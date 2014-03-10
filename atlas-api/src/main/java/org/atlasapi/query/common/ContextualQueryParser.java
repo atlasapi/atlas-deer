@@ -7,7 +7,8 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.auth.ApiKeyNotFoundException;
+import org.atlasapi.application.auth.RevokedApiKeyException;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.Operators;
@@ -47,7 +48,7 @@ public class ContextualQueryParser<C, R> {
     }
     
     public ContextualQuery<C, R> parse(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         parameterValidator.validateParameters(request);
         QueryContext context = queryContextParser.parseContext(request);
         SingleQuery<C> contextQuery = contextQuery(request, context);

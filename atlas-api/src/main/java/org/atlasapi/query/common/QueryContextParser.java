@@ -5,8 +5,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.application.auth.ApiKeyNotFoundException;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.auth.RevokedApiKeyException;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
@@ -30,7 +31,7 @@ public class QueryContextParser implements ParameterNameProvider {
         this.selectionBuilder = checkNotNull(selectionBuilder);
     }
     
-    public QueryContext parseSingleContext(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public QueryContext parseSingleContext(HttpServletRequest request) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         return new QueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromSingleRequest(request),
@@ -38,7 +39,7 @@ public class QueryContextParser implements ParameterNameProvider {
                 );
     }
 
-    public QueryContext parseListContext(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public QueryContext parseListContext(HttpServletRequest request) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         return new QueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
             annotationExtractor.extractFromListRequest(request),

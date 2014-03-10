@@ -24,15 +24,17 @@ public class ApiKeySourcesFetcher implements ApplicationSourcesFetcher {
     }
 
     @Override
-    public Optional<ApplicationSources> sourcesFor(HttpServletRequest request) throws InvalidApiKeyException  {
+    public Optional<ApplicationSources> sourcesFor(HttpServletRequest request) throws RevokedApiKeyException, ApiKeyNotFoundException  {
             String apiKey = request.getParameter(API_KEY_QUERY_PARAMETER);
             if (apiKey != null) {
                 Optional<Application> app = reader.applicationForKey(apiKey);
                 if (app.isPresent()) {
                     if (app.get().isRevoked()) {
-                        throw new InvalidApiKeyException(app.get().getCredentials().getApiKey());
+                        throw new RevokedApiKeyException(app.get().getCredentials().getApiKey());
                     }
                     return Optional.of(app.get().getSources());
+                } else {
+                    throw new ApiKeyNotFoundException(apiKey);
                 }
             }
         return Optional.absent();

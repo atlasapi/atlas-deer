@@ -7,7 +7,8 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.auth.ApiKeyNotFoundException;
+import org.atlasapi.application.auth.RevokedApiKeyException;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.AbstractRequestParameterValidator;
@@ -38,7 +39,7 @@ public class StandardUserAwareQueryParser<T> implements UserAwareQueryParser<T> 
     }
 
     @Override
-    public UserAwareQuery<T> parse(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public UserAwareQuery<T> parse(HttpServletRequest request) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         parameterValidator.validateParameters(request);
         Id singleId = tryExtractSingleId(request);
         return singleId != null ? singleQuery(request, singleId) 
@@ -51,11 +52,11 @@ public class StandardUserAwareQueryParser<T> implements UserAwareQueryParser<T> 
                               : null;
     }
     
-    private UserAwareQuery<T> singleQuery(HttpServletRequest request, Id singleId) throws QueryParseException, InvalidApiKeyException {
+    private UserAwareQuery<T> singleQuery(HttpServletRequest request, Id singleId) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         return UserAwareQuery.singleQuery(singleId, contextParser.parseSingleContext(request));
     }
 
-    private UserAwareQuery<T> listQuery(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    private UserAwareQuery<T> listQuery(HttpServletRequest request) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         AttributeQuerySet querySet = attributeParser.parse(request);
         return UserAwareQuery.listQuery(querySet,
             contextParser.parseListContext(request));

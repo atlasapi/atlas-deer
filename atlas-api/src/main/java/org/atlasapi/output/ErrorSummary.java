@@ -3,9 +3,9 @@ package org.atlasapi.output;
 import java.util.Map;
 import java.util.UUID;
 
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.auth.ApiKeyNotFoundException;
+import org.atlasapi.application.auth.RevokedApiKeyException;
 import org.atlasapi.query.common.InvalidAnnotationException;
-
 
 import com.google.common.collect.ImmutableMap;
 import com.metabroadcast.common.http.HttpStatusCode;
@@ -62,7 +62,8 @@ public class ErrorSummary {
 		    .put(NotAuthorizedException.class, new DefaultErrorSummaryFactory("UNAUTHORIZED", HttpStatusCode.FORBIDDEN))
 		    .put(UserProfileIncompleteException.class, new DefaultErrorSummaryFactory("FORBIDDEN_USER_INCOMPLETE", HttpStatusCode.FORBIDDEN))
 		    .put(ResourceForbiddenException.class, new DefaultErrorSummaryFactory("FORBIDDEN_RESOURCE", HttpStatusCode.FORBIDDEN))
-		    .put(InvalidApiKeyException.class, new DefaultErrorSummaryFactory("INVALID_API_KEY", HttpStatusCode.FORBIDDEN))
+		    .put(RevokedApiKeyException.class, new DefaultErrorSummaryFactory("REVOKED_API_KEY", HttpStatusCode.FORBIDDEN))
+		    .put(ApiKeyNotFoundException.class, new DefaultErrorSummaryFactory("API_KEY_NOT_FOUND", HttpStatusCode.FORBIDDEN))
 		    .put(LicenseNotAcceptedException.class, new DefaultErrorSummaryFactory("LICENSE_NOT_ACCEPTED", HttpStatusCode.FORBIDDEN))           
 		    .put(InvalidTransitionException.class, new DefaultErrorSummaryFactory("INVALID_TRANSITION", HttpStatusCode.BAD_REQUEST))  
 		    .build();

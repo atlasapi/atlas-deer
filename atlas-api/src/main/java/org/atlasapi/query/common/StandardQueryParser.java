@@ -7,7 +7,8 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.auth.ApiKeyNotFoundException;
+import org.atlasapi.application.auth.RevokedApiKeyException;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 
@@ -33,7 +34,7 @@ public class StandardQueryParser<T> implements QueryParser<T> {
     }
 
     @Override
-    public Query<T> parse(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public Query<T> parse(HttpServletRequest request) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         parameterValidator.validateParameters(request);
         Id singleId = tryExtractSingleId(request);
         return singleId != null ? singleQuery(request, singleId) 
@@ -46,11 +47,11 @@ public class StandardQueryParser<T> implements QueryParser<T> {
                               : null;
     }
     
-    private Query<T> singleQuery(HttpServletRequest request, Id singleId) throws QueryParseException, InvalidApiKeyException {
+    private Query<T> singleQuery(HttpServletRequest request, Id singleId) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         return Query.singleQuery(singleId, contextParser.parseSingleContext(request));
     }
 
-    private Query<T> listQuery(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    private Query<T> listQuery(HttpServletRequest request) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         AttributeQuerySet querySet = attributeParser.parse(request);
         return Query.listQuery(querySet,
             contextParser.parseListContext(request));

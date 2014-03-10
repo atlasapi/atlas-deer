@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableSet;
 
 public interface ApplicationSourcesFetcher {
 	
-	Optional<ApplicationSources> sourcesFor(HttpServletRequest request) throws InvalidApiKeyException;
+	Optional<ApplicationSources> sourcesFor(HttpServletRequest request) throws RevokedApiKeyException, ApiKeyNotFoundException;
 
     ImmutableSet<String> getParameterNames();
 

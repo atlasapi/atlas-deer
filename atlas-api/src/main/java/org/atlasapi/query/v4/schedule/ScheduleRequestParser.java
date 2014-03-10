@@ -12,8 +12,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
+import org.atlasapi.application.auth.ApiKeyNotFoundException;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.auth.RevokedApiKeyException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.annotation.ActiveAnnotations;
@@ -75,14 +76,14 @@ class ScheduleRequestParser {
         this.annotationExtractor = annotationsExtractor;
     }
 
-    public ScheduleQuery queryFrom(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public ScheduleQuery queryFrom(HttpServletRequest request) throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         Matcher matcher = CHANNEL_ID_PATTERN.matcher(request.getRequestURI());
         return matcher.matches() ? parseSingleRequest(request)
                                  : parseMultiRequest(request);
     }
 
     private ScheduleQuery parseSingleRequest(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         singleValidator.validateParameters(request);
         
         Publisher publisher = extractPublisher(request);
@@ -95,7 +96,7 @@ class ScheduleRequestParser {
     }
 
     private ScheduleQuery parseMultiRequest(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, RevokedApiKeyException, ApiKeyNotFoundException {
         
         multiValidator.validateParameters(request);
         
@@ -109,7 +110,7 @@ class ScheduleRequestParser {
 
 
     private QueryContext parseContext(HttpServletRequest request, Publisher publisher,
-            Interval queryInterval) throws InvalidApiKeyException, InvalidAnnotationException {
+            Interval queryInterval) throws RevokedApiKeyException, InvalidAnnotationException, ApiKeyNotFoundException {
         ApplicationSources appSources = getConfiguration(request);
         appSources = appConfigForValidPublisher(publisher, appSources, queryInterval);
         checkArgument(appSources != null, "Source %s not enabled", publisher);
@@ -192,7 +193,7 @@ class ScheduleRequestParser {
         return publisher.get();
     }
 
-    private ApplicationSources getConfiguration(HttpServletRequest request) throws InvalidApiKeyException {
+    private ApplicationSources getConfiguration(HttpServletRequest request) throws RevokedApiKeyException, ApiKeyNotFoundException {
         Optional<ApplicationSources> config = applicationStore.sourcesFor(request);
         if (config.isPresent()) {
             return config.get();
