@@ -42,8 +42,8 @@ public class ApplicationModelTranslator implements Function<org.atlasapi.applica
             .withCredentials(transformCredentials3to4(input.getCredentials()))
             .withSources(transformConfiguration3to4(input.getConfiguration()))
             .withRevoked(input.isRevoked())
-            .withNumberOfUsers(input.getNumberOfUsers())
             .withStripeCustomerId(input.getStripeCustomerId())
+            .withStripeSubscriptionId(input.getStripeSubscriptionId())
             .build();
     }
     
@@ -89,8 +89,8 @@ public class ApplicationModelTranslator implements Function<org.atlasapi.applica
                 .withConfiguration(transformSources4to3(input.getSources()))
                 .withCredentials(transformCredentials4to3(input.getCredentials())) 
                 .withRevoked(input.isRevoked())
-                .withNumberOfUsers(input.getNumberOfUsers())
                 .withStripeCustomerId(input.getStripeCustomerId())
+                .withStripeSubscriptionId(input.getStripeSubscriptionId())
                 .build();
     }
     

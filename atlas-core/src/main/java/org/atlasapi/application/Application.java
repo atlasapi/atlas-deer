@@ -30,8 +30,8 @@ public class Application implements Identifiable, Sourced {
     private final ApplicationCredentials credentials;
     private final ApplicationSources sources;
     private final boolean revoked;
-    private final Long numberOfUsers;
     private final Optional<String> stripeCustomerId;
+    private final Optional<String> stripeSubscriptionId;
 
     private Application(Id id, 
             String slug, 
@@ -41,8 +41,8 @@ public class Application implements Identifiable, Sourced {
             ApplicationCredentials credentials, 
             ApplicationSources sources,
             boolean revoked,
-            Long numberOfUsers,
-            Optional<String> stripeCustomerId) {
+            Optional<String> stripeCustomerId,
+            Optional<String> stripeSubscriptionId) {
         this.id = id;
         this.slug = slug;
         this.title = title;
@@ -51,8 +51,8 @@ public class Application implements Identifiable, Sourced {
         this.credentials = credentials;
         this.sources = sources;
         this.revoked = revoked;
-        this.numberOfUsers = numberOfUsers;
         this.stripeCustomerId = checkNotNull(stripeCustomerId);
+        this.stripeSubscriptionId = checkNotNull(stripeSubscriptionId);
     }
 
     public Id getId() {
@@ -98,10 +98,6 @@ public class Application implements Identifiable, Sourced {
         return revoked;
     }
     
-    public Long getNumberOfUsers() {
-        return numberOfUsers;
-    }
-    
     /**
      * Stripe payments customer reference
      * DO NOT OUTPUT IN JSON
@@ -109,6 +105,14 @@ public class Application implements Identifiable, Sourced {
      */
     public Optional<String> getStripeCustomerId() {
         return stripeCustomerId;
+    }
+    
+    /**
+     * Maps customer to a stripe plan
+     * @return
+     */
+    public Optional<String> getStripeSubscriptionId() {
+        return stripeSubscriptionId;
     }
     
     public Application copyWithPrecedenceDisabled() {
@@ -252,8 +256,8 @@ public class Application implements Identifiable, Sourced {
                 .withCredentials(this.getCredentials())
                 .withSources(this.getSources())
                 .withRevoked(this.isRevoked())
-                .withNumberOfUsers(this.getNumberOfUsers())
-                .withStripeCustomerId(this.getStripeCustomerId());
+                .withStripeCustomerId(this.getStripeCustomerId())
+                .withStripeSubscriptionId(this.getStripeSubscriptionId());
     }
     
     public static Builder builder() {
@@ -272,6 +276,7 @@ public class Application implements Identifiable, Sourced {
         private boolean revoked = false;
         private Long numberOfUsers;
         private Optional<String> stripeCustomerId = Optional.absent();
+        private Optional<String> stripeSubscriptionId = Optional.absent();
 
         public Builder() {
             this.sources = ApplicationSources.defaults();
@@ -335,9 +340,19 @@ public class Application implements Identifiable, Sourced {
             this.stripeCustomerId = stripeCustomerId;
             return this;
         }
+        
+        public Builder withStripeSubscriptionId(String stripeSubscriptionId) {
+            this.stripeSubscriptionId = Optional.fromNullable(stripeSubscriptionId);
+            return this;
+        }
+        
+        public Builder withStripeSubscriptionId(Optional<String> stripeSubscriptionId) {
+            this.stripeSubscriptionId = stripeSubscriptionId;
+            return this;
+        }
 
         public Application build() {
-            return new Application(id, slug, title, description, created, credentials, sources, revoked, numberOfUsers, stripeCustomerId);
+            return new Application(id, slug, title, description, created, credentials, sources, revoked, stripeCustomerId, stripeSubscriptionId);
         }
     }
 
