@@ -13,6 +13,11 @@
   <dependencies>
     <dependency>
       <groupId>org.atlasapi</groupId>
+      <version>${atlas.version}</version>
+      <artifactId>atlas-generator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.atlasapi</groupId>
       <artifactId>atlas-model</artifactId>
     </dependency>
     <dependency>
@@ -51,6 +56,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value</artifactId>
+      <version>1.0-rc1</version>
     </dependency>
   </dependencies>
 </project>

@@ -6,6 +6,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>atlas-generator</module>
     <module>atlas-core</module>
     <module>atlas-testlib</module>
     <module>atlas-cassandra</module>
@@ -303,6 +304,11 @@
         <groupId>org.apache.activemq</groupId>
         <artifactId>activemq-kahadb-store</artifactId>
         <version>${amq.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${spring.version}</version>
       </dependency>
       <dependency>
         <groupId>org.springframework</groupId>

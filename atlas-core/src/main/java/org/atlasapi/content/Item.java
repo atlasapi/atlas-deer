@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.List;
 import java.util.Set;
 
+import org.atlasapi.attribute.AtlasAttribute;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
@@ -103,12 +104,13 @@ public class Item extends Content {
         this.blackAndWhite = blackAndWhite;
     }
 
+    @AtlasAttribute("blackAndWhite")
     public Boolean getBlackAndWhite() {
         return blackAndWhite;
     }
     
    
-    
+    @AtlasAttribute("manifestedAs") 
     public Set<Encoding> getManifestedAs() {
         return manifestedAs;
     }
