@@ -1,7 +1,7 @@
 package org.atlasapi.attribute;
 
 
-public class TestClass extends ParentTestClass {
+public class TestClass extends ParentTestClass implements Cloneable {
 
     @AtlasAttribute("foo")
     public String getFoo() {

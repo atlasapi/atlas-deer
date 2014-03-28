@@ -1,14 +1,18 @@
 package org.atlasapi.attribute;
 
+import static org.junit.Assert.assertFalse;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -16,8 +20,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.util.ClassUtils;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Function;
@@ -29,6 +31,8 @@ import com.google.common.io.Resources;
 public class AttributeGeneratorTest {
 
     private static final String JAVA = ".java";
+    private static final Locale DEFAULT_LOCALE = null;
+    private static final Charset DEFAULT_CHARSET = null;
 
     @Test
     public void testGeneratingAttributes() throws Exception {
@@ -41,10 +45,14 @@ public class AttributeGeneratorTest {
         
         List<Diagnostic<? extends JavaFileObject>> diagnostics = compileWithProcessors(classes, processors);
         
+        boolean failed = false;
         for (Diagnostic<?> diagnostic : diagnostics) {
-            System.out.println(diagnostic.getMessage(Locale.getDefault()));
+            failed = failed | (diagnostic.getKind().equals(Kind.ERROR));
+            System.out.println(String.format("[%s] %s [%s,%s]", 
+                    diagnostic.getKind(), diagnostic.getMessage(Locale.getDefault()), 
+                    diagnostic.getLineNumber(), diagnostic.getColumnNumber()));
         }
-        
+        assertFalse(failed);
     }
 
     private List<Diagnostic<? extends JavaFileObject>> compileWithProcessors(
@@ -54,7 +62,7 @@ public class AttributeGeneratorTest {
         DiagnosticCollector<JavaFileObject> diagnosticCollector = 
                 new DiagnosticCollector<JavaFileObject>();
         StandardJavaFileManager fileManager = 
-                compiler.getStandardFileManager(diagnosticCollector, null, null);
+                compiler.getStandardFileManager(diagnosticCollector, DEFAULT_LOCALE, DEFAULT_CHARSET);
         
         List<File> compilationFiles = Lists.transform(classes, new Function<Class<?>, File>() {
             @Override
