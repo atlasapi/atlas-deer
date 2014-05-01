@@ -27,6 +27,8 @@ public class ApplicationModelTranslatorTest {
 	private static final DateTime CREATED = new DateTime(DateTimeZones.UTC)
 	         .withDate(2013, 9, 13)
 	         .withTime(15, 13, 0, 0);
+	private static final Long NUMBER_OF_CUSTOMERS = Long.valueOf(123L);
+	private static final String STRIPE_CUSTOMER_ID = "Stripe123";
 	private static final SourceReadEntry READ_ENTRY_1 = new SourceReadEntry(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED);
 	private static final SourceReadEntry READ_ENTRY_2 = new SourceReadEntry(Publisher.ARCHIVE_ORG, SourceStatus.UNAVAILABLE);
 
@@ -51,6 +53,8 @@ public class ApplicationModelTranslatorTest {
 	            .withConfiguration(configuration)
 	            .withCredentials(creds) 
 	            .withRevoked(true)
+	            .withNumberOfUsers(NUMBER_OF_CUSTOMERS)
+	            .withStripeCustomerId(STRIPE_CUSTOMER_ID)
 				.build();
 		 ApplicationModelTranslator translator = new ApplicationModelTranslator();
 		 Application result = translator.apply(application);
@@ -66,6 +70,9 @@ public class ApplicationModelTranslatorTest {
 		 assertTrue(result.getSources().isPrecedenceEnabled());
 		 assertTrue(result.getSources().isReadEnabled(Publisher.BBC));
 		 assertTrue(result.getSources().isWriteEnabled(Publisher.ARCHIVE_ORG));
+		 // Stripe
+		 assertEquals(result.getNumberOfUsers(), NUMBER_OF_CUSTOMERS);
+		 assertEquals(result.getStripeCustomerId().get(), STRIPE_CUSTOMER_ID);
 	}
 	
 	@Test
@@ -86,6 +93,8 @@ public class ApplicationModelTranslatorTest {
 	              .withCreated(CREATED)
 	              .withCredentials(credentials)
 	              .withSources(sources)
+	              .withNumberOfUsers(NUMBER_OF_CUSTOMERS)
+	              .withStripeCustomerId(STRIPE_CUSTOMER_ID)
 	              .build();
 	      ApplicationModelTranslator translator = new ApplicationModelTranslator();
 	      org.atlasapi.application.v3.Application result = translator.transform4to3(application);
@@ -98,5 +107,8 @@ public class ApplicationModelTranslatorTest {
 	      assertTrue(result.getConfiguration().precedenceEnabled());
 	      assertTrue(result.getConfiguration().getEnabledSources().contains(Publisher.BBC));
 	      assertTrue(result.getConfiguration().canWrite(Publisher.ARCHIVE_ORG));
+	      // Stripe
+	      assertEquals(result.getNumberOfUsers(), NUMBER_OF_CUSTOMERS);
+	      assertEquals(result.getStripeCustomerId().get(), STRIPE_CUSTOMER_ID);
 	}
 }

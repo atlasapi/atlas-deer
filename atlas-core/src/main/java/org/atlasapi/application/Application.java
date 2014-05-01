@@ -1,5 +1,8 @@
 package org.atlasapi.application;
 
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +14,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -26,6 +30,8 @@ public class Application implements Identifiable, Sourced {
     private final ApplicationCredentials credentials;
     private final ApplicationSources sources;
     private final boolean revoked;
+    private final Long numberOfUsers;
+    private final Optional<String> stripeCustomerId;
 
     private Application(Id id, 
             String slug, 
@@ -34,7 +40,9 @@ public class Application implements Identifiable, Sourced {
             DateTime created, 
             ApplicationCredentials credentials, 
             ApplicationSources sources,
-            boolean revoked) {
+            boolean revoked,
+            Long numberOfUsers,
+            Optional<String> stripeCustomerId) {
         this.id = id;
         this.slug = slug;
         this.title = title;
@@ -43,6 +51,8 @@ public class Application implements Identifiable, Sourced {
         this.credentials = credentials;
         this.sources = sources;
         this.revoked = revoked;
+        this.numberOfUsers = numberOfUsers;
+        this.stripeCustomerId = checkNotNull(stripeCustomerId);
     }
 
     public Id getId() {
@@ -86,6 +96,19 @@ public class Application implements Identifiable, Sourced {
     
     public boolean isRevoked() {
         return revoked;
+    }
+    
+    public Long getNumberOfUsers() {
+        return numberOfUsers;
+    }
+    
+    /**
+     * Stripe payments customer reference
+     * DO NOT OUTPUT IN JSON
+     * @return
+     */
+    public Optional<String> getStripeCustomerId() {
+        return stripeCustomerId;
     }
     
     public Application copyWithPrecedenceDisabled() {
@@ -228,7 +251,9 @@ public class Application implements Identifiable, Sourced {
                 .withCreated(this.getCreated())
                 .withCredentials(this.getCredentials())
                 .withSources(this.getSources())
-                .withRevoked(this.isRevoked());
+                .withRevoked(this.isRevoked())
+                .withNumberOfUsers(this.getNumberOfUsers())
+                .withStripeCustomerId(this.getStripeCustomerId());
     }
     
     public static Builder builder() {
@@ -245,6 +270,8 @@ public class Application implements Identifiable, Sourced {
         private ApplicationCredentials credentials;
         private ApplicationSources sources;
         private boolean revoked = false;
+        private Long numberOfUsers;
+        private Optional<String> stripeCustomerId = Optional.absent();
 
         public Builder() {
             this.sources = ApplicationSources.defaults();
@@ -294,10 +321,23 @@ public class Application implements Identifiable, Sourced {
         public Builder withRevoked(boolean revoked) {
             this.revoked = revoked;
             return this;
+        }        public Builder withNumberOfUsers(Long numberOfUsers) {
+            this.numberOfUsers = numberOfUsers;
+            return this;
+        }
+        
+        public Builder withStripeCustomerId(String stripeCustomerId) {
+            this.stripeCustomerId = Optional.fromNullable(stripeCustomerId);
+            return this;
+        }
+        
+        public Builder withStripeCustomerId(Optional<String> stripeCustomerId) {
+            this.stripeCustomerId = stripeCustomerId;
+            return this;
         }
 
         public Application build() {
-            return new Application(id, slug, title, description, created, credentials, sources, revoked);
+            return new Application(id, slug, title, description, created, credentials, sources, revoked, numberOfUsers, stripeCustomerId);
         }
     }
 

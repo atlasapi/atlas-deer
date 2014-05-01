@@ -41,6 +41,8 @@ public class ApplicationListWriter implements EntityListWriter<Application> {
         writer.writeObject(credentialsWriter, entity.getCredentials(), ctxt);
         writer.writeObject(sourcesWriter, entity.getSources(), ctxt);
         writer.writeObject(publisherWriter, entity.getPublisher(), ctxt);
+        writer.writeField("numberOfUsers", entity.getNumberOfUsers());
+        // Stripe customer ID is not output
         ctxt.endResource();
 
     }

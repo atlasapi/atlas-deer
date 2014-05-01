@@ -225,6 +225,11 @@
       <artifactId>google-api-services-youtube</artifactId>
       <version>v3-rev90-1.17.0-rc</version>
     </dependency>
+    <dependency>
+      <groupId>com.stripe</groupId>
+      <artifactId>stripe-java</artifactId>
+      <version>1.7.2</version>
+    </dependency>
   </dependencies>
 
   <distributionManagement>

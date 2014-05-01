@@ -45,6 +45,8 @@ import org.atlasapi.application.model.deserialize.PublisherDeserializer;
 import org.atlasapi.application.model.deserialize.RoleDeserializer;
 import org.atlasapi.application.model.deserialize.SourceReadEntryDeserializer;
 import org.atlasapi.application.notification.NotifierModule;
+import org.atlasapi.application.payments.PaymentsController;
+import org.atlasapi.application.payments.StripeClient;
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.users.EndUserLicenseController;
 import org.atlasapi.application.users.NewUserSupplier;
@@ -151,6 +153,9 @@ public class ApplicationWebModule {
     @Value("${youtube.clientSecret}") private String youTubeClientSecret;
     
     @Value("${youtube.handling.service}") private String handlingService;
+    
+    @Value("${stripe.secret.key}") private String stripeSecretKey;
+    @Value("${stripe.publishable.key}") private String stripePublishableKey;
     
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(DateTime.class, datetimeDeserializer)
@@ -468,6 +473,12 @@ public class ApplicationWebModule {
         
         return new EndUserLicenseController(new EndUserLicenseQueryResultWriter(endUserLicenseListWriter),
                 gsonModelReader(), appPersistence.endUserLicenseStore(), userFetcher()); 
+    }
+    
+    @Bean 
+    public PaymentsController paymentsController() {
+        StripeClient stripeClient = new StripeClient(stripePublishableKey, stripeSecretKey);
+        return new PaymentsController(stripeClient, userFetcher());
     }
   
 }

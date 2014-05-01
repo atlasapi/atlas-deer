@@ -3,9 +3,7 @@ package org.atlasapi.model.translators;
 import java.util.List;
 import java.util.Map;
 
-import org.atlasapi.application.SourceStatus;
 import org.atlasapi.application.v3.ApplicationConfiguration;
-import org.atlasapi.application.v3.SourceStatus.SourceState;
 import org.atlasapi.application.Application;
 import org.atlasapi.application.ApplicationCredentials;
 import org.atlasapi.application.ApplicationSources;
@@ -44,6 +42,8 @@ public class ApplicationModelTranslator implements Function<org.atlasapi.applica
             .withCredentials(transformCredentials3to4(input.getCredentials()))
             .withSources(transformConfiguration3to4(input.getConfiguration()))
             .withRevoked(input.isRevoked())
+            .withNumberOfUsers(input.getNumberOfUsers())
+            .withStripeCustomerId(input.getStripeCustomerId())
             .build();
     }
     
@@ -89,6 +89,8 @@ public class ApplicationModelTranslator implements Function<org.atlasapi.applica
                 .withConfiguration(transformSources4to3(input.getSources()))
                 .withCredentials(transformCredentials4to3(input.getCredentials())) 
                 .withRevoked(input.isRevoked())
+                .withNumberOfUsers(input.getNumberOfUsers())
+                .withStripeCustomerId(input.getStripeCustomerId())
                 .build();
     }
     
