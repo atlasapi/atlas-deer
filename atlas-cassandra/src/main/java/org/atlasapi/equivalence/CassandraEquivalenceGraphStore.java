@@ -16,12 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Query;
+import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.querybuilder.Batch;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -96,7 +97,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         };
     }
     
-    private Query queryForGraphRows(final Map<Id, Long> idIndex) {
+    private Statement queryForGraphRows(final Map<Id, Long> idIndex) {
         return select().all()
                 .from(EQUIVALENCE_GRAPHS_TABLE)
                 .where(in(GRAPH_ID_KEY, ImmutableSet.copyOf(idIndex.values()).toArray()))
@@ -127,11 +128,11 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         return Futures.transform(resultOf(queryForGraphIds(ids)), toGraphIdIndex);
     }
 
-    private ResultSetFuture resultOf(Query query) {
+    private ResultSetFuture resultOf(Statement query) {
         return session.executeAsync(query);
     }
 
-    private Query queryForGraphIds(Iterable<Id> ids) {
+    private Statement queryForGraphIds(Iterable<Id> ids) {
         ImmutableSet<Long> uniqueIds = ImmutableSet.copyOf(Iterables.transform(ids, Id.toLongValue()));
         Object[] lids = Iterables.toArray(uniqueIds,Long.class);
         return QueryBuilder
@@ -152,7 +153,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
                 updates.add(indexInsert(adjacency.getKey().longValue(), graphId));
             }
         }
-        Query updateBatch = QueryBuilder.batch(updates.toArray(new Statement[updates.size()]));
+        Batch updateBatch = QueryBuilder.batch(updates.toArray(new RegularStatement[updates.size()]));
         session.execute(updateBatch.setConsistencyLevel(write));
     }
 

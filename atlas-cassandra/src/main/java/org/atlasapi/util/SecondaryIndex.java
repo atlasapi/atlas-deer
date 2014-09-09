@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Query;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -76,7 +75,7 @@ public class SecondaryIndex {
         return Futures.transform(session.executeAsync(queryFor(keys, level)), toMap);
     }
 
-    private Query queryFor(Iterable<Long> keys, ConsistencyLevel level) {
+    private Statement queryFor(Iterable<Long> keys, ConsistencyLevel level) {
         return select(KEY_KEY, VALUE_KEY)
                 .from(indexTable)
                 .where(in(KEY_KEY, Iterables.toArray(keys, Object.class)))

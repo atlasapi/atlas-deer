@@ -65,6 +65,6 @@ public final class DatastaxCassandraService extends AbstractIdleService {
     @Override
     protected void shutDown() throws Exception {
         log.info("disconnecting");
-        cluster.shutdown();
+        cluster.close();
     }
 }

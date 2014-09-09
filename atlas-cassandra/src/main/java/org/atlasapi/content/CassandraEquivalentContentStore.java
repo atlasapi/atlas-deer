@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Query;
+import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
@@ -202,15 +202,16 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             && equivalenceGraph.getEquivalenceSet().contains(content.getId());
     }
 
-    private ResultSetFuture resultOf(Query query, ConsistencyLevel readConsistency) {
+    private ResultSetFuture resultOf(Statement query, ConsistencyLevel readConsistency) {
         return session.executeAsync(query.setConsistencyLevel(readConsistency));
     }
     
-    private Query selectSetsQuery(Iterable<Long> keys) {
+    private Statement selectSetsQuery(Iterable<Long> keys) {
         return select().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(in(SET_ID_KEY, ImmutableSet.copyOf(keys).toArray()))
-                .orderBy(asc(CONTENT_ID_KEY));
+                .orderBy(asc(CONTENT_ID_KEY))
+                .setFetchSize(Integer.MAX_VALUE);
     }
     
     @Override
@@ -240,7 +241,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         .and(eq(CONTENT_ID_KEY, elem.longValue())));
             }
         }
-        session.execute(batch(deletes.toArray(new Statement[deletes.size()]))
+        session.execute(batch(deletes.toArray(new RegularStatement[deletes.size()]))
                 .setConsistencyLevel(writeConsistency));
     }
 
@@ -268,7 +269,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     .and(eq(CONTENT_ID_KEY, graph.getId().longValue()))
                     .with(set(GRAPH_KEY, graphSerializer.serialize(graph))));
         }
-        session.execute(batch(updates.toArray(new Statement[updates.size()]))
+        session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
                 .setConsistencyLevel(writeConsistency));        
     }
 
@@ -291,7 +292,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Content content = graphAndContent.getValue();
             updates.add(index.insertStatement(content.getId().longValue(), graph.getId().longValue()));
         }
-        session.execute(batch(updates.toArray(new Statement[updates.size()]))
+        session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
                 .setConsistencyLevel(writeConsistency));
     }
 
