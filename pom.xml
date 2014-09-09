@@ -375,7 +375,6 @@
     <metrics.version>3.0.1</metrics.version>
     <amq.version>5.9.0</amq.version>
     <spring.version>3.0.5.RELEASE</spring.version>
-    <astyanax.version>1.56.44</astyanax.version>
     <datastax.version>2.1.0</datastax.version>
     <jackson.version>2.3.0</jackson.version>
   </properties>
