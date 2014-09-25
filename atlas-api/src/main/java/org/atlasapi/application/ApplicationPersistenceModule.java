@@ -21,6 +21,7 @@ import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.social.auth.credentials.CredentialsStore;
 import com.metabroadcast.common.social.auth.credentials.MongoDBCredentialsStore;
+import com.mongodb.ReadPreference;
 
 @Configuration
 @Import({AtlasPersistenceModule.class})
@@ -46,7 +47,7 @@ public class ApplicationPersistenceModule {
     public LegacyApplicationStore applicationStore() {
         DatabasedMongo mongo = persistence.databasedMongo();
         IdGenerator idGenerator = new MongoSequentialIdGenerator(mongo, "application");
-        MongoApplicationStore legacyStore = new MongoApplicationStore(mongo, idGenerator);
+        MongoApplicationStore legacyStore = new MongoApplicationStore(mongo, idGenerator, ReadPreference.primaryPreferred());
         LegacyAdaptingApplicationStore store = new LegacyAdaptingApplicationStore(legacyStore, mongo, idGenerator, idCodec);
         return new CacheBackedApplicationStore(store, cacheMinutes);
     }
