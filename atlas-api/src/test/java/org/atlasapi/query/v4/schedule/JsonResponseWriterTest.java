@@ -208,4 +208,16 @@ public class JsonResponseWriterTest {
         }
         assertTrue(Strings.isNullOrEmpty(response.getResponseAsString()));
     }
+    
+    @Test
+    public void testWritingEmptyArrayFollowedByField() throws Exception {
+        
+        formatter.writeList("elems", "elem", ImmutableList.<String>of(), ctxt);
+        formatter.writeField("hello", "world");
+        formatter.finishResponse();
+        
+        Map<String, Object> results = asMap(response);
+        assertEquals(ImmutableList.<String>of(), results.get("elems"));
+        assertEquals("world", results.get("hello"));
+    }
 }
