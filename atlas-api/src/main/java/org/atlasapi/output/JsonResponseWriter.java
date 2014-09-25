@@ -173,6 +173,7 @@ public final class JsonResponseWriter implements ResponseWriter {
             }
         }
         writer.write(END_ARRAY);
+        printMemberSeparator = true;
     }
 
     /**
@@ -196,6 +197,7 @@ public final class JsonResponseWriter implements ResponseWriter {
             }
         }
         writer.write(END_ARRAY);
+        printMemberSeparator = true;
     }
 
     private <T> void writeObj(EntityWriter<? super T> entWriter, T nextObj, OutputContext ctxt) throws IOException {
