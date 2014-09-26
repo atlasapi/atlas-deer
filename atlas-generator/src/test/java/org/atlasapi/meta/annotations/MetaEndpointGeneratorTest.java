@@ -1,4 +1,4 @@
-package org.atlasapi.attribute;
+package org.atlasapi.meta.annotations;
 
 import static org.junit.Assert.assertFalse;
 
@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 
-public class AttributeGeneratorTest {
+public class MetaEndpointGeneratorTest {
 
     private static final String JAVA = ".java";
     private static final Locale DEFAULT_LOCALE = null;
@@ -38,10 +38,10 @@ public class AttributeGeneratorTest {
     public void testGeneratingAttributes() throws Exception {
         
         ImmutableList<Class<?>> classes = ImmutableList.<Class<?>>of(
-            ParentTestClass.class, 
-            TestClass.class
+            IdentifiedClass.class, 
+            DescribedClass.class
         );
-        ImmutableSet<AttributeGenerator> processors = ImmutableSet.of(new AttributeGenerator());
+        ImmutableSet<AnnotationProcessor> processors = ImmutableSet.of(new AnnotationProcessor(new FieldTypeFileGenerator(FieldName.class)));
         
         List<Diagnostic<? extends JavaFileObject>> diagnostics = compileWithProcessors(classes, processors);
         
@@ -56,7 +56,7 @@ public class AttributeGeneratorTest {
     }
 
     private List<Diagnostic<? extends JavaFileObject>> compileWithProcessors(
-            ImmutableList<Class<?>> classes, ImmutableSet<AttributeGenerator> processors) {
+            ImmutableList<Class<?>> classes, ImmutableSet<AnnotationProcessor> processors) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         
         DiagnosticCollector<JavaFileObject> diagnosticCollector = 

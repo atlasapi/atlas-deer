@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.atlasapi</groupId>
     <artifactId>atlas</artifactId>
-    <version>7.0.17-SNAPSHOT</version>
+    <version>7.0.48-SNAPSHOT</version>
   </parent>
   <artifactId>atlas-generator</artifactId>
   <packaging>jar</packaging>
@@ -32,6 +32,15 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.3.2</version>
     </dependency>
   </dependencies>
 </project>
