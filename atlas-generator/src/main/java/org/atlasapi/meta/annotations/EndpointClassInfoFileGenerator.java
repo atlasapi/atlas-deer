@@ -4,22 +4,27 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.tools.JavaFileObject;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.JavaFileObject;
 
-import com.google.common.base.Function;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableSet;
 
 public class EndpointClassInfoFileGenerator implements FileGenerator {
 	
 	private static final String OVERRIDDEN_METHOD_PATTERN = "%s@Override\n%spublic %%s %%s() {\n%sreturn %%s;\n%s}\n";
+	private static final String SET_METHOD_ELEM_PATTERN = "%s.add(new Operation(%%s, %%s))\n";
 	private static final String CLASS_HEADER_PATTERN = "package %s;\n\n%s\n\npublic class %sEndpointInfo implements EndpointClassInfo {\n";
 	
 	private static final String TAB = "    ";
@@ -37,8 +42,10 @@ public class EndpointClassInfoFileGenerator implements FileGenerator {
 				TAB, 
 				TAB + TAB, 
 				TAB);
-		// TODO
-		this.setElemPattern = "";
+		this.setElemPattern = String.format(
+				SET_METHOD_ELEM_PATTERN, 
+				TAB + TAB + TAB
+		);
 	}
 
 	@Override
@@ -87,14 +94,31 @@ public class EndpointClassInfoFileGenerator implements FileGenerator {
 	}
 	
 	private String setElementFrom(ExecutableElement method) {
-//		String fieldName = addQuotesToString(fieldNameFromAnnotation(method));
-//		String doc = addQuotesToString(parseJavadoc(processingEnv.getElementUtils().getDocComment(method)));
-//		String returnType = addQuotesToString(method.getReturnType().toString());
-//		return String.format(setElemPattern, fieldName, doc, returnType);
-		// TODO
-		return "";
+		RequestMapping requestMappingAnnotation = method.getAnnotation(RequestMapping.class);
+		Set<RequestMethod> methods = extractMethods(requestMappingAnnotation);
+		Set<String> paths = extractPaths(requestMappingAnnotation);
+		
+		StringBuilder operations = new StringBuilder();
+		for (RequestMethod requestMethod : methods) {
+			for (String path : paths) {
+				operations.append(String.format(setElemPattern, addQuotesToString(path), requestMethod));
+			}
+		}
+		return operations.toString();
+	}
+
+	private Set<RequestMethod> extractMethods(RequestMapping requestMapping) {
+		RequestMethod[] requestMethods = requestMapping.method();
+		if (requestMethods.length == 0) {
+			return ImmutableSet.of(RequestMethod.GET);
+		}
+		return ImmutableSet.copyOf(requestMethods);
 	}
 	
+	private Set<String> extractPaths(RequestMapping requestMapping) {
+		return ImmutableSet.copyOf(requestMapping.value());
+	}
+
 	private String setClose() {
 		return TAB + TAB + TAB + ".build();\n";
 	}
@@ -106,19 +130,33 @@ public class EndpointClassInfoFileGenerator implements FileGenerator {
 		methods.append("\n");
 		methods.append(formatOverriddenMethod("String", "description", addQuotesToString(parseJavadoc(processingEnv.getElementUtils().getDocComment(type)))));
 		methods.append("\n");
-		// TODO root path
+		methods.append(formatOverriddenMethod("String", "rootPath", addQuotesToString(extractRootPath(type).or(""))));
 		methods.append("\n");
 		methods.append(formatOverriddenMethod("Set<Operation>", "operations", "operations"));
 		methods.append("\n");
-		// TODO returned type
+		methods.append(formatOverriddenMethod("Class<?>", "returnedType", extractProducedType(type) + ".class"));
 		
 		return methods.toString();
 	}
-	
+
+	private Optional<String> extractRootPath(TypeElement type) {
+		RequestMapping rootMapping = type.getAnnotation(RequestMapping.class);
+		if (rootMapping == null) {
+			return Optional.absent();
+		}
+		// TODO potential issue if multiple root paths specified
+		return Optional.of(rootMapping.value()[0]);
+	}
+
 	private String formatOverriddenMethod(String returnType, String methodName, String returnValue) {
 		return String.format(overriddenMethodPattern, returnType, methodName, returnValue);
 	}
 
+	private String extractProducedType(TypeElement type) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	private String addQuotesToString(String input) {
 		return "\"" + input + "\"";
 	}
