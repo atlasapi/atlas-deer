@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.QueryResultWriter;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+@ProducesType(type=Content.class)
 @Controller
 public class ContentController {
 
@@ -39,7 +41,7 @@ public class ContentController {
     }
 
     @RequestMapping({ "/4/content/{cid}.*", "/4/content/{cid}", "/4/content.*", "/4/content" })
-    public void writeSingleTopic(HttpServletRequest request, HttpServletResponse response)
+    public void fetchContent(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;
         try {

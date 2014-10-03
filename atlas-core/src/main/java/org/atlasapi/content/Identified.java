@@ -15,6 +15,7 @@ import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -78,7 +79,8 @@ public class Identified implements Identifiable, Aliased {
 	public Set<String> getAliasUrls() {
 		return aliasUrls;
 	}
-	
+
+    @Override
     public ImmutableSet<Alias> getAliases() {
         return aliases;
     }
@@ -118,10 +120,12 @@ public class Identified implements Identifiable, Aliased {
 	    setAliases(Iterables.concat(this.aliases, ImmutableList.copyOf(aliases)));
 	}
 	
+	@FieldName("uri")
 	public String getCanonicalUri() {
 		return canonicalUri;
 	}
 	
+	@FieldName("curie")
 	public String getCurie() {
 		return curie;
 	}
@@ -161,6 +165,7 @@ public class Identified implements Identifiable, Aliased {
 		this.lastUpdated = lastUpdated;
 	}
 	
+	@FieldName("last_updated")
 	public DateTime getLastUpdated() {
 		return lastUpdated;
 	}
@@ -188,6 +193,7 @@ public class Identified implements Identifiable, Aliased {
 		this.id = id;
 	}
 	
+	@FieldName("equivalence_update")
 	public DateTime getEquivalenceUpdate() {
 	    return equivalenceUpdate;
 	}

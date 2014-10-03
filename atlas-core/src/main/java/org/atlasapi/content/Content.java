@@ -22,6 +22,7 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -54,6 +55,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         super(id, source);
     }
 
+    @FieldName("clips")
     public List<Clip> getClips() {
         return clips;
     }
@@ -66,6 +68,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         topicRefs = ImmutableList.<TopicRef>builder().add(topicRef).addAll(topicRefs).build();
     }
 
+    @FieldName("topic_refs")
     public List<TopicRef> getTopicRefs() {
         return topicRefs;
     }
@@ -78,6 +81,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         contentGroupRefs = ImmutableList.<ContentGroupRef>builder().add(contentGroupRef).addAll(contentGroupRefs).build();
     }
 
+    @FieldName("content_group_refs")
     public List<ContentGroupRef> getContentGroupRefs() {
         return contentGroupRefs;
     }
@@ -95,6 +99,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         setClips(all);
     }
 
+    @FieldName("key_phrases")
     public Set<KeyPhrase> getKeyPhrases() {
         return keyPhrases;
     }
@@ -107,10 +112,12 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         keyPhrases = ImmutableSet.<KeyPhrase>builder().add(phrase).addAll(keyPhrases).build();
     }
 
+    @FieldName("people")
     public List<CrewMember> people() {
         return people;
     }
 
+    @FieldName("actors")
     public List<Actor> actors() {
         return Lists.<Actor>newArrayList(Iterables.filter(people, Actor.class));
     }
@@ -149,6 +156,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         return SortKey.DEFAULT.name();
     }
     
+    @FieldName("languages")
     public Set<String> getLanguages() {
         return languages;
     }
@@ -157,6 +165,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         this.languages = ImmutableSet.copyOf(languages);
     }
 
+    @FieldName("certificates")
     public Set<Certificate> getCertificates() {
         return certificates;
     }
@@ -169,6 +178,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         this.year = year;
     }
 
+    @FieldName("year")
     public Integer getYear() {
         return year;
     }
