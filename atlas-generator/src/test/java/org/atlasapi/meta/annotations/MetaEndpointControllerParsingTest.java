@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import javax.annotation.processing.AbstractProcessor;
 import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.DiagnosticCollector;
@@ -20,8 +21,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-import org.atlasapi.meta.annotations.modelprocessing.FieldNameAnnotationProcessor;
-import org.atlasapi.meta.annotations.modelprocessing.ModelClassInfoFileGenerator;
 import org.junit.Test;
 
 import com.google.common.base.Function;
@@ -30,7 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 
-public class MetaEndpointGeneratorTest {
+public class MetaEndpointControllerParsingTest {
 
     private static final String JAVA = ".java";
     private static final Locale DEFAULT_LOCALE = null;
@@ -43,15 +42,18 @@ public class MetaEndpointGeneratorTest {
             Identified.class, 
             Described.class,
             Topic.class,
-            Content.class
+            Content.class,
+            ContentController.class
         );
         ImmutableList<Class<?>> classesToOutput = ImmutableList.<Class<?>>of(
-    		Topic.class,
-            Content.class
-        );
+        		Topic.class,
+                Content.class
+            );
         
-        FileGenerator generator = new ModelClassInfoFileGenerator(classesToOutput);
-		ImmutableSet<FieldNameAnnotationProcessor> processors = ImmutableSet.of(new FieldNameAnnotationProcessor(generator));
+        FileGenerator generator = new EndpointClassInfoFileGenerator();
+		ImmutableSet<? extends AbstractProcessor> processors = ImmutableSet.of(
+        		new ControllerAnnotationProcessor(generator)
+		);
         
         List<Diagnostic<? extends JavaFileObject>> diagnostics = compileWithProcessors(sourceClasses, processors);
         
@@ -66,8 +68,7 @@ public class MetaEndpointGeneratorTest {
     }
 
     private List<Diagnostic<? extends JavaFileObject>> compileWithProcessors(
-    		ImmutableList<Class<?>> classes, 
-    		ImmutableSet<FieldNameAnnotationProcessor> processors) {
+    		ImmutableList<Class<?>> classes, ImmutableSet<? extends AbstractProcessor> processors) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         
         DiagnosticCollector<JavaFileObject> diagnosticCollector = 
@@ -87,14 +88,20 @@ public class MetaEndpointGeneratorTest {
             }
         });
         
-        Iterable<? extends JavaFileObject> sourceCompilationUnits = fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);
+        Iterable<? extends JavaFileObject> sourceCompilationUnits
+            = fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);
         
-        CompilationTask task = compiler.getTask(new OutputStreamWriter(System.out), 
-                fileManager, diagnosticCollector, 
-                Arrays.asList("-proc:only", 
-                			  "-s", "/Users/oli/Documents/Code/atlas-deer/atlas-generator/build/generated-sources"), 
-                null, 
-                sourceCompilationUnits);
+        CompilationTask task = compiler.getTask(
+        		new OutputStreamWriter(System.out), 
+                fileManager, 
+                diagnosticCollector, 
+                Arrays.asList(
+                		"-proc:only", 
+                		"-s", 
+                		"/Users/oli/Documents/Code/atlas-deer/atlas-generator/build/generated-sources"
+        		), 
+        		null, 
+        		sourceCompilationUnits);
         
         task.setProcessors(processors);
         task.call();

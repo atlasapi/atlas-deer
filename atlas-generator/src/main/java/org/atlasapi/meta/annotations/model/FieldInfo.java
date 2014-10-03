@@ -1,24 +1,25 @@
 package org.atlasapi.meta.annotations.model;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
-public class ValueField {
+public class FieldInfo {
 	
 	private final String name;
 	private final String description;
-	private final Boolean isDefault;
-	private final String value;
+	private final String type;
+	private final Optional<String> endpoint;
 	
 	public static Builder builder() {
 		return new Builder();
 	}
 	
-	public ValueField(String name, String description, Boolean isDefault, String value) {
+	private FieldInfo(String name, String description, String type, Optional<String> endpoint) {
 		this.name = Preconditions.checkNotNull(name);
 		this.description = description;
-		this.isDefault = isDefault;
-		this.value = value;
+		this.type = type;
+		this.endpoint = endpoint;
 	}
 
 	public String name() {
@@ -29,12 +30,12 @@ public class ValueField {
 		return description;
 	}
 
-	public Boolean isDefault() {
-		return isDefault;
+	public String type() {
+		return type;
 	}
-
-	public String value() {
-		return value;
+	
+	public Optional<String> endpoint() {
+		return endpoint;
 	}
 	
 	@Override
@@ -44,11 +45,11 @@ public class ValueField {
 	
 	@Override
 	public String toString() {
-		return Objects.toStringHelper(ValueField.class)
+		return Objects.toStringHelper(FieldInfo.class)
 				.add("name", name)
 				.add("description", description)
-				.add("isDefault", isDefault)
-				.add("value", value)
+				.add("type", type)
+				.add("endpoint", endpoint)
 				.toString();
 	}
 	
@@ -57,8 +58,8 @@ public class ValueField {
 		if (this == that) {
 			return true;
 		}
-		if (that instanceof ValueField) {
-			ValueField other = (ValueField) that;
+		if (that instanceof FieldInfo) {
+			FieldInfo other = (FieldInfo) that;
 			return name.equals(other.name);
 		}
 		
@@ -69,13 +70,13 @@ public class ValueField {
 		
 		private String name;
 		private String description;
-		private Boolean isDefault;
-		private String value;
+		private String type;
+		private Optional<String> endpoint = Optional.absent();
 		
 		private Builder() { }
 		
-		public ValueField build() {
-			return new ValueField(name, description, isDefault, value);
+		public FieldInfo build() {
+			return new FieldInfo(name, description, type, endpoint);
 		}
 
 		public Builder withName(String name) {
@@ -88,13 +89,13 @@ public class ValueField {
 			return this;
 		}
 
-		public Builder withIsDefault(Boolean isDefault) {
-			this.isDefault = isDefault;
+		public Builder withType(String type) {
+			this.type = type;
 			return this;
 		}
-
-		public Builder withValue(String value) {
-			this.value = value;
+		
+		public Builder withEndpoint(String endpoint) {
+			this.endpoint = Optional.fromNullable(endpoint);
 			return this;
 		}
 	}

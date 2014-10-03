@@ -1,4 +1,4 @@
-package org.atlasapi.meta.annotations;
+package org.atlasapi.meta.annotations.modelprocessing;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -21,6 +21,8 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
+import org.atlasapi.meta.annotations.FileGenerator;
+
 import com.google.auto.service.AutoService;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableListMultimap;
@@ -28,7 +30,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 
 @AutoService(Processor.class)
-public class AnnotationProcessor extends AbstractProcessor {
+public class FieldNameAnnotationProcessor extends AbstractProcessor {
 
 	private static final Class<? extends Annotation> type = FieldName.class;
 	
@@ -36,7 +38,7 @@ public class AnnotationProcessor extends AbstractProcessor {
 	
 	private Types typeUtils;
 
-    public AnnotationProcessor(FileGenerator generator) {
+    public FieldNameAnnotationProcessor(FileGenerator generator) {
 		this.generator = checkNotNull(generator);
     }
 
@@ -53,15 +55,14 @@ public class AnnotationProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
-        typeUtils = processingEnv.getTypeUtils();
         generator.init(processingEnv);
+        typeUtils = processingEnv.getTypeUtils();
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         boolean claimed = (annotations.size() == 1
-            && annotations.iterator().next().getQualifiedName().toString().equals(
-                type.getName()));
+            && annotations.iterator().next().getQualifiedName().toString().equals(type.getName()));
         if (claimed) {
             process(roundEnv);
             return true;
@@ -71,8 +72,7 @@ public class AnnotationProcessor extends AbstractProcessor {
     }
 
     private void process(RoundEnvironment roundEnv) {
-        Collection<? extends Element> annotatedElements =
-            roundEnv.getElementsAnnotatedWith(type);
+        Collection<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(type);
         Collection<ExecutableElement> types = ElementFilter.methodsIn(annotatedElements);
         
         ImmutableListMultimap<TypeElement, ExecutableElement> typeMethod = Multimaps.index(types, 
@@ -85,7 +85,6 @@ public class AnnotationProcessor extends AbstractProcessor {
         );
         
         typeMethod = collectSuperTypeMethods(typeMethod); 
-        
         for (Entry<TypeElement, Collection<ExecutableElement>> typeMethods : typeMethod.asMap().entrySet()) {
             try {
             	generator.processType(typeMethods.getKey(), typeMethods.getValue());
@@ -96,7 +95,7 @@ public class AnnotationProcessor extends AbstractProcessor {
         }
     }
 
-    private ImmutableListMultimap<TypeElement, ExecutableElement> collectSuperTypeMethods(
+	private ImmutableListMultimap<TypeElement, ExecutableElement> collectSuperTypeMethods(
             ImmutableListMultimap<TypeElement, ExecutableElement> typeMethodIndex) {
         ImmutableListMultimap.Builder<TypeElement, ExecutableElement> builder
             = ImmutableListMultimap.builder();
