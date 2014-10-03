@@ -1,4 +1,4 @@
-package org.atlasapi.meta.annotations.model;
+package org.atlasapi.generation.model;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;

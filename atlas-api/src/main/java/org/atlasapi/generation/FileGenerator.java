@@ -1,4 +1,4 @@
-package org.atlasapi.meta.annotations;
+package org.atlasapi.generation;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;

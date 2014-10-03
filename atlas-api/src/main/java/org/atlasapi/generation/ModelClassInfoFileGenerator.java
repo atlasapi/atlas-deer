@@ -1,4 +1,4 @@
-package org.atlasapi.meta.annotations.modelprocessing;
+package org.atlasapi.generation;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -12,7 +12,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
-import org.atlasapi.meta.annotations.FileGenerator;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -125,6 +125,8 @@ public class ModelClassInfoFileGenerator implements FileGenerator {
 		methods.append(formatOverriddenMethod("String", "description", addQuotesToString(parseJavadoc(processingEnv.getElementUtils().getDocComment(type)))));
 		methods.append("\n");
 		methods.append(formatOverriddenMethod("Set<FieldInfo>", "fields", "fields"));
+		methods.append("\n");
+		methods.append(formatOverriddenMethod("Class<?>", "describedType", type.getQualifiedName() + ".class"));
 		
 		return methods.toString();
 	}

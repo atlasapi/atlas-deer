@@ -1,4 +1,4 @@
-package org.atlasapi.meta.annotations.model;
+package org.atlasapi.generation.model;
 
 import java.util.Set;
 

@@ -6,7 +6,6 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>atlas-generator</module>
     <module>atlas-core</module>
     <module>atlas-testlib</module>
     <module>atlas-cassandra</module>

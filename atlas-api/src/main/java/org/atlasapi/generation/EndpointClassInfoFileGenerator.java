@@ -1,4 +1,4 @@
-package org.atlasapi.meta.annotations;
+package org.atlasapi.generation;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
