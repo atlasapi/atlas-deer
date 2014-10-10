@@ -1,4 +1,4 @@
-package org.atlasapi.content;
+package org.atlasapi.generatation.generated.model;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
@@ -7,11 +7,111 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class IdentifiedInfo implements ModelClassInfo {
+public class PolicyInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
+                    .withName("available_countries")
+                    .withDescription("")
+                    .withType("Country")
+                    .withIsMultiple(true)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.ARRAY)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("availability_start")
+                    .withDescription("")
+                    .withType("DateTime")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("drm_playable_from")
+                    .withDescription("")
+                    .withType("DateTime")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("availability_end")
+                    .withDescription("")
+                    .withType("DateTime")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("platform")
+                    .withDescription("")
+                    .withType("Platform")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("network")
+                    .withDescription("")
+                    .withType("Network")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("actual_availability_start")
+                    .withDescription("")
+                    .withType("DateTime")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("revenue_contract")
+                    .withDescription("")
+                    .withType("RevenueContract")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("price")
+                    .withDescription("")
+                    .withType("Price")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("availability_length")
+                    .withDescription("")
+                    .withType("Integer")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.NUMBER)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
                     .withName("alias_urls")
                     .withDescription("")
                     .withType("String")
@@ -92,9 +192,9 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("alias_urls")
+                    .withName("available_countries")
                     .withDescription("")
-                    .withType("String")
+                    .withType("Country")
                     .withIsMultiple(true)
                     .withIsModelType(false)
                     .withJsonType(JsonType.ARRAY)
@@ -102,47 +202,7 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("aliases")
-                    .withDescription("")
-                    .withType("Alias")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("uri")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("curie")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("uris")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("last_updated")
+                    .withName("availability_start")
                     .withDescription("")
                     .withType("DateTime")
                     .withIsMultiple(false)
@@ -152,9 +212,9 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("id")
+                    .withName("drm_playable_from")
                     .withDescription("")
-                    .withType("Id")
+                    .withType("DateTime")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -162,12 +222,72 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("equivalence_update")
+                    .withName("availability_end")
                     .withDescription("")
                     .withType("DateTime")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("platform")
+                    .withDescription("")
+                    .withType("Platform")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("network")
+                    .withDescription("")
+                    .withType("Network")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("actual_availability_start")
+                    .withDescription("")
+                    .withType("DateTime")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("revenue_contract")
+                    .withDescription("")
+                    .withType("RevenueContract")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("price")
+                    .withDescription("")
+                    .withType("Price")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("availability_length")
+                    .withDescription("")
+                    .withType("Integer")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.NUMBER)
                     .build()
             )
             .build();
@@ -179,17 +299,17 @@ public class IdentifiedInfo implements ModelClassInfo {
 
     @Override
     public String name() {
-        return "identified";
+        return "policy";
     }
 
     @Override
     public String description() {
-        return " Base type for descriptions of resources. @author Robert Chatley @author Lee Denison";
+        return "";
     }
 
     @Override
     public Class<?> describedType() {
-        return IdentifiedInfo.class;
+        return PolicyInfo.class;
     }
 
 }

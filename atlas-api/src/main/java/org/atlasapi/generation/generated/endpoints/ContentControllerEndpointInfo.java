@@ -1,4 +1,4 @@
-package org.atlasapi.query.v4.content;
+package org.atlasapi.generation.generated.endpoints;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;

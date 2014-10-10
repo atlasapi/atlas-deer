@@ -23,13 +23,27 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import org.atlasapi.content.Actor;
+import org.atlasapi.content.Brand;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentGroup;
+import org.atlasapi.content.CrewMember;
 import org.atlasapi.content.Described;
+import org.atlasapi.content.Description;
+import org.atlasapi.content.Encoding;
+import org.atlasapi.content.Episode;
+import org.atlasapi.content.Film;
 import org.atlasapi.content.Identified;
+import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.Person;
+import org.atlasapi.content.Policy;
+import org.atlasapi.content.RelatedLink;
+import org.atlasapi.content.Restriction;
+import org.atlasapi.content.Synopses;
 import org.atlasapi.content.TopicRef;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Identifiable;
@@ -97,7 +111,21 @@ public class MetaApiInfoClassGenerator {
                 TopicRef.class,
                 ContainerRef.class,
                 Item.class,
-                Certificate.class
+                Certificate.class,
+                Actor.class,
+                Brand.class,
+                ContentGroup.class,
+                Description.class,
+                Encoding.class,
+                Policy.class,
+                Episode.class,
+                Film.class,
+                Image.class,
+                Person.class,
+                CrewMember.class,
+                Restriction.class,
+                RelatedLink.class,
+                Synopses.class
 		);
     	ImmutableList<Class<?>> outputModelClasses = ImmutableList.<Class<?>>of(
     			Content.class,
@@ -107,7 +135,21 @@ public class MetaApiInfoClassGenerator {
     			TopicRef.class,
                 ContainerRef.class,
                 Item.class,
-                Certificate.class
+                Certificate.class,
+                Actor.class,
+                Brand.class,
+                ContentGroup.class,
+                Description.class,
+                Encoding.class,
+                Policy.class,
+                Episode.class,
+                Film.class,
+                Image.class,
+                Person.class,
+                CrewMember.class,
+                Restriction.class,
+                RelatedLink.class,
+                Synopses.class
 		);
     	
     	SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();
@@ -171,7 +213,7 @@ public class MetaApiInfoClassGenerator {
 				fileManager, diagnosticCollector, 
 				Arrays.asList(
 						"-proc:only", 
-						"-s", "/Users/oli/Documents/Code/atlas-deer/atlas-api/build/generated-sources"
+						"-s", "/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java"
 				), 
 				null, 
 				sourceCompilationUnits

@@ -1,4 +1,4 @@
-package org.atlasapi.content;
+package org.atlasapi.generatation.generated.model;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
@@ -7,14 +7,24 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class ClipInfo implements ModelClassInfo {
+public class ContentGroupInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("clip_of")
+                    .withName("contents")
                     .withDescription("")
-                    .withType("String")
+                    .withType("ContentRef")
+                    .withIsMultiple(true)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.ARRAY)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("type")
+                    .withDescription("")
+                    .withType("Type")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -136,8 +146,8 @@ public class ClipInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Synopses")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -286,7 +296,7 @@ public class ClipInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Image")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -296,8 +306,8 @@ public class ClipInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Image")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -306,7 +316,7 @@ public class ClipInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("RelatedLink")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -322,29 +332,9 @@ public class ClipInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("clips")
+                    .withName("contents")
                     .withDescription("")
-                    .withType("Clip")
-                    .withIsMultiple(true)
-                    .withIsModelType(true)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("topic_refs")
-                    .withDescription("")
-                    .withType("TopicRef")
-                    .withIsMultiple(true)
-                    .withIsModelType(true)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("content_group_refs")
-                    .withDescription("")
-                    .withType("ContentGroupRef")
+                    .withType("ContentRef")
                     .withIsMultiple(true)
                     .withIsModelType(false)
                     .withJsonType(JsonType.ARRAY)
@@ -352,179 +342,9 @@ public class ClipInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("key_phrases")
+                    .withName("type")
                     .withDescription("")
-                    .withType("KeyPhrase")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("people")
-                    .withDescription("")
-                    .withType("CrewMember")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("actors")
-                    .withDescription("")
-                    .withType("Actor")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("languages")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("certificates")
-                    .withDescription("")
-                    .withType("Certificate")
-                    .withIsMultiple(true)
-                    .withIsModelType(true)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("year")
-                    .withDescription("")
-                    .withType("Integer")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.NUMBER)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("container_ref")
-                    .withDescription("")
-                    .withType("ContainerRef")
-                    .withIsMultiple(false)
-                    .withIsModelType(true)
-                    .withJsonType(JsonType.OBJECT)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("is_long_form")
-                    .withDescription("")
-                    .withType("boolean")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.BOOLEAN)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("countries_of_origin")
-                    .withDescription("")
-                    .withType("Country")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("people")
-                    .withDescription("")
-                    .withType("CrewMember")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("black_and_white")
-                    .withDescription("")
-                    .withType("Boolean")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.BOOLEAN)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("manifested_as")
-                    .withDescription("")
-                    .withType("Encoding")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("broadcasts")
-                    .withDescription("")
-                    .withType("Broadcast")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("restrictions")
-                    .withDescription("")
-                    .withType("Restriction")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("segment_events")
-                    .withDescription("")
-                    .withType("SegmentEvent")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("sort_key")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("container_summary")
-                    .withDescription("")
-                    .withType("ContainerSummary")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("clip_of")
-                    .withDescription("")
-                    .withType("String")
+                    .withType("Type")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -539,7 +359,7 @@ public class ClipInfo implements ModelClassInfo {
 
     @Override
     public String name() {
-        return "clip";
+        return "contentgroup";
     }
 
     @Override
@@ -549,7 +369,7 @@ public class ClipInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return ClipInfo.class;
+        return ContentGroupInfo.class;
     }
 
 }

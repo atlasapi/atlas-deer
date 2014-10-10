@@ -1,4 +1,4 @@
-package org.atlasapi.content;
+package org.atlasapi.generatation.generated.model;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
@@ -7,34 +7,14 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class TopicRefInfo implements ModelClassInfo {
+public class DescriptionInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("weighting")
+                    .withName("title")
                     .withDescription("")
-                    .withType("Float")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.NUMBER)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("is_supervised")
-                    .withDescription("")
-                    .withType("Boolean")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.BOOLEAN)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("topic")
-                    .withDescription("")
-                    .withType("Id")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -42,9 +22,9 @@ public class TopicRefInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("relationship")
+                    .withName("synopsis")
                     .withDescription("")
-                    .withType("Relationship")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -52,19 +32,9 @@ public class TopicRefInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("offset")
+                    .withName("image")
                     .withDescription("")
-                    .withType("Integer")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.NUMBER)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("publisher")
-                    .withDescription("")
-                    .withType("Publisher")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -72,29 +42,9 @@ public class TopicRefInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("weighting")
+                    .withName("thumbnail")
                     .withDescription("")
-                    .withType("Float")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.NUMBER)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("is_supervised")
-                    .withDescription("")
-                    .withType("Boolean")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.BOOLEAN)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("topic")
-                    .withDescription("")
-                    .withType("Id")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -102,9 +52,9 @@ public class TopicRefInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("relationship")
+                    .withName("title")
                     .withDescription("")
-                    .withType("Relationship")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -112,19 +62,29 @@ public class TopicRefInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("offset")
+                    .withName("synopsis")
                     .withDescription("")
-                    .withType("Integer")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.NUMBER)
+                    .withJsonType(JsonType.STRING)
                     .build()
             )
             .add(
                 FieldInfo.builder()
-                    .withName("publisher")
+                    .withName("image")
                     .withDescription("")
-                    .withType("Publisher")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("thumbnail")
+                    .withDescription("")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -139,17 +99,17 @@ public class TopicRefInfo implements ModelClassInfo {
 
     @Override
     public String name() {
-        return "topicref";
+        return "description";
     }
 
     @Override
     public String description() {
-        return "";
+        return " A Description of something  @author Fred van den Driessche (fred@metabroadcast.com)";
     }
 
     @Override
     public Class<?> describedType() {
-        return TopicRefInfo.class;
+        return DescriptionInfo.class;
     }
 
 }

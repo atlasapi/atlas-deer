@@ -1,4 +1,4 @@
-package org.atlasapi.content;
+package org.atlasapi.generatation.generated.model;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
@@ -7,22 +7,12 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class CertificateInfo implements ModelClassInfo {
+public class SynopsesInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("country")
-                    .withDescription("")
-                    .withType("Country")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("classification")
+                    .withName("short_description")
                     .withDescription("")
                     .withType("String")
                     .withIsMultiple(false)
@@ -32,9 +22,9 @@ public class CertificateInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("country")
+                    .withName("medium_description")
                     .withDescription("")
-                    .withType("Country")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -42,7 +32,37 @@ public class CertificateInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("classification")
+                    .withName("long_description")
+                    .withDescription("")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("short_description")
+                    .withDescription("")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("medium_description")
+                    .withDescription("")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("long_description")
                     .withDescription("")
                     .withType("String")
                     .withIsMultiple(false)
@@ -59,7 +79,7 @@ public class CertificateInfo implements ModelClassInfo {
 
     @Override
     public String name() {
-        return "certificate";
+        return "synopses";
     }
 
     @Override
@@ -69,7 +89,7 @@ public class CertificateInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return CertificateInfo.class;
+        return SynopsesInfo.class;
     }
 
 }
