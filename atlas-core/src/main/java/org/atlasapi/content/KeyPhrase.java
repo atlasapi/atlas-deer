@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Objects;
 
 public final class KeyPhrase {
@@ -18,6 +20,7 @@ public final class KeyPhrase {
         this(phrase, null);
     }
 
+    @FieldName("phrase")
     public String getPhrase() {
         return this.phrase;
     }
@@ -26,6 +29,7 @@ public final class KeyPhrase {
         this.phrase = phrase;
     }
 
+    @FieldName("weighting")
     public Double getWeighting() {
         return this.weighting;
     }

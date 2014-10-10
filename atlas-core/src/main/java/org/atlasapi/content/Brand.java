@@ -17,6 +17,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -40,6 +41,7 @@ public class Brand extends Container {
     
     public Brand() { /* some legacy code still requires a default constructor */ }
 
+    @FieldName("series_refs")
     public ImmutableList<SeriesRef> getSeriesRefs() {
         return seriesRefs ;
     }

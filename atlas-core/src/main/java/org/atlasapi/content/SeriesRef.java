@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Objects.ToStringHelper;
@@ -33,19 +34,23 @@ public class SeriesRef extends ContainerRef implements Comparable<SeriesRef> {
         this.updated = updated;
     }
     
+    @FieldName("content_type")
     @Override
     public ContentType getContentType() {
         return ContentType.SERIES;
     }
 
+    @FieldName("title")
     public String getTitle() {
         return title;
     }
     
+    @FieldName("updated")
     public DateTime getUpdated() {
         return updated;
     }
     
+    @FieldName("series_number")
     public Integer getSeriesNumber() {
         return seriesNumber;
     }

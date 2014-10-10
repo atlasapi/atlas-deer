@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.Channel;
+import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.schedule.ScheduleBroadcastFilter;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -109,30 +110,37 @@ public class Broadcast extends Identified {
         this.activelyPublished = activelyPublished;
     }
 
+    @FieldName("transmission_time")
     public DateTime getTransmissionTime() {
         return transmissionInterval.getStart();
     }
 
+    @FieldName("transmission_end_time")
     public DateTime getTransmissionEndTime() {
 		return transmissionInterval.getEnd();
 	}
     
+    @FieldName("transmission_interval")
     public Interval getTransmissionInterval() {
         return transmissionInterval;
     }
 
+    @FieldName("broadcast_duration")
     public Duration getBroadcastDuration() {
         return this.broadcastDuration;
     }
 
+    @FieldName("channel_id")
     public Id getChannelId() {
         return channelId;
     }
 
+    @FieldName("schedule_date")
     public LocalDate getScheduleDate() {
         return scheduleDate;
     }
     
+    @FieldName("source_id")
     public String getSourceId() {
         return sourceId;
     }
@@ -146,6 +154,7 @@ public class Broadcast extends Identified {
         return this;
     }
     
+    @FieldName("actively_published")
     public Boolean isActivelyPublished() {
         return activelyPublished;
     }
@@ -154,6 +163,7 @@ public class Broadcast extends Identified {
         this.activelyPublished = activelyPublished;
     }
     
+    @FieldName("repeat")
     public Boolean getRepeat() {
         return repeat;
     }
@@ -166,6 +176,7 @@ public class Broadcast extends Identified {
         this.subtitled = subtitled;
     }
 
+    @FieldName("subtitled")
     public Boolean getSubtitled() {
         return subtitled;
     }
@@ -174,6 +185,7 @@ public class Broadcast extends Identified {
         this.signed = signed;
     }
 
+    @FieldName("signed")
     public Boolean getSigned() {
         return signed;
     }
@@ -182,6 +194,7 @@ public class Broadcast extends Identified {
         this.audioDescribed = audioDescribed;
     }
 
+    @FieldName("audio_described")
     public Boolean getAudioDescribed() {
         return audioDescribed;
     }
@@ -190,6 +203,7 @@ public class Broadcast extends Identified {
         this.highDefinition = highDefinition;
     }
 
+    @FieldName("high_definition")
     public Boolean getHighDefinition() {
         return highDefinition;
     }
@@ -198,6 +212,7 @@ public class Broadcast extends Identified {
         this.widescreen = widescreen;
     }
 
+    @FieldName("widescreen")
     public Boolean getWidescreen() {
         return widescreen;
     }
@@ -206,6 +221,7 @@ public class Broadcast extends Identified {
         this.surround = surround;
     }
 
+    @FieldName("surround")
     public Boolean getSurround() {
         return surround;
     }
@@ -214,6 +230,7 @@ public class Broadcast extends Identified {
         this.live = live;
     }
 
+    @FieldName("live")
     public Boolean getLive() {
         return live;
     }
@@ -222,6 +239,7 @@ public class Broadcast extends Identified {
         this.premiere = premiere;
     }
 
+    @FieldName("premiere")
     public Boolean getPremiere() {
         return premiere;
     }
@@ -230,6 +248,7 @@ public class Broadcast extends Identified {
         this.newSeries = newSeries;
     }
     
+    @FieldName("new_series")
     public Boolean getNewSeries() {
         return newSeries;
     }
@@ -238,10 +257,12 @@ public class Broadcast extends Identified {
         this.newEpisode = newEpisode;
     }
     
+    @FieldName("new_episode")
     public Boolean getNewEpisode() {
         return newEpisode;
     }
     
+    @FieldName("three_d")
     public Boolean is3d() {
         return is3d;
     }
@@ -250,6 +271,7 @@ public class Broadcast extends Identified {
         this.is3d = is3d;
     }
     
+    @FieldName("version_id")
     public String getVersionId() {
         return versionId;
     }

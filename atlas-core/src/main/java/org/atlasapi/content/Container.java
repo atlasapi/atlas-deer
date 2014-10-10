@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.collect.ImmutableList;
 
@@ -19,6 +20,7 @@ public abstract class Container extends Content {
     
     public Container() {}
     
+    @FieldName("item_refs")
     public ImmutableList<ItemRef> getItemRefs() {
         return itemRefs;
     }

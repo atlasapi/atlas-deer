@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 public class Synopses {
     private String shortDescription;
     private String mediumDescription;
@@ -35,14 +37,17 @@ public class Synopses {
         this.longDescription = longDescription;
     }
     
+    @FieldName("short_description")
     public String getShortDescription() {
         return shortDescription;
     }
     
+    @FieldName("medium_description")
     public String getMediumDescription() {
         return mediumDescription;
     }
     
+    @FieldName("long_description")
     public String getLongDescription() {
         return longDescription;
     }

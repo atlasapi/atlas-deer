@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 public class FilmRef extends ItemRef {
@@ -10,6 +11,7 @@ public class FilmRef extends ItemRef {
         super(id, source, sortKey, updated);
     }
 
+    @FieldName("content_type")
     @Override
     public ContentType getContentType() {
         return ContentType.FILM;

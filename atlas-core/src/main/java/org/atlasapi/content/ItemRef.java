@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.collect.ComparisonChain;
@@ -24,10 +25,12 @@ public class ItemRef extends ContentRef implements Comparable<ItemRef> {
         return ContentType.ITEM;
     }
     
+    @FieldName("sort_key")
     public String getSortKey() {
         return sortKey;
     }
     
+    @FieldName("updated")
     public DateTime getUpdated() {
         return updated;
     }

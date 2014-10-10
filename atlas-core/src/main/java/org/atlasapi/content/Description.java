@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Objects;
 
 /**
@@ -76,18 +78,22 @@ public class Description {
     
     private final transient int hash;
     
+    @FieldName("title")
     public String getTitle() {
         return this.title;
     }
 
+    @FieldName("synopsis")
     public String getSynopsis() {
         return this.synopsis;
     }
 
+    @FieldName("image")
     public String getImage() {
         return this.image;
     }
 
+    @FieldName("thumbnail")
     public String getThumbnail() {
         return this.thumbnail;
     }

@@ -75,11 +75,13 @@ public class Identified implements Identifiable, Aliased {
 	    this.id = id;
     }
 
+	@FieldName("alias_urls")
     @Deprecated
 	public Set<String> getAliasUrls() {
 		return aliasUrls;
 	}
 
+	@FieldName("aliases")
     @Override
     public ImmutableSet<Alias> getAliases() {
         return aliases;
@@ -130,6 +132,7 @@ public class Identified implements Identifiable, Aliased {
 		return curie;
 	}
 
+	@FieldName("uris")
 	@Deprecated
 	public Set<String> getAllUris() {
 		Set<String> allUris = Sets.newHashSet(getAliasUrls());

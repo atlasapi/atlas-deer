@@ -18,6 +18,8 @@ package org.atlasapi.content;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -61,6 +63,7 @@ public class Encoding extends Identified {
     
     private String versionId;
 
+    @FieldName("available_at")
     public Set<Location> getAvailableAt() { 
         return this.availableAt; 
     }
@@ -77,6 +80,7 @@ public class Encoding extends Identified {
     	return this.availableAt.remove(location);
     }
    
+    @FieldName("format_data_size")
     public String formatDataSize() {
         if (dataSize != null) {
             StringBuffer result = new StringBuffer();
@@ -99,82 +103,102 @@ public class Encoding extends Identified {
         }
     }
   
+    @FieldName("advertising_duration")
     public Integer getAdvertisingDuration() { 
         return this.advertisingDuration;
     }
 
+    @FieldName("audio_bit_rate")
     public Integer getAudioBitRate() { 
         return this.audioBitRate;
     }
 
+    @FieldName("audio_channels")
     public Integer getAudioChannels() { 
         return this.audioChannels;
     }
-        
+    
+    @FieldName("audio_coding")
     public MimeType getAudioCoding() { 
         return this.audioCoding; 
     }
 
+    @FieldName("bit_rate")
     public Integer getBitRate() {
         return this.bitRate;
     }
     
+    @FieldName("contains_advertising")
     public Boolean getContainsAdvertising() { 
         return this.containsAdvertising;
     }
     
+    @FieldName("data_container_format")
     public MimeType getDataContainerFormat() { 
         return this.dataContainerFormat; 
     }
     
+    @FieldName("data_size")
     public Long getDataSize() { 
         return this.dataSize;
     }
 
+    @FieldName("distributor")
     public String getDistributor() {
         return this.distributor;
     }
 
+    @FieldName("d_o_g")
     public Boolean getHasDOG() { 
         return this.hasDOG;
     }
     
+    @FieldName("three_d")
     public Boolean is3d() {
         return is3d;
     }
 
+    @FieldName("source")
     public String getSource() {
         return this.source;
     }
 
+    @FieldName("video_aspect_ratio")
     public String getVideoAspectRatio() { 
         return this.videoAspectRatio;
     }
 
+    @FieldName("video_bit_rate")
     public Integer getVideoBitRate() { 
         return this.videoBitRate;
     }
 
+    @FieldName("video_coding")
     public MimeType getVideoCoding() { 
         return this.videoCoding; 
     }
 
+    @FieldName("video_frame_rate")
     public Float getVideoFrameRate() { 
         return this.videoFrameRate;
     }
 
+    @FieldName("video_horizontal_size")
     public Integer getVideoHorizontalSize() { 
         return this.videoHorizontalSize;
     }
 
+    @FieldName("video_progressive_scan")
     public Boolean getVideoProgressiveScan() { 
         return this.videoProgressiveScan;
     }
 
+    @FieldName("video_vertical_size")
     public Integer getVideoVerticalSize() { 
         return this.videoVerticalSize;
     }
     
+    @FieldName("version_id")
     public String getVersionId() {
         return versionId;
     }

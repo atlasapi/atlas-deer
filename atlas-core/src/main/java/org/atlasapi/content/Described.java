@@ -83,6 +83,7 @@ public abstract class Described extends Identified implements Sourced {
 	    this.publisher = source;
 	}
 
+	@FieldName("last_fetched")
     public DateTime getLastFetched() {
         return lastFetched;
     }

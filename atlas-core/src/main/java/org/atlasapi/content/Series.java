@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
@@ -38,6 +39,7 @@ public class Series extends Container {
 		return this;
 	}
 
+	@FieldName("series_number")
 	public Integer getSeriesNumber() {
 		return seriesNumber;
 	}
@@ -50,6 +52,7 @@ public class Series extends Container {
         this.brandRef = brandRef;
     }
 	
+    @FieldName("brand_ref")
 	public BrandRef getBrandRef() {
 	    return this.brandRef;
 	}
@@ -78,6 +81,7 @@ public class Series extends Container {
         this.totalEpisodes = totalEpisodes;
     }
     
+    @FieldName("total_episodes")
     public Integer getTotalEpisodes() {
         return totalEpisodes;
     }

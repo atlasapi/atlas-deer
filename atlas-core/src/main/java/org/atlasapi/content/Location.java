@@ -15,6 +15,8 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 
@@ -40,23 +42,27 @@ public class Location extends Identified {
     
     private Policy policy;
     
+    @FieldName("policy")
     public Policy getPolicy() { 
         return this.policy; 
     }
 
+    @FieldName("transport_is_live")
     public Boolean getTransportIsLive() {
         return this.transportIsLive;
     }
     
+    @FieldName("transport_sub_type")
     public TransportSubType getTransportSubType() { 
         return this.transportSubType; 
     }
 
+    @FieldName("transport_type")
     public TransportType getTransportType() { 
         return this.transportType; 
     }
 
-    
+    @FieldName("available")
     public boolean getAvailable() {
     	return available;
     }
@@ -81,6 +87,7 @@ public class Location extends Identified {
 		this.transportType = transportType; 
     }
 
+    @FieldName("uri")
     public String getUri() {
 		return uri;
 	}
@@ -89,10 +96,12 @@ public class Location extends Identified {
 		this.uri = uri;
 	}
     
+    @FieldName("embed_code")
     public String getEmbedCode() {
 		return embedCode;
 	}
     
+    @FieldName("embed_id") 
     public String getEmbedId() {
         return embedId;
     }

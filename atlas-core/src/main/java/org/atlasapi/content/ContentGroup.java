@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -33,6 +34,7 @@ public class ContentGroup extends Described implements MutableContentList, Equiv
         this.type = Type.PLAYLIST;
     }
 
+    @FieldName("contents")
     public ImmutableList<ContentRef> getContents() {
         return contents.asList();
     }
@@ -41,6 +43,7 @@ public class ContentGroup extends Described implements MutableContentList, Equiv
         this.type = type;
     }
 
+    @FieldName("type")
     public Type getType() {
         return type;
     }

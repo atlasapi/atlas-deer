@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects;
 
@@ -26,6 +27,7 @@ public class ContentGroupRef {
         this.id = id;
     }
 
+    @FieldName("id")
     public Id getId() {
         return id;
     }
@@ -34,6 +36,7 @@ public class ContentGroupRef {
         this.uri = uri;
     }
 
+    @FieldName("uri")
     public String getUri() {
         return uri;
     }

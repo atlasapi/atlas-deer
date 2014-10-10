@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.topic.Topic;
 
 import com.google.common.base.Function;
@@ -67,18 +68,22 @@ public class TopicRef {
         this.relationship = relationship;
     }
 
+    @FieldName("weighting")
     public Float getWeighting() {
         return weighting;
     }
 
+    @FieldName("is_supervised")
     public Boolean isSupervised() {
         return supervised;
     }
 
+    @FieldName("topic")
     public Id getTopic() {
         return topic;
     }
 
+    @FieldName("relationship")
     public Relationship getRelationship() {
         return relationship;
     }
@@ -87,6 +92,7 @@ public class TopicRef {
         this.offset = offset;
     }
     
+    @FieldName("offset")
     public Integer getOffset() {
         return this.offset;
     }
@@ -95,6 +101,7 @@ public class TopicRef {
         this.publisher = publisher;
     }
 
+    @FieldName("publisher")
     public Publisher getPublisher() {
         return publisher;
     }

@@ -20,6 +20,7 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -44,18 +45,22 @@ public class Episode extends Item {
 	
 	public Episode() { }
 	
+	@FieldName("part_number")
 	public Integer getPartNumber() {
 	    return this.partNumber;
 	}
 
+	@FieldName("episode_number")
 	public Integer getEpisodeNumber() {
 		return episodeNumber;
 	}
 	
+	@FieldName("series_number")
 	public Integer getSeriesNumber() {
 		return seriesNumber;
 	}
 	
+	@FieldName("special")
 	public Boolean getSpecial() {
 	    return special;
 	}
@@ -84,6 +89,7 @@ public class Episode extends Item {
         setSeriesRef(series.toRef());
     }
 
+    @FieldName("series_ref")
 	public @Nullable SeriesRef getSeriesRef() {
 		return seriesRef;
 	}

@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 
 public class Restriction extends Identified {
 
@@ -13,6 +15,7 @@ public class Restriction extends Identified {
 		this.restricted = rated;
 	}
 
+	@FieldName("is_restricted")
 	public Boolean isRestricted() {
 		return restricted;
 	}
@@ -21,6 +24,7 @@ public class Restriction extends Identified {
 		this.minimumAge = minimumAge;
 	}
 
+	@FieldName("minimum_age")
 	public Integer getMinimumAge() {
 		return minimumAge;
 	}
@@ -29,10 +33,12 @@ public class Restriction extends Identified {
 		this.message = message;
 	}
 
+	@FieldName("message")
 	public String getMessage() {
 		return message;
 	}
 	
+	@FieldName("has_restriction_information")
 	public boolean hasRestrictionInformation() {
 	    return restricted != null;
 	}
