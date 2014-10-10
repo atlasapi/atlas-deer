@@ -28,7 +28,11 @@ public class ModelTypeParser implements TypeParser<ModelTypeInfo, ModelMethodInf
 	        "int", 
 	        "Integer",
 	        "long", 
-	        "Long"
+	        "Long",
+	        "float",
+	        "Float",
+	        "double",
+	        "Double"
     );
     private final JavadocParser docParser;
 	private final Set<Class<?>> classesToOutput;

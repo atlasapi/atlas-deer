@@ -4,7 +4,6 @@ import java.lang.annotation.Annotation;
 import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -20,11 +19,9 @@ import org.atlasapi.meta.annotations.ProducesType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.google.auto.service.AutoService;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
-@AutoService(Processor.class)
 public final class ControllerAnnotationProcessor extends SingleAnnotationTypeProcessor<EndpointTypeInfo, EndpointMethodInfo> {
 
     public ControllerAnnotationProcessor(SourceGenerator<EndpointTypeInfo, EndpointMethodInfo> generator, 

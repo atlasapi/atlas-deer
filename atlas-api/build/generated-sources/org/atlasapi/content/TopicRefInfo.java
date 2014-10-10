@@ -7,72 +7,32 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class IdentifiedInfo implements ModelClassInfo {
+public class TopicRefInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("alias_urls")
+                    .withName("weighting")
                     .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("aliases")
-                    .withDescription("")
-                    .withType("Alias")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("uri")
-                    .withDescription("")
-                    .withType("String")
+                    .withType("Float")
                     .withIsMultiple(false)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withJsonType(JsonType.NUMBER)
                     .build()
             )
             .add(
                 FieldInfo.builder()
-                    .withName("curie")
+                    .withName("is_supervised")
                     .withDescription("")
-                    .withType("String")
+                    .withType("Boolean")
                     .withIsMultiple(false)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withJsonType(JsonType.BOOLEAN)
                     .build()
             )
             .add(
                 FieldInfo.builder()
-                    .withName("uris")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("last_updated")
-                    .withDescription("")
-                    .withType("DateTime")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("id")
+                    .withName("topic")
                     .withDescription("")
                     .withType("Id")
                     .withIsMultiple(false)
@@ -82,9 +42,9 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("equivalence_update")
+                    .withName("relationship")
                     .withDescription("")
-                    .withType("DateTime")
+                    .withType("Relationship")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -92,29 +52,19 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("alias_urls")
+                    .withName("offset")
                     .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(true)
+                    .withType("Integer")
+                    .withIsMultiple(false)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
+                    .withJsonType(JsonType.NUMBER)
                     .build()
             )
             .add(
                 FieldInfo.builder()
-                    .withName("aliases")
+                    .withName("publisher")
                     .withDescription("")
-                    .withType("Alias")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("uri")
-                    .withDescription("")
-                    .withType("String")
+                    .withType("Publisher")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -122,37 +72,27 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("curie")
+                    .withName("weighting")
                     .withDescription("")
-                    .withType("String")
+                    .withType("Float")
                     .withIsMultiple(false)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withJsonType(JsonType.NUMBER)
                     .build()
             )
             .add(
                 FieldInfo.builder()
-                    .withName("uris")
+                    .withName("is_supervised")
                     .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("last_updated")
-                    .withDescription("")
-                    .withType("DateTime")
+                    .withType("Boolean")
                     .withIsMultiple(false)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withJsonType(JsonType.BOOLEAN)
                     .build()
             )
             .add(
                 FieldInfo.builder()
-                    .withName("id")
+                    .withName("topic")
                     .withDescription("")
                     .withType("Id")
                     .withIsMultiple(false)
@@ -162,9 +102,29 @@ public class IdentifiedInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("equivalence_update")
+                    .withName("relationship")
                     .withDescription("")
-                    .withType("DateTime")
+                    .withType("Relationship")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("offset")
+                    .withDescription("")
+                    .withType("Integer")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.NUMBER)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("publisher")
+                    .withDescription("")
+                    .withType("Publisher")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -179,17 +139,17 @@ public class IdentifiedInfo implements ModelClassInfo {
 
     @Override
     public String name() {
-        return "identified";
+        return "topicref";
     }
 
     @Override
     public String description() {
-        return " Base type for descriptions of resources. @author Robert Chatley @author Lee Denison";
+        return "";
     }
 
     @Override
     public Class<?> describedType() {
-        return IdentifiedInfo.class;
+        return TopicRefInfo.class;
     }
 
 }

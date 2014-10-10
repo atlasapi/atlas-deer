@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -22,12 +21,10 @@ import org.atlasapi.generation.output.writers.SourceFileWriter;
 import org.atlasapi.generation.parsing.TypeParser;
 import org.atlasapi.meta.annotations.FieldName;
 
-import com.google.auto.service.AutoService;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimaps;
 
-@AutoService(Processor.class)
 public final class FieldNameProcessor extends SingleAnnotationTypeProcessor<ModelTypeInfo, ModelMethodInfo> {
 
     private final HierarchyExtractor hierarchyExtractor;
