@@ -180,6 +180,7 @@ public class Identified implements Identifiable, Aliased {
 		return equivalentTo;
 	}
 	
+	@FieldName("id")
 	@Override
     public Id getId() {
 		return id;

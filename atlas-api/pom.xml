@@ -226,6 +226,11 @@
       <artifactId>google-api-services-youtube</artifactId>
       <version>v3-rev90-1.17.0-rc</version>
     </dependency>
+    <dependency>
+	  <groupId>org.reflections</groupId>
+	  <artifactId>reflections</artifactId>
+	  <version>0.9.9</version>
+    </dependency>
   </dependencies>
 
   <distributionManagement>

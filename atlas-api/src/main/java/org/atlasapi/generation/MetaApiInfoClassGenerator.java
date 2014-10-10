@@ -1,12 +1,9 @@
 package org.atlasapi.generation;
 
-import static org.junit.Assert.assertFalse;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -18,19 +15,42 @@ import java.util.Locale;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
-import javax.tools.Diagnostic.Kind;
-import javax.tools.JavaCompiler.CompilationTask;
 
+import org.atlasapi.content.Certificate;
+import org.atlasapi.content.Clip;
+import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Identified;
+import org.atlasapi.content.Item;
+import org.atlasapi.content.TopicRef;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Identifiable;
+import org.atlasapi.entity.Sourced;
+import org.atlasapi.equivalence.Equivalable;
+import org.atlasapi.generation.model.EndpointMethodInfo;
+import org.atlasapi.generation.model.EndpointTypeInfo;
+import org.atlasapi.generation.model.ModelMethodInfo;
+import org.atlasapi.generation.model.ModelTypeInfo;
+import org.atlasapi.generation.output.EndpointClassInfoSourceGenerator;
+import org.atlasapi.generation.output.ModelClassInfoSourceGenerator;
+import org.atlasapi.generation.output.SourceGenerator;
+import org.atlasapi.generation.output.writers.JavaxSourceFileWriter;
+import org.atlasapi.generation.output.writers.SourceFileWriter;
+import org.atlasapi.generation.parsing.EndpointTypeParser;
+import org.atlasapi.generation.parsing.JavadocParser;
+import org.atlasapi.generation.parsing.ModelTypeParser;
+import org.atlasapi.generation.parsing.StandardJavadocParser;
+import org.atlasapi.generation.parsing.TypeParser;
+import org.atlasapi.generation.processing.ControllerAnnotationProcessor;
+import org.atlasapi.generation.processing.FieldNameProcessor;
 import org.atlasapi.query.v4.content.ContentController;
 
 import com.google.common.base.Function;
@@ -60,46 +80,63 @@ public class MetaApiInfoClassGenerator {
 	public MetaApiInfoClassGenerator() {
 	}
 
-
     public static void main(String[] args) throws Exception {
     	MetaApiInfoClassGenerator classGenerator = new MetaApiInfoClassGenerator();
 
+    	// TODO can this be taken from packages instead?
     	ImmutableList<Class<?>> sourceClasses = ImmutableList.<Class<?>>of(
     			Content.class,
     			Described.class,
     			Identified.class,
     			Identifiable.class,
     			Aliased.class,
-    			ContentController.class
+    			Sourced.class,
+    			Equivalable.class,
+    			ContentController.class,
+    			Clip.class,
+                TopicRef.class,
+                ContainerRef.class,
+                Item.class,
+                Certificate.class
 		);
     	ImmutableList<Class<?>> outputModelClasses = ImmutableList.<Class<?>>of(
     			Content.class,
     			Described.class,
-    			Identified.class
+    			Identified.class,
+    			Clip.class,
+    			TopicRef.class,
+                ContainerRef.class,
+                Item.class,
+                Certificate.class
 		);
     	
-//    	addPath("file:///Users/oli/Documents/Code/atlas-deer/atlas-core/");
-
-    	// TODO try running as single run with two processors rather than two runs with one processor each
-    	//TODO rename file generator, extract writing from file creation from model parsing 
-    	FileGenerator generator = new ModelClassInfoFileGenerator(outputModelClasses);
-    	AbstractProcessor processor = new FieldNameAnnotationProcessor(generator);
-    	boolean modelGenerationSucceeded = classGenerator.generateInfoClasses(processor, sourceClasses);
-    	if (!modelGenerationSucceeded) {
+    	SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();
+		JavadocParser docParser = new StandardJavadocParser();
+		TypeParser<ModelTypeInfo, ModelMethodInfo> typeParser = new ModelTypeParser(docParser, outputModelClasses);
+		SourceGenerator<ModelTypeInfo, ModelMethodInfo> modelGenerator = new ModelClassInfoSourceGenerator();
+		HierarchyExtractor hierarchyExtractor = new ReflectionBasedHierarchyExtractor();
+		
+		// TODO try running as single run with two processors rather than two runs with one processor each
+		
+        AbstractProcessor processor = new FieldNameProcessor(modelGenerator, hierarchyExtractor, modelWriter, typeParser, outputModelClasses);
+    	boolean modelGenerationFailed = classGenerator.generateInfoClasses(processor, sourceClasses);
+    	if (modelGenerationFailed) {
     		System.err.println("model info class generation failed");
     		System.exit(-1);
     	}
 
-    	generator = new EndpointClassInfoFileGenerator();
-    	processor = new ControllerAnnotationProcessor(generator);
-    	boolean endpointGenerationSucceeded = classGenerator.generateInfoClasses(processor, sourceClasses);
-    	if (!endpointGenerationSucceeded) {
+    	SourceFileWriter<EndpointTypeInfo> endpointWriter = new JavaxSourceFileWriter<EndpointTypeInfo>();
+    	TypeParser<EndpointTypeInfo, EndpointMethodInfo> endpointTypeParser = new EndpointTypeParser(docParser);
+    	SourceGenerator<EndpointTypeInfo, EndpointMethodInfo> endpointGenerator = new EndpointClassInfoSourceGenerator();
+    	processor = new ControllerAnnotationProcessor(endpointGenerator, endpointWriter, endpointTypeParser, sourceClasses);
+    	boolean endpointGenerationFailed = classGenerator.generateInfoClasses(processor, sourceClasses);
+    	if (endpointGenerationFailed) {
     		System.err.println("endpoint info class generation failed");
     		System.exit(-1);
     	}
     }
     
-	private boolean generateInfoClasses(AbstractProcessor processor, List<Class<?>> sourceClasses) {
+	private boolean generateInfoClasses(AbstractProcessor processor, List<Class<?>> sourceClasses) throws Exception {
 		ImmutableSet<? extends AbstractProcessor> processors = ImmutableSet.of(processor);
 
 		List<Diagnostic<? extends JavaFileObject>> diagnostics = compileWithProcessors(sourceClasses, processors);
@@ -115,7 +152,7 @@ public class MetaApiInfoClassGenerator {
 	}
 
 	private List<Diagnostic<? extends JavaFileObject>> compileWithProcessors(Iterable<Class<?>> classes, 
-			ImmutableSet<? extends AbstractProcessor> processors) {
+			ImmutableSet<? extends AbstractProcessor> processors) throws Exception {
 
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		
@@ -154,7 +191,9 @@ public class MetaApiInfoClassGenerator {
 
 
 	private Iterable<? extends JavaFileObject> transformToCompilationUnits(Iterable<Class<?>> classes, 
-			StandardJavaFileManager fileManager) {
+			StandardJavaFileManager fileManager) throws Exception {
+		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-core/src/main/java/");
+		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java/");
 		Iterable<File> sourceCompilationFiles = Iterables.transform(classes, CLASS_TO_FILE);
 		
 		return fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);

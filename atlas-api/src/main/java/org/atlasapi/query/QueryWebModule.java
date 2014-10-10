@@ -34,6 +34,8 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.generation.EndpointClassInfoSingletonStore;
+import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.output.AnnotationRegistry;
@@ -82,6 +84,8 @@ import org.atlasapi.query.common.QueryContextParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.StandardQueryParser;
 import org.atlasapi.query.v4.content.ContentController;
+import org.atlasapi.query.v4.meta.EndpointController;
+import org.atlasapi.query.v4.meta.ModelController;
 import org.atlasapi.query.v4.schedule.ChannelListWriter;
 import org.atlasapi.query.v4.schedule.ContentListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleController;
@@ -182,6 +186,16 @@ public class QueryWebModule {
         
         return new TopicContentController(parser, queryModule.topicContentQueryExecutor(),
                 new TopicContentResultWriter(topicListWriter(), contentListWriter()));
+    }
+    
+    @Bean
+    ModelController modelController() {
+        return new ModelController(ModelClassInfoSingletonStore.INSTANCE);
+    }
+    
+    @Bean
+    EndpointController endpointController() {
+        return new EndpointController(EndpointClassInfoSingletonStore.INSTANCE);
     }
 
     private QueryAttributeParser contentQueryAttributeParser() {

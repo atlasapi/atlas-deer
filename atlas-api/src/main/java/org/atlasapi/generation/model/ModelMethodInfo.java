@@ -4,8 +4,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Objects;
 
-public class FieldInfo {
-	
+
+public class ModelMethodInfo implements MethodInfo {
+
 	private final String name;
 	private final String description;
 	private final String type;
@@ -17,9 +18,9 @@ public class FieldInfo {
 		return new Builder();
 	}
 	
-	private FieldInfo(String name, String description, String type, JsonType jsonType,
-	        Boolean isMultiple, Boolean isModelType) {
-        this.name = checkNotNull(name);
+	private ModelMethodInfo(String name, String description, String type,
+	        JsonType jsonType, Boolean isMultiple, Boolean isModelType) {
+		this.name = checkNotNull(name);
 		this.description = checkNotNull(description);
 		this.type = checkNotNull(type);
 		this.jsonType = checkNotNull(jsonType);
@@ -50,35 +51,17 @@ public class FieldInfo {
     public Boolean isModelType() {
         return isModelType;
     }
-    
-	@Override
-	public int hashCode() {
-		return Objects.hashCode(name);
-	}
 	
 	@Override
 	public String toString() {
-		return Objects.toStringHelper(FieldInfo.class)
+		return Objects.toStringHelper(getClass())
 				.add("name", name)
 				.add("description", description)
 				.add("type", type)
 				.add("jsonType", jsonType)
 				.add("isMultiple", isMultiple)
-                .add("isModelType", isModelType)
+				.add("isModelType", isModelType)
 				.toString();
-	}
-	
-	@Override
-	public boolean equals(Object that) {
-		if (this == that) {
-			return true;
-		}
-		if (that instanceof FieldInfo) {
-			FieldInfo other = (FieldInfo) that;
-			return name.equals(other.name);
-		}
-		
-		return false;
 	}
 	
 	public static class Builder {
@@ -92,8 +75,9 @@ public class FieldInfo {
 		
 		private Builder() { }
 		
-		public FieldInfo build() {
-			return new FieldInfo(name, description, type, jsonType, isMultiple, isModelType);
+		public ModelMethodInfo build() {
+			return new ModelMethodInfo(name, description, type, jsonType, isMultiple, 
+			        isModelType);
 		}
 
 		public Builder withName(String name) {
@@ -115,13 +99,13 @@ public class FieldInfo {
             this.jsonType = jsonType;
             return this;
         }
-
-        public Builder withIsMultiple(boolean isMultiple) {
+        
+        public Builder withIsMultiple(Boolean isMultiple) {
             this.isMultiple = isMultiple;
             return this;
         }
-
-        public Builder withIsModelType(boolean isModelType) {
+        
+        public Builder withIsModelType(Boolean isModelType) {
             this.isModelType = isModelType;
             return this;
         }

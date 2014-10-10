@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Objects;
 
 public class RelatedLink {
@@ -124,34 +126,42 @@ public class RelatedLink {
         this.url = url;
     }
 
+    @FieldName("url")
     public String getUrl() {
         return this.url;
     }
 
+    @FieldName("type")
     public LinkType getType() {
         return this.type;
     }
     
+    @FieldName("source_id")
     public String getSourceId() {
         return this.sourceId;
     }
 
+    @FieldName("short_name")
     public String getShortName() {
         return this.shortName;
     }
 
+    @FieldName("title")
     public String getTitle() {
         return this.title;
     }
 
+    @FieldName("description")
     public String getDescription() {
         return this.description;
     }
 
+    @FieldName("image")
     public String getImage() {
         return this.image;
     }
 
+    @FieldName("thumbnail")
     public String getThumbnail() {
         return this.thumbnail;
     }

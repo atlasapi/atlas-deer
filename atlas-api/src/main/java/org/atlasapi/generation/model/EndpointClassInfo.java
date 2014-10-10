@@ -8,5 +8,4 @@ public interface EndpointClassInfo {
 	String description();
 	String rootPath();
 	Set<Operation> operations();
-	Class<?> returnedType();
 }

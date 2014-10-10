@@ -21,6 +21,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+/**
+ * An endpoint for serving pieces of Content. Content can be fetched either by
+ * unique ID or by adding filter parameters to the endpoint. 
+ * 
+ */
 @ProducesType(type=Content.class)
 @Controller
 public class ContentController {

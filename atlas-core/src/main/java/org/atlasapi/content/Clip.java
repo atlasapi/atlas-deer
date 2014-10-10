@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 
@@ -21,6 +22,7 @@ public class Clip extends Item {
 		this.clipOf = clipOf;
 	}
 	
+	@FieldName("clip_of")
 	public String getClipOf() {
 		return clipOf;
 	}

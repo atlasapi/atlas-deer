@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Objects;
 import com.metabroadcast.common.intl.Country;
 
@@ -17,10 +19,12 @@ public class Certificate {
         this.country = checkNotNull(country);
     }
 
+    @FieldName("country")
     public Country country() {
         return country;
     }
 
+    @FieldName("classification")
     public String classification() {
         return classification;
     }
