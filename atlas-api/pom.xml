@@ -79,11 +79,26 @@
         </configuration>
       </plugin>
     </plugins>
-    <resources>
-      <resource>
-        <directory>build/generated-sources</directory>
-      </resource>
-    </resources>
+    <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>build/generated-sources</source>
+                ...
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
   </build>
 
   <dependencies>
