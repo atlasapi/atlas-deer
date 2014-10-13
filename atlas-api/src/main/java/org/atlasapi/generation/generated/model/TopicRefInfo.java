@@ -138,7 +138,7 @@ public class TopicRefInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "topicref";
     }
 
@@ -149,7 +149,7 @@ public class TopicRefInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return TopicRefInfo.class;
+        return org.atlasapi.content.TopicRef.class;
     }
 
 }

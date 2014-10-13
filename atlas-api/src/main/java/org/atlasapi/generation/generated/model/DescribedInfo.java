@@ -156,8 +156,8 @@ public class DescribedInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("MediaType")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -236,7 +236,7 @@ public class DescribedInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -446,8 +446,8 @@ public class DescribedInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("MediaType")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -518,7 +518,7 @@ public class DescribedInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "described";
     }
 
@@ -529,7 +529,7 @@ public class DescribedInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return DescribedInfo.class;
+        return org.atlasapi.content.Described.class;
     }
 
 }

@@ -26,7 +26,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Subtitles")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -36,7 +36,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ReleaseDate")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -56,7 +56,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -266,8 +266,8 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("MediaType")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -336,7 +336,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("EquivalenceRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -366,7 +366,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ContentGroupRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -376,7 +376,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("KeyPhrase")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -496,7 +496,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Broadcast")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -536,8 +536,8 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ContainerSummary")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -556,7 +556,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Subtitles")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -566,7 +566,7 @@ public class FilmInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ReleaseDate")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -578,7 +578,7 @@ public class FilmInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "film";
     }
 
@@ -589,7 +589,7 @@ public class FilmInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return FilmInfo.class;
+        return org.atlasapi.content.Film.class;
     }
 
 }

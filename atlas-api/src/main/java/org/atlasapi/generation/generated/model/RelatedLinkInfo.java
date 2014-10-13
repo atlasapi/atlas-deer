@@ -178,7 +178,7 @@ public class RelatedLinkInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "relatedlink";
     }
 
@@ -189,7 +189,7 @@ public class RelatedLinkInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return RelatedLinkInfo.class;
+        return org.atlasapi.content.RelatedLink.class;
     }
 
 }

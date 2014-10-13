@@ -66,7 +66,7 @@ public class CrewMemberInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -178,7 +178,7 @@ public class CrewMemberInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "crewmember";
     }
 
@@ -189,7 +189,7 @@ public class CrewMemberInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return CrewMemberInfo.class;
+        return org.atlasapi.content.CrewMember.class;
     }
 
 }

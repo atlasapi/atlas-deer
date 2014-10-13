@@ -36,7 +36,7 @@ public class ActorInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -158,7 +158,7 @@ public class ActorInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "actor";
     }
 
@@ -169,7 +169,7 @@ public class ActorInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return ActorInfo.class;
+        return org.atlasapi.content.Actor.class;
     }
 
 }

@@ -7,14 +7,14 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class CertificateInfo implements ModelClassInfo {
+public class ContentRefInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("country")
+                    .withName("resource_type")
                     .withDescription("")
-                    .withType("Country")
+                    .withType("ResourceType")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -22,29 +22,9 @@ public class CertificateInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("classification")
+                    .withName("resource_type")
                     .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("country")
-                    .withDescription("")
-                    .withType("Country")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("classification")
-                    .withDescription("")
-                    .withType("String")
+                    .withType("ResourceType")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -59,7 +39,7 @@ public class CertificateInfo implements ModelClassInfo {
 
     @Override
     public String key() {
-        return "certificate";
+        return "contentref";
     }
 
     @Override
@@ -69,7 +49,7 @@ public class CertificateInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.content.Certificate.class;
+        return org.atlasapi.content.ContentRef.class;
     }
 
 }

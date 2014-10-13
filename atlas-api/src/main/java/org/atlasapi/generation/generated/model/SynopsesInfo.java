@@ -78,7 +78,7 @@ public class SynopsesInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "synopses";
     }
 
@@ -89,7 +89,7 @@ public class SynopsesInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return SynopsesInfo.class;
+        return org.atlasapi.content.Synopses.class;
     }
 
 }

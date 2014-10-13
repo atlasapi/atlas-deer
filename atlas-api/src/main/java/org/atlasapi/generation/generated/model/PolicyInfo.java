@@ -126,7 +126,7 @@ public class PolicyInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -298,7 +298,7 @@ public class PolicyInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "policy";
     }
 
@@ -309,7 +309,7 @@ public class PolicyInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return PolicyInfo.class;
+        return org.atlasapi.content.Policy.class;
     }
 
 }

@@ -16,7 +16,7 @@ public class BrandInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("SeriesRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -36,7 +36,7 @@ public class BrandInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -246,8 +246,8 @@ public class BrandInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("MediaType")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -316,7 +316,7 @@ public class BrandInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("EquivalenceRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -346,7 +346,7 @@ public class BrandInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ContentGroupRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -356,7 +356,7 @@ public class BrandInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("KeyPhrase")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -416,7 +416,7 @@ public class BrandInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("SeriesRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -428,7 +428,7 @@ public class BrandInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "brand";
     }
 
@@ -439,7 +439,7 @@ public class BrandInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return BrandInfo.class;
+        return org.atlasapi.content.Brand.class;
     }
 
 }

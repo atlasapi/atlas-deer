@@ -66,7 +66,7 @@ public class TopicInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -276,8 +276,8 @@ public class TopicInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("MediaType")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -388,7 +388,7 @@ public class TopicInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "topic";
     }
 
@@ -399,7 +399,7 @@ public class TopicInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return TopicInfo.class;
+        return org.atlasapi.topic.Topic.class;
     }
 
 }

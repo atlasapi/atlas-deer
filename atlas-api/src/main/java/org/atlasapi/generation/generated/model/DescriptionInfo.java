@@ -98,7 +98,7 @@ public class DescriptionInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "description";
     }
 
@@ -109,7 +109,7 @@ public class DescriptionInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return DescriptionInfo.class;
+        return org.atlasapi.content.Description.class;
     }
 
 }

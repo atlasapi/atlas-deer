@@ -7,14 +7,14 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class ChannelScheduleInfo implements ModelClassInfo {
+public class ReleaseDateInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("channel")
+                    .withName("country")
                     .withDescription("")
-                    .withType("Channel")
+                    .withType("Country")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -22,9 +22,9 @@ public class ChannelScheduleInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("interval")
+                    .withName("date")
                     .withDescription("")
-                    .withType("Interval")
+                    .withType("LocalDate")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -32,19 +32,9 @@ public class ChannelScheduleInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("entries")
+                    .withName("type")
                     .withDescription("")
-                    .withType("ItemAndBroadcast")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("channel")
-                    .withDescription("")
-                    .withType("Channel")
+                    .withType("ReleaseType")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -52,9 +42,9 @@ public class ChannelScheduleInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("interval")
+                    .withName("country")
                     .withDescription("")
-                    .withType("Interval")
+                    .withType("Country")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -62,12 +52,22 @@ public class ChannelScheduleInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("entries")
+                    .withName("date")
                     .withDescription("")
-                    .withType("ItemAndBroadcast")
-                    .withIsMultiple(true)
+                    .withType("LocalDate")
+                    .withIsMultiple(false)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("type")
+                    .withDescription("")
+                    .withType("ReleaseType")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
                     .build()
             )
             .build();
@@ -79,7 +79,7 @@ public class ChannelScheduleInfo implements ModelClassInfo {
 
     @Override
     public String key() {
-        return "channelschedule";
+        return "releasedate";
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ChannelScheduleInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.schedule.ChannelSchedule.class;
+        return org.atlasapi.content.ReleaseDate.class;
     }
 
 }

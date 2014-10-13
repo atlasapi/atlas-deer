@@ -6,6 +6,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -34,10 +35,12 @@ public class EquivalenceRef implements Identifiable, Sourced {
         this.id = checkNotNull(id);
     }
 
+    @FieldName("id")
     public Id getId() {
         return this.id;
     }
 
+    @FieldName("source")
     public Publisher getPublisher() {
         return this.source;
     }

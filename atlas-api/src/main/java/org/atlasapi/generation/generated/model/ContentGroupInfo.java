@@ -16,7 +16,7 @@ public class ContentGroupInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ContentRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -46,7 +46,7 @@ public class ContentGroupInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -256,8 +256,8 @@ public class ContentGroupInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("MediaType")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -326,7 +326,7 @@ public class ContentGroupInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("EquivalenceRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -336,7 +336,7 @@ public class ContentGroupInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ContentRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -358,7 +358,7 @@ public class ContentGroupInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "contentgroup";
     }
 
@@ -369,7 +369,7 @@ public class ContentGroupInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return ContentGroupInfo.class;
+        return org.atlasapi.content.ContentGroup.class;
     }
 
 }

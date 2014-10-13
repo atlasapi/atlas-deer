@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import javax.annotation.Nullable;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
@@ -13,6 +15,7 @@ public enum MediaType {
 	AUDIO,
 	VIDEO;
 	
+	@FieldName("key")
 	public String toKey() {
 	    return this.name().toLowerCase();
 	}

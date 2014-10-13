@@ -218,7 +218,7 @@ public class ImageInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "image";
     }
 
@@ -229,7 +229,7 @@ public class ImageInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return ImageInfo.class;
+        return org.atlasapi.content.Image.class;
     }
 
 }

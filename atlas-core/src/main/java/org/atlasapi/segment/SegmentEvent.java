@@ -4,6 +4,7 @@ import java.util.Comparator;
 
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Identified;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.Duration;
 
 import com.google.common.base.Function;
@@ -22,22 +23,27 @@ public class SegmentEvent extends Identified {
     
     private String versionId;
     
+    @FieldName("position")
     public Integer getPosition() {
         return this.position;
     }
 
+    @FieldName("offset")
     public Duration getOffset() {
         return this.offset;
     }
 
+    @FieldName("is_chapter")
     public Boolean getIsChapter() {
         return this.isChapter;
     }
 
+    @FieldName("description")
     public Description getDescription() {
         return this.description;
     }
 
+    @FieldName("segment")
     public SegmentRef getSegment() {
         return this.segment;
     }
@@ -62,6 +68,7 @@ public class SegmentEvent extends Identified {
         this.segment = segment;
     }
 
+    @FieldName("version_id")
     public String getVersionId() {
         return versionId;
     }

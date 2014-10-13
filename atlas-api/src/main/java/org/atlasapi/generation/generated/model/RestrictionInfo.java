@@ -66,7 +66,7 @@ public class RestrictionInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -178,7 +178,7 @@ public class RestrictionInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "restriction";
     }
 
@@ -189,7 +189,7 @@ public class RestrictionInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return RestrictionInfo.class;
+        return org.atlasapi.content.Restriction.class;
     }
 
 }

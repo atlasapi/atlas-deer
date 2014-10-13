@@ -7,22 +7,12 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class CertificateInfo implements ModelClassInfo {
+public class SegmentRefInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("country")
-                    .withDescription("")
-                    .withType("Country")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("classification")
+                    .withName("identifier")
                     .withDescription("")
                     .withType("String")
                     .withIsMultiple(false)
@@ -32,17 +22,7 @@ public class CertificateInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("country")
-                    .withDescription("")
-                    .withType("Country")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("classification")
+                    .withName("identifier")
                     .withDescription("")
                     .withType("String")
                     .withIsMultiple(false)
@@ -59,7 +39,7 @@ public class CertificateInfo implements ModelClassInfo {
 
     @Override
     public String key() {
-        return "certificate";
+        return "segmentref";
     }
 
     @Override
@@ -69,7 +49,7 @@ public class CertificateInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.content.Certificate.class;
+        return org.atlasapi.segment.SegmentRef.class;
     }
 
 }

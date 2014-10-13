@@ -106,7 +106,7 @@ public class PersonInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Alias")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -316,8 +316,8 @@ public class PersonInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("MediaType")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -386,7 +386,7 @@ public class PersonInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("EquivalenceRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -396,7 +396,7 @@ public class PersonInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("ContentRef")
                     .withIsMultiple(true)
-                    .withIsModelType(false)
+                    .withIsModelType(true)
                     .withJsonType(JsonType.ARRAY)
                     .build()
             )
@@ -498,7 +498,7 @@ public class PersonInfo implements ModelClassInfo {
     }
 
     @Override
-    public String name() {
+    public String key() {
         return "person";
     }
 
@@ -509,7 +509,7 @@ public class PersonInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return PersonInfo.class;
+        return org.atlasapi.content.Person.class;
     }
 
 }

@@ -7,14 +7,14 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class ChannelScheduleInfo implements ModelClassInfo {
+public class ContentGroupRefInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("channel")
+                    .withName("id")
                     .withDescription("")
-                    .withType("Channel")
+                    .withType("Id")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -22,9 +22,9 @@ public class ChannelScheduleInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("interval")
+                    .withName("uri")
                     .withDescription("")
-                    .withType("Interval")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -32,19 +32,9 @@ public class ChannelScheduleInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("entries")
+                    .withName("id")
                     .withDescription("")
-                    .withType("ItemAndBroadcast")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("channel")
-                    .withDescription("")
-                    .withType("Channel")
+                    .withType("Id")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -52,22 +42,12 @@ public class ChannelScheduleInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("interval")
+                    .withName("uri")
                     .withDescription("")
-                    .withType("Interval")
+                    .withType("String")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("entries")
-                    .withDescription("")
-                    .withType("ItemAndBroadcast")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
                     .build()
             )
             .build();
@@ -79,7 +59,7 @@ public class ChannelScheduleInfo implements ModelClassInfo {
 
     @Override
     public String key() {
-        return "channelschedule";
+        return "contentgroupref";
     }
 
     @Override
@@ -89,7 +69,7 @@ public class ChannelScheduleInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.schedule.ChannelSchedule.class;
+        return org.atlasapi.content.ContentGroupRef.class;
     }
 
 }

@@ -2,6 +2,8 @@ package org.atlasapi.segment;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Function;
 
 public class SegmentRef {
@@ -19,6 +21,7 @@ public class SegmentRef {
         this.identifier = checkNotNull(identifier);
     }
 
+    @FieldName("identifier")
     public String identifier() {
         return identifier;
     }
