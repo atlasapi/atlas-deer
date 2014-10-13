@@ -68,6 +68,8 @@ import org.atlasapi.generation.processing.FieldNameProcessor;
 import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.schedule.ScheduleController;
 import org.atlasapi.query.v4.topic.TopicController;
+import org.atlasapi.schedule.ChannelSchedule;
+import org.atlasapi.topic.Topic;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -129,7 +131,9 @@ public class MetaApiInfoClassGenerator {
                 CrewMember.class,
                 Restriction.class,
                 RelatedLink.class,
-                Synopses.class
+                Synopses.class,
+                Topic.class,
+                ChannelSchedule.class
 		);
     	ImmutableList<Class<?>> outputModelClasses = ImmutableList.<Class<?>>of(
     			Content.class,
@@ -153,7 +157,9 @@ public class MetaApiInfoClassGenerator {
                 CrewMember.class,
                 Restriction.class,
                 RelatedLink.class,
-                Synopses.class
+                Synopses.class,
+                Topic.class,
+                ChannelSchedule.class
 		);
     	
     	SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();
@@ -238,8 +244,8 @@ public class MetaApiInfoClassGenerator {
 
 	private Iterable<? extends JavaFileObject> transformToCompilationUnits(Iterable<Class<?>> classes, 
 			StandardJavaFileManager fileManager) throws Exception {
-		addPath("../atlas-deer/atlas-core/src/main/java/");
-		addPath("../atlas-deer/atlas-api/src/main/java/");
+		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-core/src/main/java/");
+		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java/");
 		Iterable<File> sourceCompilationFiles = Iterables.transform(classes, CLASS_TO_FILE);
 		
 		return fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);

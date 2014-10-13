@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.media.channel.Channel;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.Interval;
 
 import com.google.common.base.Function;
@@ -49,14 +50,17 @@ public class ChannelSchedule {
         this.entries = Ordering.natural().immutableSortedCopy(entries);
     }
 
+    @FieldName("channel")
     public Channel getChannel() {
         return channel;
     }
     
+    @FieldName("interval")
     public Interval getInterval() {
         return interval;
     }
 
+    @FieldName("entries")
     public List<ItemAndBroadcast> getEntries() {
         return entries;
     }

@@ -1,4 +1,4 @@
-package org.atlasapi.generatation.generated.model;
+package org.atlasapi.generation.generated.model;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
@@ -7,14 +7,14 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class DescriptionInfo implements ModelClassInfo {
+public class ChannelScheduleInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
                 FieldInfo.builder()
-                    .withName("title")
+                    .withName("channel")
                     .withDescription("")
-                    .withType("String")
+                    .withType("Channel")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -22,9 +22,9 @@ public class DescriptionInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("synopsis")
+                    .withName("interval")
                     .withDescription("")
-                    .withType("String")
+                    .withType("Interval")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -32,9 +32,19 @@ public class DescriptionInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("image")
+                    .withName("entries")
                     .withDescription("")
-                    .withType("String")
+                    .withType("ItemAndBroadcast")
+                    .withIsMultiple(true)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.ARRAY)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("channel")
+                    .withDescription("")
+                    .withType("Channel")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -42,9 +52,9 @@ public class DescriptionInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("thumbnail")
+                    .withName("interval")
                     .withDescription("")
-                    .withType("String")
+                    .withType("Interval")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -52,42 +62,12 @@ public class DescriptionInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("title")
+                    .withName("entries")
                     .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
+                    .withType("ItemAndBroadcast")
+                    .withIsMultiple(true)
                     .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("synopsis")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("image")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("thumbnail")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withJsonType(JsonType.ARRAY)
                     .build()
             )
             .build();
@@ -99,17 +79,17 @@ public class DescriptionInfo implements ModelClassInfo {
 
     @Override
     public String name() {
-        return "description";
+        return "channelschedule";
     }
 
     @Override
     public String description() {
-        return " A Description of something  @author Fred van den Driessche (fred@metabroadcast.com)";
+        return "";
     }
 
     @Override
     public Class<?> describedType() {
-        return DescriptionInfo.class;
+        return ChannelScheduleInfo.class;
     }
 
 }

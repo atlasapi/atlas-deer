@@ -1,4 +1,4 @@
-package org.atlasapi.generatation.generated.model;
+package org.atlasapi.generation.generated.model;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
@@ -7,24 +7,44 @@ import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
 
 
-public class ContentGroupInfo implements ModelClassInfo {
+public class TopicInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
-            .add(
-                FieldInfo.builder()
-                    .withName("contents")
-                    .withDescription("")
-                    .withType("ContentRef")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
             .add(
                 FieldInfo.builder()
                     .withName("type")
                     .withDescription("")
                     .withType("Type")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("namespace")
+                    .withDescription("")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("value")
+                    .withDescription("")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("publisher")
+                    .withDescription("")
+                    .withType("Publisher")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -322,29 +342,39 @@ public class ContentGroupInfo implements ModelClassInfo {
             )
             .add(
                 FieldInfo.builder()
-                    .withName("equivalent_to")
-                    .withDescription("")
-                    .withType("EquivalenceRef")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
-                    .withName("contents")
-                    .withDescription("")
-                    .withType("ContentRef")
-                    .withIsMultiple(true)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.ARRAY)
-                    .build()
-            )
-            .add(
-                FieldInfo.builder()
                     .withName("type")
                     .withDescription("")
                     .withType("Type")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("namespace")
+                    .withDescription("")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("value")
+                    .withDescription("")
+                    .withType("String")
+                    .withIsMultiple(false)
+                    .withIsModelType(false)
+                    .withJsonType(JsonType.STRING)
+                    .build()
+            )
+            .add(
+                FieldInfo.builder()
+                    .withName("publisher")
+                    .withDescription("")
+                    .withType("Publisher")
                     .withIsMultiple(false)
                     .withIsModelType(false)
                     .withJsonType(JsonType.STRING)
@@ -359,7 +389,7 @@ public class ContentGroupInfo implements ModelClassInfo {
 
     @Override
     public String name() {
-        return "contentgroup";
+        return "topic";
     }
 
     @Override
@@ -369,7 +399,7 @@ public class ContentGroupInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return ContentGroupInfo.class;
+        return TopicInfo.class;
     }
 
 }
