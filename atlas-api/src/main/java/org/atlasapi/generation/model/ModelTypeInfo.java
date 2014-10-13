@@ -5,10 +5,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import org.elasticsearch.common.base.Objects;
 
 public class ModelTypeInfo implements TypeInfo {
+    
+    private static final String MODEL_PACKAGE = "org.atlasapi.generation.generated.model";
 	
 	private final String typeName;
 	private final String className;
-	private final String fullPackage;
 	private final String parsedClass;
 	private final String description;
 	
@@ -16,11 +17,10 @@ public class ModelTypeInfo implements TypeInfo {
 		return new Builder();
 	}
 
-	private ModelTypeInfo(String typeName, String className, String fullPackage, 
+	private ModelTypeInfo(String typeName, String className, 
 	        String parsedClass, String description) {
         this.typeName = checkNotNull(typeName);
         this.className = checkNotNull(className);
-        this.fullPackage = checkNotNull(fullPackage);
         this.parsedClass = checkNotNull(parsedClass);
 		this.description = checkNotNull(description);
 	}
@@ -36,7 +36,7 @@ public class ModelTypeInfo implements TypeInfo {
 
 	@Override
 	public String fullPackage() {
-	    return fullPackage;
+	    return MODEL_PACKAGE;
 	}
 	
 	public String description() {
@@ -52,7 +52,7 @@ public class ModelTypeInfo implements TypeInfo {
 		return Objects.toStringHelper(getClass())
 				.add("typeName", typeName)
 				.add("className", className)
-				.add("fullPackage", fullPackage)
+				.add("package", MODEL_PACKAGE)
 				.add("parsedClass", parsedClass)
 				.add("description", description)
 				.toString();
@@ -62,24 +62,18 @@ public class ModelTypeInfo implements TypeInfo {
 		
 		private String typeName;
 		private String className;
-		private String fullPackage;
 		private String description;
 		private String parsedClass;
 
 		private Builder() {}
 		
 		public ModelTypeInfo build() {
-			return new ModelTypeInfo(typeName, className, fullPackage, parsedClass, description);
+			return new ModelTypeInfo(typeName, className, parsedClass, description);
 		}
 		
 		public Builder withTypeName(String typeName) {
 			this.typeName = typeName;
 			return this;
-		}
-		
-		public Builder withPackage(String fullPackage) {
-		    this.fullPackage = fullPackage;
-		    return this;
 		}
 		
 		public Builder withClassName(String className) {

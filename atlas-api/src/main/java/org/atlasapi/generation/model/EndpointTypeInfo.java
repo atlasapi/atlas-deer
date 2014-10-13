@@ -6,10 +6,11 @@ import org.elasticsearch.common.base.Objects;
 
 
 public class EndpointTypeInfo implements TypeInfo {
+    
+    private static final String ENDPOINT_PACKAGE = "org.atlasapi.generation.generated.endpoints";
 
     private final String typeName;
     private final String className;
-    private final String fullPackage;
     private final String description;
     private final String rootPath;
     private final String producedType;
@@ -18,11 +19,10 @@ public class EndpointTypeInfo implements TypeInfo {
         return new Builder();
     }
 
-    private EndpointTypeInfo(String typeName, String className, String fullPackage,
+    private EndpointTypeInfo(String typeName, String className,
             String description, String rootPath, String producedType) {
         this.typeName = checkNotNull(typeName);
         this.className = checkNotNull(className);
-        this.fullPackage = checkNotNull(fullPackage);
         this.description = checkNotNull(description);
         this.rootPath = checkNotNull(rootPath);
         this.producedType = checkNotNull(producedType);
@@ -39,7 +39,7 @@ public class EndpointTypeInfo implements TypeInfo {
     
     @Override
     public String fullPackage() {
-        return fullPackage;
+        return ENDPOINT_PACKAGE;
     }
 
     public String description() {
@@ -59,7 +59,7 @@ public class EndpointTypeInfo implements TypeInfo {
         return Objects.toStringHelper(getClass())
                 .add("typeName", typeName)
                 .add("className", className)
-                .add("fullPackage", fullPackage)
+                .add("package", ENDPOINT_PACKAGE)
                 .add("description", description)
                 .add("rootPath", rootPath)
                 .add("producedType", producedType)
@@ -71,14 +71,13 @@ public class EndpointTypeInfo implements TypeInfo {
         private String typeName;
         private String className;
         private String description;
-        private String fullPackage;
         private String rootPath;
         private String producedType;
 
         private Builder() {}
         
         public EndpointTypeInfo build() {
-            return new EndpointTypeInfo(typeName, className, fullPackage, description, rootPath, producedType);
+            return new EndpointTypeInfo(typeName, className, description, rootPath, producedType);
         }
         
         public Builder withTypeName(String typeName) {
@@ -91,11 +90,6 @@ public class EndpointTypeInfo implements TypeInfo {
             return this;
         }
         
-        public Builder withPackage(String fullPackage) {
-            this.fullPackage = fullPackage;
-            return this;
-        }
-
         public Builder withDescription(String description) {
             this.description = description;
             return this;

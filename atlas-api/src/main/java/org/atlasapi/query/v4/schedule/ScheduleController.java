@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.QueryResultWriter;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.metabroadcast.common.time.SystemClock;
 
+@ProducesType(type = ChannelSchedule.class)
 @Controller
 public class ScheduleController {
 

@@ -49,7 +49,6 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
                 .withTypeName(typeNameFrom(type))
                 .withClassName(classNameFrom(type))
                 .withDescription(descriptionFrom(type))
-                .withPackage(packageFrom(type))
                 .withRootPath(rootPathFrom(type))
                 .withProducedType(producedTypeFrom(type))
                 .build();
@@ -65,10 +64,6 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
 
     private String descriptionFrom(TypeElement type) {
         return addQuotesToString(docParser.parse(processingEnv.getElementUtils().getDocComment(type)));
-    }
-
-    private String packageFrom(TypeElement type) {
-        return processingEnv.getElementUtils().getPackageOf(type).getQualifiedName().toString();
     }
 
     private String rootPathFrom(TypeElement type) {

@@ -66,6 +66,8 @@ import org.atlasapi.generation.parsing.TypeParser;
 import org.atlasapi.generation.processing.ControllerAnnotationProcessor;
 import org.atlasapi.generation.processing.FieldNameProcessor;
 import org.atlasapi.query.v4.content.ContentController;
+import org.atlasapi.query.v4.schedule.ScheduleController;
+import org.atlasapi.query.v4.topic.TopicController;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -107,6 +109,8 @@ public class MetaApiInfoClassGenerator {
     			Sourced.class,
     			Equivalable.class,
     			ContentController.class,
+    			TopicController.class,
+    			ScheduleController.class,
     			Clip.class,
                 TopicRef.class,
                 ContainerRef.class,
@@ -115,7 +119,7 @@ public class MetaApiInfoClassGenerator {
                 Actor.class,
                 Brand.class,
                 ContentGroup.class,
-                Description.class,
+                Description.class,  
                 Encoding.class,
                 Policy.class,
                 Episode.class,
