@@ -33,17 +33,22 @@ import com.metabroadcast.common.webapp.serializers.OptionalSerializer;
 @Controller
 public class ModelController {
     
-    private final Gson gson = new GsonBuilder()
-            .serializeNulls()
-            .registerTypeAdapter(JsonWrapper.class, new JsonWrapperSerializer())
-            .registerTypeAdapter(ModelClassInfo.class, new ModelClassInfoSerializer())
-            .registerTypeAdapter(FieldInfo.class, new FieldInfoSerializer(new ConfigurerBasedLinkCreator()))
-            .registerTypeAdapter(Optional.class, new OptionalSerializer())
-            .create();
+    private final Gson gson;
     private final ModelClassInfoStore classInfoStore;
     
-    public ModelController(ModelClassInfoStore classInfoStore) {
+    public ModelController(ModelClassInfoStore classInfoStore, LinkCreator linkCreator) {
         this.classInfoStore = checkNotNull(classInfoStore);
+        this.gson = setupSerialization(linkCreator);
+    }
+
+    private Gson setupSerialization(LinkCreator linkCreator) {
+        return new GsonBuilder()
+        .serializeNulls()
+        .registerTypeAdapter(JsonWrapper.class, new JsonWrapperSerializer())
+        .registerTypeAdapter(ModelClassInfo.class, new ModelClassInfoSerializer())
+        .registerTypeAdapter(FieldInfo.class, new FieldInfoSerializer(linkCreator))
+        .registerTypeAdapter(Optional.class, new OptionalSerializer())
+        .create();
     }
     
     // TODO this is hacked together for prototyping purposes. TIDY IT UP

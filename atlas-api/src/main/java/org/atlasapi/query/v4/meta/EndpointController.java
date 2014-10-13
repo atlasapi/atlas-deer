@@ -29,15 +29,20 @@ import com.metabroadcast.common.webapp.serializers.OptionalSerializer;
 @Controller
 public class EndpointController {
     
-    private final Gson gson = new GsonBuilder()
-            .serializeNulls()
-            .registerTypeAdapter(EndpointClassInfo.class, new EndpointClassInfoSerializer(new ConfigurerBasedLinkCreator()))
-            .registerTypeAdapter(Optional.class, new OptionalSerializer())
-            .create();
+    private final Gson gson;
     private final EndpointClassInfoStore endpointInfoStore;
     
-    public EndpointController(EndpointClassInfoStore endpointInfoStore) {
+    public EndpointController(EndpointClassInfoStore endpointInfoStore, LinkCreator linkCreator) {
         this.endpointInfoStore = checkNotNull(endpointInfoStore);
+        this.gson = setupSerialization(linkCreator);
+    }
+
+    private Gson setupSerialization(LinkCreator linkCreator) {
+        return new GsonBuilder()
+            .serializeNulls()
+            .registerTypeAdapter(EndpointClassInfo.class, new EndpointClassInfoSerializer(linkCreator))
+            .registerTypeAdapter(Optional.class, new OptionalSerializer())
+            .create();
     }
     
     @RequestMapping({"/4/endpoints.*", "/4/endpoints"})

@@ -13,7 +13,7 @@ import java.util.Set;
  */
 public interface ModelClassInfo {
 
-	String name();
+	String key();
 	String description();
 	Set<FieldInfo> fields();
 	Class<?> describedType();

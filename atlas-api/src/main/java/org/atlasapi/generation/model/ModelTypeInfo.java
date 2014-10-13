@@ -8,8 +8,8 @@ public class ModelTypeInfo implements TypeInfo {
     
     private static final String MODEL_PACKAGE = "org.atlasapi.generation.generated.model";
 	
-	private final String typeName;
-	private final String className;
+    private final String key;
+	private final String outputClassName;
 	private final String parsedClass;
 	private final String description;
 	
@@ -17,21 +17,21 @@ public class ModelTypeInfo implements TypeInfo {
 		return new Builder();
 	}
 
-	private ModelTypeInfo(String typeName, String className, 
-	        String parsedClass, String description) {
-        this.typeName = checkNotNull(typeName);
-        this.className = checkNotNull(className);
+	private ModelTypeInfo(String key, String outputClassName, String parsedClass, 
+	        String description) {
+	    this.key = checkNotNull(key);
+        this.outputClassName = checkNotNull(outputClassName);
         this.parsedClass = checkNotNull(parsedClass);
 		this.description = checkNotNull(description);
 	}
-
-	public String typeName() {
-		return typeName;
+	
+	public String key() {
+	    return key;
 	}
 	
 	@Override
 	public String className() {
-	    return className;
+	    return outputClassName;
 	}
 
 	@Override
@@ -50,8 +50,8 @@ public class ModelTypeInfo implements TypeInfo {
 	@Override
 	public String toString() {
 		return Objects.toStringHelper(getClass())
-				.add("typeName", typeName)
-				.add("className", className)
+		        .add("key", key)
+				.add("outputClassName", outputClassName)
 				.add("package", MODEL_PACKAGE)
 				.add("parsedClass", parsedClass)
 				.add("description", description)
@@ -60,24 +60,24 @@ public class ModelTypeInfo implements TypeInfo {
 	
 	public static class Builder {
 		
-		private String typeName;
-		private String className;
+	    private String key;
+		private String outputClassName;
 		private String description;
 		private String parsedClass;
 
 		private Builder() {}
 		
 		public ModelTypeInfo build() {
-			return new ModelTypeInfo(typeName, className, parsedClass, description);
+			return new ModelTypeInfo(key, outputClassName, parsedClass, description);
 		}
+        
+        public Builder withKey(String key) {
+            this.key = key;
+            return this;
+        }
 		
-		public Builder withTypeName(String typeName) {
-			this.typeName = typeName;
-			return this;
-		}
-		
-		public Builder withClassName(String className) {
-		    this.className = className;
+		public Builder withOutputClassName(String outputClassName) {
+		    this.outputClassName = outputClassName;
 		    return this;
 		}
 		

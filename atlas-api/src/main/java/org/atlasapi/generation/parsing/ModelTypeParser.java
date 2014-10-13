@@ -52,12 +52,16 @@ public class ModelTypeParser implements TypeParser<ModelTypeInfo, ModelMethodInf
 	@Override
 	public ModelTypeInfo parse(TypeElement type) {
 		return ModelTypeInfo.builder()
-				.withTypeName(typeNameFrom(type))
-				.withClassName(classNameFrom(type))
+		        .withKey(keyFrom(type))
+				.withOutputClassName(classNameFrom(type))
 				.withDescription(descriptionFrom(type))
 				.withParsedClass(parsedClassFrom(type))
 				.build();
 	}
+
+    private String keyFrom(TypeElement type) {
+        return addQuotesToString(typeToSimpleName(type).toLowerCase());
+    }
 
     private String classNameFrom(TypeElement type) {
         return typeToSimpleName(type) + "Info";
@@ -67,10 +71,6 @@ public class ModelTypeParser implements TypeParser<ModelTypeInfo, ModelMethodInf
 		return addQuotesToString(docParser.parse(processingEnv.getElementUtils().getDocComment(type)));
 	}
 
-	private String typeNameFrom(TypeElement type) {
-		return addQuotesToString(typeToSimpleName(type).toLowerCase());
-	}
-	
 	private String parsedClassFrom(TypeElement type) {
 	    return type.getQualifiedName().toString() + ".class";
 	}

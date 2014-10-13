@@ -85,6 +85,8 @@ import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.StandardQueryParser;
 import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.meta.EndpointController;
+import org.atlasapi.query.v4.meta.LinkCreator;
+import org.atlasapi.query.v4.meta.MetaApiLinkCreator;
 import org.atlasapi.query.v4.meta.ModelController;
 import org.atlasapi.query.v4.schedule.ChannelListWriter;
 import org.atlasapi.query.v4.schedule.ContentListWriter;
@@ -125,6 +127,7 @@ import com.metabroadcast.common.time.SystemClock;
 public class QueryWebModule {
     
     private @Value("${local.host.name}") String localHostName;
+    private @Value("${atlas.uri}") String baseAtlasUri;
     
     private @Autowired DatabasedMongo mongo;
     private @Autowired QueryModule queryModule;
@@ -189,13 +192,18 @@ public class QueryWebModule {
     }
     
     @Bean
+    LinkCreator linkCreator() {
+        return new MetaApiLinkCreator(baseAtlasUri);
+    }
+    
+    @Bean
     ModelController modelController() {
-        return new ModelController(ModelClassInfoSingletonStore.INSTANCE);
+        return new ModelController(ModelClassInfoSingletonStore.INSTANCE, linkCreator());
     }
     
     @Bean
     EndpointController endpointController() {
-        return new EndpointController(EndpointClassInfoSingletonStore.INSTANCE);
+        return new EndpointController(EndpointClassInfoSingletonStore.INSTANCE, linkCreator());
     }
 
     private QueryAttributeParser contentQueryAttributeParser() {

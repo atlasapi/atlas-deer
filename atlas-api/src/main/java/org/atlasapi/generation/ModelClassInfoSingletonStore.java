@@ -32,7 +32,7 @@ public enum ModelClassInfoSingletonStore implements ModelClassInfoStore {
             Set<Class<? extends ModelClassInfo>> subTypes = new Reflections("org.atlasapi").getSubTypesOf(ModelClassInfo.class);
             for (Class<? extends ModelClassInfo> subType : subTypes) {
                 ModelClassInfo instantiation = subType.newInstance();
-                modelInfoLookup.put(instantiation.name(), instantiation);
+                modelInfoLookup.put(instantiation.key(), instantiation);
             }
         } catch (InstantiationException | IllegalAccessException e) {
             log.error("Error while reflexively obtaining Model Information classes", e);

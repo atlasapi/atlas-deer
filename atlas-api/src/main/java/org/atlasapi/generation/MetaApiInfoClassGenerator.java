@@ -25,11 +25,14 @@ import javax.tools.ToolProvider;
 
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.Brand;
+import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentGroup;
+import org.atlasapi.content.ContentGroupRef;
+import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.CrewMember;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Description;
@@ -39,16 +42,24 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.Item.ContainerSummary;
+import org.atlasapi.content.KeyPhrase;
+import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Person;
 import org.atlasapi.content.Policy;
 import org.atlasapi.content.RelatedLink;
+import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Restriction;
+import org.atlasapi.content.SeriesRef;
+import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Synopses;
 import org.atlasapi.content.TopicRef;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.Equivalable;
+import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.generation.model.EndpointMethodInfo;
 import org.atlasapi.generation.model.EndpointTypeInfo;
 import org.atlasapi.generation.model.ModelMethodInfo;
@@ -69,6 +80,8 @@ import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.schedule.ScheduleController;
 import org.atlasapi.query.v4.topic.TopicController;
 import org.atlasapi.schedule.ChannelSchedule;
+import org.atlasapi.segment.Segment;
+import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.topic.Topic;
 
 import com.google.common.base.Function;
@@ -133,7 +146,19 @@ public class MetaApiInfoClassGenerator {
                 RelatedLink.class,
                 Synopses.class,
                 Topic.class,
-                ChannelSchedule.class
+                ChannelSchedule.class,
+                Subtitles.class,
+                ReleaseDate.class,
+                Alias.class,
+                ContentGroupRef.class,
+                Segment.class,
+                SegmentRef.class,
+                MediaType.class,
+                EquivalenceRef.class,
+                KeyPhrase.class,
+                Broadcast.class,
+                ContentRef.class,
+                SeriesRef.class
 		);
     	ImmutableList<Class<?>> outputModelClasses = ImmutableList.<Class<?>>of(
     			Content.class,
@@ -159,7 +184,20 @@ public class MetaApiInfoClassGenerator {
                 RelatedLink.class,
                 Synopses.class,
                 Topic.class,
-                ChannelSchedule.class
+                ChannelSchedule.class,
+                Subtitles.class,
+                ReleaseDate.class,
+                Alias.class,
+                ContentGroupRef.class,
+                Segment.class,
+                SegmentRef.class,
+                ContainerSummary.class,
+                MediaType.class,
+                EquivalenceRef.class,
+                KeyPhrase.class,
+                Broadcast.class,
+                ContentRef.class,
+                SeriesRef.class
 		);
     	
     	SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();

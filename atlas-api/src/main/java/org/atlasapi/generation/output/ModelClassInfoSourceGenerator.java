@@ -76,11 +76,11 @@ public class ModelClassInfoSourceGenerator extends AbstractSourceGenerator<Model
     @Override
     public String generateTypeBasedFields(ModelTypeInfo typeInfo) {
         return new StringBuilder()
-                .append(formatOverriddenMethod("name", "String", typeInfo.typeName()))
+                .append(formatOverriddenMethod("key", "String", typeInfo.key()))
                 .append(NEWLINE)
                 .append(formatOverriddenMethod("description", "String", typeInfo.description()))
                 .append(NEWLINE)
-                .append(formatOverriddenMethod("describedType", "Class<?>", typeInfo.className() + ".class")) // TODO tidy this up
+                .append(formatOverriddenMethod("describedType", "Class<?>", typeInfo.parsedClass()))
                 .toString();
     }
 }

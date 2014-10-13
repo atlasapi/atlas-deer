@@ -46,7 +46,7 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
     @Override
     public EndpointTypeInfo parse(TypeElement type) {
         return EndpointTypeInfo.builder()
-                .withTypeName(typeNameFrom(type))
+                .withKey(keyFrom(type))
                 .withClassName(classNameFrom(type))
                 .withDescription(descriptionFrom(type))
                 .withRootPath(rootPathFrom(type))
@@ -54,7 +54,7 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
                 .build();
     }
 
-    private String typeNameFrom(TypeElement type) {
+    private String keyFrom(TypeElement type) {
         return addQuotesToString(typeToSimpleName(type));
     }
 

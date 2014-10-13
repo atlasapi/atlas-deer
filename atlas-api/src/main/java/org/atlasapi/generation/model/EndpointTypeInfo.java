@@ -9,7 +9,7 @@ public class EndpointTypeInfo implements TypeInfo {
     
     private static final String ENDPOINT_PACKAGE = "org.atlasapi.generation.generated.endpoints";
 
-    private final String typeName;
+    private final String key;
     private final String className;
     private final String description;
     private final String rootPath;
@@ -19,17 +19,17 @@ public class EndpointTypeInfo implements TypeInfo {
         return new Builder();
     }
 
-    private EndpointTypeInfo(String typeName, String className,
+    private EndpointTypeInfo(String key, String className,
             String description, String rootPath, String producedType) {
-        this.typeName = checkNotNull(typeName);
+        this.key = checkNotNull(key);
         this.className = checkNotNull(className);
         this.description = checkNotNull(description);
         this.rootPath = checkNotNull(rootPath);
         this.producedType = checkNotNull(producedType);
     }
 
-    public String typeName() {
-        return typeName;
+    public String key() {
+        return key;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class EndpointTypeInfo implements TypeInfo {
     @Override
     public String toString() {
         return Objects.toStringHelper(getClass())
-                .add("typeName", typeName)
+                .add("key", key)
                 .add("className", className)
                 .add("package", ENDPOINT_PACKAGE)
                 .add("description", description)
@@ -68,7 +68,7 @@ public class EndpointTypeInfo implements TypeInfo {
     
     public static class Builder {
         
-        private String typeName;
+        private String key;
         private String className;
         private String description;
         private String rootPath;
@@ -77,11 +77,11 @@ public class EndpointTypeInfo implements TypeInfo {
         private Builder() {}
         
         public EndpointTypeInfo build() {
-            return new EndpointTypeInfo(typeName, className, description, rootPath, producedType);
+            return new EndpointTypeInfo(key, className, description, rootPath, producedType);
         }
         
-        public Builder withTypeName(String typeName) {
-            this.typeName = typeName;
+        public Builder withKey(String key) {
+            this.key = key;
             return this;
         }
         

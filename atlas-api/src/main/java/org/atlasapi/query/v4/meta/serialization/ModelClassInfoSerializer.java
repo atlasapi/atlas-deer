@@ -18,7 +18,7 @@ public class ModelClassInfoSerializer implements JsonSerializer<ModelClassInfo> 
         
         JsonObject json = new JsonObject();
         
-        json.add("name", context.serialize(src.name()));
+        json.add("name", context.serialize(src.key()));
         json.add("description", context.serialize(src.description()));
         json.add("fields", context.serialize(src.fields()));
         json.add("described_type", context.serialize(src.describedType().getCanonicalName()));
