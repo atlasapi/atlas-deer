@@ -226,7 +226,7 @@ public class MetaApiInfoClassGenerator {
     	}
     }
     
-	private boolean generateInfoClasses(AbstractProcessor processor, List<Class<?>> sourceClasses) throws Exception {
+	public boolean generateInfoClasses(AbstractProcessor processor, List<Class<?>> sourceClasses) throws Exception {
 		ImmutableSet<? extends AbstractProcessor> processors = ImmutableSet.of(processor);
 
 		List<Diagnostic<? extends JavaFileObject>> diagnostics = compileWithProcessors(sourceClasses, processors);
