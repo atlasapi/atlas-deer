@@ -1,4 +1,4 @@
-package org.atlasapi.query.v4.meta;
+package org.atlasapi.query.v4.meta.serialization;
 
 import java.lang.reflect.Type;
 

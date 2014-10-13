@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.generation.EndpointClassInfoStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
+import org.atlasapi.query.v4.meta.serialization.EndpointClassInfoSerializer;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,8 +31,7 @@ public class EndpointController {
     
     private final Gson gson = new GsonBuilder()
             .serializeNulls()
-            .registerTypeAdapter(JsonCollectionWrapper.class, new JsonCollectionWrapperSerializer<EndpointClassInfo>())
-            .registerTypeAdapter(EndpointClassInfo.class, new EndpointClassInfoSerializer())
+            .registerTypeAdapter(EndpointClassInfo.class, new EndpointClassInfoSerializer(new ConfigurerBasedLinkCreator()))
             .registerTypeAdapter(Optional.class, new OptionalSerializer())
             .create();
     private final EndpointClassInfoStore endpointInfoStore;

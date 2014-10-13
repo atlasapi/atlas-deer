@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.generation.ModelClassInfoStore;
 import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
+import org.atlasapi.query.v4.meta.serialization.FieldInfoSerializer;
+import org.atlasapi.query.v4.meta.serialization.ModelClassInfoSerializer;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,7 +37,7 @@ public class ModelController {
             .serializeNulls()
             .registerTypeAdapter(JsonWrapper.class, new JsonWrapperSerializer())
             .registerTypeAdapter(ModelClassInfo.class, new ModelClassInfoSerializer())
-            .registerTypeAdapter(FieldInfo.class, new FieldInfoSerializer())
+            .registerTypeAdapter(FieldInfo.class, new FieldInfoSerializer(new ConfigurerBasedLinkCreator()))
             .registerTypeAdapter(Optional.class, new OptionalSerializer())
             .create();
     private final ModelClassInfoStore classInfoStore;
