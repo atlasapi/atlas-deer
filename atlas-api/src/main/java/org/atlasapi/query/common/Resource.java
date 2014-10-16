@@ -13,7 +13,9 @@ public enum Resource {
     SOURCE_REQUEST("source_request", "source_requests"),
     USER("user", "users"),
     SOURCE_LICENSE("source_license", "source_licenses"),
-    END_USER_LICENSE("end_user_license", "end_user_licenses")
+    END_USER_LICENSE("end_user_license", "end_user_licenses"),
+    MODEL_INFO("model_class", "model_classes"),
+    ENDPOINT_INFO("endpoint", "endpoints"),
     ;
     
     private final String singular;

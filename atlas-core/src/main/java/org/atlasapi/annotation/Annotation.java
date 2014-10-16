@@ -50,7 +50,10 @@ public enum Annotation {
     CONTENT_DETAIL,
     CHANNEL_SUMMARY,
     AUDIT,
-    IMAGES;
+    IMAGES,
+    META_MODEL,
+    META_ENDPOINT,
+    ;
     
     public String toKey() {
         return name().toLowerCase();
@@ -88,8 +91,9 @@ public enum Annotation {
         return defaultAnnotations;
     }
     
+    // TODO revise standard annotations for the meta API
     private static final ImmutableSet<Annotation> defaultAnnotations = ImmutableSet.of(
-        ID_SUMMARY, LICENSE
+        ID_SUMMARY, LICENSE, META_MODEL, META_ENDPOINT
     );
     
 }

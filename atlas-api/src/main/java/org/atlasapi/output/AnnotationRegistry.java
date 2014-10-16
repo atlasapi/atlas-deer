@@ -45,7 +45,7 @@ public class AnnotationRegistry<T> {
             return register(annotation, outputAnnotation, ImmutableSet.of(implied));
         }
         
-        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T> output, Iterable<Annotation> implieds){
+        public Builder<T> register(Annotation annotation, OutputAnnotation<? super T> output, Iterable<Annotation> implieds) {
             checkRegistered(implieds, "Cannot imply un-registered annotation '%s'");
             register(annotation, output);
             for (Annotation implied : implieds) {
