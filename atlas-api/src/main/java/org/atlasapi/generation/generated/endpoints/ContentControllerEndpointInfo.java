@@ -11,16 +11,16 @@ public class ContentControllerEndpointInfo implements EndpointClassInfo {
 
     private static final Set<Operation> operations = ImmutableSet.<Operation>builder()
             .add(
-                new Operation(RequestMethod.GET, "/4/content/{cid}.*")
+                new Operation(RequestMethod.GET, "/{cid}.*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/content/{cid}")
+                new Operation(RequestMethod.GET, "/{cid}")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/content.*")
+                new Operation(RequestMethod.GET, ".*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/content")
+                new Operation(RequestMethod.GET, "")
             )
             .build();
 
@@ -41,7 +41,7 @@ public class ContentControllerEndpointInfo implements EndpointClassInfo {
 
     @Override
     public String rootPath() {
-        return "";
+        return "/4/content";
     }
 
 }

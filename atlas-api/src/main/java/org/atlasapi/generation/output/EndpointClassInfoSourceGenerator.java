@@ -46,7 +46,7 @@ public class EndpointClassInfoSourceGenerator extends AbstractSourceGenerator<En
     @Override
     public String generateTypeBasedFields(EndpointTypeInfo typeInfo) {
         return new StringBuilder()
-        .append(formatOverriddenMethod("name", "String", typeInfo.producedType().toLowerCase()))
+        .append(formatOverriddenMethod("name", "String", typeInfo.key()))
         .append(NEWLINE)
         .append(formatOverriddenMethod("description", "String", typeInfo.description()))
         .append(NEWLINE)

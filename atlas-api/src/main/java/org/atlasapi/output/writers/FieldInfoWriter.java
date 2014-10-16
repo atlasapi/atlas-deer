@@ -30,7 +30,8 @@ public class FieldInfoWriter implements EntityListWriter<FieldInfo> {
         writer.writeField("type", entity.type());
         if (entity.isModelType()) {
             writer.writeField("model_class_link",linkCreator.createModelLink(entity.type().toLowerCase()));
-      }
+        }
+        writer.writeField("is_multiple", entity.isMultiple().toString());
         writer.writeField("json_type", entity.jsonType().value());
     }
 

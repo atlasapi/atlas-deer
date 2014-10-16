@@ -11,16 +11,16 @@ public class ScheduleControllerEndpointInfo implements EndpointClassInfo {
 
     private static final Set<Operation> operations = ImmutableSet.<Operation>builder()
             .add(
-                new Operation(RequestMethod.GET, "/4/schedules")
+                new Operation(RequestMethod.GET, "")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/schedules.*")
+                new Operation(RequestMethod.GET, ".*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/schedules/{cid}.*")
+                new Operation(RequestMethod.GET, "/{cid}.*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/schedules/{cid}")
+                new Operation(RequestMethod.GET, "/{cid}")
             )
             .build();
 
@@ -31,7 +31,7 @@ public class ScheduleControllerEndpointInfo implements EndpointClassInfo {
 
     @Override
     public String name() {
-        return "channelschedule";
+        return "schedules";
     }
 
     @Override
@@ -41,7 +41,7 @@ public class ScheduleControllerEndpointInfo implements EndpointClassInfo {
 
     @Override
     public String rootPath() {
-        return "";
+        return "/4/schedules";
     }
 
 }

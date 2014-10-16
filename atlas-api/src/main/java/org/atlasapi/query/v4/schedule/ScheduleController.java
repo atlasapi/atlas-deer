@@ -25,6 +25,7 @@ import com.metabroadcast.common.time.SystemClock;
 
 @ProducesType(type = ChannelSchedule.class)
 @Controller
+@RequestMapping("/4/schedules")
 public class ScheduleController {
 
     private static Logger log = LoggerFactory.getLogger(ScheduleController.class);
@@ -50,8 +51,7 @@ public class ScheduleController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/4/schedules", "/4/schedules.*", 
-        "/4/schedules/{cid}.*", "/4/schedules/{cid}" })
+    @RequestMapping({ "", ".*", "/{cid}.*", "/{cid}" })
     public void writeChannelSchedule(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;

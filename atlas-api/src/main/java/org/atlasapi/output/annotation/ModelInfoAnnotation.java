@@ -24,7 +24,6 @@ public class ModelInfoAnnotation<T extends ModelClassInfo> extends
         writer.writeField("name", entity.key());
         writer.writeField("description", entity.description());
         writer.writeList(fieldInfoWriter, entity.fields(), ctxt);
-        writer.writeField("described_type", entity.describedType().getCanonicalName());
     }
 
 }

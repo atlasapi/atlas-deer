@@ -11,16 +11,16 @@ public class TopicControllerEndpointInfo implements EndpointClassInfo {
 
     private static final Set<Operation> operations = ImmutableSet.<Operation>builder()
             .add(
-                new Operation(RequestMethod.GET, "/4/topics/{tid}.*")
+                new Operation(RequestMethod.GET, "/{tid}.*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/topics/{tid}")
+                new Operation(RequestMethod.GET, "/{tid}")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/topics.*")
+                new Operation(RequestMethod.GET, ".*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/4/topics")
+                new Operation(RequestMethod.GET, "")
             )
             .build();
 
@@ -31,7 +31,7 @@ public class TopicControllerEndpointInfo implements EndpointClassInfo {
 
     @Override
     public String name() {
-        return "topic";
+        return "topics";
     }
 
     @Override
@@ -41,7 +41,7 @@ public class TopicControllerEndpointInfo implements EndpointClassInfo {
 
     @Override
     public String rootPath() {
-        return "";
+        return "/4/topics";
     }
 
 }

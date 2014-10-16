@@ -45,17 +45,19 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
 
     @Override
     public EndpointTypeInfo parse(TypeElement type) {
+        String rootPath = rootPathFrom(type);
         return EndpointTypeInfo.builder()
-                .withKey(keyFrom(type))
+                .withKey(keyFrom(rootPath))
                 .withClassName(classNameFrom(type))
                 .withDescription(descriptionFrom(type))
-                .withRootPath(rootPathFrom(type))
+                .withRootPath(rootPath)
                 .withProducedType(producedTypeFrom(type))
                 .build();
     }
 
-    private String keyFrom(TypeElement type) {
-        return addQuotesToString(typeToSimpleName(type));
+    private String keyFrom(String rootPath) {
+        return rootPath.replaceAll("(/4/)", "");
+//        return addQuotesToString(typeToSimpleName(type));
     }
 
     private String classNameFrom(TypeElement type) {
@@ -75,7 +77,6 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
         if (rootMapping == null) {
             return Optional.absent();
         }
-        // TODO potential issue if multiple root paths specified
         return Optional.of(rootMapping.value()[0]);
     }
 

@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  */
 @ProducesType(type=Content.class)
 @Controller
+@RequestMapping("/4/content")
 public class ContentController {
 
     private static Logger log = LoggerFactory.getLogger(ContentController.class);
@@ -45,7 +46,7 @@ public class ContentController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/4/content/{cid}.*", "/4/content/{cid}", "/4/content.*", "/4/content" })
+    @RequestMapping({ "/{cid}.*", "/{cid}", ".*", "" })
     public void fetchContent(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;
