@@ -76,7 +76,7 @@ public class LegacyPersistenceModule {
     
     @Bean @Qualifier("legacy")
     public MongoLookupEntryStore legacyEquivalenceStore() {
-        return new MongoLookupEntryStore(persistence.databasedMongo().collection("lookup"), ReadPreference.primary());
+        return new MongoLookupEntryStore(persistence.databasedMongo().collection("lookup"), ReadPreference.primaryPreferred());
     }
     
     @Bean @Qualifier("legacy")
