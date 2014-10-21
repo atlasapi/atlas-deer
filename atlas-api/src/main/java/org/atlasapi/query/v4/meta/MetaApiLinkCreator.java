@@ -26,7 +26,7 @@ public class MetaApiLinkCreator implements LinkCreator {
 //            modelLink.append("dev.mbst.tv:8080");
 //        }
         modelLink.append(atlasUriBase);
-        modelLink.append("/4/model_classes/"); 
+        modelLink.append("/4/meta/model_classes/"); 
         modelLink.append(type);
         modelLink.append(".json");
         
