@@ -45,7 +45,7 @@ public class EndpointController {
         this.contextParser = checkNotNull(contextParser);
     }
     
-    @RequestMapping({"/4/endpoints.*", "/4/endpoints"})
+    @RequestMapping({"/4/meta/endpoints.*", "/4/meta/endpoints"})
     public void fetchAllEndpointInfo(HttpServletRequest request, HttpServletResponse response) throws IOException { 
         ResponseWriter writer = null;
         try {
@@ -70,7 +70,7 @@ public class EndpointController {
         return QueryResult.listResult(resources, contextParser.parseContext(request));
     }
     
-    @RequestMapping({"/4/endpoints/{key}.*", "/4/endpoints/{key}"})
+    @RequestMapping({"/4/meta/endpoints/{key}.*", "/4/meta/endpoints/{key}"})
     public void fetchSingleEndpointInfo(HttpServletRequest request, HttpServletResponse response,
             @PathVariable("key") String key) throws IOException { 
         ResponseWriter writer = null;

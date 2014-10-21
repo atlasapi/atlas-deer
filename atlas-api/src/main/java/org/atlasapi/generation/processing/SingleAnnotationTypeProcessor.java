@@ -73,6 +73,7 @@ public abstract class SingleAnnotationTypeProcessor<TI extends TypeInfo, MI exte
         }
     }
 
+    // TODO does this miss explicitly overridden methods?
 	private boolean isClaimed(Set<? extends TypeElement> annotations) {
 		return annotations.size() == 1
             && annotations.iterator().next().getQualifiedName().toString().equals(annotationType().getName());
