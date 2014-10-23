@@ -35,6 +35,7 @@ public enum ModelClassInfoSingletonStore implements ModelClassInfoStore {
                 modelInfoLookup.put(instantiation.key(), instantiation);
             }
         } catch (InstantiationException | IllegalAccessException e) {
+            //TODO THROOOOOOOOWWWWW
             log.error("Error while reflexively obtaining Model Information classes", e);
         }
     }

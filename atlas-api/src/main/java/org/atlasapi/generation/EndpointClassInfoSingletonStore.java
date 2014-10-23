@@ -35,7 +35,8 @@ public enum EndpointClassInfoSingletonStore implements EndpointClassInfoStore {
                 endpointInfoLookup.put(instantiation.name(), instantiation);
             }
         } catch (InstantiationException | IllegalAccessException e) {
-            log.error("Error while reflexively obtaining Endpoint Information classes", e);
+            // bunk because gonna throw
+            log.error("Error while reflectively obtaining Endpoint Information classes", e);
         }
     }
     

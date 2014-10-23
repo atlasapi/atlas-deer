@@ -15,17 +15,8 @@ public class MetaApiLinkCreator implements LinkCreator {
     public String createModelLink(String type) {
         StringBuilder modelLink = new StringBuilder(); 
         
-//        String platform = Configurer.getPlatform();
-//        // TODO this is a MASSIVELY ENORMOUS HACK, but along the right lines
-//        modelLink.append("http://");
-//        if ("STAGE".equalsIgnoreCase(platform)) {
-//            modelLink.append("stage.atlas.metabroadcast.com");
-//        } else if ("PROD".equalsIgnoreCase(platform)) {
-//            modelLink.append("atlas.metabroadcast.com");
-//        } else {
-//            modelLink.append("dev.mbst.tv:8080");
-//        }
         modelLink.append(atlasUriBase);
+        // TODO use a constant from the controller defining root path
         modelLink.append("/4/meta/model_classes/"); 
         modelLink.append(type);
         modelLink.append(".json");

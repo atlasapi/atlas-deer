@@ -26,8 +26,8 @@ public class EndpointInfoListWriter implements EntityListWriter<EndpointClassInf
         ctxt.startResource(Resource.ENDPOINT_INFO);
         List<OutputAnnotation<? super EndpointClassInfo>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
-        for (int i = 0; i < annotations.size(); i++) {
-            annotations.get(i).write(entity, writer, ctxt);
+        for (OutputAnnotation<? super EndpointClassInfo> annotation : annotations) {
+            annotation.write(entity, writer, ctxt);
         }
         ctxt.endResource();
     }
