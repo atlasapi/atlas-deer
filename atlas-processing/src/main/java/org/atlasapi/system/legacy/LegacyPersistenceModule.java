@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Import;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
+import com.mongodb.ReadPreference;
 
 @Configuration
 @Import(AtlasPersistenceModule.class)
@@ -75,7 +76,7 @@ public class LegacyPersistenceModule {
     
     @Bean @Qualifier("legacy")
     public MongoLookupEntryStore legacyEquivalenceStore() {
-        return new MongoLookupEntryStore(persistence.databasedMongo().collection("lookup"));
+        return new MongoLookupEntryStore(persistence.databasedMongo().collection("lookup"), ReadPreference.primaryPreferred());
     }
     
     @Bean @Qualifier("legacy")
