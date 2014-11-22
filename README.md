@@ -17,11 +17,13 @@ Development installation
 You will need:
   * Maven 3
   * Google’s protocol buffer compiler, protoc, on your path
-  * ElasticSearch 0.19.8 (http://www.elasticsearch.org/downloads/0-19-8/)
+  * ElasticSearch 0.90.0 (http://www.elasticsearch.org/downloads/0-90-0/)
   * The current version of the 2.0.x release of Cassandra (http://planetcassandra.org/cassandra/) and latest cqlsh
   * The latest version of MongoDB (http://www.mongodb.org/)
 
-* Make sure the protobuf library version specified in the atlas-cassandra/pom.xml matches the output of protoc —version
+* Make sure the protobuf library version specified in the atlas-cassandra/pom.xml matches the output of protoc --version
+* Make sure the elasticsearch version specified in the atlas-elasticsearch/pom.xml matches the the version you install.
+* Make sure the elasticsearch cluster name specified in elasticsearch.yml matches your elasticsearch.cluster (default in atlas-api/src/main/resources/config/environments/dev.properties is atlas_deer_dev)
 * Start Cassandra locally on the standard port
 * Start ElasticSearch
 * Run mvn package in the project directory
