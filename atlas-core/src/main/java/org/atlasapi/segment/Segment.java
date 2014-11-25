@@ -46,7 +46,7 @@ public class Segment extends Described {
 
     @Override
     public Described copy() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public static final Function<Segment, SegmentRef> TO_REF = new Function<Segment, SegmentRef>() {
