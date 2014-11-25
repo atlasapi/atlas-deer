@@ -238,7 +238,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         org.atlasapi.media.entity.Description d = input.getDescription();
         se.setDescription(new Description(d.getTitle(), d.getSynopsis(), d.getImage(), d.getThumbnail()));
         org.atlasapi.media.segment.SegmentRef sr = input.getSegment();
-        se.setSegment(new SegmentRef(sr.identifier()));
+        se.setSegment(new SegmentRef(Id.valueOf(sr.identifier())));
         se.setVersionId(version.getCanonicalUri());
         return se;
     }
