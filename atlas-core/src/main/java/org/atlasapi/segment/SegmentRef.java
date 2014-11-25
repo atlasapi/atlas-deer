@@ -6,20 +6,20 @@ import com.google.common.base.Function;
 
 public class SegmentRef {
     
-    public static final Function<SegmentRef, String> TO_ID = new Function<SegmentRef, String>(){
+    public static final Function<SegmentRef, Long> TO_ID = new Function<SegmentRef, Long>(){
         @Override
-        public String apply(SegmentRef input) {
+        public Long apply(SegmentRef input) {
             return input.identifier();
         }
     };
     
-    private final String identifier;
+    private final Long identifier;
 
-    public SegmentRef(String identifier) {
+    public SegmentRef(Long identifier) {
         this.identifier = checkNotNull(identifier);
     }
 
-    public String identifier() {
+    public Long identifier() {
         return identifier;
     }
     

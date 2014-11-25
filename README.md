@@ -16,7 +16,7 @@ Development installation
 
 You will need:
   * Maven 3
-  * Google’s protocol buffer compiler, protoc, on your path
+  * Google’s protocol buffer compiler, protoc, on your path (see bug below if you have trouble compiling protoc).
   * ElasticSearch 0.19.8 (http://www.elasticsearch.org/downloads/0-19-8/)
   * The current version of the 2.0.x release of Cassandra (http://planetcassandra.org/cassandra/) and latest cqlsh
   * The latest version of MongoDB (http://www.mongodb.org/)
@@ -34,3 +34,9 @@ At this stage you hopefully have successfully obtained war files.
 
 Finally:
 * java -jar atlas-api/target/atlas-api.war
+
+
+Problems
+--------
+* Error when using make to compile protoc
+        https://code.google.com/p/protobuf/issues/detail?id=570

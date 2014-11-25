@@ -2,6 +2,7 @@ package org.atlasapi.segment;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.content.Described;
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Identified;
 import org.atlasapi.media.entity.Publisher;
@@ -9,24 +10,14 @@ import org.joda.time.Duration;
 
 import com.google.common.base.Function;
 
-public class Segment extends Identified {
+public class Segment extends Described {
 
-    private Description description = Description.EMPTY;
     private SegmentType type;
     private Duration duration;
     private Publisher publisher;
-    private String identifier;
-    
+
     public SegmentRef toRef() {
-        return new SegmentRef(checkNotNull(identifier, "Can't create reference for segment without ID"));
-    }
-
-    public Description getDescription() {
-        return this.description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
+        return new SegmentRef(checkNotNull(this.getId().longValue(), "Can't create reference for segment without ID"));
     }
 
     public SegmentType getType() {
@@ -53,14 +44,11 @@ public class Segment extends Identified {
         this.publisher = publisher;
     }
 
-    public String getIdentifier() {
-        return this.identifier;
+    @Override
+    public Described copy() {
+        return null;
     }
 
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
-    
     public static final Function<Segment, SegmentRef> TO_REF = new Function<Segment, SegmentRef>() {
         @Override
         public SegmentRef apply(Segment input) {

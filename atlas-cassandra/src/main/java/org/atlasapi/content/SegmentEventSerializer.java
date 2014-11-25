@@ -23,7 +23,7 @@ public class SegmentEventSerializer {
             builder.setPosition(event.getPosition());
         }
         if (event.getSegment() != null) {
-            builder.setSegment(event.getSegment().identifier());
+            builder.setSegment(event.getId().toString());
         }
         Description desc = event.getDescription();
         if (desc != null) {
@@ -44,7 +44,7 @@ public class SegmentEventSerializer {
         }
         event.setPosition(msg.hasPosition() ? msg.getPosition() : null);
         if (msg.hasSegment()) {
-            event.setSegment(new SegmentRef(msg.getSegment()));
+            event.setSegment(new SegmentRef(Long.valueOf(msg.getSegment())));
         }
         Description desc = new Description(
             msg.hasTitle() ? msg.getTitle() : null,

@@ -20,7 +20,7 @@ public class SegmentEventSerializerTest {
         segmentEvent.setIsChapter(true);
         segmentEvent.setOffset(Duration.standardMinutes(5));
         segmentEvent.setPosition(5);
-        segmentEvent.setSegment(new SegmentRef("segment"));
+        segmentEvent.setSegment(new SegmentRef(10L));
         segmentEvent.setDescription(new Description("title", "desc", "img", "thmb"));
         
         byte[] bytes = serializer.serialize(segmentEvent).build().toByteArray();
