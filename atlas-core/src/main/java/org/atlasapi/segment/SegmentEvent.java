@@ -38,7 +38,7 @@ public class SegmentEvent extends Identified {
         return this.description;
     }
 
-    public SegmentRef getSegment() {
+    public SegmentRef getSegmentRef() {
         return this.segment;
     }
 
@@ -84,7 +84,7 @@ public class SegmentEvent extends Identified {
 
         @Override
         public SegmentRef apply(SegmentEvent input) {
-            return input.getSegment();
+            return input.getSegmentRef();
         }
         
     };

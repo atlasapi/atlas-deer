@@ -40,10 +40,11 @@ public class LegacyContentResolver implements ContentResolver {
     private KnownTypeContentResolver contentResolver;
     private LegacyContentTransformer transformer;
 
-    public LegacyContentResolver(LookupEntryStore lookupStore, KnownTypeContentResolver contentResolver, ChannelResolver channelResolver) {
+    public LegacyContentResolver(LookupEntryStore lookupStore, KnownTypeContentResolver contentResolver, LegacySegmentMigrator legacySegmentMigrator,
+                                 ChannelResolver channelResolver) {
         this.lookupStore = lookupStore;
         this.contentResolver = contentResolver;
-        this.transformer = new LegacyContentTransformer(channelResolver);
+        this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
     }
     
     @Override

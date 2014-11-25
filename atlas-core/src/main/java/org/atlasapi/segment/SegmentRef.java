@@ -1,11 +1,13 @@
 package org.atlasapi.segment;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.entity.ResourceType;
+import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.base.Function;
-import org.atlasapi.entity.Id;
 
-public class SegmentRef {
+public class SegmentRef extends ResourceRef {
     
     public static final Function<SegmentRef, Id> TO_ID = new Function<SegmentRef, Id>(){
         @Override
@@ -14,16 +16,15 @@ public class SegmentRef {
         }
     };
     
-    private final Id id;
-
-    public SegmentRef(Id id) {
-        this.id = checkNotNull(id);
+    public SegmentRef(Id id, Publisher source) {
+        super(id, source);
     }
 
-    public Id getId() {
-        return id;
+    @Override
+    public ResourceType getResourceType() {
+        return null;
     }
-    
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -39,10 +40,5 @@ public class SegmentRef {
     @Override
     public int hashCode() {
         return id.hashCode();
-    }
-    
-    @Override
-    public String toString() {
-        return String.format("SegRef %s", id);
     }
 }

@@ -16,11 +16,12 @@ import com.google.common.collect.Iterators;
 public class ContentListerResourceListerAdapter implements ResourceLister<Content> {
 
     private final ContentLister contentLister;
-	private final LegacyContentTransformer transformer;
+    private final LegacyContentTransformer transformer;
 
-    public ContentListerResourceListerAdapter(ContentLister contentLister, ChannelResolver channelResolver) {
+    public ContentListerResourceListerAdapter(ContentLister contentLister, ChannelResolver channelResolver,
+                                              LegacySegmentMigrator legacySegmentMigrator) {
         this.contentLister = contentLister;
-        this.transformer = new LegacyContentTransformer(channelResolver);
+        this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
     }
 
     @Override
@@ -29,14 +30,14 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
             @Override
             public Iterator<Content> iterator() {
                 return Iterators.transform(contentLister.listContent(ContentListingCriteria.defaultCriteria()
-                    .forPublishers(Sources.all().asList())
-                    .forContent(
-                        ContentCategory.CONTAINER,
-                        ContentCategory.PROGRAMME_GROUP,
-                        ContentCategory.TOP_LEVEL_ITEM,
-                        ContentCategory.CHILD_ITEM
-                    )
-                    .build()), transformer);
+                        .forPublishers(Sources.all().asList())
+                        .forContent(
+                                ContentCategory.CONTAINER,
+                                ContentCategory.PROGRAMME_GROUP,
+                                ContentCategory.TOP_LEVEL_ITEM,
+                                ContentCategory.CHILD_ITEM
+                        )
+                        .build()), transformer);
             }
         };
     }

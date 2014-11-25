@@ -13,6 +13,7 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
+import org.atlasapi.segment.SegmentStore;
 import org.atlasapi.topic.TopicStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
 public abstract class TestCassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
-    
+
     private final Logger log = LoggerFactory.getLogger(getClass());
     
     private final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
@@ -97,7 +98,7 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         createTables(session, context);
         
         CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(messageSenderFactory, context, cassandraService,
-                keyspace, idGeneratorBuilder(), hasher);
+                keyspace, idGeneratorBuilder(), hasher, seeds);
         persistenceModule.startAsync().awaitRunning();
         return persistenceModule;
     }
@@ -144,6 +145,11 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
     @Override
     public ScheduleStore scheduleStore() {
         return persistenceModule.scheduleStore();
+    }
+
+    @Override
+    public SegmentStore segmentStore() {
+        return persistenceModule.segmentStore();
     }
 
     @Override

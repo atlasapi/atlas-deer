@@ -155,6 +155,4 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
             }
         ));
     }
-
-    
 }

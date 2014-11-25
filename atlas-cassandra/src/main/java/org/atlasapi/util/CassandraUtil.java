@@ -6,6 +6,9 @@ import com.netflix.astyanax.connectionpool.OperationResult;
 
 public final class CassandraUtil {
 
+    public static final String KEY = "key";
+    public static final String VALUE = "value";
+
     private CassandraUtil() {}
     
     private enum OperationResultToResultFunction implements Function<OperationResult<Object>, Object> {
