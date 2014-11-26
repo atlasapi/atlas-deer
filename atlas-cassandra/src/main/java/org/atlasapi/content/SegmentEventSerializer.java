@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import org.atlasapi.entity.Id;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.serialization.protobuf.ContentProtos;
@@ -23,7 +24,7 @@ public class SegmentEventSerializer {
             builder.setPosition(event.getPosition());
         }
         if (event.getSegment() != null) {
-            builder.setSegment(event.getSegment().identifier());
+            builder.setSegmentRef(event.getSegment().getId().longValue());
         }
         Description desc = event.getDescription();
         if (desc != null) {
@@ -43,8 +44,8 @@ public class SegmentEventSerializer {
             event.setOffset(Duration.millis(msg.getOffset()));
         }
         event.setPosition(msg.hasPosition() ? msg.getPosition() : null);
-        if (msg.hasSegment()) {
-            event.setSegment(new SegmentRef(msg.getSegment()));
+        if (msg.hasSegmentRef()) {
+            event.setSegment(new SegmentRef(Id.valueOf(msg.getSegmentRef())));
         }
         Description desc = new Description(
             msg.hasTitle() ? msg.getTitle() : null,

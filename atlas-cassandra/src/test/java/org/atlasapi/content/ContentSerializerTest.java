@@ -244,7 +244,7 @@ public class ContentSerializerTest {
             new Broadcast(Id.valueOf(2), new DateTime(DateTimeZones.UTC), new DateTime(DateTimeZones.UTC))
         ));
         item.setManifestedAs(ImmutableSet.of(encoding("one")));
-        item.setSegmentEvents(ImmutableSet.of(segmentEvent("one")));
+        item.setSegmentEvents(ImmutableSet.of(segmentEvent(10L)));
         item.setRestrictions(ImmutableSet.of(Restriction.from(14, "old")));
     }
 
@@ -290,9 +290,9 @@ public class ContentSerializerTest {
         identified.setEquivalentTo(ImmutableSet.of(new EquivalenceRef(Id.valueOf(1) ,Publisher.BBC)));
     }
     
-    private SegmentEvent segmentEvent(String segment) {
+    private SegmentEvent segmentEvent(Long segmentId) {
         SegmentEvent event = new SegmentEvent();
-        event.setSegment(new SegmentRef(segment));
+        event.setSegment(new SegmentRef(Id.valueOf(segmentId)));
         return event;
     }
 

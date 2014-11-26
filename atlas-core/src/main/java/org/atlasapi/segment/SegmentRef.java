@@ -3,24 +3,25 @@ package org.atlasapi.segment;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Function;
+import org.atlasapi.entity.Id;
 
 public class SegmentRef {
     
-    public static final Function<SegmentRef, String> TO_ID = new Function<SegmentRef, String>(){
+    public static final Function<SegmentRef, Id> TO_ID = new Function<SegmentRef, Id>(){
         @Override
-        public String apply(SegmentRef input) {
-            return input.identifier();
+        public Id apply(SegmentRef input) {
+            return input.getId();
         }
     };
     
-    private final String identifier;
+    private final Id id;
 
-    public SegmentRef(String identifier) {
-        this.identifier = checkNotNull(identifier);
+    public SegmentRef(Id id) {
+        this.id = checkNotNull(id);
     }
 
-    public String identifier() {
-        return identifier;
+    public Id getId() {
+        return id;
     }
     
     @Override
@@ -30,18 +31,18 @@ public class SegmentRef {
         }
         if (that instanceof SegmentRef) {
             SegmentRef other = (SegmentRef) that;
-            return other.identifier.equals(this.identifier);
+            return other.id.equals(this.id);
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return identifier.hashCode();
+        return id.hashCode();
     }
     
     @Override
     public String toString() {
-        return String.format("SegRef %s", identifier);
+        return String.format("SegRef %s", id);
     }
 }

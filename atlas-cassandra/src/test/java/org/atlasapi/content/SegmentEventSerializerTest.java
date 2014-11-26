@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import org.atlasapi.entity.Id;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.serialization.protobuf.ContentProtos;
@@ -20,7 +21,7 @@ public class SegmentEventSerializerTest {
         segmentEvent.setIsChapter(true);
         segmentEvent.setOffset(Duration.standardMinutes(5));
         segmentEvent.setPosition(5);
-        segmentEvent.setSegment(new SegmentRef("segment"));
+        segmentEvent.setSegment(new SegmentRef(Id.valueOf(10l)));
         segmentEvent.setDescription(new Description("title", "desc", "img", "thmb"));
         
         byte[] bytes = serializer.serialize(segmentEvent).build().toByteArray();
@@ -35,6 +36,4 @@ public class SegmentEventSerializerTest {
         assertThat(deserialized.getDescription(), is(segmentEvent.getDescription()));
         
     }
-
-
 }
