@@ -24,7 +24,7 @@ public class SegmentEventSerializer {
             builder.setPosition(event.getPosition());
         }
         if (event.getSegment() != null) {
-            builder.setSegment(event.getId().toString());
+            builder.setSegment(event.getSegment().getId().toString());
         }
         Description desc = event.getDescription();
         if (desc != null) {
