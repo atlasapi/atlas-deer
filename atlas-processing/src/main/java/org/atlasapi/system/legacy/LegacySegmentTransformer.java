@@ -8,7 +8,7 @@ public class LegacySegmentTransformer extends DescribedLegacyResourceTransformer
 
     @Override
     protected Segment createDescribed(org.atlasapi.media.segment.Segment input) {
-        Segment segment = super.apply(input);
+        Segment segment = new Segment();
         segment.setType(SegmentType.valueOf(input.getType().name()));
         segment.setDuration(input.getDuration());
         return segment;
