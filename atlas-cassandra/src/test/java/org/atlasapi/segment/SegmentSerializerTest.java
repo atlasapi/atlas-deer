@@ -2,17 +2,15 @@ package org.atlasapi.segment;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.serialization.protobuf.SegmentProtos;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 

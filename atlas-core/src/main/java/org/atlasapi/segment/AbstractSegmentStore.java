@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Equivalence;
-import com.google.common.base.Optional;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;

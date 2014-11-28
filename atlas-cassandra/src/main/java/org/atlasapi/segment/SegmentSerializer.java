@@ -95,18 +95,32 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
             Segment segment = new Segment();
             segment.setId(proto.getId());
             segment.setPublisher(Publisher.fromKey(proto.getSource()).requireValue());
-            segment.setDuration(Duration.standardSeconds(proto.getDuration()));
             segment.setTitle(proto.getTitle());
-            segment.setAliases(Iterables.transform(proto.getAliasesList(), PROTO_TO_ALIAS));
             segment.setType(SegmentType.fromString(proto.getType()).requireValue());
             segment.setShortDescription(proto.getShortDescription());
             segment.setMediumDescription(proto.getMediumDescription());
             segment.setLongDescription(proto.getLongDescription());
-            segment.setFirstSeen(ProtoBufUtils.deserializeDateTime(proto.getFirstSeen()));
-            segment.setLastUpdated(ProtoBufUtils.deserializeDateTime(proto.getLastUpdated()));
-            segment.setLastFetched(ProtoBufUtils.deserializeDateTime(proto.getLastFetched()));
-            segment.setThisOrChildLastUpdated(ProtoBufUtils.deserializeDateTime(proto.getThisOrChildLastUpdated()));
-            segment.setRelatedLinks(Iterables.transform(proto.getLinksList(), relatedLinkSerializer.FROM_PROTO));
+            if (proto.hasLastFetched()) {
+                segment.setLastFetched(ProtoBufUtils.deserializeDateTime(proto.getLastFetched()));
+            }
+            if (proto.hasLastUpdated()) {
+                segment.setLastUpdated(ProtoBufUtils.deserializeDateTime(proto.getLastUpdated()));
+            }
+            if (proto.hasFirstSeen()) {
+                segment.setFirstSeen(ProtoBufUtils.deserializeDateTime(proto.getFirstSeen()));
+            }
+            if (proto.hasDuration()) {
+                segment.setDuration(Duration.standardSeconds(proto.getDuration()));
+            }
+            if (proto.hasThisOrChildLastUpdated()) {
+                segment.setThisOrChildLastUpdated(ProtoBufUtils.deserializeDateTime(proto.getThisOrChildLastUpdated()));
+            }
+            if (proto.getLinksList() != null && !proto.getLinksList().isEmpty()) {
+                segment.setRelatedLinks(Iterables.transform(proto.getLinksList(), relatedLinkSerializer.FROM_PROTO));
+            }
+            if (proto.getAliasesList() != null && !proto.getAliasesList().isEmpty()) {
+                segment.setAliases(Iterables.transform(proto.getAliasesList(), PROTO_TO_ALIAS));
+            }
             return segment;
         } catch (InvalidProtocolBufferException e) {
             throw Throwables.propagate(e);

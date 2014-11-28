@@ -10,7 +10,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import org.apache.cassandra.utils.Hex;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
@@ -27,7 +26,6 @@ import com.google.common.collect.Iterables;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.persistence.cassandra.CassandraDataStaxClient;
 import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
