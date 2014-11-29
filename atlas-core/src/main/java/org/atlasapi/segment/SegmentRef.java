@@ -22,7 +22,7 @@ public class SegmentRef extends ResourceRef {
 
     @Override
     public ResourceType getResourceType() {
-        return null;
+        return ResourceType.SEGMENT;
     }
 
     @Override
