@@ -46,7 +46,7 @@ public class RelatedLinkSerializer {
         return relatedLink;
     }
 
-    public Function<RelatedLink, ContentProtos.RelatedLink> TO_PROTO =
+    public final Function<RelatedLink, ContentProtos.RelatedLink> TO_PROTO =
             new Function<RelatedLink, ContentProtos.RelatedLink>() {
                 @Nullable
                 @Override
@@ -55,7 +55,7 @@ public class RelatedLinkSerializer {
                 }
             };
 
-    public Function<ContentProtos.RelatedLink, RelatedLink> FROM_PROTO =
+    public final Function<ContentProtos.RelatedLink, RelatedLink> FROM_PROTO =
             new Function<ContentProtos.RelatedLink, RelatedLink>() {
                 @Nullable
                 @Override

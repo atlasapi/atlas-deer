@@ -1,6 +1,7 @@
 package org.atlasapi.segment;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Identified;
@@ -88,5 +89,4 @@ public class SegmentEvent extends Identified {
         }
         
     };
-    
 }

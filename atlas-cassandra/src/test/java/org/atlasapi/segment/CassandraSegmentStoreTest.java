@@ -11,6 +11,8 @@ import org.junit.Test;
 
 import com.datastax.driver.core.Session;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
@@ -63,6 +65,7 @@ public class CassandraSegmentStoreTest {
     };
 
     private SegmentStore segmentStore;
+
     @Before
     public void setUp() throws Exception {
         testPersistenceModule.startAsync().awaitRunning();
@@ -80,7 +83,9 @@ public class CassandraSegmentStoreTest {
         segment.setType(SegmentType.VIDEO);
         segment.setPublisher(Publisher.BBC);
         segmentStore.writeSegment(segment);
-        Optional<Segment> writtenSegment = segmentStore.resolveSegment(id);
+        Optional<Segment> writtenSegment = Optional.fromNullable(
+                Iterables.getOnlyElement(segmentStore.resolveSegments(ImmutableList.of(id)), null)
+        );
         assertTrue(writtenSegment.isPresent());
         assertTrue(writtenSegment.get().equals(segment));
     }

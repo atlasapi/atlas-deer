@@ -38,8 +38,10 @@ public class LegacySegmentMigrator {
 
     public WriteResult<org.atlasapi.segment.Segment, org.atlasapi.segment.Segment> migrateLegacySegment(Id legacyId)
             throws UnresolvedLegacySegmentException {
+
         log.trace("Attempting to resolve legacy segment with ID: {} in Deer first", legacyId);
-        Optional<Segment> existingSegment = segmentStore.resolveSegment(legacyId);
+        Iterable<Segment> segments = segmentStore.resolveSegments(ImmutableList.of(legacyId));
+        Optional<Segment> existingSegment = Optional.fromNullable(Iterables.getOnlyElement(segments, null));
 
         if (existingSegment.isPresent()) {
             log.trace("Legacy segment already present in Deer, returning...");
@@ -55,11 +57,13 @@ public class LegacySegmentMigrator {
     }
 
     private org.atlasapi.media.segment.Segment resolveLegacySegment(Id legacyId) throws UnresolvedLegacySegmentException {
-        log.trace("Resolving legacy segment with ID: " + legacyId.longValue());
+        checkNotNull(legacyId, "Cannot resolve null legacy segment ID");
+
+        log.trace("Resolving legacy segment in Owl with ID: " + legacyId.longValue());
+
         Maybe<org.atlasapi.media.segment.Segment> maybeSegment = Iterables.getOnlyElement(
-                legacySegmentResolver.resolveById(
-                        Iterables.transform(ImmutableList.of(legacyId), ID_TO_SEGMENT_REF)
-                ).entrySet(), null).getValue();
+                        legacySegmentResolver.resolveById(ImmutableList.of(ID_TO_SEGMENT_REF.apply(legacyId))).entrySet()
+                ).getValue();
 
         if (maybeSegment == null || maybeSegment.isNothing()) {
             throw new UnresolvedLegacySegmentException("Unable to resolve Segment using ID: " + legacyId.longValue());

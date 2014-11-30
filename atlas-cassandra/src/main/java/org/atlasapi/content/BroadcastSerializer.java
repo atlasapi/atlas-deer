@@ -68,7 +68,6 @@ public class BroadcastSerializer {
         }
         return builder;
     }
-    
 
     public Broadcast deserialize(ContentProtos.Broadcast msg) {
         Broadcast broadcast = new Broadcast(Id.valueOf(msg.getChannel().getId()),
@@ -94,5 +93,4 @@ public class BroadcastSerializer {
         broadcast.setVersionId(msg.hasVersion() ? msg.getVersion() : null);
         return broadcast;
     }
-    
 }

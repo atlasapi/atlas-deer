@@ -6,6 +6,6 @@ import com.google.common.base.Optional;
 
 public interface SegmentResolver {
 
-    Optional<Segment> resolveSegment(Id id);
+    Iterable<Segment> resolveSegments(Iterable<Id> id);
 
 }

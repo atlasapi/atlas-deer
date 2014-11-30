@@ -1,6 +1,6 @@
 package org.atlasapi.segment;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -17,11 +17,12 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraUtil;
 
-import com.datastax.driver.core.Row;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Equivalence;
-import com.google.common.base.Optional;
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.persistence.cassandra.CassandraDataStaxClient;
@@ -75,7 +76,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
         Segment previous = null;
         if (id != null) {
-            previous = resolveSegment(id).orNull();
+            previous = Iterables.getOnlyElement(resolveSegments(ImmutableList.of(id)), null);
             if (previous != null) {
                 return previous;
             }
@@ -85,7 +86,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
             Set<Long> aliasIds = aliasIndex.readAliases(source, aliases);
             Long aliasId = Iterables.getFirst(aliasIds, null);
             if (aliasId != null) {
-                return resolveSegment(Id.valueOf(aliasId)).orNull();
+                return Iterables.getOnlyElement(resolveSegments(ImmutableList.of(Id.valueOf(aliasId))), null);
             }
         } catch (ConnectionException e) {
             throw Throwables.propagate(e);
@@ -95,20 +96,35 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     }
 
     @Override
-    public Optional<Segment> resolveSegment(Id id) {
+    public Iterable<Segment> resolveSegments(Iterable<Id> ids) {
         String query = select().from(keyspace, tableName)
-                .where(eq(CassandraUtil.KEY, id.longValue()))
+                .where(in(CassandraUtil.KEY, idsToArray(ids)))
+                .setForceNoValues(true)
                 .getQueryString();
-        Row result = cassandra.executeReadQuery(query).one();
+        ResultSet rows = cassandra.executeReadQuery(query);
 
-        if (result == null) {
-            return Optional.absent();
+        if (rows == null || rows.isExhausted()) {
+            return ImmutableList.of();
         }
 
-        ByteBuffer buffer = result.getBytes(CassandraUtil.VALUE).slice();
-        byte[] bytes = new byte[buffer.limit()];
-        buffer.get(bytes, 0, buffer.limit());
-        return Optional.of(segmentSerializer.deserialize(bytes));
+        ImmutableList.Builder<Segment> list = ImmutableList.builder();
+        while (!rows.isExhausted()) {
+            ByteBuffer buffer = rows.one().getBytes(CassandraUtil.VALUE).slice();
+            byte[] bytes = new byte[buffer.limit()];
+            buffer.get(bytes, 0, buffer.limit());
+            list.add(segmentSerializer.deserialize(bytes));
+        }
+        return list.build();
+    }
+
+    private Long[] idsToArray(Iterable<Id> ids) {
+        return Iterables.toArray(Iterables.transform(ids, new Function<Id, Long>() {
+            @Nullable
+            @Override
+            public Long apply(@Nullable Id input) {
+                return input.longValue();
+            }
+        }), Long.class);
     }
 
     public static Builder builder() {

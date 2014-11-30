@@ -37,5 +37,4 @@ public class TopicRefSerializer {
             ref.hasRelationship() ? TopicRef.Relationship.fromString(ref.getRelationship()).get() : null,
             ref.hasOffset() ? ref.getOffset() : null);
     }
-    
 }
