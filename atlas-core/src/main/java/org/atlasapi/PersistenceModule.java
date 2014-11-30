@@ -5,6 +5,7 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
+import org.atlasapi.segment.SegmentStore;
 import org.atlasapi.topic.TopicStore;
 
 public interface PersistenceModule {
@@ -15,10 +16,13 @@ public interface PersistenceModule {
 
     ScheduleStore scheduleStore();
     
+    SegmentStore segmentStore();
+
     EquivalenceGraphStore contentEquivalenceGraphStore();
-    
+
     EquivalentContentStore equivalentContentStore();
-    
+
     EquivalentScheduleStore equivalentScheduleStore();
-    
+
+
 }

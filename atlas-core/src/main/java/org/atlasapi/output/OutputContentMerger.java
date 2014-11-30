@@ -33,6 +33,7 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.SeriesAndEpisodeNumber;
 import org.atlasapi.equivalence.SeriesOrder;
+import org.atlasapi.segment.SegmentEvent;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -48,7 +49,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 
 
-public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
+public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     
     private static final Ordering<Episode> SERIES_ORDER = Ordering.from(new SeriesOrder());
 
@@ -277,8 +278,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Item> void mergeVersions(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
         // if chosen has broadcasts, merge the set of broadcasts from notChosen
         Set<Broadcast> chosenBroadcasts = Sets.newHashSet(chosen.getBroadcasts());
+        List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
         if (!chosenBroadcasts.isEmpty()) {
-            List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
             for (Broadcast chosenBroadcast : chosenBroadcasts) {
                 matchAndMerge(chosenBroadcast, notChosenOrdered);
             }
@@ -287,6 +288,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         for (T notChosenItem : notChosen) {
             notChosenItem.setBroadcasts(Sets.<Broadcast>newHashSet());
             encodings.addAll(notChosenItem.getManifestedAs());
+        }
+        Set<SegmentEvent> segmentEvents = Sets.newHashSet(chosen.getSegmentEvents());
+        for (T notChosenItem : notChosenOrdered) {
+            segmentEvents.addAll(notChosenItem.getSegmentEvents());
+            chosen.setSegmentEvents(segmentEvents);
         }
         chosen.setManifestedAs(encodings);
     }

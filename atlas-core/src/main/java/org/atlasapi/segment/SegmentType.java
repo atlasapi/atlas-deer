@@ -10,7 +10,8 @@ import com.metabroadcast.common.base.Maybe;
 public enum SegmentType {
 
     MUSIC("music"),
-    SPEECH("speech");
+    SPEECH("speech"),
+    VIDEO("video");
     
     private final String display;
 

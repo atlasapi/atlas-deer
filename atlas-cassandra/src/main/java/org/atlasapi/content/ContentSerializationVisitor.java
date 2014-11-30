@@ -111,6 +111,9 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
         if (content.getSpecialization() != null) {
             builder.setSpecialization(content.getSpecialization().toString());
         }
+        for (RelatedLink relatedLink : content.getRelatedLinks()) {
+            builder.addRelatedLink(relatedLinkSerializer.serialize(relatedLink));
+        }
         return builder;
     }
 
@@ -136,10 +139,6 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
         
         for (KeyPhrase keyPhrase : content.getKeyPhrases()) {
             builder.addKeyPhrases(keyPhraseSerializer.serialize(keyPhrase));
-        }
-        
-        for (RelatedLink relatedLink : content.getRelatedLinks()) {
-            builder.addRelatedLink(relatedLinkSerializer.serialize(relatedLink));
         }
         
         for (TopicRef topicRef : content.getTopicRefs()) {

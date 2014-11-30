@@ -19,7 +19,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.queue.Worker;
 
 public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
-    
+
     private static final int maxAttempts = 3;
 
     private final Logger log = LoggerFactory.getLogger(ContentReadWriteWorker.class);
@@ -40,7 +40,7 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
     private void readAndWrite(Id id) {
         readAndWrite(id, 0);
     }
-    
+
     private void readAndWrite(final Id id, final int attempt) {
         if (attempt >= maxAttempts) {
             throw new RuntimeException(String.format("Failed to write %s in %s attempts", id, maxAttempts));
@@ -60,7 +60,7 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
                     } catch (MissingResourceException mre) {
                         log.warn("missing {} for {}, re-attempting", mre.getMissingId(), content);
                         readAndWrite(mre.getMissingId());
-                        readAndWrite(id, attempt+1);
+                        readAndWrite(id, attempt + 1);
                     } catch (WriteException we) {
                         log.error("failed to write " + id + "-" + content, we);
                     }
@@ -69,10 +69,10 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
             @Override
             public void onFailure(Throwable t) {
-            	log.error("Failed to resolve id" + id);
+                log.error("Failed to resolve id" + id);
             }
         });
     }
-    
-    
+
+
 }

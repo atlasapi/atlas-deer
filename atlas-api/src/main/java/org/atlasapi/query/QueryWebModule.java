@@ -22,11 +22,13 @@ import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.PEOPLE;
 import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
+import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
 import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
 import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
 import static org.atlasapi.annotation.Annotation.TOPICS;
 
+import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
@@ -38,6 +40,8 @@ import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.SegmentRelatedLinkMerger;
+import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
 import org.atlasapi.output.annotation.BrandReferenceAnnotation;
 import org.atlasapi.output.annotation.BrandSummaryAnnotation;
@@ -59,6 +63,7 @@ import org.atlasapi.output.annotation.NextBroadcastAnnotation;
 import org.atlasapi.output.annotation.NullWriter;
 import org.atlasapi.output.annotation.PeopleAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
+import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
@@ -131,6 +136,8 @@ public class QueryWebModule {
     private @Autowired UserFetcher userFetcher;
 
     private @Autowired ApplicationSourcesFetcher configFetcher;
+
+    private @Autowired AtlasPersistenceModule persistenceModule;
 
     @Bean NumberToShortStringCodec idCodec() {
         return SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -272,7 +279,7 @@ public class QueryWebModule {
             .register(PEOPLE, new PeopleAnnotation(), commonImplied)
             .register(TOPICS, new TopicsAnnotation(topicResolver, topicListWriter()), commonImplied)
             //.register(CONTENT_GROUPS, new ContentGroupsAnnotation(contentGroupResolver), commonImplied)
-            //.register(SEGMENT_EVENTS, new SegmentEventsAnnotation(segmentResolver), commonImplied)
+            .register(SEGMENT_EVENTS, new SegmentEventsAnnotation(segmentRelatedLinkMergingFetcher()), commonImplied)
             .register(RELATED_LINKS, new RelatedLinksAnnotation(), commonImplied)
             .register(KEY_PHRASES, new KeyPhrasesAnnotation(), commonImplied)
             .register(LOCATIONS, new LocationsAnnotation(), commonImplied)
@@ -301,8 +308,12 @@ public class QueryWebModule {
             .register(DESCRIPTION, new DescriptionAnnotation<Topic>(), ImmutableSet.of(ID))
             .build());
     }
-    
+
     @Bean
+    SegmentRelatedLinkMergingFetcher segmentRelatedLinkMergingFetcher() {
+        return new SegmentRelatedLinkMergingFetcher(persistenceModule.segmentStore(), new SegmentRelatedLinkMerger());
+    }
+
     protected EntityListWriter<Channel> channelListWriter() {
         return new ChannelListWriter(AnnotationRegistry.<Channel>builder()
 //            .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))

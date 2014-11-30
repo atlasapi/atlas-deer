@@ -174,7 +174,7 @@ message Location {
 
 message SegmentEvent {
     optional string segment = 10;
-    optional int64 segmentRef = 11;
+    optional SegmentRef segmentRef = 11;
     optional string version = 9;
     optional string uri = 1;
     optional int32 position = 2;
@@ -184,6 +184,11 @@ message SegmentEvent {
     optional string description = 6;
     optional string image = 7;
     optional string thumbnail = 8;
+}
+
+message SegmentRef {
+    optional int64 segmentRef = 1;
+    optional string source = 2;
 }
 
 message Synopsis {

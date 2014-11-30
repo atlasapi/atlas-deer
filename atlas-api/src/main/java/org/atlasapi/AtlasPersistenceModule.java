@@ -23,6 +23,7 @@ import org.atlasapi.messaging.MessagingModule;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
+import org.atlasapi.segment.SegmentStore;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
@@ -88,7 +89,6 @@ public class AtlasPersistenceModule {
         context.start();
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds);
         cassandraService.startAsync().awaitRunning();
-        
         return new CassandraPersistenceModule(messaging.messageSenderFactory(),
                 context,
                 cassandraService,
@@ -98,7 +98,9 @@ public class AtlasPersistenceModule {
                     public String hash(Content content) {
                         return UUID.randomUUID().toString();
                     }
-                });
+                },
+                seeds
+        );
     }
     
     @Bean
@@ -115,7 +117,10 @@ public class AtlasPersistenceModule {
     public ScheduleStore scheduleStore() {
         return persistenceModule().scheduleStore();
     }
-    
+
+    @Bean
+    public SegmentStore segmentStore() { return persistenceModule().segmentStore(); }
+
     @Bean
     public EquivalenceGraphStore getContentEquivalenceGraphStore() {
         return persistenceModule().contentEquivalenceGraphStore();

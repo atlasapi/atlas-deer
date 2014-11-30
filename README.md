@@ -17,13 +17,13 @@ Development installation
 You will need:
   * Maven 3
   * Google’s protocol buffer compiler, protoc, on your path (see bug below if you have trouble compiling protoc).
-  * ElasticSearch 0.19.8 (http://www.elasticsearch.org/downloads/0-19-8/)
+  * ElasticSearch (Check the atlas-elasticsearch POM and find the current client version used, you need the same version - both major and minor must match).
   * The current version of the 2.0.x release of Cassandra (http://planetcassandra.org/cassandra/) and latest cqlsh
   * The latest version of MongoDB (http://www.mongodb.org/)
 
 * Make sure the protobuf library version specified in the atlas-cassandra/pom.xml matches the output of protoc —version
 * Start Cassandra locally on the standard port
-* Start ElasticSearch
+* Start ElasticSearch (check the cluster name in dev.properties and change your elasticsearch.yml in /config/ to match)
 * Run mvn package in the project directory
 
 At this stage you hopefully have successfully obtained war files.

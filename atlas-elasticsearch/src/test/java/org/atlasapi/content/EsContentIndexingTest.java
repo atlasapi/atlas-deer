@@ -55,7 +55,7 @@ public final class EsContentIndexingTest {
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient);
         contentIndexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000);
-        contentIndexer.startAsync().awaitRunning(10, TimeUnit.SECONDS);
+        contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     
     @After

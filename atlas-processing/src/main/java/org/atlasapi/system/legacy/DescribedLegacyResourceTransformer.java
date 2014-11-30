@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
@@ -111,6 +112,10 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
     }
 
     private Iterable<Image> transformImages(Set<org.atlasapi.media.entity.Image> images) {
+        if (images == null) {
+            return ImmutableList.of();
+        }
+
         return Iterables.transform(images, new Function<org.atlasapi.media.entity.Image, Image>() {
             @Override
             public Image apply(org.atlasapi.media.entity.Image input) {
@@ -155,6 +160,4 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
             }
         ));
     }
-
-    
 }

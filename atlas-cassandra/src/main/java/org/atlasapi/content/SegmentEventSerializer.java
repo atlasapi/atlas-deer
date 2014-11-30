@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.serialization.protobuf.ContentProtos;
@@ -23,8 +24,8 @@ public class SegmentEventSerializer {
         if (event.getPosition() != null) {
             builder.setPosition(event.getPosition());
         }
-        if (event.getSegment() != null) {
-            builder.setSegmentRef(event.getSegment().getId().longValue());
+        if (event.getSegmentRef() != null) {
+            builder.setSegmentRef(serialize(event.getSegmentRef()));
         }
         Description desc = event.getDescription();
         if (desc != null) {
@@ -36,6 +37,15 @@ public class SegmentEventSerializer {
         return builder;
     }
 
+    private ContentProtos.SegmentRef serialize(SegmentRef ref) {
+        ContentProtos.SegmentRef.Builder builder = ContentProtos.SegmentRef.newBuilder();
+        if (ref.getPublisher() != null) {
+            builder.setSource(ref.getPublisher().key());
+        }
+        builder.setSegmentRef(ref.getId().longValue());
+        return builder.build();
+    }
+
     public SegmentEvent deserialize(ContentProtos.SegmentEvent msg) {
         SegmentEvent event = new SegmentEvent();
         event.setCanonicalUri(msg.hasUri() ? msg.getUri() : null);
@@ -45,7 +55,7 @@ public class SegmentEventSerializer {
         }
         event.setPosition(msg.hasPosition() ? msg.getPosition() : null);
         if (msg.hasSegmentRef()) {
-            event.setSegment(new SegmentRef(Id.valueOf(msg.getSegmentRef())));
+            event.setSegment(deserialize(msg.getSegmentRef()));
         }
         Description desc = new Description(
             msg.hasTitle() ? msg.getTitle() : null,
@@ -57,4 +67,7 @@ public class SegmentEventSerializer {
         return event;
     }
 
+    private SegmentRef deserialize(ContentProtos.SegmentRef msg) {
+        return new SegmentRef(Id.valueOf(msg.getSegmentRef()), Publisher.fromKey(msg.getSource()).requireValue());
+    }
 }

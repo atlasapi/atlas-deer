@@ -22,6 +22,7 @@ import org.atlasapi.content.TransportSubType;
 import org.atlasapi.content.TransportType;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Brand;
@@ -37,6 +38,7 @@ import org.atlasapi.media.entity.Series;
 import org.atlasapi.media.entity.Song;
 import org.atlasapi.media.entity.Subtitles;
 import org.atlasapi.media.entity.Version;
+import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.joda.time.DateTime;
@@ -55,9 +57,11 @@ import com.metabroadcast.common.time.DateTimeZones;
 public class LegacyContentTransformer extends DescribedLegacyResourceTransformer<Content, org.atlasapi.content.Content> {
 
     private final ChannelResolver channelResolver;
+    private final LegacySegmentMigrator legacySegmentMigrator;
 
-    public LegacyContentTransformer(ChannelResolver channelResolver) {
+    public LegacyContentTransformer(ChannelResolver channelResolver, LegacySegmentMigrator segmentMigrator) {
         this.channelResolver = checkNotNull(channelResolver);
+        this.legacySegmentMigrator = checkNotNull(segmentMigrator);
     }
     
     @Override
@@ -212,7 +216,11 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         Set<SegmentEvent> segEvents = Sets.newHashSet();
         for (Version version : versions) {
             for (org.atlasapi.media.segment.SegmentEvent segementEvent : version.getSegmentEvents()) {
-                segEvents.add(transformSegmentEvent(segementEvent, version));
+                try {
+                    segEvents.add(transformSegmentEvent(segementEvent, version));
+                } catch (UnresolvedLegacySegmentException e) {
+                    log.warn("Failed to transform legacy segment - {}", e.toString());
+                }
             }
         }
         return segEvents;
@@ -230,7 +238,9 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         );
     }
 
-    private SegmentEvent transformSegmentEvent(org.atlasapi.media.segment.SegmentEvent input, Version version) {
+    private SegmentEvent transformSegmentEvent(org.atlasapi.media.segment.SegmentEvent input, Version version)
+            throws UnresolvedLegacySegmentException {
+
         SegmentEvent se = new SegmentEvent();
         setIdentifiedFields(se, input);
         se.setOffset(input.getOffset());
@@ -238,7 +248,9 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         org.atlasapi.media.entity.Description d = input.getDescription();
         se.setDescription(new Description(d.getTitle(), d.getSynopsis(), d.getImage(), d.getThumbnail()));
         org.atlasapi.media.segment.SegmentRef sr = input.getSegment();
-        se.setSegment(new SegmentRef(Id.valueOf(sr.identifier())));
+        Id segmentId = Id.valueOf(sr.identifier());
+        WriteResult<Segment, Segment> legacyMigrationResult = legacySegmentMigrator.migrateLegacySegment(segmentId);
+        se.setSegment(new SegmentRef(segmentId, legacyMigrationResult.getResource().getPublisher()));
         se.setVersionId(version.getCanonicalUri());
         return se;
     }
