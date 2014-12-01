@@ -3,9 +3,6 @@ package org.atlasapi.segment;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.content.Described;
-import org.atlasapi.content.Description;
-import org.atlasapi.content.Identified;
-import org.atlasapi.media.entity.Publisher;
 import org.joda.time.Duration;
 
 import com.google.common.base.Function;
@@ -14,10 +11,10 @@ public class Segment extends Described {
 
     private SegmentType type;
     private Duration duration;
-    private Publisher publisher;
 
     public SegmentRef toRef() {
-        return new SegmentRef(checkNotNull(this.getId(), "Can't create reference for segment without ID"));
+        return new SegmentRef(checkNotNull(this.getId(),
+                "Can't create reference for segment without ID"), publisher);
     }
 
     public SegmentType getType() {
@@ -34,14 +31,6 @@ public class Segment extends Described {
 
     public void setDuration(Duration duration) {
         this.duration = duration;
-    }
-
-    public Publisher getPublisher() {
-        return this.publisher;
-    }
-
-    public void setPublisher(Publisher publisher) {
-        this.publisher = publisher;
     }
 
     @Override

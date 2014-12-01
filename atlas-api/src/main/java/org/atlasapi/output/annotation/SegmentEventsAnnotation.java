@@ -1,27 +1,37 @@
 package org.atlasapi.output.annotation;
 
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
-import org.atlasapi.media.segment.SegmentResolver;
+import org.atlasapi.content.Item;
+import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.SegmentAndEventTuple;
+import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
+import org.atlasapi.output.writers.SegmentEventWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
 
-    private final SegmentResolver segmentResolver;
+    private final SegmentRelatedLinkMergingFetcher linkMergingFetcher;
+    private final EntityListWriter<SegmentAndEventTuple> writer =
+            new SegmentEventWriter();
 
-    public SegmentEventsAnnotation(SegmentResolver segmentResolver) {
-        super();
-        this.segmentResolver = segmentResolver;
+    public SegmentEventsAnnotation(SegmentRelatedLinkMergingFetcher linkMergingFetcher) {
+        this.linkMergingFetcher = checkNotNull(linkMergingFetcher);
     }
 
     @Override
     public void write(Content entity, FieldWriter format, OutputContext ctxt) throws IOException {
-        // TODO Auto-generated method stub
-        
+        if (entity instanceof Item) {
+            SegmentAndEventTuple eventTuple = linkMergingFetcher.mergeSegmentLinks((Item) entity);
+            writer.write(eventTuple, format, ctxt);
+        }
     }
-
 }

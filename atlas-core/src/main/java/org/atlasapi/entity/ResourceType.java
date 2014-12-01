@@ -2,6 +2,7 @@ package org.atlasapi.entity;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Identified;
+import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.Topic;
 
 import com.google.common.base.Function;
@@ -15,7 +16,8 @@ import com.metabroadcast.common.collect.OptionalMap;
 
 public enum ResourceType {
     CONTENT(Content.class),
-    TOPIC(Topic.class)
+    TOPIC(Topic.class),
+    SEGMENT(Segment.class),
     ;
 
     private Class<? extends Identified> cls;

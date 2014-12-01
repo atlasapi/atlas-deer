@@ -320,5 +320,5 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     public Content visit(Clip clip) {
         return visitItem(clip);
     }
-    
+
 }

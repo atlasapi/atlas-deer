@@ -53,5 +53,4 @@ public class ContentController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
 }

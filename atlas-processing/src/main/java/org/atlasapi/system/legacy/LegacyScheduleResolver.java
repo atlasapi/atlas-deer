@@ -31,9 +31,10 @@ public class LegacyScheduleResolver implements ScheduleResolver {
     private final org.atlasapi.persistence.content.ScheduleResolver legacyResolver;
     private final LegacyContentTransformer transformer;
 
-    public LegacyScheduleResolver(org.atlasapi.persistence.content.ScheduleResolver legacyResolver, ChannelResolver channelResolver) {
+    public LegacyScheduleResolver(org.atlasapi.persistence.content.ScheduleResolver legacyResolver, LegacySegmentMigrator legacySegmentMigrator,
+                                  ChannelResolver channelResolver) {
         this.legacyResolver = checkNotNull(legacyResolver);
-        this.transformer = new LegacyContentTransformer(channelResolver);
+        this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
     }
 
     @Override

@@ -292,7 +292,7 @@ public class ContentSerializerTest {
     
     private SegmentEvent segmentEvent(Long segmentId) {
         SegmentEvent event = new SegmentEvent();
-        event.setSegment(new SegmentRef(Id.valueOf(segmentId)));
+        event.setSegment(new SegmentRef(Id.valueOf(segmentId), Publisher.BBC));
         return event;
     }
 

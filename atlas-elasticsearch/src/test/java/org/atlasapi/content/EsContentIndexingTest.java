@@ -55,7 +55,7 @@ public final class EsContentIndexingTest {
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient);
         contentIndexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000);
-        contentIndexer.startAsync().awaitRunning(10, TimeUnit.SECONDS);
+        contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     
     @After
@@ -145,7 +145,7 @@ public final class EsContentIndexingTest {
             .execute();
         
         
-        SearchResponse result = futureResult.actionGet(1, TimeUnit.SECONDS);
+        SearchResponse result = futureResult.actionGet(5, TimeUnit.SECONDS);
         Facets facets = result.getFacets();
         List<? extends Entry> terms = facets.facet(TermsFacet.class, "topicFacet").getEntries();
 
