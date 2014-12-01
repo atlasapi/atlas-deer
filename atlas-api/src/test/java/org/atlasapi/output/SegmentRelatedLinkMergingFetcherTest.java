@@ -21,6 +21,7 @@ import org.mockito.Mock;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 public class SegmentRelatedLinkMergingFetcherTest {
 
@@ -92,6 +93,7 @@ public class SegmentRelatedLinkMergingFetcherTest {
         SegmentAndEventTuple segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item);
 
         assertTrue(segmentAndEventTuple.getSegment().getRelatedLinks().size() == 6);
+        assertTrue(Sets.intersection(segmentFour().getRelatedLinks(), segmentAndEventTuple.getSegment().getRelatedLinks()).isEmpty());
     }
 
     private ImmutableList<SegmentEvent> segmentEvents() {
