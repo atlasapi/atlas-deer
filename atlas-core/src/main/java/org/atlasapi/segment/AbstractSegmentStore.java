@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Equivalence;
+import com.google.common.base.Optional;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
@@ -100,9 +101,9 @@ abstract public class AbstractSegmentStore implements SegmentStore {
     }
 
     private Segment getPreviousSegment(Segment segment) {
-        return resolvePrevious(segment.getId(), segment.getPublisher(), segment.getAliases());
+        return resolvePrevious(segment.getId(), segment.getPublisher(), segment.getAliases()).orNull();
     }
 
     @Nullable
-    protected abstract Segment resolvePrevious(Id id, Publisher source, Set<Alias> aliases);
+    protected abstract Optional<Segment> resolvePrevious(Id id, Publisher source, Set<Alias> aliases);
 }

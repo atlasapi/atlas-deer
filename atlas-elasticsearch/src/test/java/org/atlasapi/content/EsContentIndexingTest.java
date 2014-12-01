@@ -145,7 +145,7 @@ public final class EsContentIndexingTest {
             .execute();
         
         
-        SearchResponse result = futureResult.actionGet(1, TimeUnit.SECONDS);
+        SearchResponse result = futureResult.actionGet(5, TimeUnit.SECONDS);
         Facets facets = result.getFacets();
         List<? extends Entry> terms = facets.facet(TermsFacet.class, "topicFacet").getEntries();
 

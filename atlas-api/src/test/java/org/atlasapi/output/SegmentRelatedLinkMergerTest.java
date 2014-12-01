@@ -36,12 +36,6 @@ public class SegmentRelatedLinkMergerTest {
     private SegmentEvent selectedSegmentEvent;
     private Multimap<Segment, SegmentEvent> segmentMap = HashMultimap.create();
 
-
-    @Before
-    public void setUp() throws Exception {
-
-    }
-
     @Test
     public void testOverlappingSegmentRelatedLinksAreReturnedInSortedOrder() throws Exception {
         selectedSegment = new Segment();

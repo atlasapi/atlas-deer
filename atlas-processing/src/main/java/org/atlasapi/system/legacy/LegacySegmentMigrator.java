@@ -36,7 +36,7 @@ public class LegacySegmentMigrator {
         this.segmentStore = checkNotNull(segmentStore);
     }
 
-    public WriteResult<org.atlasapi.segment.Segment, org.atlasapi.segment.Segment> migrateLegacySegment(Id legacyId)
+    public WriteResult<Segment, Segment> migrateLegacySegment(Id legacyId)
             throws UnresolvedLegacySegmentException {
 
         log.trace("Attempting to resolve legacy segment with ID: {} in Deer first", legacyId);

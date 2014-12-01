@@ -44,8 +44,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
 
-    // private String segmentChanges = Configurer.get("messaging.destination.segment.changes").get();
-
     private Boolean processing = Objects.firstNonNull(Configurer.get("processing.config"), Parameter.valueOf("false")).toBoolean();
 
     private final String keyspace;
@@ -95,12 +93,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withDataStaxClient(dataStaxClient)
                 .withIdGenerator(idGeneratorBuilder.generator("segment"))
                 .withMessageSender(nullMessageSender())
-                .withEquivalence(segmentEquivalence())
+                .withEquivalence(alwaysFalseSegmentEquivalence())
                 .build();
         this.dataStaxService = datastaxCassandraService;
     }
 
-    private Equivalence<Segment> segmentEquivalence() {
+    private Equivalence<Segment> alwaysFalseSegmentEquivalence() {
         return new Equivalence<Segment>() {
             @Override
             protected boolean doEquivalent(Segment target, Segment candidate) {

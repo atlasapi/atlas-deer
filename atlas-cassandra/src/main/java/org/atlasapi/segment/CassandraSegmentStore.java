@@ -21,6 +21,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Equivalence;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -40,7 +41,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     private final String tableName;
     private final SegmentSerializer segmentSerializer = new SegmentSerializer();
 
-    public CassandraSegmentStore(CassandraDataStaxClient cassandra, String keyspace, String tableName,
+    private CassandraSegmentStore(CassandraDataStaxClient cassandra, String keyspace, String tableName,
                                  AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
                                  Equivalence<? super Segment> equivalence,
                                  MessageSender<ResourceUpdatedMessage> sender) {
@@ -72,27 +73,30 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
     @Nullable
     @Override
-    protected Segment resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases) {
+    protected Optional<Segment> resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases) {
 
         Segment previous = null;
         if (id != null) {
             previous = Iterables.getOnlyElement(resolveSegments(ImmutableList.of(id)), null);
             if (previous != null) {
-                return previous;
+                return Optional.of(previous);
             }
         }
 
+        return Optional.fromNullable(resolveByAlias(source, aliases));
+    }
+
+    private Segment resolveByAlias(Publisher source, Set<Alias> aliases) {
         try {
             Set<Long> aliasIds = aliasIndex.readAliases(source, aliases);
             Long aliasId = Iterables.getFirst(aliasIds, null);
-            if (aliasId != null) {
-                return Iterables.getOnlyElement(resolveSegments(ImmutableList.of(Id.valueOf(aliasId))), null);
+            if (aliasId == null) {
+                return null;
             }
+            return Iterables.getOnlyElement(resolveSegments(ImmutableList.of(Id.valueOf(aliasId))), null);
         } catch (ConnectionException e) {
             throw Throwables.propagate(e);
         }
-
-        return null;
     }
 
     @Override
