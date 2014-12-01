@@ -4,12 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nullable;
 
 import org.atlasapi.content.Item;
-import org.atlasapi.content.RelatedLink;
 import org.atlasapi.entity.Id;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
@@ -18,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -28,6 +23,20 @@ import com.google.common.collect.Multimaps;
 
 public class SegmentRelatedLinkMergingFetcher {
 
+    public static final Function<Segment, Id> SEGMENT_TO_ID = new Function<Segment, Id>() {
+
+        @Override
+        public Id apply(Segment input) {
+            return input.getId();
+        }
+    };
+    public static final Function<SegmentEvent, Id> SEG_EVENT_TO_SEG_ID = new Function<SegmentEvent, Id>() {
+
+        @Override
+        public Id apply(SegmentEvent input) {
+            return input.getId();
+        }
+    };
     private final SegmentRelatedLinkMerger segmentRelatedLinkMerger;
     private final SegmentResolver segmentResolver;
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -37,7 +46,7 @@ public class SegmentRelatedLinkMergingFetcher {
         this.segmentRelatedLinkMerger = checkNotNull(segmentRelatedLinkMerger);
     }
 
-    public ImmutableList<RelatedLink> fetchAndMergeRelatedLinks(Item item) {
+    public SegmentAndEventTuple mergeSegmentLinks(Item item) {
         List<SegmentEvent> segmentEvents = item.getSegmentEvents();
         ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
         SegmentEvent selectedSegmentEvent = Iterables.getFirst(segmentEvents, null);
@@ -47,30 +56,25 @@ public class SegmentRelatedLinkMergingFetcher {
             log.warn("Failed to resolve selected segment {}",
                     Iterables.getOnlyElement(segmentMap.inverse().get(segmentEvents.get(0))).getId()
             );
-            return ImmutableList.of();
+            return new SegmentAndEventTuple(null, selectedSegmentEvent);
         }
 
-        return segmentRelatedLinkMerger.getLinks(
+        selectedSegment.setRelatedLinks(segmentRelatedLinkMerger.getLinks(
                 selectedSegment, selectedSegmentEvent, resolveSegments(segmentEvents)
-        );
+        ));
+        return new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent);
     }
 
-    private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(List<SegmentEvent> segmentEvents) {
-        ImmutableListMultimap<Id, SegmentEvent> segmentEventToSegmentIds = Multimaps.index(segmentEvents, new Function<SegmentEvent, Id>() {
+    private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(final List<SegmentEvent> segmentEvents) {
+        final ImmutableListMultimap<Id, SegmentEvent> segmentEventToSegmentIds = Multimaps.index(
+                segmentEvents,
+                SEG_EVENT_TO_SEG_ID
+        );
 
-            @Override
-            public Id apply(SegmentEvent input) {
-                return input.getId();
-            }
-        });
-
-        final ImmutableMap<Id, Segment> segmentsToIds = Maps.uniqueIndex(segmentResolver.resolveSegments(segmentEventToSegmentIds.keySet()), new Function<Segment, Id>() {
-
-            @Override
-            public Id apply(Segment input) {
-                return input.getId();
-            }
-        });
+        final ImmutableMap<Id, Segment> segmentsToIds = Maps.uniqueIndex(
+                segmentResolver.resolveSegments(segmentEventToSegmentIds.keySet()),
+                SEGMENT_TO_ID
+        );
 
         ImmutableMultimap.Builder<Segment, SegmentEvent> segmentMappngs = ImmutableMultimap.builder();
         for (Map.Entry<Id, SegmentEvent> entry : segmentEventToSegmentIds.entries()) {

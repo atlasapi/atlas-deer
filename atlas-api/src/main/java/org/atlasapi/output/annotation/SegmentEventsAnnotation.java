@@ -4,39 +4,24 @@ package org.atlasapi.output.annotation;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nullable;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.RelatedLink;
-import org.atlasapi.entity.Id;
+import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.output.SegmentRelatedLinkMerger;
+import org.atlasapi.output.SegmentAndEventTuple;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
-import org.atlasapi.segment.Segment;
-import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.segment.SegmentResolver;
+import org.atlasapi.output.writers.SegmentEventWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimaps;
 
 
 public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
 
     private final SegmentRelatedLinkMergingFetcher linkMergingFetcher;
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final EntityListWriter<SegmentAndEventTuple> writer =
+            new SegmentEventWriter();
 
     public SegmentEventsAnnotation(SegmentRelatedLinkMergingFetcher linkMergingFetcher) {
         this.linkMergingFetcher = checkNotNull(linkMergingFetcher);
@@ -44,9 +29,9 @@ public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
 
     @Override
     public void write(Content entity, FieldWriter format, OutputContext ctxt) throws IOException {
-        //TODO this;
         if (entity instanceof Item) {
-            ImmutableList<RelatedLink> links = linkMergingFetcher.fetchAndMergeRelatedLinks((Item) entity);
+            SegmentAndEventTuple eventTuple = linkMergingFetcher.mergeSegmentLinks((Item) entity);
+            writer.write(eventTuple, format, ctxt);
         }
     }
 }
