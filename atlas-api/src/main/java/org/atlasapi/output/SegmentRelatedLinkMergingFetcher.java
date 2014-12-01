@@ -34,7 +34,7 @@ public class SegmentRelatedLinkMergingFetcher {
 
         @Override
         public Id apply(SegmentEvent input) {
-            return input.getId();
+            return input.getSegmentRef().getId();
         }
     };
     private final SegmentRelatedLinkMerger segmentRelatedLinkMerger;
@@ -70,7 +70,6 @@ public class SegmentRelatedLinkMergingFetcher {
                 segmentEvents,
                 SEG_EVENT_TO_SEG_ID
         );
-
         final ImmutableMap<Id, Segment> segmentsToIds = Maps.uniqueIndex(
                 segmentResolver.resolveSegments(segmentEventToSegmentIds.keySet()),
                 SEGMENT_TO_ID
