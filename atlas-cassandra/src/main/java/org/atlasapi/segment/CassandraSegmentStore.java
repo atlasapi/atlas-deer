@@ -97,16 +97,24 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
     @Override
     public Iterable<Segment> resolveSegments(Iterable<Id> ids) {
-        String query = select().from(keyspace, tableName)
-                .where(in(CassandraUtil.KEY, idsToArray(ids)))
-                .setForceNoValues(true)
-                .getQueryString();
-        ResultSet rows = cassandra.executeReadQuery(query);
+        ResultSet rows = executeReadQuery(ids);
 
         if (rows == null || rows.isExhausted()) {
             return ImmutableList.of();
         }
 
+        return transformResultSet(rows);
+    }
+
+    private ResultSet executeReadQuery(Iterable<Id> ids) {
+        String query = select().from(keyspace, tableName)
+                .where(in(CassandraUtil.KEY, idsToArray(ids)))
+                .setForceNoValues(true)
+                .getQueryString();
+        return cassandra.executeReadQuery(query);
+    }
+
+    private Iterable<Segment> transformResultSet(ResultSet rows) {
         ImmutableList.Builder<Segment> list = ImmutableList.builder();
         while (!rows.isExhausted()) {
             ByteBuffer buffer = rows.one().getBytes(CassandraUtil.VALUE).slice();

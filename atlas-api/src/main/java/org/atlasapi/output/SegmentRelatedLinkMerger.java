@@ -17,6 +17,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
 
 public class SegmentRelatedLinkMerger {
@@ -34,20 +35,21 @@ public class SegmentRelatedLinkMerger {
                                                Multimap<Segment, SegmentEvent> segmentMap) {
 
         Interval selectedInterval = intervalFrom(selectedSegment, selectedSegmentEvent);
-        ImmutableMultimap<Segment, SegmentEvent> filtered = filterNonOverlapping(selectedInterval, segmentMap);
-        return FluentIterable.from(
-                intervalOrdering(selectedInterval).immutableSortedCopy(filtered.entries())
-        ).transformAndConcat(PROJECT_RELATED_LINKS).toList();
 
+        return FluentIterable.from(
+                intervalOrdering(selectedInterval).immutableSortedCopy(
+                        filterNonOverlapping(selectedInterval, segmentMap).entries()
+                )
+        ).transformAndConcat(PROJECT_RELATED_LINKS).toList();
     }
 
     private Ordering<Map.Entry<Segment, SegmentEvent>> intervalOrdering(final Interval selectedInterval) {
         return new Ordering<Map.Entry<Segment, SegmentEvent>>() {
             @Override
             public int compare(Map.Entry<Segment, SegmentEvent> left, Map.Entry<Segment, SegmentEvent> right) {
-                Duration leftDuration = overlapDurationOf(selectedInterval, intervalFrom(left.getKey(), left.getValue()));
-                Duration rightDuration = overlapDurationOf(selectedInterval, intervalFrom(right.getKey(), right.getValue()));
-                return rightDuration.compareTo(leftDuration);
+                return overlapDurationOf(selectedInterval, intervalFrom(right.getKey(), right.getValue()))
+                        .compareTo(
+                        overlapDurationOf(selectedInterval, intervalFrom(left.getKey(), left.getValue())));
             }
         };
     }
@@ -64,26 +66,17 @@ public class SegmentRelatedLinkMerger {
     private ImmutableMultimap<Segment, SegmentEvent> filterNonOverlapping(
             final Interval selectedInterval, Multimap<Segment, SegmentEvent> segmentMap) {
 
-        ImmutableMultimap.Builder<Segment, SegmentEvent> filteredSegments = ImmutableMultimap.builder();
-        for (Map.Entry<Segment, SegmentEvent> entry : segmentMap.entries()) {
-            if (overlappingIntervalPredicate(selectedInterval).apply(entry)) {
-                filteredSegments.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return filteredSegments.build();
+        return ImmutableMultimap.copyOf(
+                Multimaps.filterEntries(segmentMap, overlappingIntervalPredicate(selectedInterval))
+        );
     }
-
 
     private Predicate<Map.Entry<Segment, SegmentEvent>> overlappingIntervalPredicate(final Interval selectedInterval) {
         return new Predicate<Map.Entry<Segment, SegmentEvent>>() {
+
             @Override
             public boolean apply(final Map.Entry<Segment, SegmentEvent> input) {
-                Duration duration = input.getKey().getDuration();
-                Duration offset = input.getValue().getOffset();
-                Interval candidateInterval = new Interval(
-                        offset.getStandardSeconds(), offset.plus(duration).getStandardSeconds()
-                );
-                return candidateInterval.overlaps(selectedInterval);
+                return intervalFrom(input.getKey(), input.getValue()).overlaps(selectedInterval);
             }
         };
     }

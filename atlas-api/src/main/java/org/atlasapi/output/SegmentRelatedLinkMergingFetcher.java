@@ -44,7 +44,7 @@ public class SegmentRelatedLinkMergingFetcher {
         Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse().get(selectedSegmentEvent));
 
         if (selectedSegment == null) {
-            log.warn("Failed to resolve canonical segment {}",
+            log.warn("Failed to resolve selected segment {}",
                     Iterables.getOnlyElement(segmentMap.inverse().get(segmentEvents.get(0))).getId()
             );
             return ImmutableList.of();
@@ -57,17 +57,17 @@ public class SegmentRelatedLinkMergingFetcher {
 
     private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(List<SegmentEvent> segmentEvents) {
         ImmutableListMultimap<Id, SegmentEvent> segmentEventToSegmentIds = Multimaps.index(segmentEvents, new Function<SegmentEvent, Id>() {
-            @Nullable
+
             @Override
-            public Id apply(@Nullable SegmentEvent input) {
+            public Id apply(SegmentEvent input) {
                 return input.getId();
             }
         });
 
         final ImmutableMap<Id, Segment> segmentsToIds = Maps.uniqueIndex(segmentResolver.resolveSegments(segmentEventToSegmentIds.keySet()), new Function<Segment, Id>() {
-            @Nullable
+
             @Override
-            public Id apply(@Nullable Segment input) {
+            public Id apply(Segment input) {
                 return input.getId();
             }
         });

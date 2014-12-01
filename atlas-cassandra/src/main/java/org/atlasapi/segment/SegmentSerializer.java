@@ -27,16 +27,16 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
             new Function<Alias, CommonProtos.Alias>() {
 
         @Override
-        public CommonProtos.Alias apply(@Nullable Alias alias) {
+        public CommonProtos.Alias apply(Alias alias) {
             return CommonProtos.Alias.newBuilder().setValue(alias.getValue()).setNamespace(alias.getNamespace()).build();
         }
     };
 
     public static final Function<CommonProtos.Alias, Alias> PROTO_TO_ALIAS =
             new Function<CommonProtos.Alias, Alias>() {
-                @Nullable
+
                 @Override
-                public Alias apply(@Nullable CommonProtos.Alias alias) {
+                public Alias apply(CommonProtos.Alias alias) {
                     return new Alias(alias.getNamespace(), alias.getValue());
                 }
             };

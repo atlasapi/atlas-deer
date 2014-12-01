@@ -36,12 +36,10 @@ import com.google.common.collect.Multimaps;
 public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
 
     private final SegmentRelatedLinkMergingFetcher linkMergingFetcher;
-    private final SegmentResolver segmentResolver;
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public SegmentEventsAnnotation(SegmentRelatedLinkMergingFetcher linkMergingFetcher, SegmentResolver segmentResolver) {
+    public SegmentEventsAnnotation(SegmentRelatedLinkMergingFetcher linkMergingFetcher) {
         this.linkMergingFetcher = checkNotNull(linkMergingFetcher);
-        this.segmentResolver = checkNotNull(segmentResolver);
     }
 
     @Override
