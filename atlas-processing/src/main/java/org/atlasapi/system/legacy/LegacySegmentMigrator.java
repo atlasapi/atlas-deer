@@ -51,9 +51,9 @@ public class LegacySegmentMigrator {
         }
 
         org.atlasapi.media.segment.Segment owlSegment = resolveLegacySegment(legacyId);
-        Segment deerSegment = legacySegmentTransformer.createDescribed(owlSegment);
+        log.trace("Resolved legacy segment in Owl");
+        Segment deerSegment = legacySegmentTransformer.apply(owlSegment);
         return segmentStore.writeSegment(deerSegment);
-
     }
 
     private org.atlasapi.media.segment.Segment resolveLegacySegment(Id legacyId) throws UnresolvedLegacySegmentException {

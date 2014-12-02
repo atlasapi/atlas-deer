@@ -16,6 +16,8 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -40,6 +42,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     private final String keyspace;
     private final String tableName;
     private final SegmentSerializer segmentSerializer = new SegmentSerializer();
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private CassandraSegmentStore(CassandraDataStaxClient cassandra, String keyspace, String tableName,
                                  AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
@@ -56,6 +59,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     protected void doWrite(Segment segment, Segment previous) {
         checkArgument(previous == null || segment.getPublisher().equals(previous.getPublisher()));
         try {
+            log.trace("Writing Segment {}", segment.getId());
             long id = segment.getId().longValue();
             String query = QueryBuilder.insertInto(keyspace, tableName)
                     .value(CassandraUtil.KEY, id)
