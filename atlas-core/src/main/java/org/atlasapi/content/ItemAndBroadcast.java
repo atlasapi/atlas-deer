@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
@@ -41,10 +43,12 @@ public class ItemAndBroadcast implements Comparable<ItemAndBroadcast> {
 		this.broadcast = checkNotNull(broadcast);
 	}
 	
+	@FieldName("broadcast")
     public Broadcast getBroadcast() {
         return broadcast;
     }
     
+	@FieldName("item")
     public Item getItem() {
         return item;
     }

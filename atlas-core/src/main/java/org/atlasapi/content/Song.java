@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.Duration;
 
 public class Song extends Item {
@@ -30,6 +31,7 @@ public class Song extends Item {
 		this.isrc = isrc;
 	}
 
+	@FieldName("isrc")
     public String getIsrc() {
         return isrc;
     }
@@ -38,6 +40,7 @@ public class Song extends Item {
         this.duration = duration != null ? duration.getStandardSeconds() : null;
     }
 
+    @FieldName("duration")
     public Duration getDuration() {
         return duration != null ? Duration.standardSeconds(duration) : null;
     }

@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 public final class BrandRef extends ContainerRef {
 
@@ -9,6 +10,7 @@ public final class BrandRef extends ContainerRef {
         super(id, source);
     }
 
+    @FieldName("content_type")
     @Override
     public ContentType getContentType() {
         return ContentType.BRAND;

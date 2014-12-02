@@ -17,7 +17,6 @@ import org.atlasapi.persistence.content.mongo.MongoTopicStore;
 import org.atlasapi.persistence.content.schedule.mongo.MongoScheduleStore;
 import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.schedule.ScheduleResolver;
-import org.atlasapi.segment.SegmentResolver;
 import org.atlasapi.topic.TopicResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,13 +24,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
-import com.mongodb.Mongo;
 import com.mongodb.ReadPreference;
 
 @Configuration

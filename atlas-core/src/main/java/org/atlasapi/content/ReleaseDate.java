@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.LocalDate;
 
 import com.google.common.base.Objects;
@@ -23,14 +24,17 @@ public class ReleaseDate {
         this.type = checkNotNull(type);
     }
 
+    @FieldName("country")
     public Country country() {
         return country;
     }
 
+    @FieldName("date")
     public LocalDate date() {
         return date;
     }
 
+    @FieldName("type")
     public ReleaseType type() {
         return type;
     }

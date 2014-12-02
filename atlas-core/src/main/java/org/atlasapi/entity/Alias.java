@@ -2,6 +2,8 @@ package org.atlasapi.entity;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Objects;
 
 public class Alias {
@@ -16,10 +18,12 @@ public class Alias {
         this.value = checkNotNull(value);
     }
 
+    @FieldName("namespace")
     public String getNamespace() {
         return namespace;
     }
 
+    @FieldName("value")
     public String getValue() {
         return value;
     }

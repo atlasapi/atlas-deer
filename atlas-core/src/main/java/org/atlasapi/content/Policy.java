@@ -16,6 +16,7 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.collect.Sets;
@@ -44,6 +45,7 @@ public class Policy extends Identified {
 	
 	private DateTime actualAvailabilityStart;
     
+	@FieldName("available_countries")
     public Set<Country> getAvailableCountries() {
 		return availableCountries;
 	}
@@ -59,26 +61,32 @@ public class Policy extends Identified {
     	availableCountries.add(country);
     }
     
+	@FieldName("availability_start")
     public DateTime getAvailabilityStart() { 
         return availabilityStart;
     }
 
+	@FieldName("drm_playable_from")
     public DateTime getDrmPlayableFrom() { 
         return drmPlayableFrom;
     }
     
+    @FieldName("availability_end")
     public DateTime getAvailabilityEnd() {
 		return availabilityEnd;
 	}
     
+    @FieldName("platform")
     public Platform getPlatform() {
         return platform;
     }
     
+    @FieldName("network")
     public Network getNetwork() {
         return network;
     }
     
+    @FieldName("actual_availability_start")
     public DateTime getActualAvailabilityStart() { 
         return actualAvailabilityStart;
     }
@@ -114,6 +122,7 @@ public class Policy extends Identified {
 	    return this;
 	}
 	
+	@FieldName("revenue_contract")
 	public RevenueContract getRevenueContract() {
         return revenueContract;
     }
@@ -139,6 +148,7 @@ public class Policy extends Identified {
 	    return this;
 	}
 	
+	@FieldName("price")
 	public Price getPrice() {
         return price;
     }
@@ -152,6 +162,7 @@ public class Policy extends Identified {
 		this.availabilityLength = seconds;
 	}
 	
+	@FieldName("availability_length")
 	public Integer getAvailabilityLength() {
 		return availabilityLength;
 	}

@@ -7,6 +7,7 @@ import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -39,6 +40,7 @@ public class Topic extends Described implements Sourced, Aliased {
             this.key = key;
         }
 
+        @FieldName("key")
         public String key() {
             return key;
         }
@@ -126,15 +128,18 @@ public class Topic extends Described implements Sourced, Aliased {
         return topic;
     }
 
+    @FieldName("type")
     public Type getType() {
         return this.type;
     }
 
+    @FieldName("namespace")
     @Deprecated
     public String getNamespace() {
         return this.namespace;
     }
 
+    @FieldName("value")
     @Deprecated
     public String getValue() {
         return this.value;
@@ -158,6 +163,7 @@ public class Topic extends Described implements Sourced, Aliased {
         this.publisher = publisher;
     }
     
+    @FieldName("publisher")
     public Publisher getPublisher() {
         return this.publisher;
     }

@@ -22,6 +22,7 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.collect.ImmutableSet;
@@ -82,6 +83,7 @@ public abstract class Described extends Identified implements Sourced {
 	    this.publisher = source;
 	}
 
+	@FieldName("last_fetched")
     public DateTime getLastFetched() {
         return lastFetched;
     }
@@ -90,6 +92,7 @@ public abstract class Described extends Identified implements Sourced {
         this.lastFetched = lastFetched;
     }
     
+    @FieldName("first_seen")
     public DateTime getFirstSeen() {
         return this.firstSeen;
     }
@@ -102,6 +105,7 @@ public abstract class Described extends Identified implements Sourced {
         this.genres = ImmutableSet.copyOf(genres);
     }
 
+    @FieldName("genres")
 	public Set<String> getGenres() {
 		return this.genres;
 	}
@@ -110,10 +114,12 @@ public abstract class Described extends Identified implements Sourced {
 		this.title = title;
 	}
 
+	@FieldName("synopses")
     public Synopses getSynopses() {
         return this.synopses;
     }
 
+	@FieldName("description")
 	public String getDescription() {
 		return this.description;
 	}
@@ -126,14 +132,17 @@ public abstract class Described extends Identified implements Sourced {
 		this.description = description;
 	}
 
+	@FieldName("short_description")
     public String getShortDescription() {
         return this.shortDescription;
     }
 
+	@FieldName("medium_description")
     public String getMediumDescription() {
         return this.mediumDescription;
     }
 
+    @FieldName("long_description")
     public String getLongDescription() {
         return this.longDescription;
     }
@@ -150,6 +159,7 @@ public abstract class Described extends Identified implements Sourced {
         this.longDescription = longDescription;
     }
 
+    @FieldName("tags")
 	public Set<String> getTags() {
 		return tags;
 	}
@@ -162,6 +172,8 @@ public abstract class Described extends Identified implements Sourced {
 	    }
 	}
 	
+	@FieldName("publisher")
+	@Override
 	public Publisher getPublisher() {
 		return publisher;
 	}
@@ -170,10 +182,12 @@ public abstract class Described extends Identified implements Sourced {
 		this.publisher = publisher;
 	}
 	    
+	@FieldName("image")
     public String getImage() {
 		return image;
 	}
     
+	@FieldName("thumbnail")
     public String getThumbnail() {
 		return thumbnail;
 	}
@@ -186,10 +200,12 @@ public abstract class Described extends Identified implements Sourced {
 		this.thumbnail = thumbnail;
 	}
 
+	@FieldName("title")
 	public String getTitle() {
 		return this.title;
 	}
 	
+	@FieldName("this_or_child_last_updated")
 	public DateTime getThisOrChildLastUpdated() {
         return thisOrChildLastUpdated;
     }
@@ -210,10 +226,12 @@ public abstract class Described extends Identified implements Sourced {
 		this.mediaType = mediaType;
 	}
 	
+	@FieldName("media_type")
 	public MediaType getMediaType() {
 		return this.mediaType;
 	}
 	
+	@FieldName("specialization")
 	public Specialization getSpecialization() {
         return specialization;
     }
@@ -226,6 +244,7 @@ public abstract class Described extends Identified implements Sourced {
         this.scheduleOnly = scheduleOnly;
     }
     
+    @FieldName("schedule_only")
     public boolean isScheduleOnly() {
         return scheduleOnly;
     }
@@ -238,6 +257,7 @@ public abstract class Described extends Identified implements Sourced {
         this.presentationChannel = channel;
     }
     
+    @FieldName("presentation_channel")
     public String getPresentationChannel() {
         return this.presentationChannel;
     }
@@ -246,14 +266,17 @@ public abstract class Described extends Identified implements Sourced {
         this.images = ImmutableSet.copyOf(images);
     }
     
+    @FieldName("images")
     public Set<Image> getImages() {
         return images;
     }
     
+    @FieldName("primary_image")
     public Image getPrimaryImage() {
         return Iterables.getOnlyElement(Iterables.filter(images, Image.IS_PRIMARY), null);
     }
     
+    @FieldName("related_links")
     public Set<RelatedLink> getRelatedLinks() {
         return relatedLinks;
     }

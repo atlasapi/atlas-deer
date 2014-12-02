@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.segment.SegmentEvent;
 
 import com.google.common.base.Function;
@@ -72,9 +73,11 @@ public class Item extends Content {
         setContainerRef(container.toRef());
     }
 
+    @FieldName("container_ref")
     public ContainerRef getContainerRef() {
         return containerRef;
     }
+    @FieldName("is_long_form")
     public boolean getIsLongForm() {
         return isLongForm;
     }
@@ -83,7 +86,7 @@ public class Item extends Content {
         this.isLongForm = isLongForm;
     }
 
-
+    @FieldName("countries_of_origin")
     public Set<Country> getCountriesOfOrigin() {
         return countriesOfOrigin;
     }
@@ -95,6 +98,7 @@ public class Item extends Content {
         }
     }
 
+    @FieldName("people")
     public List<CrewMember> getPeople() {
         return people();
     }
@@ -103,12 +107,12 @@ public class Item extends Content {
         this.blackAndWhite = blackAndWhite;
     }
 
+    @FieldName("black_and_white")
     public Boolean getBlackAndWhite() {
         return blackAndWhite;
     }
     
-   
-    
+    @FieldName("manifested_as")
     public Set<Encoding> getManifestedAs() {
         return manifestedAs;
     }
@@ -122,6 +126,7 @@ public class Item extends Content {
         manifestedAs.add(encoding);
     }
     
+    @FieldName("broadcasts")
     public Set<Broadcast> getBroadcasts() {
         return broadcasts;
     }
@@ -144,10 +149,12 @@ public class Item extends Content {
         restrictions.add(restriction);
     }
 
+    @FieldName("restrictions")
     public Set<Restriction> getRestrictions() {
         return restrictions;
     }
     
+    @FieldName("segment_events")
     public List<SegmentEvent> getSegmentEvents() {
         return segmentEvents;
     }
@@ -188,6 +195,7 @@ public class Item extends Content {
         return this;
     }
 
+    @FieldName("sort_key")
     public String sortKey() {
         return sortKey;
     }
@@ -204,6 +212,7 @@ public class Item extends Content {
         }
     };
 
+    @FieldName("container_summary")
     public ContainerSummary getContainerSummary() {
         return containerSummary;
     }
@@ -243,18 +252,22 @@ public class Item extends Content {
         private ContainerSummary() {
         }
 
+        @FieldName("type")
         public String getType() {
             return type;
         }
 
+        @FieldName("title")
         public String getTitle() {
             return title;
         }
 
+        @FieldName("description")
         public String getDescription() {
             return description;
         }
-
+        
+        @FieldName("series_number")
         public Integer getSeriesNumber() {
             return seriesNumber;
         }

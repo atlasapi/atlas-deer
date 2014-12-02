@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Predicate;
@@ -19,6 +20,7 @@ public class Image {
             this.name = name;
         }
         
+        @FieldName("name")
         public String getName() {
             return name;
         }
@@ -36,6 +38,7 @@ public class Image {
             this.name = name;
         }
         
+        @FieldName("name")
         public String getName() {
             return name;
         }
@@ -54,6 +57,7 @@ public class Image {
             this.name = name;
         }
         
+        @FieldName("name")
         public String getName() {
             return name;
         }
@@ -73,6 +77,7 @@ public class Image {
             this.name = name;
         }
         
+        @FieldName("name")
         public String getName() {
             return name;
         }
@@ -201,6 +206,7 @@ public class Image {
         this.uri = checkNotNull(uri);
     }
     
+    @FieldName("uri")
     public String getCanonicalUri() {
         return uri;
     }
@@ -209,6 +215,7 @@ public class Image {
         this.uri = uri;
     }
     
+    @FieldName("height")
     public Integer getHeight() {
         return height;
     }
@@ -217,6 +224,7 @@ public class Image {
         this.height = height;
     }
     
+    @FieldName("width")
     public Integer getWidth() {
         return width;
     }
@@ -225,6 +233,7 @@ public class Image {
         this.width = width;
     }
     
+    @FieldName("type")
     public Type getType() {
         return type;
     }
@@ -233,6 +242,7 @@ public class Image {
         this.type = type;
     }
 
+    @FieldName("color")
     public Color getColor() {
         return color;
     }
@@ -241,6 +251,7 @@ public class Image {
         this.color = color;
     }
 
+    @FieldName("theme")
     public Theme getTheme() {
         return theme;
     }
@@ -249,6 +260,7 @@ public class Image {
         this.theme = theme;
     }
 
+    @FieldName("aspect_ratio")
     public AspectRatio getAspectRatio() {
         return aspectRatio;
     }
@@ -257,6 +269,7 @@ public class Image {
         this.aspectRatio = aspectRatio;
     }
 
+    @FieldName("mime_type")
     public MimeType getMimeType() {
         return mimeType;
     }
@@ -265,6 +278,7 @@ public class Image {
         this.mimeType = mimeType;
     }
     
+    @FieldName("availability_start")
     public DateTime getAvailabilityStart() {
         return availabilityStart;
     }
@@ -273,6 +287,7 @@ public class Image {
         this.availabilityStart = availabilityStart;
     }
     
+    @FieldName("availability_end")
     public DateTime getAvailabilityEnd() {
         return availabilityEnd;
     }

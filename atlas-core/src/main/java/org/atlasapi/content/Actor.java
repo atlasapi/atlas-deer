@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -19,6 +20,7 @@ public class Actor extends CrewMember {
          this.withRole(Role.ACTOR);
     }
     
+    @FieldName("character")
     public String character() {
         return character;
     }

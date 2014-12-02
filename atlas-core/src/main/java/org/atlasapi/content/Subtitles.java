@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 public class Subtitles {
 
     private final String languageCode;
@@ -10,6 +12,7 @@ public class Subtitles {
         this.languageCode = checkNotNull(languageCode);
     }
 
+    @FieldName("code")
     public String code() {
         return languageCode;
     }

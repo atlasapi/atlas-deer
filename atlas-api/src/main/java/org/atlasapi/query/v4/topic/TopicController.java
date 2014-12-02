@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.QueryResultWriter;
@@ -20,7 +21,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+@ProducesType(type = Topic.class)
 @Controller
+@RequestMapping("/4/topics")
 public class TopicController {
 
     private static Logger log = LoggerFactory.getLogger(TopicController.class);
@@ -38,7 +41,7 @@ public class TopicController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/4/topics/{tid}.*", "/4/topics/{tid}", "/4/topics.*", "/4/topics" })
+    @RequestMapping({ "/{tid}.*", "/{tid}", ".*", "" })
     public void writeSingleTopic(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;

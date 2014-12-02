@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.entity.Id;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.Interval;
 
 import com.google.common.base.Objects;
@@ -19,14 +20,17 @@ public final class BroadcastRef {
         this.transmissionInterval = checkNotNull(transmissionInterval);
     }
 
+    @FieldName("source_id")
     public String getSourceId() {
         return sourceId;
     }
     
+    @FieldName("transmission_interval")
     public Interval getTransmissionInterval() {
         return transmissionInterval;
     }
     
+    @FieldName("channel_id")
     public Id getChannelId() {
         return channelId;
     }

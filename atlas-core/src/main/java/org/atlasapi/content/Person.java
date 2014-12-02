@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import java.util.Set;
 
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -20,6 +21,7 @@ public class Person extends ContentGroup {
     private String birthPlace;
     private Set<String> quotes = Sets.newHashSet();
     
+    @FieldName("given_name")
     public String getGivenName() {
         return givenName;
     }
@@ -28,6 +30,7 @@ public class Person extends ContentGroup {
         this.givenName = givenName;
     }
 
+    @FieldName("family_name")
     public String getFamilyName() {
         return familyName;
     }
@@ -36,6 +39,7 @@ public class Person extends ContentGroup {
         this.familyName = familyName;
     }
 
+    @FieldName("gender")
     public String getGender() {
         return gender;
     }
@@ -44,6 +48,7 @@ public class Person extends ContentGroup {
         this.gender = gender;
     }
 
+    @FieldName("birth_date")
     public DateTime getBirthDate() {
         return birthDate;
     }
@@ -52,6 +57,7 @@ public class Person extends ContentGroup {
         this.birthDate = birthDate;
     }
 
+    @FieldName("birth_place")
     public String getBirthPlace() {
         return birthPlace;
     }
@@ -60,6 +66,7 @@ public class Person extends ContentGroup {
         this.birthPlace = birthPlace;
     }
 
+    @FieldName("quotes")
     public Set<String> getQuotes() {
         return quotes;
     }
@@ -78,10 +85,12 @@ public class Person extends ContentGroup {
          super(ContentGroup.Type.PERSON, uri, curie, publisher);
     }
 	
+	@FieldName("name")
 	public String name() {
 		return this.getTitle();
 	}
 	
+	@FieldName("profile_links")
 	public Set<String> profileLinks() {
 	    return this.getAliasUrls();
 	}

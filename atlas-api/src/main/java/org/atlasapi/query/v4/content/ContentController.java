@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.QueryResultWriter;
@@ -20,7 +21,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+/**
+ * An endpoint for serving pieces of Content. Content can be fetched either by
+ * unique ID or by adding filter parameters to the endpoint. 
+ * 
+ */
+@ProducesType(type=Content.class)
 @Controller
+@RequestMapping("/4/content")
 public class ContentController {
 
     private static Logger log = LoggerFactory.getLogger(ContentController.class);
@@ -38,8 +46,8 @@ public class ContentController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/4/content/{cid}.*", "/4/content/{cid}", "/4/content.*", "/4/content" })
-    public void writeSingleTopic(HttpServletRequest request, HttpServletResponse response)
+    @RequestMapping({ "/{cid}.*", "/{cid}", ".*", "" })
+    public void fetchContent(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;
         try {

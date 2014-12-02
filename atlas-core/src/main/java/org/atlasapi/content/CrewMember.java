@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -55,10 +56,12 @@ public class CrewMember extends Identified {
             this.title = title;
         }
         
+        @FieldName("key")
         public String key() {
             return key;
         }
         
+        @FieldName("title")
         public String title() {
             return title;
         }
@@ -100,18 +103,22 @@ public class CrewMember extends Identified {
         this.publisher = publisher;
     }
     
+    @FieldName("role")
     public Role role() {
         return role;
     }
     
+    @FieldName("name")
     public String name() {
         return name;
     }
     
+    @FieldName("publisher")
     public Publisher publisher() {
         return publisher;
     }
     
+    @FieldName("profile_links")
     public Set<String> profileLinks() {
         return getAliasUrls();
     }

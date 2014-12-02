@@ -4,6 +4,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.ResourceType;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects.ToStringHelper;
 
@@ -15,6 +16,7 @@ public abstract class ContentRef extends ResourceRef {
 
     public abstract ContentType getContentType();
     
+    @FieldName("resource_type")
     @Override
     public final ResourceType getResourceType() {
         return ResourceType.CONTENT;

@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -30,10 +31,12 @@ public class Film extends Item {
         this.websiteUrl = websiteUrl;
     }
     
+    @FieldName("website_url")
     public String getWebsiteUrl() {
         return websiteUrl;
     }
 
+    @FieldName("subtitles")
     public Set<Subtitles> getSubtitles() {
         return subtitles;
     }
@@ -42,6 +45,7 @@ public class Film extends Item {
         this.subtitles = ImmutableSet.copyOf(subtitles);
     }
 
+    @FieldName("release_dates")
     public Set<ReleaseDate> getReleaseDates() {
         return releaseDates;
     }

@@ -5,6 +5,8 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.ResourceType;
 import org.atlasapi.media.entity.Publisher;
 
+import org.atlasapi.meta.annotations.FieldName;
+
 import com.google.common.base.Function;
 
 public class SegmentRef extends ResourceRef {
@@ -21,6 +23,7 @@ public class SegmentRef extends ResourceRef {
     }
 
     @Override
+    @FieldName("resourceType")
     public ResourceType getResourceType() {
         return ResourceType.SEGMENT;
     }
