@@ -96,10 +96,12 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
             segment.setId(proto.getId());
             segment.setPublisher(Publisher.fromKey(proto.getSource()).requireValue());
             segment.setTitle(proto.getTitle());
-            segment.setType(SegmentType.fromString(proto.getType()).requireValue());
             segment.setShortDescription(proto.getShortDescription());
             segment.setMediumDescription(proto.getMediumDescription());
             segment.setLongDescription(proto.getLongDescription());
+            if (proto.getType() != null && SegmentType.fromString(proto.getType()).hasValue()) {
+                segment.setType(SegmentType.fromString(proto.getType()).requireValue());
+            }
             if (proto.hasLastFetched()) {
                 segment.setLastFetched(ProtoBufUtils.deserializeDateTime(proto.getLastFetched()));
             }
