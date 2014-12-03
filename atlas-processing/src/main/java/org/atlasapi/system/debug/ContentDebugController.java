@@ -7,10 +7,11 @@ import java.lang.reflect.Type;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentResolver;
+import com.metabroadcast.common.base.Maybe;
+import org.atlasapi.content.*;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,21 +27,24 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class ContentDebugController {
-    
+
     private final Gson gson = new GsonBuilder().registerTypeAdapter(DateTime.class, new JsonSerializer<DateTime>() {
         @Override
         public JsonElement serialize(DateTime src, Type typeOfSrc, JsonSerializationContext context) {
             return new JsonPrimitive(src.toString());
         }
     }).create();
-    
-    private final ContentResolver resolver;
 
-    public ContentDebugController(ContentResolver resolver) {
+    private final ContentResolver resolver;
+    private final EquivalentContentStore equivalentContentStore;
+
+    public ContentDebugController(ContentResolver resolver, EquivalentContentStore equivalentContentStore) {
         this.resolver = checkNotNull(resolver);
+        this.equivalentContentStore = checkNotNull(equivalentContentStore);
     }
 
     @RequestMapping("/system/debug/content/{id}")
@@ -68,6 +72,28 @@ public class ContentDebugController {
             }
         });
     }
-    
-    
+
+    @RequestMapping("/system/debug/content/{id}/update-equiv")
+    public void forceEquivUpdate(@PathVariable("id") Long id, @RequestParam(value = "publisher", required = true) String publisherKey,
+                                 final HttpServletResponse response) throws IOException {
+        try {
+            Maybe<Publisher> publisherMaybe = Publisher.fromKey(publisherKey);
+            if (publisherMaybe.isNothing()) {
+                response.setStatus(400);
+                response.getWriter().write("Supply a valid publisher key");
+                response.flushBuffer();
+                return;
+            }
+
+            Publisher publisher = publisherMaybe.requireValue();
+            ItemRef ref = new ItemRef(Id.valueOf(id), publisher, "sortKey", DateTime.now());
+            equivalentContentStore.updateContent(ref);
+
+            response.setStatus(200);
+            response.getWriter().write("Updated content equivalence for " + id.toString());
+            response.flushBuffer();
+        } catch (Throwable t) {
+            t.printStackTrace(response.getWriter());
+        }
+    }
 }

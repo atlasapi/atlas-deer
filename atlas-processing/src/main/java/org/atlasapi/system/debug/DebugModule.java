@@ -14,7 +14,7 @@ public class DebugModule {
     
     @Bean
     public ContentDebugController contentDebugController() {
-        return new ContentDebugController(persistenceModule.contentStore());
+        return new ContentDebugController(persistenceModule.contentStore(), persistenceModule.getEquivalentContentStore());
     }
     
 }
