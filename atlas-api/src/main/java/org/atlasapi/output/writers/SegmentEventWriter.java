@@ -34,6 +34,9 @@ public class SegmentEventWriter implements EntityListWriter<SegmentAndEventTuple
 
     @Override
     public void write(@Nonnull SegmentAndEventTuple entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+        if (entity == null) {
+            return;
+        }
         final Segment segment = entity.getSegment();
         SegmentEvent segmentEvent = entity.getSegmentEvent();
         writer.writeField("position", segmentEvent.getPosition());

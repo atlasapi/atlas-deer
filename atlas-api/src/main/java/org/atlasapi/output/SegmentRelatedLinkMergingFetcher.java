@@ -5,6 +5,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.segment.Segment;
@@ -46,7 +48,11 @@ public class SegmentRelatedLinkMergingFetcher {
         this.segmentRelatedLinkMerger = checkNotNull(segmentRelatedLinkMerger);
     }
 
-    public SegmentAndEventTuple mergeSegmentLinks(Item item) {
+    @Nullable
+    public SegmentAndEventTuple mergeSegmentLinks(@Nullable Item item) {
+        if (item == null || item.getSegmentEvents() == null || item.getSegmentEvents().isEmpty()) {
+            return null;
+        }
         List<SegmentEvent> segmentEvents = item.getSegmentEvents();
         ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
         SegmentEvent selectedSegmentEvent = Iterables.getFirst(segmentEvents, null);
