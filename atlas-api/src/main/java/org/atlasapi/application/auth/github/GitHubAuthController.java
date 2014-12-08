@@ -39,10 +39,14 @@ import com.metabroadcast.common.social.model.UserRef;
 import com.metabroadcast.common.social.model.UserRef.UserNamespace;
 import com.metabroadcast.common.social.user.AccessTokenProcessor;
 import com.metabroadcast.common.url.UrlEncoding;
+import com.metabroadcast.common.webapp.http.CacheHeaderWriter;
 
 @Controller
 public class GitHubAuthController {
-    private static Logger log = LoggerFactory.getLogger(GitHubAuthController.class);    
+    private static Logger log = LoggerFactory.getLogger(GitHubAuthController.class);
+    
+    private static final CacheHeaderWriter NO_CACHE_HEADER_WRITER = CacheHeaderWriter.neverCache();
+    
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final GitHubAuthClient gitHubClient;
     private final UserStore userStore; 
@@ -78,6 +82,7 @@ public class GitHubAuthController {
         HttpServletResponse response,
             @RequestParam(required = true) String callbackUrl,
             @RequestParam(required = false) String targetUri) throws UnsupportedFormatException, NotAcceptableException, IOException {
+        NO_CACHE_HEADER_WRITER.writeHeaders(request, response);
         ResponseWriter writer = writerResolver.writerFor(request, response);
         if (!Strings.isNullOrEmpty(targetUri)) {
             callbackUrl += "?targetUri=" + UrlEncoding.encode(targetUri);

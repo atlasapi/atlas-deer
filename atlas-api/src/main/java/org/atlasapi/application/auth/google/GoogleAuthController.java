@@ -42,6 +42,7 @@ import com.metabroadcast.common.social.model.UserRef.UserNamespace;
 import com.metabroadcast.common.social.user.AccessTokenProcessor;
 import com.metabroadcast.common.url.UrlEncoding;
 import com.metabroadcast.common.url.Urls;
+import com.metabroadcast.common.webapp.http.CacheHeaderWriter;
 
 @Controller
 public class GoogleAuthController {
@@ -49,6 +50,9 @@ public class GoogleAuthController {
             "profile",
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile");
+    
+    private static final CacheHeaderWriter NO_CACHE_HEADER_WRITER = CacheHeaderWriter.neverCache();
+    
     private static Logger log = LoggerFactory.getLogger(GoogleAuthController.class);
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final GoogleAuthClient googleClient;
@@ -80,6 +84,7 @@ public class GoogleAuthController {
         HttpServletResponse response,
             @RequestParam(required = true) String callbackUrl,
             @RequestParam(required = false) String targetUri) throws UnsupportedFormatException, NotAcceptableException, IOException {
+        NO_CACHE_HEADER_WRITER.writeHeaders(request, response);
         ResponseWriter writer = writerResolver.writerFor(request, response);
         if (!Strings.isNullOrEmpty(targetUri)) {
             callbackUrl += "?targetUri=" + UrlEncoding.encode(targetUri);
@@ -106,6 +111,7 @@ public class GoogleAuthController {
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String error) throws IOException {
+        NO_CACHE_HEADER_WRITER.writeHeaders(request, response);
         OAuthRequest oauthRequest = tokenRequestStore.lookupAndRemove(UUID.fromString(state)).get();
         String redirectUrl = oauthRequest.getCallbackUrl().toExternalForm();
         if (!Strings.isNullOrEmpty(code)) {
