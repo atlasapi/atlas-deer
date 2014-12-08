@@ -42,9 +42,13 @@ import com.metabroadcast.common.social.model.UserRef.UserNamespace;
 import com.metabroadcast.common.social.twitter.TwitterApplication;
 import com.metabroadcast.common.social.user.AccessTokenProcessor;
 import com.metabroadcast.common.url.UrlEncoding;
+import com.metabroadcast.common.webapp.http.CacheHeaderWriter;
 
 @Controller
 public class TwitterAuthController {
+    
+    private static final CacheHeaderWriter NO_CACHE_HEADER_WRITER = CacheHeaderWriter.neverCache();
+    
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final TwitterFactory twitterFactory;
     private UserStore userStore; 
@@ -81,6 +85,7 @@ public class TwitterAuthController {
             HttpServletResponse response,
             @RequestParam(required = true) String callbackUrl,
             @RequestParam(required = false) String targetUri) throws UnsupportedFormatException, NotAcceptableException, IOException {
+        NO_CACHE_HEADER_WRITER.writeHeaders(request, response);
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
             Twitter twitter = twitterFactory.getInstance();
@@ -98,7 +103,6 @@ public class TwitterAuthController {
                     .build();
             tokenRequestStore.store(oauthRequest);
             QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest, QueryContext.standard());
-
             oauthRequestResultWriter.write(queryResult, writer);
         } catch (TwitterException e) {
             throw new RuntimeException(e);
@@ -110,6 +114,7 @@ public class TwitterAuthController {
             @RequestParam String oauthToken,
             @RequestParam String oauthVerifier,
             @RequestParam(required = false) String targetUri) throws UnsupportedFormatException, NotAcceptableException, IOException {
+        NO_CACHE_HEADER_WRITER.writeHeaders(request, response);
         Twitter twitter = twitterFactory.getInstance();
         Optional<OAuthRequest> storedOAuthRequest = tokenRequestStore.lookupAndRemove(UserNamespace.TWITTER, oauthToken);
         if (!storedOAuthRequest.isPresent()) {
