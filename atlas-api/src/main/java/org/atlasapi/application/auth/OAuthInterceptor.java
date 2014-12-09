@@ -53,17 +53,25 @@ public class OAuthInterceptor extends HandlerInterceptorAdapter {
         Optional<User> user = userFetcher.userFor(request);
         String uri = request.getRequestURI();
         
-        if (!authorized(user, uri)) {
+        if (!requiresAuthenticatedUser(uri)) {
+            return true;
+        }
+        
+        if (!user.isPresent()) {
             writeError(request, response, new NotAuthenticatedException());
             return false;
-        } else if (user.isPresent() && !hasProfile(user.get()) && needsProfile(uri, user.get())) {
+        }
+        
+        if (needsProfile(uri, user.get())
+                && !hasProfileAndAcceptedLicense(user.get())) {
             writeError(request, response, new UserProfileIncompleteException());
             return false;
         }
+        
         return true;
     }
     
-    private boolean hasProfile(User user) {
+    private boolean hasProfileAndAcceptedLicense(User user) {
         return user.isProfileComplete() && user.getLicenseAccepted().isPresent();
     }
     
@@ -73,17 +81,18 @@ public class OAuthInterceptor extends HandlerInterceptorAdapter {
         new ErrorResultWriter().write(summary, writer, request, response);
     }
     
-    private boolean authorized(Optional<User> user, String requestUri) throws NotAuthenticatedException, UserProfileIncompleteException {
+    private boolean requiresAuthenticatedUser(String requestUri) throws NotAuthenticatedException, UserProfileIncompleteException {
         if (urlsToProtect.isEmpty()) {
             return true; 
         }
         boolean protectedUrl = false;
         for (String uri : urlsToProtect) {
-            if (requestUri.startsWith(uri)) {
+            if (requestUri.startsWith(uri)
+                    && !protectedUrl) {
                 protectedUrl = !exemptions.contains(requestUri);
             }
         }  
-        return !protectedUrl || (user.isPresent() && protectedUrl);
+        return protectedUrl;
     }
     
     private boolean needsProfile(String uri, User user) {
