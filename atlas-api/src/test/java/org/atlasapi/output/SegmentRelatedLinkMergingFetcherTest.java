@@ -1,6 +1,7 @@
 package org.atlasapi.output;
 
 import static org.atlasapi.content.RelatedLink.LinkType.ARTICLE;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -26,11 +27,10 @@ import com.google.common.collect.Sets;
 public class SegmentRelatedLinkMergingFetcherTest {
 
     private @Mock SegmentResolver segmentResolver = mock(SegmentResolver.class);
-    private final SegmentRelatedLinkMerger segmentRelatedLinkMerger =
-            new SegmentRelatedLinkMerger();
+    private final ScrubbablesSegmentRelatedLinkMerger segmentRelatedLinkMerger =
+            new ScrubbablesSegmentRelatedLinkMerger();
     private final SegmentRelatedLinkMergingFetcher linkMergingFetcher =
             new SegmentRelatedLinkMergingFetcher(segmentResolver, segmentRelatedLinkMerger);
-    private final Segment seg1 = segmentOne();
 
     private Segment segmentOne() {
         Segment segment = new Segment();
@@ -76,7 +76,6 @@ public class SegmentRelatedLinkMergingFetcherTest {
         return segment;
     }
 
-
     @Test
     public void testMergeSegmentLinks() throws Exception {
         when(segmentResolver.resolveSegments(
@@ -92,8 +91,8 @@ public class SegmentRelatedLinkMergingFetcherTest {
         item.setSegmentEvents(segmentEvents());
         SegmentAndEventTuple segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item);
 
-        assertTrue(segmentAndEventTuple.getSegment().getRelatedLinks().size() == 6);
-        assertTrue(Sets.intersection(segmentFour().getRelatedLinks(), segmentAndEventTuple.getSegment().getRelatedLinks()).isEmpty());
+        assertThat(segmentAndEventTuple.getSegment().getRelatedLinks().size(), is(6));
+        assertThat(Sets.intersection(segmentFour().getRelatedLinks(), segmentAndEventTuple.getSegment().getRelatedLinks()).size(), is(0));
     }
 
     private ImmutableList<SegmentEvent> segmentEvents() {

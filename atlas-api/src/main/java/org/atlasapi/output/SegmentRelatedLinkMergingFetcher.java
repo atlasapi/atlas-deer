@@ -5,8 +5,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.segment.Segment;
@@ -43,27 +41,27 @@ public class SegmentRelatedLinkMergingFetcher {
     private final SegmentResolver segmentResolver;
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public SegmentRelatedLinkMergingFetcher(SegmentResolver segmentResolver, SegmentRelatedLinkMerger segmentRelatedLinkMerger) {
+    public SegmentRelatedLinkMergingFetcher(SegmentResolver segmentResolver, ScrubbablesSegmentRelatedLinkMerger segmentRelatedLinkMerger) {
         this.segmentResolver = checkNotNull(segmentResolver);
         this.segmentRelatedLinkMerger = checkNotNull(segmentRelatedLinkMerger);
     }
 
-    @Nullable
-    public SegmentAndEventTuple mergeSegmentLinks(@Nullable Item item) {
-        if (item == null || item.getSegmentEvents() == null || item.getSegmentEvents().isEmpty()) {
-            return null;
-        }
+    /**
+     * Returns a {@link org.atlasapi.output.SegmentAndEventTuple} containing the first SegmentEvent
+     * that exists on the Item passed in, and the Segment it references. With the overlapping RelatedLinks
+     * from all other Segments referenced by other SegmentEvents merged in and in descending order of their
+     * overlap duration.
+     *
+     * @param item - The item with SegmentEvents - the first of which will be used as the reference point for comparing
+     *             and merging all others.
+     * @return A tuple containing the SegmentEvent and referenced SegmentEvent. With all RelatedLinks
+     * from other merged Segments into the contained Segment.
+     */
+    public SegmentAndEventTuple mergeSegmentLinks(Item item) {
         List<SegmentEvent> segmentEvents = item.getSegmentEvents();
         ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
-        SegmentEvent selectedSegmentEvent = Iterables.getFirst(segmentEvents, null);
+        SegmentEvent selectedSegmentEvent = segmentEvents.iterator().next();
         Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse().get(selectedSegmentEvent));
-
-        if (selectedSegment == null) {
-            log.warn("Failed to resolve selected segment {}",
-                    Iterables.getOnlyElement(segmentMap.inverse().get(segmentEvents.get(0))).getId()
-            );
-            return new SegmentAndEventTuple(null, selectedSegmentEvent);
-        }
 
         selectedSegment.setRelatedLinks(segmentRelatedLinkMerger.getLinks(
                 selectedSegment, selectedSegmentEvent, resolveSegments(segmentEvents)

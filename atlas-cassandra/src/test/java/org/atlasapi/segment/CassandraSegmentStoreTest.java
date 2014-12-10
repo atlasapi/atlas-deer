@@ -1,6 +1,7 @@
 package org.atlasapi.segment;
 
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -72,8 +73,6 @@ public class CassandraSegmentStoreTest {
         segmentStore = testPersistenceModule.segmentStore();
     }
 
-    /* TODO Test this more */
-
     @Test
     public void testWriteAndRead() throws Exception {
         Segment segment = new Segment();
@@ -86,7 +85,7 @@ public class CassandraSegmentStoreTest {
         Optional<Segment> writtenSegment = Optional.fromNullable(
                 Iterables.getOnlyElement(segmentStore.resolveSegments(ImmutableList.of(id)), null)
         );
-        assertTrue(writtenSegment.isPresent());
-        assertTrue(writtenSegment.get().equals(segment));
+        assertThat(writtenSegment.isPresent(), is(true));
+        assertThat(writtenSegment.get().equals(segment), is(true));
     }
 }

@@ -93,16 +93,16 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withDataStaxClient(dataStaxClient)
                 .withIdGenerator(idGeneratorBuilder.generator("segment"))
                 .withMessageSender(nullMessageSender())
-                .withEquivalence(alwaysFalseSegmentEquivalence())
+                .withEquivalence(segmentEquivalence())
                 .build();
         this.dataStaxService = datastaxCassandraService;
     }
 
-    private Equivalence<Segment> alwaysFalseSegmentEquivalence() {
+    private Equivalence<Segment> segmentEquivalence() {
         return new Equivalence<Segment>() {
             @Override
             protected boolean doEquivalent(Segment target, Segment candidate) {
-                return false;
+                return target.getId().equals(candidate.getId());
             }
 
             @Override

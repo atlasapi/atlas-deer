@@ -5,8 +5,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteResult;
@@ -104,6 +102,5 @@ abstract public class AbstractSegmentStore implements SegmentStore {
         return resolvePrevious(segment.getId(), segment.getPublisher(), segment.getAliases()).orNull();
     }
 
-    @Nullable
     protected abstract Optional<Segment> resolvePrevious(Id id, Publisher source, Set<Alias> aliases);
 }

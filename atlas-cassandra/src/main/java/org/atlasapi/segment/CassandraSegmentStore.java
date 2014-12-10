@@ -35,7 +35,7 @@ import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
 public class CassandraSegmentStore extends AbstractSegmentStore {
 
-    private static final String SEGMENT = "column1";
+   private static final String SEGMENT = "column1";
 
     private final CassandraDataStaxClient cassandra;
     private final AliasIndex<Segment> aliasIndex;
@@ -57,7 +57,8 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
     @Override
     protected void doWrite(Segment segment, Segment previous) {
-        checkArgument(previous == null || segment.getPublisher().equals(previous.getPublisher()));
+        checkArgument(previous == null || segment.getPublisher().equals(previous.getPublisher()),
+                "Cannot change the Source of a Segment!");
         try {
             log.trace("Writing Segment {}", segment.getId());
             long id = segment.getId().longValue();
@@ -75,7 +76,6 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
         }
     }
 
-    @Nullable
     @Override
     protected Optional<Segment> resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases) {
 

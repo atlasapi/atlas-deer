@@ -2,10 +2,6 @@ package org.atlasapi.segment;
 
 import static org.atlasapi.serialization.protobuf.SegmentProtos.Segment.Builder;
 
-import java.nio.ByteBuffer;
-
-import javax.annotation.Nullable;
-
 import org.atlasapi.content.RelatedLinkSerializer;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.ProtoBufUtils;
@@ -43,7 +39,6 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
 
 
     private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
-
     @Override
     public byte[] serialize(Segment src) {
         Builder builder = SegmentProtos.Segment.newBuilder();
