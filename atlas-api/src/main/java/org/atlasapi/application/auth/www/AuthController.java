@@ -15,9 +15,12 @@ import org.atlasapi.application.model.auth.OAuthProvider;
 import org.atlasapi.application.users.User;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
+import org.atlasapi.output.NotAcceptableException;
+import org.atlasapi.output.NotAuthenticatedException;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
+import org.atlasapi.output.UnsupportedFormatException;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 import org.slf4j.Logger;
@@ -72,9 +75,15 @@ public class AuthController {
         response.addHeader("Access-Control-Allow-Origin", "*");
         ResponseWriter writer = null;
         try {
-            // Should always be able to get a user ref here as
-            // missing oauth user would be intercepted
+            writer = writerResolver.writerFor(request, response);
             Optional<User> user = userFetcher.userFor(request);
+            // We should always have a user at this point. However, there are
+            // cases where the OAuthInterceptor is passing, yet there is no
+            // user. Therefore we will check for the presence of a user here.
+            if (!user.isPresent()) {
+                writeError(new NotAuthenticatedException(), writer, request, response);
+                return;
+            }
             String userUrl = String.format(USER_URL, 
                     idCodec.encode(BigInteger.valueOf(user.get().getId().longValue())),
                     "json");
@@ -85,8 +94,14 @@ public class AuthController {
             response.sendRedirect(Urls.appendParameters(userUrl, oauthParams));
         }  catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
-            ErrorSummary summary = ErrorSummary.forException(e);
-            new ErrorResultWriter().write(summary, writer, request, response);
+            writeError(e, writer, request, response);
+            return;
         }
+    }
+    
+    private void writeError(Exception exception, ResponseWriter writer, 
+            HttpServletRequest request, HttpServletResponse response) throws IOException {
+        ErrorSummary summary = ErrorSummary.forException(exception);
+        new ErrorResultWriter().write(summary, writer, request, response);
     }
 }
