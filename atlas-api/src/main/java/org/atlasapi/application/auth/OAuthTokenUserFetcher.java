@@ -42,16 +42,19 @@ public class OAuthTokenUserFetcher implements UserFetcher {
     }
 
     public Optional<UserRef> userRefFor(HttpServletRequest request) {
-        if (!Strings.isNullOrEmpty(request.getParameter(OAUTH_PROVIDER_QUERY_PARAMETER))) {
-            UserNamespace oauthProviderNamespace = UserNamespace.valueOf(request.getParameter(OAUTH_PROVIDER_QUERY_PARAMETER).toUpperCase());
-            String oauthToken = request.getParameter(OAUTH_TOKEN_QUERY_PARAMETER);
-            Optional<Credentials> credentials = credentialsStore.credentialsForToken(oauthProviderNamespace, oauthToken);
-            if (accessTokenCheckers.keySet().contains(oauthProviderNamespace) 
-                    && credentials.isPresent()
-                    && accessTokenCheckers.get(oauthProviderNamespace).check(credentials.get().authToken()).hasValue()) {
-                return Optional.of(credentials.get().userRef());                
-            }
+        if (Strings.isNullOrEmpty(request.getParameter(OAUTH_PROVIDER_QUERY_PARAMETER))) {
+            return Optional.absent();
         }
+        
+        UserNamespace oauthProviderNamespace = UserNamespace.valueOf(request.getParameter(OAUTH_PROVIDER_QUERY_PARAMETER).toUpperCase());
+        String oauthToken = request.getParameter(OAUTH_TOKEN_QUERY_PARAMETER);
+        Optional<Credentials> credentials = credentialsStore.credentialsForToken(oauthProviderNamespace, oauthToken);
+        if (accessTokenCheckers.keySet().contains(oauthProviderNamespace) 
+                && credentials.isPresent()
+                && accessTokenCheckers.get(oauthProviderNamespace).check(credentials.get().authToken()).hasValue()) {
+            return Optional.of(credentials.get().userRef());                
+        }
+        
         return Optional.absent();
     }
     

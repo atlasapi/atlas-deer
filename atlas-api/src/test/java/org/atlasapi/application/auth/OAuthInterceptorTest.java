@@ -14,13 +14,27 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.application.users.User;
 import org.atlasapi.entity.Id;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
+@RunWith( MockitoJUnitRunner.class )
 public class OAuthInterceptorTest {
 
+    private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
+    private final HttpServletRequest request = mock(HttpServletRequest.class);
+    private final HttpServletResponse response = mock(HttpServletResponse.class);
+    private final ServletOutputStream stream = mock(ServletOutputStream.class);
+    private final UserFetcher userFetcher = mock(UserFetcher.class);
+    private final User user = User.builder()
+                                    .withId(Id.valueOf(new BigInteger("5000")))
+                                    .withProfileComplete(false)
+                                    .build();
+    
     /**
      * Test that access is denied to a url under protection if no
      * user present
@@ -28,14 +42,10 @@ public class OAuthInterceptorTest {
      */
     @Test
     public void testProtectsUrlNoUser() throws Exception {
-        HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/myprotectedUrl.json");
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        ServletOutputStream stream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(stream);
-        UserFetcher userFetcher = mock(UserFetcher.class);
-        NumberToShortStringCodec idCodec = mock(NumberToShortStringCodec.class);
         when(userFetcher.userFor(request)).thenReturn(Optional.<User>absent());
+        
         OAuthInterceptor interceptor = OAuthInterceptor
                 .builder()
                 .withUserFetcher(userFetcher)
@@ -54,18 +64,9 @@ public class OAuthInterceptorTest {
      */
     @Test
     public void testProtectsUrlNeedingFullProfile() throws Exception {
-        User user = mock(User.class);
-        when(user.getId()).thenReturn(Id.valueOf(new BigInteger("5000")));
-        when(user.isProfileComplete()).thenReturn(false);
-        HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/myprotectedUrl.json");
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        ServletOutputStream stream = mock(ServletOutputStream.class);
-        when(response.getOutputStream()).thenReturn(stream);
-        UserFetcher userFetcher = mock(UserFetcher.class);
-        NumberToShortStringCodec idCodec = mock(NumberToShortStringCodec.class);
-        when(idCodec.encode(new BigInteger("5000"))).thenReturn("bcdf");
         when(userFetcher.userFor(request)).thenReturn(Optional.<User>of(user));
+        when(response.getOutputStream()).thenReturn(stream);
         OAuthInterceptor interceptor = OAuthInterceptor
                 .builder()
                 .withUserFetcher(userFetcher)
@@ -84,17 +85,8 @@ public class OAuthInterceptorTest {
      */
     @Test
     public void testNeedingFullProfileExemption() throws Exception  {
-        User user = mock(User.class);
-        when(user.getId()).thenReturn(Id.valueOf(new BigInteger("5000")));
-        when(user.isProfileComplete()).thenReturn(false);
-        HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/something/bcdf.json");
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        ServletOutputStream stream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(stream);
-        UserFetcher userFetcher = mock(UserFetcher.class);
-        NumberToShortStringCodec idCodec = mock(NumberToShortStringCodec.class);
-        when(idCodec.encode(new BigInteger("5000"))).thenReturn("bcdf");
         when(userFetcher.userFor(request)).thenReturn(Optional.<User>of(user));
         OAuthInterceptor interceptor = OAuthInterceptor
                 .builder()
@@ -113,16 +105,8 @@ public class OAuthInterceptorTest {
      */
     @Test
     public void testNotProtectingOtherUrl() throws Exception {
-        User user = mock(User.class);
-        when(user.getId()).thenReturn(Id.valueOf(new BigInteger("5000")));
-        HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/other.json");
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        ServletOutputStream stream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(stream);
-        UserFetcher userFetcher = mock(UserFetcher.class);
-        NumberToShortStringCodec idCodec = mock(NumberToShortStringCodec.class);
-        when(idCodec.encode(new BigInteger("5000"))).thenReturn("bcdf");
         when(userFetcher.userFor(request)).thenReturn(Optional.<User>of(user));
         OAuthInterceptor interceptor = OAuthInterceptor
                 .builder()
@@ -134,4 +118,5 @@ public class OAuthInterceptorTest {
                 .build();
         assertTrue(interceptor.preHandle(request, response, null));
     }
+    
 }
