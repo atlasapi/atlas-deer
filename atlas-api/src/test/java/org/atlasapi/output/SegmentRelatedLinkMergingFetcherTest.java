@@ -2,11 +2,9 @@ package org.atlasapi.output;
 
 import static org.atlasapi.content.RelatedLink.LinkType.ARTICLE;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-
 
 import org.atlasapi.content.Item;
 import org.atlasapi.content.RelatedLink;
@@ -89,7 +87,7 @@ public class SegmentRelatedLinkMergingFetcherTest {
 
         Item item = new Item();
         item.setSegmentEvents(segmentEvents());
-        SegmentAndEventTuple segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item);
+        SegmentAndEventTuple segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item).get();
 
         assertThat(segmentAndEventTuple.getSegment().getRelatedLinks().size(), is(6));
         assertThat(Sets.intersection(segmentFour().getRelatedLinks(), segmentAndEventTuple.getSegment().getRelatedLinks()).size(), is(0));

@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -57,8 +58,11 @@ public class SegmentRelatedLinkMergingFetcher {
      * @return A tuple containing the SegmentEvent and referenced SegmentEvent. With all RelatedLinks
      * from other merged Segments into the contained Segment.
      */
-    public SegmentAndEventTuple mergeSegmentLinks(Item item) {
+    public Optional<SegmentAndEventTuple> mergeSegmentLinks(Item item) {
         List<SegmentEvent> segmentEvents = item.getSegmentEvents();
+        if (segmentEvents == null || segmentEvents.isEmpty()) {
+            return Optional.absent();
+        }
         ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
         SegmentEvent selectedSegmentEvent = segmentEvents.iterator().next();
         Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse().get(selectedSegmentEvent));
@@ -66,7 +70,7 @@ public class SegmentRelatedLinkMergingFetcher {
         selectedSegment.setRelatedLinks(segmentRelatedLinkMerger.getLinks(
                 selectedSegment, selectedSegmentEvent, resolveSegments(segmentEvents)
         ));
-        return new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent);
+        return Optional.of(new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent));
     }
 
     private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(final List<SegmentEvent> segmentEvents) {

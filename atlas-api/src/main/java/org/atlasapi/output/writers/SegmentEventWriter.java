@@ -13,18 +13,13 @@ import org.atlasapi.output.SegmentAndEventTuple;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 
+import com.google.common.base.Optional;
 import com.google.common.primitives.Ints;
 
-public class SegmentEventWriter implements EntityListWriter<SegmentAndEventTuple> {
+public class SegmentEventWriter implements EntityListWriter<Optional<SegmentAndEventTuple>> {
 
     private final EntityListWriter<RelatedLink> relatedLinkWriter =
             new RelatedLinkWriter();
-
-    @Nonnull
-    @Override
-    public String fieldName(SegmentAndEventTuple entity) {
-        return "segment_event";
-    }
 
     @Nonnull
     @Override
@@ -33,16 +28,22 @@ public class SegmentEventWriter implements EntityListWriter<SegmentAndEventTuple
     }
 
     @Override
-    public void write(@Nonnull SegmentAndEventTuple entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
-        if (entity == null) {
+    public void write(@Nonnull Optional<SegmentAndEventTuple> entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+        if (!entity.isPresent()) {
             return;
         }
-        final Segment segment = entity.getSegment();
-        SegmentEvent segmentEvent = entity.getSegmentEvent();
+        final Segment segment = entity.get().getSegment();
+        SegmentEvent segmentEvent = entity.get().getSegmentEvent();
         writer.writeField("position", segmentEvent.getPosition());
         writer.writeField("offset", Ints.saturatedCast(segmentEvent.getOffset().getStandardSeconds()));
         writer.writeField("is_chapter", segmentEvent.getIsChapter());
         writer.writeObject(segmentWriter(), segment, ctxt);
+    }
+
+    @Nonnull
+    @Override
+    public String fieldName(Optional<SegmentAndEventTuple> entity) {
+        return "segment_event";
     }
 
     private EntityWriter<Segment> segmentWriter() {

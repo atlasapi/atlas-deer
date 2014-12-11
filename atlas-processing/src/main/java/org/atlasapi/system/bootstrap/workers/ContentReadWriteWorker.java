@@ -14,6 +14,7 @@ import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.LookupRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -23,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -127,8 +129,13 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
         log.trace("Resolved {}/{} equivalent refs for content {}",
                 refs.size(), entry.explicitEquivalents().size(), content.getId());
         ImmutableSet<Publisher> sources = FluentIterable.from(refs).transform(TO_SOURCE).toSet();
-        equivalenceGraphStore.updateEquivalences(content.toRef(), refs, sources);
-        log.trace("Updated explicit equivalents for {}", content.getId());
+        Optional<EquivalenceGraphUpdate> update = equivalenceGraphStore.updateEquivalences(content.toRef(), refs, sources);
+        if (update.isPresent()) {
+            int adjNum = update.get().getUpdated().getAdjacents(content.getId()).getAdjacent().size();
+            log.trace("Updated explicit equivalents for {} with {} adjacent", content.getId(), adjNum);
+        } else {
+            log.trace("No update for {}", content.getId());
+        }
     }
 
     private ImmutableSet<ResourceRef> resolveEquivRefsToResourceRefs(Set<LookupRef> lookupRefs) throws ExecutionException {
