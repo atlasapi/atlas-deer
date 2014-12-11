@@ -20,6 +20,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,10 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
         @Override
         public ResourceRef apply(Content input) {
+            if (input.getThisOrChildLastUpdated() != null) {
+                return input.toRef();
+            }
+            input.setThisOrChildLastUpdated(DateTime.now());
             return input.toRef();
         }
     };
