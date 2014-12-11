@@ -124,8 +124,11 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
     private void updateEquivalences(Content content, LookupEntry entry) throws WriteException, ExecutionException {
         ImmutableSet<ResourceRef> refs = resolveEquivRefsToResourceRefs(entry.explicitEquivalents());
+        log.trace("Resolved {}/{} equivalent refs for content {}",
+                refs.size(), entry.explicitEquivalents().size(), content.getId());
         ImmutableSet<Publisher> sources = FluentIterable.from(refs).transform(TO_SOURCE).toSet();
         equivalenceGraphStore.updateEquivalences(content.toRef(), refs, sources);
+        log.trace("Updated explicit equivalents for {}", content.getId());
     }
 
     private ImmutableSet<ResourceRef> resolveEquivRefsToResourceRefs(Set<LookupRef> lookupRefs) throws ExecutionException {
