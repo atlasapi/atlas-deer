@@ -72,7 +72,6 @@ public class AuthController {
             HttpServletResponse response,
             @RequestParam (value = OAUTH_PROVIDER_QUERY_PARAMETER) String oauthProvider,
             @RequestParam (value = OAUTH_TOKEN_QUERY_PARAMETER) String oauthToken) throws IOException {
-        response.addHeader("Access-Control-Allow-Origin", "*");
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
