@@ -47,7 +47,7 @@ import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.QueryResultWriter;
-import org.atlasapi.output.SegmentRelatedLinkMerger;
+import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
 import org.atlasapi.output.annotation.BrandReferenceAnnotation;
@@ -376,7 +376,7 @@ public class QueryWebModule {
 
     @Bean
     SegmentRelatedLinkMergingFetcher segmentRelatedLinkMergingFetcher() {
-        return new SegmentRelatedLinkMergingFetcher(persistenceModule.segmentStore(), new SegmentRelatedLinkMerger());
+        return new SegmentRelatedLinkMergingFetcher(persistenceModule.segmentStore(), new ScrubbablesSegmentRelatedLinkMerger());
     }
 
     protected EntityListWriter<Channel> channelListWriter() {

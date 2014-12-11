@@ -15,10 +15,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.AbstractIdleService;
 
-/**
- * @Deprecated Use {@link com.metabroadcast.common.persistence.cassandra.CassandraDataStaxClient} instead.
- */
-@Deprecated
+
 public final class DatastaxCassandraService extends AbstractIdleService {
 
     private final Logger log = LoggerFactory.getLogger(getClass());

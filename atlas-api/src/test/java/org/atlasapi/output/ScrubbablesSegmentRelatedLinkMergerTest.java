@@ -2,7 +2,6 @@ package org.atlasapi.output;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -13,7 +12,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.joda.time.Duration;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Function;
@@ -22,7 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
-public class SegmentRelatedLinkMergerTest {
+public class ScrubbablesSegmentRelatedLinkMergerTest {
 
     public static final Function<RelatedLink, String> RELATED_LINK_TO_URL = new Function<RelatedLink, String>() {
         @Nullable
@@ -31,7 +29,7 @@ public class SegmentRelatedLinkMergerTest {
             return input.getUrl();
         }
     };
-    private final SegmentRelatedLinkMerger merger = new SegmentRelatedLinkMerger();
+    private final ScrubbablesSegmentRelatedLinkMerger merger = new ScrubbablesSegmentRelatedLinkMerger();
     private Segment selectedSegment;
     private SegmentEvent selectedSegmentEvent;
     private Multimap<Segment, SegmentEvent> segmentMap = HashMultimap.create();
@@ -58,7 +56,7 @@ public class SegmentRelatedLinkMergerTest {
         segmentMap.put(tempSeg, tempSegEvent);
 
         List<RelatedLink> links = merger.getLinks(selectedSegment, selectedSegmentEvent, segmentMap);
-        assertTrue(links.size() == 2);
+        assertThat(links.size(), is(2));
         assertThat(Iterables.getFirst(links, null), is(selectedSegment.getRelatedLinks().iterator().next()));
         assertThat(Iterables.getLast(links, null), is(tempSeg.getRelatedLinks().iterator().next()));
     }
@@ -93,7 +91,7 @@ public class SegmentRelatedLinkMergerTest {
 
 
         List<RelatedLink> links = merger.getLinks(selectedSegment, selectedSegmentEvent, segmentMap);
-        assertTrue(links.size() == 2);
+        assertThat(links.size(), is(2));
         assertThat(Iterables.getFirst(links, null), is(selectedSegment.getRelatedLinks().iterator().next()));
         assertThat(Iterables.getLast(links, null), is(tempSeg.getRelatedLinks().iterator().next()));
     }
@@ -175,7 +173,7 @@ public class SegmentRelatedLinkMergerTest {
         segmentMap.put(tempSeg, tempSegEvent);
 
         List<RelatedLink> links = merger.getLinks(selectedSegment, selectedSegmentEvent, segmentMap);
-        assertTrue(links.size() == 7);
+        assertThat(links.size(), is(7));
         assertThat(ImmutableList.copyOf(Iterables.transform(links, RELATED_LINK_TO_URL)),
                 is(ImmutableList.of("full", "30", "15A", "15B", "10", "5A", "5B")));
     }
