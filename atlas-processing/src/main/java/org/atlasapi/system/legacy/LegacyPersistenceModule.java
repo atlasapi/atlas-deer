@@ -17,12 +17,14 @@ import org.atlasapi.persistence.content.mongo.MongoTopicStore;
 import org.atlasapi.persistence.content.schedule.mongo.MongoScheduleStore;
 import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.schedule.ScheduleResolver;
+import org.atlasapi.system.bootstrap.workers.ExplicitEquivalenceMigrator;
 import org.atlasapi.topic.TopicResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
@@ -101,4 +103,13 @@ public class LegacyPersistenceModule {
         return new MongoSegmentResolver(persistence.databasedMongo(), new SubstitutionTableNumberCodec());
     }
 
+    @Bean
+    @Lazy(true)
+    public ExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new ExplicitEquivalenceMigrator(
+                legacyContentResolver(),
+                legacyEquivalenceStore(),
+                persistence.getContentEquivalenceGraphStore()
+        );
+    }
 }

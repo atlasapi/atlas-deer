@@ -68,8 +68,7 @@ public class BootstrapWorkersModule {
         ContentReadWriteWorker worker = new ContentReadWriteWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                legacy.legacyEquivalenceStore(),
-                persistence.getContentEquivalenceGraphStore()
+                legacy.explicitEquivalenceMigrator()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();

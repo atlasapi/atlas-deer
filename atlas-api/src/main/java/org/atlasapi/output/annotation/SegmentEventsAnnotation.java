@@ -15,12 +15,13 @@ import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
 import org.atlasapi.output.writers.SegmentEventWriter;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 
 
 public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
 
     private final SegmentRelatedLinkMergingFetcher linkMergingFetcher;
-    private final EntityListWriter<Optional<SegmentAndEventTuple>> writer =
+    private final EntityListWriter<Optional<SegmentAndEventTuple>> segmentWriter =
             new SegmentEventWriter();
 
     public SegmentEventsAnnotation(SegmentRelatedLinkMergingFetcher linkMergingFetcher) {
@@ -30,8 +31,11 @@ public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
     @Override
     public void write(Content entity, FieldWriter format, OutputContext ctxt) throws IOException {
         if (entity instanceof Item) {
-            Optional<SegmentAndEventTuple> tupleOpt = linkMergingFetcher.mergeSegmentLinks((Item) entity);
-            writer.write(tupleOpt, format, ctxt);
+            writeSegmentEvents(format, (Item) entity, ctxt);
         }
+    }
+
+    private void writeSegmentEvents(FieldWriter writer, Item item, OutputContext ctxt) throws IOException {
+        writer.writeList(segmentWriter, ImmutableList.of(linkMergingFetcher.mergeSegmentLinks(item)), ctxt);
     }
 }

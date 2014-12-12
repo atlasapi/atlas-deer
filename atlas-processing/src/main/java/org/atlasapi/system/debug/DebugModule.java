@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, LegacyPersistenceModule.class})
+@Import({ AtlasPersistenceModule.class, LegacyPersistenceModule.class })
 public class DebugModule {
 
     @Autowired
@@ -19,9 +19,10 @@ public class DebugModule {
     @Bean
     public ContentDebugController contentDebugController() {
         return new ContentDebugController(
-                legacyPersistenceModule.legacyContentResolver(),persistenceModule.getEquivalentContentStore(),
-                persistenceModule.getContentEquivalenceGraphStore(), persistenceModule.contentStore(),
-                legacyPersistenceModule.legacyEquivalenceStore());
+                legacyPersistenceModule.legacyContentResolver(),
+                persistenceModule.getEquivalentContentStore(),
+                persistenceModule.contentStore(),
+                legacyPersistenceModule.explicitEquivalenceMigrator());
     }
 
 }

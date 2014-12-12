@@ -4,8 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.math.BigInteger;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,14 +15,10 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
-import org.atlasapi.media.entity.LookupRef;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.persistence.lookup.entry.LookupEntry;
-import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
+import org.atlasapi.system.bootstrap.workers.ExplicitEquivalenceMigrator;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -48,16 +41,24 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.metabroadcast.common.base.Maybe;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 @Controller
 public class ContentDebugController {
 
-    private final Gson gson = new GsonBuilder().registerTypeAdapter(DateTime.class, new JsonSerializer<DateTime>() {
-        @Override
-        public JsonElement serialize(DateTime src, Type typeOfSrc, JsonSerializationContext context) {
-            return new JsonPrimitive(src.toString());
-        }
-    }).create();
+    private final NumberToShortStringCodec uppercase = new SubstitutionTableNumberCodec();
+    private final NumberToShortStringCodec lowercase = SubstitutionTableNumberCodec.lowerCaseOnly();
+
+    private final Gson gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
+            new JsonSerializer<DateTime>() {
+
+                @Override
+                public JsonElement serialize(DateTime src, Type typeOfSrc,
+                        JsonSerializationContext context) {
+                    return new JsonPrimitive(src.toString());
+                }
+            }).create();
 
     private static final Function<Content, ResourceRef> TO_RESOURCE_REF = new Function<Content, ResourceRef>() {
 
@@ -77,18 +78,40 @@ public class ContentDebugController {
     private final Logger log = LoggerFactory.getLogger(ContentDebugController.class);
     private final ContentResolver legacyResolver;
     private final EquivalentContentStore equivalentContentStore;
-    private final EquivalenceGraphStore graphStore;
     private final ContentStore contentStore;
-    private final LookupEntryStore entryStore;
+    private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
 
-    public ContentDebugController(ContentResolver legacyResolver, EquivalentContentStore equivalentContentStore,
-                                  EquivalenceGraphStore graphStore, ContentStore contentStore,
-                                  LookupEntryStore entryStore) {
+    public ContentDebugController(ContentResolver legacyResolver,
+            EquivalentContentStore equivalentContentStore, ContentStore contentStore,
+            ExplicitEquivalenceMigrator explicitEquivalenceMigrator) {
+        this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
         this.legacyResolver = checkNotNull(legacyResolver);
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
-        this.graphStore = checkNotNull(graphStore);
         this.contentStore = checkNotNull(contentStore);
-        this.entryStore = checkNotNull(entryStore);
+    }
+
+    @RequestMapping("/system/id/decode/uppercase/{id}")
+    private void decodeUppercaseId(@PathVariable("id") String id,
+            final HttpServletResponse response) throws IOException {
+        response.getWriter().write(uppercase.decode(id).toString());
+    }
+
+    @RequestMapping("/system/id/decode/lowercase/{id}")
+    private void decodeLowercaseId(@PathVariable("id") String id,
+            final HttpServletResponse response) throws IOException {
+        response.getWriter().write(lowercase.decode(id).toString());
+    }
+
+    @RequestMapping("/system/id/encode/uppercase/{id}")
+    private void encodeUppercaseId(@PathVariable("id") Long id, final HttpServletResponse response)
+            throws IOException {
+        response.getWriter().write(uppercase.encode(BigInteger.valueOf(id)));
+    }
+
+    @RequestMapping("/system/id/encode/lowercase/{id}")
+    private void encodeLowercaseId(@PathVariable("id") Long id, final HttpServletResponse response)
+            throws IOException {
+        response.getWriter().write(lowercase.encode(BigInteger.valueOf(id)));
     }
 
     @RequestMapping("/system/debug/content/{id}")
@@ -118,8 +141,9 @@ public class ContentDebugController {
     }
 
     @RequestMapping("/system/debug/content/{id}/migrate")
-    public void forceEquivUpdate(@PathVariable("id") Long id, @RequestParam(value = "publisher", required = true) String publisherKey,
-                                 final HttpServletResponse response) throws IOException {
+    public void forceEquivUpdate(@PathVariable("id") Long id,
+            @RequestParam(value = "publisher", required = true) String publisherKey,
+            final HttpServletResponse response) throws IOException {
         try {
             Maybe<Publisher> publisherMaybe = Publisher.fromKey(publisherKey);
             if (publisherMaybe.isNothing()) {
@@ -127,9 +151,8 @@ public class ContentDebugController {
                 response.getWriter().write("Supply a valid publisher key");
                 return;
             }
-
-            Resolved<Content> resolved = Futures.getUnchecked(legacyResolver.resolveIds(ImmutableList.of(Id.valueOf(id))));
-            WriteResult<Content, Content> writeResult = contentStore.writeContent(resolved.getResources().first().get());
+            Content content = resolveLegacyContent(id);
+            WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
 
             if (!writeResult.written()) {
                 response.getWriter().write("No write occured when migrating content into C* store");
@@ -137,43 +160,26 @@ public class ContentDebugController {
                 return;
             }
 
-            Optional<EquivalenceGraphUpdate> graphUpdate = migrateExplicitEquivalence(writeResult.getResource());
+            Optional<EquivalenceGraphUpdate> graphUpdate =
+                    explicitEquivalenceMigrator.migrateEquivalence(content);
+            if (!graphUpdate.isPresent()) {
+                response.setStatus(500);
+                response.getWriter().write("No update equivalence graph");
+                return;
+            }
+
             equivalentContentStore.updateEquivalences(graphUpdate.get());
 
             response.setStatus(200);
-            response.getWriter().write("Migrated content " + resolved.getResources().first().get().getId().toString());
+            response.getWriter().write("Migrated content " + content.getId().toString());
             response.flushBuffer();
         } catch (Throwable t) {
             t.printStackTrace(response.getWriter());
         }
     }
 
-    private Optional<EquivalenceGraphUpdate> migrateExplicitEquivalence(Content content) {
-        long id = content.getId().longValue();
-        try {
-            LookupEntry entry = Iterables.getOnlyElement(entryStore.entriesForIds(ImmutableList.of(id)));
-            if (entry.explicitEquivalents() == null || entry.explicitEquivalents().isEmpty()) {
-                throw new IllegalArgumentException("Content " + id + " has no explicit equivalents");
-            } else {
-                return updateEquivalences(content, entry);
-            }
-        } catch (WriteException | ExecutionException e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
-    private Optional<EquivalenceGraphUpdate> updateEquivalences(Content content, LookupEntry entry) throws WriteException, ExecutionException {
-        ImmutableSet<ResourceRef> refs = resolveEquivRefsToResourceRefs(entry.explicitEquivalents());
-        log.info("Resolved {}/{} equivalent refs for content {}",
-                refs.size(), entry.explicitEquivalents().size(), content.getId());
-        ImmutableSet<Publisher> sources = FluentIterable.from(refs).transform(TO_SOURCE).toSet();
-        Optional<EquivalenceGraphUpdate> update = graphStore.updateEquivalences(content.toRef(), refs, sources);
-        return update;
-    }
-
-    private ImmutableSet<ResourceRef> resolveEquivRefsToResourceRefs(Set<LookupRef> lookupRefs) throws ExecutionException {
-        ImmutableSet<Id> ids = FluentIterable.from(lookupRefs).transform(LookupRef.TO_ID).transform(Id.fromLongValue()).toSet();
-        Resolved<Content> contentResolved = Futures.get(legacyResolver.resolveIds(ids), ExecutionException.class);
-        return contentResolved.getResources().transform(TO_RESOURCE_REF).toSet();
+    private Content resolveLegacyContent(Long id) {
+        return Iterables.getOnlyElement(Futures.getUnchecked(legacyResolver.resolveIds(
+                ImmutableList.of(Id.valueOf(id)))).getResources());
     }
 }
