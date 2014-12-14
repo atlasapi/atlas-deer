@@ -2,6 +2,8 @@ package org.atlasapi.system.bootstrap.workers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
@@ -19,6 +21,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.queue.Worker;
 
+import javax.annotation.Nullable;
+
 public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
     private static final int maxAttempts = 3;
@@ -30,17 +34,26 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
     private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+    private final Meter messagesMeter;
 
     public ContentReadWriteWorker(ContentResolver contentResolver, ContentWriter writer,
-            ExplicitEquivalenceMigrator explicitEquivalenceMigrator) {
+            ExplicitEquivalenceMigrator explicitEquivalenceMigrator, @Nullable MetricRegistry metricsRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
+        this.messagesMeter = (metricsRegistry != null ? checkNotNull(instrumentWorker(metricsRegistry)) : null);
+    }
+
+    private Meter instrumentWorker(MetricRegistry metricsRegistry) {
+        return metricsRegistry.meter("content-bootstrap-message-processing");
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) {
         readAndWrite(message.getUpdatedResource().getId());
+        if (messagesMeter != null) {
+            messagesMeter.mark();
+        }
     }
 
     private void readAndWrite(Id id) {
