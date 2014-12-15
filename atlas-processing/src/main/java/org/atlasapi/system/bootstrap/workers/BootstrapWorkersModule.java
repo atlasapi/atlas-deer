@@ -14,6 +14,7 @@ import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.system.HealthModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
@@ -33,7 +34,7 @@ import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, LegacyPersistenceModule.class})
+@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, LegacyPersistenceModule.class, HealthModule.class})
 public class BootstrapWorkersModule {
 
     private String consumerSystem = Configurer.get("messaging.system").get();
@@ -54,6 +55,8 @@ public class BootstrapWorkersModule {
     private LegacyPersistenceModule legacy;
     @Autowired
     private KafkaMessagingModule messaging;
+    @Autowired
+    private HealthModule health;
 
     @Bean
     @Qualifier("bootstrap")
@@ -68,7 +71,8 @@ public class BootstrapWorkersModule {
         ContentReadWriteWorker worker = new ContentReadWriteWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                legacy.explicitEquivalenceMigrator()
+                legacy.explicitEquivalenceMigrator(),
+                health.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
