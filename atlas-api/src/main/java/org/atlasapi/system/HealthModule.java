@@ -45,7 +45,6 @@ public class HealthModule {
 
     @PostConstruct
     public void addProbes() {
-        healthController.addProbes(ImmutableList.of(metricsProbe()));
         healthController.addProbes(probes);
     }
 }
