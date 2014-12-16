@@ -26,7 +26,7 @@ import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class})
+@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, HealthModule.class})
 public class WorkersModule {
     
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
@@ -48,6 +48,7 @@ public class WorkersModule {
 
     @Autowired private KafkaMessagingModule messaging;
     @Autowired private AtlasPersistenceModule persistence;
+    @Autowired private HealthModule health;
     private ServiceManager consumerManager;
 
     @Bean
@@ -89,7 +90,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceGraphUpdateMessage> equivalentContentStoreGraphUpdateWorker() {
-        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore());
+        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
     }
     
     @Bean
@@ -106,7 +107,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> equivalentContentStoreContentUpdateWorker() {
-        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore());
+        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
     }
     
     @Bean
@@ -169,7 +170,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceAssertionMessage> contentEquivalenceUpdater() {
-        return new ContentEquivalenceUpdatingWorker(persistence.getContentEquivalenceGraphStore());
+        return new ContentEquivalenceUpdatingWorker(persistence.getContentEquivalenceGraphStore(), health.metrics());
     }
     
     @Bean
