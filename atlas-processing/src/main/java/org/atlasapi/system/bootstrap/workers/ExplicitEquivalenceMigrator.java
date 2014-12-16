@@ -63,8 +63,16 @@ public class ExplicitEquivalenceMigrator {
         try {
             Set<LookupRef> legacyEquivRefs = resolveLegacyEquivalents(content).explicitEquivalents();
             if (!legacyEquivRefs.isEmpty()) {
+                log.trace("Resolved {} legacy explicit equiv refs for {}",
+                        legacyEquivRefs.size(), content.getId());
                 Set<ResourceRef> equivRefs = resolveLegacyContent(legacyEquivRefs);
-                return updateGraphStore(content, equivRefs);
+                log.trace("Dereferenced {} of {} explicit equivalents for {}",
+                        equivRefs.size(), legacyEquivRefs.size(), content.getId());
+                Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(
+                        content,
+                        equivRefs);
+                log.trace("Updated graph store? {}", graphUpdate.isPresent());
+                return graphUpdate;
             } else {
                 log.warn("Content {} has no explicit equivalents", content.getId());
                 return Optional.absent();
