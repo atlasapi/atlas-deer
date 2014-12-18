@@ -1,5 +1,6 @@
 package org.atlasapi;
 
+import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import org.atlasapi.content.CassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentHasher;

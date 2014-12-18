@@ -3,14 +3,15 @@ package org.atlasapi;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.DefaultRetryPolicy;
+import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
+import com.datastax.driver.core.policies.LoggingRetryPolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.Metadata;
 import com.datastax.driver.core.ProtocolOptions.Compression;
-import com.datastax.driver.core.Session;
 import com.google.common.base.Joiner;
 import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.AbstractIdleService;
@@ -30,7 +31,12 @@ public final class DatastaxCassandraService extends AbstractIdleService {
     public DatastaxCassandraService(Iterable<String> nodes) {
         this.clusterBuilder = Cluster.builder()
                 .addContactPoints(FluentIterable.from(nodes).toArray(String.class))
-                .withCompression(Compression.SNAPPY);
+                .withCompression(Compression.SNAPPY)
+                .withSocketOptions(new SocketOptions().setReadTimeoutMillis(20000).setConnectTimeoutMillis(20000))
+                .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
+                .withLoadBalancingPolicy(new RoundRobinPolicy())
+                .withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 20000));
+
     }
 
     @Override

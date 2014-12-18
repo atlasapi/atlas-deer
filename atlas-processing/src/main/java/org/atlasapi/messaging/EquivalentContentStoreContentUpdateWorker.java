@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
 
+import com.codahale.metrics.Counter;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
 import org.slf4j.Logger;
@@ -19,20 +20,23 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
     
     private final EquivalentContentStore equivalentContentStore;
     @Nullable private final Timer messageTimer;
+    @Nullable private final Counter counter;
 
     public EquivalentContentStoreContentUpdateWorker(EquivalentContentStore equivalentContentStore, @Nullable
             MetricRegistry metrics) {
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
         this.messageTimer = (metrics != null ? checkNotNull(metrics.timer("content-changes-msg-processing")) : null);
+        this.counter = (metrics != null ? checkNotNull(metrics.counter("content-changes-msgs-total")) : null);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) {
         try {
-            if (messageTimer != null) {
+            if (messageTimer != null && counter != null) {
                 Timer.Context timer = messageTimer.time();
                 equivalentContentStore.updateContent(message.getUpdatedResource());
                 timer.stop();
+                counter.inc();
             } else {
                 equivalentContentStore.updateContent(message.getUpdatedResource());
             }

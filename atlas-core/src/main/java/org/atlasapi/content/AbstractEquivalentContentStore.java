@@ -29,7 +29,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     private final ContentResolver contentResolver;
     private final EquivalenceGraphStore graphStore;
-    
+
     private static final GroupLock<Id> lock = GroupLock.natural();
 
     public AbstractEquivalentContentStore(ContentResolver contentResolver, EquivalenceGraphStore graphStore) {

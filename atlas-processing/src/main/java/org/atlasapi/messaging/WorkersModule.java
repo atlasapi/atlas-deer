@@ -39,7 +39,7 @@ public class WorkersModule {
     
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
-    private Integer equivDefltConsumers = Configurer.get("equiv.update.consumers.default").toInt();
+        private Integer equivDefltConsumers = Configurer.get("equiv.update.consumers.default").toInt();
     private Integer equivMaxConsumers = Configurer.get("equiv.update.consumers.max").toInt();
     
 //    private String loggerDestination = Configurer.get("messaging.destination.logger").get();

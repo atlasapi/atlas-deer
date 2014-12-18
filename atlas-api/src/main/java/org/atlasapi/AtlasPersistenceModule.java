@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.datastax.driver.core.policies.LatencyAwarePolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentStore;
