@@ -101,8 +101,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         return select().all()
                 .from(EQUIVALENCE_GRAPHS_TABLE)
                 .where(in(GRAPH_ID_KEY, ImmutableSet.copyOf(idIndex.values()).toArray()))
-                .setConsistencyLevel(read)
-                .enableTracing();
+                .setConsistencyLevel(read);
     }
 
     private final Function<ResultSet, Map<Id, Long>> toGraphIdIndex
@@ -130,7 +129,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     }
 
     private ResultSetFuture resultOf(Statement query) {
-        return session.executeAsync(query.enableTracing());
+        return session.executeAsync(query);
     }
 
     private Statement queryForGraphIds(Iterable<Id> ids) {
@@ -140,8 +139,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
             .select(RESOURCE_ID_KEY,GRAPH_ID_KEY)
             .from(EQUIVALENCE_GRAPH_INDEX_TABLE)
             .where(in(RESOURCE_ID_KEY, lids))
-            .setConsistencyLevel(read)
-            .enableTracing();
+            .setConsistencyLevel(read);
     }
 
     @Override
@@ -156,21 +154,19 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
             }
         }
         Batch updateBatch = QueryBuilder.batch(updates.toArray(new RegularStatement[updates.size()]));
-        session.execute(updateBatch.setConsistencyLevel(write).enableTracing());
+        session.execute(updateBatch.setConsistencyLevel(write));
     }
 
     private Statement indexInsert(Long resourceId, Long graphId) {
         return insertInto(EQUIVALENCE_GRAPH_INDEX_TABLE)
                 .value(RESOURCE_ID_KEY, resourceId)
-                .value(GRAPH_ID_KEY, graphId)
-                .enableTracing();
+                .value(GRAPH_ID_KEY, graphId);
     }
 
     private Statement graphInsert(Long graphId, ByteBuffer serializedGraph) {
         return insertInto(EQUIVALENCE_GRAPHS_TABLE)
                 .value(GRAPH_ID_KEY, graphId)
-                .value(GRAPH_KEY, serializedGraph)
-                .enableTracing();
+                .value(GRAPH_KEY, serializedGraph);
     }
 
     private Long lowestId(EquivalenceGraph graph) {

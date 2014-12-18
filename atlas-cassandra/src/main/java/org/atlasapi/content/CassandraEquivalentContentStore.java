@@ -203,7 +203,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private ResultSetFuture resultOf(Statement query, ConsistencyLevel readConsistency) {
-        return session.executeAsync(query.setConsistencyLevel(readConsistency).enableTracing());
+        return session.executeAsync(query.setConsistencyLevel(readConsistency));
     }
     
     private Statement selectSetsQuery(Iterable<Long> keys) {
@@ -242,7 +242,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             }
         }
         session.execute(batch(deletes.toArray(new RegularStatement[deletes.size()]))
-                .setConsistencyLevel(writeConsistency).enableTracing());
+                .setConsistencyLevel(writeConsistency));
     }
 
     private void deleteStaleSets(Set<Id> deletedGraphs) {
@@ -253,7 +253,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         session.execute(delete().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(in(SET_ID_KEY, ids))
-                .setConsistencyLevel(writeConsistency).enableTracing());
+                .setConsistencyLevel(writeConsistency));
     }
 
     private void updateDataRows(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
@@ -270,7 +270,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     .with(set(GRAPH_KEY, graphSerializer.serialize(graph))));
         }
         session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
-                .setConsistencyLevel(writeConsistency).enableTracing());
+                .setConsistencyLevel(writeConsistency));
     }
 
     private Statement dataRowUpdateFor(EquivalenceGraph graph, Content content) {
@@ -293,12 +293,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             updates.add(index.insertStatement(content.getId().longValue(), graph.getId().longValue()));
         }
         session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
-                .setConsistencyLevel(writeConsistency).enableTracing());
+                .setConsistencyLevel(writeConsistency));
     }
 
     @Override
     protected void updateInSet(EquivalenceGraph graph, Content content) {
-        session.execute(dataRowUpdateFor(graph, content).setConsistencyLevel(writeConsistency).enableTracing());
+        session.execute(dataRowUpdateFor(graph, content).setConsistencyLevel(writeConsistency));
     }
 
 }
