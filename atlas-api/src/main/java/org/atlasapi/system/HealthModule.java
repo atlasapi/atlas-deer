@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import javax.annotation.PostConstruct;
 
-import org.atlasapi.CassandraPersistenceModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +26,6 @@ public class HealthModule {
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
-    private @Autowired CassandraPersistenceModule cassandraPersistenceModule;
 
     public @Bean HealthController healthController() {
         return new HealthController(systemProbes);
@@ -39,14 +37,6 @@ public class HealthModule {
 
     public @Bean HealthProbe metricsProbe() {
         return new MetricsProbe("Metrics", metrics());
-    }
-
-    public @Bean HealthProbe cassandraMetrics() {
-        return new MetricsProbe("Cassandra Connections",
-                cassandraPersistenceModule.cassandraService()
-                        .getCluster()
-                        .getMetrics()
-                        .getRegistry());
     }
 
     public @Bean MetricRegistry metrics() {
