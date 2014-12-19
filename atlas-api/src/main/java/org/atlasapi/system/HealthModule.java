@@ -1,7 +1,6 @@
 package org.atlasapi.system;
 
 import java.util.Collection;
-import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -19,8 +18,6 @@ import com.metabroadcast.common.health.probes.MemoryInfoProbe;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 import com.netflix.astyanax.connectionpool.ConnectionPoolMonitor;
-import com.netflix.astyanax.connectionpool.Host;
-import com.netflix.astyanax.connectionpool.HostStats;
 
 @Configuration
 public class HealthModule {
@@ -54,9 +51,7 @@ public class HealthModule {
                 ConnectionPoolMonitor pool = persistenceModule.persistenceModule()
                         .getContext()
                         .getConnectionPoolMonitor();
-                for (Map.Entry<Host, HostStats> hostEntry : pool.getHostStats().entrySet()) {
-                    result.addInfo(hostEntry.getKey().toString(), hostEntry.getValue().toString());
-                }
+                
                 result.addInfo("Socket timeouts", Long.toString(pool.getSocketTimeoutCount()));
                 result.addInfo("Transport errors", Long.toString(pool.getTransportErrorCount()));
                 result.addInfo("Pool-exhausted timeouts", Long.toString(pool.getPoolExhaustedTimeoutCount()));
