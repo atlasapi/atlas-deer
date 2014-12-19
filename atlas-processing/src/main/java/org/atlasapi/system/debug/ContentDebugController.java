@@ -145,6 +145,7 @@ public class ContentDebugController {
             @RequestParam(value = "publisher", required = true) String publisherKey,
             final HttpServletResponse response) throws IOException {
         try {
+            StringBuilder respString = new StringBuilder();
             Maybe<Publisher> publisherMaybe = Publisher.fromKey(publisherKey);
             if (publisherMaybe.isNothing()) {
                 response.setStatus(400);
@@ -152,26 +153,27 @@ public class ContentDebugController {
                 return;
             }
             Content content = resolveLegacyContent(id);
+            respString.append("Resolved legacy content ").append(content.getId());
             WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
 
             if (!writeResult.written()) {
-                response.getWriter().write("No write occured when migrating content into C* store");
+                response.getWriter().write(respString.append("\nNo write occured when migrating content into C* store").toString());
                 response.setStatus(500);
                 return;
             }
-
+            respString.append("\nMigrated content into C* content store");
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     explicitEquivalenceMigrator.migrateEquivalence(content);
-            if (!graphUpdate.isPresent()) {
-                response.setStatus(200);
-                response.getWriter().write("No update equivalence graph");
-                return;
+            if (graphUpdate.isPresent()) {
+                respString.append("Equivalence graph store updated");
+                equivalentContentStore.updateEquivalences(graphUpdate.get());
+                respString.append("Equivalent content store updated using graph update");
             }
-
-            equivalentContentStore.updateEquivalences(graphUpdate.get());
+            equivalentContentStore.updateContent(content.toRef());
+            respString.append("Equivalent content store updated using content ref");
 
             response.setStatus(200);
-            response.getWriter().write("Migrated content " + content.getId().toString());
+            response.getWriter().write(respString.toString());
             response.flushBuffer();
         } catch (Throwable t) {
             t.printStackTrace(response.getWriter());
