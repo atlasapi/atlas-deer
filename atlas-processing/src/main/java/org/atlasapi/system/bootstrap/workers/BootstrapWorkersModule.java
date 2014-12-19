@@ -14,7 +14,7 @@ import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
-import org.atlasapi.system.HealthModule;
+import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
@@ -34,7 +34,8 @@ import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, LegacyPersistenceModule.class, HealthModule.class})
+@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, LegacyPersistenceModule.class,
+        ProcessingHealthModule.class})
 public class BootstrapWorkersModule {
 
     private String consumerSystem = Configurer.get("messaging.system").get();
@@ -56,7 +57,7 @@ public class BootstrapWorkersModule {
     @Autowired
     private KafkaMessagingModule messaging;
     @Autowired
-    private HealthModule health;
+    private ProcessingHealthModule health;
 
     @Bean
     @Qualifier("bootstrap")

@@ -9,7 +9,7 @@ import javax.annotation.PreDestroy;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
-import org.atlasapi.system.HealthModule;
+import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -26,7 +26,7 @@ import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, HealthModule.class})
+@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, ProcessingHealthModule.class})
 public class WorkersModule {
     
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
@@ -48,7 +48,7 @@ public class WorkersModule {
 
     @Autowired private KafkaMessagingModule messaging;
     @Autowired private AtlasPersistenceModule persistence;
-    @Autowired private HealthModule health;
+    @Autowired private ProcessingHealthModule health;
     private ServiceManager consumerManager;
 
     @Bean
