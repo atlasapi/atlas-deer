@@ -2,7 +2,7 @@ package org.atlasapi;
 
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.WorkersModule;
-import org.atlasapi.system.HealthModule;
+import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.BootstrapModule;
 import org.atlasapi.system.debug.DebugModule;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +16,7 @@ import com.metabroadcast.common.webapp.properties.ContextConfigurer;
     KafkaMessagingModule.class,
     AtlasPersistenceModule.class, 
     WorkersModule.class,
-    HealthModule.class,
+    ProcessingHealthModule.class,
     BootstrapModule.class,
     DebugModule.class,
 })
