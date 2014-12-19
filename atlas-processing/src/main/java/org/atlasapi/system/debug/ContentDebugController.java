@@ -163,7 +163,7 @@ public class ContentDebugController {
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     explicitEquivalenceMigrator.migrateEquivalence(content);
             if (!graphUpdate.isPresent()) {
-                response.setStatus(500);
+                response.setStatus(200);
                 response.getWriter().write("No update equivalence graph");
                 return;
             }
