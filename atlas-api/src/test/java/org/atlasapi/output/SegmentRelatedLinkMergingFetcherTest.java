@@ -87,7 +87,7 @@ public class SegmentRelatedLinkMergingFetcherTest {
 
         Item item = new Item();
         item.setSegmentEvents(segmentEvents());
-        SegmentAndEventTuple segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item).get();
+        SegmentAndEventTuple segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents());
 
         assertThat(segmentAndEventTuple.getSegment().getRelatedLinks().size(), is(6));
         assertThat(Sets.intersection(segmentFour().getRelatedLinks(), segmentAndEventTuple.getSegment().getRelatedLinks()).size(), is(0));
