@@ -53,15 +53,14 @@ public class SegmentRelatedLinkMergingFetcher {
      * from all other Segments referenced by other SegmentEvents merged in and in descending order of their
      * overlap duration.
      *
-     * @param item - The item with SegmentEvents - the first of which will be used as the reference point for comparing
+     * @param segmentEvents - List of SegmentEvents - the first of which will be used as the reference point for comparing
      *             and merging all others.
-     * @return A tuple containing the SegmentEvent and referenced SegmentEvent. With all RelatedLinks
-     * from other merged Segments into the contained Segment.
+     * @return A tuple containing the SegmentEvent and referenced SegmentEvent, with all RelatedLinks
+     * from other merged Segments into the contained Segment. Or null if the list was empty.
      */
-    public Optional<SegmentAndEventTuple> mergeSegmentLinks(Item item) {
-        List<SegmentEvent> segmentEvents = item.getSegmentEvents();
-        if (segmentEvents == null || segmentEvents.isEmpty()) {
-            return Optional.absent();
+    public SegmentAndEventTuple mergeSegmentLinks(List<SegmentEvent> segmentEvents) {
+        if (segmentEvents.isEmpty()) {
+            return null;
         }
         ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
         SegmentEvent selectedSegmentEvent = segmentEvents.iterator().next();
@@ -70,7 +69,7 @@ public class SegmentRelatedLinkMergingFetcher {
         selectedSegment.setRelatedLinks(segmentRelatedLinkMerger.getLinks(
                 selectedSegment, selectedSegmentEvent, resolveSegments(segmentEvents)
         ));
-        return Optional.of(new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent));
+        return new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent);
     }
 
     private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(final List<SegmentEvent> segmentEvents) {

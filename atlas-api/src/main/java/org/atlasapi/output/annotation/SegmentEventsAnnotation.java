@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableList;
 public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
 
     private final SegmentRelatedLinkMergingFetcher linkMergingFetcher;
-    private final EntityListWriter<Optional<SegmentAndEventTuple>> segmentWriter =
+    private final EntityListWriter<SegmentAndEventTuple> segmentWriter =
             new SegmentEventWriter();
 
     public SegmentEventsAnnotation(SegmentRelatedLinkMergingFetcher linkMergingFetcher) {
@@ -31,11 +31,17 @@ public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
     @Override
     public void write(Content entity, FieldWriter format, OutputContext ctxt) throws IOException {
         if (entity instanceof Item) {
-            writeSegmentEvents(format, (Item) entity, ctxt);
+            if (!((Item) entity).getSegmentEvents().isEmpty()) {
+                writeSegmentEvents(format, (Item) entity, ctxt);
+            } else {
+                format.writeList(segmentWriter, ImmutableList.<SegmentAndEventTuple>of(), ctxt);
+            }
         }
     }
 
     private void writeSegmentEvents(FieldWriter writer, Item item, OutputContext ctxt) throws IOException {
-        writer.writeList(segmentWriter, ImmutableList.of(linkMergingFetcher.mergeSegmentLinks(item)), ctxt);
+        SegmentAndEventTuple segmentTuple =
+                linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents());
+        writer.writeList(segmentWriter, ImmutableList.of(segmentTuple), ctxt);
     }
 }
