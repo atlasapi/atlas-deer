@@ -24,7 +24,7 @@ public class EquivalentContentStoreGraphUpdateWorker implements Worker<Equivalen
     public EquivalentContentStoreGraphUpdateWorker(EquivalentContentStore equivalentContentStore, @Nullable
             MetricRegistry metrics) {
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
-        this.messageTimer = (metrics != null ? checkNotNull(metrics.timer("content-equiv-graph-msg-processing")) : null);
+        this.messageTimer = (metrics != null ? checkNotNull(metrics.timer("EquivalentContentStoreGraphUpdateWorker")) : null);
     }
 
     @Override

@@ -12,6 +12,8 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.util.GroupLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -27,6 +29,7 @@ import com.metabroadcast.common.collect.OptionalMap;
 
 public abstract class AbstractEquivalentContentStore implements EquivalentContentStore {
 
+    private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
     private final ContentResolver contentResolver;
     private final EquivalenceGraphStore graphStore;
 

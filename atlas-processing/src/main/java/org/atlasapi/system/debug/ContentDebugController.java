@@ -164,13 +164,8 @@ public class ContentDebugController {
             respString.append("\nMigrated content into C* content store");
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     explicitEquivalenceMigrator.migrateEquivalence(content);
-            if (graphUpdate.isPresent()) {
-                respString.append("Equivalence graph store updated");
-                equivalentContentStore.updateEquivalences(graphUpdate.get());
-                respString.append("Equivalent content store updated using graph update");
-            }
             equivalentContentStore.updateContent(content.toRef());
-            respString.append("Equivalent content store updated using content ref");
+            respString.append("\nEquivalent content store updated using content ref");
 
             response.setStatus(200);
             response.getWriter().write(respString.toString());

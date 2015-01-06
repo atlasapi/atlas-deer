@@ -20,7 +20,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     MetricRegistry metrics) {
         this.graphStore = checkNotNull(graphStore);
         this.messageTimer = (metrics != null ?
-                             checkNotNull(metrics.timer("content-equiv-msg-processing")) :
+                             checkNotNull(metrics.timer("ContentEquivalenceUpdatingWorker")) :
                              null);
     }
 
