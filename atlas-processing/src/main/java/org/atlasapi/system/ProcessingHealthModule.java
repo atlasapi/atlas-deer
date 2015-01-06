@@ -4,6 +4,13 @@ import java.util.Collection;
 
 import javax.annotation.PostConstruct;
 
+import com.codahale.metrics.Clock;
+import com.codahale.metrics.graphite.GraphiteRabbitMQ;
+import com.codahale.metrics.graphite.GraphiteReporter;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
+import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +37,13 @@ public class ProcessingHealthModule {
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
     private @Autowired AtlasPersistenceModule persistenceModule;
+    private final String environmentPrefix =  Configurer.get("metrics.environment.prefix").get();
+    private final String rabbitmqHost =  Configurer.get("metrics.rabbitmq.host").get();
+    private final int rabbitmqPort =  Configurer.get("metrics.rabbitmq.port").toInt();
+    private final String rabbitmqUsername =  Configurer.get("metrics.rabbitmq.username").get();
+    private final String rabbitmqPassword =  Configurer.get("metrics.rabbitmq.password").get();
+    private final String rabbitmqExchange =  Configurer.get("metrics.rabbitmq.exchange").get();
+
 
     public @Bean HealthController healthController() {
         return new HealthController(systemProbes);
@@ -37,6 +51,13 @@ public class ProcessingHealthModule {
 
     public @Bean org.atlasapi.system.HealthController threadController() {
         return new org.atlasapi.system.HealthController();
+    }
+
+    public @Bean GraphiteReporter graphiteReporter() {
+        return GraphiteReporter.forRegistry(metrics())
+                .prefixedWith("atlas.deer." + environmentPrefix + ".")
+                .withClock(new Clock.UserTimeClock())
+                .build(new GraphiteRabbitMQ(rabbitmqHost, rabbitmqPort, rabbitmqUsername, rabbitmqPassword, rabbitmqExchange));
     }
 
     public @Bean HealthProbe metricsProbe() {
@@ -71,7 +92,11 @@ public class ProcessingHealthModule {
     }
 
     public @Bean MetricRegistry metrics() {
-        return new MetricRegistry();
+        MetricRegistry metrics = new MetricRegistry();
+        metrics.registerAll(new GarbageCollectorMetricSet());
+        metrics.registerAll(new MemoryUsageGaugeSet());
+        metrics.registerAll(new ThreadStatesGaugeSet());
+        return metrics;
     }
 
     @PostConstruct

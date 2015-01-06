@@ -124,6 +124,8 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         return Futures.transform(graphIdIndex, toGraphs);
     }
 
+
+
     private ListenableFuture<Map<Id,Long>> resolveToGraphIds(Iterable<Id> ids) {
         return Futures.transform(resultOf(queryForGraphIds(ids)), toGraphIdIndex);
     }
