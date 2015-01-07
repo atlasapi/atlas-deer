@@ -1,6 +1,7 @@
 package org.atlasapi.system;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
@@ -54,10 +55,12 @@ public class ProcessingHealthModule {
     }
 
     public @Bean GraphiteReporter graphiteReporter() {
-        return GraphiteReporter.forRegistry(metrics())
+        GraphiteReporter reporter = GraphiteReporter.forRegistry(metrics())
                 .prefixedWith("atlas.deer." + environmentPrefix + ".")
                 .withClock(new Clock.UserTimeClock())
                 .build(new GraphiteRabbitMQ(rabbitmqHost, rabbitmqPort, rabbitmqUsername, rabbitmqPassword, rabbitmqExchange));
+        reporter.start(1, TimeUnit.MINUTES);
+        return reporter;
     }
 
     public @Bean HealthProbe metricsProbe() {
