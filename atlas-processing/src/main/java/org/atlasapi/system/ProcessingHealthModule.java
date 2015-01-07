@@ -5,24 +5,24 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
-import com.codahale.metrics.Clock;
-import com.codahale.metrics.graphite.GraphiteRabbitMQ;
-import com.codahale.metrics.graphite.GraphiteReporter;
-import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
-import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
-import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
-import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.codahale.metrics.Clock;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.graphite.GraphiteRabbitMQ;
+import com.codahale.metrics.graphite.GraphiteReporter;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.ProbeResult;
 import com.metabroadcast.common.health.probes.DiskSpaceProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
+import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 import com.netflix.astyanax.connectionpool.ConnectionPoolMonitor;
@@ -73,8 +73,7 @@ public class ProcessingHealthModule {
             @Override public ProbeResult probe() throws Exception {
                 ProbeResult result = new ProbeResult(title());
                 ConnectionPoolMonitor pool = persistenceModule.persistenceModule()
-                        .getContext()
-                        .getConnectionPoolMonitor();
+                        .getContext().getConnectionPoolMonitor();
 
                 result.addInfo("Socket timeouts", Long.toString(pool.getSocketTimeoutCount()));
                 result.addInfo("Transport errors", Long.toString(pool.getTransportErrorCount()));
