@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.codahale.metrics.Clock;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.graphite.GraphiteRabbitMQ;
+import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
@@ -39,12 +39,8 @@ public class ProcessingHealthModule {
     private @Autowired HealthController healthController;
     private @Autowired AtlasPersistenceModule persistenceModule;
     private final String environmentPrefix =  Configurer.get("metrics.environment.prefix").get();
-    private final String rabbitmqHost =  Configurer.get("metrics.rabbitmq.host").get();
-    private final int rabbitmqPort =  Configurer.get("metrics.rabbitmq.port").toInt();
-    private final String rabbitmqUsername =  Configurer.get("metrics.rabbitmq.username").get();
-    private final String rabbitmqPassword =  Configurer.get("metrics.rabbitmq.password").get();
-    private final String rabbitmqExchange =  Configurer.get("metrics.rabbitmq.exchange").get();
-
+    private final String graphiteHost =  Configurer.get("metrics.graphite.host").get();
+    private final int graphitePort =  Configurer.get("metrics.graphite.port").toInt();
 
     public @Bean HealthController healthController() {
         return new HealthController(systemProbes);
@@ -58,7 +54,7 @@ public class ProcessingHealthModule {
         GraphiteReporter reporter = GraphiteReporter.forRegistry(metrics())
                 .prefixedWith("atlas.deer." + environmentPrefix + ".")
                 .withClock(new Clock.UserTimeClock())
-                .build(new GraphiteRabbitMQ(rabbitmqHost, rabbitmqPort, rabbitmqUsername, rabbitmqPassword, rabbitmqExchange));
+                .build(new Graphite(graphiteHost, graphitePort));
         reporter.start(1, TimeUnit.MINUTES);
         return reporter;
     }
