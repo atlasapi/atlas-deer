@@ -24,6 +24,7 @@ import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.segment.SegmentStore;
+import org.atlasapi.system.HealthModule;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
@@ -73,6 +74,8 @@ public class AtlasPersistenceModule {
     private final Parameter processingConfig = Configurer.get("processing.config");
 
     @Autowired MessagingModule messaging;
+    @Autowired HealthModule health;
+
 
     @PostConstruct
     public void init() {
@@ -84,7 +87,8 @@ public class AtlasPersistenceModule {
         Iterable<String> seeds = Splitter.on(",").split(cassandraSeeds);
         ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster, cassandraKeyspace, 
                 seeds, Integer.parseInt(cassandraPort), 
-                Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout));
+                Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout),
+                health.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds);

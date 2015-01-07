@@ -1,6 +1,7 @@
 package org.atlasapi.system;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
@@ -11,7 +12,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.codahale.metrics.Clock;
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
@@ -28,7 +31,7 @@ import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 import com.netflix.astyanax.connectionpool.ConnectionPoolMonitor;
 
 @Configuration
-public class ProcessingHealthModule {
+public class ProcessingHealthModule extends HealthModule {
 
     private final ImmutableList<HealthProbe> systemProbes = ImmutableList.of(
             new MemoryInfoProbe(),
@@ -70,7 +73,6 @@ public class ProcessingHealthModule {
                 ProbeResult result = new ProbeResult(title());
                 ConnectionPoolMonitor pool = persistenceModule.persistenceModule()
                         .getContext().getConnectionPoolMonitor();
-
                 result.addInfo("Socket timeouts", Long.toString(pool.getSocketTimeoutCount()));
                 result.addInfo("Transport errors", Long.toString(pool.getTransportErrorCount()));
                 result.addInfo("Pool-exhausted timeouts", Long.toString(pool.getPoolExhaustedTimeoutCount()));
@@ -91,14 +93,20 @@ public class ProcessingHealthModule {
 
     public @Bean MetricRegistry metrics() {
         MetricRegistry metrics = new MetricRegistry();
-        metrics.registerAll(new GarbageCollectorMetricSet());
-        metrics.registerAll(new MemoryUsageGaugeSet());
-        metrics.registerAll(new ThreadStatesGaugeSet());
+        registerMetrics("gc.", new GarbageCollectorMetricSet(), metrics);
+        registerMetrics("memory.", new MemoryUsageGaugeSet(), metrics);
+        registerMetrics("threads.", new ThreadStatesGaugeSet(), metrics);
         return metrics;
     }
 
     @PostConstruct
     public void addProbes() {
         healthController.addProbes(probes);
+    }
+
+    private void registerMetrics(String prefix, MetricSet metrics, MetricRegistry registry) {
+        for (Map.Entry<String, Metric> metric : metrics.getMetrics().entrySet()) {
+            registry.register(prefix.concat(metric.getKey()), metric.getValue());
+        }
     }
 }

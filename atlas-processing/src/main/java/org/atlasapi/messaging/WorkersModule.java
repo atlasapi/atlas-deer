@@ -39,7 +39,7 @@ public class WorkersModule {
     
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
-        private Integer equivDefltConsumers = Configurer.get("equiv.update.consumers.default").toInt();
+    private Integer equivDefltConsumers = Configurer.get("equiv.update.consumers.default").toInt();
     private Integer equivMaxConsumers = Configurer.get("equiv.update.consumers.max").toInt();
     
 //    private String loggerDestination = Configurer.get("messaging.destination.logger").get();
@@ -99,8 +99,8 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(equivalentContentStoreGraphUpdateWorker(),
                 serializer(EquivalenceGraphUpdateMessage.class), 
                 contentEquivalenceGraphChanges, "EquivalentContentStoreGraphs")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefltConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
 
@@ -116,8 +116,8 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(equivalentContentStoreContentUpdateWorker(),
                 serializer(ResourceUpdatedMessage.class), 
                 contentChanges, "EquivalentContentStoreContent")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefltConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
 
@@ -133,8 +133,8 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(equivalentScheduletStoreGraphUpdateWorker(),
                 serializer(EquivalenceGraphUpdateMessage.class), 
                 contentEquivalenceGraphChanges, "EquivalentScheduleStoreGraphs")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefltConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
     
@@ -149,8 +149,8 @@ public class WorkersModule {
     public KafkaConsumer equivalentScheduleStoreScheduleUpdateListener() {
         return messaging.messageConsumerFactory().createConsumer(equivalentScheduleStoreScheduleUpdateWorker(), 
                 serializer(ScheduleUpdateMessage.class), scheduleChanges, "EquivalentScheduleStoreSchedule")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefltConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
 
