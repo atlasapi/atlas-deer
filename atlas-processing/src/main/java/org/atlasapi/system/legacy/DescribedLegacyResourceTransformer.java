@@ -12,6 +12,7 @@ import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Described;
 import org.atlasapi.media.entity.Identified;
 import org.atlasapi.media.entity.Topic;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,11 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         described.setSynopses(getSynopses(input));
         described.setSpecialization(transformEnum(input.getSpecialization(), Specialization.class));
         described.setTags(input.getTags());
-        described.setThisOrChildLastUpdated(input.getThisOrChildLastUpdated());
+        if (input.getThisOrChildLastUpdated() != null) {
+            described.setThisOrChildLastUpdated(input.getThisOrChildLastUpdated());
+        } else {
+            described.setThisOrChildLastUpdated(DateTime.now());
+        }
         described.setThumbnail(input.getThumbnail());
         described.setTitle(input.getTitle());
         return described;
@@ -67,7 +72,11 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         if (input instanceof Content || input instanceof Topic || input.getId() != null) {
             i.setId(input.getId());
         }
-        i.setLastUpdated(input.getLastUpdated());
+        if (input.getLastUpdated() != null) {
+            i.setLastUpdated(input.getLastUpdated());
+        } else {
+            i.setLastUpdated(DateTime.now());
+        }
     }
 
     protected abstract T createDescribed(F input);
