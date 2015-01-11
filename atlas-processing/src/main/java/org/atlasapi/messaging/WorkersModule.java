@@ -47,12 +47,11 @@ public class WorkersModule {
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private ProcessingHealthModule health;
     private ServiceManager consumerManager;
-    private final MetricRegistry metrics = health.metrics();
 
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> contentIndexingWorker() {
-        return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex(), metrics);
+        return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex(), health.metrics());
     }
 
     @Bean
@@ -72,7 +71,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> topicIndexingWorker() {
-        return new TopicIndexingWorker(persistence.topicStore(), persistence.topicIndex(), metrics);
+        return new TopicIndexingWorker(persistence.topicStore(), persistence.topicIndex(), health.metrics());
     }
     
     @Bean
@@ -88,7 +87,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceGraphUpdateMessage> equivalentContentStoreGraphUpdateWorker() {
-        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore(), metrics);
+        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
     }
     
     @Bean
@@ -105,7 +104,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> equivalentContentStoreContentUpdateWorker() {
-        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore(), metrics);
+        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
     }
     
     @Bean
@@ -122,7 +121,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceGraphUpdateMessage> equivalentScheduletStoreGraphUpdateWorker() {
-        return new EquivalentScheduleStoreGraphUpdateWorker(persistence.getEquivalentScheduleStore(), metrics);
+        return new EquivalentScheduleStoreGraphUpdateWorker(persistence.getEquivalentScheduleStore(), health.metrics());
     }
     
     @Bean
@@ -139,7 +138,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ScheduleUpdateMessage> equivalentScheduleStoreScheduleUpdateWorker() {
-        return new EquivalentScheduleStoreScheduleUpdateWorker(persistence.getEquivalentScheduleStore(), metrics);
+        return new EquivalentScheduleStoreScheduleUpdateWorker(persistence.getEquivalentScheduleStore(), health.metrics());
     }
     
     @Bean
@@ -155,7 +154,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceAssertionMessage> contentEquivalenceUpdater() {
-        return new ContentEquivalenceUpdatingWorker(persistence.getContentEquivalenceGraphStore(), metrics);
+        return new ContentEquivalenceUpdatingWorker(persistence.getContentEquivalenceGraphStore(), health.metrics());
     }
     
     @Bean
