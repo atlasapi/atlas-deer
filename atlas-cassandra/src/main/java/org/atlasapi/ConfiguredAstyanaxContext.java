@@ -54,7 +54,7 @@ public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keysp
         );
 
         if (metrics != null) {
-            executor = new InstrumentedExecutorService(executor, metrics, "astyanax");
+            executor = new InstrumentedExecutorService(executor, metrics, "astyanax-thread-pool");
         }
 
         return new AstyanaxContext.Builder()

@@ -41,7 +41,7 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
-        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("content-bootstrap-msg-processing")) : null);
+        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("ContentReadWriteWorker")) : null);
     }
 
     @Override
