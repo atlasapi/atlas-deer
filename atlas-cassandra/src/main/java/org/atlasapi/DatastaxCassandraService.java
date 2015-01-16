@@ -10,6 +10,7 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Metadata;
 import com.datastax.driver.core.ProtocolOptions.Compression;
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.policies.DefaultRetryPolicy;
@@ -39,6 +40,8 @@ public final class DatastaxCassandraService extends AbstractIdleService {
                 .withSocketOptions(new SocketOptions().setReadTimeoutMillis(20000).setConnectTimeoutMillis(20000))
                 .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
                 .withLoadBalancingPolicy(new RoundRobinPolicy())
+                .withProtocolVersion(ProtocolVersion.V3)
+                .withPort(9160)
                 .withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 20000));
     }
 
