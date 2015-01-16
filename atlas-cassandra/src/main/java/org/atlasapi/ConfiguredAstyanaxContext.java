@@ -63,7 +63,6 @@ public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keysp
             .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
                 .setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE)
                 .setConnectionPoolType(ConnectionPoolType.ROUND_ROBIN)
-                .setTargetCassandraVersion("2.0.11")
                 .setAsyncExecutor(executor)
             )
             .withConnectionPoolConfiguration(new ConnectionPoolConfigurationImpl("altas")
