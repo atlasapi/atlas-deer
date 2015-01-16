@@ -3,6 +3,8 @@ package org.atlasapi.messaging;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import org.atlasapi.content.IndexException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.topic.Topic;
@@ -17,21 +19,32 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.queue.Worker;
 
+import javax.annotation.Nullable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final TopicResolver topicResolver;
     private final TopicIndex topicIndex;
+    private final Timer messageTimer;
 
-    public TopicIndexingWorker(TopicResolver topicResolver, TopicIndex topicIndex) {
+    public TopicIndexingWorker(TopicResolver topicResolver, TopicIndex topicIndex,
+                               @Nullable MetricRegistry metrics) {
         this.topicResolver = topicResolver;
         this.topicIndex = topicIndex;
+        this.messageTimer = (metrics != null ? checkNotNull(metrics.timer("TopicIndexingWorker")) : null);
     }
 
     @Override
     public void process(final ResourceUpdatedMessage message) {
         try {
+            Timer.Context time = null;
+            if (messageTimer != null) {
+                time = messageTimer.time();
+            }
             Resolved<Topic> results = Futures.get(resolveContent(message), 1, TimeUnit.MINUTES, TimeoutException.class);
             Optional<Topic> topic = results.getResources().first();
             if (topic.isPresent()) {
@@ -41,6 +54,9 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
             } else {
                 log.warn("{}: failed to resolve {} ",
                         new Object[]{message.getMessageId(), message.getUpdatedResource()});
+            }
+            if (time != null) {
+                time.stop();
             }
         } catch (TimeoutException | IndexException e) {
             log.error("iqqndexing error:", e);

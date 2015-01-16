@@ -1,22 +1,11 @@
 package org.atlasapi.system;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
-
-import org.atlasapi.AtlasPersistenceModule;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import com.codahale.metrics.Clock;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
-import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
+import com.codahale.metrics.graphite.GraphiteUDP;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
@@ -29,6 +18,15 @@ import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 import com.netflix.astyanax.connectionpool.ConnectionPoolMonitor;
+import org.atlasapi.AtlasPersistenceModule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.annotation.PostConstruct;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class ProcessingHealthModule extends HealthModule {
@@ -57,7 +55,7 @@ public class ProcessingHealthModule extends HealthModule {
         GraphiteReporter reporter = GraphiteReporter.forRegistry(metrics())
                 .prefixedWith("atlas.deer." + environmentPrefix + ".")
                 .withClock(new Clock.UserTimeClock())
-                .build(new Graphite(graphiteHost, graphitePort));
+                .build(new GraphiteUDP(graphiteHost, graphitePort));
         reporter.start(1, TimeUnit.MINUTES);
         return reporter;
     }

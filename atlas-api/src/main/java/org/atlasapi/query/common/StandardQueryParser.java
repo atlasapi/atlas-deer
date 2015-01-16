@@ -40,10 +40,14 @@ public class StandardQueryParser<T> implements QueryParser<T> {
                                 : listQuery(request);
     }
 
-    private Id tryExtractSingleId(HttpServletRequest request) {
+    private Id tryExtractSingleId(HttpServletRequest request) throws QueryParseException {
         Matcher matcher = singleResourcePattern.matcher(request.getRequestURI());
-        return matcher.find() ? Id.valueOf(idCodec.decode(matcher.group(1)))
-                              : null;
+        try {
+            return matcher.find() ? Id.valueOf(idCodec.decode(matcher.group(1)))
+                    : null;
+        } catch (IllegalArgumentException e) {
+            throw new InvalidIdentifierException(e.getMessage(), e);
+        }
     }
     
     private Query<T> singleQuery(HttpServletRequest request, Id singleId) throws QueryParseException, InvalidApiKeyException {
