@@ -375,12 +375,12 @@
     <guava.version>16.0.1</guava.version>
     <jetty.version>9.0.6.v20130930</jetty.version>
     <slf4j.version>1.7.5</slf4j.version>
-    <astyanax.version>2.0.1</astyanax.version>
+    <astyanax.version>2.0.2</astyanax.version>
     <common.version>1.0-SNAPSHOT</common.version>
     <metrics.version>3.0.1</metrics.version>
     <amq.version>5.9.0</amq.version>
     <spring.version>3.0.5.RELEASE</spring.version>
-    <datastax.version>2.1.0</datastax.version>
+    <datastax.version>2.1.4</datastax.version>
     <jackson.version>2.3.0</jackson.version>
   </properties>
 
