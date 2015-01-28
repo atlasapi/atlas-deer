@@ -1,5 +1,7 @@
 package org.atlasapi.entity;
 
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Identified;
 import org.atlasapi.segment.Segment;
@@ -18,6 +20,8 @@ public enum ResourceType {
     CONTENT(Content.class),
     TOPIC(Topic.class),
     SEGMENT(Segment.class),
+    CHANNEL(Channel.class),
+    CHANNEL_GROUP(ChannelGroup.class),
     ;
 
     private Class<? extends Identified> cls;
