@@ -1,9 +1,10 @@
 package org.atlasapi.channel;
 
-import com.google.common.base.Preconditions;
 import org.joda.time.LocalDate;
 
 import javax.annotation.Nullable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelNumbering extends ChannelGroupMembership {
 
@@ -17,7 +18,10 @@ public class ChannelNumbering extends ChannelGroupMembership {
             String channelNumber
     ) {
         super(channelGroup, channelRef, startDate, endDate);
-        Preconditions.checkNotNull(channelNumber);
-        this.channelNumber = channelNumber;
+        this.channelNumber = checkNotNull(channelNumber);
+    }
+
+    public String getChannelNumber() {
+        return channelNumber;
     }
 }

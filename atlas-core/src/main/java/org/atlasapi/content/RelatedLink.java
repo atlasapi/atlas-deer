@@ -108,7 +108,9 @@ public class RelatedLink {
         FLICKR,
         SIMULCAST,
         ARTICLE,
-        UNKNOWN
+        VOD,
+        UNKNOWN,
+        ;
     }
     
     private final String url;
