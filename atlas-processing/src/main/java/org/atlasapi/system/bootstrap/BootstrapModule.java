@@ -11,7 +11,6 @@ import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.SchedulerModule;
 import org.atlasapi.content.Content;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.system.HealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;

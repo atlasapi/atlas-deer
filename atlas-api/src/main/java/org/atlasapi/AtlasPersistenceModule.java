@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentStore;
@@ -25,6 +26,8 @@ import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.segment.SegmentStore;
 import org.atlasapi.system.HealthModule;
+import org.atlasapi.system.legacy.LegacyChannelResolver;
+import org.atlasapi.system.legacy.LegacyChannelTransformer;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
@@ -231,4 +234,8 @@ public class AtlasPersistenceModule {
         return new MongoConnectionPoolProbe();
     }
 
+    @Bean
+    public ChannelResolver channelResolver() {
+        return new LegacyChannelResolver(channelStore(), new LegacyChannelTransformer());
+    }
 }

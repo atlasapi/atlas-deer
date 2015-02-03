@@ -4,7 +4,6 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.segment.SegmentType;
 import org.atlasapi.segment.Segment;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 
 public class LegacySegmentTransformer extends DescribedLegacyResourceTransformer<org.atlasapi.media.segment.Segment, Segment> {
 

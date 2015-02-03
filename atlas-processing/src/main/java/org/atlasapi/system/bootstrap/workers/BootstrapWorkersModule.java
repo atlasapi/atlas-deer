@@ -72,7 +72,7 @@ public class BootstrapWorkersModule {
         ContentReadWriteWorker worker = new ContentReadWriteWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                legacy.explicitEquivalenceMigrator(),
+                explicitEquivalenceMigrator(),
                 health.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
@@ -131,6 +131,15 @@ public class BootstrapWorkersModule {
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
+    }
+
+
+     public ExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new ExplicitEquivalenceMigrator(
+                legacy.legacyContentResolver(),
+                legacy.legacyEquivalenceStore(),
+                persistence.getContentEquivalenceGraphStore()
+        );
     }
 
 }

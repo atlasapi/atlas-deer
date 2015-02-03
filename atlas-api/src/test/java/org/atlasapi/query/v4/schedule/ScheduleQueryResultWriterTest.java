@@ -43,7 +43,7 @@ public class ScheduleQueryResultWriterTest {
     private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
     private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter("broadcasts", SubstitutionTableNumberCodec.lowerCaseOnly());
     private final EntityListWriter<ChannelSchedule> scheduleWriter
-        = new ScheduleListWriter(new ChannelListWriter(channelAnnotations), new ScheduleEntryListWriter(contentWriter, broadcastWriter));
+        = new ScheduleListWriter(new LegacyChannelListWriter(channelAnnotations), new ScheduleEntryListWriter(contentWriter, broadcastWriter));
     private final ScheduleQueryResultWriter writer = new ScheduleQueryResultWriter(scheduleWriter);
       
     

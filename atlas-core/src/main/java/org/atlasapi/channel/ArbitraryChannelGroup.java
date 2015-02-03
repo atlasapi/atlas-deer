@@ -10,7 +10,7 @@ public class ArbitraryChannelGroup extends ChannelGroup<ChannelGroupMembership> 
 
     public ArbitraryChannelGroup(
             Publisher publisher,
-            ChannelGroupMembership channels,
+            Set<ChannelGroupMembership> channels,
             Set<Country> availableCountries,
             Set<TemporalField<String>> titles
     ) {

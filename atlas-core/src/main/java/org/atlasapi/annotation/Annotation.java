@@ -53,6 +53,7 @@ public enum Annotation {
     IMAGES,
     META_MODEL,
     META_ENDPOINT,
+    VARIATIONS
     ;
     
     public String toKey() {

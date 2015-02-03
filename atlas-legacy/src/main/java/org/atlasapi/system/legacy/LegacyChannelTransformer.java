@@ -22,7 +22,9 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
     public Channel apply(org.atlasapi.media.channel.Channel input) {
         return Channel.builder(input.getSource())
                 .withUri(input.getUri())
+                .withId(input.getId())
                 .withHighDefinition(input.getHighDefinition())
+                .withTitles(input.getAllTitles())
                 .withAdult(input.getAdult())
                 .withBroadcaster(input.getBroadcaster())
                 .withParent(input.getParent())
@@ -66,7 +68,7 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
         return Iterables.transform(aliases, new Function<org.atlasapi.media.entity.Alias, Alias>() {
             @Override
             public Alias apply( org.atlasapi.media.entity.Alias input) {
-                return null;
+                return new Alias(input.getNamespace(), input.getValue());
             }
         });
     }
@@ -116,10 +118,10 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
         return Image.builder(legacyImage.getCanonicalUri())
                 .withHeight(legacyImage.getHeight())
                 .withWidth(legacyImage.getWidth())
-                .withType(Image.Type.valueOf(legacyImage.getType().toString()))
-                .withColor(Image.Color.valueOf(legacyImage.getColor().toString()))
-                .withTheme(Image.Theme.valueOf(legacyImage.getTheme().toString()))
-                .withAspectRatio(Image.AspectRatio.valueOf(legacyImage.getAspectRatio().toString()))
+                .withLegacyType(legacyImage.getType())
+                .withLegacyColor(legacyImage.getColor())
+                .withLegacyTheme(legacyImage.getTheme())
+                .withLegacyAspectRatio(legacyImage.getAspectRatio())
                 .withMimeType(legacyImage.getMimeType())
                 .withAvailabilityStart(legacyImage.getAvailabilityStart())
                 .withAvailabilityEnd(legacyImage.getAvailabilityEnd())

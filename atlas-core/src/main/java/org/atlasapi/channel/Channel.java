@@ -13,6 +13,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.LocalDate;
 
 import javax.annotation.Nullable;
@@ -42,6 +43,7 @@ public class Channel extends Identified implements Sourced {
 
     public Channel(
             String uri,
+            Id id,
             Set<Alias> aliases,
             Set<TemporalField<String>> titles,
             Publisher publisher,
@@ -62,6 +64,7 @@ public class Channel extends Identified implements Sourced {
     ) {
         super(checkNotNull(uri));
         this.setAliases(aliases);
+        this.setId(id);
         this.titles = ImmutableSet.copyOf(titles);
         this.publisher = checkNotNull(publisher);
         this.mediaType = mediaType;
@@ -82,66 +85,90 @@ public class Channel extends Identified implements Sourced {
 
 
     @Override
+    @FieldName("source")
     public Publisher getPublisher() {
         return this.publisher;
     }
 
-    public ImmutableSet<TemporalField<String>> getTitles() {
+
+    @FieldName("title")
+    public String getTitle() {
+        return TemporalField.currentOrFutureValue(titles);
+    }
+    public ImmutableSet<TemporalField<String>> getAllTitles() {
         return titles;
     }
 
+    @FieldName("media_type")
     public MediaType getMediaType() {
         return mediaType;
     }
 
+    @FieldName("high_definition")
     public Boolean getHighDefinition() {
         return highDefinition;
     }
 
+    @FieldName("regional")
     public Boolean getRegional() {
         return regional;
     }
 
+    @FieldName("adult")
     public Boolean getAdult() {
         return adult;
     }
 
+    @FieldName("broadcaster")
     public Publisher getBroadcaster() {
         return broadcaster;
     }
 
+    @FieldName("available_from")
     public ImmutableSet<Publisher> getAvailableFrom() {
         return availableFrom;
     }
 
+    @FieldName("channel_groups")
     public ImmutableSet<ChannelGroupMembership> getChannelGroups() {
         return channelGroups;
     }
 
+    @FieldName("genres")
     public ImmutableSet<String> getGenres() {
         return genres;
     }
 
+    @FieldName("related_links")
     public ImmutableSet<RelatedLink> getRelatedLinks() {
         return relatedLinks;
     }
 
-    public ImmutableSet<TemporalField<Image>> getImages() {
+    @FieldName("images")
+    public Set<Image> getImages() {
+        return TemporalField.currentValues(images);
+    }
+
+    public ImmutableSet<TemporalField<Image>> getAllImages() {
         return images;
     }
 
+    @FieldName("parent")
     public ChannelRef getParent() {
         return parent;
     }
 
+    @FieldName("variations")
     public ImmutableSet<ChannelRef> getVariations() {
         return variations;
     }
 
+    @FieldName("start_date")
     public LocalDate getStartDate() {
         return startDate;
     }
 
+    @FieldName("end_date")
     public LocalDate getEndDate() {
         return endDate;
     }
@@ -153,6 +180,7 @@ public class Channel extends Identified implements Sourced {
     public static class Builder {
 
         private String uri;
+        private Id id;
         private Set<Alias> aliases = Sets.newHashSet();
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private Publisher publisher;
@@ -186,8 +214,8 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
-        public Builder withTitles(TemporalField<String> title) {
-            this.titles.add(title);
+        public Builder withTitles(Iterable<TemporalField<String>> titles) {
+            Iterables.addAll(this.titles, titles);
             return this;
         }
 
@@ -257,7 +285,9 @@ public class Channel extends Identified implements Sourced {
         }
 
         public Builder withParent(Long parentId) {
-            this.parent = buildChannelRef(parentId);
+            if (parentId != null) {
+                this.parent = buildChannelRef(parentId);
+            }
             return this;
         }
 
@@ -288,6 +318,11 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withId(Long id) {
+            this.id = Id.valueOf(id);
+            return this;
+        }
+
 
         private ChannelRef buildChannelRef(Long id) {
             return new ChannelRef(Id.valueOf(id), publisher);
@@ -296,6 +331,7 @@ public class Channel extends Identified implements Sourced {
         public Channel build() {
             return new Channel(
                     uri,
+                    id,
                     aliases,
                     titles,
                     publisher,

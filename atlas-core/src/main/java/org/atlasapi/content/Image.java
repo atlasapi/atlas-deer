@@ -2,6 +2,10 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.media.entity.ImageAspectRatio;
+import org.atlasapi.media.entity.ImageColor;
+import org.atlasapi.media.entity.ImageTheme;
+import org.atlasapi.media.entity.ImageType;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
@@ -158,6 +162,34 @@ public class Image {
         
         public Builder withAspectRatio(AspectRatio aspectRatio) {
             this.aspectRatio = aspectRatio;
+            return this;
+        }
+
+        public Builder withLegacyType(ImageType type) {
+            if(type != null) {
+                this.type = Image.Type.valueOf(type.toString());
+            }
+            return this;
+        }
+
+        public Builder withLegacyColor(ImageColor color) {
+            if(color != null) {
+                this.color = Image.Color.valueOf(color.toString());
+            }
+            return this;
+        }
+
+        public Builder withLegacyTheme(ImageTheme theme) {
+            if(theme != null) {
+                this.theme = Image.Theme.valueOf(theme.toString());
+            }
+            return this;
+        }
+
+        public Builder withLegacyAspectRatio(ImageAspectRatio aspectRatio) {
+            if(aspectRatio != null ) {
+                this.aspectRatio = Image.AspectRatio.valueOf(aspectRatio.toString());
+            }
             return this;
         }
         
