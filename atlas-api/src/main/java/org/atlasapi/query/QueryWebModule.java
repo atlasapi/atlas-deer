@@ -68,6 +68,7 @@ import org.atlasapi.output.annotation.ChannelAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupMembershipListWriter;
 import org.atlasapi.output.annotation.ChannelVariationAnnotation;
 import org.atlasapi.output.annotation.LegacyChannelAnnotation;
 import org.atlasapi.output.annotation.ChannelSummaryWriter;
@@ -532,7 +533,13 @@ public class QueryWebModule {
         return new ChannelListWriter(
                 AnnotationRegistry.<Channel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation())
-                        .register(CHANNEL_GROUPS, new ChannelGroupMembershipAnnotation(idCodec()))
+                        .register(CHANNEL_GROUPS, new ChannelGroupMembershipAnnotation(
+                                new ChannelGroupMembershipListWriter(
+                                        "channel_groups",
+                                        "channel_group",
+                                        channelGroupResolver
+                                )
+                        ))
                         .register(PARENT, new ParentChannelAnnotation(channelResolver))
                         .register(VARIATIONS, new ChannelVariationAnnotation(channelResolver))
                         .build());
