@@ -329,13 +329,17 @@ public class QueryWebModule {
     }
 
     private ChannelGroupListWriter channelGroupListWriter() {
-        return new ChannelGroupListWriter( AnnotationRegistry.<ChannelGroup>builder()
+        return new ChannelGroupListWriter(AnnotationRegistry.<ChannelGroup>builder()
                 .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
-                .register(CHANNELS, new ChannelGroupChannelsAnnotation(
-                        new ChannelGroupChannelWriter(channelResolver)
-                ))
-                .register(REGIONS, new RegionsAnnotation(channelGroupResolver))
-                .register(PLATFORM, new PlatformAnnotation(channelGroupResolver))
+                .register(
+                        CHANNELS,
+                        new ChannelGroupChannelsAnnotation(
+                                new ChannelGroupChannelWriter(channelResolver)
+                        ),
+                        CHANNEL_GROUP
+                )
+                .register(REGIONS, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
+                .register(PLATFORM, new PlatformAnnotation(channelGroupResolver), CHANNEL_GROUP)
                 .build());
     }
 
@@ -533,15 +537,19 @@ public class QueryWebModule {
         return new ChannelListWriter(
                 AnnotationRegistry.<Channel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation())
-                        .register(CHANNEL_GROUPS, new ChannelGroupMembershipAnnotation(
-                                new ChannelGroupMembershipListWriter(
-                                        "channel_groups",
-                                        "channel_group",
-                                        channelGroupResolver
-                                )
-                        ))
-                        .register(PARENT, new ParentChannelAnnotation(channelResolver))
-                        .register(VARIATIONS, new ChannelVariationAnnotation(channelResolver))
+                        .register(
+                                CHANNEL_GROUPS,
+                                new ChannelGroupMembershipAnnotation(
+                                        new ChannelGroupMembershipListWriter(
+                                                "channel_groups",
+                                                "channel_group",
+                                                channelGroupResolver
+                                        )
+                                ),
+                                CHANNEL
+                        )
+                        .register(PARENT, new ParentChannelAnnotation(channelResolver), CHANNEL)
+                        .register(VARIATIONS, new ChannelVariationAnnotation(channelResolver), CHANNEL)
                         .build());
     }
 
