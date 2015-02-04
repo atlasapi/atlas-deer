@@ -6,6 +6,7 @@ import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
 import static org.atlasapi.annotation.Annotation.BROADCASTS;
 import static org.atlasapi.annotation.Annotation.CHANNEL;
 import static org.atlasapi.annotation.Annotation.CHANNELS;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CLIPS;
@@ -25,6 +26,8 @@ import static org.atlasapi.annotation.Annotation.META_MODEL;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.PARENT;
 import static org.atlasapi.annotation.Annotation.PEOPLE;
+import static org.atlasapi.annotation.Annotation.PLATFORM;
+import static org.atlasapi.annotation.Annotation.REGIONS;
 import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
 import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
 import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
@@ -40,6 +43,8 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
@@ -60,6 +65,8 @@ import org.atlasapi.output.annotation.BrandReferenceAnnotation;
 import org.atlasapi.output.annotation.BrandSummaryAnnotation;
 import org.atlasapi.output.annotation.BroadcastsAnnotation;
 import org.atlasapi.output.annotation.ChannelAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
 import org.atlasapi.output.annotation.ChannelVariationAnnotation;
 import org.atlasapi.output.annotation.LegacyChannelAnnotation;
@@ -81,6 +88,8 @@ import org.atlasapi.output.annotation.NextBroadcastAnnotation;
 import org.atlasapi.output.annotation.NullWriter;
 import org.atlasapi.output.annotation.ParentChannelAnnotation;
 import org.atlasapi.output.annotation.PeopleAnnotation;
+import org.atlasapi.output.annotation.PlatformAnnotation;
+import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
@@ -93,6 +102,7 @@ import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
 import org.atlasapi.persistence.output.RecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.UpcomingItemsResolver;
+import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.ImagesAnnotation;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
 import org.atlasapi.query.common.AttributeCoercers;
@@ -104,11 +114,16 @@ import org.atlasapi.query.common.QueryAtomParser;
 import org.atlasapi.query.common.QueryAttributeParser;
 import org.atlasapi.query.common.QueryContextParser;
 import org.atlasapi.query.common.QueryExecutor;
+import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.StandardQueryParser;
 import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryResultWriter;
 import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.meta.LinkCreator;
 import org.atlasapi.query.v4.meta.MetaApiLinkCreator;
@@ -174,6 +189,11 @@ public class QueryWebModule {
     private @Autowired  QueryExecutor<Channel> channelQueryExecutor;
 
     private @Autowired ChannelResolver channelResolver;
+
+    private @Autowired QueryExecutor<ChannelGroup> channelGroupQueryExecutor;
+
+    private @Autowired ChannelGroupResolver channelGroupResolver;
+
 
     @Bean NumberToShortStringCodec idCodec() {
         return SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -290,7 +310,7 @@ public class QueryWebModule {
 
 
     @Bean
-    ChannelController ChannelController() {
+    ChannelController channelController() {
         return new ChannelController(
                 channelQueryParser(),
                 channelQueryExecutor,
@@ -298,6 +318,54 @@ public class QueryWebModule {
         );
     }
 
+    @Bean
+    ChannelGroupController channelGroupController() {
+        return new ChannelGroupController(
+                channelGroupQueryParser(),
+                channelGroupQueryExecutor,
+                new ChannelGroupQueryResultWriter(channelGroupListWriter())
+        );
+    }
+
+    private ChannelGroupListWriter channelGroupListWriter() {
+        return new ChannelGroupListWriter( AnnotationRegistry.<ChannelGroup>builder()
+                .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
+                .register(CHANNELS, new ChannelGroupChannelsAnnotation(
+                        new ChannelGroupChannelWriter(channelResolver)
+                ))
+                .register(REGIONS, new RegionsAnnotation(channelGroupResolver))
+                .register(PLATFORM, new PlatformAnnotation(channelGroupResolver))
+                .build());
+    }
+
+    private QueryParser<ChannelGroup> channelGroupQueryParser() {
+        QueryContextParser contextParser = new QueryContextParser(
+                configFetcher,
+                userFetcher,
+                new IndexAnnotationsExtractor(
+                        channelGroupAnnotationIndex()
+                ),
+                selectionBuilder()
+        );
+        return new StandardQueryParser<>(
+                Resource.CHANNEL_GROUP,
+                channelGroupQueryAttributeParser(),
+                idCodec(),
+                contextParser
+        );
+    }
+
+    private AnnotationIndex channelGroupAnnotationIndex() {
+        return ResourceAnnotationIndex.builder(Resource.CHANNEL_GROUP, Annotation.all()).build();
+    }
+
+    private QueryAttributeParser channelGroupQueryAttributeParser() {
+        return new QueryAttributeParser(
+                ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec()))
+                )
+        );
+    }
 
 
     private StandardQueryParser<Channel> channelQueryParser() {

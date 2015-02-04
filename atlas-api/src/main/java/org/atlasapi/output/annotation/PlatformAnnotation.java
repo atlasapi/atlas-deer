@@ -1,0 +1,63 @@
+package org.atlasapi.output.annotation;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupRef;
+import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.Region;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.output.FieldWriter;
+import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.writers.ChannelGroupWriter;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public class PlatformAnnotation extends OutputAnnotation<ChannelGroup> {
+
+    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("platforms", "platform");
+
+    private final ChannelGroupResolver channelGroupResolver;
+
+    public PlatformAnnotation(ChannelGroupResolver channelGroupResolver) {
+
+        this.channelGroupResolver = checkNotNull(channelGroupResolver);
+    }
+
+    @Override
+    public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if(!(entity instanceof Region)) {
+            return;
+        }
+        Region region = (Region) entity;
+        if(region.getPlatform() == null) {
+            writer.writeField("parent", null);
+            return;
+        }
+        Id platformId = region.getPlatform().getId();
+
+
+        ChannelGroup platform = Futures.get(
+                Futures.transform(
+                        channelGroupResolver.resolveIds(ImmutableSet.of(platformId)),
+                        new Function<Resolved<ChannelGroup>, ChannelGroup>() {
+                            @Override
+                            public ChannelGroup apply(@Nullable Resolved<ChannelGroup> input) {
+                                return input.getResources().first().get();
+                            }
+                        }
+                ), 1, TimeUnit.MINUTES, IOException.class
+        );
+
+        writer.writeObject(CHANNEL_GROUP_WRITER, platform, ctxt);
+    }
+}

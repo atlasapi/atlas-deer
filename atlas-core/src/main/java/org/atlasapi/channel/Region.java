@@ -16,13 +16,14 @@ public class Region extends ChannelGroup<ChannelNumbering> {
     private final ChannelGroupRef platform;
 
     public Region(
+            Id id,
             Publisher publisher,
             Set<ChannelNumbering> channels,
             Set<Country> availableCountries,
             Set<TemporalField<String>> titles,
             ChannelGroupRef platform
     ) {
-        super(publisher, channels, availableCountries, titles);
+        super(id, publisher, channels, availableCountries, titles);
         this.platform = platform;
     }
 
@@ -33,17 +34,28 @@ public class Region extends ChannelGroup<ChannelNumbering> {
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
     }
+
+    @Override
+    public String getType() {
+        return "region";
+    }
+
     public static class Builder {
+        private Id id;
         private Publisher publisher;
         private Set<ChannelNumbering> channels = Sets.newHashSet();
         private Set<Country> availableCountries= Sets.newHashSet();
         private Set<TemporalField<String>> titles = Sets.newHashSet();
-        private Long platformId;
+        private ChannelGroupRef platformRef;
 
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
         }
 
+        public Builder withId(Long id) {
+            this.id = Id.valueOf(id);
+            return this;
+        }
         public Builder withChannels(Iterable<ChannelNumbering> channels) {
             Iterables.addAll(this.channels, channels);
             return this;
@@ -59,18 +71,20 @@ public class Region extends ChannelGroup<ChannelNumbering> {
             return this;
         }
 
-        public Builder withPlaformId(Long plaformId) {
-            this.platformId = plaformId;
+        public Builder withPlaformId(Long platformId) {
+            if(platformId != null) {
+                this.platformRef = new ChannelGroupRef(
+                        Id.valueOf(platformId),
+                        publisher
+                );
+            }
             return this;
         }
 
 
         public Region build() {
-            ChannelGroupRef platformRef = new ChannelGroupRef(
-                    Id.valueOf(platformId),
-                    publisher
-            );
             return new Region(
+                    id,
                     publisher,
                     channels,
                     availableCountries,

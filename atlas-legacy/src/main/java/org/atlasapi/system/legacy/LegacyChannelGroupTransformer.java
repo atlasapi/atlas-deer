@@ -5,11 +5,13 @@ import com.google.common.collect.Iterables;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
+import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.Region;
 import org.atlasapi.media.entity.Publisher;
 
 import java.util.Set;
 
-public abstract class LegacyChannelGroupTransformer<F extends org.atlasapi.media.channel.ChannelGroup, T extends ChannelGroup> extends BaseLegacyResourceTransformer<F, T>{
+public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer<org.atlasapi.media.channel.ChannelGroup,ChannelGroup> {
 
     protected Iterable<ChannelNumbering> transformChannelNumbering(
             Set<org.atlasapi.media.channel.ChannelNumbering> channelNumberings,
@@ -27,5 +29,36 @@ public abstract class LegacyChannelGroupTransformer<F extends org.atlasapi.media
                         .buildChannelNumbering();
             }
         });
+    }
+
+
+
+    @Override
+    public ChannelGroup apply(org.atlasapi.media.channel.ChannelGroup input) {
+        if(input instanceof org.atlasapi.media.channel.Platform) {
+            return transformPlatform((org.atlasapi.media.channel.Platform) input);
+        } else {
+            return transformRegion((org.atlasapi.media.channel.Region) input);
+        }
+    }
+
+    private Platform transformPlatform(org.atlasapi.media.channel.Platform input) {
+        return Platform.builder(input.getPublisher())
+                .withId(input.getId())
+                .withAvailableCountries(input.getAvailableCountries())
+                .withRegionIds(input.getRegions())
+                .withTitles(input.getAllTitles())
+                .withChannels(transformChannelNumbering(input.getChannelNumberings(), input.getPublisher()))
+                .build();
+    }
+
+    public Region transformRegion(org.atlasapi.media.channel.Region input) {
+        return Region.builder(input.getPublisher())
+                .withId(input.getId())
+                .withAvailableCountries(input.getAvailableCountries())
+                .withPlaformId(input.getPlatform())
+                .withTitles(input.getAllTitles())
+                .withChannels(transformChannelNumbering(input.getChannelNumberings(), input.getPublisher()))
+                .build();
     }
 }

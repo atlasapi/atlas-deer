@@ -1,6 +1,7 @@
-package org.atlasapi.query.v4.channel;
+package org.atlasapi.query.v4.channelgroup;
 
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
@@ -18,27 +19,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
-@RequestMapping("/4/channels")
-@ProducesType(type = Channel.class)
-public class ChannelController {
+@RequestMapping("/4/channel_groups")
+@ProducesType(type = ChannelGroup.class)
+public class ChannelGroupController {
 
-    private final QueryParser<Channel> requestParser;
-    private final QueryExecutor<Channel> queryExecutor;
-    private final QueryResultWriter<Channel> resultWriter;
+    private final QueryParser<ChannelGroup> requestParser;
+    private final QueryExecutor<ChannelGroup> queryExecutor;
+    private final QueryResultWriter<ChannelGroup> resultWriter;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    private static Logger log = LoggerFactory.getLogger(ChannelController.class);
+    private static Logger log = LoggerFactory.getLogger(ChannelGroupController.class);
 
-    public ChannelController(
-            QueryParser<Channel> requestParser,
-            QueryExecutor<Channel> queryExecutor,
-            QueryResultWriter<Channel> resultWriter
+    public ChannelGroupController(
+            QueryParser<ChannelGroup> requestParser,
+            QueryExecutor<ChannelGroup> queryExecutor,
+            QueryResultWriter<ChannelGroup> resultWriter
     ) {
         this.requestParser = checkNotNull(requestParser);
         this.queryExecutor = checkNotNull(queryExecutor);
@@ -46,12 +46,12 @@ public class ChannelController {
     }
 
     @RequestMapping({"", ".*", "/{cid}.*", "/{cid}"})
-    public void fetchChannel(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void fetchChannelGroup(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            Query<Channel> channelQuery = requestParser.parse(request);
-            QueryResult<Channel> queryResult = queryExecutor.execute(channelQuery);
+            Query<ChannelGroup> channelGroupQuery = requestParser.parse(request);
+            QueryResult<ChannelGroup> queryResult = queryExecutor.execute(channelGroupQuery);
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

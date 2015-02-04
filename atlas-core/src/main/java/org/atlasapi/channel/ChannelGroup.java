@@ -3,6 +3,7 @@ package org.atlasapi.channel;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.intl.Country;
 import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
@@ -21,11 +22,13 @@ public abstract class ChannelGroup<T extends ChannelGroupMembership> extends Ide
 
 
     protected ChannelGroup(
+            Id id,
             Publisher publisher,
             Set<T> channels,
             Set<Country> availableCountries,
             Set<TemporalField<String>> titles
     ) {
+        super(id);
         this.channels = ImmutableSet.copyOf(channels);
         this.availableCountries = ImmutableSet.copyOf(availableCountries);
         this.titles = ImmutableSet.copyOf(titles);
@@ -49,4 +52,10 @@ public abstract class ChannelGroup<T extends ChannelGroupMembership> extends Ide
     public Set<TemporalField<String>> getTitles() {
         return titles;
     }
+
+    public String getTitle() {
+        return TemporalField.currentOrFutureValue(titles);
+    }
+
+    public abstract String getType();
 }

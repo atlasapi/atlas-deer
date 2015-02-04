@@ -21,13 +21,14 @@ public class Platform extends ChannelGroup<ChannelNumbering> {
     private final ImmutableSet<ChannelGroupRef> regions;
 
     public Platform(
+            Id id,
             Publisher publisher,
             Set<ChannelNumbering> channels,
             Set<Country> availableCountries,
             Set<TemporalField<String>> titles,
             Set<ChannelGroupRef> regions
     ) {
-        super(publisher, channels, availableCountries, titles);
+        super(id, publisher, channels, availableCountries, titles);
         this.regions = ImmutableSet.copyOf(regions);
     }
 
@@ -38,7 +39,14 @@ public class Platform extends ChannelGroup<ChannelNumbering> {
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
     }
+
+    @Override
+    public String getType() {
+        return "platform";
+    }
+
     public static class Builder {
+        private Id id;
         private Publisher publisher;
         private Set<ChannelNumbering> channels = Sets.newHashSet();
         private Set<Country> availableCountries= Sets.newHashSet();
@@ -49,6 +57,10 @@ public class Platform extends ChannelGroup<ChannelNumbering> {
             this.publisher = checkNotNull(publisher);
         }
 
+        public Builder withId(Long id) {
+            this.id = Id.valueOf(id);
+            return this;
+        }
         public Builder withChannels(Iterable<ChannelNumbering> channels) {
             Iterables.addAll(this.channels, channels);
             return this;
@@ -86,6 +98,7 @@ public class Platform extends ChannelGroup<ChannelNumbering> {
                     )
             );
             return new Platform(
+                    id,
                     publisher,
                     channels,
                     availableCountries,

@@ -15,10 +15,10 @@ public class ChannelNumbering extends ChannelGroupMembership {
             ChannelRef channelRef,
             @Nullable LocalDate startDate,
             @Nullable LocalDate endDate,
-            String channelNumber
+            @Nullable String channelNumber
     ) {
         super(channelGroup, channelRef, startDate, endDate);
-        this.channelNumber = checkNotNull(channelNumber);
+        this.channelNumber = channelNumber;
     }
 
     public String getChannelNumber() {
