@@ -36,7 +36,7 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                 .withMediaType(MediaType.valueOf(input.getMediaType().toString()))
                 .withAvailableFrom(input.getAvailableFrom())
                 .withRelatedLinks(transformRelatedLinks(input.getRelatedLinks()))
-                .withAliases(transformAliases(input.getAliases()))
+                .withAliases(transformAliases(input))
                 .withChannelGroups(
                         transformChannelNumbers(
                                 input.getChannelNumbers(),
@@ -64,39 +64,6 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
 
     }
 
-    private Iterable<Alias> transformAliases(Iterable<org.atlasapi.media.entity.Alias> aliases) {
-        return Iterables.transform(aliases, new Function<org.atlasapi.media.entity.Alias, Alias>() {
-            @Override
-            public Alias apply( org.atlasapi.media.entity.Alias input) {
-                return new Alias(input.getNamespace(), input.getValue());
-            }
-        });
-    }
-
-    private Iterable<RelatedLink> transformRelatedLinks(Iterable<org.atlasapi.media.entity.RelatedLink> legacyRelatedLinks) {
-        return Iterables.transform(legacyRelatedLinks, new Function<org.atlasapi.media.entity.RelatedLink, RelatedLink>() {
-            @Override
-            public RelatedLink apply(org.atlasapi.media.entity.RelatedLink legacyLink) {
-                return transformRelatedLink(legacyLink);
-            }
-        });
-
-    }
-
-    private RelatedLink transformRelatedLink(org.atlasapi.media.entity.RelatedLink legacyLink) {
-        return RelatedLink.relatedLink(
-                RelatedLink.LinkType.valueOf(legacyLink.getType().toString()),
-                    legacyLink.getUrl()
-                ).withSourceId(legacyLink.getSourceId())
-                .withShortName(legacyLink.getShortName())
-                .withTitle(legacyLink.getTitle())
-                .withDescription(legacyLink.getDescription())
-                .withImage(legacyLink.getImage())
-                .withThumbnail(legacyLink.getThumbnail())
-                .build();
-    }
-
-
     private Iterable<TemporalField<Image>> transformImages(Iterable<TemporalField<org.atlasapi.media.entity.Image>> legacyImages) {
         return Iterables.transform(
                 legacyImages,
@@ -111,21 +78,6 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                     }
                 }
         );
-
-    }
-    private Image transformImage(org.atlasapi.media.entity.Image legacyImage) {
-
-        return Image.builder(legacyImage.getCanonicalUri())
-                .withHeight(legacyImage.getHeight())
-                .withWidth(legacyImage.getWidth())
-                .withLegacyType(legacyImage.getType())
-                .withLegacyColor(legacyImage.getColor())
-                .withLegacyTheme(legacyImage.getTheme())
-                .withLegacyAspectRatio(legacyImage.getAspectRatio())
-                .withMimeType(legacyImage.getMimeType())
-                .withAvailabilityStart(legacyImage.getAvailabilityStart())
-                .withAvailabilityEnd(legacyImage.getAvailabilityEnd())
-                .build();
 
     }
 }
