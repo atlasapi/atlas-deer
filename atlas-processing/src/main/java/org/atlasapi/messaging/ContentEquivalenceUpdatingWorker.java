@@ -10,8 +10,12 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.metabroadcast.common.queue.Worker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAssertionMessage> {
+
+    private final Logger log = LoggerFactory.getLogger(ContentEquivalenceUpdatingWorker.class);
 
     private final EquivalenceGraphStore graphStore;
     @Nullable private final Timer messageTimer;
@@ -36,8 +40,8 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                 graphStore.updateEquivalences(message.getSubject(), message.getAssertedAdjacents(),
                         message.getPublishers());
             }
-        } catch (WriteException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.warn("Error while processing EquivalenceAssertionMessage {}", message.toString(), e);
         }
     }
 
