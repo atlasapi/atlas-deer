@@ -51,8 +51,8 @@ public class ProcessingHealthModule extends HealthModule {
         return new org.atlasapi.system.HealthController();
     }
 
-    public @Bean GraphiteReporter graphiteReporter() {
-        GraphiteReporter reporter = GraphiteReporter.forRegistry(metrics())
+    public GraphiteReporter graphiteReporterFor(MetricRegistry metrics) {
+        GraphiteReporter reporter = GraphiteReporter.forRegistry(metrics)
                 .prefixedWith("atlas.deer." + environmentPrefix + ".")
                 .withClock(new Clock.UserTimeClock())
                 .build(new GraphiteUDP(graphiteHost, graphitePort));
@@ -94,6 +94,7 @@ public class ProcessingHealthModule extends HealthModule {
         registerMetrics("gc.", new GarbageCollectorMetricSet(), metrics);
         registerMetrics("memory.", new MemoryUsageGaugeSet(), metrics);
         registerMetrics("threads.", new ThreadStatesGaugeSet(), metrics);
+        graphiteReporterFor(metrics);
         return metrics;
     }
 
