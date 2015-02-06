@@ -41,7 +41,7 @@ public class ProducesTypeProcessorTest {
         AbstractProcessor fieldNameProcessor = createFieldNameProcessor(sourceClasses);
         
         // TODO hacky - can this be avoided?
-        MetaApiInfoClassGenerator.addPath("/Users/oli/Documents/Code/atlas-deer/atlas-api/src/test/java/");
+        MetaApiInfoClassGenerator.addPath("./src/test/java/");
         boolean hasFailed = generator.generateInfoClasses(fieldNameProcessor, sourceClasses);
         
         assertFalse("generation of model info classes failed", hasFailed);
@@ -61,7 +61,7 @@ public class ProducesTypeProcessorTest {
     }
 
     private String filePathFrom(Class<?> outputClass) {
-        return "/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java/org/atlasapi/generation/generated/endpoints/" + outputClass.getSimpleName() + "EndpointInfo.java";
+        return "./src/main/java/org/atlasapi/generation/generated/endpoints/" + outputClass.getSimpleName() + "EndpointInfo.java";
     }
 
     private AbstractProcessor createFieldNameProcessor(Iterable<Class<?>> classesToOutput) {

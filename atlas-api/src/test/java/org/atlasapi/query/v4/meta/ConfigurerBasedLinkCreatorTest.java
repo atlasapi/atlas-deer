@@ -14,7 +14,7 @@ public class ConfigurerBasedLinkCreatorTest {
     public void testLinkCreation() {
         String type = "type";
         
-        assertEquals(baseUri + "/4/model_classes/" + type + ".json", linkCreator.createModelLink(type));
+        assertEquals(baseUri + "/4/meta/model_classes/" + type + ".json", linkCreator.createModelLink(type));
     }
 
 }

@@ -261,7 +261,7 @@ public class MetaApiInfoClassGenerator {
 				fileManager, diagnosticCollector, 
 				Arrays.asList(
 						"-proc:only", 
-						"-s", "/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java"
+						"-s", "./src/main/java"
 				), 
 				null, 
 				sourceCompilationUnits
@@ -282,8 +282,8 @@ public class MetaApiInfoClassGenerator {
 
 	private Iterable<? extends JavaFileObject> transformToCompilationUnits(Iterable<Class<?>> classes, 
 			StandardJavaFileManager fileManager) throws Exception {
-		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-core/src/main/java/");
-		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java/");
+		addPath("./../atlas-core/src/main/java/");
+		addPath("./src/main/java/");
 		Iterable<File> sourceCompilationFiles = Iterables.transform(classes, CLASS_TO_FILE);
 		
 		return fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);

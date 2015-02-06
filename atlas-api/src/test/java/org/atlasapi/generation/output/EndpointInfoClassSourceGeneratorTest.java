@@ -1,5 +1,7 @@
 package org.atlasapi.generation.output;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 
 import org.atlasapi.generation.model.EndpointMethodInfo;
@@ -35,7 +37,7 @@ public class EndpointInfoClassSourceGeneratorTest {
         
         String typeBasedFields = generator.generateTypeBasedFields(typeInfo);
         
-        assertEquals(expected(typeInfo), typeBasedFields);
+        assertThat(typeBasedFields, is(expected(typeInfo)));
     }
     
     @Test
@@ -52,7 +54,7 @@ public class EndpointInfoClassSourceGeneratorTest {
         
         String classString = generator.processType(typeInfo, ImmutableList.of(methodInfo));
         
-        assertEquals(expectedClassString(typeInfo, methodInfo), classString);
+        assertThat(classString, is(expectedClassString(typeInfo, methodInfo)));
     }
 
     private String expected(EndpointTypeInfo typeInfo) {
@@ -75,7 +77,7 @@ public class EndpointInfoClassSourceGeneratorTest {
         
         return String.format(
                 expectedPattern,
-                typeInfo.producedType().toLowerCase(),
+                typeInfo.key(),
                 typeInfo.description(),
                 typeInfo.rootPath()
         );
@@ -136,7 +138,7 @@ public class EndpointInfoClassSourceGeneratorTest {
                 typeInfo.className(),
                 methodInfo.method(),
                 methodInfo.path(),
-                typeInfo.producedType().toLowerCase(),
+                typeInfo.key(),
                 typeInfo.description(),
                 typeInfo.rootPath()
         );
