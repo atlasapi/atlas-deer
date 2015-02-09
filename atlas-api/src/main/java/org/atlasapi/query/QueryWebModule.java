@@ -6,6 +6,8 @@ import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
 import static org.atlasapi.annotation.Annotation.BROADCASTS;
 import static org.atlasapi.annotation.Annotation.CHANNEL;
 import static org.atlasapi.annotation.Annotation.CHANNELS;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CLIPS;
 import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
@@ -22,28 +24,37 @@ import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
 import static org.atlasapi.annotation.Annotation.META_MODEL;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.PARENT;
 import static org.atlasapi.annotation.Annotation.PEOPLE;
+import static org.atlasapi.annotation.Annotation.PLATFORM;
+import static org.atlasapi.annotation.Annotation.REGIONS;
 import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
 import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
 import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
 import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
 import static org.atlasapi.annotation.Annotation.TOPICS;
+import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ItemAndBroadcast;
+import org.atlasapi.content.MediaType;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.QueryResultWriter;
@@ -54,6 +65,12 @@ import org.atlasapi.output.annotation.BrandReferenceAnnotation;
 import org.atlasapi.output.annotation.BrandSummaryAnnotation;
 import org.atlasapi.output.annotation.BroadcastsAnnotation;
 import org.atlasapi.output.annotation.ChannelAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupMembershipListWriter;
+import org.atlasapi.output.annotation.ChannelVariationAnnotation;
+import org.atlasapi.output.annotation.LegacyChannelAnnotation;
 import org.atlasapi.output.annotation.ChannelSummaryWriter;
 import org.atlasapi.output.annotation.ChannelsAnnotation;
 import org.atlasapi.output.annotation.ClipsAnnotation;
@@ -70,7 +87,10 @@ import org.atlasapi.output.annotation.LocationsAnnotation;
 import org.atlasapi.output.annotation.ModelInfoAnnotation;
 import org.atlasapi.output.annotation.NextBroadcastAnnotation;
 import org.atlasapi.output.annotation.NullWriter;
+import org.atlasapi.output.annotation.ParentChannelAnnotation;
 import org.atlasapi.output.annotation.PeopleAnnotation;
+import org.atlasapi.output.annotation.PlatformAnnotation;
+import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
@@ -83,6 +103,7 @@ import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
 import org.atlasapi.persistence.output.RecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.UpcomingItemsResolver;
+import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.ImagesAnnotation;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
 import org.atlasapi.query.common.AttributeCoercers;
@@ -93,8 +114,17 @@ import org.atlasapi.query.common.IndexContextualAnnotationsExtractor;
 import org.atlasapi.query.common.QueryAtomParser;
 import org.atlasapi.query.common.QueryAttributeParser;
 import org.atlasapi.query.common.QueryContextParser;
+import org.atlasapi.query.common.QueryExecutor;
+import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.StandardQueryParser;
+import org.atlasapi.query.v4.channel.ChannelController;
+import org.atlasapi.query.v4.channel.ChannelListWriter;
+import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryResultWriter;
 import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.meta.LinkCreator;
 import org.atlasapi.query.v4.meta.MetaApiLinkCreator;
@@ -104,7 +134,7 @@ import org.atlasapi.query.v4.meta.endpoint.EndpointInfoQueryResultWriter;
 import org.atlasapi.query.v4.meta.model.ModelController;
 import org.atlasapi.query.v4.meta.model.ModelInfoListWriter;
 import org.atlasapi.query.v4.meta.model.ModelInfoQueryResultWriter;
-import org.atlasapi.query.v4.schedule.ChannelListWriter;
+import org.atlasapi.query.v4.schedule.LegacyChannelListWriter;
 import org.atlasapi.query.v4.schedule.ContentListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleController;
 import org.atlasapi.query.v4.schedule.ScheduleEntryListWriter;
@@ -141,13 +171,13 @@ import com.metabroadcast.common.time.SystemClock;
 @Configuration
 @Import({QueryModule.class})
 public class QueryWebModule {
-    
+
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
-    
+
     private @Autowired DatabasedMongo mongo;
     private @Autowired QueryModule queryModule;
-    private @Autowired ChannelResolver channelResolver;
+    private @Autowired org.atlasapi.media.channel.ChannelResolver legacyChannelResolver;
     private @Autowired SearchResolver v4SearchResolver;
     private @Autowired TopicResolver topicResolver;
     private @Autowired PopularTopicIndex popularTopicIndex;
@@ -156,6 +186,15 @@ public class QueryWebModule {
     private @Autowired ApplicationSourcesFetcher configFetcher;
 
     private @Autowired AtlasPersistenceModule persistenceModule;
+
+    private @Autowired  QueryExecutor<Channel> channelQueryExecutor;
+
+    private @Autowired ChannelResolver channelResolver;
+
+    private @Autowired QueryExecutor<ChannelGroup> channelGroupQueryExecutor;
+
+    private @Autowired ChannelGroupResolver channelGroupResolver;
+
 
     @Bean NumberToShortStringCodec idCodec() {
         return SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -167,9 +206,9 @@ public class QueryWebModule {
 
     @Bean
     ScheduleController v4ScheduleController() {
-        EntityListWriter<ItemAndBroadcast> entryListWriter = 
-            new ScheduleEntryListWriter(contentListWriter(), new BroadcastWriter("broadcasts", idCodec())); 
-        ScheduleListWriter scheduleWriter = new ScheduleListWriter(channelListWriter(), entryListWriter);
+        EntityListWriter<ItemAndBroadcast> entryListWriter =
+            new ScheduleEntryListWriter(contentListWriter(), new BroadcastWriter("broadcasts", idCodec()));
+        ScheduleListWriter scheduleWriter = new ScheduleListWriter(legacyChannelListWriter(), entryListWriter);
         return new ScheduleController(queryModule.equivalentScheduleStoreScheduleQueryExecutor(),
             configFetcher, new ScheduleQueryResultWriter(scheduleWriter),
             new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
@@ -180,10 +219,10 @@ public class QueryWebModule {
 
     @Bean
     TopicController v4TopicController() {
-        return new TopicController(topicQueryParser(), 
+        return new TopicController(topicQueryParser(),
             queryModule.topicQueryExecutor(), new TopicQueryResultWriter(topicListWriter()));
     }
-    
+
     @Bean
     ContentController contentController() {
         return new ContentController(contentQueryParser(),
@@ -199,50 +238,50 @@ public class QueryWebModule {
                 .addExplicitSingleContext(topicAnnotationIndex())
                 .combine()
             ), selectionBuilder());
-        
+
         ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<Topic, Content>(
             Resource.TOPIC, Attributes.TOPIC_ID, Resource.CONTENT, idCodec(),
             contentQueryAttributeParser(),
             contextParser);
-        
+
         return new TopicContentController(parser, queryModule.topicContentQueryExecutor(),
                 new TopicContentResultWriter(topicListWriter(), contentListWriter()));
     }
-    
+
     @Bean
     LinkCreator linkCreator() {
         return new MetaApiLinkCreator(baseAtlasUri);
     }
-    
+
     @Bean
     ModelController modelController() {
         QueryResultWriter<ModelClassInfo> resultWriter = new ModelInfoQueryResultWriter(modelListWriter());
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
-                userFetcher, 
+                userFetcher,
                 new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(modelInfoAnnotationIndex())
                         .combine()
-                        ), 
+                        ),
                         selectionBuilder()
                 );
-        
+
         return new ModelController(ModelClassInfoSingletonStore.INSTANCE, resultWriter, contextParser);
     }
-    
+
     @Bean
     EndpointController endpointController() {
         QueryResultWriter<EndpointClassInfo> resultWriter = new EndpointInfoQueryResultWriter(endpointListWriter());
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
-                userFetcher, 
+                userFetcher,
                 new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(endpointInfoAnnotationIndex())
                         .combine()
-                        ), 
+                        ),
                         selectionBuilder()
                 );
-        
+
         return new EndpointController(EndpointClassInfoSingletonStore.INSTANCE, resultWriter, contextParser);
     }
 
@@ -259,22 +298,127 @@ public class QueryWebModule {
             QueryAtomParser.valueOf(Attributes.TOPIC_WEIGHTING, AttributeCoercers.floatCoercer())
         ));
     }
-    
+
     private StandardQueryParser<Content> contentQueryParser() {
         QueryContextParser contextParser = new QueryContextParser(configFetcher,
                 userFetcher,
         new IndexAnnotationsExtractor(contentAnnotationIndex()), selectionBuilder());
-        
-        return new StandardQueryParser<Content>(Resource.CONTENT, 
+
+        return new StandardQueryParser<Content>(Resource.CONTENT,
                 contentQueryAttributeParser(),
                 idCodec(), contextParser);
+    }
+
+
+    @Bean
+    ChannelController channelController() {
+        return new ChannelController(
+                channelQueryParser(),
+                channelQueryExecutor,
+                new ChannelQueryResultWriter(channelListWriter())
+        );
+    }
+
+    @Bean
+    ChannelGroupController channelGroupController() {
+        return new ChannelGroupController(
+                channelGroupQueryParser(),
+                channelGroupQueryExecutor,
+                new ChannelGroupQueryResultWriter(channelGroupListWriter())
+        );
+    }
+
+    private ChannelGroupListWriter channelGroupListWriter() {
+        return new ChannelGroupListWriter(AnnotationRegistry.<ChannelGroup>builder()
+                .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
+                .register(
+                        CHANNELS,
+                        new ChannelGroupChannelsAnnotation(
+                                new ChannelGroupChannelWriter(channelResolver)
+                        ),
+                        CHANNEL_GROUP
+                )
+                .register(REGIONS, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
+                .register(PLATFORM, new PlatformAnnotation(channelGroupResolver), CHANNEL_GROUP)
+                .build());
+    }
+
+    private QueryParser<ChannelGroup> channelGroupQueryParser() {
+        QueryContextParser contextParser = new QueryContextParser(
+                configFetcher,
+                userFetcher,
+                new IndexAnnotationsExtractor(
+                        channelGroupAnnotationIndex()
+                ),
+                selectionBuilder()
+        );
+        return new StandardQueryParser<>(
+                Resource.CHANNEL_GROUP,
+                channelGroupQueryAttributeParser(),
+                idCodec(),
+                contextParser
+        );
+    }
+
+    private AnnotationIndex channelGroupAnnotationIndex() {
+        return ResourceAnnotationIndex.builder(Resource.CHANNEL_GROUP, Annotation.all()).build();
+    }
+
+    private QueryAttributeParser channelGroupQueryAttributeParser() {
+        return new QueryAttributeParser(
+                ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec()))
+                )
+        );
+    }
+
+
+    private StandardQueryParser<Channel> channelQueryParser() {
+        QueryContextParser contextParser = new QueryContextParser(
+                configFetcher,
+                userFetcher,
+                new IndexAnnotationsExtractor(
+                        channelAnnotationIndex()
+                ),
+                selectionBuilder()
+        );
+        return new StandardQueryParser<>(
+                Resource.CHANNEL,
+                channelQueryAttributeParser(),
+                idCodec(),
+                contextParser
+        );
+    }
+
+
+
+    private QueryAttributeParser channelQueryAttributeParser() {
+        return new QueryAttributeParser(
+                ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.AVAILABLE_FROM, AttributeCoercers.enumCoercer(Sources.fromKey())),
+                        QueryAtomParser.valueOf(Attributes.BROADCASTER, AttributeCoercers.enumCoercer(Sources.fromKey())),
+                        QueryAtomParser.valueOf(Attributes.ORDER_BY, AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(
+                                Attributes.MEDIA_TYPE,
+                                AttributeCoercers.enumCoercer(
+                                        new Function<String, Optional<MediaType>>() {
+                                            @Override
+                                            public Optional<MediaType> apply(String input) {
+                                                return MediaType.fromKey(input);
+                                            }
+                                        }
+                                )
+                        )
+                )
+        );
     }
 
     private StandardQueryParser<Topic> topicQueryParser() {
         QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
         new IndexAnnotationsExtractor(topicAnnotationIndex()), selectionBuilder());
-        
-        return new StandardQueryParser<Topic>(Resource.TOPIC, 
+
+        return new StandardQueryParser<Topic>(Resource.TOPIC,
             new QueryAttributeParser(ImmutableList.of(
                 QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())),
                 QueryAtomParser.valueOf(Attributes.TOPIC_TYPE, AttributeCoercers.enumCoercer(Topic.Type.fromKey())),
@@ -295,14 +439,14 @@ public class QueryWebModule {
     SearchController searchController() {
         return new SearchController(v4SearchResolver, configFetcher, new ContentQueryResultWriter(contentListWriter()));
     }
-    
+
     @Bean
     ResourceAnnotationIndex contentAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.CONTENT, Annotation.all())
             .attach(Annotation.TOPICS, topicAnnotationIndex(), Annotation.ID)
             .build();
     }
-    
+
     @Bean
     ResourceAnnotationIndex topicAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.TOPIC, Annotation.all()).build();
@@ -312,17 +456,17 @@ public class QueryWebModule {
     ResourceAnnotationIndex channelAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.CHANNEL, Annotation.all()).build();
     }
-    
+
     @Bean
     ResourceAnnotationIndex modelInfoAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.MODEL_INFO, Annotation.all()).build();
     }
-    
+
     @Bean
     ResourceAnnotationIndex endpointInfoAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.ENDPOINT_INFO, Annotation.all()).build();
     }
-    
+
     @Bean
     EntityListWriter<Content> contentListWriter() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
@@ -357,10 +501,10 @@ public class QueryWebModule {
             //.register(PRODUCTS, new ProductsAnnotation(productResolver), commonImplied)
             //.register(RECENTLY_BROADCAST, new RecentlyBroadcastAnnotation(idCodec(), recentlyBroadcastResolver), commonImplied)
             .register(CHANNELS, new ChannelsAnnotation(), commonImplied)
-            .register(CONTENT_SUMMARY, NullWriter.create(Content.class), ImmutableSet.of(DESCRIPTION, BRAND_SUMMARY, 
-                SERIES_SUMMARY, BROADCASTS, LOCATIONS))
-            .register(CONTENT_DETAIL, NullWriter.create(Content.class), ImmutableSet.of(EXTENDED_DESCRIPTION, SUB_ITEMS, CLIPS, 
-                PEOPLE, BRAND_SUMMARY, SERIES_SUMMARY, BROADCASTS, LOCATIONS, KEY_PHRASES, RELATED_LINKS))
+            .register(CONTENT_SUMMARY, NullWriter.create(Content.class), ImmutableSet.of(DESCRIPTION, BRAND_SUMMARY,
+                    SERIES_SUMMARY, BROADCASTS, LOCATIONS))
+            .register(CONTENT_DETAIL, NullWriter.create(Content.class), ImmutableSet.of(EXTENDED_DESCRIPTION, SUB_ITEMS, CLIPS,
+                    PEOPLE, BRAND_SUMMARY, SERIES_SUMMARY, BROADCASTS, LOCATIONS, KEY_PHRASES, RELATED_LINKS))
         .build());
     }
 
@@ -379,23 +523,43 @@ public class QueryWebModule {
         return new SegmentRelatedLinkMergingFetcher(persistenceModule.segmentStore(), new ScrubbablesSegmentRelatedLinkMerger());
     }
 
-    protected EntityListWriter<Channel> channelListWriter() {
-        return new ChannelListWriter(AnnotationRegistry.<Channel>builder()
+    protected EntityListWriter<org.atlasapi.media.channel.Channel> legacyChannelListWriter() {
+        return new LegacyChannelListWriter(AnnotationRegistry.<org.atlasapi.media.channel.Channel>builder()
 //            .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
 //            .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
 //            .register(EXTENDED_ID, new ExtendedIdentificationAnnotation(idCodec()), ImmutableSet.of(ID))
             .registerDefault(CHANNEL_SUMMARY, new ChannelSummaryWriter(idCodec()))
-            .register(CHANNEL, new ChannelAnnotation(), ImmutableSet.of(CHANNEL_SUMMARY))
+            .register(CHANNEL, new LegacyChannelAnnotation(), ImmutableSet.of(CHANNEL_SUMMARY))
             .build());
     }
-    
+
+    protected EntityListWriter<Channel> channelListWriter() {
+        return new ChannelListWriter(
+                AnnotationRegistry.<Channel>builder()
+                        .registerDefault(CHANNEL, new ChannelAnnotation())
+                        .register(
+                                CHANNEL_GROUPS,
+                                new ChannelGroupMembershipAnnotation(
+                                        new ChannelGroupMembershipListWriter(
+                                                "channel_groups",
+                                                "channel_group",
+                                                channelGroupResolver
+                                        )
+                                ),
+                                CHANNEL
+                        )
+                        .register(PARENT, new ParentChannelAnnotation(channelResolver), CHANNEL)
+                        .register(VARIATIONS, new ChannelVariationAnnotation(channelResolver), CHANNEL)
+                        .build());
+    }
+
     @Bean
     protected EntityListWriter<ModelClassInfo> modelListWriter() {
         return new ModelInfoListWriter(AnnotationRegistry.<ModelClassInfo>builder()
                 .registerDefault(META_MODEL, new ModelInfoAnnotation<>(linkCreator()))
                 .build());
     }
-    
+
     @Bean
     protected EntityListWriter<EndpointClassInfo> endpointListWriter() {
         return new EndpointInfoListWriter(AnnotationRegistry.<EndpointClassInfo>builder()

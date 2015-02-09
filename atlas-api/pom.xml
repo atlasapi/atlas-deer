@@ -103,6 +103,11 @@
     </dependency>
     <dependency>
       <groupId>org.atlasapi</groupId>
+      <version>${atlas.version}</version>
+      <artifactId>atlas-legacy</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.atlasapi</groupId>
       <artifactId>atlas-persistence</artifactId>
       <exclusions>
         <exclusion>

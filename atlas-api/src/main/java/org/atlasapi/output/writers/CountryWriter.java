@@ -2,14 +2,27 @@ package org.atlasapi.output.writers;
 
 import java.io.IOException;
 
+import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 import com.metabroadcast.common.intl.Country;
 
+import javax.annotation.Nonnull;
 
-public class CountryWriter implements EntityWriter<Country> {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+
+public class CountryWriter implements EntityListWriter<Country> {
+
+    private final String listName;
+    private final String fieldName;
+
+    public CountryWriter(String listName, String fieldName) {
+        this.listName = checkNotNull(listName);
+        this.fieldName = checkNotNull(fieldName);
+    }
 
     @Override
     public void write(Country entity, FieldWriter writer, OutputContext ctxt) throws IOException {
@@ -19,7 +32,12 @@ public class CountryWriter implements EntityWriter<Country> {
 
     @Override
     public String fieldName(Country entity) {
-        return "country";
+        return fieldName;
     }
 
+    @Nonnull
+    @Override
+    public String listName() {
+        return listName;
+    }
 }

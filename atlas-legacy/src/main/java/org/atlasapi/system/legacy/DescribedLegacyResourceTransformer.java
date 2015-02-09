@@ -79,20 +79,10 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         }
     }
 
+
+
     protected abstract T createDescribed(F input);
     
-    protected <E extends Enum<E>> E transformEnum(Enum<?> from, Class<E> to) {
-        if (from == null) {
-            return null;
-        }
-        try {
-            return Enum.valueOf(to, from.name());
-        } catch (IllegalArgumentException e) {
-            log.warn("{} missing constant {}", to, from);
-            return null;
-        }
-    }
-
     private Synopses getSynopses(org.atlasapi.media.entity.Described input) {
         Synopses synopses = Synopses.withShortDescription(input.getShortDescription());
         synopses.setMediumDescription(input.getMediumDescription());
@@ -100,73 +90,6 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         return synopses;
     }
 
-    private Iterable<RelatedLink> transformRelatedLinks(
-            Set<org.atlasapi.media.entity.RelatedLink> relatedLinks) {
-        return Iterables.transform(relatedLinks,
-            new Function<org.atlasapi.media.entity.RelatedLink, RelatedLink>() {
-                @Override
-                public RelatedLink apply(org.atlasapi.media.entity.RelatedLink input) {
-                    RelatedLink.LinkType type = transformEnum(input.getType(), RelatedLink.LinkType.class);
-                    return RelatedLink.relatedLink(type, input.getUrl())
-                            .withDescription(input.getDescription())
-                            .withImage(input.getImage())
-                            .withShortName(input.getShortName())
-                            .withSourceId(input.getSourceId())
-                            .withThumbnail(input.getThumbnail())
-                            .withTitle(input.getTitle())
-                            .build();
-                }
-            }
-        );
-    }
-
-    private Iterable<Image> transformImages(Set<org.atlasapi.media.entity.Image> images) {
-        if (images == null) {
-            return ImmutableList.of();
-        }
-
-        return Iterables.transform(images, new Function<org.atlasapi.media.entity.Image, Image>() {
-            @Override
-            public Image apply(org.atlasapi.media.entity.Image input) {
-                Image image = new Image(input.getCanonicalUri());
-                image.setType(transformEnum(input.getType(), Image.Type.class));
-                image.setColor(transformEnum(input.getColor(), Image.Color.class));
-                image.setTheme(transformEnum(input.getTheme(), Image.Theme.class));
-                image.setHeight(input.getHeight());
-                image.setWidth(input.getWidth());
-                image.setAspectRatio(transformEnum(input.getAspectRatio(), Image.AspectRatio.class));
-                image.setMimeType(input.getMimeType());
-                image.setAvailabilityStart(input.getAvailabilityStart());
-                image.setAvailabilityEnd(input.getAvailabilityEnd());
-                return image;
-            }
-        });
-    }
-
-    protected ImmutableSet<Alias> transformAliases(Identified input) {
-        ImmutableSet.Builder<Alias> aliases = ImmutableSet.builder();
-        aliases.addAll(transformAliases(input.getAliases()));
-        aliases.addAll(Collections2.transform(input.getAliasUrls(),
-            new Function<String, Alias>() {
-                @Override
-                public Alias apply(String input) {
-                    return new Alias(Alias.URI_NAMESPACE, input);
-                }
-            }
-        ));
-        return aliases.build();
-    }
-
     protected abstract Iterable<Alias> moreAliases(F input);
 
-    private Set<? extends Alias> transformAliases(Set<org.atlasapi.media.entity.Alias> aliases) {
-        return ImmutableSet.copyOf(Collections2.transform(aliases,
-            new Function<org.atlasapi.media.entity.Alias, Alias>() {
-                @Override
-                public Alias apply(org.atlasapi.media.entity.Alias input) {
-                    return new Alias(input.getNamespace(), input.getValue());
-                }
-            }
-        ));
-    }
 }

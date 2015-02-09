@@ -37,6 +37,9 @@ public enum Annotation {
     UPCOMING, 
     FILTERING_RESOURCE,
     CHANNEL,
+    CHANNEL_GROUP,
+    REGIONS,
+    PLATFORM,
     CHANNEL_GROUPS,
     HISTORY,
     PARENT,
@@ -53,6 +56,7 @@ public enum Annotation {
     IMAGES,
     META_MODEL,
     META_ENDPOINT,
+    VARIATIONS
     ;
     
     public String toKey() {

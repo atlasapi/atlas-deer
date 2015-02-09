@@ -17,6 +17,7 @@ package org.atlasapi.criteria.attribute;
 import java.util.List;
 import java.util.Map;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
@@ -83,7 +84,13 @@ public class Attributes {
     public static final Attribute<Publisher> SOURCE_READS = EnumValuedAttribute.valueOf("source.reads", Publisher.class, Identified.class, true);
     public static final Attribute<Publisher> SOURCE_WRITES = EnumValuedAttribute.valueOf("source.writes", Publisher.class, Identified.class, true);
     public static final Attribute<Publisher> SOURCE_REQUEST_SOURCE = EnumValuedAttribute.valueOf("source", Publisher.class, Identified.class, true);
-	
+
+	//For Channels
+	public static final Attribute<Publisher> BROADCASTER = EnumValuedAttribute.valueOf("broadcaster", Publisher.class, Identified.class, true);
+	public static final Attribute<Publisher> AVAILABLE_FROM = EnumValuedAttribute.valueOf("available_from", Publisher.class, Identified.class, true);
+	public static final Attribute<MediaType> MEDIA_TYPE = new EnumValuedAttribute<>("media_type", MediaType.class, Identified.class);
+	public static final Attribute<String> ORDER_BY = stringAttribute("order_by", Channel.class);
+
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
 		ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,
 								    DESCRIPTION_GENRE,

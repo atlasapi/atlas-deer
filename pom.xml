@@ -12,6 +12,7 @@
     <module>atlas-elasticsearch</module>
     <module>atlas-processing</module>
     <module>atlas-api</module>
+    <module>atlas-legacy</module>
   </modules>
 
   <build>

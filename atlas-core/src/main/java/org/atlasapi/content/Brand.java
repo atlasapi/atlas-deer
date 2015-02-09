@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableList;
  */
 public class Brand extends Container {
     
-    private ImmutableList<SeriesRef> seriesRefs = ImmutableList.of();;
+    private ImmutableList<SeriesRef> seriesRefs = ImmutableList.of();
 
     public Brand(String uri, String curie, Publisher publisher) {
 		super(uri, curie, publisher);

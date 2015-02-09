@@ -15,11 +15,11 @@ public class BrandReferenceAnnotation extends OutputAnnotation<Content> {
 
     private static final String CONTAINER_FIELD = "container";
 
-    private final ContainerRefWriter brandRefWriter;
+    private final ResourceRefWriter brandRefWriter;
 
     public BrandReferenceAnnotation(NumberToShortStringCodec idCodec) {
         super();
-        brandRefWriter = new ContainerRefWriter(CONTAINER_FIELD, checkNotNull(idCodec));
+        brandRefWriter = new ResourceRefWriter(CONTAINER_FIELD, checkNotNull(idCodec));
     }
 
     @Override
