@@ -14,20 +14,18 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 public class ParentChannelAnnotation extends OutputAnnotation<Channel> {
-
 
     private static final ChannelWriter CHANNEL_WRITER = new ChannelWriter("parents", "parent");
 
     private final ChannelResolver channelResolver;
 
-
-
     public ParentChannelAnnotation(ChannelResolver channelResolver) {
-        this.channelResolver = channelResolver;
+        this.channelResolver = checkNotNull(channelResolver);
     }
-
 
     @Override
     public void write(Channel entity, FieldWriter format, OutputContext ctxt) throws IOException {

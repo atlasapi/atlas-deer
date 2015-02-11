@@ -86,10 +86,14 @@ public class Attributes {
     public static final Attribute<Publisher> SOURCE_REQUEST_SOURCE = EnumValuedAttribute.valueOf("source", Publisher.class, Identified.class, true);
 
 	//For Channels
-	public static final Attribute<Publisher> BROADCASTER = EnumValuedAttribute.valueOf("broadcaster", Publisher.class, Identified.class, true);
-	public static final Attribute<Publisher> AVAILABLE_FROM = EnumValuedAttribute.valueOf("available_from", Publisher.class, Identified.class, true);
-	public static final Attribute<MediaType> MEDIA_TYPE = new EnumValuedAttribute<>("media_type", MediaType.class, Identified.class);
-	public static final Attribute<String> ORDER_BY = stringAttribute("order_by", Channel.class);
+    public static final String BROADCASTER_PARAM = "broadcaster";
+    public static final String AVAILABLE_FROM_PARAM = "available_from";
+    public static final String MEDIA_TYPE_PARAM = "media_type";
+    public static final String ORDER_BY_PARAM = "order_by";
+	public static final Attribute<Publisher> BROADCASTER = EnumValuedAttribute.valueOf(BROADCASTER_PARAM, Publisher.class, Identified.class, true);
+	public static final Attribute<Publisher> AVAILABLE_FROM = EnumValuedAttribute.valueOf(AVAILABLE_FROM_PARAM, Publisher.class, Identified.class, true);
+	public static final Attribute<MediaType> MEDIA_TYPE = new EnumValuedAttribute<>(MEDIA_TYPE_PARAM, MediaType.class, Identified.class);
+	public static final Attribute<String> ORDER_BY = stringAttribute(ORDER_BY_PARAM, Channel.class);
 
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
 		ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,

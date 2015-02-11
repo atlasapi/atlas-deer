@@ -58,7 +58,6 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         format.writeList("genres", "genres", entity.getGenres(), ctxt);
         format.writeField("high_definition", entity.getHighDefinition());
         format.writeField("regional", entity.getRegional());
-        format.writeField("adult", entity.getAdult());
         format.writeList(RELATED_LINKS_WRITER, entity.getRelatedLinks(), ctxt);
         format.writeField("start_date", entity.getStartDate());
 

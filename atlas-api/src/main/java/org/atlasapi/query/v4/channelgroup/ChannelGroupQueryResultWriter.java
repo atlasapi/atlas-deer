@@ -1,7 +1,6 @@
 package org.atlasapi.query.v4.channelgroup;
 
 import com.google.common.collect.FluentIterable;
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;

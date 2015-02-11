@@ -62,7 +62,7 @@ public class Channel extends Identified implements Sourced {
             @Nullable LocalDate startDate,
             @Nullable LocalDate endDate
     ) {
-        super(checkNotNull(uri));
+        super(uri);
         this.setAliases(aliases);
         this.setId(id);
         this.titles = ImmutableSet.copyOf(titles);

@@ -7,19 +7,19 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 
-public abstract class ChannelGroup<T extends ChannelGroupMembership> extends Identified implements Sourced {
+public class ChannelGroup<T extends ChannelGroupMembership> extends Identified implements Sourced {
 
     private final Publisher publisher;
     private final ImmutableSet<T> channels;
     private final ImmutableSet<Country> availableCountries;
     private final ImmutableSet<TemporalField<String>> titles;
-
 
     protected ChannelGroup(
             Id id,
@@ -35,8 +35,8 @@ public abstract class ChannelGroup<T extends ChannelGroupMembership> extends Ide
         this.publisher = checkNotNull(publisher);
     }
 
-
     @Override
+    @FieldName("source")
     public Publisher getPublisher() {
         return publisher;
     }
@@ -57,5 +57,7 @@ public abstract class ChannelGroup<T extends ChannelGroupMembership> extends Ide
         return TemporalField.currentOrFutureValue(titles);
     }
 
-    public abstract String getType();
+    public String getType() {
+        return "channel_group";
+    }
 }
