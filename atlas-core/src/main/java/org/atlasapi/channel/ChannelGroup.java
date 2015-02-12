@@ -45,6 +45,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
         return channels;
     }
 
+    @FieldName("available_countries")
     public Set<Country> getAvailableCountries() {
         return availableCountries;
     }
@@ -53,6 +54,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
         return titles;
     }
 
+    @FieldName("title")
     public String getTitle() {
         return TemporalField.currentOrFutureValue(titles);
     }

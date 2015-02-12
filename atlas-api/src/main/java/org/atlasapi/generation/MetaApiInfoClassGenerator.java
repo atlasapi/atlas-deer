@@ -23,6 +23,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
@@ -76,6 +79,8 @@ import org.atlasapi.generation.parsing.StandardJavadocParser;
 import org.atlasapi.generation.parsing.TypeParser;
 import org.atlasapi.generation.processing.ControllerAnnotationProcessor;
 import org.atlasapi.generation.processing.FieldNameProcessor;
+import org.atlasapi.query.v4.channel.ChannelController;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.schedule.ScheduleController;
 import org.atlasapi.query.v4.topic.TopicController;
@@ -126,6 +131,8 @@ public class MetaApiInfoClassGenerator {
     			ContentController.class,
     			TopicController.class,
     			ScheduleController.class,
+                ChannelController.class,
+                ChannelGroupController.class,
     			Clip.class,
                 TopicRef.class,
                 ContainerRef.class,
@@ -158,6 +165,9 @@ public class MetaApiInfoClassGenerator {
                 KeyPhrase.class,
                 Broadcast.class,
                 ContentRef.class,
+                Channel.class,
+                ChannelGroup.class,
+                ChannelGroupMembership.class,
                 SeriesRef.class
 		);
     	ImmutableList<Class<?>> outputModelClasses = ImmutableList.<Class<?>>of(
@@ -197,7 +207,10 @@ public class MetaApiInfoClassGenerator {
                 KeyPhrase.class,
                 Broadcast.class,
                 ContentRef.class,
-                SeriesRef.class
+                SeriesRef.class,
+                Channel.class,
+                ChannelGroup.class,
+                ChannelGroupMembership.class
 		);
     	
     	SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();

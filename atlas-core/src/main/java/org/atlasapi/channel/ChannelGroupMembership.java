@@ -2,6 +2,7 @@ package org.atlasapi.channel;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.LocalDate;
 
 import javax.annotation.Nullable;
@@ -114,18 +115,22 @@ public class ChannelGroupMembership {
 
     }
 
+    @FieldName("channel_group")
     public ChannelGroupRef getChannelGroup() {
         return channelGroup;
     }
 
+    @FieldName("channel")
     public ChannelRef getChannel() {
         return channel;
     }
 
+    @FieldName("start_date")
     public LocalDate getStartDate() {
         return startDate;
     }
 
+    @FieldName("end_date")
     public LocalDate getEndDate() {
         return endDate;
     }

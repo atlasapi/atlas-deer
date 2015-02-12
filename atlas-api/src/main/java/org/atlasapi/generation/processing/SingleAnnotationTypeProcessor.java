@@ -102,7 +102,14 @@ public abstract class SingleAnnotationTypeProcessor<TI extends TypeInfo, MI exte
             writer.writeFile(typeInfo, generatedSource);
             
         } catch (RuntimeException e) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, "@FieldName processor threw an exception: " + e, type);
+            processingEnv.getMessager().printMessage(
+                    Kind.ERROR,
+                    String.format(
+                            "@FieldName processor threw an exception: %s while processing element %s",
+                            e,
+                            type
+                    )
+                    , type);
         }
     }
 }
