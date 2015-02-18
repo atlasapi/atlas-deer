@@ -24,12 +24,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Channel extends Identified implements Sourced {
 
+    public static final String ADULT_GENRE = "http://pressassociation.com/genres/adult";
+
     private final ImmutableSet<TemporalField<String>> titles;
     private final Publisher publisher;
     private final MediaType mediaType;
     private final Boolean highDefinition;
     private final Boolean regional;
-    private final Boolean adult;
     private final Publisher broadcaster;
     private final ImmutableSet<Publisher> availableFrom;
     private final ImmutableSet<ChannelGroupMembership> channelGroups;
@@ -50,7 +51,6 @@ public class Channel extends Identified implements Sourced {
             MediaType mediaType,
             Boolean highDefinition,
             Boolean regional,
-            Boolean adult,
             Publisher broadcaster,
             Set<Publisher> availableFrom,
             Set<ChannelGroupMembership> channelGroups,
@@ -62,7 +62,7 @@ public class Channel extends Identified implements Sourced {
             @Nullable LocalDate startDate,
             @Nullable LocalDate endDate
     ) {
-        super(checkNotNull(uri));
+        super(uri);
         this.setAliases(aliases);
         this.setId(id);
         this.titles = ImmutableSet.copyOf(titles);
@@ -70,7 +70,6 @@ public class Channel extends Identified implements Sourced {
         this.mediaType = mediaType;
         this.highDefinition = highDefinition;
         this.regional = regional;
-        this.adult = adult;
         this.broadcaster = broadcaster;
         this.availableFrom = ImmutableSet.copyOf(availableFrom);
         this.channelGroups = ImmutableSet.copyOf(channelGroups);
@@ -112,11 +111,6 @@ public class Channel extends Identified implements Sourced {
     @FieldName("regional")
     public Boolean getRegional() {
         return regional;
-    }
-
-    @FieldName("adult")
-    public Boolean getAdult() {
-        return adult;
     }
 
     @FieldName("broadcaster")
@@ -187,7 +181,7 @@ public class Channel extends Identified implements Sourced {
         private MediaType mediaType;
         private Boolean highDefinition;
         private Boolean regional;
-        private Boolean adult;
+        private Boolean adult = false;
         private Publisher broadcaster;
         private Set<Publisher> availableFrom = Sets.newHashSet();
         private Set<ChannelGroupMembership> channelGroups = Sets.newHashSet();
@@ -329,6 +323,9 @@ public class Channel extends Identified implements Sourced {
         }
 
         public Channel build() {
+            if(adult) {
+                genres.add(ADULT_GENRE);
+            }
             return new Channel(
                     uri,
                     id,
@@ -338,7 +335,6 @@ public class Channel extends Identified implements Sourced {
                     mediaType,
                     highDefinition,
                     regional,
-                    adult,
                     broadcaster,
                     availableFrom,
                     channelGroups,

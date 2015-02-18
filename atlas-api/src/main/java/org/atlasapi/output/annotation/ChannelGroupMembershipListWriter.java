@@ -31,7 +31,6 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
     private final String fieldName;
     private final ChannelGroupResolver channelGroupResolver;
 
-
     public ChannelGroupMembershipListWriter(
             String listName,
             String fieldName,
@@ -41,7 +40,6 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
         this.fieldName = checkNotNull(fieldName);
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
     }
-
 
     @Override
     public String listName() {

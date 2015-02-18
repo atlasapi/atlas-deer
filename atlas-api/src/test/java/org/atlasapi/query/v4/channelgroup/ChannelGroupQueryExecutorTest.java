@@ -56,15 +56,11 @@ public class ChannelGroupQueryExecutorTest {
                         )
                 );
 
-
         QueryResult<ChannelGroup> queryResult = objectUnderTest.execute(channelQuery);
-
 
         assertThat(queryResult.getOnlyResource(), is(result));
 
-
     }
-
 
     @Test
     public void testExecuteMulti() throws Exception {
@@ -89,9 +85,7 @@ public class ChannelGroupQueryExecutorTest {
                         )
                 );
 
-
         QueryResult<ChannelGroup> queryResult = objectUnderTest.execute(channelQuery);
-
 
         assertThat(queryResult.getResources(), containsInAnyOrder(result, result2));
     }
