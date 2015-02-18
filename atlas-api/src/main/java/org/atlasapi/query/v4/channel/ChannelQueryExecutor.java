@@ -16,6 +16,7 @@ import org.atlasapi.content.MediaType;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.QueryNode;
 import org.atlasapi.criteria.QueryNodeVisitor;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.media.entity.Publisher;
@@ -90,23 +91,28 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
         Ordering<? super Channel> ordering = Ordering.allEqual();
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             switch (attributeQuery.getAttributeName()) {
-                case "available_from":
+                case Attributes.AVAILABLE_FROM_PARAM:
                     channelQueryBuilder.withAvailableFrom((Publisher) attributeQuery.getValue().get(0));
                     break;
-                case "broadcaster":
+                case Attributes.BROADCASTER_PARAM:
                     channelQueryBuilder.withBroadcaster((Publisher) attributeQuery.getValue().get(0));
                     break;
-                case "media_type":
+                case Attributes.MEDIA_TYPE_PARAM:
                     channelQueryBuilder.withMediaType(
                             org.atlasapi.media.entity.MediaType.valueOf(
                                     attributeQuery.getValue().get(0).toString().toUpperCase()
                             )
                     );
-                    break;
-                case "order_by":
+                case Attributes.ORDER_BY_PARAM:
                     ordering = ordering(attributeQuery.getValue().get(0).toString());
                     break;
                 default:
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Incorrect query string parameter: %s",
+                                    attributeQuery.getAttributeName()
+                            )
+                    );
             }
         }
 

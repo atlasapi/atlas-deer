@@ -18,10 +18,6 @@ public class LegacyChannelAnnotation extends OutputAnnotation<Channel> {
     private static final EntityListWriter<Publisher> AVAILABLE_FROM_WRITER = sourceListWriter("available_from");
     private static final EntityWriter<Publisher> BROADCASTER_WRITER = sourceWriter("broadcaster");
 
-    public LegacyChannelAnnotation() {
-        super();
-    }
-
     @Override
     public void write(Channel entity, FieldWriter format, OutputContext ctxt) throws IOException {
         format.writeList(AVAILABLE_FROM_WRITER, entity.getAvailableFrom(), ctxt);

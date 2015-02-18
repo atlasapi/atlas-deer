@@ -11,13 +11,12 @@ import org.junit.Test;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 public class LegacyChannelTransformerTest {
 
-
     private LegacyChannelTransformer objectUnderTest = new LegacyChannelTransformer();
-
 
     @Test
     public void testApply() throws Exception {
@@ -34,7 +33,6 @@ public class LegacyChannelTransformerTest {
         Set<String> genres = ImmutableSet.of("comedy", "drama");
         org.atlasapi.media.entity.MediaType mediaType = org.atlasapi.media.entity.MediaType.VIDEO;
         Set<Publisher> availableFrom = ImmutableSet.of(Publisher.AMAZON_UK, Publisher.C4);
-
 
         org.atlasapi.media.channel.Channel legacyChannel = org.atlasapi.media.channel.Channel.builder()
                 .withSource(source)
@@ -57,12 +55,11 @@ public class LegacyChannelTransformerTest {
         assertThat(transformed.getCanonicalUri(), is(uri));
         assertThat(transformed.getPublisher(), is(source));
         assertThat(transformed.getHighDefinition(), is(hightDefinition));
-        assertThat(transformed.getAdult(), is(adult));
         assertThat(transformed.getBroadcaster(), is(broadcaster));
         assertThat(transformed.getParent().getId().longValue(), is(parentId));
         assertThat(transformed.getStartDate(), is(startDate));
         assertThat(transformed.getEndDate(), is(endDate));
-        assertThat(transformed.getGenres(), is(genres));
+        assertThat(transformed.getGenres(), containsInAnyOrder("comedy", "drama", Channel.ADULT_GENRE));
         assertThat(transformed.getMediaType(), is(MediaType.valueOf(mediaType.toString())));
         assertThat(transformed.getAvailableFrom(), is(availableFrom));
     }
