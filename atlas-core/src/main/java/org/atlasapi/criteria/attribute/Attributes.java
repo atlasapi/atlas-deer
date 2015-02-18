@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
@@ -53,7 +54,8 @@ public class Attributes {
     public static final Attribute<String> DESCRIPTION_TAG = stringListAttribute("tag", Content.class);
     public static final Attribute<MediaType> DESCRIPTION_TYPE = new EnumValuedAttribute<MediaType>("mediaType", MediaType.class, Item.class);
 	public static final Attribute<String> TOPICS = stringListAttribute("topics", Content.class);
-	
+	public static final Attribute<String> CHANNEL_GROUP_TYPE = stringListAttribute("type", ChannelGroup.class);
+
 	//public static final Attribute<Boolean> ITEM_IS_LONG_FORM = new BooleanValuedAttribute("isLongForm", Item.class).allowShortMatches();
 	
 	//public static final Attribute<Enum<MimeType>> ENCODING_DATA_CONTAINER_FORMAT = new EnumValuedAttribute<MimeType>("dataContainerFormat", MimeType.class, Encoding.class).allowShortMatches();

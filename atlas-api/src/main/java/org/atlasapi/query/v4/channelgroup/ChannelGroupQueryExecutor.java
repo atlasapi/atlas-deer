@@ -7,6 +7,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
@@ -66,6 +68,17 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ChannelGroup> {
                 QueryExecutionException.class
         );
 
+        for (AttributeQuery<?> attributeQuery : query.getOperands()) {
+            if (attributeQuery.getAttributeName().equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
+                final String channelGroupType = attributeQuery.getValue().get(0).toString();
+                channelGroups = Iterables.filter(channelGroups, new Predicate<ChannelGroup>() {
+                    @Override
+                    public boolean apply(ChannelGroup channelGroup) {
+                        return channelGroupType.equals(channelGroup.getType());
+                    }
+                });
+            }
+        }
         return QueryResult.listResult(
                 query.getContext().getSelection().get().applyTo(
                         Iterables.filter(channelGroups, new Predicate<ChannelGroup>() {

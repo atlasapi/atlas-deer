@@ -367,7 +367,8 @@ public class QueryWebModule {
     private QueryAttributeParser channelGroupQueryAttributeParser() {
         return new QueryAttributeParser(
                 ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec()))
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_TYPE, AttributeCoercers.stringCoercer())
                 )
         );
     }

@@ -1,7 +1,9 @@
 package org.atlasapi.query.v4.channelgroup;
 
 
+import com.google.api.client.util.Lists;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -11,6 +13,7 @@ import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -66,6 +69,12 @@ public class ChannelGroupQueryExecutorTest {
     public void testExecuteMulti() throws Exception {
         ChannelGroup result = mock(ChannelGroup.class);
         ChannelGroup result2 = mock(ChannelGroup.class);
+        ChannelGroup result3 = mock(ChannelGroup.class);
+
+        when(result.getType()).thenReturn("platform");
+        when(result2.getType()).thenReturn("region");
+        when(result3.getType()).thenReturn("platform");
+
         QueryContext context = mock(QueryContext.class);
         Query<ChannelGroup> channelQuery = mock(Query.class);
         ApplicationSources applicationSources = mock(ApplicationSources.class);
@@ -78,16 +87,27 @@ public class ChannelGroupQueryExecutorTest {
 
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
+        AttributeQuery attributeQuery = mock(AttributeQuery.class);
+        when(attributeQuery.getAttributeName()).thenReturn("type");
+        when(attributeQuery.getValue()).thenReturn(ImmutableList.of("platform"));
+        Attribute attribute = mock(Attribute.class);
+        when(attributeQuery.getAttribute()).thenReturn(attribute);
+        when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
+
+        AttributeQuerySet attributeQueries =  new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet(attributeQuery));
+
+        when(channelQuery.getOperands()).thenReturn(attributeQueries);
+
         when(channelGroupResolver.allChannels())
                 .thenReturn(
                         Futures.immediateFuture(
-                                Resolved.valueOf(ImmutableSet.of(result, result2))
+                                Resolved.valueOf(ImmutableSet.of(result, result2, result3))
                         )
                 );
 
         QueryResult<ChannelGroup> queryResult = objectUnderTest.execute(channelQuery);
 
-        assertThat(queryResult.getResources(), containsInAnyOrder(result, result2));
+        assertThat(queryResult.getResources(), containsInAnyOrder(result, result3));
     }
 
 }

@@ -181,7 +181,7 @@ public class Channel extends Identified implements Sourced {
         private MediaType mediaType;
         private Boolean highDefinition;
         private Boolean regional;
-        private Boolean adult = false;
+        private Boolean adult;
         private Publisher broadcaster;
         private Set<Publisher> availableFrom = Sets.newHashSet();
         private Set<ChannelGroupMembership> channelGroups = Sets.newHashSet();
@@ -323,7 +323,7 @@ public class Channel extends Identified implements Sourced {
         }
 
         public Channel build() {
-            if(adult) {
+            if(adult != null && adult) {
                 genres.add(ADULT_GENRE);
             }
             return new Channel(
