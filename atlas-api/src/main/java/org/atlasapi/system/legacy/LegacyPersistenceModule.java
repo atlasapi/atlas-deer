@@ -6,6 +6,7 @@ import org.atlasapi.content.NullContentResolver;
 import org.atlasapi.media.entity.Described;
 import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
 import org.atlasapi.persistence.audit.PersistenceAuditLog;
 import org.atlasapi.persistence.content.DefaultEquivalentContentResolver;
 import org.atlasapi.persistence.content.EquivalentContentResolver;
@@ -15,6 +16,7 @@ import org.atlasapi.persistence.content.mongo.MongoContentLister;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoTopicStore;
 import org.atlasapi.persistence.content.schedule.mongo.MongoScheduleStore;
+import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.topic.TopicResolver;
@@ -64,21 +66,15 @@ public class LegacyPersistenceModule {
     
     @Bean @Qualifier("legacy")
     public MongoTopicStore legacyTopicStore() {
-        return new MongoTopicStore(persistence.databasedMongo(), new PersistenceAuditLog() {
-            
-            @Override
-            public void logWrite(Described arg0) {
-            }
-            
-            @Override
-            public void logNoWrite(Described arg0) {
-            }
-        });
+        return new MongoTopicStore(persistence.databasedMongo(), persistenceAuditLog());
     }
-    
+
     @Bean @Qualifier("legacy")
     public MongoLookupEntryStore legacyEquivalenceStore() {
-        return new MongoLookupEntryStore(persistence.databasedMongo().collection("lookup"), ReadPreference.primaryPreferred());
+        return new MongoLookupEntryStore(
+                persistence.databasedMongo().collection("lookup"),
+                persistenceAuditLog(),
+                ReadPreference.primaryPreferred());
     }
     
     @Bean @Qualifier("legacy")
@@ -99,5 +95,9 @@ public class LegacyPersistenceModule {
     @Bean @Qualifier("legacy")
     public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
         return new MongoSegmentResolver(persistence.databasedMongo(), new SubstitutionTableNumberCodec());
+    }
+
+    private PersistenceAuditLog persistenceAuditLog() {
+        return new NoLoggingPersistenceAuditLog();
     }
 }
