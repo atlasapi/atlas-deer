@@ -40,10 +40,10 @@ public final class DatastaxCassandraService extends AbstractIdleService {
             Integer connectionsPerHostRemote
     ) {
         PoolingOptions poolingOptions = new PoolingOptions();
-        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, checkNotNull(connectionsPerHostLocal));
         poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, checkNotNull(connectionsPerHostLocal));
-        poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, checkNotNull(connectionsPerHostRemote));
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, checkNotNull(connectionsPerHostLocal));
         poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, checkNotNull(connectionsPerHostRemote));
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, checkNotNull(connectionsPerHostRemote));
 
         this.clusterBuilder = Cluster.builder()
                 .addContactPoints(FluentIterable.from(nodes).toArray(String.class))
