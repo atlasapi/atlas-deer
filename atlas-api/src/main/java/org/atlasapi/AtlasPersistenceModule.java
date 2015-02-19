@@ -73,6 +73,8 @@ public class AtlasPersistenceModule {
     private final String cassandraPort = Configurer.get("cassandra.port").get();
     private final String cassandraConnectionTimeout = Configurer.get("cassandra.connectionTimeout").get();
     private final String cassandraClientThreads = Configurer.get("cassandra.clientThreads").get();
+    private final Integer cassandraConnectionsPerHostLocal = Configurer.get("cassandra.connectionsPerHost.local").toInt();
+    private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
  
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final String esCluster = Configurer.get("elasticsearch.cluster").get();
@@ -97,7 +99,11 @@ public class AtlasPersistenceModule {
                 health.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
-        DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds);
+        DatastaxCassandraService cassandraService = new DatastaxCassandraService(
+                seeds,
+                cassandraConnectionsPerHostLocal,
+                cassandraConnectionsPerHostRemote
+        );
         cassandraService.startAsync().awaitRunning();
         return new CassandraPersistenceModule(messaging.messageSenderFactory(),
                 context,

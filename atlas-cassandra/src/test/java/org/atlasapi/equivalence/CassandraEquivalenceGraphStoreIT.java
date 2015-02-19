@@ -35,7 +35,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 public class CassandraEquivalenceGraphStoreIT {
 
     private static DatastaxCassandraService service
-        = new DatastaxCassandraService(ImmutableList.of("localhost"));
+        = new DatastaxCassandraService(ImmutableList.of("localhost"), 8, 2);
     private static CassandraEquivalenceGraphStore store;
     private static Session session;
     

@@ -3,6 +3,8 @@ package org.atlasapi;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.PoolingOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +34,24 @@ public final class DatastaxCassandraService extends AbstractIdleService {
         this.clusterBuilder = checkNotNull(clusterBuilder);
     }
 
-    public DatastaxCassandraService(Iterable<String> nodes) {
+    public DatastaxCassandraService(
+            Iterable<String> nodes,
+            Integer connectionsPerHostLocal,
+            Integer connectionsPerHostRemote
+    ) {
+        PoolingOptions poolingOptions = new PoolingOptions();
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, checkNotNull(connectionsPerHostLocal));
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, checkNotNull(connectionsPerHostLocal));
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, checkNotNull(connectionsPerHostRemote));
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, checkNotNull(connectionsPerHostRemote));
+
         this.clusterBuilder = Cluster.builder()
                 .addContactPoints(FluentIterable.from(nodes).toArray(String.class))
                 .withCompression(Compression.SNAPPY)
                 .withSocketOptions(new SocketOptions().setReadTimeoutMillis(20000).setConnectTimeoutMillis(20000))
                 .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
                 .withLoadBalancingPolicy(new RoundRobinPolicy())
+                .withPoolingOptions(poolingOptions)
                 .withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 20000));
     }
 
