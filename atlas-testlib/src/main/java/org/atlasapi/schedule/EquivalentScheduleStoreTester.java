@@ -63,8 +63,8 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         
         Channel channel = Channel.builder().build();
         channel.setId(1L);
-        Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
-                new DateTime(2014,03,21,17,00,00,000, DateTimeZones.UTC));
+        Interval interval = new Interval(new DateTime(2014,3,21,16,0,0,0, DateTimeZones.UTC),
+                new DateTime(2014,3,21,17,0,0,0, DateTimeZones.UTC));
         
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         Broadcast broadcast1 = new Broadcast(channel, interval).withId("sid1");

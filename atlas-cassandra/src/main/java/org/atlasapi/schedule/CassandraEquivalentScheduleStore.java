@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.QueryExecutionException;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.BroadcastSerializer;
@@ -227,7 +229,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
         
         Statement updateBatch = batch(Iterables.toArray(Iterables.concat(updates, deletes), RegularStatement.class));
-        session.execute(updateBatch.setConsistencyLevel(write));
+        try {
+            session.execute(updateBatch.setConsistencyLevel(write));
+        } catch(NoHostAvailableException | QueryExecutionException e) {
+            throw new WriteException(e);
+        }
     }
 
     private List<RegularStatement> updateStatements(Publisher source, ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)

@@ -45,11 +45,12 @@ public class BootstrapWorkersModule {
     private Integer maxConsumers = Configurer.get("messaging.bootstrap.consumers.max").toInt();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
-    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
+    private Long backOffIntervalMillis = Configurer.get("messaging.maxBackOffMillis").toLong();
+    private Long maxBackOffMillis = Configurer.get("messaging.maxBackOffMillis").toLong();
 
+    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private Set<Publisher> ignoredScheduleSources
             = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA));
-
     @Autowired
     private AtlasPersistenceModule persistence;
     @Autowired
@@ -62,7 +63,7 @@ public class BootstrapWorkersModule {
     @Bean
     @Qualifier("bootstrap")
     KafkaMessageConsumerFactory bootstrapQueueFactory() {
-        return new KafkaMessageConsumerFactory(zookeeper, originSystem);
+        return new KafkaMessageConsumerFactory(zookeeper, originSystem, backOffIntervalMillis, maxBackOffMillis);
     }
 
     @Bean
