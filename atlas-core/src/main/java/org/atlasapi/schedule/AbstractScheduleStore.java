@@ -36,7 +36,6 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
-import scala.concurrent.pilib;
 
 /**
  * {@code AbstractScheduleStore} is a base implementation of a
