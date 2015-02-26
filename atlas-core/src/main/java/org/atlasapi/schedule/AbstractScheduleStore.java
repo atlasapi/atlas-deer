@@ -36,6 +36,7 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
+import scala.concurrent.pilib;
 
 /**
  * {@code AbstractScheduleStore} is a base implementation of a
@@ -87,7 +88,14 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
         }
         
         List<ChannelSchedule> currentBlocks = resolveCurrentScheduleBlocks(source, channel, interval);
-        ScheduleBlocksUpdate update = blockUpdater.updateBlocks(currentBlocks, itemsAndBroadcasts, channel, interval);
+        List<ChannelSchedule> staleBlocks = resolveStaleScheduleBlocks(source, channel, interval);
+        ScheduleBlocksUpdate update = blockUpdater.updateBlocks(
+                currentBlocks,
+                staleBlocks,
+                itemsAndBroadcasts,
+                channel,
+                interval
+        );
         for (ItemAndBroadcast staleEntry : update.getStaleEntries()) {
             updateItemInContentStore(staleEntry);
         }
@@ -95,7 +103,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
         sendUpdateMessage(source, content, update, channel, interval);
         return writeResults;
     }
-    
+
     private void sendUpdateMessage(Publisher source, List<ScheduleHierarchy> content, ScheduleBlocksUpdate update, Channel channel, Interval interval) throws WriteException {
         try {
             String mid = UUID.randomUUID().toString();
@@ -171,6 +179,23 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
      */
     protected abstract List<ChannelSchedule> resolveCurrentScheduleBlocks(Publisher source, Channel channel,
             Interval interval) throws WriteException;
+
+    /**
+     * Resolve past schedule blocks. These are blocks which are currently not in use
+     * and are necessary to ensure that they are deleted in equivalent store.
+     *
+     * If the store doesn't store past blocks it should return an empty list;
+     * @param source
+     * @param channel
+     * @param interval
+     * @return
+     */
+    protected abstract List<ChannelSchedule> resolveStaleScheduleBlocks(
+            Publisher source,
+            Channel channel,
+            Interval interval
+    ) throws WriteException;
+
 
     /**
      * Write the blocks of schedule for a source.
