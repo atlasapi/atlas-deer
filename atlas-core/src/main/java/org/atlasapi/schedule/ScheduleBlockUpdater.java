@@ -25,7 +25,7 @@ class ScheduleBlockUpdater {
 
     public ScheduleBlocksUpdate updateBlocks(
             List<ChannelSchedule> currentBlocks,
-            List<ChannelSchedule> pastBlocks,
+            List<ChannelSchedule> staleBlocks,
             List<ItemAndBroadcast> updatedSchedule,
             Channel channel,
             Interval interval
@@ -45,7 +45,7 @@ class ScheduleBlockUpdater {
                     .addAll(survivors)
                     .build()));
         }
-        for (ChannelSchedule pastBlock : pastBlocks) {
+        for (ChannelSchedule pastBlock : staleBlocks) {
             staleEntries.addAll(pastBlock.getEntries());
         }
 
