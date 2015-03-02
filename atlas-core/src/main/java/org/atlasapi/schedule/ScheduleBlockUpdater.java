@@ -23,7 +23,13 @@ import com.metabroadcast.common.base.MorePredicates;
 
 class ScheduleBlockUpdater {
 
-    public ScheduleBlocksUpdate updateBlocks(List<ChannelSchedule> currentBlocks, List<ItemAndBroadcast> updatedSchedule, Channel channel, Interval interval) {
+    public ScheduleBlocksUpdate updateBlocks(
+            List<ChannelSchedule> currentBlocks,
+            List<ChannelSchedule> staleBlocks,
+            List<ItemAndBroadcast> updatedSchedule,
+            Channel channel,
+            Interval interval
+    ) {
         
         Map<String, Id> validIds = index(updatedSchedule);
         Predicate<Broadcast> broadcastFilter = broadcastFilter(channel, interval);
@@ -39,7 +45,10 @@ class ScheduleBlockUpdater {
                     .addAll(survivors)
                     .build()));
         }
-        
+        for (ChannelSchedule pastBlock : staleBlocks) {
+            staleEntries.addAll(pastBlock.getEntries());
+        }
+
         return new ScheduleBlocksUpdate(updatedBlocks, staleEntries);
     }
 

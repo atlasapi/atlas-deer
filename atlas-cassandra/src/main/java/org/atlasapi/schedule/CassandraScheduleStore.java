@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContentStore;
@@ -276,6 +276,51 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
             channelSchedules.add(schedule(channel, dayInterval, rows.getRow(keyFor(source, channel, date))));
         }
         return channelSchedules;
+    }
+
+    @Override
+    protected List<ChannelSchedule> resolveStaleScheduleBlocks(Publisher source, Channel channel, Interval interval) throws WriteException {
+        Rows<String, String> rows = fetchRows(source, channel, interval);
+        List<ChannelSchedule> channelSchedules = Lists.newArrayList();
+        for (LocalDate date : new ScheduleIntervalDates(interval)) {
+            channelSchedules.add(
+                    new ChannelSchedule(
+                            channel,
+                            interval,
+                            pastSchedule(rows.getRow(keyFor(source, channel, date)))
+                    )
+            );
+        }
+        return channelSchedules;
+    }
+
+    private Iterable<ItemAndBroadcast> pastSchedule(Row<String, String> row) {
+        return deserializePastBlocks(row);
+
+    }
+
+    private Iterable<ItemAndBroadcast> deserializePastBlocks(Row<String, String> row) {
+        if (row == null) {
+            return ImmutableList.of();
+        }
+        ColumnList<String> columns = row.getColumns();
+        Column<String> idColumn = columns.getColumnByName(IDS_COL);
+        Set<String> ids;
+        if (idColumn == null) {
+            ids = ImmutableSet.of();
+        } else {
+            ids = ImmutableSet.copyOf(Splitter.on(',').omitEmptyStrings().split(idColumn.getStringValue()));
+        }
+
+        ArrayList<ItemAndBroadcast> iabs = Lists.newArrayListWithCapacity(columns.size());
+        for (Column<String> column : columns) {
+            if (IDS_COL.equals(column.getName()) || UPDATED_COL.equals(column.getName()) || ids.contains(column.getName())) {
+                continue;
+            }
+            iabs.add(serializer.deserialize(column.getByteArrayValue()));
+        }
+
+        return iabs;
     }
 
     private Rows<String, String> fetchRows(Publisher source, Channel channel, Interval interval)
