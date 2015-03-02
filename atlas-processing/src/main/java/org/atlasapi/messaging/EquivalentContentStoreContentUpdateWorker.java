@@ -4,8 +4,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
 
+import com.metabroadcast.common.queue.RecoverableException;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.input.ReadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +18,7 @@ import com.metabroadcast.common.queue.Worker;
 public class EquivalentContentStoreContentUpdateWorker implements Worker<ResourceUpdatedMessage> {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
     private final EquivalentContentStore equivalentContentStore;
     @Nullable private final Timer messageTimer;
 
@@ -27,7 +29,7 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
     }
 
     @Override
-    public void process(ResourceUpdatedMessage message) {
+    public void process(ResourceUpdatedMessage message) throws RecoverableException {
         try {
             if (messageTimer != null) {
                 Timer.Context timer = messageTimer.time();
@@ -37,7 +39,7 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
                 equivalentContentStore.updateContent(message.getUpdatedResource());
             }
         } catch (WriteException e) {
-            log.error("update failed for content " + message.getUpdatedResource(), e);
+           throw new RecoverableException("update failed for content " + message.getUpdatedResource(), e);
         }
     }
 

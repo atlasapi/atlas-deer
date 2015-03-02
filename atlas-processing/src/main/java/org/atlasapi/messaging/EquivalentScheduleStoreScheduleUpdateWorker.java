@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.metabroadcast.common.queue.RecoverableException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
@@ -29,7 +30,7 @@ public class EquivalentScheduleStoreScheduleUpdateWorker implements Worker<Sched
     }
 
     @Override
-    public void process(ScheduleUpdateMessage message) {
+    public void process(ScheduleUpdateMessage message) throws RecoverableException {
         try {
             Timer.Context timer = null;
             if (messageTimer != null) {
@@ -40,7 +41,7 @@ public class EquivalentScheduleStoreScheduleUpdateWorker implements Worker<Sched
                 timer.stop();
             }
         } catch (WriteException e) {
-            log.error("update failed for " + message.getScheduleUpdate(), e);
+            throw new RecoverableException("update failed for " + message.getScheduleUpdate(), e);
         }
     }
 

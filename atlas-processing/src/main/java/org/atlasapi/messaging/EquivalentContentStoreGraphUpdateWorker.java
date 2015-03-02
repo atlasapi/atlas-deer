@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
 
+import com.metabroadcast.common.queue.RecoverableException;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
@@ -28,7 +29,7 @@ public class EquivalentContentStoreGraphUpdateWorker implements Worker<Equivalen
     }
 
     @Override
-    public void process(EquivalenceGraphUpdateMessage message) {
+    public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
         try {
             if (messageTimer != null) {
                 Timer.Context timer = messageTimer.time();
@@ -38,7 +39,7 @@ public class EquivalentContentStoreGraphUpdateWorker implements Worker<Equivalen
                 equivalentContentStore.updateEquivalences(message.getGraphUpdate());
             }
         } catch (WriteException e) {
-            log.error("update failed for " + message.getGraphUpdate(), e);
+            throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
         }
     }
 

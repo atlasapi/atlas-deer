@@ -19,6 +19,7 @@ import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
 import org.atlasapi.topic.TopicStore;
+import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -45,11 +46,12 @@ public class BootstrapWorkersModule {
     private Integer maxConsumers = Configurer.get("messaging.bootstrap.consumers.max").toInt();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
-    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
+    private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
+    private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
 
+    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private Set<Publisher> ignoredScheduleSources
             = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA));
-
     @Autowired
     private AtlasPersistenceModule persistence;
     @Autowired
@@ -62,7 +64,7 @@ public class BootstrapWorkersModule {
     @Bean
     @Qualifier("bootstrap")
     KafkaMessageConsumerFactory bootstrapQueueFactory() {
-        return new KafkaMessageConsumerFactory(zookeeper, originSystem);
+        return new KafkaMessageConsumerFactory(zookeeper, originSystem, backOffBase, maxBackOff);
     }
 
     @Bean

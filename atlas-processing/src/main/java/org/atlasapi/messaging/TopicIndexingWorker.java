@@ -5,6 +5,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.metabroadcast.common.queue.RecoverableException;
 import org.atlasapi.content.IndexException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.topic.Topic;
@@ -39,7 +40,7 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
     }
 
     @Override
-    public void process(final ResourceUpdatedMessage message) {
+    public void process(final ResourceUpdatedMessage message) throws RecoverableException {
         try {
             Timer.Context time = null;
             if (messageTimer != null) {
@@ -59,7 +60,7 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
                 time.stop();
             }
         } catch (TimeoutException | IndexException e) {
-            log.error("iqqndexing error:", e);
+            throw new RecoverableException("indexing error:", e);
         }
     }
 

@@ -5,6 +5,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import javax.annotation.Nullable;
 
 import com.codahale.metrics.Meter;
+import com.metabroadcast.common.queue.RecoverableException;
+import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 
 import com.codahale.metrics.MetricRegistry;
@@ -33,7 +35,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     }
 
     @Override
-    public void process(EquivalenceAssertionMessage message) {
+    public void process(EquivalenceAssertionMessage message) throws RecoverableException {
         try {
             if (messageTimer != null) {
                 Timer.Context timer = messageTimer.time();
@@ -45,6 +47,8 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                         message.getPublishers());
             }
             log.debug("Successfully processed message {}", message.toString());
+        } catch (WriteException e) {
+            throw new RecoverableException("update failed for " + message.toString(), e);
         } catch (Exception e) {
             log.warn("Error while processing EquivalenceAssertionMessage {}", message.toString(), e);
             if (meter != null) {
