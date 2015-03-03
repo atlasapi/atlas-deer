@@ -39,6 +39,7 @@ import static org.atlasapi.annotation.Annotation.VARIATIONS;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
@@ -57,6 +58,8 @@ import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
+import org.atlasapi.output.License;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
@@ -98,6 +101,8 @@ import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.TopicsAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
+import org.atlasapi.output.writers.LicenseWriter;
+import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.output.MongoContainerSummaryResolver;
 import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
@@ -154,6 +159,7 @@ import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -168,8 +174,10 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
 import com.metabroadcast.common.time.SystemClock;
 
+import javax.servlet.http.HttpServletRequest;
+
 @Configuration
-@Import({QueryModule.class})
+@Import({QueryModule.class, LicenseModule.class})
 public class QueryWebModule {
 
     private @Value("${local.host.name}") String localHostName;
@@ -195,6 +203,7 @@ public class QueryWebModule {
 
     private @Autowired ChannelGroupResolver channelGroupResolver;
 
+    @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
 
     @Bean NumberToShortStringCodec idCodec() {
         return SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -205,12 +214,17 @@ public class QueryWebModule {
     }
 
     @Bean
+    EntityWriter<HttpServletRequest> requestWriter() {
+        return new RequestWriter();
+    }
+
+    @Bean
     ScheduleController v4ScheduleController() {
         EntityListWriter<ItemAndBroadcast> entryListWriter =
             new ScheduleEntryListWriter(contentListWriter(), new BroadcastWriter("broadcasts", idCodec()));
         ScheduleListWriter scheduleWriter = new ScheduleListWriter(legacyChannelListWriter(), entryListWriter);
         return new ScheduleController(queryModule.equivalentScheduleStoreScheduleQueryExecutor(),
-            configFetcher, new ScheduleQueryResultWriter(scheduleWriter),
+            configFetcher, new ScheduleQueryResultWriter(scheduleWriter, licenseWriter, requestWriter()),
             new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                 .addExplicitSingleContext(channelAnnotationIndex())
                 .addExplicitListContext(contentAnnotationIndex())
@@ -220,13 +234,13 @@ public class QueryWebModule {
     @Bean
     TopicController v4TopicController() {
         return new TopicController(topicQueryParser(),
-            queryModule.topicQueryExecutor(), new TopicQueryResultWriter(topicListWriter()));
+            queryModule.topicQueryExecutor(), new TopicQueryResultWriter(topicListWriter(), licenseWriter, requestWriter()));
     }
 
     @Bean
     ContentController contentController() {
         return new ContentController(contentQueryParser(),
-            queryModule.contentQueryExecutor(), new ContentQueryResultWriter(contentListWriter()));
+            queryModule.contentQueryExecutor(), new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter()));
     }
 
     @Bean
@@ -255,7 +269,7 @@ public class QueryWebModule {
 
     @Bean
     ModelController modelController() {
-        QueryResultWriter<ModelClassInfo> resultWriter = new ModelInfoQueryResultWriter(modelListWriter());
+        QueryResultWriter<ModelClassInfo> resultWriter = new ModelInfoQueryResultWriter(modelListWriter(), licenseWriter, requestWriter());
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
                 userFetcher,
@@ -271,7 +285,7 @@ public class QueryWebModule {
 
     @Bean
     EndpointController endpointController() {
-        QueryResultWriter<EndpointClassInfo> resultWriter = new EndpointInfoQueryResultWriter(endpointListWriter());
+        QueryResultWriter<EndpointClassInfo> resultWriter = new EndpointInfoQueryResultWriter(endpointListWriter(), licenseWriter, requestWriter());
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
                 userFetcher,
@@ -315,7 +329,7 @@ public class QueryWebModule {
         return new ChannelController(
                 channelQueryParser(),
                 channelQueryExecutor,
-                new ChannelQueryResultWriter(channelListWriter())
+                new ChannelQueryResultWriter(channelListWriter(), licenseWriter, requestWriter())
         );
     }
 
@@ -324,7 +338,7 @@ public class QueryWebModule {
         return new ChannelGroupController(
                 channelGroupQueryParser(),
                 channelGroupQueryExecutor,
-                new ChannelGroupQueryResultWriter(channelGroupListWriter())
+                new ChannelGroupQueryResultWriter(channelGroupListWriter(), licenseWriter, requestWriter())
         );
     }
 
@@ -433,12 +447,12 @@ public class QueryWebModule {
 
     @Bean
     PopularTopicController popularTopicController() {
-        return new PopularTopicController(topicResolver, popularTopicIndex, new TopicQueryResultWriter(topicListWriter()), configFetcher);
+        return new PopularTopicController(topicResolver, popularTopicIndex, new TopicQueryResultWriter(topicListWriter(), licenseWriter, requestWriter()), configFetcher);
     }
 
     @Bean
     SearchController searchController() {
-        return new SearchController(v4SearchResolver, configFetcher, new ContentQueryResultWriter(contentListWriter()));
+        return new SearchController(v4SearchResolver, configFetcher, new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter()));
     }
 
     @Bean

@@ -10,6 +10,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
@@ -81,7 +83,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         channel.setId(1L);
         channel.setCanonicalUri("one");
         Interval interval = new Interval(0, 100, DateTimeZones.UTC);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, interval, QueryContext.standard(), Id.valueOf(channel.getId()));
+        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, interval, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(channel.getId()));
 
         EquivalentChannelSchedule channelSchedule = new EquivalentChannelSchedule(channel, interval, ImmutableList.<EquivalentScheduleEntry>of());
 
@@ -109,7 +111,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         
         Interval interval = new Interval(0, 100, DateTimeZones.UTC);
         List<Id> cids = ImmutableList.of(Id.valueOf(channelOne.getId()), Id.valueOf(channelTwo.getId()));
-        ScheduleQuery query = ScheduleQuery.multi(METABROADCAST, interval, QueryContext.standard(), cids);
+        ScheduleQuery query = ScheduleQuery.multi(METABROADCAST, interval, QueryContext.standard(mock(HttpServletRequest.class)), cids);
 
         EquivalentChannelSchedule cs1 = new EquivalentChannelSchedule(channelOne, interval, ImmutableList.<EquivalentScheduleEntry>of());
         EquivalentChannelSchedule cs2 = new EquivalentChannelSchedule(channelTwo, interval, ImmutableList.<EquivalentScheduleEntry>of());
@@ -136,7 +138,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
             .thenReturn(Maybe.<Channel>nothing());
 
         Interval interval = new Interval(0, 100, DateTimeZones.UTC);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, interval, QueryContext.standard(), Id.valueOf(1));
+        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, interval, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(1));
         
         try {
             executor.execute(query);
@@ -163,7 +165,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
                 .withPrecedence(true)
                 .withReadableSources(reads)
                 .build();
-        QueryContext context = new QueryContext(appSources, ActiveAnnotations.standard());
+        QueryContext context = new QueryContext(appSources, ActiveAnnotations.standard(), mock(HttpServletRequest.class));
         
         Id itemId = Id.valueOf(1);
         Item scheduleItem = new Item(itemId, METABROADCAST);

@@ -22,6 +22,8 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+import javax.servlet.http.HttpServletRequest;
+
 public class ApplicationQueryExecutorTest {
     
     private ApplicationQueryExecutor executor;
@@ -48,7 +50,8 @@ public class ApplicationQueryExecutorTest {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<Application> query = UserAwareQuery.singleQuery(Id.valueOf(5000), context);
         UserAwareQueryResult<Application> result = executor.execute(query);
         assertFalse(result.isListResult());
@@ -69,7 +72,8 @@ public class ApplicationQueryExecutorTest {
                 .build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<Application> query = UserAwareQuery.singleQuery(Id.valueOf(5000), context);
         UserAwareQueryResult<Application> result = executor.execute(query);
         assertFalse(result.isListResult());
@@ -90,7 +94,8 @@ public class ApplicationQueryExecutorTest {
                 .build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<Application> query = UserAwareQuery.singleQuery(Id.valueOf(6000), context);
         executor.execute(query);
     }
@@ -109,7 +114,8 @@ public class ApplicationQueryExecutorTest {
                 .build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<Application> query = UserAwareQuery.singleQuery(Id.valueOf(6000), context);
         UserAwareQueryResult<Application> result = executor.execute(query);
         assertFalse(result.isListResult());

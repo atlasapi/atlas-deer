@@ -133,7 +133,8 @@ public class ApplicationsController {
             UserAwareQueryContext context = new UserAwareQueryContext(
                     ApplicationSources.defaults(), 
                     ActiveAnnotations.standard(),
-                    Optional.of(user)
+                    Optional.of(user),
+                    request
             );
             UserAwareQuery<Application> applicationsQuery = UserAwareQuery.singleQuery(application.getId(), context);
             UserAwareQueryResult<Application> queryResult = queryExecutor.execute(applicationsQuery);

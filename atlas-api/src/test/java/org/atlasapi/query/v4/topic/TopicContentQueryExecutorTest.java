@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +47,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.query.Selection;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RunWith(MockitoJUnitRunner.class)
 public class TopicContentQueryExecutorTest {
 
@@ -66,7 +69,7 @@ public class TopicContentQueryExecutorTest {
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
         QueryContext context = new QueryContext(ApplicationSources.defaults()
                 .copyWithChangedReadableSourceStatus(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED)
-                .copyWithChangedReadableSourceStatus(Publisher.DBPEDIA, SourceStatus.AVAILABLE_ENABLED), ActiveAnnotations.standard());
+                .copyWithChangedReadableSourceStatus(Publisher.DBPEDIA, SourceStatus.AVAILABLE_ENABLED), ActiveAnnotations.standard(), mock(HttpServletRequest.class));
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context );
         ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
 
@@ -96,7 +99,7 @@ public class TopicContentQueryExecutorTest {
     public void testFailsWhenTopicIsMissing() throws Throwable {
         
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = QueryContext.standard();
+        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context );
         ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
         
@@ -117,7 +120,7 @@ public class TopicContentQueryExecutorTest {
     public void testFailsWhenTopicIsForbidden() throws Throwable {
         
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = QueryContext.standard();
+        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context );
         ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
         

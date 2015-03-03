@@ -2,6 +2,7 @@ package org.atlasapi.application;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
 
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.users.Role;
@@ -22,6 +23,8 @@ import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
+import javax.servlet.http.HttpServletRequest;
+
 
 public class SourcesQueryExecutorTest {
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -38,7 +41,8 @@ public class SourcesQueryExecutorTest {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<Publisher> query = UserAwareQuery.singleQuery(Id.valueOf(1003), context);
         UserAwareQueryResult<Publisher> result = executor.execute(query);
         assertFalse(result.isListResult());
@@ -58,7 +62,8 @@ public class SourcesQueryExecutorTest {
                 .build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<Publisher> query = UserAwareQuery.singleQuery(Id.valueOf(1003), context);
         UserAwareQueryResult<Publisher> result = executor.execute(query);
         assertFalse(result.isListResult());
@@ -78,7 +83,8 @@ public class SourcesQueryExecutorTest {
                 .build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<Publisher> query = UserAwareQuery.singleQuery(Id.valueOf(1003), context);
         UserAwareQueryResult<Publisher> result = executor.execute(query);
         assertFalse(result.isListResult());

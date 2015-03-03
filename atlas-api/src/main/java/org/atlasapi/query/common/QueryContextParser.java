@@ -37,7 +37,8 @@ public class QueryContextParser implements ParameterNameProvider {
         return new QueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromSingleRequest(request),
-                selectionBuilder.build(request)
+                selectionBuilder.build(request),
+                request
                 );
     }
 
@@ -45,7 +46,8 @@ public class QueryContextParser implements ParameterNameProvider {
         return new QueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
             annotationExtractor.extractFromListRequest(request),
-            selectionBuilder.build(request)
+            selectionBuilder.build(request),
+            request
         );
     }
 

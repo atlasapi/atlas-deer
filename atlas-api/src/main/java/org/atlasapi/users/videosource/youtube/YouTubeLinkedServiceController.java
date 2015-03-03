@@ -157,7 +157,7 @@ public class YouTubeLinkedServiceController {
                 .withSecret("")
                 .build();
         QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest,
-                QueryContext.standard());
+                QueryContext.standard(request));
         oauthRequestResultWriter.write(queryResult, writer);
     }
 
@@ -217,7 +217,7 @@ public class YouTubeLinkedServiceController {
             User user = userFetcher.userFor(request).get();
             writer =  writerResolver.writerFor(request, response);
             QueryResult<VideoSourceChannelResults> queryResult =
-            QueryResult.listResult(getChannelsForUser(user), QueryContext.standard());
+            QueryResult.listResult(getChannelsForUser(user), QueryContext.standard(request));
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

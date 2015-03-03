@@ -85,7 +85,7 @@ public class SourceLicenseController {
            
             SourceLicense license = deserialize(new InputStreamReader(request.getInputStream()), SourceLicense.class);
             store.store(license);
-            UserAwareQueryResult<SourceLicense> queryResult = UserAwareQueryResult.singleResult(license, UserAwareQueryContext.standard());
+            UserAwareQueryResult<SourceLicense> queryResult = UserAwareQueryResult.singleResult(license, UserAwareQueryContext.standard(request));
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

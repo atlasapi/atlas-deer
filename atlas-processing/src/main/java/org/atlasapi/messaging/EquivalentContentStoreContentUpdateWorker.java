@@ -7,7 +7,6 @@ import javax.annotation.Nullable;
 import com.metabroadcast.common.queue.RecoverableException;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.input.ReadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

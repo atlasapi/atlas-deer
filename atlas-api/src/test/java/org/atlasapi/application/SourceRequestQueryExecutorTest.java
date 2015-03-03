@@ -1,6 +1,7 @@
 package org.atlasapi.application;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.atlasapi.application.users.Role;
@@ -21,6 +22,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
+
+import javax.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SourceRequestQueryExecutorTest {
@@ -58,7 +61,8 @@ public class SourceRequestQueryExecutorTest {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
         UserAwareQuery<SourceRequest> query = UserAwareQuery.listQuery(emptyAttributeQuerySet, context);
         UserAwareQueryResult<SourceRequest> result = executor.execute(query);
