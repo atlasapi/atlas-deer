@@ -4,33 +4,32 @@ import java.io.IOException;
 
 import org.atlasapi.application.model.auth.OAuthRequest;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
 
+import javax.servlet.http.HttpServletRequest;
 
-public class OAuthRequestQueryResultWriter implements QueryResultWriter<OAuthRequest> {
+public class OAuthRequestQueryResultWriter extends QueryResultWriter<OAuthRequest> {
     private final EntityListWriter<OAuthRequest> oauthRequestWriter;
-    
-    public OAuthRequestQueryResultWriter(EntityListWriter<OAuthRequest> oauthRequestWriter) {
+
+    public OAuthRequestQueryResultWriter(
+            EntityListWriter<OAuthRequest> oauthRequestWriter,
+            EntityWriter<Object> licenseWriter,
+            EntityWriter<HttpServletRequest> requestWriter
+    ) {
+        super(licenseWriter, requestWriter);
         this.oauthRequestWriter = oauthRequestWriter;
     }
     
     @Override
-    public void write(QueryResult<OAuthRequest> result, ResponseWriter responseWriter)
+    protected void writeResult(QueryResult<OAuthRequest> result, ResponseWriter writer)
             throws IOException {
-        responseWriter.startResponse();
-        writeResult(result, responseWriter);
-        responseWriter.finishResponse();
-    }
-    
-    private void writeResult(QueryResult<OAuthRequest> result, ResponseWriter writer)
-            throws IOException {
-        OutputContext ctxt = outputContext(result.getContext());
+        OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
             FluentIterable<OAuthRequest> resources = result.getResources();
@@ -39,8 +38,5 @@ public class OAuthRequestQueryResultWriter implements QueryResultWriter<OAuthReq
             writer.writeObject(oauthRequestWriter, result.getOnlyResource(), ctxt);
         }
     }
-    
-    private OutputContext outputContext(QueryContext queryContext) {
-        return OutputContext.valueOf(queryContext);
-    }
+
 }

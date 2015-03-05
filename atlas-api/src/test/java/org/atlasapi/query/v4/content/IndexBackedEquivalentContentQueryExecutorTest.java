@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.content;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.atlasapi.content.Content;
@@ -19,6 +20,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RunWith(MockitoJUnitRunner.class)
 public class IndexBackedEquivalentContentQueryExecutorTest {
 
@@ -34,7 +37,7 @@ public class IndexBackedEquivalentContentQueryExecutorTest {
     @Test(expected=NotFoundException.class)
     public void testNoContentForSingleQueryThrowsNotFoundException() throws Exception {
         
-        Query<Content> query = Query.singleQuery(Id.valueOf(1), QueryContext.standard());
+        Query<Content> query = Query.singleQuery(Id.valueOf(1), QueryContext.standard(mock(HttpServletRequest.class)));
         QueryContext ctxt = query.getContext();
         
         when(equivalentContentResolver.resolveIds(ImmutableSet.of(query.getOnlyId()), 

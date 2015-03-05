@@ -102,7 +102,7 @@ public class GoogleAuthController {
              .withSecret("") 
              .build();
         tokenRequestStore.store(oauthRequest);
-        QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest, QueryContext.standard());
+        QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest, QueryContext.standard(request));
         oauthRequestResultWriter.write(queryResult, writer);
     }
     
@@ -144,7 +144,7 @@ public class GoogleAuthController {
                 oauthResult.withToken(token.tokenPayload());
             }
             
-            QueryResult<OAuthResult> queryResult = QueryResult.singleResult(oauthResult.build(), QueryContext.standard());
+            QueryResult<OAuthResult> queryResult = QueryResult.singleResult(oauthResult.build(), QueryContext.standard(request));
             oauthResultResultWriter.write(queryResult, writer);
         }  catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

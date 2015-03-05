@@ -11,33 +11,35 @@ import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.metabroadcast.common.query.Selection;
 
+import javax.servlet.http.HttpServletRequest;
+
 public class UserAwareQueryContext {
 
-    private static final UserAwareQueryContext STANDARD = new UserAwareQueryContext(
-            ApplicationSources.defaults(), 
-            ActiveAnnotations.standard(),
-            Optional.<User>absent()
-    );
-    
-    public static final UserAwareQueryContext standard() {
-        return STANDARD;
+    public static final UserAwareQueryContext standard(HttpServletRequest request) {
+        return new UserAwareQueryContext(
+                ApplicationSources.defaults(),
+                ActiveAnnotations.standard(),
+                Optional.<User>absent(),
+                request);
     }
     
     private final ApplicationSources appSources;
     private final ActiveAnnotations annotations;
     private final Optional<User> user;
     private final Optional<Selection> selection;
+    private final HttpServletRequest request;
 
-    public UserAwareQueryContext(ApplicationSources appSources, ActiveAnnotations annotations, Optional<User> user) {
-        this(appSources, annotations, user, null);
+    public UserAwareQueryContext(ApplicationSources appSources, ActiveAnnotations annotations, Optional<User> user, HttpServletRequest request) {
+        this(appSources, annotations, user, null, request);
     }
     
     public UserAwareQueryContext(ApplicationSources appSources, ActiveAnnotations annotations,
-        Optional<User> user, Selection selection) {
+        Optional<User> user, Selection selection,HttpServletRequest request) {
         this.appSources = checkNotNull(appSources);
         this.annotations = checkNotNull(annotations);
         this.user = checkNotNull(user);
         this.selection = Optional.fromNullable(selection);
+        this.request = checkNotNull(request);
     }
 
     public ApplicationSources getApplicationSources() {
@@ -54,6 +56,10 @@ public class UserAwareQueryContext {
     
     public Optional<Selection> getSelection() {
         return this.selection;
+    }
+
+    public HttpServletRequest getRequest() {
+        return request;
     }
     
     public boolean isAdminUser() {
@@ -90,5 +96,4 @@ public class UserAwareQueryContext {
             .add("selection", selection)
             .toString();
     }
-    
 }

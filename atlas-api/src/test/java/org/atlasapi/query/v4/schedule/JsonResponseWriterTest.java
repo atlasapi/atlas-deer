@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.schedule;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class JsonResponseWriterTest {
         mapper = new ObjectMapper();
         request = new StubHttpServletRequest();
         response = new StubHttpServletResponse();
-        ctxt = OutputContext.valueOf(QueryContext.standard());
+        ctxt = OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)));
         formatter = new JsonResponseWriter(request, response);
         formatter.startResponse();
     }

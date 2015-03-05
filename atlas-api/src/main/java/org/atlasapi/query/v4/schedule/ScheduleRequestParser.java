@@ -132,7 +132,7 @@ class ScheduleRequestParser {
         checkArgument(appSources.isReadEnabled(publisher), "Source %s not enabled", publisher);
         
         ActiveAnnotations annotations = annotationExtractor.extractFromRequest(request);
-        QueryContext context = new QueryContext(appSources, annotations);
+        QueryContext context = new QueryContext(appSources, annotations, request);
         return context;
     }
 

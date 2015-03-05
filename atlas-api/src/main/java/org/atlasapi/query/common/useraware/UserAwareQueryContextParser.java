@@ -41,7 +41,8 @@ public class UserAwareQueryContextParser implements ParameterNameProvider {
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromSingleRequest(request),
                 userFetcher.userFor(request),
-                selectionBuilder.build(request)
+                selectionBuilder.build(request),
+                request
                 );
     }
 
@@ -50,7 +51,8 @@ public class UserAwareQueryContextParser implements ParameterNameProvider {
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
             annotationExtractor.extractFromListRequest(request),
             userFetcher.userFor(request),
-            selectionBuilder.build(request)
+            selectionBuilder.build(request),
+            request
         );
     }
 

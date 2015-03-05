@@ -102,7 +102,7 @@ public class TwitterAuthController {
                     .withSecret(requestToken.getTokenSecret())
                     .build();
             tokenRequestStore.store(oauthRequest);
-            QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest, QueryContext.standard());
+            QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest, QueryContext.standard(request));
             oauthRequestResultWriter.write(queryResult, writer);
         } catch (TwitterException e) {
             throw new RuntimeException(e);
@@ -146,7 +146,7 @@ public class TwitterAuthController {
                         .build();
             }
             
-            QueryResult<OAuthResult> queryResult = QueryResult.singleResult(oauthResult, QueryContext.standard());
+            QueryResult<OAuthResult> queryResult = QueryResult.singleResult(oauthResult, QueryContext.standard(request));
             oauthResultResultWriter.write(queryResult, responseWriter);
         } catch (TwitterException e) {
             throw new RuntimeException(e);

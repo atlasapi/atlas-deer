@@ -6,6 +6,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,7 +53,7 @@ public class StandardQueryParserTest {
     @Test
     public void testParsesSingleIdIntoNonListTopicQuery() throws Exception {
         when(queryContextParser.parseSingleContext(isA(HttpServletRequest.class)))
-            .thenReturn(QueryContext.standard());
+            .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
         
         Query<Topic> q = queryParser.parse(requestWithPath("4.0/topics/cbbh.json"));
         
@@ -66,7 +67,7 @@ public class StandardQueryParserTest {
     @SuppressWarnings("unchecked")
     public void testParsesIdsOnlyIntoListQuery() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-            .thenReturn(QueryContext.standard());
+            .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
     
         Query<Topic> q = queryParser.parse(requestWithPath("4.0/topics.json")
             .withParam("id", "cbbh"));
@@ -83,7 +84,7 @@ public class StandardQueryParserTest {
     @SuppressWarnings("unchecked")
     public void testParsesAttributeKeyWithOperator() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-            .thenReturn(QueryContext.standard());
+            .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
         
         Query<Topic> q = queryParser.parse(requestWithPath("4.0/topics.json")
                 .withParam("aliases.namespace.beginning", "prefix"));
@@ -96,10 +97,12 @@ public class StandardQueryParserTest {
         verify(queryContextParser).parseListContext(isA(HttpServletRequest.class));
     }
 
+
+
     @Test(expected=InvalidParameterException.class)
     public void testRejectsInvalidAttributeKey() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-        .thenReturn(QueryContext.standard());
+        .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
         
         queryParser.parse(requestWithPath("4.0/topics.json")
                 .withParam("just.the.beginning", "prefix"));
@@ -109,7 +112,7 @@ public class StandardQueryParserTest {
     @Test(expected=InvalidOperatorException.class)
     public void testRejectsAttributeKeyWithBadOperator() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-        .thenReturn(QueryContext.standard());
+        .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
         
         queryParser.parse(requestWithPath("4.0/topics.json")
                 .withParam("aliases.namespace.ending", "suffix"));

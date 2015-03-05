@@ -19,7 +19,10 @@ import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.JsonResponseWriter;
+import org.atlasapi.output.License;
 import org.atlasapi.output.writers.BroadcastWriter;
+import org.atlasapi.output.writers.LicenseWriter;
+import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.output.ContainerSummaryResolver;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
@@ -44,7 +47,8 @@ public class ScheduleQueryResultWriterTest {
     private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter("broadcasts", SubstitutionTableNumberCodec.lowerCaseOnly());
     private final EntityListWriter<ChannelSchedule> scheduleWriter
         = new ScheduleListWriter(new LegacyChannelListWriter(channelAnnotations), new ScheduleEntryListWriter(contentWriter, broadcastWriter));
-    private final ScheduleQueryResultWriter writer = new ScheduleQueryResultWriter(scheduleWriter);
+    private final EntityWriter<Object> licenseWriter = new LicenseWriter(new License("test"));
+    private final ScheduleQueryResultWriter writer = new ScheduleQueryResultWriter(scheduleWriter, licenseWriter, new RequestWriter());
       
     
     @Test
@@ -73,7 +77,7 @@ public class ScheduleQueryResultWriterTest {
         HttpServletRequest request = new StubHttpServletRequest();
         StubHttpServletResponse response = new StubHttpServletResponse();
         JsonResponseWriter responseWriter = new JsonResponseWriter(request, response);
-        QueryContext context = QueryContext.standard();
+        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
         QueryResult<ChannelSchedule> result = QueryResult.singleResult(cs, context);
         
         writer.write(result, responseWriter);

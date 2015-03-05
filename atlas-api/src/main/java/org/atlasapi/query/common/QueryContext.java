@@ -9,30 +9,40 @@ import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.metabroadcast.common.query.Selection;
 
+import javax.servlet.http.HttpServletRequest;
+
 public class QueryContext {
 
-    private static final QueryContext STANDARD = new QueryContext(
-            ApplicationSources.defaults(), 
-            ActiveAnnotations.standard()    
-    );
-    
-    public static final QueryContext standard() {
-        return STANDARD;
+    public static final QueryContext standard(HttpServletRequest request) {
+        return new QueryContext(
+                ApplicationSources.defaults(),
+                ActiveAnnotations.standard(),
+                request);
     }
     
     private final ApplicationSources appSources;
     private final ActiveAnnotations annotations;
     private final Optional<Selection> selection;
+    private final HttpServletRequest request;
 
-    public QueryContext(ApplicationSources appSources, ActiveAnnotations annotations) {
-        this(appSources, annotations, null);
+    public QueryContext(
+            ApplicationSources appSources,
+            ActiveAnnotations annotations,
+            HttpServletRequest request
+    ) {
+        this(appSources, annotations, null, request);
     }
     
-    public QueryContext(ApplicationSources appSources, ActiveAnnotations annotations,
-        Selection selection) {
+    public QueryContext(
+            ApplicationSources appSources,
+            ActiveAnnotations annotations,
+            Selection selection,
+            HttpServletRequest request
+    ) {
         this.appSources = checkNotNull(appSources);
         this.annotations = checkNotNull(annotations);
         this.selection = Optional.fromNullable(selection);
+        this.request = checkNotNull(request);
     }
 
     public ApplicationSources getApplicationSources() {
@@ -45,6 +55,10 @@ public class QueryContext {
     
     public Optional<Selection> getSelection() {
         return this.selection;
+    }
+
+    public HttpServletRequest getRequest() {
+        return request;
     }
 
     @Override
@@ -74,5 +88,4 @@ public class QueryContext {
             .add("selection", selection)
             .toString();
     }
-    
 }

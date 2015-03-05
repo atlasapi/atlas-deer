@@ -20,6 +20,8 @@ import org.junit.Test;
 
 import com.google.common.base.Optional;
 
+import javax.servlet.http.HttpServletRequest;
+
 
 public class UsersQueryExecutorTest {
     
@@ -46,7 +48,8 @@ public class UsersQueryExecutorTest {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<User> query = UserAwareQuery.singleQuery(Id.valueOf(6000), context);
         UserAwareQueryResult<User> result = executor.execute(query);
         assertFalse(result.isListResult());
@@ -63,7 +66,8 @@ public class UsersQueryExecutorTest {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.REGULAR).build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<User> query = UserAwareQuery.singleQuery(Id.valueOf(5000), context);
         UserAwareQueryResult<User> result = executor.execute(query);
         assertFalse(result.isListResult());
@@ -80,7 +84,8 @@ public class UsersQueryExecutorTest {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.REGULAR).build();
         UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
                 ActiveAnnotations.standard(),
-                Optional.of(user));
+                Optional.of(user),
+                mock(HttpServletRequest.class));
         UserAwareQuery<User> query = UserAwareQuery.singleQuery(Id.valueOf(6000), context);
         executor.execute(query);
     }
