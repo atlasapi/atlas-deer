@@ -19,7 +19,7 @@ public class LicenseModule {
     @Bean
     EntityWriter<Object> licenseWriter() throws IOException {
         return new LicenseWriter(
-                new License(IOUtils.toString(licenseText.getInputStream()))
+                new License(IOUtils.toString(licenseText.getInputStream(), "UTF-8"))
         );
     }
 }
