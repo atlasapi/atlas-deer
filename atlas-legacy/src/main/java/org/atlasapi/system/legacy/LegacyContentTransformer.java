@@ -96,7 +96,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         org.atlasapi.content.Series series = new org.atlasapi.content.Series();
         series.withSeriesNumber(input.getSeriesNumber());
         series.setTotalEpisodes(input.getTotalEpisodes());
-        if (input.getParent() != null) {
+        if (input.getParent() != null && input.getParent().getId() != null) {
             series.setBrandRef(transformToBrandRef(input.getParent(), input.getPublisher()));
         }
         return setContainerFields(series, input);
