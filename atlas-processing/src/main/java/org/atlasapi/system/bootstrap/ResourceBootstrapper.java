@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.ResourceLister;
+import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +87,11 @@ public class ResourceBootstrapper<T extends Identifiable> {
         int processed = 0;
         Iterable<List<T>> partitioned = Iterables.partition(lister.list(), batchSize);
         for (List<T> partition : partitioned) {
-            listener.onChange(ImmutableList.copyOf(Iterables.filter(partition, notNull())));
+            try {
+                listener.onChange(ImmutableList.copyOf(Iterables.filter(partition, notNull())));
+            } catch (Exception e) {
+                log.warn(e.getMessage(), e);
+            }
             processed += partition.size();
             log.info("Bootstrapping: {} to {}", processed, destination);
         };
