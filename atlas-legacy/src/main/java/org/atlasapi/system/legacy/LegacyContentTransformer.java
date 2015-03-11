@@ -41,6 +41,7 @@ import org.atlasapi.media.entity.Version;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
+import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -349,7 +350,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private Id channelId(String broadcastOn) {
         Maybe<Channel> possibleChannel = channelResolver.fromUri(broadcastOn);
         if (possibleChannel.isNothing()) {
-            throw new RuntimeException("no channel found for uri " + broadcastOn);
+            throw new LegacyChannelNotFoundException("no channel found for uri " + broadcastOn);
         }
         return Id.valueOf(possibleChannel.requireValue().getId());
     }
