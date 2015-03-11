@@ -3,6 +3,7 @@ package org.atlasapi.system.legacy;
 
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.base.Maybe;
+import org.atlasapi.content.Content;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Alias;
@@ -13,7 +14,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.media.entity.Restriction;
 import org.atlasapi.media.entity.Series;
 import org.atlasapi.media.entity.Version;
-import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,6 +21,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -45,8 +47,8 @@ public class LegacyContentTransformerTest {
         objectUnderTest.apply(legacy);
     }
 
-    @Test(expected = LegacyChannelNotFoundException.class)
-    public void testThrowLegacyChannelNotFoundExceptionWhenChannelNotFound() {
+    @Test
+    public void testIgnoreBroadcastsWithUnknownChannel() {
         String channelId = "nonexistentChannel";
         Item legacy = new Item();
         legacy.setId(1L);
@@ -61,7 +63,9 @@ public class LegacyContentTransformerTest {
         legacy.setAliases(ImmutableSet.<Alias>of());
         when(channelResolver.fromUri(channelId)).thenReturn(Maybe.<Channel>nothing());
 
-        objectUnderTest.apply(legacy);
+        org.atlasapi.content.Item transformed = (org.atlasapi.content.Item) objectUnderTest.apply(legacy);
+
+        assertThat(transformed.getBroadcasts().size(), is(0));
     }
 
 }

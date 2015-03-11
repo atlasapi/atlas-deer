@@ -94,7 +94,7 @@ public class ResourceBootstrapper<T extends Identifiable> {
             }
             processed += partition.size();
             log.info("Bootstrapping: {} to {}", processed, destination);
-        };
+        }
         return processed;
     }
 

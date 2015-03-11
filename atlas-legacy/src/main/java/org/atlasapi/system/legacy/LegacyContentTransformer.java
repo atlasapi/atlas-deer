@@ -207,7 +207,16 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         Set<Broadcast> broadcasts = Sets.newHashSet();
         for (Version version : versions) {
             for (org.atlasapi.media.entity.Broadcast broadcast : broadcastsWithIds(version)) {
-                broadcasts.add(transformBroadcast(broadcast, version));
+                try {
+                    broadcasts.add(transformBroadcast(broadcast, version));
+                } catch (LegacyChannelNotFoundException e) {
+                    log.warn(
+                            "{}, Broadcast with source id: {}, version id: {}",
+                            e.getMessage(),
+                            broadcast.getSourceId(),
+                            version.getId()
+                    );
+                }
             }
         }
         return broadcasts;

@@ -29,15 +29,20 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
         return new FluentIterable<Content>() {
             @Override
             public Iterator<Content> iterator() {
-                return Iterators.transform(contentLister.listContent(ContentListingCriteria.defaultCriteria()
-                        .forPublishers(Sources.all().asList())
-                        .forContent(
-                                ContentCategory.CONTAINER,
-                                ContentCategory.PROGRAMME_GROUP,
-                                ContentCategory.TOP_LEVEL_ITEM,
-                                ContentCategory.CHILD_ITEM
-                        )
-                        .build()), transformer);
+                return Iterators.transform(
+                        contentLister.listContent(
+                                ContentListingCriteria.defaultCriteria()
+                                        .forPublishers(Sources.all().asList())
+                                        .forContent(
+                                                ContentCategory.CONTAINER,
+                                                ContentCategory.PROGRAMME_GROUP,
+                                                ContentCategory.TOP_LEVEL_ITEM,
+                                                ContentCategory.CHILD_ITEM
+                                        )
+                                        .build()
+                        ),
+                        transformer
+                );
             }
         };
     }
