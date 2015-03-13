@@ -17,7 +17,9 @@ package org.atlasapi.query;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
 import org.atlasapi.equivalence.DefaultMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.output.OutputContentMerger;
@@ -92,6 +94,11 @@ public class QueryModule {
     public SearchResolver v4SearchResolver() {
         // FIXME externalize timeout
         return new ContentResolvingSearcher(persistenceModule.contentSearcher(), persistenceModule.contentStore(), 60000);
+    }
+
+    @Bean
+    public ContainerSummaryResolver containerSummaryResolver() {
+        return new MergingEquivalentsResolverBackedContainerSummaryResolver(mergingContentResolver());
     }
 
 }

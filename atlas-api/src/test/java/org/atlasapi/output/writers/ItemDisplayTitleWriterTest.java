@@ -6,9 +6,9 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.Item.ContainerSummary;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -22,7 +22,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.metabroadcast.common.time.DateTimeZones;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 

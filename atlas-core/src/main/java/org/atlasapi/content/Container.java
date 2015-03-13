@@ -37,6 +37,8 @@ public abstract class Container extends Content {
     public abstract <V> V accept(ContainerVisitor<V> visitor);
     
     public abstract ContainerRef toRef();
+
+    public abstract ContainerSummary toSummary();
     
     @Override
     public <V> V accept(ContentVisitor<V> visitor) {

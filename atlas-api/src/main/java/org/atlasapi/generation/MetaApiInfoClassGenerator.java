@@ -32,6 +32,7 @@ import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.ContainerRef;
+import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentGroupRef;
@@ -45,7 +46,6 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.Item.ContainerSummary;
 import org.atlasapi.content.KeyPhrase;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Person;
@@ -158,6 +158,7 @@ public class MetaApiInfoClassGenerator {
                 ReleaseDate.class,
                 Alias.class,
                 ContentGroupRef.class,
+                ContainerSummary.class,
                 Segment.class,
                 SegmentRef.class,
                 MediaType.class,

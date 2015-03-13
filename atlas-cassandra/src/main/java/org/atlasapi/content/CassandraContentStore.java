@@ -240,7 +240,7 @@ public final class CassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected Item.ContainerSummary summarize(ContainerRef id) {
+    protected ContainerSummary summarize(ContainerRef id) {
         Content resolved = resolve(id.getId().longValue(), 
             ImmutableSet.of(TYPE, SOURCE, IDENTIFICATION, DESCRIPTION));
         if (resolved instanceof Container) {
@@ -252,23 +252,29 @@ public final class CassandraContentStore extends AbstractContentStore {
         }
     }
 
-    private Item.ContainerSummary summarize(Container container) {
-        Item.ContainerSummary summary = null;
+    private ContainerSummary summarize(Container container) {
+        ContainerSummary summary = null;
         if (container != null) {
-            summary = container.accept(new ContainerVisitor<Item.ContainerSummary>() {
+            summary = container.accept(new ContainerVisitor<ContainerSummary>() {
 
                 @Override
-                public Item.ContainerSummary visit(Brand brand) {
-                    return new Item.ContainerSummary(
-                        EntityType.from(brand).name(), brand.getTitle(), 
-                        brand.getDescription(), null);
+                public ContainerSummary visit(Brand brand) {
+                    return new ContainerSummary(
+                            EntityType.from(brand).name(),
+                            brand.getTitle(),
+                            brand.getDescription(),
+                            null
+                    );
                 }
 
                 @Override
-                public Item.ContainerSummary visit(Series series) {
-                    return new Item.ContainerSummary(
-                        EntityType.from(series).name(), series.getTitle(), 
-                        series.getDescription(), series.getSeriesNumber());
+                public ContainerSummary visit(Series series) {
+                    return new ContainerSummary(
+                            EntityType.from(series).name(),
+                            series.getTitle(),
+                            series.getDescription(),
+                            series.getSeriesNumber()
+                    );
                 }
                 
             });
