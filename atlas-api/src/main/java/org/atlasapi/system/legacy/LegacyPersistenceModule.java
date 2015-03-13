@@ -51,7 +51,13 @@ public class LegacyPersistenceModule {
     @Bean @Qualifier("legacy")
     public ContentListerResourceListerAdapter legacyContentLister() {
         MongoContentLister contentLister = new MongoContentLister(persistence.databasedMongo());
-        return new ContentListerResourceListerAdapter(contentLister, persistence.channelStore(), legacySegmentMigrator());
+        return new ContentListerResourceListerAdapter(
+                contentLister,
+                new LegacyContentTransformer(
+                        persistence.channelStore(),
+                        legacySegmentMigrator()
+                )
+        );
     }
     
     @Bean @Qualifier("legacy")
