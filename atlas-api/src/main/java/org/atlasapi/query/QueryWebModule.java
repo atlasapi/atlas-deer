@@ -97,11 +97,13 @@ import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
+import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.TopicsAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.RequestWriter;
+import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
 import org.atlasapi.persistence.output.RecentlyBroadcastChildrenResolver;
@@ -179,7 +181,6 @@ import javax.servlet.http.HttpServletRequest;
 public class QueryWebModule {
 
     private static final String CONTAINER_FIELD = "container";
-    private static final String SERIES_FIELD = "series";
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
 
@@ -496,9 +497,8 @@ public class QueryWebModule {
             .register(SERIES_REFERENCE, new SeriesReferenceAnnotation(idCodec()), commonImplied)
             .register(
                     SERIES_SUMMARY,
-                    new ContainerSummaryAnnotation(
-                            SERIES_FIELD,
-                            new ContainerSummaryWriter(idCodec(), SERIES_FIELD, containerSummaryResolver)
+                    new SeriesSummaryAnnotation(
+                            new SeriesSummaryWriter(idCodec(), containerSummaryResolver)
                     ),
                     commonImplied,
                     ImmutableSet.of(SERIES_REFERENCE)
