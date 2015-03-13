@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
@@ -14,13 +15,15 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class MergingEquivalentsResolverBackedContainerSummaryResolver implements ContainerSummaryResolver {
 
     private static final Logger log = LoggerFactory.getLogger(MergingEquivalentsResolverBackedContainerSummaryResolver.class);
     private final MergingEquivalentsResolver<Content> contentResolver;
 
     public MergingEquivalentsResolverBackedContainerSummaryResolver(MergingEquivalentsResolver<Content> contentResolver) {
-        this.contentResolver = contentResolver;
+        this.contentResolver = checkNotNull(contentResolver);
     }
 
     @Override
@@ -33,7 +36,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolver implements
                     Exception.class
             );
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            Throwables.propagate(e);
         }
         Set<Content> equivalentContent = contentResolved.get(id);
         if(equivalentContent.isEmpty()) {
