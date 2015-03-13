@@ -27,7 +27,7 @@ public class SeriesSummaryAnnotation extends OutputAnnotation<Content> {
             if(episode.getSeriesRef() == null) {
                 writer.writeField(SERIES_FIELD, null);
             } else {
-                summaryWriter.write(episode, writer, ctxt);
+                writer.writeObject(summaryWriter, episode, ctxt);
             }
         }
     }
