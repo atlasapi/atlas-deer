@@ -234,7 +234,7 @@ public class ContentSerializerTest {
     private void setItemProperties(Item item) {
         setContentProperties(item);
         item.setContainerRef(new BrandRef(Id.valueOf(4321), item.getPublisher()));
-        item.setContainerSummary(new Item.ContainerSummary("brand", "title", "description", null));
+        item.setContainerSummary(new ContainerSummary("brand", "title", "description", null));
         item.setBlackAndWhite(true);
         item.setCountriesOfOrigin(ImmutableSet.of(Countries.GB));
         item.setIsLongForm(true);

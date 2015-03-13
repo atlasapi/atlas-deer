@@ -17,6 +17,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.media.entity.simple.BrandSummary;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
@@ -50,13 +51,15 @@ public class Brand extends Container {
         this.seriesRefs = ImmutableList.copyOf(seriesRefs);
     }
     
-    public Brand toSummary() {
-        Brand summary = new Brand(this.getCanonicalUri(), this.getCurie(), this.getPublisher());
-        summary.setTitle(this.getTitle());
-        summary.setDescription(this.getDescription());
-        return summary;
+    public ContainerSummary toSummary() {
+        return new ContainerSummary(
+                getClass().getSimpleName().toLowerCase(),
+                getTitle(),
+                getDescription(),
+                null
+        );
     }
-	
+
 	@Override
 	public Container copy() {
 	    Brand copy = new Brand();

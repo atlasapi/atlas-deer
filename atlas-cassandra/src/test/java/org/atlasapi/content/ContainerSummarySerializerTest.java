@@ -12,15 +12,15 @@ public class ContainerSummarySerializerTest {
     
     @Test
     public void testDeSerializeContainerSummary() {
-        serializeAndCheck(new Item.ContainerSummary(null, null, null, null));
-        serializeAndCheck(new Item.ContainerSummary("title", null, null, null));
-        serializeAndCheck(new Item.ContainerSummary(null, "desc", null, null));
-        serializeAndCheck(new Item.ContainerSummary(null, null, "type", null));
-        serializeAndCheck(new Item.ContainerSummary(null, null,  null, 1));
+        serializeAndCheck(new ContainerSummary(null, null, null, null));
+        serializeAndCheck(new ContainerSummary("title", null, null, null));
+        serializeAndCheck(new ContainerSummary(null, "desc", null, null));
+        serializeAndCheck(new ContainerSummary(null, null, "type", null));
+        serializeAndCheck(new ContainerSummary(null, null,  null, 1));
     }
 
-    private void serializeAndCheck(Item.ContainerSummary containerSummary) {
-        Item.ContainerSummary deserialized = serializer.deserialize(serializer.serialize(containerSummary));
+    private void serializeAndCheck(ContainerSummary containerSummary) {
+        ContainerSummary deserialized = serializer.deserialize(serializer.serialize(containerSummary));
         assertThat(deserialized.getTitle(), is(containerSummary.getTitle()));
         assertThat(deserialized.getDescription(), is(containerSummary.getDescription()));
         assertThat(deserialized.getType(), is(containerSummary.getType()));

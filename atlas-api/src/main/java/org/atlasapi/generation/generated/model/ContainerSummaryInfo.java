@@ -109,7 +109,7 @@ public class ContainerSummaryInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.content.Item.ContainerSummary.class;
+        return org.atlasapi.content.ContainerSummary.class;
     }
 
 }

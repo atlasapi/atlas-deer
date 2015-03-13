@@ -47,6 +47,7 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ItemAndBroadcast;
@@ -59,13 +60,12 @@ import org.atlasapi.generation.model.ModelClassInfo;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
-import org.atlasapi.output.License;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
 import org.atlasapi.output.annotation.BrandReferenceAnnotation;
-import org.atlasapi.output.annotation.BrandSummaryAnnotation;
+import org.atlasapi.output.annotation.ContainerSummaryAnnotation;
 import org.atlasapi.output.annotation.BroadcastsAnnotation;
 import org.atlasapi.output.annotation.ChannelAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupAnnotation;
@@ -97,13 +97,11 @@ import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
-import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.TopicsAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
-import org.atlasapi.output.writers.LicenseWriter;
+import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.RequestWriter;
-import org.atlasapi.persistence.output.MongoContainerSummaryResolver;
 import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
 import org.atlasapi.persistence.output.RecentlyBroadcastChildrenResolver;
@@ -180,6 +178,8 @@ import javax.servlet.http.HttpServletRequest;
 @Import({QueryModule.class, LicenseModule.class})
 public class QueryWebModule {
 
+    private static final String CONTAINER_FIELD = "container";
+    private static final String SERIES_FIELD = "series";
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
 
@@ -202,6 +202,8 @@ public class QueryWebModule {
     private @Autowired QueryExecutor<ChannelGroup> channelGroupQueryExecutor;
 
     private @Autowired ChannelGroupResolver channelGroupResolver;
+
+    private @Autowired ContainerSummaryResolver containerSummaryResolver;
 
     @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
 
@@ -487,16 +489,29 @@ public class QueryWebModule {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
         RecentlyBroadcastChildrenResolver recentlyBroadcastResolver = new MongoRecentlyBroadcastChildrenResolver(mongo);
         UpcomingItemsResolver upcomingChildrenResolver = new MongoUpcomingItemsResolver(mongo);
-        MongoContainerSummaryResolver containerSummaryResolver = new MongoContainerSummaryResolver(mongo, idCodec());
         return new ContentListWriter(AnnotationRegistry.<Content>builder()
             .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
             .register(ID, new IdentificationAnnotation(), commonImplied)
             .register(EXTENDED_ID, new ExtendedIdentificationAnnotation(idCodec()), ImmutableSet.of(ID))
             .register(SERIES_REFERENCE, new SeriesReferenceAnnotation(idCodec()), commonImplied)
-            .register(SERIES_SUMMARY, new SeriesSummaryAnnotation(idCodec(), containerSummaryResolver), commonImplied, ImmutableSet.of(SERIES_REFERENCE))
-            .register(BRAND_REFERENCE, new BrandReferenceAnnotation(idCodec()), commonImplied)
-            .register(BRAND_SUMMARY, new BrandSummaryAnnotation(idCodec(), containerSummaryResolver), commonImplied, ImmutableSet.of(BRAND_REFERENCE))
-            .register(DESCRIPTION, new ContentDescriptionAnnotation(), ImmutableSet.of(ID, SERIES_REFERENCE, BRAND_REFERENCE))
+            .register(
+                    SERIES_SUMMARY,
+                    new ContainerSummaryAnnotation(
+                            SERIES_FIELD,
+                            new ContainerSummaryWriter(idCodec(), SERIES_FIELD, containerSummaryResolver)
+                    ),
+                    commonImplied,
+                    ImmutableSet.of(SERIES_REFERENCE)
+            ).register(BRAND_REFERENCE, new BrandReferenceAnnotation(idCodec()), commonImplied)
+            .register(
+                    BRAND_SUMMARY,
+                    new ContainerSummaryAnnotation(
+                            CONTAINER_FIELD,
+                            new ContainerSummaryWriter(idCodec(), CONTAINER_FIELD, containerSummaryResolver)
+                    ),
+                    commonImplied,
+                    ImmutableSet.of(BRAND_REFERENCE)
+            ).register(DESCRIPTION, new ContentDescriptionAnnotation(), ImmutableSet.of(ID, SERIES_REFERENCE, BRAND_REFERENCE))
             .register(EXTENDED_DESCRIPTION, new ExtendedDescriptionAnnotation(), ImmutableSet.of(DESCRIPTION, EXTENDED_ID))
             .register(SUB_ITEMS, new SubItemAnnotation(idCodec()), commonImplied)
             .register(CLIPS, new ClipsAnnotation(), commonImplied)

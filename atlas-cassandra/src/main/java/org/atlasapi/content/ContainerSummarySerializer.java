@@ -6,7 +6,7 @@ import org.atlasapi.serialization.protobuf.ContentProtos.Summary;
 
 public class ContainerSummarySerializer {
 
-    public ContentProtos.Summary serialize(Item.ContainerSummary containerSummary) {
+    public ContentProtos.Summary serialize(ContainerSummary containerSummary) {
         ContentProtos.Summary.Builder summary = ContentProtos.Summary.newBuilder();
         if (containerSummary.getType() != null) {
             summary.setType(containerSummary.getType());
@@ -23,8 +23,8 @@ public class ContainerSummarySerializer {
         return summary.build();
     }
     
-    public Item.ContainerSummary deserialize(Summary summary) {
-        return new Item.ContainerSummary(
+    public ContainerSummary deserialize(Summary summary) {
+        return new ContainerSummary(
             summary.hasType() ? summary.getType() : null,
             summary.hasTitle() ? summary.getTitle() : null,
             summary.hasDescription() ? summary.getDescription() : null,

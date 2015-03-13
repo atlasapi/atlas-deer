@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.media.entity.simple.SeriesSummary;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
@@ -23,15 +24,13 @@ public class Series extends Container {
         super(id, source);
     }
 
-	public Series toSummary() {
-	   Series summary = new Series(this.getCanonicalUri(), this.getCurie(), this.publisher);
-       summary.setTitle(this.getTitle());
-       summary.setDescription(this.getDescription());
-       summary.withSeriesNumber(seriesNumber);
-       summary.setLastUpdated(this.getLastUpdated());
-       summary.setThumbnail(this.getThumbnail());
-       summary.setImage(this.getImage());
-       return summary;
+	public ContainerSummary toSummary() {
+       return new ContainerSummary(
+               getClass().getSimpleName().toLowerCase(),
+               getTitle(),
+               getDescription(),
+               seriesNumber
+       );
 	}
 
 	public Series withSeriesNumber(Integer seriesNumber) {

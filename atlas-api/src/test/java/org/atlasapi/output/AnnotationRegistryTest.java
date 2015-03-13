@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
+import org.atlasapi.output.annotation.ContainerSummaryAnnotation;
 import org.atlasapi.output.annotation.ContentDescriptionAnnotation;
 import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
 import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
@@ -21,8 +22,7 @@ import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
-import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
-import org.atlasapi.persistence.output.ContainerSummaryResolver;
+import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -43,7 +43,7 @@ public class AnnotationRegistryTest {
     private final ContentDescriptionAnnotation desc = new ContentDescriptionAnnotation();
     private final ExtendedDescriptionAnnotation extDesc = new ExtendedDescriptionAnnotation();
     private final SeriesReferenceAnnotation seriesRef = new SeriesReferenceAnnotation(idCodec);
-    private final SeriesSummaryAnnotation seriesSum = new SeriesSummaryAnnotation(idCodec, mock(ContainerSummaryResolver.class));
+    private final ContainerSummaryAnnotation seriesSum = new ContainerSummaryAnnotation("series", mock(ContainerSummaryWriter.class));
     
     private final AnnotationRegistry<Content> registry = AnnotationRegistry.<Content>builder()
         .register(ID_SUMMARY, idSum)

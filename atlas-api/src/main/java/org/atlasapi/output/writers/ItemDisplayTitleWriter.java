@@ -3,9 +3,9 @@ package org.atlasapi.output.writers;
 import java.io.IOException;
 
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.Item.ContainerSummary;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
