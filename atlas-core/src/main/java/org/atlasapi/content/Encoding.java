@@ -63,6 +63,8 @@ public class Encoding extends Identified {
     
     private String versionId;
 
+    //TODO audio described, signed
+
     @FieldName("available_at")
     public Set<Location> getAvailableAt() { 
         return this.availableAt; 

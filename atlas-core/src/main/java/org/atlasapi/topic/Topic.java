@@ -18,7 +18,8 @@ import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 
 public class Topic extends Described implements Sourced, Aliased {
-    
+
+    //TODO readHash
     private Type type;
     private String namespace;
     private String value;

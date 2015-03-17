@@ -62,6 +62,8 @@ public abstract class Described extends Identified implements Sourced {
     private String presentationChannel;
 
     protected Set<RelatedLink> relatedLinks = ImmutableSet.of();
+    //TODO LocalizedDescription,LocalizedTitles, reviews, ratings, audience statistics
+
 	
 	public Described(String uri, String curie, Publisher publisher) {
 		super(uri, curie);

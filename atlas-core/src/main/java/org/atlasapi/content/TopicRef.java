@@ -17,6 +17,8 @@ import com.google.common.collect.Maps;
 
 public class TopicRef {
 
+
+    //TODO reviese merging with topic/TopicRef
     private Id topic;
     private Publisher publisher;
 	private Boolean supervised;

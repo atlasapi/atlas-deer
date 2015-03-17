@@ -6,6 +6,7 @@ import org.atlasapi.entity.ResourceType;
 import org.atlasapi.media.entity.Publisher;
 
 
+//TODO revise merging with content/TopicRef
 public class TopicRef extends ResourceRef {
 
     public TopicRef(Id id, Publisher source) {

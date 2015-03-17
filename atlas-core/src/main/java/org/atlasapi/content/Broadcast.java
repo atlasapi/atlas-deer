@@ -38,7 +38,9 @@ import com.metabroadcast.common.time.IntervalOrdering;
  * @author Robert Chatley (robert@metabroadcast.com)
  */
 public class Broadcast extends Identified {
-    
+
+
+    //TODO channelRef
     private final Id channelId;
     private final Interval transmissionInterval;
     private final Duration broadcastDuration;
@@ -47,6 +49,7 @@ public class Broadcast extends Identified {
     private Boolean activelyPublished;
     
     //Should probably be called sourceAlias.
+    //TODO source/publisher?ß
     private String sourceId;  
 
     private String versionId;
@@ -64,7 +67,7 @@ public class Broadcast extends Identified {
     private Boolean premiere;
     private Boolean is3d;
     private Optional<BlackoutRestriction> blackoutRestriction = Optional.absent();
-    
+
     public Broadcast(Id channelId, DateTime start, DateTime end, Boolean activelyPublished) {
 		this(channelId, new Interval(start, end), activelyPublished);
 	}

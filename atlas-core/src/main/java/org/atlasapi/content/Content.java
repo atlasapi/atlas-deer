@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-public abstract class Content extends Described implements Aliased, Sourced, Equivalable<Content> {
+public abstract class Content extends Described implements Aliased, Equivalable<Content> {
 
     private transient String readHash;
     private ImmutableList<Clip> clips = ImmutableList.of();

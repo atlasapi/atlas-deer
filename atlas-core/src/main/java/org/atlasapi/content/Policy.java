@@ -38,7 +38,8 @@ public class Policy extends Identified {
 	private RevenueContract revenueContract;
 	
 	private Price price;
-	
+
+    //TODO replace this with Player/service
 	private Platform platform;
 	
 	private Network network;
