@@ -351,8 +351,8 @@ public class QueryWebModule {
                 .register(
                         CHANNELS,
                         new ChannelGroupChannelsAnnotation(
-                                new ChannelGroupChannelWriter(channelResolver)
-                        ),
+                                new ChannelGroupChannelWriter(),
+                                channelResolver),
                         CHANNEL_GROUP
                 )
                 .register(REGIONS, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
@@ -385,7 +385,8 @@ public class QueryWebModule {
         return new QueryAttributeParser(
                 ImmutableList.of(
                         QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())),
-                        QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_TYPE, AttributeCoercers.stringCoercer())
+                        QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_TYPE, AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_CHANNEL_GENRE, AttributeCoercers.stringCoercer())
                 )
         );
     }
