@@ -1,6 +1,7 @@
 package org.atlasapi.output.annotation;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -40,9 +41,10 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasap
         }
 
         ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
+        String genre = ctxt.getRequest().getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRE.externalName());
         Iterable<Channel> channels = Futures.get(
                 Futures.transform(
-                        this.channelResolver.resolveIds(channelGroupMemberships.keySet()),
+                        this.channelResolver.resolveIds(channelGroupMemberships.keySet(), Optional.fromNullable(genre)),
                         new Function<Resolved<Channel>, Iterable<Channel>>() {
                             @Override
                             public Iterable<Channel> apply(Resolved<Channel> channelResolved) {
@@ -53,11 +55,8 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasap
                 ), 1, TimeUnit.MINUTES, IOException.class
         );
         ImmutableSet.Builder<ChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
-        String genre = ctxt.getRequest().getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRE.externalName());
+
         for (Channel channel : channels) {
-            if (genre != null && !channel.getGenres().contains(genre)) {
-                continue;
-            }
             for (ChannelGroupMembership channelGroupMembership : channelGroupMemberships.get(channel.getId())) {
                 resultBuilder.add(
                         new ChannelWithChannelGroupMembership(
