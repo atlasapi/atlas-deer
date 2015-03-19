@@ -1,7 +1,8 @@
 package org.atlasapi.output.annotation;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -42,12 +43,12 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasap
         }
 
         ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
-        String genre = ctxt.getRequest().getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRE.externalName());
+        String genre = ctxt.getRequest().getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
 
         ChannelQuery.Builder channelQueryBuilder = ChannelQuery.builder()
                 .withChannelGroups(ImmutableSet.of(entity.getId().longValue()));
-        if (genre != null) {
-            channelQueryBuilder.withGenres(ImmutableSet.of(genre));
+        if (!Strings.isNullOrEmpty(genre)) {
+            channelQueryBuilder.withGenres(ImmutableSet.copyOf(Splitter.on(',').split(genre)));
         }
         ChannelQuery channelQuery = channelQueryBuilder.build();
         Iterable<Channel> channels = Futures.get(
