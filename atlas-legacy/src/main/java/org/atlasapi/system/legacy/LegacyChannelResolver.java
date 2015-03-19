@@ -1,7 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -30,26 +28,6 @@ public class LegacyChannelResolver implements ChannelResolver {
         return Futures.immediateFuture(
                 Resolved.valueOf(
                         resolveAndTransformLegacyChannels(ids)
-                )
-        );
-    }
-
-    @Override
-    public ListenableFuture<Resolved<Channel>> resolveIds(Iterable<Id> ids, final Optional<String> genre) {
-        if(!genre.isPresent()) {
-            return resolveIds(ids);
-        }
-        return Futures.immediateFuture(
-                Resolved.valueOf(
-                        Iterables.filter(
-                                resolveAndTransformLegacyChannels(ids),
-                                new Predicate<Channel>() {
-                                    @Override
-                                    public boolean apply(Channel channel) {
-                                        return channel.getGenres().contains(genre.get());
-                                    }
-                                }
-                        )
                 )
         );
     }

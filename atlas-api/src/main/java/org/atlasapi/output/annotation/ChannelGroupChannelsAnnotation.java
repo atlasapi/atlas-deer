@@ -12,6 +12,7 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.output.ChannelWithChannelGroupMembership;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -42,9 +43,16 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasap
 
         ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
         String genre = ctxt.getRequest().getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRE.externalName());
+
+        ChannelQuery.Builder channelQueryBuilder = ChannelQuery.builder()
+                .withChannelGroups(ImmutableSet.of(entity.getId().longValue()));
+        if (genre != null) {
+            channelQueryBuilder.withGenres(ImmutableSet.of(genre));
+        }
+        ChannelQuery channelQuery = channelQueryBuilder.build();
         Iterable<Channel> channels = Futures.get(
                 Futures.transform(
-                        this.channelResolver.resolveIds(channelGroupMemberships.keySet(), Optional.fromNullable(genre)),
+                        this.channelResolver.resolveChannels(channelQuery),
                         new Function<Resolved<Channel>, Iterable<Channel>>() {
                             @Override
                             public Iterable<Channel> apply(Resolved<Channel> channelResolved) {
