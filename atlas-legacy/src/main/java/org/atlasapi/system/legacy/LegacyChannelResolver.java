@@ -25,10 +25,17 @@ public class LegacyChannelResolver implements ChannelResolver {
 
     @Override
     public ListenableFuture<Resolved<Channel>> resolveIds(Iterable<Id> ids) {
+        return Futures.immediateFuture(
+                Resolved.valueOf(
+                        resolveAndTransformLegacyChannels(ids)
+                )
+        );
+    }
+
+    private Iterable<Channel> resolveAndTransformLegacyChannels(Iterable<Id> ids) {
         Iterable<Long> lids = Iterables.transform(ids, Id.toLongValue());
         Iterable<org.atlasapi.media.channel.Channel> resolvedChannels = legacyResolver.forIds(lids);
-        Iterable<Channel> transformed = transformer.transform(resolvedChannels);
-        return Futures.immediateFuture(Resolved.valueOf(transformed));
+        return transformer.transform(resolvedChannels);
     }
 
     @Override
