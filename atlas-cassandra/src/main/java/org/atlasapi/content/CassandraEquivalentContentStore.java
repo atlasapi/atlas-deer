@@ -162,18 +162,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             long setId = row.getLong(SET_ID_KEY);
             if (!row.isNull(GRAPH_KEY)) {
                 graphs.put(setId, graphSerializer.deserialize(row.getBytes(GRAPH_KEY)));
-            }
-            Content content = deserialize(row);
-            EquivalenceGraph graphForContent = graphs.get(setId);
-            if (contentSelected(content, graphForContent, selectedSources)) {
-                sets.put(setId, content);
+                Content content = deserialize(row);
+                EquivalenceGraph graphForContent = graphs.get(setId);
+                if (contentSelected(content, graphForContent, selectedSources)) {
+                    sets.put(setId, content);
+                }
             }
         }
         return checkIntegrity(index, graphs) ? sets.build() : null;
     }
 
     private boolean checkIntegrity(Map<Long, Long> index, Map<Long, EquivalenceGraph> graphs) {
-        //check integrity
         for (Entry<Long, Long> requests : index.entrySet()) {
             EquivalenceGraph requestedGraph = graphs.get(requests.getValue());
             if (requestedGraph == null
