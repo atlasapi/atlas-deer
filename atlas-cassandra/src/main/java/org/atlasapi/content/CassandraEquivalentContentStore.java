@@ -276,7 +276,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, graph.getId().longValue()))
                 .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
-            .with(set(DATA_KEY, serialize(content)));
+                .with(set(DATA_KEY, serialize(content)))
+                .and(set(GRAPH_KEY, graphSerializer.serialize(graph)));
     }
 
     private ByteBuffer serialize(Content content) {
