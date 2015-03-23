@@ -1,12 +1,16 @@
 package org.atlasapi.system.bootstrap;
 
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.SchedulerModule;
 import org.atlasapi.content.Content;
@@ -96,6 +100,33 @@ public class BootstrapModule {
     
     @Bean
     public ScheduleBootstrapController scheduleBootstrapController() {
-        return new ScheduleBootstrapController(workers.scheduleBootstrapTaskFactory(), persistence.channelStore());
+        return new ScheduleBootstrapController(
+                workers.scheduleBootstrapTaskFactory(),
+                persistence.channelStore(),
+                executorService(2, "ScheduleBootstrapController"),
+                scheduleBootstrapper()
+        );
+    }
+
+    @Bean
+    public ScheduleBootstrapper scheduleBootstrapper() {
+        return new ScheduleBootstrapper(
+                executorService(10, "ScheduleBootstrapper"),
+                workers.scheduleBootstrapTaskFactory()
+        );
+    }
+
+
+    private ListeningExecutorService executorService(Integer concurrencyLevel, String namePrefix) {
+        return MoreExecutors.listeningDecorator(
+                new ThreadPoolExecutor(
+                        concurrencyLevel,
+                        concurrencyLevel,
+                        0, TimeUnit.MICROSECONDS,
+                        new ArrayBlockingQueue<Runnable>(100 * Runtime.getRuntime().availableProcessors()),
+                        new ThreadFactoryBuilder().setNameFormat(namePrefix + " Thread %d").build(),
+                        new ThreadPoolExecutor.CallerRunsPolicy()
+                )
+        );
     }
 }

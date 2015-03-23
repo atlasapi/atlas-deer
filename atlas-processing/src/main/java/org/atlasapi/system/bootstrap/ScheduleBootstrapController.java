@@ -5,9 +5,13 @@ import static com.metabroadcast.common.http.HttpStatusCode.BAD_REQUEST;
 import static com.metabroadcast.common.http.HttpStatusCode.SERVER_ERROR;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Maps;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Publisher;
@@ -16,6 +20,8 @@ import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -33,11 +39,22 @@ public class ScheduleBootstrapController {
     
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
     private final ChannelResolver channelResvoler;
-    
+    private final ExecutorService executor;
+    private final ScheduleBootstrapper scheduleBootstrapper;
+    private final ObjectMapper jsonMapper = new ObjectMapper();
+
     private static final DateTimeFormatter dateParser = ISODateTimeFormat.date();
     private static final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
+    private static final Logger log = LoggerFactory.getLogger(ScheduleBootstrapper.class);
 
-    public ScheduleBootstrapController(ChannelIntervalScheduleBootstrapTaskFactory taskFactory, ChannelResolver channelResvoler) {
+    public ScheduleBootstrapController(
+            ChannelIntervalScheduleBootstrapTaskFactory taskFactory,
+            ChannelResolver channelResvoler,
+            ExecutorService executor,
+            ScheduleBootstrapper scheduleBootstrapper
+    ) {
+        this.executor = checkNotNull(executor);
+        this.scheduleBootstrapper = checkNotNull(scheduleBootstrapper);
         this.taskFactory = checkNotNull(taskFactory);
         this.channelResvoler = checkNotNull(channelResvoler);
     }
@@ -72,9 +89,70 @@ public class ScheduleBootstrapController {
         } catch (Exception e) {
             return failure(resp, SERVER_ERROR, Throwables.getStackTraceAsString(e));
         }
-        
     }
 
+    @RequestMapping(value="/system/bootstrap/schedule/all",method=RequestMethod.POST)
+    public Void bootstrapAllSchedules(HttpServletResponse resp, @RequestParam("source") String src,
+                                  @RequestParam("from") String from, @RequestParam("to") String to)
+            throws IOException {
+
+        final Maybe<Publisher> source = Publisher.fromKey(src);
+        if (!source.hasValue()) {
+            return failure(resp, BAD_REQUEST, "Unknown source " + src);
+        }
+
+        final Iterable<Channel> channels = channelResvoler.all();
+
+        final LocalDate dateFrom;
+        final LocalDate dateTo;
+        try {
+            dateFrom = dateParser.parseLocalDate(from);
+        } catch (IllegalArgumentException iae) {
+            return failure(resp, BAD_REQUEST, "Failed to parse "+ from +", expected yyyy-MM-dd");
+        }
+
+        try {
+            dateTo = dateParser.parseLocalDate(to);
+        } catch (IllegalArgumentException iae) {
+            return failure(resp, BAD_REQUEST, "Failed to parse "+ to +", expected yyyy-MM-dd");
+        }
+        final Interval interval = interval(dateFrom, dateTo);
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                boolean bootstrapping = scheduleBootstrapper.bootstrapSchedules(
+                        channels,
+                        interval,
+                        source.requireValue()
+                );
+                if (!bootstrapping) {
+                    log.warn("Bootstrapping failed because apparently busy bootstrapping something else.");
+                }
+            }
+        });
+        return null;
+    }
+
+    @RequestMapping(value="/system/bootstrap/schedule/all/status.json",method=RequestMethod.GET)
+    public void checkScheduleBootstrapStatus(HttpServletResponse response) throws IOException {
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("bootstrapping", scheduleBootstrapper.isBootstrapping());
+        Throwable lastException = scheduleBootstrapper.getLastException();
+        if (lastException != null) {
+            result.put("lastException", Throwables.getStackTraceAsString(lastException));
+        }
+        result.put("processed", scheduleBootstrapper.getProgress().getProcessed());
+        result.put("failures", scheduleBootstrapper.getProgress().getFailures());
+        jsonMapper.writeValue(response.getOutputStream(), result);
+        response.flushBuffer();
+    }
+
+    private Interval interval(LocalDate from, LocalDate to) {
+        return new Interval(
+                from.toDateTimeAtStartOfDay(DateTimeZones.UTC),
+                to.toDateTimeAtStartOfDay(DateTimeZones.UTC)
+        );
+    }
     private Interval interval(LocalDate day) {
         return new Interval(day.toDateTimeAtStartOfDay(DateTimeZones.UTC),
                 day.plusDays(1).toDateTimeAtStartOfDay(DateTimeZones.UTC));
