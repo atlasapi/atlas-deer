@@ -11,6 +11,7 @@ import javax.annotation.PostConstruct;
 
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.SchedulerModule;
 import org.atlasapi.content.Content;
@@ -36,6 +37,10 @@ import com.metabroadcast.common.time.SystemClock;
 @Import({AtlasPersistenceModule.class, BootstrapWorkersModule.class, LegacyPersistenceModule.class,
     SchedulerModule.class})
 public class BootstrapModule {
+
+    //we only need 2 here, on to run the bootstrap and one to be able to return quickly when it's running
+    private static final Integer NUMBER_OF_SCHECHULE_CONTROLLER_THREADS = 2;
+    private static final Integer NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS = Configurer.get("boootstrap.schedule.numThreads").toInt();
 
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private LegacyPersistenceModule legacy;
@@ -103,7 +108,7 @@ public class BootstrapModule {
         return new ScheduleBootstrapController(
                 workers.scheduleBootstrapTaskFactory(),
                 persistence.channelStore(),
-                executorService(2, "ScheduleBootstrapController"),
+                executorService(NUMBER_OF_SCHECHULE_CONTROLLER_THREADS, "ScheduleBootstrapController"),
                 scheduleBootstrapper()
         );
     }
@@ -111,7 +116,7 @@ public class BootstrapModule {
     @Bean
     public ScheduleBootstrapper scheduleBootstrapper() {
         return new ScheduleBootstrapper(
-                executorService(10, "ScheduleBootstrapper"),
+                executorService(NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS, "ScheduleBootstrapper"),
                 workers.scheduleBootstrapTaskFactory()
         );
     }

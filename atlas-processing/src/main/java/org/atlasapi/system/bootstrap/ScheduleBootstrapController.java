@@ -92,13 +92,14 @@ public class ScheduleBootstrapController {
     }
 
     @RequestMapping(value="/system/bootstrap/schedule/all",method=RequestMethod.POST)
-    public Void bootstrapAllSchedules(HttpServletResponse resp, @RequestParam("source") String src,
+    public void bootstrapAllSchedules(HttpServletResponse resp, @RequestParam("source") String src,
                                   @RequestParam("from") String from, @RequestParam("to") String to)
             throws IOException {
 
         final Maybe<Publisher> source = Publisher.fromKey(src);
         if (!source.hasValue()) {
-            return failure(resp, BAD_REQUEST, "Unknown source " + src);
+            failure(resp, BAD_REQUEST, "Unknown source " + src);
+            return;
         }
 
         final Iterable<Channel> channels = channelResvoler.all();
@@ -108,13 +109,15 @@ public class ScheduleBootstrapController {
         try {
             dateFrom = dateParser.parseLocalDate(from);
         } catch (IllegalArgumentException iae) {
-            return failure(resp, BAD_REQUEST, "Failed to parse "+ from +", expected yyyy-MM-dd");
+            failure(resp, BAD_REQUEST, "Failed to parse "+ from +", expected yyyy-MM-dd");
+            return;
         }
 
         try {
             dateTo = dateParser.parseLocalDate(to);
         } catch (IllegalArgumentException iae) {
-            return failure(resp, BAD_REQUEST, "Failed to parse "+ to +", expected yyyy-MM-dd");
+            failure(resp, BAD_REQUEST, "Failed to parse "+ to +", expected yyyy-MM-dd");
+            return;
         }
         final Interval interval = interval(dateFrom, dateTo);
         executor.submit(new Runnable() {
@@ -130,17 +133,12 @@ public class ScheduleBootstrapController {
                 }
             }
         });
-        return null;
     }
 
     @RequestMapping(value="/system/bootstrap/schedule/all/status.json",method=RequestMethod.GET)
     public void checkScheduleBootstrapStatus(HttpServletResponse response) throws IOException {
         Map<String, Object> result = Maps.newHashMap();
         result.put("bootstrapping", scheduleBootstrapper.isBootstrapping());
-        Throwable lastException = scheduleBootstrapper.getLastException();
-        if (lastException != null) {
-            result.put("lastException", Throwables.getStackTraceAsString(lastException));
-        }
         result.put("processed", scheduleBootstrapper.getProgress().getProcessed());
         result.put("failures", scheduleBootstrapper.getProgress().getFailures());
         jsonMapper.writeValue(response.getOutputStream(), result);
