@@ -148,7 +148,7 @@ public class ScheduleBootstrapController {
     private Interval interval(LocalDate from, LocalDate to) {
         return new Interval(
                 from.toDateTimeAtStartOfDay(DateTimeZones.UTC),
-                to.toDateTimeAtStartOfDay(DateTimeZones.UTC)
+                to.plusDays(1).toDateTimeAtStartOfDay(DateTimeZones.UTC)
         );
     }
     private Interval interval(LocalDate day) {

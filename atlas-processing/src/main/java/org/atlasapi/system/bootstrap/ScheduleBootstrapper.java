@@ -76,12 +76,12 @@ public class ScheduleBootstrapper {
             @Override
             public void onSuccess(UpdateProgress result) {
                 processed.incrementAndGet();
-                log.info("Processed channel {} with updates {}", channel.getId(), result);
+                log.info("Processed channel {}/{} with updates {}", channel.getId(), channel.getTitle(), result);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.error("Error while processing schedules", t);
+                log.error("Error while processing schedules for channel {}/{}", channel.getId(),channel.getTitle(), t);
                 failures.incrementAndGet();
             }
         });
