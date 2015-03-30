@@ -204,3 +204,22 @@ CREATE TABLE segments_aliases (
     populate_io_cache_on_flush='false' AND
     compaction={'class': 'SizeTieredCompactionStrategy'} AND
     compression={'sstable_compression': 'SnappyCompressor'};
+
+CREATE TABLE failed_messages (
+  topic text,
+  day timestamp,
+  failed_timestamp timeuuid,
+  message blob,
+  stacktrace text,
+  PRIMARY KEY ((topic, day), failed_timestamp)
+) WITH COMPACT STORAGE AND
+  bloom_filter_fp_chance=0.010000 AND
+  caching='KEYS_ONLY' AND
+  comment='' AND
+  dclocal_read_repair_chance=0.000000 AND
+  gc_grace_seconds=864000 AND
+  read_repair_chance=0.100000 AND
+  replicate_on_write='true' AND
+  populate_io_cache_on_flush='false' AND
+  compaction={'class': 'SizeTieredCompactionStrategy'} AND
+  compression={'sstable_compression': 'SnappyCompressor'};
