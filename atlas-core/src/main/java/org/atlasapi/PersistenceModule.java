@@ -1,5 +1,6 @@
 package org.atlasapi;
 
+import com.metabroadcast.common.queue.FailedMessagesStore;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -23,6 +24,8 @@ public interface PersistenceModule {
     EquivalentContentStore equivalentContentStore();
 
     EquivalentScheduleStore equivalentScheduleStore();
+
+    FailedMessagesStore failedMessagesStore();
 
 
 }
