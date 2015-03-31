@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
 
+import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ClipRef;
@@ -109,7 +110,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
             new Function<org.atlasapi.media.entity.SeriesRef, SeriesRef>() {
                 @Override
                 public SeriesRef apply(org.atlasapi.media.entity.SeriesRef input) {
-                    return new SeriesRef(Id.valueOf(input.getId()), brand.getPublisher(), 
+                    return new SeriesRef(Id.valueOf(input.getId()), brand.getPublisher(),
                             input.getTitle(), input.getSeriesNumber(), input.getUpdated());
                 }
             }
@@ -128,7 +129,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
                     }
                     Id id = Id.valueOf(input.getId());
                     DateTime updated = Objects.firstNonNull(input.getUpdated(),new DateTime(DateTimeZones.UTC));
-                    org.atlasapi.media.entity.EntityType type 
+                    org.atlasapi.media.entity.EntityType type
                         = transformEnum(input.getType(), org.atlasapi.media.entity.EntityType.class);
                     switch (type) {
                     case ITEM:
@@ -353,9 +354,17 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         b.setPremiere(input.getPremiere());
         b.set3d(version.is3d());
         b.setVersionId(version.getCanonicalUri());
+        b.setBlackoutRestriction(transformBlackoutRestriction(input.getBlackoutRestriction()));
         return b;
     }
-    
+
+    private BlackoutRestriction transformBlackoutRestriction(org.atlasapi.media.entity.BlackoutRestriction legacy) {
+        if (legacy == null) {
+            return null;
+        }
+        return new BlackoutRestriction(legacy.getAll());
+    }
+
     private Id channelId(String broadcastOn) {
         Maybe<Channel> possibleChannel = channelResolver.fromUri(broadcastOn);
         if (possibleChannel.isNothing()) {

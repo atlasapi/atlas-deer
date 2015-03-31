@@ -16,6 +16,7 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Optional;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.meta.annotations.FieldName;
@@ -62,6 +63,7 @@ public class Broadcast extends Identified {
     private Boolean newEpisode;
     private Boolean premiere;
     private Boolean is3d;
+    private Optional<BlackoutRestriction> blackoutRestriction = Optional.absent();
     
     public Broadcast(Id channelId, DateTime start, DateTime end, Boolean activelyPublished) {
 		this(channelId, new Interval(start, end), activelyPublished);
@@ -370,6 +372,14 @@ public class Broadcast extends Identified {
     
     public static final Predicate<Broadcast> channelFilter(final Channel channel) {
         return new BroadcastChannelFilter(channel);
+    }
+
+    public void setBlackoutRestriction(BlackoutRestriction blackoutRestriction) {
+        this.blackoutRestriction = Optional.fromNullable(blackoutRestriction);
+    }
+
+    public Optional<BlackoutRestriction> getBlackoutRestriction() {
+        return blackoutRestriction;
     }
 
     private static final class BroadcastChannelFilter implements Predicate<Broadcast> {
