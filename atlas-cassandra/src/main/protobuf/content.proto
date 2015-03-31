@@ -126,6 +126,11 @@ message Broadcast {
     optional bool premiere = 16;
     optional string channel_uri = 18;
     optional bool is_three_d = 20;
+    optional BlackoutRestriction blackout_restriction = 21;
+}
+
+message BlackoutRestriction {
+    optional bool all = 1;
 }
 
 message Encoding {
