@@ -44,13 +44,17 @@ public class LegacyPersistenceModule {
         if (mongoDb == null) {
             return NullContentResolver.get();
         }
-        KnownTypeContentResolver contentResolver = new MongoContentResolver(mongoDb, legacyEquivalenceStore());
-        return new LegacyContentResolver(legacyEquivalenceStore(), contentResolver, legacySegmentMigrator(), persistence.channelStore());
+        return new LegacyContentResolver(legacyEquivalenceStore(), knownTypeContentResolver(), legacySegmentMigrator(), persistence.channelStore());
     }
-    
+
+    @Bean
+    public KnownTypeContentResolver knownTypeContentResolver() {
+        return new MongoContentResolver(persistence.databasedMongo(), legacyEquivalenceStore());
+    }
+
     @Bean @Qualifier("legacy")
     public ContentListerResourceListerAdapter legacyContentLister() {
-        MongoContentLister contentLister = new MongoContentLister(persistence.databasedMongo());
+        MongoContentLister contentLister = new MongoContentLister(persistence.databasedMongo(), knownTypeContentResolver());
         return new ContentListerResourceListerAdapter(
                 contentLister,
                 new LegacyContentTransformer(

@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.metabroadcast.common.queue.FailedMessagesStore;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
@@ -137,6 +138,10 @@ public class AtlasPersistenceModule {
     @Bean
     public SegmentStore segmentStore() { return persistenceModule().segmentStore(); }
 
+    @Bean
+    public FailedMessagesStore failedMessagesStore() {
+        return persistenceModule().failedMessagesStore();
+    }
     @Bean
     public EquivalenceGraphStore getContentEquivalenceGraphStore() {
         return persistenceModule().contentEquivalenceGraphStore();

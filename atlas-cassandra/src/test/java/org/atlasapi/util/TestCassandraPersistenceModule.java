@@ -2,6 +2,7 @@ package org.atlasapi.util;
 
 import java.util.UUID;
 
+import com.metabroadcast.common.queue.FailedMessagesStore;
 import org.atlasapi.CassandraPersistenceModule;
 import org.atlasapi.ConfiguredAstyanaxContext;
 import org.atlasapi.DatastaxCassandraService;
@@ -165,6 +166,11 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
     @Override
     public EquivalentScheduleStore equivalentScheduleStore() {
         return persistenceModule.equivalentScheduleStore();
+    }
+
+    @Override
+    public FailedMessagesStore failedMessagesStore() {
+        return persistenceModule.failedMessagesStore();
     }
 
     public Session getCassandraSession() {

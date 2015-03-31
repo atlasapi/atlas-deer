@@ -1,6 +1,8 @@
 package org.atlasapi.messaging;
 
+import org.atlasapi.AtlasPersistenceModule;
 import org.joda.time.Duration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,8 +12,10 @@ import com.metabroadcast.common.queue.MessageSenderFactory;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 import com.metabroadcast.common.queue.kafka.KafkaMessageSenderFactory;
+import org.springframework.context.annotation.Import;
 
 @Configuration
+@Import({AtlasPersistenceModule.class})
 public class KafkaMessagingModule implements MessagingModule {
     
     @Value("${messaging.broker.url}")
@@ -24,7 +28,10 @@ public class KafkaMessagingModule implements MessagingModule {
     private Long backOffIntervalMillis;
     @Value("${messaging.maxBackOffMillis}")
     private Long maxBackOffMillis;
-    
+
+    @Autowired private AtlasPersistenceModule persistence;
+
+
     public KafkaMessagingModule(String brokerUrl, String zookeeper, String messagingSystem) {
         this.brokerUrl = brokerUrl;
         this.zookeeper = zookeeper;
@@ -46,7 +53,8 @@ public class KafkaMessagingModule implements MessagingModule {
                 zookeeper,
                 messagingSystem,
                 Duration.millis(backOffIntervalMillis),
-                Duration.millis(maxBackOffMillis)
+                Duration.millis(maxBackOffMillis),
+                persistence.failedMessagesStore()
         );
     }
     

@@ -1,5 +1,8 @@
 package org.atlasapi;
 
+import com.google.common.collect.ImmutableMap;
+import com.metabroadcast.common.queue.FailedMessagesStore;
+import com.metabroadcast.common.queue.MessageSerializer;
 import org.atlasapi.content.CassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentHasher;
@@ -8,6 +11,7 @@ import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
+import org.atlasapi.messaging.CassandraFailedMessagesStore;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
@@ -54,6 +58,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final CassandraScheduleStore scheduleStore;
     private final CassandraSegmentStore segmentStore;
     private final DatastaxCassandraService dataStaxService;
+    private final CassandraFailedMessagesStore failedMessagesStore;
 
     private CassandraEquivalenceGraphStore contentEquivalenceGraphStore;
     private CassandraEquivalentContentStore equivalentContentStore;
@@ -96,6 +101,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withEquivalence(segmentEquivalence())
                 .build();
         this.dataStaxService = datastaxCassandraService;
+        this.failedMessagesStore = new CassandraFailedMessagesStore(
+                datastaxCassandraService.getSession(this.keyspace),
+                com.datastax.driver.core.ConsistencyLevel.QUORUM,
+                datastaxReadConsistency,
+                ImmutableMap.<Class, MessageSerializer>of()
+        );
     }
 
     private Equivalence<Segment> segmentEquivalence() {
@@ -196,5 +207,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public EquivalentScheduleStore equivalentScheduleStore() {
         return this.equivalentScheduleStore;
+    }
+
+    @Override
+    public FailedMessagesStore failedMessagesStore() {
+        return failedMessagesStore;
     }
 }
