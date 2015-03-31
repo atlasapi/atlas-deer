@@ -115,8 +115,6 @@ public final class JsonResponseWriter implements ResponseWriter {
         startField(field);
         if (obj == null) {
             writeNullValue();
-        } else if (obj instanceof Long) {
-            writeString(obj.toString());
         } else if (Primitives.isWrapperType(obj.getClass())) {
             writeRaw(obj);
         } else {
@@ -131,13 +129,7 @@ public final class JsonResponseWriter implements ResponseWriter {
 
     @Override
     public <T> void writeObject(EntityWriter<? super T> objWriter, T obj, OutputContext ctxt) throws IOException {
-        startField(objWriter.fieldName(obj));
-        if (obj != null) {
-            writeObj(objWriter, obj, ctxt);
-        } else {
-            writeNullValue();
-        }
-        printMemberSeparator = true;
+        writeObject(objWriter, objWriter.fieldName(obj), obj, ctxt);
     }
 
     @Override
