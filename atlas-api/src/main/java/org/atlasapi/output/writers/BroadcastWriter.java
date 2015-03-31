@@ -53,6 +53,7 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeField("live",entity.getLive());
         writer.writeField("premiere",entity.getPremiere());
         writer.writeField("new_series",entity.getNewSeries());
+        writer.writeField("blackout_restriction", entity.getBlackoutRestriction().orNull());
     }
 
     @Override
