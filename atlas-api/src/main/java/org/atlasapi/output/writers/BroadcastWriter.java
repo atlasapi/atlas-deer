@@ -57,7 +57,7 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         if(!entity.getBlackoutRestriction().isPresent()) {
             writer.writeField("blackout_restriction", null);
         } else {
-            writer.writeObject(blackoutRestrictionWriter, entity.getBlackoutRestriction().orNull(), ctxt);
+            writer.writeObject(blackoutRestrictionWriter, entity.getBlackoutRestriction().get(), ctxt);
         }
     }
 
