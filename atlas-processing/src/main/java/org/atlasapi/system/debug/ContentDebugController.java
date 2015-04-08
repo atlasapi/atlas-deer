@@ -141,10 +141,12 @@ public class ContentDebugController {
     }
 
     @RequestMapping("/system/debug/content/{id}/migrate")
-    public void forceEquivUpdate(@PathVariable("id") Long id,
+    public void forceEquivUpdate(@PathVariable("id") String id,
             @RequestParam(value = "publisher", required = true) String publisherKey,
             final HttpServletResponse response) throws IOException {
         try {
+            Long decodedId = lowercase.decode(id).longValue();
+
             StringBuilder respString = new StringBuilder();
             Maybe<Publisher> publisherMaybe = Publisher.fromKey(publisherKey);
             if (publisherMaybe.isNothing()) {
@@ -152,7 +154,8 @@ public class ContentDebugController {
                 response.getWriter().write("Supply a valid publisher key");
                 return;
             }
-            Content content = resolveLegacyContent(id);
+            Content content = resolveLegacyContent(decodedId);
+
             respString.append("Resolved legacy content ").append(content.getId());
             WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
 
