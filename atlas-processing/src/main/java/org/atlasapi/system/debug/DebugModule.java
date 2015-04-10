@@ -23,7 +23,8 @@ public class DebugModule {
                 legacyPersistenceModule.legacyContentResolver(),
                 persistenceModule.getEquivalentContentStore(),
                 persistenceModule.contentStore(),
-                explicitEquivalenceMigrator());
+                explicitEquivalenceMigrator(),
+                legacyPersistenceModule.legacySegmentMigrator());
     }
 
     public ExplicitEquivalenceMigrator explicitEquivalenceMigrator() {

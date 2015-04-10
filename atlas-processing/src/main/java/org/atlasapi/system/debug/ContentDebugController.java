@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -12,13 +13,16 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.ExplicitEquivalenceMigrator;
+import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,14 +84,16 @@ public class ContentDebugController {
     private final EquivalentContentStore equivalentContentStore;
     private final ContentStore contentStore;
     private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+    private final LegacySegmentMigrator segmentMigrator;
 
     public ContentDebugController(ContentResolver legacyResolver,
             EquivalentContentStore equivalentContentStore, ContentStore contentStore,
-            ExplicitEquivalenceMigrator explicitEquivalenceMigrator) {
+            ExplicitEquivalenceMigrator explicitEquivalenceMigrator, LegacySegmentMigrator segmentMigrator) {
         this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
         this.legacyResolver = checkNotNull(legacyResolver);
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
         this.contentStore = checkNotNull(contentStore);
+        this.segmentMigrator = checkNotNull(segmentMigrator);
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -154,7 +160,18 @@ public class ContentDebugController {
                 response.getWriter().write("Supply a valid publisher key");
                 return;
             }
+
             Content content = resolveLegacyContent(decodedId);
+            if (content instanceof Item) {
+                Item item = (Item) content;
+                List<SegmentEvent> segmentEvents = item.getSegmentEvents();
+                if (!segmentEvents.isEmpty()) {
+                    for (SegmentEvent segmentEvent : segmentEvents) {
+                        segmentMigrator.migrateLegacySegment(segmentEvent.getSegmentRef().getId());
+                        log.info("Migrated segment " + segmentEvent.getSegmentRef().getId());
+                    }
+                }
+            }
 
             respString.append("Resolved legacy content ").append(content.getId());
             WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
