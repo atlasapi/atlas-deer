@@ -2,13 +2,18 @@ package org.atlasapi.output;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
+import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.segment.SegmentResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +43,20 @@ public class SegmentRelatedLinkMergingFetcher {
             return input.getSegmentRef().getId();
         }
     };
+    public static final Ordering<SegmentEvent> SEGMENT_EVENT_ORDERING = new Ordering<SegmentEvent>() {
+        @Override
+        public int compare(SegmentEvent left, SegmentEvent right) {
+            if (left == null && right == null) { return 0; }
+            if (left == null) { return 1; }
+            if (right == null) { return -1; }
+            SegmentRef leftRef = left.getSegmentRef();
+            SegmentRef rightRef = right.getSegmentRef();
+            if (leftRef == null && rightRef == null) { return 0; }
+            if (leftRef == null) { return 1; }
+            if (rightRef == null) { return -1; }
+            return leftRef.getId().compareTo(rightRef.getId());
+        }
+    };
     private final SegmentRelatedLinkMerger segmentRelatedLinkMerger;
     private final SegmentResolver segmentResolver;
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -62,13 +81,14 @@ public class SegmentRelatedLinkMergingFetcher {
         if (segmentEvents.isEmpty()) {
             return null;
         }
+        segmentEvents = SEGMENT_EVENT_ORDERING.nullsLast().sortedCopy(segmentEvents);
         ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
         SegmentEvent selectedSegmentEvent = segmentEvents.iterator().next();
         Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse().get(selectedSegmentEvent));
 
-        selectedSegment.setRelatedLinks(segmentRelatedLinkMerger.getLinks(
-                selectedSegment, selectedSegmentEvent, resolveSegments(segmentEvents)
-        ));
+        selectedSegment.setRelatedLinks(
+                segmentRelatedLinkMerger.getLinks(selectedSegment, selectedSegmentEvent, resolveSegments(segmentEvents))
+        );
         return new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent);
     }
 
