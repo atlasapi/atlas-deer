@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -121,29 +122,11 @@ public class ContentDebugController {
     }
 
     @RequestMapping("/system/debug/content/{id}")
-    public void printContent(@PathVariable("id") Long id, final HttpServletResponse response) {
+    public void printContent(@PathVariable("id") Long id, final HttpServletResponse response) throws Exception {
         ImmutableList<Id> ids = ImmutableList.of(Id.valueOf(id));
-        Futures.addCallback(contentStore.resolveIds(ids), new FutureCallback<Resolved<Content>>() {
-
-            @Override
-            public void onSuccess(Resolved<Content> result) {
-                try {
-                    Content content = result.getResources().first().orNull();
-                    gson.toJson(content, response.getWriter());
-                } catch (Exception e) {
-                    Throwables.propagate(e);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                try {
-                    t.printStackTrace(response.getWriter());
-                } catch (IOException e) {
-                    Throwables.propagate(e);
-                }
-            }
-        });
+        Resolved<Content> result = Futures.get(contentStore.resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class);
+        Content content = result.getResources().first().orNull();
+        gson.toJson(content, response.getWriter());
     }
 
     @RequestMapping("/system/debug/content/{id}/migrate")
