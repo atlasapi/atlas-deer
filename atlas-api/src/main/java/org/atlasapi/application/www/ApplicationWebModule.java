@@ -258,7 +258,7 @@ public class ApplicationWebModule {
     
     @Bean
     public SourceRequestsController sourceRequestsController() {
-        IdGenerator idGenerator = new MongoSequentialIdGenerator(persistence.databasedMongo(), "sourceRequest");
+        IdGenerator idGenerator = new MongoSequentialIdGenerator(persistence.databasedWriteMongo(), "sourceRequest");
         SourceRequestManager manager = new SourceRequestManager(appPersistence.sourceRequestStore(), 
                 appPersistence.applicationStore(), 
                 idGenerator,
@@ -364,7 +364,7 @@ public class ApplicationWebModule {
     }
     
     private NewUserSupplier newUserSupplier() {
-        return new NewUserSupplier(new MongoSequentialIdGenerator(persistence.databasedMongo(), "users"));
+        return new NewUserSupplier(new MongoSequentialIdGenerator(persistence.databasedWriteMongo(), "users"));
     }
 
     public @Bean TwitterAuthController twitterAuthController() {
