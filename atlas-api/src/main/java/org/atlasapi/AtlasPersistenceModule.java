@@ -189,7 +189,7 @@ public class AtlasPersistenceModule {
 
             @Override
             public IdGenerator generator(String sequenceIdentifier) {
-                return new MongoSequentialIdGenerator(databasedReadMongo(), sequenceIdentifier);
+                return new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
             }
         };
     }
