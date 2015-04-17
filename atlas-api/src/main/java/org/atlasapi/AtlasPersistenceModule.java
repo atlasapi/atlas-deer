@@ -174,7 +174,6 @@ public class AtlasPersistenceModule {
         return new DatabasedMongo(mongo(mongoWriteHost, mongoWritePort), mongoWriteDbName);
     }
 
-    @Bean @Primary
     public Mongo mongo(String mongoHost, Integer mongoPort) {
         Mongo mongo = new MongoClient(mongoHosts(mongoHost, mongoPort));
         if (processingConfig == null || !processingConfig.toBoolean()) {
