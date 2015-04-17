@@ -35,17 +35,17 @@ public class ApplicationPersistenceModule {
 
     @Bean
     public CredentialsStore credentialsStore() {
-        return new MongoDBCredentialsStore(persistence.databasedMongo());
+        return new MongoDBCredentialsStore(persistence.databasedWriteMongo());
     }
     
     @Bean
     public MongoTokenRequestStore tokenStore() {
-        return new MongoTokenRequestStore(persistence.databasedMongo());
+        return new MongoTokenRequestStore(persistence.databasedWriteMongo());
     }
     
     @Bean
     public LegacyApplicationStore applicationStore() {
-        DatabasedMongo mongo = persistence.databasedMongo();
+        DatabasedMongo mongo = persistence.databasedWriteMongo();
         IdGenerator idGenerator = new MongoSequentialIdGenerator(mongo, "application");
         MongoApplicationStore legacyStore = new MongoApplicationStore(mongo, idGenerator, ReadPreference.primaryPreferred());
         LegacyAdaptingApplicationStore store = new LegacyAdaptingApplicationStore(legacyStore, mongo, idGenerator, idCodec);
@@ -54,27 +54,27 @@ public class ApplicationPersistenceModule {
     
     @Bean
     public SourceRequestStore sourceRequestStore() {
-        return new MongoSourceRequestStore(persistence.databasedMongo());
+        return new MongoSourceRequestStore(persistence.databasedWriteMongo());
     }
     
     public @Bean
     UserStore userStore() {
-        MongoUserStore legacy = new MongoUserStore(persistence.databasedMongo());
-        return new LegacyAdaptingUserStore(legacy, applicationStore(), persistence.databasedMongo());
+        MongoUserStore legacy = new MongoUserStore(persistence.databasedWriteMongo());
+        return new LegacyAdaptingUserStore(legacy, applicationStore(), persistence.databasedWriteMongo());
     }
     
     @Bean
     public UserVideoSourceStore linkedOauthTokenUserStore() {
-    	return new MongoUserVideoSourceStore(persistence.databasedMongo());
+    	return new MongoUserVideoSourceStore(persistence.databasedWriteMongo());
     }
     
     @Bean
     public SourceLicenseStore sourceLicenseStore() {
-        return new MongoSourceLicenseStore(persistence.databasedMongo());
+        return new MongoSourceLicenseStore(persistence.databasedWriteMongo());
     }
     
     @Bean 
     public EndUserLicenseStore endUserLicenseStore() {
-        return new MongoEndUserLicenseStore(persistence.databasedMongo());
+        return new MongoEndUserLicenseStore(persistence.databasedWriteMongo());
     }
 }

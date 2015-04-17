@@ -63,9 +63,13 @@ import com.netflix.astyanax.Keyspace;
 @Import({KafkaMessagingModule.class})
 public class AtlasPersistenceModule {
 
-    private final String mongoHost = Configurer.get("mongo.host").get();
-    private final Integer mongoPort = Configurer.get("mongo.port").toInt();
-    private final String mongoDbName = Configurer.get("mongo.name").get();
+    private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
+    private final Integer mongoWritePort = Configurer.get("mongo.write.port").toInt();
+    private final String mongoWriteDbName = Configurer.get("mongo.write.name").get();
+
+    private final String mongoReadHost = Configurer.get("mongo.read.host").get();
+    private final Integer mongoReadPort = Configurer.get("mongo.read.port").toInt();
+    private final String mongoReadDbName = Configurer.get("mongo.read.name").get();
     
     private final String cassandraCluster = Configurer.get("cassandra.cluster").get();
     private final String cassandraKeyspace = Configurer.get("cassandra.keyspace").get();
@@ -161,13 +165,18 @@ public class AtlasPersistenceModule {
     }
 
     @Bean @Primary
-    public DatabasedMongo databasedMongo() {
-        return new DatabasedMongo(mongo(), mongoDbName);
+    public DatabasedMongo databasedReadMongo() {
+        return new DatabasedMongo(mongo(mongoReadHost, mongoReadPort), mongoReadDbName);
+    }
+
+    @Bean
+    public DatabasedMongo databasedWriteMongo() {
+        return new DatabasedMongo(mongo(mongoWriteHost, mongoWritePort), mongoWriteDbName);
     }
 
     @Bean @Primary
-    public Mongo mongo() {
-        Mongo mongo = new MongoClient(mongoHosts());
+    public Mongo mongo(String mongoHost, Integer mongoPort) {
+        Mongo mongo = new MongoClient(mongoHosts(mongoHost, mongoPort));
         if (processingConfig == null || !processingConfig.toBoolean()) {
             mongo.setReadPreference(ReadPreference.secondaryPreferred());
         }
@@ -180,7 +189,7 @@ public class AtlasPersistenceModule {
 
             @Override
             public IdGenerator generator(String sequenceIdentifier) {
-                return new MongoSequentialIdGenerator(databasedMongo(), sequenceIdentifier);
+                return new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
             }
         };
     }
@@ -212,17 +221,17 @@ public class AtlasPersistenceModule {
     @Bean
     @Primary
     public ChannelStore channelStore() {
-        MongoChannelStore rawStore = new MongoChannelStore(databasedMongo(), channelGroupStore(), channelGroupStore());
+        MongoChannelStore rawStore = new MongoChannelStore(databasedReadMongo(), channelGroupStore(), channelGroupStore());
         return new CachingChannelStore(rawStore);
     }
     
     @Bean
     @Primary
     public ChannelGroupStore channelGroupStore() {
-        return new MongoChannelGroupStore(databasedMongo());
+        return new MongoChannelGroupStore(databasedReadMongo());
     }
 
-    private List<ServerAddress> mongoHosts() {
+    private List<ServerAddress> mongoHosts(String mongoHost, final Integer mongoPort) {
         Splitter splitter = Splitter.on(",").omitEmptyStrings().trimResults();
         return ImmutableList.copyOf(Iterables.filter(Iterables.transform(splitter.split(mongoHost), 
             new Function<String, ServerAddress>() {

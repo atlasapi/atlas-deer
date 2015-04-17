@@ -40,7 +40,7 @@ public class LegacyPersistenceModule {
 
     @Bean @Qualifier("legacy")
     public ContentResolver legacyContentResolver() {
-        DatabasedMongo mongoDb = persistence.databasedMongo();
+        DatabasedMongo mongoDb = persistence.databasedReadMongo();
         if (mongoDb == null) {
             return NullContentResolver.get();
         }
@@ -50,9 +50,9 @@ public class LegacyPersistenceModule {
     
     @Bean @Qualifier("legacy")
     public ContentListerResourceListerAdapter legacyContentLister() {
-        DatabasedMongo mongoDb = persistence.databasedMongo();
+        DatabasedMongo mongoDb = persistence.databasedReadMongo();
         MongoContentLister contentLister = new MongoContentLister(
-                persistence.databasedMongo(),
+                persistence.databasedReadMongo(),
                 new MongoContentResolver(mongoDb, legacyEquivalenceStore()
                 )
         );
@@ -77,20 +77,20 @@ public class LegacyPersistenceModule {
     
     @Bean @Qualifier("legacy")
     public MongoTopicStore legacyTopicStore() {
-        return new MongoTopicStore(persistence.databasedMongo(), persistenceAuditLog());
+        return new MongoTopicStore(persistence.databasedReadMongo(), persistenceAuditLog());
     }
 
     @Bean @Qualifier("legacy")
     public MongoLookupEntryStore legacyEquivalenceStore() {
         return new MongoLookupEntryStore(
-                persistence.databasedMongo().collection("lookup"),
+                persistence.databasedReadMongo().collection("lookup"),
                 persistenceAuditLog(),
                 ReadPreference.primaryPreferred());
     }
     
     @Bean @Qualifier("legacy")
     public ScheduleResolver legacyScheduleStore() {
-        DatabasedMongo db = persistence.databasedMongo();
+        DatabasedMongo db = persistence.databasedReadMongo();
         KnownTypeContentResolver contentResolver = new MongoContentResolver(db, legacyEquivalenceStore());
         LookupResolvingContentResolver resolver = new LookupResolvingContentResolver(contentResolver, legacyEquivalenceStore());
         EquivalentContentResolver equivalentContentResolver = new DefaultEquivalentContentResolver(contentResolver, legacyEquivalenceStore());
@@ -105,7 +105,7 @@ public class LegacyPersistenceModule {
 
     @Bean @Qualifier("legacy")
     public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
-        return new MongoSegmentResolver(persistence.databasedMongo(), new SubstitutionTableNumberCodec());
+        return new MongoSegmentResolver(persistence.databasedReadMongo(), new SubstitutionTableNumberCodec());
     }
 
     private PersistenceAuditLog persistenceAuditLog() {
