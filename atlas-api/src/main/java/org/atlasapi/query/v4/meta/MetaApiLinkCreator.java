@@ -17,7 +17,7 @@ public class MetaApiLinkCreator implements LinkCreator {
         
         modelLink.append(atlasUriBase);
         // TODO use a constant from the controller defining root path
-        modelLink.append("/4/meta/model_classes/"); 
+        modelLink.append("/4/meta/types/");
         modelLink.append(type);
         modelLink.append(".json");
         
