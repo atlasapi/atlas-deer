@@ -34,12 +34,12 @@ public class ModelInfoListWriter implements EntityListWriter<ModelClassInfo> {
 
     @Override
     public String listName() {
-        return "model_classes";
+        return "types";
     }
 
     @Override
     public String fieldName(ModelClassInfo entity) {
-        return "model_class";
+        return "type";
     }
 
 }
