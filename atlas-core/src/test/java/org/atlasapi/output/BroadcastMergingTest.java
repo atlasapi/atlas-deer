@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
+import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Alias;
@@ -98,6 +99,7 @@ public class BroadcastMergingTest {
         broadcast.setHighDefinition(false);
         broadcast.setSurround(false);
         broadcast.setSubtitled(false);
+        broadcast.setBlackoutRestriction(new BlackoutRestriction(true));
         notChosenItem.addBroadcast(broadcast);
         
         chosenItem.addEquivalentTo(notChosenItem);
@@ -114,6 +116,7 @@ public class BroadcastMergingTest {
         assertFalse(mergedBroadcast.getSurround());
         assertTrue(mergedBroadcast.getSubtitled());
         assertTrue(mergedBroadcast.getAliases().size() == 2);
+        assertTrue(mergedBroadcast.getBlackoutRestriction().isPresent());
     }
     
     @Test

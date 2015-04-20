@@ -358,6 +358,9 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getPremiere() == null && toMerge.getPremiere() != null) {
             chosen.setPremiere(toMerge.getPremiere());
         }
+        if(!chosen.getBlackoutRestriction().isPresent() && toMerge.getBlackoutRestriction().isPresent()) {
+            chosen.setBlackoutRestriction(toMerge.getBlackoutRestriction().get());
+        }
     }
     
     private static final Predicate<Described> HAS_AVAILABLE_IMAGE_SET = new Predicate<Described>() {

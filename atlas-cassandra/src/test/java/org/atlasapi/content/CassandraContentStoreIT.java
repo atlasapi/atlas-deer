@@ -131,6 +131,39 @@ public class CassandraContentStoreIT {
         assertThat(item.getThisOrChildLastUpdated(), is(now));
         
     }
+
+    @Test
+    public void testWriteAndReadTopLevelItemWithBroadcast() throws Exception {
+        Item item = create(new Item());
+        item.setTitle("title");
+
+        Broadcast broadcast = new Broadcast(Id.valueOf(1), new DateTime(), new DateTime().plusHours(1));
+        broadcast.withId("pa:107472720");
+        broadcast.setBlackoutRestriction(new BlackoutRestriction(true));
+        item.addBroadcast(broadcast);
+
+
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+
+        WriteResult<Item, Content> writeResult = store.writeContent(item);
+        assertTrue(writeResult.written());
+        assertThat(writeResult.getResource().getId().longValue(), is(1234l));
+        assertFalse(writeResult.getPrevious().isPresent());
+
+        verify(sender).sendMessage(argThat(isA(ResourceUpdatedMessage.class)));
+
+        Item read = (Item) resolve(item.getId().longValue());
+
+        assertThat(read.getId(), is(writeResult.getResource().getId()));
+        assertThat(read.getTitle(), is(read.getTitle()));
+        assertThat(read.getFirstSeen(), is(now));
+        assertThat(read.getLastUpdated(), is(now));
+        assertThat(read.getThisOrChildLastUpdated(), is(now));
+        assertThat(Iterables.getOnlyElement(read.getBroadcasts()).getBlackoutRestriction().isPresent(), is(true));
+
+    }
     
     @Test
     public void testContentNotWrittenWhenHashNotChanged() throws Exception {
