@@ -8,11 +8,15 @@ import java.util.List;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
+import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
+import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
+import org.joda.time.DateTime;
 import org.junit.Test;
 
 import com.google.common.base.Function;
@@ -87,6 +91,12 @@ public class OutputContentMergerTest {
 
     private Brand brand(long id, String uri, Publisher source) {
         Brand one = new Brand(uri,uri,source);
+        one.setId(id);
+        return one;
+    }
+
+    private Item item(long id, String uri, Publisher source) {
+        Item one = new Item(uri,uri,source);
         one.setId(id);
         return one;
     }
