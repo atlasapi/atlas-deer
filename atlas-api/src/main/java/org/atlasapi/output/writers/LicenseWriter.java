@@ -24,6 +24,6 @@ public class LicenseWriter implements EntityWriter<Object> {
     @Nonnull
     @Override
     public String fieldName(Object entity) {
-        return "license";
+        return "terms_and_conditions";
     }
 }
