@@ -26,7 +26,7 @@ public class EndpointInfoAnnotation<T extends EndpointClassInfo> extends
     @Override
     public void write(T entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeField("name", entity.name());
-        writer.writeField("model_class_link", linkCreator.createModelLink(entity.name()));
+        writer.writeField("model_class_link", linkCreator.createModelLink(entity.modelKey()));
         writer.writeField("description", entity.description());
         writer.writeField("root_path", entity.rootPath());
         writer.writeList(operationWriter, entity.operations(), ctxt);

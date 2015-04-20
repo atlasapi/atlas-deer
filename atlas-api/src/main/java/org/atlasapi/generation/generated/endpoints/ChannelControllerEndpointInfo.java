@@ -17,10 +17,10 @@ public class ChannelControllerEndpointInfo implements EndpointClassInfo {
                 new Operation(RequestMethod.GET, ".*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/{cid}.*")
+                new Operation(RequestMethod.GET, "/{id}.*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/{cid}")
+                new Operation(RequestMethod.GET, "/{id}")
             )
             .build();
 
@@ -32,6 +32,11 @@ public class ChannelControllerEndpointInfo implements EndpointClassInfo {
     @Override
     public String name() {
         return "channels";
+    }
+
+    @Override
+    public String modelKey() {
+        return "channel";
     }
 
     @Override

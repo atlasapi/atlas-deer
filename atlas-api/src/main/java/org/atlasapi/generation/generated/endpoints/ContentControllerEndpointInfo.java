@@ -11,10 +11,10 @@ public class ContentControllerEndpointInfo implements EndpointClassInfo {
 
     private static final Set<Operation> operations = ImmutableSet.<Operation>builder()
             .add(
-                new Operation(RequestMethod.GET, "/{cid}.*")
+                new Operation(RequestMethod.GET, "/{id}.*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/{cid}")
+                new Operation(RequestMethod.GET, "/{id}")
             )
             .add(
                 new Operation(RequestMethod.GET, ".*")
@@ -31,6 +31,11 @@ public class ContentControllerEndpointInfo implements EndpointClassInfo {
 
     @Override
     public String name() {
+        return "content";
+    }
+
+    @Override
+    public String modelKey() {
         return "content";
     }
 
