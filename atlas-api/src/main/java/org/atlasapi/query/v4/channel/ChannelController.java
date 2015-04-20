@@ -45,7 +45,7 @@ public class ChannelController {
         this.resultWriter = checkNotNull(resultWriter);
     }
 
-    @RequestMapping({"", ".*", "/{cid}.*", "/{cid}"})
+    @RequestMapping({"", ".*", "/{id}.*", "/{id}"})
     public void fetchChannel(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResponseWriter writer = null;
         try {

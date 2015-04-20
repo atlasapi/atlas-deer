@@ -41,7 +41,7 @@ public class TopicController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/{tid}.*", "/{tid}", ".*", "" })
+    @RequestMapping({ "/{id}.*", "/{id}", ".*", "" })
     public void writeSingleTopic(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;
