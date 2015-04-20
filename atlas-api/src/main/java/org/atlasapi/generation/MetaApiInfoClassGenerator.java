@@ -101,6 +101,7 @@ public class MetaApiInfoClassGenerator {
 		@Override
 		public File apply(Class<?> input) {
 			String path = input.getName().replace(".", "/") + JAVA;
+			System.out.println(path);
 			try {
 				return new File(Resources.getResource(path).toURI());
 			} catch (URISyntaxException e) {
@@ -275,7 +276,7 @@ public class MetaApiInfoClassGenerator {
 				fileManager, diagnosticCollector, 
 				Arrays.asList(
 						"-proc:only", 
-						"-s", "./src/main/java"
+						"-s", "/Users/jamie/dev/atlas-deer/atlas-api/src/main/java"
 				), 
 				null, 
 				sourceCompilationUnits
@@ -296,8 +297,8 @@ public class MetaApiInfoClassGenerator {
 
 	private Iterable<? extends JavaFileObject> transformToCompilationUnits(Iterable<Class<?>> classes, 
 			StandardJavaFileManager fileManager) throws Exception {
-		addPath("./../atlas-core/src/main/java/");
-		addPath("./src/main/java/");
+		addPath("/Users/jamie/dev/atlas-deer/atlas-core/src/main/java");
+		addPath("/Users/jamie/dev/atlas-deer/atlas-api/src/main/java");
 		Iterable<File> sourceCompilationFiles = Iterables.transform(classes, CLASS_TO_FILE);
 		
 		return fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);
