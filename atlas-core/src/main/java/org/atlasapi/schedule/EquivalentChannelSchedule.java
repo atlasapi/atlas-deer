@@ -2,6 +2,7 @@ package org.atlasapi.schedule;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Iterables;
 import org.atlasapi.media.channel.Channel;
 import org.joda.time.Interval;
 
@@ -59,6 +60,15 @@ public class EquivalentChannelSchedule {
                 .add("interval", interval)
                 .add("entries", entries)
                 .toString();
+    }
+
+    public EquivalentChannelSchedule withLimitedBroadcasts(Integer count) {
+        Iterable<EquivalentScheduleEntry> limitedEntries = Iterables.limit(entries, count);
+        Interval limitedInterval = new Interval(
+                interval.getStart(),
+                Iterables.getLast(limitedEntries).getBroadcast().getTransmissionEndTime()
+        );
+        return new EquivalentChannelSchedule(channel, limitedInterval, limitedEntries);
     }
     
 }

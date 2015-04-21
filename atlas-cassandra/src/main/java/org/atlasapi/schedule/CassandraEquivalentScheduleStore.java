@@ -137,7 +137,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     items.add(item);
                 }
             }
-            return new Equivalent<Item>(graph, items.build());
+            return new Equivalent<>(graph, items.build());
         }
 
         private Broadcast deserialize(ByteBuffer bcastBytes) throws InvalidProtocolBufferException {
@@ -179,8 +179,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    public ListenableFuture<EquivalentSchedule> resolveSchedules(Iterable<Channel> channels,
-            final Interval interval, Publisher source, final Set<Publisher> selectedSources) {
+    public ListenableFuture<EquivalentSchedule> resolveSchedules(
+            Iterable<Channel> channels,
+            final Interval interval,
+            Publisher source,
+            final Set<Publisher> selectedSources
+    ) {
         final Set<Channel> chans = ImmutableSet.copyOf(channels);
         List<Statement> selects = selectStatements(source, channels, interval);
         ListenableFuture<List<ResultSet>> results = Futures.allAsList(Lists.transform(selects, 
@@ -192,6 +196,26 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             }
         ));
         return Futures.transform(results, new ToEquivalentSchedule(chans, interval, selectedSources));
+    }
+
+    @Override
+    public ListenableFuture<EquivalentSchedule> resolveSchedules(
+            Iterable<Channel> channels,
+            DateTime start,
+            final Integer count,
+            Publisher source,
+            Set<Publisher> selectedSources
+    ) {
+        Interval interval = new Interval(start, start.plusHours(24));
+        return Futures.transform(
+                resolveSchedules(channels, interval, source, selectedSources),
+                new Function<EquivalentSchedule, EquivalentSchedule>() {
+                    @Override
+                    public EquivalentSchedule apply(EquivalentSchedule input) {
+                        return input.withLimitedBroadcasts(count);
+                    }
+                }
+        );
     }
 
     private List<Statement> selectStatements(Publisher src, Iterable<Channel> channels, Interval interval) {
