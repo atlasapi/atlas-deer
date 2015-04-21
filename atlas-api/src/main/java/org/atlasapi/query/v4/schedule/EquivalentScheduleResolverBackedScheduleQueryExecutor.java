@@ -33,6 +33,7 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
+import org.joda.time.Interval;
 
 
 public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements ScheduleQueryExecutor {
@@ -57,7 +58,23 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
         List<Channel> channels = resolveChannels(query);
         
         ImmutableSet<Publisher> selectedSources = selectedSources(query);
-        ListenableFuture<EquivalentSchedule> schedule = scheduleResolver.resolveSchedules(channels, query.getInterval(), query.getSource(), selectedSources);
+        ListenableFuture<EquivalentSchedule> schedule;
+        if(query.getEnd().isPresent()) {
+            schedule = scheduleResolver.resolveSchedules(
+                    channels,
+                    new Interval(query.getStart(), query.getEnd().get()),
+                    query.getSource(),
+                    selectedSources
+            );
+        } else {
+            schedule = scheduleResolver.resolveSchedules(
+                    channels,
+                    query.getStart(),
+                    query.getCount().get(),
+                    query.getSource(),
+                    selectedSources
+            );
+        }
         
         if (query.isMultiChannel()) {
             return QueryResult.listResult(channelSchedules(schedule, query), query.getContext());

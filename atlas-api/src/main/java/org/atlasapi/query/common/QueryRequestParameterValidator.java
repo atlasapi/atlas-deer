@@ -77,6 +77,11 @@ public class QueryRequestParameterValidator extends AbstractRequestParameterVali
     }
 
     @Override
+    protected Collection<String> determineConflictingParameters(Set<String> requestParams) {
+        return ImmutableSet.of();
+    }
+
+    @Override
     protected String invalidParameterMessage(Collection<String> invalidParams) {
         return replacementSuggestion.forInvalid(invalidParams);
     }
@@ -84,6 +89,11 @@ public class QueryRequestParameterValidator extends AbstractRequestParameterVali
     @Override
     protected String missingParameterMessage(Collection<String> missingParams) {
         return Joiner.on(",").appendTo(new StringBuilder("Missing parameters: "), missingParams).toString();
+    }
+
+    @Override
+    protected String conflictingParameterMessage(Collection<String> conflictingParams) {
+        throw new UnsupportedOperationException("QueryRequestParameterValidator doesn't support alternative parameters(for now)");
     }
 
 }

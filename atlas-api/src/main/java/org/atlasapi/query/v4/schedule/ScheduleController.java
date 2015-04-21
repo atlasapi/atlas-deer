@@ -52,7 +52,7 @@ public class ScheduleController {
     }
 
     @RequestMapping({ "", ".*", "/{id}.*", "/{id}" })
-    public void writeChannelSchedule(HttpServletRequest request, HttpServletResponse response)
+    public void getChannelSchedule(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;
         try {

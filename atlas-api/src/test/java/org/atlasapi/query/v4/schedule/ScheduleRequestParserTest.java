@@ -27,6 +27,7 @@ import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
+import org.atlasapi.query.common.InvalidParameterException;
 import org.atlasapi.query.common.QueryParseException;
 import org.atlasapi.query.common.Resource;
 import org.hamcrest.FeatureMatcher;
@@ -102,21 +103,23 @@ public class ScheduleRequestParserTest {
 
     @Test
     public void testCreatesSingleQueryFromValidSingleQueryString() throws Exception {
-        
-        Interval intvl = new Interval(new DateTime(DateTimeZones.UTC), new DateTime(DateTimeZones.UTC).plusHours(1));
+        DateTime start = new DateTime(DateTimeZones.UTC);
+        DateTime end = start.plusHours(1);
+        Interval intvl = new Interval(start, end);
         StubHttpServletRequest request = singleScheduleRequest(
-            channel1,
-            intvl, 
-            BBC, 
-            "apikey", 
-            Annotation.standard(), 
-            ".json"
+                channel1,
+                intvl,
+                BBC,
+                "apikey",
+                Annotation.standard(),
+                ".json"
         );
-        
+
         ScheduleQuery query = builder.queryFrom(request);
-        
+
         assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
-        assertThat(query.getInterval(), is(intvl));
+        assertThat(query.getStart(), is(start));
+        assertThat(query.getEnd().get(), is(end));
         assertThat(query.getSource(), is(BBC));
         assertThat(query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)), is(Annotation.standard()));
         assertThat(query.getContext().getApplicationSources(), is(sources));
@@ -124,8 +127,10 @@ public class ScheduleRequestParserTest {
     
     @Test
     public void testCreatesSingleQueryFromValidSingleQueryStringWithNoExtension() throws Exception {
-        
-        Interval intvl = new Interval(new DateTime(DateTimeZones.UTC), new DateTime(DateTimeZones.UTC).plusHours(1));
+
+        DateTime start = new DateTime(DateTimeZones.UTC);
+        DateTime end = start.plusHours(1);
+        Interval intvl = new Interval(start, end);
         StubHttpServletRequest request = singleScheduleRequest(
             channel1, 
             intvl, 
@@ -138,7 +143,56 @@ public class ScheduleRequestParserTest {
         ScheduleQuery query = builder.queryFrom(request);
         
         assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
-        assertThat(query.getInterval(), is(intvl));
+        assertThat(query.getStart(), is(start));
+        assertThat(query.getEnd().get(), is(end));
+        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)), is(Annotation.standard()));
+        assertThat(query.getContext().getApplicationSources(), is(sources));
+    }
+
+    @Test(expected=InvalidParameterException.class)
+    public void testThrowExceptionWhenCountAndToArePresent() throws Exception {
+
+        DateTime start = new DateTime(DateTimeZones.UTC);
+        DateTime end = start.plusHours(1);
+        Interval intvl = new Interval(start, end);
+        StubHttpServletRequest request = singleScheduleRequest(
+                channel1,
+                intvl,
+                BBC,
+                "apikey",
+                Annotation.standard(),
+                ""
+        ).withParam("count", "5");
+
+        ScheduleQuery query = builder.queryFrom(request);
+
+        assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
+        assertThat(query.getStart(), is(start));
+        assertThat(query.getEnd().get(), is(end));
+        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)), is(Annotation.standard()));
+        assertThat(query.getContext().getApplicationSources(), is(sources));
+    }
+
+    @Test
+    public void testCreatesQueryWithCount() throws Exception {
+
+        DateTime start = new DateTime(DateTimeZones.UTC);
+        StubHttpServletRequest request = new StubHttpServletRequest().withRequestUri(
+                String.format("test/schedules/%s.json", codec.encode(BigInteger.valueOf(channel1.getId())))
+        )
+                .withParam("from", start.toString())
+                .withParam("count", "5")
+                .withParam("source", BBC.key())
+                .withParam("annotations", Joiner.on(',').join(Iterables.transform(Annotation.standard(), Annotation.toKeyFunction())))
+                .withParam(KEY_PARAM, "apikey");
+
+        ScheduleQuery query = builder.queryFrom(request);
+
+        assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
+        assertThat(query.getStart(), is(start));
+        assertThat(query.getCount().get(), is(5));
         assertThat(query.getSource(), is(BBC));
         assertThat(query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)), is(Annotation.standard()));
         assertThat(query.getContext().getApplicationSources(), is(sources));
