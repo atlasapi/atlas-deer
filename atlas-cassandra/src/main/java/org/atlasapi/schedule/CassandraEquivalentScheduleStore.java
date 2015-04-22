@@ -40,6 +40,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 
@@ -65,6 +66,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.metabroadcast.common.time.Clock;
 
 public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
+
+    private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
 
     private final class ToEquivalentSchedule implements Function<List<ResultSet>, EquivalentSchedule> {
 
@@ -206,7 +209,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             Publisher source,
             Set<Publisher> selectedSources
     ) {
-        Interval interval = new Interval(start, start.plusHours(24));
+        Interval interval = new Interval(start, start.plus(MAX_SCHEDULE_LENGTH));
         return Futures.transform(
                 resolveSchedules(channels, interval, source, selectedSources),
                 new Function<EquivalentSchedule, EquivalentSchedule>() {

@@ -45,6 +45,14 @@ class ScheduleRequestParser {
     private static final Splitter commaSplitter = Splitter.on(",").omitEmptyStrings().trimResults();
 
     private static final Range<Integer> COUNT_RANGE = Range.closed(1, 10);
+
+    private static final String FROM_PARAM = "from";
+    private static final String TO_PARAM = "to";
+    private static final String COUNT_PARAM = "count";
+    private static final String SOURCE_PARAM = "source";
+    private static final String ANNOTATIONS_PARAM = "annotations";
+    private static final String CALLBACK_PARAM = "callback";
+    private static final String ID_PARAM = "id";
     
     private final ApplicationSourcesFetcher applicationFetcher;
 
@@ -75,25 +83,25 @@ class ScheduleRequestParser {
 
     private SetBasedRequestParameterValidator singleRequestValidator(ApplicationSourcesFetcher fetcher) {
         ImmutableList<String> required = ImmutableList.<String>builder()
-            .add("from","source")
+            .add(FROM_PARAM, SOURCE_PARAM)
             .addAll(fetcher.getParameterNames())
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters("annotations", "callback")
-            .withRequiredAlternativeParameters("to", "count")
+            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM)
+            .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
 
     private SetBasedRequestParameterValidator multiRequestValidator(ApplicationSourcesFetcher fetcher) {
         ImmutableList<String> required = ImmutableList.<String>builder()
-            .add("id", "from", "source")
+            .add(ID_PARAM, FROM_PARAM, SOURCE_PARAM)
             .addAll(fetcher.getParameterNames())
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters("annotations", "callback")
-            .withRequiredAlternativeParameters("to", "count")
+            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM)
+            .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
 
@@ -155,7 +163,7 @@ class ScheduleRequestParser {
     }
 
     private List<Id> extractChannels(HttpServletRequest request) throws QueryParseException {
-        String csvCids = request.getParameter("id");
+        String csvCids = request.getParameter(ID_PARAM);
         List<String> cids = commaSplitter.splitToList(csvCids);
         List<String> invalidIds = Lists.newLinkedList();
         ImmutableList.Builder<Id> ids = ImmutableList.builder();
@@ -190,13 +198,13 @@ class ScheduleRequestParser {
 
     private DateTime extractFrom(HttpServletRequest request) {
         DateTime now = clock.now();
-        DateTime from = dateTimeParser.parse(getParameter(request, "from"), now);
+        DateTime from = dateTimeParser.parse(getParameter(request, FROM_PARAM), now);
         return from;
     }
 
     private Optional<DateTime> extractTo(HttpServletRequest request) {
         DateTime now = clock.now();
-        String toParam = request.getParameter("to");
+        String toParam = request.getParameter(TO_PARAM);
         if (Strings.isNullOrEmpty(toParam)) {
             return Optional.absent();
         }
@@ -210,14 +218,14 @@ class ScheduleRequestParser {
     }
 
     private Integer extractCount(HttpServletRequest request) {
-        Integer count = Integer.valueOf(getParameter(request, "count"));
+        Integer count = Integer.valueOf(getParameter(request, COUNT_PARAM));
 
-        checkArgument(COUNT_RANGE.contains(count),  "'count' must be in range %s, was %s", COUNT_RANGE, count);
+        checkArgument(COUNT_RANGE.contains(count),  "'count' must be between %s and %s, was %s", COUNT_RANGE.lowerEndpoint(), COUNT_RANGE.upperEndpoint(), count);
         return count;
     }
 
     private Publisher extractPublisher(HttpServletRequest request) {
-        String pubKey = getParameter(request, "source");
+        String pubKey = getParameter(request, SOURCE_PARAM);
         Optional<Publisher> publisher = Sources.fromPossibleKey(pubKey);
         checkArgument(publisher.isPresent(), "Unknown source %s", pubKey);
         return publisher.get();

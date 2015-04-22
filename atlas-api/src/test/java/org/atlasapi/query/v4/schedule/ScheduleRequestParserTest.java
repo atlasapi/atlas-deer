@@ -197,6 +197,31 @@ public class ScheduleRequestParserTest {
         assertThat(query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)), is(Annotation.standard()));
         assertThat(query.getContext().getApplicationSources(), is(sources));
     }
+
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testThrowsExceptionWhenCountIsTooHigh() throws Exception {
+
+        DateTime start = new DateTime(DateTimeZones.UTC);
+        StubHttpServletRequest request = new StubHttpServletRequest().withRequestUri(
+                String.format("test/schedules/%s.json", codec.encode(BigInteger.valueOf(channel1.getId())))
+        )
+                .withParam("from", start.toString())
+                .withParam("count", "11")
+                .withParam("source", BBC.key())
+                .withParam("annotations", Joiner.on(',').join(Iterables.transform(Annotation.standard(), Annotation.toKeyFunction())))
+                .withParam(KEY_PARAM, "apikey");
+
+        ScheduleQuery query = builder.queryFrom(request);
+
+        assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
+        assertThat(query.getStart(), is(start));
+        assertThat(query.getCount().get(), is(5));
+        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)), is(Annotation.standard()));
+        assertThat(query.getContext().getApplicationSources(), is(sources));
+    }
+
     
     @Test(expected=IllegalArgumentException.class)
     public void testDoesntAcceptQueryDurationGreaterThanMax() throws Exception {

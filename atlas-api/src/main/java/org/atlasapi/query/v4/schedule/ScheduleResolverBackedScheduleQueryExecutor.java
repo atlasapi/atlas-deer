@@ -61,7 +61,7 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
         
         List<Channel> channels = resolveChannels(query);
         if(!query.getEnd().isPresent()) {
-            throw new UnsupportedOperationException("ScheduleResolverBackedScheduleQueryExecutor doesn't support 'count' queries. Please specify 'to' parameter in your request");
+            throw new UnsupportedOperationException("'count' parameter not supported in non-equivalent schedule store. Please specify 'to' parameter in your request");
         }
         ListenableFuture<Schedule> schedule = scheduleResolver.resolve(
                 channels,

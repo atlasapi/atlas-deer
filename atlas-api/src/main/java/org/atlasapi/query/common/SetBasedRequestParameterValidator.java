@@ -21,17 +21,17 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
         private ImmutableSet<String> optional;
         private ImmutableSet<String> requiredAlternatives = ImmutableSet.of();
 
-        public Builder withRequiredParameters(String...parameters) {
+        public Builder withRequiredParameters(String... parameters) {
             this.required = ImmutableSet.copyOf(parameters);
             return this;
         }
         
-        public Builder withOptionalParameters(String...parameters) {
+        public Builder withOptionalParameters(String... parameters) {
             this.optional = ImmutableSet.copyOf(parameters);
             return this;
         }
 
-        public Builder withRequiredAlternativeParameters(String...parameters) {
+        public Builder withRequiredAlternativeParameters(String... parameters) {
             this.requiredAlternatives = ImmutableSet.copyOf(parameters);
             return this;
         }
