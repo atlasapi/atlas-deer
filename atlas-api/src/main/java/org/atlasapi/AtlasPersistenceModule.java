@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.mongodb.MongoClientOptions;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
@@ -175,7 +176,10 @@ public class AtlasPersistenceModule {
     }
 
     public Mongo mongo(String mongoHost, Integer mongoPort) {
-        Mongo mongo = new MongoClient(mongoHosts(mongoHost, mongoPort));
+        Mongo mongo = new MongoClient(
+                mongoHosts(mongoHost, mongoPort),
+                MongoClientOptions.builder().connectTimeout(10000).build()
+        );
         if (processingConfig == null || !processingConfig.toBoolean()) {
             mongo.setReadPreference(ReadPreference.secondaryPreferred());
         }
