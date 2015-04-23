@@ -41,6 +41,7 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
+import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,8 +78,10 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         Channel channel = Channel.builder().build();
         channel.setId(1L);
         channel.setCanonicalUri("one");
-        Interval interval = new Interval(0, 100, DateTimeZones.UTC);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, interval, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(channel.getId()));
+        DateTime start = new DateTime(0, DateTimeZones.UTC);
+        DateTime end = new DateTime(0, DateTimeZones.UTC);
+        Interval interval = new Interval(start, end);
+        ScheduleQuery query = ScheduleQuery.single(METABROADCAST,start, end, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(channel.getId()));
 
         ChannelSchedule channelSchedule = new ChannelSchedule(channel, interval, ImmutableList.<ItemAndBroadcast>of());
 
@@ -102,10 +105,12 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         Channel channelTwo = Channel.builder().build();
         channelTwo.setId(2L);
         channelTwo.setCanonicalUri("two");
-        
-        Interval interval = new Interval(0, 100, DateTimeZones.UTC);
+
+        DateTime start = new DateTime(0, DateTimeZones.UTC);
+        DateTime end = new DateTime(0, DateTimeZones.UTC);
+        Interval interval = new Interval(start, end);
         List<Id> cids = ImmutableList.of(Id.valueOf(channelOne.getId()), Id.valueOf(channelTwo.getId()));
-        ScheduleQuery query = ScheduleQuery.multi(METABROADCAST, interval, QueryContext.standard(mock(HttpServletRequest.class)), cids);
+        ScheduleQuery query = ScheduleQuery.multi(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), cids);
 
         ChannelSchedule cs1 = new ChannelSchedule(channelOne, interval, ImmutableList.<ItemAndBroadcast>of());
         ChannelSchedule cs2 = new ChannelSchedule(channelTwo, interval, ImmutableList.<ItemAndBroadcast>of());
@@ -127,8 +132,10 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         when(channelResolver.fromId(any(Long.class)))
             .thenReturn(Maybe.<Channel>nothing());
 
-        Interval interval = new Interval(0, 100, DateTimeZones.UTC);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, interval, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(1));
+        DateTime start = new DateTime(0, DateTimeZones.UTC);
+        DateTime end = new DateTime(0, DateTimeZones.UTC);
+        Interval interval = new Interval(start, end);
+        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(1));
         
         try {
             executor.execute(query);
@@ -144,7 +151,9 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         Channel channel = Channel.builder().build();
         channel.setId(1L);
         channel.setCanonicalUri("one");
-        Interval interval = new Interval(0, 100, DateTimeZones.UTC);
+        DateTime start = new DateTime(0, DateTimeZones.UTC);
+        DateTime end = new DateTime(0, DateTimeZones.UTC);
+        Interval interval = new Interval(start, end);
         List<SourceReadEntry> reads = ImmutableList.copyOf(Iterables.transform(Publisher.all(), new Function<Publisher, SourceReadEntry>() {
            @Override
             public SourceReadEntry apply(@Nullable Publisher input) {
@@ -165,7 +174,7 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
             )
         ));
 
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, interval, context, Id.valueOf(channel.getId()));
+        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, context, Id.valueOf(channel.getId()));
 
         Item equivalentItem = new Item(itemId, METABROADCAST);
         when(channelResolver.fromId(channel.getId()))

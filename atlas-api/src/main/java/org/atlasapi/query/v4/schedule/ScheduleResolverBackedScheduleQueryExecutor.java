@@ -35,6 +35,7 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
+import org.joda.time.Interval;
 
 
 public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQueryExecutor {
@@ -59,7 +60,14 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
             throws QueryExecutionException {
         
         List<Channel> channels = resolveChannels(query);
-        ListenableFuture<Schedule> schedule = scheduleResolver.resolve(channels, query.getInterval(), query.getSource());
+        if(!query.getEnd().isPresent()) {
+            throw new UnsupportedOperationException("'count' parameter not supported in non-equivalent schedule store. Please specify 'to' parameter in your request");
+        }
+        ListenableFuture<Schedule> schedule = scheduleResolver.resolve(
+                channels,
+                new Interval(query.getStart(), query.getEnd().get()),
+                query.getSource()
+        );
         
         if (query.isMultiChannel()) {
             return QueryResult.listResult(channelSchedules(schedule, query), query.getContext());

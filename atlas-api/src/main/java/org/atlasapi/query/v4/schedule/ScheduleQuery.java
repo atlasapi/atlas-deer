@@ -4,30 +4,52 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 
+import com.google.common.base.Optional;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.common.QueryContext;
+import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
 import com.google.common.collect.ImmutableSet;
 
 public abstract class ScheduleQuery {
     
-    public static final ScheduleQuery single(Publisher source, Interval interval, QueryContext context, Id channelId) {
-        return new SingleScheduleQuery(source, interval, context, channelId);
+    public static final ScheduleQuery single(Publisher source, DateTime start, DateTime end, QueryContext context, Id channelId) {
+        return new SingleScheduleQuery(source, start, end, context, channelId);
+    }
+
+    public static final ScheduleQuery single(Publisher source, DateTime start, Integer count, QueryContext context, Id channelId) {
+        return new SingleScheduleQuery(source, start, count, context, channelId);
     }
     
-    public static final ScheduleQuery multi(Publisher source, Interval interval, QueryContext context, List<Id> channelIds) {
-        return new MultiScheduleQuery(source, interval, context, channelIds);
+    public static final ScheduleQuery multi(Publisher source, DateTime start, DateTime end, QueryContext context, List<Id> channelIds) {
+        return new MultiScheduleQuery(source, start, end, context, channelIds);
+    }
+
+    public static final ScheduleQuery multi(Publisher source, DateTime start, Integer count, QueryContext context, List<Id> channelIds) {
+        return new MultiScheduleQuery(source, start, count, context, channelIds);
     }
     
     private final Publisher source;
-    private final Interval interval;
+    private final DateTime start;
+    private final Optional<DateTime> end;
+    private final Optional<Integer> count;
     private final QueryContext context;
 
-    public ScheduleQuery(Publisher source, Interval interval, QueryContext context) {
+    public ScheduleQuery(Publisher source, DateTime start, DateTime end, QueryContext context) {
         this.source = checkNotNull(source);
-        this.interval = checkNotNull(interval);
+        this.start = checkNotNull(start);
+        this.end = Optional.of(end);
+        this.count = Optional.absent();
+        this.context = checkNotNull(context);
+    }
+
+    public ScheduleQuery(Publisher source, DateTime start, Integer count, QueryContext context) {
+        this.source = checkNotNull(source);
+        this.start = checkNotNull(start);
+        this.end = Optional.absent();
+        this.count = Optional.of(count);
         this.context = checkNotNull(context);
     }
     
@@ -41,20 +63,33 @@ public abstract class ScheduleQuery {
         return source;
     }
         
-    public Interval getInterval() {
-        return interval;
-    }
-    
     public QueryContext getContext() {
         return this.context;
     }
-    
+
+    public DateTime getStart() {
+        return start;
+    }
+
+    public Optional<DateTime> getEnd() {
+        return end;
+    }
+
+    public Optional<Integer> getCount() {
+        return count;
+    }
+
     private static final class SingleScheduleQuery extends ScheduleQuery {
 
         private final Id channelId;
 
-        public SingleScheduleQuery(Publisher source, Interval interval, QueryContext context, Id channelId) {
-            super(source, interval, context);
+        public SingleScheduleQuery(Publisher source, DateTime start, DateTime end, QueryContext context, Id channelId) {
+            super(source, start, end, context);
+            this.channelId = channelId;
+        }
+
+        public SingleScheduleQuery(Publisher source, DateTime start, Integer count, QueryContext context, Id channelId) {
+            super(source, start, count, context);
             this.channelId = channelId;
         }
         
@@ -79,8 +114,13 @@ public abstract class ScheduleQuery {
 
         private final ImmutableSet<Id> channelIds;
 
-        public MultiScheduleQuery(Publisher source, Interval interval, QueryContext context, List<Id> ids) {
-            super(source, interval, context);
+        public MultiScheduleQuery(Publisher source, DateTime start, DateTime end, QueryContext context, List<Id> ids) {
+            super(source, start, end, context);
+            this.channelIds = ImmutableSet.copyOf(ids);
+        }
+
+        public MultiScheduleQuery(Publisher source, DateTime start, Integer count, QueryContext context, List<Id> ids) {
+            super(source, start, count, context);
             this.channelIds = ImmutableSet.copyOf(ids);
         }
 

@@ -19,61 +19,46 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
         
         private ImmutableSet<String> required;
         private ImmutableSet<String> optional;
+        private ImmutableSet<String> requiredAlternatives = ImmutableSet.of();
 
-        public Builder withRequiredParameters(String...parameters) {
+        public Builder withRequiredParameters(String... parameters) {
             this.required = ImmutableSet.copyOf(parameters);
             return this;
         }
         
-        public Builder withOptionalParameters(String...parameters) {
+        public Builder withOptionalParameters(String... parameters) {
             this.optional = ImmutableSet.copyOf(parameters);
+            return this;
+        }
+
+        public Builder withRequiredAlternativeParameters(String... parameters) {
+            this.requiredAlternatives = ImmutableSet.copyOf(parameters);
             return this;
         }
         
         public SetBasedRequestParameterValidator build() {
-            return new SetBasedRequestParameterValidator(required, optional);
+            return new SetBasedRequestParameterValidator(required, optional, requiredAlternatives);
         }
-    }
-    
-    public SetBasedRequestParameterValidator(ParameterNameProvider... nameProviders) {
-        this(requiredParams(nameProviders), optionalParams(nameProviders));
-    }
-
-    private static ImmutableSet<String> requiredParams(ParameterNameProvider[] nameProviders) {
-        return ImmutableSet.copyOf(Iterables.concat(Iterables.transform(
-            ImmutableList.copyOf(nameProviders),
-            new Function<ParameterNameProvider, Set<String>>() {
-                @Override
-                public Set<String> apply(ParameterNameProvider input) {
-                    return input.getRequiredParameters();
-                }
-            }
-        )));
-    }
-
-    private static ImmutableSet<String> optionalParams(ParameterNameProvider[] nameProviders) {
-        return ImmutableSet.copyOf(Iterables.concat(Iterables.transform(
-            ImmutableList.copyOf(nameProviders),
-            new Function<ParameterNameProvider, Set<String>>() {
-                @Override
-                public Set<String> apply(ParameterNameProvider input) {
-                    return input.getOptionalParameters();
-                }
-            }
-        )));
     }
     
     private final Set<String> requiredParams;
     private final Set<String> optionalParams;
+    private final Set<String> requiredAlternativeParams;
     
     private final Set<String> allParams;
     private final String validParamMsg;
     private final ReplacementSuggestion replacementSuggestion;
 
-    private SetBasedRequestParameterValidator(Set<String> requiredParams, Set<String> optionalParams) {
+    private SetBasedRequestParameterValidator(Set<String> requiredParams, Set<String> optionalParams, Set<String> requiredAlternativeParams) {
         this.requiredParams = ImmutableSet.copyOf(requiredParams);
         this.optionalParams = ImmutableSet.copyOf(optionalParams);
-        this.allParams = ImmutableSet.copyOf(Sets.union(this.requiredParams, this.optionalParams));
+        this.requiredAlternativeParams = ImmutableSet.copyOf(requiredAlternativeParams);
+        this.allParams = ImmutableSet.copyOf(
+                Sets.union(
+                        Sets.union(this.requiredParams, this.optionalParams),
+                        this.requiredAlternativeParams
+                )
+        );
         this.validParamMsg = "Valid params: " + commaJoiner.join(allParams);
         this.replacementSuggestion = new ReplacementSuggestion(allParams, "Invalid parameters: ", " (did you mean %s?)");
     }
@@ -84,6 +69,19 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
     }
 
     @Override
+    protected Collection<String> determineConflictingParameters(Set<String> requestParams) {
+        if (requiredAlternativeParams.size() < 2) {
+            return ImmutableSet.of();
+        }
+
+        Collection<String> requestRequiredAlternativeParams = Sets.intersection(requiredAlternativeParams, requestParams);
+        if (requestRequiredAlternativeParams.isEmpty() || requestRequiredAlternativeParams.size() > 1) {
+            return requiredAlternativeParams;
+        }
+        return ImmutableList.of();
+    }
+
+    @Override
     protected Set<String> determineInvalidParameters(Set<String> requestParams) {
         return Sets.difference(requestParams, allParams);
     }
@@ -91,6 +89,11 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
     @Override
     protected String missingParameterMessage(Collection<String> missingParams) {
         return String.format("Missing parameters: %s.", commaJoiner.join(missingParams));
+    }
+
+    @Override
+    protected String conflictingParameterMessage(Collection<String> conflictingParams) {
+        return String.format("You must specify ONE of: %s.", commaJoiner.join(conflictingParams));
     }
 
     @Override

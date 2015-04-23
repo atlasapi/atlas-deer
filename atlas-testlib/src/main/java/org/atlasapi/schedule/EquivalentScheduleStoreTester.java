@@ -442,6 +442,95 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         
     }
 
+    public void testResolvingScheduleFromMultipleChannelsWithCountParameter() throws Exception {
+
+        Channel channel1 = Channel.builder().build();
+        channel1.setId(1L);
+
+        Channel channel2 = Channel.builder().build();
+        channel2.setId(2L);
+
+        DateTime start = DateTime.now();
+        DateTime startPlus1h = start.plusHours(1);
+        DateTime startPlus2h = start.plusHours(2);
+        DateTime startPlus3h = start.plusHours(3);
+        DateTime startPlus4h = start.plusHours(4);
+        DateTime startPlus25h = start.plusHours(25);
+        DateTime startPlus26h = start.plusHours(26);
+
+        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+
+        Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
+        item2.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+
+        Item item3 = new Item(Id.valueOf(3), Publisher.METABROADCAST);
+        item3.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+
+        Broadcast broadcast1Channel1 = new Broadcast(channel1, start, startPlus1h).withId("11");
+        item1.addBroadcast(broadcast1Channel1);
+        Broadcast broadcast2Channel1 = new Broadcast(channel1, startPlus1h, startPlus2h).withId("12");
+        item2.addBroadcast(broadcast2Channel1);
+        Broadcast broadcast3Channel1 = new Broadcast(channel1, startPlus2h, startPlus3h).withId("13");
+        item3.addBroadcast(broadcast3Channel1);
+        Broadcast broadcast4Channel1 = new Broadcast(channel1, startPlus3h, startPlus4h).withId("14");
+        item2.addBroadcast(broadcast4Channel1);
+
+        Broadcast broadcast1Channel2 = new Broadcast(channel2, start, startPlus1h).withId("21");
+        item1.addBroadcast(broadcast1Channel2);
+        Broadcast broadcast2Channel2 = new Broadcast(channel2, startPlus1h, startPlus25h).withId("22");
+        item2.addBroadcast(broadcast2Channel2);
+        Broadcast broadcast3Channel2 = new Broadcast(channel2, startPlus25h, startPlus26h).withId("23");
+        item3.addBroadcast(broadcast3Channel2);
+
+        getSubjectGenerator().getContentStore().writeContent(item1);
+        getSubjectGenerator().getContentStore().writeContent(item2);
+        getSubjectGenerator().getContentStore().writeContent(item3);
+
+        ScheduleRef scheduleRef1 = ScheduleRef
+                .forChannel(Id.valueOf(channel1.getId()), new Interval(start, startPlus3h))
+                .addEntry(item1.getId(), broadcast1Channel1.toRef())
+                .addEntry(item2.getId(), broadcast2Channel1.toRef())
+                .addEntry(item3.getId(), broadcast3Channel1.toRef())
+                .addEntry(item2.getId(), broadcast4Channel1.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef1, ImmutableSet.<BroadcastRef>of()));
+
+        ScheduleRef scheduleRef2 = ScheduleRef
+                .forChannel(Id.valueOf(channel2.getId()), new Interval(start, startPlus26h))
+                .addEntry(item1.getId(), broadcast1Channel2.toRef())
+                .addEntry(item2.getId(), broadcast2Channel2.toRef())
+                .addEntry(item3.getId(), broadcast3Channel2.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef2, ImmutableSet.<BroadcastRef>of()));
+
+        EquivalentSchedule resolved
+                = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1, channel2),
+                        start,
+                        3,
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST)
+                )
+        );
+
+
+        assertThat(resolved.channelSchedules().size(), is(2));
+        EquivalentChannelSchedule sched1 = resolved.channelSchedules().get(0);
+        EquivalentChannelSchedule sched2 = resolved.channelSchedules().get(1);
+
+        assertThat(sched1.getEntries().size(), is(3));
+
+        assertThat(sched2.getEntries().size(), is(2));
+
+        assertThat(sched1.getInterval().getEnd(), is(startPlus3h));
+        assertThat(sched2.getInterval().getEnd(), is(startPlus25h));
+
+    }
+
     public void testWritingScheduleRemovesExtraneousBroadcasts() throws Exception {
         
         Channel channel = Channel.builder().build();

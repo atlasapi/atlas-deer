@@ -16,6 +16,7 @@ import org.atlasapi.schedule.ScheduleIndex;
 import org.atlasapi.schedule.ScheduleRef;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -72,7 +73,12 @@ public class ScheduleIndexDebugController {
     public void debugSchedule(HttpServletRequest request, HttpServletResponse response) throws Exception {
         ScheduleQuery query = requestParser.queryFrom(request);
         Channel channel = channelResolver.fromId(query.getChannelId().longValue()).requireValue();
-        ListenableFuture<ScheduleRef> resolveSchedule = index.resolveSchedule(query.getSource(), channel, query.getInterval());
+        ListenableFuture<ScheduleRef> resolveSchedule = index.resolveSchedule(
+                query.getSource(),
+                channel,
+                new Interval(query.getStart(), query.getEnd().get()
+                )
+        );
         gson.toJson(resolveSchedule.get(5, TimeUnit.SECONDS), response.getWriter());
     }
     

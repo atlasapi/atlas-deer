@@ -40,6 +40,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 
@@ -65,6 +66,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.metabroadcast.common.time.Clock;
 
 public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
+
+    private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
 
     private final class ToEquivalentSchedule implements Function<List<ResultSet>, EquivalentSchedule> {
 
@@ -137,7 +140,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     items.add(item);
                 }
             }
-            return new Equivalent<Item>(graph, items.build());
+            return new Equivalent<>(graph, items.build());
         }
 
         private Broadcast deserialize(ByteBuffer bcastBytes) throws InvalidProtocolBufferException {
@@ -179,8 +182,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    public ListenableFuture<EquivalentSchedule> resolveSchedules(Iterable<Channel> channels,
-            final Interval interval, Publisher source, final Set<Publisher> selectedSources) {
+    public ListenableFuture<EquivalentSchedule> resolveSchedules(
+            Iterable<Channel> channels,
+            final Interval interval,
+            Publisher source,
+            final Set<Publisher> selectedSources
+    ) {
         final Set<Channel> chans = ImmutableSet.copyOf(channels);
         List<Statement> selects = selectStatements(source, channels, interval);
         ListenableFuture<List<ResultSet>> results = Futures.allAsList(Lists.transform(selects, 
@@ -192,6 +199,26 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             }
         ));
         return Futures.transform(results, new ToEquivalentSchedule(chans, interval, selectedSources));
+    }
+
+    @Override
+    public ListenableFuture<EquivalentSchedule> resolveSchedules(
+            Iterable<Channel> channels,
+            DateTime start,
+            final Integer count,
+            Publisher source,
+            Set<Publisher> selectedSources
+    ) {
+        Interval interval = new Interval(start, start.plus(MAX_SCHEDULE_LENGTH));
+        return Futures.transform(
+                resolveSchedules(channels, interval, source, selectedSources),
+                new Function<EquivalentSchedule, EquivalentSchedule>() {
+                    @Override
+                    public EquivalentSchedule apply(EquivalentSchedule input) {
+                        return input.withLimitedBroadcasts(count);
+                    }
+                }
+        );
     }
 
     private List<Statement> selectStatements(Publisher src, Iterable<Channel> channels, Interval interval) {
