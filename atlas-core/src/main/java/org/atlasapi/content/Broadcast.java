@@ -17,8 +17,8 @@ package org.atlasapi.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Optional;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.entity.Id;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.schedule.ScheduleBroadcastFilter;
 import org.joda.time.DateTime;
@@ -86,23 +86,23 @@ public class Broadcast extends Identified {
 	}
 
     public Broadcast(Channel channel, DateTime start, DateTime end, Boolean activelyPublished) {
-        this(Id.valueOf(channel.getId()), new Interval(start, end), activelyPublished);
+        this(channel.getId(), new Interval(start, end), activelyPublished);
     }
     
     public Broadcast(Channel channel, DateTime start, DateTime end) {
-        this(Id.valueOf(channel.getId()), start, end, true);
+        this(channel.getId(), start, end, true);
     }
     
     public Broadcast(Channel channel, DateTime start, Duration duration) {
-        this(Id.valueOf(channel.getId()), start, duration, true);
+        this(channel.getId(), start, duration, true);
     }
     
     public Broadcast(Channel channel, Interval interval) {
-        this(Id.valueOf(channel.getId()), interval, true);
+        this(channel.getId(), interval, true);
     }
     
     public Broadcast(Channel channel, DateTime start, Duration duration, Boolean activelyPublished) {
-        this(Id.valueOf(channel.getId()), new Interval(start, start.plus(duration)), activelyPublished);
+        this(channel.getId(), new Interval(start, start.plus(duration)), activelyPublished);
     }
     
     public Broadcast(Id channelId, Interval interval, Boolean activelyPublished) {
@@ -393,7 +393,7 @@ public class Broadcast extends Identified {
         @Override
         public boolean apply(Broadcast input) {
             return input.getChannelId() != null 
-                && input.getChannelId().longValue() == channel.getId();
+                && input.getChannelId().longValue() == channel.getId().longValue();
         }
         
         @Override

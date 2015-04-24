@@ -3,7 +3,7 @@ package org.atlasapi.schedule;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Iterables;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 

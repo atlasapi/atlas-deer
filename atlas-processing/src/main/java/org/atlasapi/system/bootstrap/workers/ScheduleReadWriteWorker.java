@@ -4,8 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
 
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTask;

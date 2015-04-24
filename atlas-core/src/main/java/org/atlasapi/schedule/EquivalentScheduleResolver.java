@@ -2,7 +2,7 @@ package org.atlasapi.schedule;
 
 import java.util.Set;
 
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;

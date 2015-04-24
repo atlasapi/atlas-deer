@@ -23,6 +23,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
@@ -31,8 +33,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.Equivalent;
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.annotation.ActiveAnnotations;
@@ -79,18 +79,18 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
     @Test
     public void testExecutingSingleScheduleQuery() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         channel.setCanonicalUri("one");
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(channel.getId()));
+        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), channel.getId());
 
         EquivalentChannelSchedule channelSchedule = new EquivalentChannelSchedule(channel, interval, ImmutableList.<EquivalentScheduleEntry>of());
 
-        when(channelResolver.fromId(channel.getId()))
-            .thenReturn(Maybe.just(channel));
+//        when(channelResolver.fromId(channel.getId()))
+//            .thenReturn(Maybe.just(channel));
         when(scheduleResolver.resolveSchedules(argThat(hasItems(channel)), eq(interval), eq(query.getSource()), 
                 argThat(is(ImmutableSet.of(query.getSource())))))
                 .thenReturn(Futures.immediateFuture(new EquivalentSchedule(ImmutableList.of(channelSchedule), interval)));
@@ -103,25 +103,25 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
     @Test
     public void testExecutingMultiScheduleQuery() throws Exception {
         
-        Channel channelOne = Channel.builder().build();
+        Channel channelOne = Channel.builder(Publisher.BBC).build();
         channelOne.setId(1L);
         channelOne.setCanonicalUri("one");
 
-        Channel channelTwo = Channel.builder().build();
+        Channel channelTwo = Channel.builder(Publisher.BBC).build();
         channelTwo.setId(2L);
         channelTwo.setCanonicalUri("two");
 
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        List<Id> cids = ImmutableList.of(Id.valueOf(channelOne.getId()), Id.valueOf(channelTwo.getId()));
+        List<Id> cids = ImmutableList.of(channelOne.getId(), channelTwo.getId());
         ScheduleQuery query = ScheduleQuery.multi(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), cids);
 
         EquivalentChannelSchedule cs1 = new EquivalentChannelSchedule(channelOne, interval, ImmutableList.<EquivalentScheduleEntry>of());
         EquivalentChannelSchedule cs2 = new EquivalentChannelSchedule(channelTwo, interval, ImmutableList.<EquivalentScheduleEntry>of());
 
-        when(channelResolver.forIds(Lists.transform(cids, Id.toLongValue())))
-            .thenReturn(ImmutableList.of(channelOne, channelTwo));
+//        when(channelResolver.forIds(Lists.transform(cids, Id.toLongValue())))
+//            .thenReturn(ImmutableList.of(channelOne, channelTwo));
         when(scheduleResolver.resolveSchedules(argThat(hasItems(channelOne, channelTwo)), eq(interval), eq(query.getSource()), 
                 argThat(is(ImmutableSet.of(query.getSource())))))
             .thenReturn(Futures.immediateFuture(new EquivalentSchedule(ImmutableList.of(cs1, cs2), interval)));
@@ -138,8 +138,8 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
     @Test
     public void testThrowsExceptionIfChannelIsMissing() {
         
-        when(channelResolver.fromId(any(Long.class)))
-            .thenReturn(Maybe.<Channel>nothing());
+//        when(channelResolver.fromId(any(Long.class)))
+//            .thenReturn(Maybe.<Channel>nothing());
 
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
@@ -157,7 +157,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
 
     @Test
     public void testResolvesEquivalentContentForApiKeyWithPrecedenceEnabled() throws Exception {
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         channel.setCanonicalUri("one");
         DateTime start = new DateTime(0, DateTimeZones.UTC);
@@ -189,10 +189,10 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
             )
         ));
 
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, context, Id.valueOf(channel.getId()));
+        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, context, channel.getId());
 
-        when(channelResolver.fromId(channel.getId()))
-            .thenReturn(Maybe.just(channel));
+//        when(channelResolver.fromId(channel.getId()))
+//            .thenReturn(Maybe.just(channel));
         when(scheduleResolver.resolveSchedules(argThat(hasItems(channel)), eq(interval), eq(query.getSource()), 
         argThat(is(query.getContext().getApplicationSources().getEnabledReadSources()))))
             .thenReturn(Futures.immediateFuture(new EquivalentSchedule(ImmutableList.of(channelSchedule), interval)));

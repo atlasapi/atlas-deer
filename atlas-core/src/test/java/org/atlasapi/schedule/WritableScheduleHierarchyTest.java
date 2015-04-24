@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContainerRef;
@@ -26,7 +27,6 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -48,7 +48,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 public class WritableScheduleHierarchyTest {
     
     @Mock private ContentStore store;
-    private final Channel channel = Channel.builder().build();
+    private final Channel channel = Channel.builder(Publisher.BBC).build();
     
     @Before
     public void setup() throws WriteException {

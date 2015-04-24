@@ -4,15 +4,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.QueryContext;
@@ -55,7 +57,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
     public QueryResult<ChannelSchedule> execute(ScheduleQuery query)
             throws QueryExecutionException {
         
-        List<Channel> channels = resolveChannels(query);
+        Iterable<Channel> channels = resolveChannels(query);
         
         ImmutableSet<Publisher> selectedSources = selectedSources(query);
         ListenableFuture<EquivalentSchedule> schedule;
@@ -89,19 +91,19 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
         return ImmutableSet.of(query.getSource());
     }
 
-    private ImmutableList<Channel> resolveChannels(ScheduleQuery query) throws NotFoundException {
-        ImmutableList<Channel> channels;
+    private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
+        Iterable<Id> channelIds;
         if (query.isMultiChannel()) {
-            List<Long> ids = Lists.transform(query.getChannelIds().asList(),Id.toLongValue());
-            channels = ImmutableList.copyOf(channelResolver.forIds(ids));
+            channelIds = query.getChannelIds();
         } else {
-            Maybe<Channel> possibleChannel = channelResolver.fromId(query.getChannelId().longValue());
-            if (!possibleChannel.hasValue()) {
-                throw new NotFoundException(query.getChannelId());
-            }
-            channels = ImmutableList.of(possibleChannel.requireValue());
+            channelIds = ImmutableSet.of(query.getChannelId());
         }
-        return channels;
+        return Futures.get(Futures.transform(channelResolver.resolveIds(channelIds), new Function<Resolved<Channel>, Iterable<Channel>>() {
+            @Override
+            public Iterable<Channel> apply(Resolved<Channel> input) {
+                return input.getResources();
+            }
+        }), 1, TimeUnit.MINUTES, QueryExecutionException.class);
     }
 
     private List<ChannelSchedule> channelSchedules(ListenableFuture<EquivalentSchedule> schedule, ScheduleQuery query)
