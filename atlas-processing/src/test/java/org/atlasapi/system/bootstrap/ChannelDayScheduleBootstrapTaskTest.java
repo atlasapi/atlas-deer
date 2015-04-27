@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
@@ -15,7 +16,6 @@ import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
@@ -46,7 +46,7 @@ public class ChannelDayScheduleBootstrapTaskTest {
     public void testRunningTask() throws Exception {
         Publisher src = Publisher.METABROADCAST;
 
-        Channel chan = Channel.builder().build();
+        Channel chan = Channel.builder(Publisher.BBC).build();
         chan.setId(123L);
         
         LocalDate day = new LocalDate();

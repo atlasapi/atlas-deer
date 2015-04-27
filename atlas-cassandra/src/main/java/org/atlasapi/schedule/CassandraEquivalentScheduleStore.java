@@ -228,7 +228,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             selects.add(QueryBuilder.select().all()
                 .from(EQUIVALENT_SCHEDULE_TABLE)
                 .where(eq(SOURCE.name(), src.key()))
-                    .and(eq(CHANNEL.name(), channel.getId()))
+                    .and(eq(CHANNEL.name(), channel.getId().longValue()))
                     .and(in(DAY.name(), days)));
         }
         return selects.build();

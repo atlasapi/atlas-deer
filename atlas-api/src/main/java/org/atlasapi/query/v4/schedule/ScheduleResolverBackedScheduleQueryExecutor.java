@@ -82,18 +82,16 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
 
     private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
         Iterable<Id> channelIds;
-
         if (query.isMultiChannel()) {
             channelIds = query.getChannelIds();
         } else {
             channelIds = ImmutableSet.of(query.getChannelId());
         }
-        return Futures.get(Futures.transform(channelResolver.resolveIds(channelIds), new Function<Resolved<Channel>, Iterable<Channel>>() {
-            @Override
-            public Iterable<Channel> apply(Resolved<Channel> input) {
-                return input.getResources();
-            }
-        }), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        Resolved<Channel> resolvedChannels = Futures.get(channelResolver.resolveIds(channelIds), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        if (resolvedChannels.getResources().isEmpty()) {
+            throw new NotFoundException(Iterables.getFirst(channelIds, null));
+        }
+        return resolvedChannels.getResources();
     }
 
     private List<ChannelSchedule> channelSchedules(ListenableFuture<Schedule> schedule, ScheduleQuery query)

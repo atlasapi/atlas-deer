@@ -98,12 +98,11 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
         } else {
             channelIds = ImmutableSet.of(query.getChannelId());
         }
-        return Futures.get(Futures.transform(channelResolver.resolveIds(channelIds), new Function<Resolved<Channel>, Iterable<Channel>>() {
-            @Override
-            public Iterable<Channel> apply(Resolved<Channel> input) {
-                return input.getResources();
-            }
-        }), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        Resolved<Channel> resolvedChannels = Futures.get(channelResolver.resolveIds(channelIds), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        if (resolvedChannels.getResources().isEmpty()) {
+            throw new NotFoundException(Iterables.getFirst(channelIds, null));
+        }
+        return resolvedChannels.getResources();
     }
 
     private List<ChannelSchedule> channelSchedules(ListenableFuture<EquivalentSchedule> schedule, ScheduleQuery query)

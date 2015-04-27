@@ -4,9 +4,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.metabroadcast.common.scheduling.UpdateProgress;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.media.entity.Schedule;
 import org.joda.time.Interval;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +47,7 @@ public class ScheduleBootstrapperTest {
         when(taskFactory.create(source, channel1, interval)).thenReturn(task1);
         when(taskFactory.create(source, channel2, interval)).thenReturn(task2);
         when(taskFactory.create(source, channel3, interval)).thenReturn(task3);
-
+//
         UpdateProgress up1 = new UpdateProgress(1, 0);
         UpdateProgress up2 = new UpdateProgress(2, 0);
         UpdateProgress up3 = new UpdateProgress(3, 0);
