@@ -3,7 +3,7 @@ package org.atlasapi.system.bootstrap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.content.ContentStore;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.schedule.ScheduleWriter;

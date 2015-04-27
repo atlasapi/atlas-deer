@@ -86,7 +86,7 @@ public class QueryModule {
     
     @Qualifier("store")
     @Bean ScheduleQueryExecutor equivalentScheduleStoreScheduleQueryExecutor() {
-        return new EquivalentScheduleResolverBackedScheduleQueryExecutor(persistenceModule.channelStore(), 
+        return new EquivalentScheduleResolverBackedScheduleQueryExecutor(persistenceModule.channelResolver(),
             persistenceModule.getEquivalentScheduleStore(), equivalentsMerger());
     }
 

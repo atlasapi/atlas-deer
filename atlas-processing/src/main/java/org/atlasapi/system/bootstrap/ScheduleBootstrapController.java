@@ -7,13 +7,22 @@ import static com.metabroadcast.common.http.HttpStatusCode.SERVER_ERROR;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.media.entity.Publisher;
 import org.elasticsearch.common.base.Throwables;
 import org.joda.time.Interval;
@@ -38,7 +47,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 public class ScheduleBootstrapController {
     
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
-    private final ChannelResolver channelResvoler;
+    private final ChannelResolver channelResolver;
     private final ExecutorService executor;
     private final ScheduleBootstrapper scheduleBootstrapper;
     private final ObjectMapper jsonMapper = new ObjectMapper();
@@ -56,21 +65,21 @@ public class ScheduleBootstrapController {
         this.executor = checkNotNull(executor);
         this.scheduleBootstrapper = checkNotNull(scheduleBootstrapper);
         this.taskFactory = checkNotNull(taskFactory);
-        this.channelResvoler = checkNotNull(channelResvoler);
+        this.channelResolver = checkNotNull(channelResvoler);
     }
     
     @RequestMapping(value="/system/bootstrap/schedule",method=RequestMethod.POST)
     public Void bootstrapSchedule(HttpServletResponse resp, @RequestParam("source") String src,
             @RequestParam("day") String day, @RequestParam("channel") String channelId)
-        throws IOException {
+            throws Exception {
         
         Maybe<Publisher> source = Publisher.fromKey(src);
         if (!source.hasValue()) {
             return failure(resp, BAD_REQUEST, "Unknown source " + src);
         }
         
-        Maybe<Channel> channel = resolve(channelId);
-        if (!channel.hasValue()) {
+        Optional<Channel> channel = resolve(channelId);
+        if (!channel.isPresent()) {
             return failure(resp, BAD_REQUEST, "Unknown channel " + channelId);
         }
         
@@ -82,7 +91,7 @@ public class ScheduleBootstrapController {
         }
         
         try {
-            UpdateProgress progress = taskFactory.create(source.requireValue(), channel.requireValue(), interval(date)).call();
+            UpdateProgress progress = taskFactory.create(source.requireValue(), channel.get(), interval(date)).call();
             resp.setStatus(HttpStatusCode.OK.code());
             resp.getWriter().write(progress.toString());
             return null;
@@ -94,7 +103,7 @@ public class ScheduleBootstrapController {
     @RequestMapping(value="/system/bootstrap/schedule/all",method=RequestMethod.POST)
     public void bootstrapAllSchedules(HttpServletResponse resp, @RequestParam("source") String src,
                                   @RequestParam("from") String from, @RequestParam("to") String to)
-            throws IOException {
+            throws Exception {
 
         final Maybe<Publisher> source = Publisher.fromKey(src);
         if (!source.hasValue()) {
@@ -102,7 +111,11 @@ public class ScheduleBootstrapController {
             return;
         }
 
-        final Iterable<Channel> channels = channelResvoler.all();
+        final Iterable<Channel> channels =
+                Futures.get(channelResolver.resolveChannels(ChannelQuery.builder().build()),
+                        1, TimeUnit.MINUTES,
+                        Exception.class
+                ).getResources();
 
         final LocalDate dateFrom;
         final LocalDate dateTo;
@@ -156,8 +169,15 @@ public class ScheduleBootstrapController {
                 day.plusDays(1).toDateTimeAtStartOfDay(DateTimeZones.UTC));
     }
 
-    private Maybe<Channel> resolve(String channelId) {
-        return channelResvoler.fromId(idCodec.decode(channelId).longValue());
+    private Optional<Channel> resolve(String channelId) throws Exception {
+        Id cid = Id.valueOf(idCodec.decode(channelId));
+        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList.of(cid));
+        Resolved<Channel> resolvedChannel = Futures.get(channelFuture, 1, TimeUnit.MINUTES, Exception.class);
+
+        if (resolvedChannel.getResources().isEmpty()) {
+            return Optional.absent();
+        }
+        return Optional.of(Iterables.getOnlyElement(resolvedChannel.getResources()));
     }
 
     private Void failure(HttpServletResponse resp, HttpStatusCode status, String msg) throws IOException {

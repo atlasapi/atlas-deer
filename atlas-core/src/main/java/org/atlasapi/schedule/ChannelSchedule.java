@@ -4,8 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.Interval;
 

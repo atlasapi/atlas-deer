@@ -29,6 +29,7 @@ public class Channel extends Identified implements Sourced {
     private final ImmutableSet<TemporalField<String>> titles;
     private final Publisher publisher;
     private final MediaType mediaType;
+    private final String key;
     private final Boolean highDefinition;
     private final Boolean regional;
     private final Publisher broadcaster;
@@ -49,6 +50,7 @@ public class Channel extends Identified implements Sourced {
             Set<TemporalField<String>> titles,
             Publisher publisher,
             MediaType mediaType,
+            String key,
             Boolean highDefinition,
             Boolean regional,
             Publisher broadcaster,
@@ -68,6 +70,7 @@ public class Channel extends Identified implements Sourced {
         this.titles = ImmutableSet.copyOf(titles);
         this.publisher = checkNotNull(publisher);
         this.mediaType = mediaType;
+        this.key = key;
         this.highDefinition = highDefinition;
         this.regional = regional;
         this.broadcaster = broadcaster;
@@ -171,6 +174,10 @@ public class Channel extends Identified implements Sourced {
         return new Builder(publisher);
     }
 
+    public String getKey() {
+        return key;
+    }
+
     public static class Builder {
 
         private String uri;
@@ -179,6 +186,7 @@ public class Channel extends Identified implements Sourced {
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private Publisher publisher;
         private MediaType mediaType;
+        private String key;
         private Boolean highDefinition;
         private Boolean regional;
         private Boolean adult;
@@ -317,6 +325,11 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withKey(String key) {
+            this.key = key;
+            return this;
+        }
+
 
         private ChannelRef buildChannelRef(Long id) {
             return new ChannelRef(Id.valueOf(id), publisher);
@@ -333,6 +346,7 @@ public class Channel extends Identified implements Sourced {
                     titles,
                     publisher,
                     mediaType,
+                    key,
                     highDefinition,
                     regional,
                     broadcaster,

@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 
 import java.util.concurrent.TimeUnit;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Item;
@@ -14,7 +15,6 @@ import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.Equivalent;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -33,7 +33,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testWritingNewSchedule() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
                 new DateTime(2014,03,21,17,00,00,000, DateTimeZones.UTC));
@@ -44,7 +44,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         
         getSubjectGenerator().getContentStore().writeContent(item);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item.getId(), broadcast.toRef())
             .build();
         
@@ -61,7 +61,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testUpdatingASchedule() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,3,21,16,0,0,0, DateTimeZones.UTC),
                 new DateTime(2014,3,21,17,0,0,0, DateTimeZones.UTC));
@@ -77,13 +77,13 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(item1);
         getSubjectGenerator().getContentStore().writeContent(item2);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .build();
         
         getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.<BroadcastRef>of()));
 
-        scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
         getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.<BroadcastRef>of(
@@ -102,7 +102,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testWritingRepeatedItem() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
                 new DateTime(2014,03,21,18,00,00,000, DateTimeZones.UTC));
@@ -115,7 +115,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         
         getSubjectGenerator().getContentStore().writeContent(item);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item.getId(), broadcast1.toRef())
                 .addEntry(item.getId(), broadcast2.toRef())
                 .build();
@@ -137,7 +137,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testWritingNewScheduleWithEquivalentItems() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
                 new DateTime(2014,03,21,17,00,00,000, DateTimeZones.UTC));
@@ -156,7 +156,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(item);
         getSubjectGenerator().getContentStore().writeContent(equiv);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
         
@@ -174,7 +174,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testResolvingScheduleFiltersItemsAccordingToSelectedSources() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
                 new DateTime(2014,03,21,17,00,00,000, DateTimeZones.UTC));
@@ -193,7 +193,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(item);
         getSubjectGenerator().getContentStore().writeContent(equiv);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
         
@@ -210,7 +210,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testWritingNewScheduleWithEquivalentItemsChoosesBestEquivalent() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
                 new DateTime(2014,03,21,17,00,00,000, DateTimeZones.UTC));
@@ -235,7 +235,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(equiv);
         getSubjectGenerator().getContentStore().writeContent(otherEquiv);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
             .addEntry(item.getId(), broadcast.toRef())
             .build();
         
@@ -253,7 +253,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testUpdatingEquivalences() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
                 new DateTime(2014,03,21,17,00,00,000, DateTimeZones.UTC));
@@ -277,7 +277,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(equiv);
         getSubjectGenerator().getContentStore().writeContent(otherEquiv);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), interval)
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
         
@@ -299,7 +299,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
     
     public void testResolvingAnEmptySchedule() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC), 
                 new DateTime(2014,03,21,17,00,00,000, DateTimeZones.UTC));
@@ -315,7 +315,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
     
     public void testResolvingScheduleFiltersByRequestedInterval() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         
         DateTime one = new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC); 
@@ -343,7 +343,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(item3);
         
         ScheduleRef scheduleRef = ScheduleRef
-                .forChannel(Id.valueOf(channel.getId()), new Interval(one, four))
+                .forChannel(channel.getId(), new Interval(one, four))
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .addEntry(item3.getId(), broadcast3.toRef())
@@ -394,10 +394,10 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testResolvingScheduleFromMultipleChannels() throws Exception {
         
-        Channel channel1 = Channel.builder().build();
+        Channel channel1 = Channel.builder(Publisher.BBC).build();
         channel1.setId(1L);
         
-        Channel channel2 = Channel.builder().build();
+        Channel channel2 = Channel.builder(Publisher.BBC).build();
         channel2.setId(2L);
         
         DateTime one = new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC); 
@@ -418,7 +418,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(item2);
         
         ScheduleRef scheduleRef = ScheduleRef
-                .forChannel(Id.valueOf(channel1.getId()), new Interval(one, three))
+                .forChannel(channel1.getId(), new Interval(one, three))
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
@@ -444,10 +444,10 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testResolvingScheduleFromMultipleChannelsWithCountParameter() throws Exception {
 
-        Channel channel1 = Channel.builder().build();
+        Channel channel1 = Channel.builder(Publisher.BBC).build();
         channel1.setId(1L);
 
-        Channel channel2 = Channel.builder().build();
+        Channel channel2 = Channel.builder(Publisher.BBC).build();
         channel2.setId(2L);
 
         DateTime start = DateTime.now();
@@ -488,7 +488,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(item3);
 
         ScheduleRef scheduleRef1 = ScheduleRef
-                .forChannel(Id.valueOf(channel1.getId()), new Interval(start, startPlus3h))
+                .forChannel(channel1.getId(), new Interval(start, startPlus3h))
                 .addEntry(item1.getId(), broadcast1Channel1.toRef())
                 .addEntry(item2.getId(), broadcast2Channel1.toRef())
                 .addEntry(item3.getId(), broadcast3Channel1.toRef())
@@ -498,7 +498,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef1, ImmutableSet.<BroadcastRef>of()));
 
         ScheduleRef scheduleRef2 = ScheduleRef
-                .forChannel(Id.valueOf(channel2.getId()), new Interval(start, startPlus26h))
+                .forChannel(channel2.getId(), new Interval(start, startPlus26h))
                 .addEntry(item1.getId(), broadcast1Channel2.toRef())
                 .addEntry(item2.getId(), broadcast2Channel2.toRef())
                 .addEntry(item3.getId(), broadcast3Channel2.toRef())
@@ -533,7 +533,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
     public void testWritingScheduleRemovesExtraneousBroadcasts() throws Exception {
         
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
 
         DateTime one = new DateTime(2014,03,21,16,00,00,000, DateTimeZones.UTC); 
@@ -562,7 +562,7 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getContentStore().writeContent(item);
         getSubjectGenerator().getContentStore().writeContent(equiv);
         
-        ScheduleRef scheduleRef = ScheduleRef.forChannel(Id.valueOf(channel.getId()), new Interval(one, two))
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), new Interval(one, two))
                 .addEntry(item.getId(), broadcast1.toRef())
                 .build();
         

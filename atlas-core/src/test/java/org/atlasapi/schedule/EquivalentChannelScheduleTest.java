@@ -2,7 +2,7 @@ package org.atlasapi.schedule;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;

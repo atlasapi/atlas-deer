@@ -225,7 +225,7 @@ public class QueryWebModule {
     ScheduleController v4ScheduleController() {
         EntityListWriter<ItemAndBroadcast> entryListWriter =
             new ScheduleEntryListWriter(contentListWriter(), new BroadcastWriter("broadcasts", idCodec()));
-        ScheduleListWriter scheduleWriter = new ScheduleListWriter(legacyChannelListWriter(), entryListWriter);
+        ScheduleListWriter scheduleWriter = new ScheduleListWriter(channelListWriter(), entryListWriter);
         return new ScheduleController(queryModule.equivalentScheduleStoreScheduleQueryExecutor(),
             configFetcher, new ScheduleQueryResultWriter(scheduleWriter, licenseWriter, requestWriter()),
             new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()

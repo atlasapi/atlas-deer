@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.Id;
-import org.atlasapi.media.channel.Channel;
 import org.joda.time.Interval;
 
 import com.google.common.base.Predicate;

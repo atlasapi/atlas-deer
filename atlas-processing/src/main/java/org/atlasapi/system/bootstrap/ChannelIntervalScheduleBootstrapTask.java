@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.ContainerRef;
@@ -25,7 +26,6 @@ import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.StoreException;
 import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;

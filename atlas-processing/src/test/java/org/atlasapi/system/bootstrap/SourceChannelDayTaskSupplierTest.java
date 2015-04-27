@@ -8,9 +8,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.Set;
 
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
+import com.google.common.util.concurrent.Futures;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.media.entity.Publisher;
+import org.hamcrest.Matchers;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Before;
@@ -48,10 +52,11 @@ public class SourceChannelDayTaskSupplierTest {
     @Test
     public void testSuppliesTasksForAllSrcDayChannels() {
         
-        Channel channel1 = Channel.builder().withUri("channel1").build();
-        Channel channel2 = Channel.builder().withUri("channel2").build();
+        Channel channel1 = Channel.builder(Publisher.BBC).withUri("channel1").build();
+        Channel channel2 = Channel.builder(Publisher.BBC).withUri("channel2").build();
         
-        when(channelResolver.all()).thenReturn(ImmutableList.of(channel1, channel2));
+        when(channelResolver.resolveChannels(any(ChannelQuery.class)))
+                .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(channel1, channel2))));
         when(factory.create(any(Publisher.class), any(Channel.class), any(Interval.class)))
             .thenReturn(1);
         
