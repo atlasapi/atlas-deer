@@ -27,13 +27,16 @@ public class SegmentEventSerializer {
         if (event.getSegmentRef() != null) {
             builder.setSegmentRef(serialize(event.getSegmentRef()));
         }
-        Description desc = event.getDescription();
-        if (desc != null) {
-            if (desc.getTitle() != null) { builder.setTitle(desc.getTitle()); }
-            if (desc.getSynopsis() != null) { builder.setDescription(desc.getSynopsis()); }
-            if (desc.getImage() != null) { builder.setImage(desc.getImage()); }
-            if (desc.getThumbnail() != null) { builder.setThumbnail(desc.getThumbnail()); }
+        if (event.getTitle() != null) {
+            builder.setTitle(event.getTitle());
         }
+        if (event.getDescription() != null) {
+            builder.setDescription(event.getDescription());
+        }
+        if (event.getImage() != null) {
+            builder.setImage(event.getImage());
+        }
+        if (event.getThumbnail() != null) { builder.setThumbnail(event.getThumbnail()); }
         return builder;
     }
 
@@ -57,13 +60,11 @@ public class SegmentEventSerializer {
         if (msg.hasSegmentRef()) {
             event.setSegment(deserialize(msg.getSegmentRef()));
         }
-        Description desc = new Description(
-            msg.hasTitle() ? msg.getTitle() : null,
-            msg.hasDescription() ? msg.getDescription() : null,
-            msg.hasImage() ? msg.getImage() : null,
-            msg.hasThumbnail() ? msg.getThumbnail() : null
-            );
-        event.setDescription(desc);
+        event.setTitle(msg.hasTitle() ? msg.getTitle() : null);
+        event.setDescription(msg.hasDescription() ? msg.getDescription() : null);
+        event.setImage(msg.hasImage() ? msg.getImage() : null);
+        event.setThumbnail(msg.hasThumbnail() ? msg.getThumbnail() : null);
+
         return event;
     }
 

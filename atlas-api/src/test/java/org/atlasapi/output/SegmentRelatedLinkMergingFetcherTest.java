@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.Iterables;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.entity.Id;
@@ -78,6 +79,18 @@ public class SegmentRelatedLinkMergingFetcherTest {
     public void testMergeSegmentLinks() throws Exception {
         when(segmentResolver.resolveSegments(
                 ImmutableSet.of(
+                        Id.valueOf(2L),
+                        Id.valueOf(3L),
+                        Id.valueOf(4L)
+                )
+        )).thenReturn(ImmutableList.of(segmentTwo(), segmentThree(), segmentFour()));
+        when(segmentResolver.resolveSegments(
+                ImmutableSet.of(
+                        Id.valueOf(1)
+                )
+        )).thenReturn(ImmutableList.of(segmentOne()));
+        when(segmentResolver.resolveSegments(
+                ImmutableSet.of(
                         Id.valueOf(1L),
                         Id.valueOf(2L),
                         Id.valueOf(3L),
@@ -87,10 +100,10 @@ public class SegmentRelatedLinkMergingFetcherTest {
 
         Item item = new Item();
         item.setSegmentEvents(segmentEvents());
-        SegmentAndEventTuple segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents());
+        Iterable<SegmentAndEventTuple> segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents());
 
-        assertThat(segmentAndEventTuple.getSegment().getRelatedLinks().size(), is(6));
-        assertThat(Sets.intersection(segmentFour().getRelatedLinks(), segmentAndEventTuple.getSegment().getRelatedLinks()).size(), is(0));
+        assertThat(Iterables.getOnlyElement(segmentAndEventTuple).getSegment().getRelatedLinks().size(), is(6));
+        assertThat(Sets.intersection(segmentFour().getRelatedLinks(), Iterables.getOnlyElement(segmentAndEventTuple).getSegment().getRelatedLinks()).size(), is(0));
     }
 
     private ImmutableList<SegmentEvent> segmentEvents() {
@@ -99,21 +112,26 @@ public class SegmentRelatedLinkMergingFetcherTest {
         seOne.setId(Id.valueOf(10L));
         seOne.setSegment(new SegmentRef(Id.valueOf(1l), Publisher.BBC));
         seOne.setOffset(Duration.standardSeconds(0l));
+        seOne.setPublisher(Publisher.BBC);
 
         SegmentEvent seTwo = new SegmentEvent();
         seTwo.setId(Id.valueOf(20L));
         seTwo.setSegment(new SegmentRef(Id.valueOf(2l), Publisher.BBC));
         seTwo.setOffset(Duration.standardSeconds(0l));
+        seTwo.setPublisher(Publisher.PA);
 
         SegmentEvent seThree = new SegmentEvent();
         seThree.setId(Id.valueOf(30L));
         seThree.setSegment(new SegmentRef(Id.valueOf(3l), Publisher.BBC));
         seThree.setOffset(Duration.standardSeconds(0l));
+        seThree.setPublisher(Publisher.PA);
 
         SegmentEvent seFour = new SegmentEvent();
         seFour.setId(Id.valueOf(40L));
         seFour.setSegment(new SegmentRef(Id.valueOf(4l), Publisher.BBC));
         seFour.setOffset(Duration.standardSeconds(200l));
+        seFour.setPublisher(Publisher.PA);
+
         return ImmutableList.of(seOne, seTwo, seThree, seFour);
     }
 }

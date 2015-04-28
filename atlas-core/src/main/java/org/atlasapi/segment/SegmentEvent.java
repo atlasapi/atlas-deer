@@ -2,6 +2,7 @@ package org.atlasapi.segment;
 
 import java.util.Comparator;
 
+import org.atlasapi.content.Described;
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Identified;
 import org.atlasapi.meta.annotations.FieldName;
@@ -11,13 +12,11 @@ import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 
-public class SegmentEvent extends Identified {
+public class SegmentEvent extends Described {
 
     private Integer position;
     private Duration offset;
     private Boolean isChapter;
-    
-    private Description description = Description.EMPTY;
     
     private SegmentRef segment;
     
@@ -38,9 +37,17 @@ public class SegmentEvent extends Identified {
         return this.isChapter;
     }
 
-    @FieldName("description")
-    public Description getDescription() {
-        return this.description;
+    @Override
+    public Described copy() {
+        SegmentEvent copy = new SegmentEvent();
+        Identified.copyTo(this, copy);
+        Described.copyTo(this, copy);
+        copy.setPosition(position);
+        copy.setOffset(offset);
+        copy.setIsChapter(isChapter);
+        copy.setSegment(segment);
+        copy.setVersionId(versionId);
+        return copy;
     }
 
     @FieldName("segment")
@@ -58,10 +65,6 @@ public class SegmentEvent extends Identified {
 
     public void setIsChapter(Boolean isChapter) {
         this.isChapter = isChapter;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     public void setSegment(SegmentRef segment) {

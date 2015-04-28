@@ -28,8 +28,11 @@ public class SegmentEventSerializerTest {
         segmentEvent.setOffset(Duration.standardMinutes(5));
         segmentEvent.setPosition(5);
         segmentEvent.setSegment(new SegmentRef(Id.valueOf(10l), Publisher.BBC));
-        segmentEvent.setDescription(new Description("title", "desc", "img", "thmb"));
-        
+        segmentEvent.setDescription("desc");
+        segmentEvent.setTitle("title");
+        segmentEvent.setImage("img");
+        segmentEvent.setThumbnail("thmb");
+
         byte[] bytes = serializer.serialize(segmentEvent).build().toByteArray();
         
         SegmentEvent deserialized = serializer.deserialize(ContentProtos.SegmentEvent.parseFrom(bytes));
@@ -40,6 +43,9 @@ public class SegmentEventSerializerTest {
         assertThat(deserialized.getPosition(), is(segmentEvent.getPosition()));
         assertThat(deserialized.getSegmentRef(), is(segmentEvent.getSegmentRef()));
         assertThat(deserialized.getDescription(), is(segmentEvent.getDescription()));
-        
+        assertThat(deserialized.getTitle(), is(segmentEvent.getTitle()));
+        assertThat(deserialized.getImage(), is(segmentEvent.getImage()));
+        assertThat(deserialized.getThumbnail(), is(segmentEvent.getThumbnail()));
+
     }
 }

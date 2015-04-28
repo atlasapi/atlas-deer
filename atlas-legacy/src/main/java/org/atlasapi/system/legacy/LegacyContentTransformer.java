@@ -257,7 +257,10 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         se.setOffset(input.getOffset());
         se.setIsChapter(input.getIsChapter());
         org.atlasapi.media.entity.Description d = input.getDescription();
-        se.setDescription(new Description(d.getTitle(), d.getSynopsis(), d.getImage(), d.getThumbnail()));
+        se.setDescription(d.getSynopsis());
+        se.setTitle(d.getTitle());
+        se.setImage(d.getImage());
+        se.setThumbnail(d.getThumbnail());
         org.atlasapi.media.segment.SegmentRef sr = input.getSegment();
         Id segmentId = Id.valueOf(sr.identifier());
         WriteResult<Segment, Segment> legacyMigrationResult = legacySegmentMigrator.migrateLegacySegment(segmentId);
