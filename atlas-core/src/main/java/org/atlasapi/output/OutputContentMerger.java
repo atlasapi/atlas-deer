@@ -33,6 +33,7 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.SeriesAndEpisodeNumber;
 import org.atlasapi.equivalence.SeriesOrder;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
 import com.google.common.base.Function;
@@ -47,7 +48,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-
 
 public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     
@@ -289,11 +289,22 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             notChosenItem.setBroadcasts(Sets.<Broadcast>newHashSet());
             encodings.addAll(notChosenItem.getManifestedAs());
         }
-        Set<SegmentEvent> segmentEvents = Sets.newHashSet(chosen.getSegmentEvents());
-        for (T notChosenItem : notChosenOrdered) {
-            segmentEvents.addAll(notChosenItem.getSegmentEvents());
-            chosen.setSegmentEvents(segmentEvents);
+        ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
+        Publisher chosenPublisher = chosen.getPublisher();
+        for (SegmentEvent segmentEvent : chosen.getSegmentEvents()) {
+            segmentEvent.setPublisher(chosenPublisher);
+            segmentEvents.add(segmentEvent);
         }
+
+        for (T notChosenItem : notChosenOrdered) {
+            if(!chosenPublisher.equals(notChosenItem.getPublisher())) {
+                for (SegmentEvent segmentEvent : notChosenItem.getSegmentEvents()) {
+                    segmentEvent.setPublisher(notChosenItem.getPublisher());
+                    segmentEvents.add(segmentEvent);
+                }
+            }
+        }
+        chosen.setSegmentEvents(segmentEvents.build());
         chosen.setManifestedAs(encodings);
     }
     

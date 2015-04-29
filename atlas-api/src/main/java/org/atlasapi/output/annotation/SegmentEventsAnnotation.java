@@ -40,8 +40,6 @@ public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
     }
 
     private void writeSegmentEvents(FieldWriter writer, Item item, OutputContext ctxt) throws IOException {
-        SegmentAndEventTuple segmentTuple =
-                linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents());
-        writer.writeList(segmentWriter, ImmutableList.of(segmentTuple), ctxt);
+        writer.writeList(segmentWriter, linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents()), ctxt);
     }
 }
