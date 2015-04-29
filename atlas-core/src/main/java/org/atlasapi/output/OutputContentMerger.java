@@ -292,14 +292,12 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
         Publisher chosenPublisher = chosen.getPublisher();
         for (SegmentEvent segmentEvent : chosen.getSegmentEvents()) {
-            segmentEvent.setPublisher(chosenPublisher);
             segmentEvents.add(segmentEvent);
         }
 
         for (T notChosenItem : notChosenOrdered) {
             if(!chosenPublisher.equals(notChosenItem.getPublisher())) {
                 for (SegmentEvent segmentEvent : notChosenItem.getSegmentEvents()) {
-                    segmentEvent.setPublisher(notChosenItem.getPublisher());
                     segmentEvents.add(segmentEvent);
                 }
             }

@@ -24,6 +24,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
@@ -163,6 +164,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             if (!row.isNull(GRAPH_KEY)) {
                 graphs.put(setId, graphSerializer.deserialize(row.getBytes(GRAPH_KEY)));
                 Content content = deserialize(row);
+                if (content instanceof Item) {
+                    Item item = (Item) content;
+                    for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
+                        segmentEvent.setPublisher(item.getPublisher());
+                    }
+                }
                 EquivalenceGraph graphForContent = graphs.get(setId);
                 if (contentSelected(content, graphForContent, selectedSources)) {
                     sets.put(setId, content);
