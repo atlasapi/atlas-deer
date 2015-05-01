@@ -1,6 +1,7 @@
 package org.atlasapi.output;
 
 import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -18,6 +19,7 @@ import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
+import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +55,8 @@ public class StrategyBackedEquivalentsMergerTest {
     
     @Test
     public void testDoesntMergeForNonMergingConfig() {
-        List<Content> merged = merger.merge(ImmutableSet.<Content>of(), 
+        Id id = Id.valueOf(1234);
+        List<Content> merged = merger.merge(id, ImmutableSet.<Content>of(), 
                 nonMergingSources);
         
         assertTrue(merged.isEmpty());
@@ -62,7 +65,8 @@ public class StrategyBackedEquivalentsMergerTest {
     
     @Test
     public void testDoesntMergeForEmptyEquivalenceSet() {
-        List<Content> merged = merger.merge(ImmutableSet.<Content>of(), 
+        Id id = Id.valueOf(1234);
+        List<Content> merged = merger.merge(id, ImmutableSet.<Content>of(), 
                 mergingSources);
         
         assertTrue(merged.isEmpty());
@@ -71,8 +75,8 @@ public class StrategyBackedEquivalentsMergerTest {
 
     @Test
     public void testDoesntMergeForSingletonEquivalenceSet() {
-        Content brand = new Brand();
-        List<Content> merged = merger.merge(ImmutableSet.of(brand), 
+        Content brand = new Brand(Id.valueOf(1), Publisher.BBC);
+        List<Content> merged = merger.merge(brand.getId(), ImmutableSet.of(brand), 
                 mergingSources);
         
         assertThat(merged.size(), is(1));
@@ -91,13 +95,13 @@ public class StrategyBackedEquivalentsMergerTest {
     @SuppressWarnings("unchecked")
     public void testMergeSortingIsStable() {
         
-        Brand one = new Brand("one","one",Publisher.BBC);
-        Brand two = new Brand("two", "two",Publisher.BBC);
-        Brand three = new Brand("three", "three",Publisher.TED);
+        Content one = new Brand(Id.valueOf(1),Publisher.BBC);
+        Content two = new Brand(Id.valueOf(2),Publisher.BBC);
+        Content three = new Brand(Id.valueOf(3),Publisher.TED);
         
-        ImmutableList<Brand> contents = ImmutableList.of(one, two, three);
+        ImmutableList<Content> contents = ImmutableList.of(one, two, three);
         
-        for (List<Brand> contentList : Collections2.permutations(contents)) {
+        for (List<Content> contentList : Collections2.permutations(contents)) {
             
             when(strategy.merge(
                 argThat(any(Content.class)), 
@@ -105,21 +109,59 @@ public class StrategyBackedEquivalentsMergerTest {
                 argThat(is(mergingSources))
             )).thenReturn(one);
             
-            merger.merge(contentList, mergingSources);
+            merger.merge(one.getId(), contentList, mergingSources);
             
             if (contentList.get(0).equals(one)) {
                 verify(strategy)
-                    .merge(one, ImmutableList.of(two, three), mergingSources);
+                    .merge(argThat(is(one)), argThat(contains(two, three)), argThat(is(mergingSources)));
             } else if (contentList.get(0).equals(two)) {
                 verify(strategy)
-                    .merge(two, ImmutableList.of(one, three), mergingSources);
+                    .merge(argThat(is(one)), argThat(contains(two, three)), argThat(is(mergingSources)));
             } else {
                 verify(strategy)
-                    .merge(contentList.get(1), ImmutableList.of(contentList.get(2), three), mergingSources);
+                    .merge(argThat(is(one)), argThat(contains(two, three)), argThat(is(mergingSources)));
             }
             
             reset(strategy);
         }
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMergeVictimIsRequestedContentIdIfVictimMatchesMostPrecedentSource() {
+        Content one = new Brand(Id.valueOf(1),Publisher.BBC);
+        Content two = new Brand(Id.valueOf(2),Publisher.BBC);
+        Content three = new Brand(Id.valueOf(3),Publisher.TED);
+        
+        setUpMockStrategyToReturn(one);
+        List<Content> merged = merger.merge(one.getId(), ImmutableSet.of(one, two, three), 
+                mergingSources);
+        
+        verify(strategy)
+            .merge(argThat(is(one)), argThat(contains(two, three)), argThat(is(mergingSources)));
+        reset(strategy);
+        setUpMockStrategyToReturn(one);
+        merged = merger.merge(two.getId(), ImmutableSet.of(one, two, three), 
+                mergingSources);
+       
+        verify(strategy)
+            .merge(argThat(is(two)), argThat(contains(one, three)), argThat(is(mergingSources)));
+        reset(strategy);
+        setUpMockStrategyToReturn(one); 
+        merged = merger.merge(three.getId(), ImmutableSet.of(one, two, three), 
+                mergingSources);
+        
+        verify(strategy)
+            .merge(argThat(is(one)), argThat(contains(two, three)), argThat(is(mergingSources)));
+        reset(strategy);
+    }
+    
+    private void setUpMockStrategyToReturn(Content content) {
+        when(strategy.merge(
+                argThat(any(Content.class)), 
+                anyCollectionOf(Content.class), 
+                argThat(is(mergingSources))
+            )).thenReturn(content);
     }
 
 }
