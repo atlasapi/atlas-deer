@@ -103,7 +103,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Content> T merge(T chosen, final Iterable<T> equivalents, final ApplicationSources sources) {
+    public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents, final ApplicationSources sources) {
         chosen.setId(lowestId(chosen));
         return chosen.accept(new ContentVisitorAdapter<T>() {
             
