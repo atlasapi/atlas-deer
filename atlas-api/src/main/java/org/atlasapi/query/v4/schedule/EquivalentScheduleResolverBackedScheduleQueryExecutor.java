@@ -28,6 +28,7 @@ import org.atlasapi.schedule.EquivalentScheduleResolver;
 import org.atlasapi.schedule.Schedule;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -35,6 +36,7 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
+
 import org.joda.time.Interval;
 
 
@@ -137,7 +139,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
             ApplicationSources applicationSources) {
         ImmutableList.Builder<ItemAndBroadcast> iabs = ImmutableList.builder();
         for (EquivalentScheduleEntry entry : entries) {
-            List<Item> mergedItems = equivalentsMerger.merge(entry.getItems().getResources(), applicationSources);
+            List<Item> mergedItems = equivalentsMerger.merge(Optional.<Id>absent(), entry.getItems().getResources(), applicationSources);
             iabs.add(new ItemAndBroadcast(Iterables.getOnlyElement(mergedItems), entry.getBroadcast()));
         }
         return iabs.build();

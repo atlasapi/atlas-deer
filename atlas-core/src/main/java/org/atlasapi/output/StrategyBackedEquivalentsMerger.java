@@ -12,6 +12,7 @@ import org.atlasapi.entity.Sourceds;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
 import org.atlasapi.equivalence.Equivalable;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
@@ -28,7 +29,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
     }
 
     @Override
-    public <T extends E> List<T> merge(final Id id, Iterable<T> equivalents, ApplicationSources sources) {
+    public <T extends E> List<T> merge(final Optional<Id> id, Iterable<T> equivalents, ApplicationSources sources) {
         if (!sources.isPrecedenceEnabled()) {
             return ImmutableList.copyOf(equivalents);
         }
@@ -38,10 +39,13 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
             return sortedEquivalents;
         }
         T chosen = sortedEquivalents.get(0);
-        T requested = Iterables.find(equivalents, idIs(id));
         
-        if (chosen.getPublisher().equals(requested.getPublisher())) {
-            chosen = requested;
+        if (id.isPresent()) {
+            T requested = Iterables.find(equivalents, idIs(id.get()));
+            
+            if (chosen.getPublisher().equals(requested.getPublisher())) {
+                chosen = requested;
+            }
         }
         
         Iterable<T> notChosen = Iterables.filter(sortedEquivalents, Predicates.not(idIs(chosen.getId())));

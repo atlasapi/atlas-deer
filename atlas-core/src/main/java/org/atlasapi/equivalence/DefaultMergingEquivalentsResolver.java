@@ -11,6 +11,7 @@ import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -50,6 +51,6 @@ public class DefaultMergingEquivalentsResolver<E extends Equivalable<E>>
     }
 
     private Iterable<E> merge(Id id, Collection<E> equivs, ApplicationSources sources) {
-        return merger.merge(id, equivs, sources);
+        return merger.merge(Optional.of(id), equivs, sources);
     }
 }

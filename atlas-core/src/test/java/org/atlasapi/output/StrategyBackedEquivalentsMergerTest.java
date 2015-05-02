@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -56,7 +57,7 @@ public class StrategyBackedEquivalentsMergerTest {
     @Test
     public void testDoesntMergeForNonMergingConfig() {
         Id id = Id.valueOf(1234);
-        List<Content> merged = merger.merge(id, ImmutableSet.<Content>of(), 
+        List<Content> merged = merger.merge(Optional.of(id), ImmutableSet.<Content>of(), 
                 nonMergingSources);
         
         assertTrue(merged.isEmpty());
@@ -66,7 +67,7 @@ public class StrategyBackedEquivalentsMergerTest {
     @Test
     public void testDoesntMergeForEmptyEquivalenceSet() {
         Id id = Id.valueOf(1234);
-        List<Content> merged = merger.merge(id, ImmutableSet.<Content>of(), 
+        List<Content> merged = merger.merge(Optional.of(id), ImmutableSet.<Content>of(), 
                 mergingSources);
         
         assertTrue(merged.isEmpty());
@@ -76,7 +77,7 @@ public class StrategyBackedEquivalentsMergerTest {
     @Test
     public void testDoesntMergeForSingletonEquivalenceSet() {
         Content brand = new Brand(Id.valueOf(1), Publisher.BBC);
-        List<Content> merged = merger.merge(brand.getId(), ImmutableSet.of(brand), 
+        List<Content> merged = merger.merge(Optional.of(brand.getId()), ImmutableSet.of(brand), 
                 mergingSources);
         
         assertThat(merged.size(), is(1));
@@ -109,7 +110,7 @@ public class StrategyBackedEquivalentsMergerTest {
                 argThat(is(mergingSources))
             )).thenReturn(one);
             
-            merger.merge(one.getId(), contentList, mergingSources);
+            merger.merge(Optional.of(one.getId()), contentList, mergingSources);
             
             if (contentList.get(0).equals(one)) {
                 verify(strategy)
@@ -134,21 +135,21 @@ public class StrategyBackedEquivalentsMergerTest {
         Content three = new Brand(Id.valueOf(3),Publisher.TED);
         
         setUpMockStrategyToReturn(one);
-        List<Content> merged = merger.merge(one.getId(), ImmutableSet.of(one, two, three), 
+        List<Content> merged = merger.merge(Optional.of(one.getId()), ImmutableSet.of(one, two, three), 
                 mergingSources);
         
         verify(strategy)
             .merge(argThat(is(one)), argThat(contains(two, three)), argThat(is(mergingSources)));
         reset(strategy);
         setUpMockStrategyToReturn(one);
-        merged = merger.merge(two.getId(), ImmutableSet.of(one, two, three), 
+        merged = merger.merge(Optional.of(two.getId()), ImmutableSet.of(one, two, three), 
                 mergingSources);
        
         verify(strategy)
             .merge(argThat(is(two)), argThat(contains(one, three)), argThat(is(mergingSources)));
         reset(strategy);
         setUpMockStrategyToReturn(one); 
-        merged = merger.merge(three.getId(), ImmutableSet.of(one, two, three), 
+        merged = merger.merge(Optional.of(three.getId()), ImmutableSet.of(one, two, three), 
                 mergingSources);
         
         verify(strategy)

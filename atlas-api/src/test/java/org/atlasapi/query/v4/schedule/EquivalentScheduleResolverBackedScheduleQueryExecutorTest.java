@@ -58,6 +58,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -201,13 +202,13 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         when(scheduleResolver.resolveSchedules(argThat(hasItems(channel)), eq(interval), eq(query.getSource()), 
         argThat(is(query.getContext().getApplicationSources().getEnabledReadSources()))))
             .thenReturn(Futures.immediateFuture(new EquivalentSchedule(ImmutableList.of(channelSchedule), interval)));
-        when(equivalentsMerger.merge(ImmutableSet.of(scheduleItem, equivalentItem), appSources))
+        when(equivalentsMerger.merge(Optional.<Id>absent(), ImmutableSet.of(scheduleItem, equivalentItem), appSources))
             .thenReturn(ImmutableList.of(equivalentItem));
         
         QueryResult<ChannelSchedule> result = executor.execute(query);
         
         assertThat(result.getOnlyResource().getEntries().get(0).getItem(), sameInstance(equivalentItem));
-        verify(equivalentsMerger).merge(ImmutableSet.of(scheduleItem, equivalentItem), appSources);
+        verify(equivalentsMerger).merge(Optional.<Id>absent(), ImmutableSet.of(scheduleItem, equivalentItem), appSources);
         
     }
     
