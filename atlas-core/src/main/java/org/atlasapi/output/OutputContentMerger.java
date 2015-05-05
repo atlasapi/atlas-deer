@@ -109,13 +109,13 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             
             @Override
             protected T visitContainer(Container container) {
-                mergeIn(sources, container, (List<Container>) equivalents);
+                mergeIn(sources, container, (Iterable<Container>) equivalents);
                 return (T) container;
             }
             
             @Override
             protected T visitItem(Item item) {
-                mergeIn(sources, item, (List<Item>) equivalents);
+                mergeIn(sources, item, (Iterable<Item>) equivalents);
                 return (T) item;
             }
             
@@ -438,7 +438,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     };
 
-    public <T extends Item> void mergeIn(ApplicationSources sources, Container chosen, List<Container> notChosen) {
+    public <T extends Item> void mergeIn(ApplicationSources sources, Container chosen, Iterable<Container> notChosen) {
         mergeContent(sources, chosen, notChosen);
     }
 
