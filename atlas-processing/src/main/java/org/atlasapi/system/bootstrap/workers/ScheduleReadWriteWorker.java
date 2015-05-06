@@ -3,9 +3,16 @@ package org.atlasapi.system.bootstrap.workers;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTask;
@@ -39,7 +46,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     
     @Override
     public void process(ScheduleUpdateMessage msg) {
-        String updateMsg = String.format("update %s %s %s-%s", 
+        String updateMsg = String.format("update %s %s %s-%s",
                 msg.getSource(), msg.getChannel(), msg.getUpdateStart(), msg.getUpdateEnd());
         
         Maybe<Publisher> source = Publisher.fromKey(msg.getSource());
@@ -53,17 +60,20 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             return;
         }
         
-        long cid = idCodec.decode(msg.getChannel()).longValue();
-        Maybe<Channel> channel = channelResolver.fromId(cid);
-        if (!channel.hasValue()) {
-            log.warn("{}: unknown channel {} ({})", updateMsg, msg.getChannel(), cid);
-        }
-        
-        Interval interval = new Interval(msg.getUpdateStart(), msg.getUpdateEnd());
+        Id cid = Id.valueOf(idCodec.decode(msg.getChannel()));
+        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList.of(cid));
+
+
         
         log.debug("{}: processing", updateMsg);
         try {
-            UpdateProgress result = taskFactory.create(src, channel.requireValue(), interval).call();
+            Resolved<Channel> resolvedChannel = Futures.get(channelFuture, 1, TimeUnit.MINUTES, Exception.class);
+
+            if (resolvedChannel.getResources().isEmpty()) {
+                log.warn("{}: unknown channel {} ({})", updateMsg, msg.getChannel(), cid);
+            }
+            Interval interval = new Interval(msg.getUpdateStart(), msg.getUpdateEnd());
+            UpdateProgress result = taskFactory.create(src, Iterables.getOnlyElement(resolvedChannel.getResources()), interval).call();
             log.debug("{}: processed: {}", updateMsg, result);
         } catch (Exception e) {
             log.error("failed " + updateMsg, e);

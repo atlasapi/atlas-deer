@@ -9,12 +9,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraUtil;
 import org.joda.time.DateTime;
@@ -128,7 +128,8 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
                     return input.getSourceId();
                 }
             }, ItemAndBroadcast.toBroadcast());
-    
+
+
     private CassandraScheduleStore(AstyanaxContext<Keyspace> context, String name, 
             ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender, Clock clock, 
             ConsistencyLevel readCl, ConsistencyLevel writeCl) {
@@ -273,7 +274,7 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
         for (LocalDate date : new ScheduleIntervalDates(interval)) {
             DateTime start = date.toDateTimeAtStartOfDay(DateTimeZones.UTC);
             Interval dayInterval = new Interval(start, start.plusDays(1));
-            channelSchedules.add(schedule(channel, dayInterval, rows.getRow(keyFor(source, channel, date))));
+            channelSchedules.add(schedule(channel, dayInterval, rows.getRow(keyFor(source, channel.getId().longValue(), date))));
         }
         return channelSchedules;
     }
@@ -287,7 +288,11 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
                     new ChannelSchedule(
                             channel,
                             interval,
-                            pastSchedule(rows.getRow(keyFor(source, channel, date)))
+                            pastSchedule(
+                                    rows.getRow(
+                                            keyFor(source, channel.getId().longValue(), date)
+                                    )
+                            )
                     )
             );
         }
@@ -341,18 +346,18 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
     }
     
     private String key(Publisher source, ChannelSchedule block) {
-        return keyFor(source, block.getChannel(), block.getInterval().getStart().toLocalDate());
+        return keyFor(source, block.getChannel().getId().longValue(), block.getInterval().getStart().toLocalDate());
     }
     
-    private String keyFor(Publisher source, Channel channel, LocalDate day) {
-        return String.format("%s-%s-%s", source.key(), channel.getId(), day.toString());
+    private String keyFor(Publisher source, Long channelId, LocalDate day) {
+        return String.format("%s-%s-%s", source.key(), channelId, day.toString());
     }
 
     private Iterable<String> rowKeys(final Channel channel, Interval interval, final Publisher source) {
         return Iterables.transform(new ScheduleIntervalDates(interval), new Function<LocalDate, String>() {
             @Override
             public String apply(LocalDate input) {
-                return keyFor(source, channel, input);
+                return keyFor(source, channel.getId().longValue(), input);
             }
         });
     }

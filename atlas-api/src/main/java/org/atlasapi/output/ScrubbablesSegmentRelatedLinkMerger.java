@@ -83,8 +83,10 @@ public class ScrubbablesSegmentRelatedLinkMerger implements SegmentRelatedLinkMe
      * Creates the interval defined by the offset and duration found on a Segment & SegmentEvent.
      */
     private Interval intervalFrom(Segment key, SegmentEvent value) {
-        return new Interval(value.getOffset().getStandardSeconds(), value.getOffset()
-                .plus(key.getDuration()).getStandardSeconds());
+        return new Interval(
+                value.getOffset().getStandardSeconds(),
+                value.getOffset().plus(key.getDuration()).getStandardSeconds()
+        );
     }
 
     private ImmutableMultimap<Segment, SegmentEvent> filterNonOverlapping(

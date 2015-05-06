@@ -9,10 +9,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.joda.time.Interval;
 import org.junit.Before;
@@ -30,7 +30,7 @@ public class ScheduleBlockUpdaterTest {
     private final ScheduleBlockUpdater updater = new ScheduleBlockUpdater(); 
 
     private final Publisher source = Publisher.METABROADCAST;
-    private final Channel channel = Channel.builder().build();
+    private final Channel channel = Channel.builder(Publisher.BBC).build();
 
     @Before
     public void setUp() {

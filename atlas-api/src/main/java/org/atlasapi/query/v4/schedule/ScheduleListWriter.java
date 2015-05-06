@@ -2,8 +2,8 @@ package org.atlasapi.query.v4.schedule;
 
 import java.io.IOException;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;

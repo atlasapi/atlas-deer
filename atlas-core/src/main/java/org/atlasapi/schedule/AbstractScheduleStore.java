@@ -19,7 +19,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ScheduleRef.Builder;
 import org.joda.time.DateTime;
@@ -126,7 +126,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
     }
 
     private ScheduleRef scheduleRef(List<ScheduleHierarchy> content, Channel channel, Interval interval) {
-        Id cid = Id.valueOf(channel.getId());
+        Id cid = channel.getId();
         Builder builder = ScheduleRef.forChannel(cid, interval);
         for (ScheduleHierarchy scheduleHierarchy : content) {
             ItemAndBroadcast iab = scheduleHierarchy.getItemAndBroadcast();

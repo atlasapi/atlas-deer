@@ -4,15 +4,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.QueryContext;
@@ -26,6 +28,7 @@ import org.atlasapi.schedule.EquivalentScheduleResolver;
 import org.atlasapi.schedule.Schedule;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -33,6 +36,8 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
+
+import org.joda.time.Interval;
 
 
 public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements ScheduleQueryExecutor {
@@ -54,10 +59,26 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
     public QueryResult<ChannelSchedule> execute(ScheduleQuery query)
             throws QueryExecutionException {
         
-        List<Channel> channels = resolveChannels(query);
+        Iterable<Channel> channels = resolveChannels(query);
         
         ImmutableSet<Publisher> selectedSources = selectedSources(query);
-        ListenableFuture<EquivalentSchedule> schedule = scheduleResolver.resolveSchedules(channels, query.getInterval(), query.getSource(), selectedSources);
+        ListenableFuture<EquivalentSchedule> schedule;
+        if(query.getEnd().isPresent()) {
+            schedule = scheduleResolver.resolveSchedules(
+                    channels,
+                    new Interval(query.getStart(), query.getEnd().get()),
+                    query.getSource(),
+                    selectedSources
+            );
+        } else {
+            schedule = scheduleResolver.resolveSchedules(
+                    channels,
+                    query.getStart(),
+                    query.getCount().get(),
+                    query.getSource(),
+                    selectedSources
+            );
+        }
         
         if (query.isMultiChannel()) {
             return QueryResult.listResult(channelSchedules(schedule, query), query.getContext());
@@ -72,19 +93,18 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
         return ImmutableSet.of(query.getSource());
     }
 
-    private ImmutableList<Channel> resolveChannels(ScheduleQuery query) throws NotFoundException {
-        ImmutableList<Channel> channels;
+    private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
+        Iterable<Id> channelIds;
         if (query.isMultiChannel()) {
-            List<Long> ids = Lists.transform(query.getChannelIds().asList(),Id.toLongValue());
-            channels = ImmutableList.copyOf(channelResolver.forIds(ids));
+            channelIds = query.getChannelIds();
         } else {
-            Maybe<Channel> possibleChannel = channelResolver.fromId(query.getChannelId().longValue());
-            if (!possibleChannel.hasValue()) {
-                throw new NotFoundException(query.getChannelId());
-            }
-            channels = ImmutableList.of(possibleChannel.requireValue());
+            channelIds = ImmutableSet.of(query.getChannelId());
         }
-        return channels;
+        Resolved<Channel> resolvedChannels = Futures.get(channelResolver.resolveIds(channelIds), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        if (resolvedChannels.getResources().isEmpty()) {
+            throw new NotFoundException(Iterables.getFirst(channelIds, null));
+        }
+        return resolvedChannels.getResources();
     }
 
     private List<ChannelSchedule> channelSchedules(ListenableFuture<EquivalentSchedule> schedule, ScheduleQuery query)
@@ -119,7 +139,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
             ApplicationSources applicationSources) {
         ImmutableList.Builder<ItemAndBroadcast> iabs = ImmutableList.builder();
         for (EquivalentScheduleEntry entry : entries) {
-            List<Item> mergedItems = equivalentsMerger.merge(entry.getItems().getResources(), applicationSources);
+            List<Item> mergedItems = equivalentsMerger.merge(Optional.<Id>absent(), entry.getItems().getResources(), applicationSources);
             iabs.add(new ItemAndBroadcast(Iterables.getOnlyElement(mergedItems), entry.getBroadcast()));
         }
         return iabs.build();

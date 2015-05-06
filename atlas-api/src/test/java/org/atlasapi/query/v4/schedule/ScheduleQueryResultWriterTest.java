@@ -8,12 +8,12 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
@@ -26,6 +26,7 @@ import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.output.ContainerSummaryResolver;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -46,14 +47,14 @@ public class ScheduleQueryResultWriterTest {
     private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
     private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter("broadcasts", SubstitutionTableNumberCodec.lowerCaseOnly());
     private final EntityListWriter<ChannelSchedule> scheduleWriter
-        = new ScheduleListWriter(new LegacyChannelListWriter(channelAnnotations), new ScheduleEntryListWriter(contentWriter, broadcastWriter));
+        = new ScheduleListWriter(new ChannelListWriter(channelAnnotations), new ScheduleEntryListWriter(contentWriter, broadcastWriter));
     private final EntityWriter<Object> licenseWriter = new LicenseWriter(new License("test"));
     private final ScheduleQueryResultWriter writer = new ScheduleQueryResultWriter(scheduleWriter, licenseWriter, new RequestWriter());
       
     
     @Test
     public void testWrite() throws IOException {
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1234l);
         
         DateTime from = new DateTime(0, DateTimeZones.UTC);

@@ -33,6 +33,7 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.SeriesAndEpisodeNumber;
 import org.atlasapi.equivalence.SeriesOrder;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
 import com.google.common.base.Function;
@@ -47,7 +48,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-
 
 public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     
@@ -103,19 +103,19 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Content> T merge(T chosen, final Iterable<T> equivalents, final ApplicationSources sources) {
+    public <T extends Content> T merge(T chosen, final Iterable<? extends T> equivalents, final ApplicationSources sources) {
         chosen.setId(lowestId(chosen));
         return chosen.accept(new ContentVisitorAdapter<T>() {
             
             @Override
             protected T visitContainer(Container container) {
-                mergeIn(sources, container, (List<Container>) equivalents);
+                mergeIn(sources, container, (Iterable<Container>) equivalents);
                 return (T) container;
             }
             
             @Override
             protected T visitItem(Item item) {
-                mergeIn(sources, item, (List<Item>) equivalents);
+                mergeIn(sources, item, (Iterable<Item>) equivalents);
                 return (T) item;
             }
             
@@ -289,11 +289,20 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             notChosenItem.setBroadcasts(Sets.<Broadcast>newHashSet());
             encodings.addAll(notChosenItem.getManifestedAs());
         }
-        Set<SegmentEvent> segmentEvents = Sets.newHashSet(chosen.getSegmentEvents());
-        for (T notChosenItem : notChosenOrdered) {
-            segmentEvents.addAll(notChosenItem.getSegmentEvents());
-            chosen.setSegmentEvents(segmentEvents);
+        ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
+        Publisher chosenPublisher = chosen.getPublisher();
+        for (SegmentEvent segmentEvent : chosen.getSegmentEvents()) {
+            segmentEvents.add(segmentEvent);
         }
+
+        for (T notChosenItem : notChosenOrdered) {
+            if(!chosenPublisher.equals(notChosenItem.getPublisher())) {
+                for (SegmentEvent segmentEvent : notChosenItem.getSegmentEvents()) {
+                    segmentEvents.add(segmentEvent);
+                }
+            }
+        }
+        chosen.setSegmentEvents(segmentEvents.build());
         chosen.setManifestedAs(encodings);
     }
     
@@ -429,7 +438,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     };
 
-    public <T extends Item> void mergeIn(ApplicationSources sources, Container chosen, List<Container> notChosen) {
+    public <T extends Item> void mergeIn(ApplicationSources sources, Container chosen, Iterable<Container> notChosen) {
         mergeContent(sources, chosen, notChosen);
     }
 

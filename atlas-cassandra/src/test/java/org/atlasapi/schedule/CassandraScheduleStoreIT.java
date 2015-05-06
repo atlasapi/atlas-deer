@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.netflix.astyanax.serializers.AsciiSerializer;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.CassandraContentStore;
@@ -30,7 +31,6 @@ import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.joda.time.DateTime;
@@ -84,7 +84,7 @@ public class CassandraScheduleStoreIT {
     private CassandraScheduleStore store;
     
     private final Publisher source = Publisher.METABROADCAST;
-    private final Channel channel = Channel.builder().build();
+    private final Channel channel = Channel.builder(Publisher.BBC).build();
 
     @BeforeClass
     public static void setup() throws ConnectionException {

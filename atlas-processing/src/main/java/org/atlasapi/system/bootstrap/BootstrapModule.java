@@ -86,7 +86,7 @@ public class BootstrapModule {
         DayRangeGenerator dayRangeGenerator = new DayRangeGenerator().withLookAhead(7).withLookBack(7);
         Set<Publisher> sources = ImmutableSet.of(Publisher.PA);
         Supplier<Iterable<ChannelIntervalScheduleBootstrapTask>> supplier = 
-            new SourceChannelIntervalTaskSupplier<ChannelIntervalScheduleBootstrapTask>(taskFactory, persistence.channelStore(), dayRangeGenerator, sources, new SystemClock());
+            new SourceChannelIntervalTaskSupplier<ChannelIntervalScheduleBootstrapTask>(taskFactory, persistence.channelResolver(), dayRangeGenerator, sources, new SystemClock());
         ExecutorService executor = Executors.newFixedThreadPool(10, 
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("schedule-bootstrap-%d").build());
         return new ExecutorServiceScheduledTask<UpdateProgress>(executor, supplier, 10, 1, TimeUnit.MINUTES);
@@ -107,7 +107,7 @@ public class BootstrapModule {
     public ScheduleBootstrapController scheduleBootstrapController() {
         return new ScheduleBootstrapController(
                 workers.scheduleBootstrapTaskFactory(),
-                persistence.channelStore(),
+                persistence.channelResolver(),
                 executorService(NUMBER_OF_SCHECHULE_CONTROLLER_THREADS, "ScheduleBootstrapController"),
                 scheduleBootstrapper()
         );

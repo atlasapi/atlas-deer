@@ -7,10 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
@@ -43,20 +46,6 @@ public class SegmentRelatedLinkMergingFetcher {
             return input.getSegmentRef().getId();
         }
     };
-    public static final Ordering<SegmentEvent> SEGMENT_EVENT_ORDERING = new Ordering<SegmentEvent>() {
-        @Override
-        public int compare(SegmentEvent left, SegmentEvent right) {
-            if (left == null && right == null) { return 0; }
-            if (left == null) { return 1; }
-            if (right == null) { return -1; }
-            SegmentRef leftRef = left.getSegmentRef();
-            SegmentRef rightRef = right.getSegmentRef();
-            if (leftRef == null && rightRef == null) { return 0; }
-            if (leftRef == null) { return 1; }
-            if (rightRef == null) { return -1; }
-            return leftRef.getId().compareTo(rightRef.getId());
-        }
-    };
     private final SegmentRelatedLinkMerger segmentRelatedLinkMerger;
     private final SegmentResolver segmentResolver;
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -77,22 +66,47 @@ public class SegmentRelatedLinkMergingFetcher {
      * @return A tuple containing the SegmentEvent and referenced SegmentEvent, with all RelatedLinks
      * from other merged Segments into the contained Segment. Or null if the list was empty.
      */
-    public SegmentAndEventTuple mergeSegmentLinks(List<SegmentEvent> segmentEvents) {
+    public Iterable<SegmentAndEventTuple> mergeSegmentLinks(List<SegmentEvent> segmentEvents) {
         if (segmentEvents.isEmpty()) {
             return null;
         }
-        segmentEvents = SEGMENT_EVENT_ORDERING.nullsLast().sortedCopy(segmentEvents);
-        ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
-        SegmentEvent selectedSegmentEvent = segmentEvents.iterator().next();
-        Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse().get(selectedSegmentEvent));
+        final Publisher chosenPublisher = Iterables.getFirst(segmentEvents, null).getPublisher();
+        Iterable<SegmentEvent> publisherSegments = Iterables.filter(segmentEvents, new Predicate<SegmentEvent>() {
+            @Override
+            public boolean apply(SegmentEvent input) {
+                return input.getPublisher().equals(chosenPublisher);
+            }
+        });
 
-        selectedSegment.setRelatedLinks(
-                segmentRelatedLinkMerger.getLinks(selectedSegment, selectedSegmentEvent, resolveSegments(segmentEvents))
-        );
-        return new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent);
+        Iterable<SegmentEvent> otherPublisherSegments = Iterables.filter(segmentEvents, new Predicate<SegmentEvent>() {
+            @Override
+            public boolean apply(SegmentEvent input) {
+                return !input.getPublisher().equals(chosenPublisher);
+            }
+        });
+
+        ImmutableList.Builder<SegmentAndEventTuple> segmentAndEvents = ImmutableList.builder();
+        ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
+        for (SegmentEvent selectedSegmentEvent : publisherSegments) {
+            Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse().get(selectedSegmentEvent));
+            ImmutableList.Builder<SegmentEvent> segmentsToResolve = ImmutableList.builder();
+            segmentsToResolve.add(selectedSegmentEvent);
+            segmentsToResolve.addAll(otherPublisherSegments);
+            selectedSegment.setRelatedLinks(
+                    segmentRelatedLinkMerger.getLinks(
+                            selectedSegment,
+                            selectedSegmentEvent,
+                            resolveSegments(segmentsToResolve.build())
+                    )
+            );
+            segmentAndEvents.add(new SegmentAndEventTuple(selectedSegment, selectedSegmentEvent));
+
+        }
+        return segmentAndEvents.build();
+
     }
 
-    private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(final List<SegmentEvent> segmentEvents) {
+    private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(final Iterable<SegmentEvent> segmentEvents) {
         final ImmutableListMultimap<Id, SegmentEvent> segmentEventToSegmentIds = Multimaps.index(
                 segmentEvents,
                 SEG_EVENT_TO_SEG_ID

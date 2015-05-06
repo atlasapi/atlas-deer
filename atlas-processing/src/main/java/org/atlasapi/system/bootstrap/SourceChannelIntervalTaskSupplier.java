@@ -3,9 +3,12 @@ package org.atlasapi.system.bootstrap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
-import org.atlasapi.media.channel.Channel;
-import org.atlasapi.media.channel.ChannelResolver;
+import com.google.common.util.concurrent.Futures;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.media.entity.Publisher;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
@@ -82,7 +85,15 @@ public class SourceChannelIntervalTaskSupplier<T> implements Supplier<Iterable<T
     @Override
     public Iterable<T> get() {
         final DayRange dayRange = dayRangeGenerator.generate(clock.now().toLocalDate());
-        final Iterable<Channel> channels = channelResolver.all();
+        final Iterable<Channel> channels;
+        try {
+            channels = Futures.get(
+                    channelResolver.resolveChannels(ChannelQuery.builder().build()),
+                    1, TimeUnit.MINUTES,
+                    Exception.class).getResources();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         return new Iterable<T>() {
             @Override
             public Iterator<T> iterator() {

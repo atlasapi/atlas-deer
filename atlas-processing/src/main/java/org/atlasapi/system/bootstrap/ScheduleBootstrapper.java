@@ -7,7 +7,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.metabroadcast.common.scheduling.UpdateProgress;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.joda.time.Interval;
 import org.slf4j.Logger;

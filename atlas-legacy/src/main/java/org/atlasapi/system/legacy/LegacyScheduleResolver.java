@@ -5,10 +5,10 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.List;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.media.entity.Schedule.ScheduleChannel;
@@ -25,16 +25,20 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import javax.annotation.Nullable;
+
 
 public class LegacyScheduleResolver implements ScheduleResolver {
 
     private final org.atlasapi.persistence.content.ScheduleResolver legacyResolver;
     private final LegacyContentTransformer transformer;
+    private final LegacyChannelTransformer channelTransformer;
 
     public LegacyScheduleResolver(org.atlasapi.persistence.content.ScheduleResolver legacyResolver, LegacySegmentMigrator legacySegmentMigrator,
                                   ChannelResolver channelResolver) {
         this.legacyResolver = checkNotNull(legacyResolver);
         this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
+        this.channelTransformer = new LegacyChannelTransformer();
     }
 
     @Override
@@ -53,7 +57,11 @@ public class LegacyScheduleResolver implements ScheduleResolver {
             new Function<ScheduleChannel, ChannelSchedule>() {
                 @Override
                 public ChannelSchedule apply(ScheduleChannel input) {
-                    return new ChannelSchedule(input.channel(), interval, toIabs(input.items(),input.channel()));
+                    return new ChannelSchedule(
+                            channelTransformer.apply(input.channel()),
+                            interval,
+                            toIabs(input.items(),channelTransformer.apply(input.channel()))
+                    );
                 }
             }
         ));
@@ -79,7 +87,15 @@ public class LegacyScheduleResolver implements ScheduleResolver {
 
     private org.atlasapi.media.entity.Schedule resolveLegacy(Iterable<Channel> channels,
             Interval interval, Publisher source) {
-        return legacyResolver.unmergedSchedule(interval.getStart(), interval.getEnd(), channels, ImmutableSet.of(source));
+
+        Iterable<org.atlasapi.media.channel.Channel> legacyChannels = Iterables.transform(channels, new Function<Channel, org.atlasapi.media.channel.Channel>() {
+            @Nullable
+            @Override
+            public org.atlasapi.media.channel.Channel apply(Channel input) {
+                return channelTransformer.toBasicLegacyChannel(input);
+            }
+        });
+        return legacyResolver.unmergedSchedule(interval.getStart(), interval.getEnd(), legacyChannels, ImmutableSet.of(source));
     }
 
 }

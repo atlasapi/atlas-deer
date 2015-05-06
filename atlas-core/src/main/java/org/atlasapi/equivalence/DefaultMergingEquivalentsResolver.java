@@ -11,6 +11,7 @@ import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -30,6 +31,7 @@ public class DefaultMergingEquivalentsResolver<E extends Equivalable<E>>
             ApplicationSources sources, Set<Annotation> activeAnnotations) {
         ListenableFuture<ResolvedEquivalents<E>> unmerged
             = resolver.resolveIds(ids, sources.getEnabledReadSources(), activeAnnotations);
+        
         return Futures.transform(unmerged, mergeUsing(sources));
     }
 
@@ -38,16 +40,17 @@ public class DefaultMergingEquivalentsResolver<E extends Equivalable<E>>
         return new Function<ResolvedEquivalents<E>, ResolvedEquivalents<E>>() {
             @Override
             public ResolvedEquivalents<E> apply(ResolvedEquivalents<E> input) {
+                
                 ResolvedEquivalents.Builder<E> builder = ResolvedEquivalents.builder();
                 for (Map.Entry<Id, Collection<E>> entry : input.asMap().entrySet()) {
-                    builder.putEquivalents(entry.getKey(), merge(entry.getValue(), sources));
+                    builder.putEquivalents(entry.getKey(), merge(entry.getKey(), entry.getValue(), sources));
                 }
                 return builder.build();
             }
         };
     }
 
-    private Iterable<E> merge(Collection<E> equivs, ApplicationSources sources) {
-        return merger.merge(equivs, sources);
+    private Iterable<E> merge(Id id, Collection<E> equivs, ApplicationSources sources) {
+        return merger.merge(Optional.of(id), equivs, sources);
     }
 }

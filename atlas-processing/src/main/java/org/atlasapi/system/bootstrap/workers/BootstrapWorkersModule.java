@@ -90,7 +90,7 @@ public class BootstrapWorkersModule {
     @Lazy(true)
     KafkaConsumer scheduleReadWriter() {
         ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(scheduleBootstrapTaskFactory(),
-                persistence.channelStore(), ignoredScheduleSources);
+                persistence.channelResolver(), ignoredScheduleSources);
         MessageSerializer<ScheduleUpdateMessage> serializer
                 = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
         return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrap")
