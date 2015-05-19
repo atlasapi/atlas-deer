@@ -53,6 +53,7 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                 .withHighDefinition(input.getHighDefinition())
                 .withBroadcaster(input.getBroadcaster())
                 .withParent(input.getParent().getId().longValue())
+                .withSource(input.getPublisher())
                 .build();
     }
 
