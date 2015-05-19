@@ -59,7 +59,7 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                         )
                 )
                 .build();
-        if (input.getGenres() != null) {
+        if (input.getParent() != null) {
             legacyChannel.setParent(input.getParent().getId().longValue());
         }
         legacyChannel.setId(input.getId().longValue());
