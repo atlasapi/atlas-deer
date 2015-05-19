@@ -47,7 +47,7 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
     }
 
     public org.atlasapi.media.channel.Channel toBasicLegacyChannel(Channel input) {
-        return org.atlasapi.media.channel.Channel.builder()
+        org.atlasapi.media.channel.Channel legacyChannel = org.atlasapi.media.channel.Channel.builder()
                 .withUri(input.getCanonicalUri())
                 .withKey(input.getKey())
                 .withHighDefinition(input.getHighDefinition())
@@ -55,6 +55,9 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                 .withParent(input.getParent().getId().longValue())
                 .withSource(input.getPublisher())
                 .build();
+        legacyChannel.setId(input.getId().longValue());
+        return legacyChannel;
+
     }
 
     private Iterable<ChannelGroupMembership> transformChannelNumbers(
