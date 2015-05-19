@@ -52,7 +52,6 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                 .withKey(input.getKey())
                 .withHighDefinition(input.getHighDefinition())
                 .withBroadcaster(input.getBroadcaster())
-                .withParent(input.getParent().getId().longValue())
                 .withSource(input.getPublisher())
                 .withMediaType(
                         org.atlasapi.media.entity.MediaType.valueOf(
