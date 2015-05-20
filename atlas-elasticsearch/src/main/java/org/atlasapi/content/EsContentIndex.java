@@ -18,7 +18,7 @@ import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
 import org.atlasapi.util.Strings;
-import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.NoShardAvailableActionException;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
@@ -334,9 +334,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private <T> T timeoutGet(ActionFuture<T> future) {
         try {
             return future.actionGet(requestTimeout, TimeUnit.MILLISECONDS);
-        } catch (ElasticSearchException ese) {
+        } catch (ElasticsearchException ese) {
             Throwable root = Throwables.getRootCause(ese);
-            Throwables.propagateIfInstanceOf(root, ElasticSearchException.class);
+            Throwables.propagateIfInstanceOf(root, ElasticsearchException.class);
             throw Throwables.propagate(ese);
         }
     }
@@ -380,7 +380,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .addField(EsContent.ID)
             .addSort(SortBuilders.fieldSort(EsContent.TOPICS+"."+EsTopicMapping.SUPERVISED).order(SortOrder.DESC))
             .addSort(SortBuilders.fieldSort(EsContent.TOPICS+"."+EsTopicMapping.WEIGHTING).order(SortOrder.DESC))
-            .setFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
+            .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
             .setFrom(selection.getOffset())
             .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
             .execute(FutureSettingActionListener.setting(response));

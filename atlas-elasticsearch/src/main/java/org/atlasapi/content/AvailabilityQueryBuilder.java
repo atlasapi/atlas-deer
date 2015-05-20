@@ -9,10 +9,10 @@ public class AvailabilityQueryBuilder {
 
     public static QueryBuilder build(Date when, float boost) {
         return QueryBuilders.nestedQuery(EsContent.LOCATIONS,
-                QueryBuilders.customBoostFactorQuery(
-                QueryBuilders.boolQuery().
-                must(QueryBuilders.rangeQuery(EsLocation.AVAILABILITY_TIME).gte(when)).
-                must(QueryBuilders.rangeQuery(EsLocation.AVAILABILITY_END_TIME).lt(when))).
-                boostFactor(boost));
+                QueryBuilders.boolQuery()
+                        .boost(boost)
+                        .must(QueryBuilders.rangeQuery(EsLocation.AVAILABILITY_TIME).gte(when))
+                        .must(QueryBuilders.rangeQuery(EsLocation.AVAILABILITY_END_TIME).lt(when))
+        );
     }
 }

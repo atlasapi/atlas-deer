@@ -107,7 +107,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
             .setTypes(EsTopic.TYPE_NAME)
             .setQuery(builder.buildQuery(query))
             .addField(ID)
-            .setFilter(FiltersBuilder.buildForPublishers(SOURCE, publishers))
+            .setPostFilter(FiltersBuilder.buildForPublishers(SOURCE, publishers))
             .setFrom(selection.getOffset())
             .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
             .execute(FutureSettingActionListener.setting(response));

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.atlasapi.util.Strings;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FuzzyQueryBuilder;
 import org.elasticsearch.index.query.PrefixQueryBuilder;
@@ -30,7 +31,7 @@ public class TitleQueryBuilder {
         } else {
             query = fuzzyTermSearch(Strings.flatten(title), tokens);
         }
-        return QueryBuilders.customBoostFactorQuery(query).boostFactor(boost);
+        return QueryBuilders.functionScoreQuery(query).boost(boost);
     }
 
     private static boolean shouldUsePrefixSearch(List<String> tokens) {
@@ -59,10 +60,12 @@ public class TitleQueryBuilder {
             BoolQueryBuilder queryForThisTerm = new BoolQueryBuilder();
             queryForThisTerm.minimumNumberShouldMatch(1);
 
-            QueryBuilder prefix = QueryBuilders.customBoostFactorQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boostFactor(20);
+            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(20);
             queryForThisTerm.should(prefix);
 
-            QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token).minSimilarity(0.65f).prefixLength(USE_PREFIX_SEARCH_UP_TO);
+            QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token)
+                    .fuzziness(Fuzziness.fromSimilarity(0.65f))
+                    .prefixLength(USE_PREFIX_SEARCH_UP_TO);
             queryForThisTerm.should(fuzzy);
 
             queryForTerms.must(queryForThisTerm);
@@ -74,10 +77,10 @@ public class TitleQueryBuilder {
         either.should(queryForTerms);
         either.should(fuzzyWithoutSpaces(value));
 
-        QueryBuilder prefix = QueryBuilders.customBoostFactorQuery(prefixSearch(value)).boostFactor(50);
+        QueryBuilder prefix = QueryBuilders.functionScoreQuery(prefixSearch(value)).boost(50);
         either.should(prefix);
         
-        QueryBuilder exact = QueryBuilders.customBoostFactorQuery(exactMatch(value, tokens)).boostFactor(100); 
+        QueryBuilder exact = QueryBuilders.functionScoreQuery(exactMatch(value, tokens)).boost(100);
         either.should(exact);
 
         return either;
@@ -109,6 +112,8 @@ public class TitleQueryBuilder {
     }
 
     private static QueryBuilder fuzzyWithoutSpaces(String value) {
-        return new FuzzyQueryBuilder(EsContent.PARENT_FLATTENED_TITLE, value).minSimilarity(0.8f).prefixLength(USE_PREFIX_SEARCH_UP_TO);
+        return new FuzzyQueryBuilder(EsContent.PARENT_FLATTENED_TITLE, value)
+                .fuzziness(Fuzziness.fromSimilarity(0.8f))
+                .prefixLength(USE_PREFIX_SEARCH_UP_TO);
     }
 }

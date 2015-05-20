@@ -78,7 +78,7 @@ public final class EsContentIndexingTest {
         ListenableActionFuture<SearchResponse> result1 = esClient.client()
             .prepareSearch(EsSchema.CONTENT_INDEX)
             .setQuery(QueryBuilders.nestedQuery("broadcasts", 
-                    QueryBuilders.fieldQuery("channel", 1L)
+                    QueryBuilders.termQuery("channel", 1L)
             )).execute();
         SearchHits hits1 = result1.actionGet(60, TimeUnit.SECONDS).getHits();
         assertEquals(1, hits1.totalHits());
