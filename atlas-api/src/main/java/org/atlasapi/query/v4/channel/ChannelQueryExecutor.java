@@ -4,6 +4,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
@@ -38,6 +40,7 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
 
     private static final String TITLE = "title";
     private static final String TITLE_REVERSE = "title.reverse";
+
     private Ordering<? super Channel> ordering(String orderBy) {
         if (!Strings.isNullOrEmpty(orderBy)) {
             if (orderBy.equals(TITLE)) {
@@ -116,31 +119,27 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
             }
         }
 
-        final Iterable<Channel> channels =
-                ordering.immutableSortedCopy(
-                        Futures.get(
-                                Futures.transform(
-                                        resolver.resolveChannels(channelQueryBuilder.build()),
-                                        new Function<Resolved<Channel>, Iterable<Channel>>() {
-                                            @Override
-                                            public Iterable<Channel> apply(Resolved<Channel> input) {
-                                                return input.getResources();
-                                            }
-                                        }),
-                                1, TimeUnit.MINUTES,
-                                QueryExecutionException.class
-                        )
-                );
+        ListenableFuture<Resolved<Channel>> resolvingChannels = resolver.resolveChannels(channelQueryBuilder.build());
+        ListenableFuture<FluentIterable<Channel>> resolvedIterable =
+                Futures.transform(resolvingChannels, new Function<Resolved<Channel>, FluentIterable<Channel>>() {
+                    @Override
+                    public FluentIterable<Channel> apply(@Nullable Resolved<Channel> resolved) {
+                        return resolved.getResources();
+                    }
+                });
+        final ImmutableList<Channel> channels;
+        try {
+            channels = ordering.immutableSortedCopy(Futures.get(resolvedIterable, 1, TimeUnit.MINUTES, QueryExecutionException.class));
+        } catch (Exception e) {
+            throw new QueryExecutionException(e);
+        }
 
         return QueryResult.listResult(
                 query.getContext().getSelection().get().applyTo(
                         Iterables.filter(
                                 channels,
-                                new Predicate<Channel>() {
-                                    @Override
-                                    public boolean apply(@Nullable Channel input) {
-                                        return query.getContext().getApplicationSources().isReadEnabled(input.getBroadcaster());
-                                    }
+                                input -> {
+                                    return query.getContext().getApplicationSources().isReadEnabled(input.getBroadcaster());
                                 }
                         )
                 ),
