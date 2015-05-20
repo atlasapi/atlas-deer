@@ -127,8 +127,12 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
                         return resolved.getResources();
                     }
                 });
-        final ImmutableList<Channel> channels =
-                ordering.immutableSortedCopy(Futures.get(resolvedIterable, 1, TimeUnit.MINUTES, QueryExecutionException.class));
+        final ImmutableList<Channel> channels;
+        try {
+            channels = ordering.immutableSortedCopy(Futures.get(resolvedIterable, 1, TimeUnit.MINUTES, QueryExecutionException.class));
+        } catch (Exception e) {
+            throw new QueryExecutionException(e);
+        }
 
         return QueryResult.listResult(
                 query.getContext().getSelection().get().applyTo(
