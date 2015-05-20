@@ -2,6 +2,7 @@ package org.atlasapi.system.debug;
 
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
+import org.atlasapi.system.bootstrap.workers.ExplicitEquivalenceMigrator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +23,16 @@ public class DebugModule {
                 legacyPersistenceModule.legacyContentResolver(),
                 persistenceModule.getEquivalentContentStore(),
                 persistenceModule.contentStore(),
-                legacyPersistenceModule.explicitEquivalenceMigrator());
+                explicitEquivalenceMigrator(),
+                legacyPersistenceModule.legacySegmentMigrator());
+    }
+
+    public ExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new ExplicitEquivalenceMigrator(
+                legacyPersistenceModule.legacyContentResolver(),
+                legacyPersistenceModule.legacyEquivalenceStore(),
+                persistenceModule.getContentEquivalenceGraphStore()
+        );
     }
 
 }

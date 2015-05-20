@@ -16,8 +16,8 @@ public class ChannelScheduleInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Channel")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(
@@ -46,8 +46,8 @@ public class ChannelScheduleInfo implements ModelClassInfo {
                     .withDescription("")
                     .withType("Channel")
                     .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
+                    .withIsModelType(true)
+                    .withJsonType(JsonType.OBJECT)
                     .build()
             )
             .add(

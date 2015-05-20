@@ -1,7 +1,12 @@
 package org.atlasapi;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.annotation.Nullable;
+
+import com.codahale.metrics.InstrumentedExecutorService;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -23,6 +28,7 @@ public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keysp
     private final int port;
     private final int clientThreads;
     private final int connectionTimeout;
+    @Nullable MetricRegistry metrics;
     
     public ConfiguredAstyanaxContext(String cluster, String keyspace, Iterable<String> seeds,
             int port, int clientThreads, int connectionTimeout) {
@@ -34,30 +40,41 @@ public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keysp
         this.connectionTimeout = connectionTimeout;
     }
 
+    public ConfiguredAstyanaxContext(String cluster, String keyspace, Iterable<String> seeds,
+            int port, int clientThreads, int connectionTimeout, MetricRegistry metrics) {
+        this(cluster, keyspace, seeds, port, clientThreads, connectionTimeout);
+        this.metrics = metrics;
+    }
+
     public AstyanaxContext<Keyspace> get() {
+        ExecutorService executor = Executors.newFixedThreadPool(clientThreads,
+                new ThreadFactoryBuilder().setDaemon(true)
+                        .setNameFormat("astyanax-%d")
+                        .build()
+        );
+
+        if (metrics != null) {
+            executor = new InstrumentedExecutorService(executor, metrics, "astyanax-thread-pool");
+        }
+
         return new AstyanaxContext.Builder()
             .forCluster(cluster)
             .forKeyspace(keyspace)
             .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
                 .setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE)
                 .setConnectionPoolType(ConnectionPoolType.ROUND_ROBIN)
-                .setAsyncExecutor(Executors.newFixedThreadPool(
-                    clientThreads,
-                    new ThreadFactoryBuilder().setDaemon(true)
-                        .setNameFormat("astyanax-%d")
-                        .build()
-                ))
+                .setAsyncExecutor(executor)
             )
             .withConnectionPoolConfiguration(new ConnectionPoolConfigurationImpl("altas")
-                .setSeeds(Joiner.on(",").join(seeds))
-                .setPort(port)
-                .setConnectTimeout(connectionTimeout)
-                .setMaxBlockedThreadsPerHost(clientThreads)
-                .setMaxConnsPerHost(clientThreads)
-                .setMaxConns(clientThreads * 5)
+                            .setSeeds(Joiner.on(",").join(seeds))
+                            .setPort(port)
+                            .setConnectTimeout(connectionTimeout)
+                            .setMaxBlockedThreadsPerHost(clientThreads)
+                            .setMaxConnsPerHost(clientThreads)
+                            .setMaxConns(clientThreads * 5)
             )
             .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
             .buildKeyspace(ThriftFamilyFactory.getInstance());
     }
-    
+
 }

@@ -37,7 +37,8 @@ public class ContextualQueryContextParser implements ParameterNameProvider {
         return new QueryContext(
             configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
             annotationExtractor.extractFromRequest(request),
-            selectionBuilder.build(request)
+            selectionBuilder.build(request),
+            request
         );
     }
 

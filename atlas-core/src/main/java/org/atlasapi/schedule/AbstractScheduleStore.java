@@ -19,7 +19,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ScheduleRef.Builder;
 import org.joda.time.DateTime;
@@ -87,7 +87,14 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
         }
         
         List<ChannelSchedule> currentBlocks = resolveCurrentScheduleBlocks(source, channel, interval);
-        ScheduleBlocksUpdate update = blockUpdater.updateBlocks(currentBlocks, itemsAndBroadcasts, channel, interval);
+        List<ChannelSchedule> staleBlocks = resolveStaleScheduleBlocks(source, channel, interval);
+        ScheduleBlocksUpdate update = blockUpdater.updateBlocks(
+                currentBlocks,
+                staleBlocks,
+                itemsAndBroadcasts,
+                channel,
+                interval
+        );
         for (ItemAndBroadcast staleEntry : update.getStaleEntries()) {
             updateItemInContentStore(staleEntry);
         }
@@ -95,7 +102,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
         sendUpdateMessage(source, content, update, channel, interval);
         return writeResults;
     }
-    
+
     private void sendUpdateMessage(Publisher source, List<ScheduleHierarchy> content, ScheduleBlocksUpdate update, Channel channel, Interval interval) throws WriteException {
         try {
             String mid = UUID.randomUUID().toString();
@@ -119,7 +126,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
     }
 
     private ScheduleRef scheduleRef(List<ScheduleHierarchy> content, Channel channel, Interval interval) {
-        Id cid = Id.valueOf(channel.getId());
+        Id cid = channel.getId();
         Builder builder = ScheduleRef.forChannel(cid, interval);
         for (ScheduleHierarchy scheduleHierarchy : content) {
             ItemAndBroadcast iab = scheduleHierarchy.getItemAndBroadcast();
@@ -171,6 +178,23 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
      */
     protected abstract List<ChannelSchedule> resolveCurrentScheduleBlocks(Publisher source, Channel channel,
             Interval interval) throws WriteException;
+
+    /**
+     * Resolve past schedule blocks. These are blocks which are currently not in use
+     * and are necessary to ensure that they are deleted in equivalent store.
+     *
+     * If the store doesn't store past blocks it should return an empty list;
+     * @param source
+     * @param channel
+     * @param interval
+     * @return
+     */
+    protected abstract List<ChannelSchedule> resolveStaleScheduleBlocks(
+            Publisher source,
+            Channel channel,
+            Interval interval
+    ) throws WriteException;
+
 
     /**
      * Write the blocks of schedule for a source.

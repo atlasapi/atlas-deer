@@ -14,6 +14,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 public class BroadcastSerializer {
 
     private final IdentifiedSerializer identifiedSerializer = new IdentifiedSerializer();
+    private final BlackoutRestrictionSerializer blackoutRestrictionSerializer = new BlackoutRestrictionSerializer();
     
     public ContentProtos.Broadcast.Builder serialize(Broadcast broadcast) {
         Builder builder = ContentProtos.Broadcast.newBuilder();
@@ -66,6 +67,9 @@ public class BroadcastSerializer {
         if (broadcast.getVersionId() != null) {
             builder.setVersion(broadcast.getVersionId());
         }
+        if (broadcast.getBlackoutRestriction().isPresent()) {
+            builder.setBlackoutRestriction(blackoutRestrictionSerializer.serialize(broadcast.getBlackoutRestriction().get()));
+        }
         return builder;
     }
 
@@ -91,6 +95,9 @@ public class BroadcastSerializer {
         broadcast.setPremiere(msg.hasPremiere() ? msg.getPremiere() : null);
         broadcast.set3d(msg.hasIsThreeD() ? msg.getIsThreeD() : null);
         broadcast.setVersionId(msg.hasVersion() ? msg.getVersion() : null);
+        if (msg.hasBlackoutRestriction()) {
+            broadcast.setBlackoutRestriction(blackoutRestrictionSerializer.deserialize(msg.getBlackoutRestriction()));
+        }
         return broadcast;
     }
 }

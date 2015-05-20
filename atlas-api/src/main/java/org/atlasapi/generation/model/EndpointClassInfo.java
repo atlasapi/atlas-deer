@@ -5,6 +5,7 @@ import java.util.Set;
 public interface EndpointClassInfo {
 
 	String name();
+	String modelKey();
 	String description();
 	String rootPath();
 	Set<Operation> operations();

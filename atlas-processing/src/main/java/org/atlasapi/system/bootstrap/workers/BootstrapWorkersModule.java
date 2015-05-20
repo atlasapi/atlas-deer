@@ -14,10 +14,12 @@ import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
 import org.atlasapi.topic.TopicStore;
+import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -33,7 +35,8 @@ import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, LegacyPersistenceModule.class})
+@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, LegacyPersistenceModule.class,
+        ProcessingHealthModule.class})
 public class BootstrapWorkersModule {
 
     private String consumerSystem = Configurer.get("messaging.system").get();
@@ -43,22 +46,25 @@ public class BootstrapWorkersModule {
     private Integer maxConsumers = Configurer.get("messaging.bootstrap.consumers.max").toInt();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
-    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
+    private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
+    private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
 
+    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private Set<Publisher> ignoredScheduleSources
             = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA));
-
     @Autowired
     private AtlasPersistenceModule persistence;
     @Autowired
     private LegacyPersistenceModule legacy;
     @Autowired
     private KafkaMessagingModule messaging;
+    @Autowired
+    private ProcessingHealthModule health;
 
     @Bean
     @Qualifier("bootstrap")
     KafkaMessageConsumerFactory bootstrapQueueFactory() {
-        return new KafkaMessageConsumerFactory(zookeeper, originSystem);
+        return new KafkaMessageConsumerFactory(zookeeper, originSystem, backOffBase, maxBackOff);
     }
 
     @Bean
@@ -68,7 +74,8 @@ public class BootstrapWorkersModule {
         ContentReadWriteWorker worker = new ContentReadWriteWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                legacy.explicitEquivalenceMigrator()
+                explicitEquivalenceMigrator(),
+                health.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
@@ -83,7 +90,7 @@ public class BootstrapWorkersModule {
     @Lazy(true)
     KafkaConsumer scheduleReadWriter() {
         ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(scheduleBootstrapTaskFactory(),
-                persistence.channelStore(), ignoredScheduleSources);
+                persistence.channelResolver(), ignoredScheduleSources);
         MessageSerializer<ScheduleUpdateMessage> serializer
                 = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
         return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrap")
@@ -126,6 +133,15 @@ public class BootstrapWorkersModule {
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
+    }
+
+
+     public ExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new ExplicitEquivalenceMigrator(
+                legacy.legacyContentResolver(),
+                legacy.legacyEquivalenceStore(),
+                persistence.getContentEquivalenceGraphStore()
+        );
     }
 
 }

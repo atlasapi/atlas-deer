@@ -5,6 +5,7 @@ import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
 import java.util.Map;
 
 import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.Application;
 import org.atlasapi.application.ApplicationPersistenceModule;
@@ -70,6 +71,10 @@ import org.atlasapi.input.GsonModelReader;
 import org.atlasapi.input.ModelReader;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
+import org.atlasapi.output.License;
+import org.atlasapi.output.writers.LicenseWriter;
+import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
 import org.atlasapi.query.common.AttributeCoercers;
@@ -90,6 +95,7 @@ import org.atlasapi.users.videosource.youtube.YouTubeLinkedServiceController;
 import org.elasticsearch.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -120,8 +126,10 @@ import com.metabroadcast.common.social.user.TwitterOAuth1AccessTokenChecker;
 import com.metabroadcast.common.time.SystemClock;
 import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
 
+import javax.servlet.http.HttpServletRequest;
+
 @Configuration
-@Import({AtlasPersistenceModule.class, ApplicationPersistenceModule.class, NotifierModule.class})
+@Import({AtlasPersistenceModule.class, ApplicationPersistenceModule.class, NotifierModule.class, LicenseModule.class})
 public class ApplicationWebModule {
     
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -136,6 +144,8 @@ public class ApplicationWebModule {
     @Autowired ApplicationPersistenceModule appPersistence;
     @Autowired NotifierModule notifier;
     
+    @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
+
     private static final String APP_NAME = "atlas";
     
     @Value("${twitter.auth.consumerKey}") private String twitterConsumerKey;
@@ -176,13 +186,19 @@ public class ApplicationWebModule {
     SelectionBuilder selectionBuilder() {
         return Selection.builder().withDefaultLimit(50).withMaxLimit(100);
     }
-    
 
-    
+    @Bean
+    EntityWriter<HttpServletRequest> requestWriter() {
+        return new RequestWriter();
+
+    }
+
     public @Bean
     AuthController authController() {
-        return new AuthController(new AuthProvidersQueryResultWriter(new AuthProvidersListWriter()),
-                userFetcher(), idCodec);
+        return new AuthController(
+                new AuthProvidersQueryResultWriter(new AuthProvidersListWriter(), licenseWriter, requestWriter()),
+                userFetcher(),
+                idCodec);
     }
     
     @Bean
@@ -242,7 +258,7 @@ public class ApplicationWebModule {
     
     @Bean
     public SourceRequestsController sourceRequestsController() {
-        IdGenerator idGenerator = new MongoSequentialIdGenerator(persistence.databasedMongo(), "sourceRequest");
+        IdGenerator idGenerator = new MongoSequentialIdGenerator(persistence.databasedWriteMongo(), "sourceRequest");
         SourceRequestManager manager = new SourceRequestManager(appPersistence.sourceRequestStore(), 
                 appPersistence.applicationStore(), 
                 idGenerator,
@@ -348,7 +364,7 @@ public class ApplicationWebModule {
     }
     
     private NewUserSupplier newUserSupplier() {
-        return new NewUserSupplier(new MongoSequentialIdGenerator(persistence.databasedMongo(), "users"));
+        return new NewUserSupplier(new MongoSequentialIdGenerator(persistence.databasedWriteMongo(), "users"));
     }
 
     public @Bean TwitterAuthController twitterAuthController() {
@@ -357,8 +373,8 @@ public class ApplicationWebModule {
                 appPersistence.userStore(), 
                 newUserSupplier(),
                 appPersistence.tokenStore(),
-                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter()),
-                new OAuthResultQueryResultWriter(new OAuthResultListWriter())
+                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter, requestWriter()),
+                new OAuthResultQueryResultWriter(new OAuthResultListWriter(), licenseWriter, requestWriter())
                 );
     }
 
@@ -369,8 +385,8 @@ public class ApplicationWebModule {
                 appPersistence.userStore(), 
                 newUserSupplier(),
                 appPersistence.tokenStore(),
-                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter()),
-                new OAuthResultQueryResultWriter(new OAuthResultListWriter())
+                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter,requestWriter()),
+                new OAuthResultQueryResultWriter(new OAuthResultListWriter(), licenseWriter, requestWriter())
                 );
     }
 
@@ -378,8 +394,8 @@ public class ApplicationWebModule {
         return new GoogleAuthController(googleClient(),
                 appPersistence.userStore(), 
                 newUserSupplier(),
-                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter()),
-                new OAuthResultQueryResultWriter(new OAuthResultListWriter()),
+                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter, requestWriter()),
+                new OAuthResultQueryResultWriter(new OAuthResultListWriter(), licenseWriter, requestWriter()),
                 new AccessTokenProcessor(googleAccessTokenChecker(), appPersistence.credentialsStore()), 
                 appPersistence.tokenStore());
     }
@@ -409,11 +425,18 @@ public class ApplicationWebModule {
     }
     
     public @Bean VideoSourceController linkedServiceController() {
-    	return new VideoSourceController(new VideoSourceOAuthProvidersQueryResultWriter(new VideoSourceOauthProvidersListWriter()), userFetcher());
+    	return new VideoSourceController(
+                new VideoSourceOAuthProvidersQueryResultWriter(
+                        new VideoSourceOauthProvidersListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                ),
+                userFetcher()
+        );
     }
     
     VideoSourceChannelResultsQueryResultWriter videoSourceChannelResultsQueryResultWriter() {
-        return new VideoSourceChannelResultsQueryResultWriter(new VideoSourceChannelResultsListWriter());
+        return new VideoSourceChannelResultsQueryResultWriter(new VideoSourceChannelResultsListWriter(), licenseWriter, requestWriter());
     }
     
     @Bean
@@ -428,7 +451,7 @@ public class ApplicationWebModule {
     	        httpClient());
     	return new YouTubeLinkedServiceController(youTubeClientId, 
     			youTubeClientSecret,
-    			new OAuthRequestQueryResultWriter(new OAuthRequestListWriter()), 
+    			new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter, requestWriter()),
     			userFetcher(),
     			idCodec,
     			sourceIdCodec,
@@ -466,7 +489,7 @@ public class ApplicationWebModule {
     public EndUserLicenseController endUserLicenseController() {
         EndUserLicenseListWriter endUserLicenseListWriter = new EndUserLicenseListWriter();
         
-        return new EndUserLicenseController(new EndUserLicenseQueryResultWriter(endUserLicenseListWriter),
+        return new EndUserLicenseController(new EndUserLicenseQueryResultWriter(endUserLicenseListWriter, licenseWriter, requestWriter()),
                 gsonModelReader(), appPersistence.endUserLicenseStore(), userFetcher()); 
     }
   

@@ -5,6 +5,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -12,13 +14,16 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.ExplicitEquivalenceMigrator;
+import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,14 +85,16 @@ public class ContentDebugController {
     private final EquivalentContentStore equivalentContentStore;
     private final ContentStore contentStore;
     private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+    private final LegacySegmentMigrator segmentMigrator;
 
     public ContentDebugController(ContentResolver legacyResolver,
             EquivalentContentStore equivalentContentStore, ContentStore contentStore,
-            ExplicitEquivalenceMigrator explicitEquivalenceMigrator) {
+            ExplicitEquivalenceMigrator explicitEquivalenceMigrator, LegacySegmentMigrator segmentMigrator) {
         this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
         this.legacyResolver = checkNotNull(legacyResolver);
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
         this.contentStore = checkNotNull(contentStore);
+        this.segmentMigrator = checkNotNull(segmentMigrator);
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -115,63 +122,56 @@ public class ContentDebugController {
     }
 
     @RequestMapping("/system/debug/content/{id}")
-    public void printContent(@PathVariable("id") Long id, final HttpServletResponse response) {
+    public void printContent(@PathVariable("id") Long id, final HttpServletResponse response) throws Exception {
         ImmutableList<Id> ids = ImmutableList.of(Id.valueOf(id));
-        Futures.addCallback(contentStore.resolveIds(ids), new FutureCallback<Resolved<Content>>() {
-
-            @Override
-            public void onSuccess(Resolved<Content> result) {
-                try {
-                    Content content = result.getResources().first().orNull();
-                    gson.toJson(content, response.getWriter());
-                } catch (Exception e) {
-                    Throwables.propagate(e);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                try {
-                    t.printStackTrace(response.getWriter());
-                } catch (IOException e) {
-                    Throwables.propagate(e);
-                }
-            }
-        });
+        Resolved<Content> result = Futures.get(contentStore.resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class);
+        Content content = result.getResources().first().orNull();
+        gson.toJson(content, response.getWriter());
     }
 
     @RequestMapping("/system/debug/content/{id}/migrate")
-    public void forceEquivUpdate(@PathVariable("id") Long id,
+    public void forceEquivUpdate(@PathVariable("id") String id,
             @RequestParam(value = "publisher", required = true) String publisherKey,
             final HttpServletResponse response) throws IOException {
         try {
+            Long decodedId = lowercase.decode(id).longValue();
+
+            StringBuilder respString = new StringBuilder();
             Maybe<Publisher> publisherMaybe = Publisher.fromKey(publisherKey);
             if (publisherMaybe.isNothing()) {
                 response.setStatus(400);
                 response.getWriter().write("Supply a valid publisher key");
                 return;
             }
-            Content content = resolveLegacyContent(id);
+
+            Content content = resolveLegacyContent(decodedId);
+            if (content instanceof Item) {
+                Item item = (Item) content;
+                List<SegmentEvent> segmentEvents = item.getSegmentEvents();
+                if (!segmentEvents.isEmpty()) {
+                    for (SegmentEvent segmentEvent : segmentEvents) {
+                        segmentMigrator.migrateLegacySegment(segmentEvent.getSegmentRef().getId());
+                        log.info("Migrated segment " + segmentEvent.getSegmentRef().getId());
+                    }
+                }
+            }
+
+            respString.append("Resolved legacy content ").append(content.getId());
             WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
 
             if (!writeResult.written()) {
-                response.getWriter().write("No write occured when migrating content into C* store");
+                response.getWriter().write(respString.append("\nNo write occured when migrating content into C* store").toString());
                 response.setStatus(500);
                 return;
             }
-
+            respString.append("\nMigrated content into C* content store");
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     explicitEquivalenceMigrator.migrateEquivalence(content);
-            if (!graphUpdate.isPresent()) {
-                response.setStatus(500);
-                response.getWriter().write("No update equivalence graph");
-                return;
-            }
-
-            equivalentContentStore.updateEquivalences(graphUpdate.get());
+            equivalentContentStore.updateContent(content.toRef());
+            respString.append("\nEquivalent content store updated using content ref");
 
             response.setStatus(200);
-            response.getWriter().write("Migrated content " + content.getId().toString());
+            response.getWriter().write(respString.toString());
             response.flushBuffer();
         } catch (Throwable t) {
             t.printStackTrace(response.getWriter());

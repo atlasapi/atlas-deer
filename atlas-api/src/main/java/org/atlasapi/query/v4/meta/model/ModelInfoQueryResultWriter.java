@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.atlasapi.generation.model.ModelClassInfo;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
@@ -12,22 +13,23 @@ import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
 
-public class ModelInfoQueryResultWriter implements QueryResultWriter<ModelClassInfo> {
+import javax.servlet.http.HttpServletRequest;
+
+public class ModelInfoQueryResultWriter extends QueryResultWriter<ModelClassInfo> {
 
     private final EntityListWriter<ModelClassInfo> modelListWriter;
     
-    public ModelInfoQueryResultWriter(EntityListWriter<ModelClassInfo> modelListWriter) {
+    public ModelInfoQueryResultWriter(
+            EntityListWriter<ModelClassInfo> modelListWriter,
+            EntityWriter<Object> licenseWriter,
+            EntityWriter<HttpServletRequest> requestWriter
+    ) {
+        super(licenseWriter, requestWriter);
         this.modelListWriter = modelListWriter;
     }
 
     @Override
-    public void write(QueryResult<ModelClassInfo> result, ResponseWriter writer) throws IOException {
-        writer.startResponse();
-        writeResult(result, writer);
-        writer.finishResponse();
-    }
-
-    private void writeResult(QueryResult<ModelClassInfo> result, ResponseWriter writer)
+    protected void writeResult(QueryResult<ModelClassInfo> result, ResponseWriter writer)
         throws IOException {
 
         OutputContext ctxt = outputContext(result.getContext());

@@ -235,60 +235,6 @@ public class Item extends Content {
         return SortKey.keyFrom(this);
     }
 
-    public static class ContainerSummary {
-
-        private String type;
-        private String title;
-        private String description;
-        private Integer seriesNumber;
-
-        public ContainerSummary(String type, String title, String description, Integer seriesNumber) {
-            this.type = type;
-            this.title = title;
-            this.description = description;
-            this.seriesNumber = seriesNumber;
-        }
-
-        private ContainerSummary() {
-        }
-
-        @FieldName("type")
-        public String getType() {
-            return type;
-        }
-
-        @FieldName("title")
-        public String getTitle() {
-            return title;
-        }
-
-        @FieldName("description")
-        public String getDescription() {
-            return description;
-        }
-        
-        @FieldName("series_number")
-        public Integer getSeriesNumber() {
-            return seriesNumber;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-
-        public void setSeriesNumber(Integer seriesNumber) {
-            this.seriesNumber = seriesNumber;
-        }
-    }
-    
     public static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
         @Override
         public Set<Broadcast> apply(Item input) {

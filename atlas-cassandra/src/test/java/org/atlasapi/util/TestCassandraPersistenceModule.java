@@ -68,7 +68,7 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
 
     private final AstyanaxContext<Keyspace> context
         = new ConfiguredAstyanaxContext("Atlas", keyspace, seeds, 9160, 5, 60).get();
-    private final DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds);
+    private final DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
     
     private CassandraPersistenceModule persistenceModule;
     

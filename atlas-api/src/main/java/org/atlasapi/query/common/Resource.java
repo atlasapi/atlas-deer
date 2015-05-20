@@ -7,6 +7,7 @@ public enum Resource {
     CONTENT("content", "content"),
     TOPIC("topic", "topics"),
     CHANNEL("channel", "channels"),
+    CHANNEL_GROUP("channel_group", "channel_groups"),
     PERSON("person", "people"),
     APPLICATION("application", "applications"),
     SOURCE("source", "sources"),

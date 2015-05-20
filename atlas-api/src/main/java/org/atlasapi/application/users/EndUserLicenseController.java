@@ -55,7 +55,7 @@ public class EndUserLicenseController {
         try {
             writer = writerResolver.writerFor(request, response);
             EndUserLicense license = licenseStore.getById(LICENSE_ID);
-            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(license, QueryContext.standard());
+            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(license, QueryContext.standard(request));
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
@@ -78,7 +78,7 @@ public class EndUserLicenseController {
             EndUserLicense posted = deserialize(new InputStreamReader(request.getInputStream()), EndUserLicense.class);
             // set to the EULA id
             licenseStore.store(posted.copy().withId(LICENSE_ID).build());
-            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(posted, QueryContext.standard());
+            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(posted, QueryContext.standard(request));
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

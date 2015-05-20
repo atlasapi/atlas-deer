@@ -20,6 +20,7 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     
     private final AliasWriter aliasWriter = new AliasWriter();
     private final BroadcastIdAliasMapping aliasMapping = new BroadcastIdAliasMapping();
+    private final BlackoutRestrictionWriter blackoutRestrictionWriter = new BlackoutRestrictionWriter();
 
     private final String listName;
     private NumberToShortStringCodec codec;
@@ -53,6 +54,11 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeField("live",entity.getLive());
         writer.writeField("premiere",entity.getPremiere());
         writer.writeField("new_series",entity.getNewSeries());
+        if(!entity.getBlackoutRestriction().isPresent()) {
+            writer.writeField("blackout_restriction", null);
+        } else {
+            writer.writeObject(blackoutRestrictionWriter, entity.getBlackoutRestriction().get(), ctxt);
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.atlasapi.schedule;
 
 import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
@@ -9,13 +10,17 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.netflix.astyanax.serializers.AsciiSerializer;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.CassandraContentStore;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
@@ -26,7 +31,6 @@ import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.joda.time.DateTime;
@@ -38,6 +42,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -79,7 +84,7 @@ public class CassandraScheduleStoreIT {
     private CassandraScheduleStore store;
     
     private final Publisher source = Publisher.METABROADCAST;
-    private final Channel channel = Channel.builder().build();
+    private final Channel channel = Channel.builder(Publisher.BBC).build();
 
     @BeforeClass
     public static void setup() throws ConnectionException {
@@ -163,55 +168,116 @@ public class CassandraScheduleStoreIT {
         DateTime start = new DateTime(2013,05,31,14,0,0,0,DateTimeZones.LONDON);
         DateTime middle = new DateTime(2013,05,31,23,0,0,0,DateTimeZones.LONDON);
         DateTime end = new DateTime(2013,06,01,14,0,0,0,DateTimeZones.LONDON);
-        
+
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
-        
+
         ImmutableList<ScheduleHierarchy> hiers = ImmutableList.<ScheduleHierarchy>of(
-            ScheduleHierarchy.itemOnly(episode1), 
+            ScheduleHierarchy.itemOnly(episode1),
             ScheduleHierarchy.itemOnly(episode2)
         );
-        
+
         Interval writtenInterval = new Interval(start, end);
         List<WriteResult<? extends Content, Content>> results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
 
         DateTime newMiddle = new DateTime(2013,05,31,23,30,0,0,DateTimeZones.LONDON);
-        
+
         //items 1 and 2 change 
         when(hasher.hash(argThat(isA(Content.class))))
             .thenReturn("differentOne")
             .thenReturn("oneDifferent")
             .thenReturn("differentTwo")
             .thenReturn("twoDifferent");
-        
+
         episode1 = itemAndBroadcast(null, "one", source, channel, start, newMiddle);
         ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, newMiddle, end);
         hiers = ImmutableList.<ScheduleHierarchy>of(
-            ScheduleHierarchy.itemOnly(episode1), 
+            ScheduleHierarchy.itemOnly(episode1),
             ScheduleHierarchy.itemOnly(episode3)
         );
-        
+
         results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
         assertTrue(Iterables.all(results, WriteResult.<Content,Content>writtenFilter()));
-        
+
         Interval requestedInterval = new Interval(
-            new DateTime(2013,05,31,10,0,0,0,DateTimeZones.UTC), 
-            new DateTime(2013,05,31,22,40,0,0,DateTimeZones.UTC) 
+            new DateTime(2013,05,31,10,0,0,0,DateTimeZones.UTC),
+            new DateTime(2013,05,31,22,40,0,0,DateTimeZones.UTC)
         );
         Schedule schedule = future(store.resolve(ImmutableList.of(channel), requestedInterval, source));
         ChannelSchedule channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
-        
+
         assertThat(channelSchedule.getChannel(), is(channel));
         assertThat(channelSchedule.getInterval(), is(requestedInterval));
         assertThat(channelSchedule.getEntries().size(), is(2));
         assertThat(channelSchedule.getEntries().get(0).getItem().getId().longValue(), is(2L));
         assertThat(channelSchedule.getEntries().get(1).getItem().getId().longValue(), is(3L));
-        
+
         Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))));
         Item two = (Item) resolved.getResources().first().get();
         assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
+    }
+
+
+    @Test
+    public void testSendAllStaleBroadcastsSchedule() throws Exception {
+
+        DateTime start = new DateTime(2013,5,31,14,0,0,0,DateTimeZones.UTC);
+        DateTime middle = new DateTime(2013,5,31,23,0,0,0,DateTimeZones.UTC);
+        DateTime end = new DateTime(2013,6,1,14,0,0,0,DateTimeZones.UTC);
+
+        ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
+        ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
+
+        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode2)
+        );
+
+        Interval writtenInterval = new Interval(start, end);
+        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(hiers, channel, writtenInterval);
+        assertThat(results.size(), is(2));
+
+        DateTime newMiddle = new DateTime(2013,05,31,23,30,0,0,DateTimeZones.UTC);
+
+        //items 1 and 2 change
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
+
+        episode1 = itemAndBroadcast(null, "one", source, channel, start, newMiddle);
+        ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, newMiddle, end);
+        hiers = ImmutableList.of(
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode3)
+        );
+
+        results = store.writeSchedule(hiers, channel, writtenInterval);
+        assertThat(results.size(), is(2));
+        assertTrue(Iterables.all(results, WriteResult.<Content,Content>writtenFilter()));
+
+
+        ItemAndBroadcast episode4 = itemAndBroadcast(null, "four", source, channel, newMiddle, end);
+        hiers = ImmutableList.<ScheduleHierarchy>of(
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode4)
+        );
+        store.writeSchedule(hiers, channel, writtenInterval);
+
+        ArgumentCaptor<ScheduleUpdateMessage> captor = ArgumentCaptor.forClass(ScheduleUpdateMessage.class);
+        verify(scheduleUpdateSender, times(3)).sendMessage(captor.capture());
+
+        assertThat(
+                captor.getAllValues().get(2).getScheduleUpdate().getStaleBroadcasts(),
+                containsInAnyOrder(
+                        new BroadcastRef("three", Id.valueOf(1234), new Interval(newMiddle, end)),
+                        new BroadcastRef("two", Id.valueOf(1234), new Interval(middle, end))
+                )
+        );
+
     }
     
     @Test

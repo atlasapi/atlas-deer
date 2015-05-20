@@ -6,9 +6,11 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import com.codahale.metrics.MetricRegistry;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
+import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +27,7 @@ import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class})
+@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, ProcessingHealthModule.class})
 public class WorkersModule {
     
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
@@ -38,21 +40,18 @@ public class WorkersModule {
     
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
-    private Integer equivDefltConsumers = Configurer.get("equiv.update.consumers.default").toInt();
+    private Integer equivDefaultConsumers = Configurer.get("equiv.update.consumers.default").toInt();
     private Integer equivMaxConsumers = Configurer.get("equiv.update.consumers.max").toInt();
-    
-//    private String loggerDestination = Configurer.get("messaging.destination.logger").get();
-//    private int loggerConsumers = Integer.parseInt(Configurer.get("messaging.consumers.logger").get());
-//    private long replayInterruptThreshold = Long.parseLong(Configurer.get("messaging.replay.interrupt.threshold").get());
 
     @Autowired private KafkaMessagingModule messaging;
     @Autowired private AtlasPersistenceModule persistence;
+    @Autowired private ProcessingHealthModule health;
     private ServiceManager consumerManager;
 
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> contentIndexingWorker() {
-        return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex());
+        return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex(), health.metrics());
     }
 
     @Bean
@@ -72,7 +71,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> topicIndexingWorker() {
-        return new TopicIndexingWorker(persistence.topicStore(), persistence.topicIndex());
+        return new TopicIndexingWorker(persistence.topicStore(), persistence.topicIndex(), health.metrics());
     }
     
     @Bean
@@ -88,7 +87,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceGraphUpdateMessage> equivalentContentStoreGraphUpdateWorker() {
-        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore());
+        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
     }
     
     @Bean
@@ -97,15 +96,15 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(equivalentContentStoreGraphUpdateWorker(),
                 serializer(EquivalenceGraphUpdateMessage.class), 
                 contentEquivalenceGraphChanges, "EquivalentContentStoreGraphs")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefaultConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
 
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> equivalentContentStoreContentUpdateWorker() {
-        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore());
+        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
     }
     
     @Bean
@@ -114,15 +113,15 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(equivalentContentStoreContentUpdateWorker(),
                 serializer(ResourceUpdatedMessage.class), 
                 contentChanges, "EquivalentContentStoreContent")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefaultConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
 
     @Bean
     @Lazy(true)
     public Worker<EquivalenceGraphUpdateMessage> equivalentScheduletStoreGraphUpdateWorker() {
-        return new EquivalentScheduleStoreGraphUpdateWorker(persistence.getEquivalentScheduleStore());
+        return new EquivalentScheduleStoreGraphUpdateWorker(persistence.getEquivalentScheduleStore(), health.metrics());
     }
     
     @Bean
@@ -131,15 +130,15 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(equivalentScheduletStoreGraphUpdateWorker(),
                 serializer(EquivalenceGraphUpdateMessage.class), 
                 contentEquivalenceGraphChanges, "EquivalentScheduleStoreGraphs")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefaultConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
     
     @Bean
     @Lazy(true)
     public Worker<ScheduleUpdateMessage> equivalentScheduleStoreScheduleUpdateWorker() {
-        return new EquivalentScheduleStoreScheduleUpdateWorker(persistence.getEquivalentScheduleStore());
+        return new EquivalentScheduleStoreScheduleUpdateWorker(persistence.getEquivalentScheduleStore(), health.metrics());
     }
     
     @Bean
@@ -147,28 +146,15 @@ public class WorkersModule {
     public KafkaConsumer equivalentScheduleStoreScheduleUpdateListener() {
         return messaging.messageConsumerFactory().createConsumer(equivalentScheduleStoreScheduleUpdateWorker(), 
                 serializer(ScheduleUpdateMessage.class), scheduleChanges, "EquivalentScheduleStoreSchedule")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(equivDefaultConsumers)
+                .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
-
-
-//    @Bean
-//    @Lazy(true)
-//    public Worker messageLogger() {
-//        return new MessageLogger(messageStore);
-//    }
-//
-//    @Bean
-//    @Lazy(true)
-//    public DefaultMessageListenerContainer messageLoggerMessageListener() {
-//        return makeContainer(messageLogger(), loggerDestination, loggerConsumers, loggerConsumers);
-//    }
 
     @Bean
     @Lazy(true)
     public Worker<EquivalenceAssertionMessage> contentEquivalenceUpdater() {
-        return new ContentEquivalenceUpdatingWorker(persistence.getContentEquivalenceGraphStore());
+        return new ContentEquivalenceUpdatingWorker(persistence.getContentEquivalenceGraphStore(), health.metrics());
     }
     
     @Bean
@@ -177,7 +163,7 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(contentEquivalenceUpdater(), 
                 new ContentEquivalenceAssertionLegacyMessageSerializer(), equivTopic, "EquivGraphUpdate")
                 .withProducerSystem(equivSystem)
-                .withDefaultConsumers(equivDefltConsumers)
+                .withDefaultConsumers(equivDefaultConsumers)
                 .withMaxConsumers(equivMaxConsumers)
                 .build();
     }

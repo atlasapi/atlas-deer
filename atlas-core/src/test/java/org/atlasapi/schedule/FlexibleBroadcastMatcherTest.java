@@ -3,8 +3,9 @@ package org.atlasapi.schedule;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
-import org.atlasapi.media.channel.Channel;
+import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Test;
@@ -191,7 +192,7 @@ public class FlexibleBroadcastMatcherTest {
     }
 
     private Channel channel(long cid) {
-        Channel channel = Channel.builder().build();
+        Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(cid);
         return channel;
     }

@@ -24,6 +24,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
@@ -162,18 +163,23 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             long setId = row.getLong(SET_ID_KEY);
             if (!row.isNull(GRAPH_KEY)) {
                 graphs.put(setId, graphSerializer.deserialize(row.getBytes(GRAPH_KEY)));
-            }
-            Content content = deserialize(row);
-            EquivalenceGraph graphForContent = graphs.get(setId);
-            if (contentSelected(content, graphForContent, selectedSources)) {
-                sets.put(setId, content);
+                Content content = deserialize(row);
+                if (content instanceof Item) {
+                    Item item = (Item) content;
+                    for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
+                        segmentEvent.setPublisher(item.getPublisher());
+                    }
+                }
+                EquivalenceGraph graphForContent = graphs.get(setId);
+                if (contentSelected(content, graphForContent, selectedSources)) {
+                    sets.put(setId, content);
+                }
             }
         }
         return checkIntegrity(index, graphs) ? sets.build() : null;
     }
 
     private boolean checkIntegrity(Map<Long, Long> index, Map<Long, EquivalenceGraph> graphs) {
-        //check integrity
         for (Entry<Long, Long> requests : index.entrySet()) {
             EquivalenceGraph requestedGraph = graphs.get(requests.getValue());
             if (requestedGraph == null
@@ -270,14 +276,15 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     .with(set(GRAPH_KEY, graphSerializer.serialize(graph))));
         }
         session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
-                .setConsistencyLevel(writeConsistency));        
+                .setConsistencyLevel(writeConsistency));
     }
 
     private Statement dataRowUpdateFor(EquivalenceGraph graph, Content content) {
         return update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, graph.getId().longValue()))
                 .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
-            .with(set(DATA_KEY, serialize(content)));
+                .with(set(DATA_KEY, serialize(content)))
+                .and(set(GRAPH_KEY, graphSerializer.serialize(graph)));
     }
 
     private ByteBuffer serialize(Content content) {

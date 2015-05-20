@@ -50,6 +50,22 @@ public class BroadcastSerializerTest {
         checkBroadcast(deserialized, broadcast);
      
     }
+
+    @Test
+    public void testDeserializeBlackoutRestriction() {
+        DateTime start = new DateTime(DateTimeZones.UTC);
+        DateTime end = start.plusHours(1);
+        Broadcast broadcast = new Broadcast(Id.valueOf(1), start, end);
+        broadcast.setId(Id.valueOf(1234));
+
+        broadcast.setBlackoutRestriction(new BlackoutRestriction(true));
+
+        ContentProtos.Broadcast serialized = serializer.serialize(broadcast).build();
+
+        Broadcast deserialized = serializer.deserialize(serialized);
+
+        assertThat(deserialized.getBlackoutRestriction().get().getAll(), is(true));
+    }
     
     @Test
     public void testDeSerializeBroadcastWithScheduleDate() {

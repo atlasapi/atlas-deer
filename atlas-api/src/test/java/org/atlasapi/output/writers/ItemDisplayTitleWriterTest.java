@@ -1,13 +1,14 @@
 package org.atlasapi.output.writers;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.Item.ContainerSummary;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -21,6 +22,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.metabroadcast.common.time.DateTimeZones;
+
+import javax.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ItemDisplayTitleWriterTest {
@@ -36,7 +39,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setContainerSummary(new ContainerSummary("brand", "Brand Title", "Brand Desc", null));
         entity.setTitle("Episode Title");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getTitle());
         verifySubtitle(null);
@@ -51,7 +54,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setContainerSummary(null);
         entity.setTitle("Episode Title");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getTitle());
         verifySubtitle(null);
@@ -67,7 +70,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("Episode Title");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(String.format("Episode %s: %s", entity.getEpisodeNumber(), entity.getTitle()));
@@ -83,7 +86,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(null);
         entity.setTitle("Episode Title");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(entity.getTitle());
@@ -99,7 +102,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("Episode 42");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(entity.getTitle());
@@ -115,7 +118,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("25/12/2013");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(entity.getTitle());
@@ -131,7 +134,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle(entity.getContainerSummary().getTitle());
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(String.format("Episode %s", entity.getEpisodeNumber()));
@@ -152,7 +155,7 @@ public class ItemDisplayTitleWriterTest {
         );
         entity.addBroadcast(broadcast);
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle("25/12/2013");
@@ -168,7 +171,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(null);
         entity.setTitle(null);
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(null);
@@ -185,7 +188,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle("Series Title, Episode 42: Sausages");
@@ -202,7 +205,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle("Series 24, Episode 42: Sausages");
@@ -219,7 +222,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle("Episode 42: Sausages");
@@ -236,7 +239,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(null);
         entity.setTitle(null);
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(null);
@@ -253,7 +256,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle("Episode 42: Sausages");
@@ -270,7 +273,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle("Sausages");
         verifySubtitle(null);
@@ -284,7 +287,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setContainerSummary(new ContainerSummary("brand", "Brand Title", "Brand Desc", null));
         entity.setTitle(null);
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(entity.getContainerSummary().getTitle());
         verifySubtitle(null);
@@ -298,7 +301,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setContainerSummary(new ContainerSummary("brand", null, "Brand Desc", null));
         entity.setTitle(null);
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(null);
         verifySubtitle(null);
@@ -312,7 +315,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setContainerSummary(null);
         entity.setTitle(null);
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle(null);
         verifySubtitle(null);
@@ -329,7 +332,7 @@ public class ItemDisplayTitleWriterTest {
         entity.setEpisodeNumber(5);
         entity.setTitle("Fraternity Part 2");
         
-        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard()));
+        titleWriter.write(entity, fieldWriter, OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class))));
         
         verifyTitle("Silent Witness");
         verifySubtitle("Series 17, Episode 5: Fraternity Part 2");

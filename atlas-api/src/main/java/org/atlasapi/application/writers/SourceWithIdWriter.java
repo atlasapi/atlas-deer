@@ -17,7 +17,7 @@ public class SourceWithIdWriter implements
     private final SourceIdCodec sourceIdCodec;
     private final String fieldName;
     private final String listName;
-    private final EntityWriter<Country> countryWriter = new CountryWriter();
+    private final EntityWriter<Country> countryWriter = new CountryWriter("countries", "country");
 
     public SourceWithIdWriter(SourceIdCodec sourceIdCodec, String fieldName, String listName) {
         this.sourceIdCodec = sourceIdCodec;

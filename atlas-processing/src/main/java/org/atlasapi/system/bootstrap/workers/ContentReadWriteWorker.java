@@ -2,6 +2,8 @@ package org.atlasapi.system.bootstrap.workers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
@@ -13,6 +15,8 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -30,17 +34,25 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
     private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+    @Nullable private final Timer messagesTimer;
 
     public ContentReadWriteWorker(ContentResolver contentResolver, ContentWriter writer,
-            ExplicitEquivalenceMigrator explicitEquivalenceMigrator) {
+            ExplicitEquivalenceMigrator explicitEquivalenceMigrator, @Nullable MetricRegistry metricsRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
+        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("ContentReadWriteWorker")) : null);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) {
-        readAndWrite(message.getUpdatedResource().getId());
+        if (messagesTimer != null) {
+            Timer.Context timer = messagesTimer.time();
+            readAndWrite(message.getUpdatedResource().getId());
+            timer.stop();
+        } else {
+            readAndWrite(message.getUpdatedResource().getId());
+        }
     }
 
     private void readAndWrite(Id id) {

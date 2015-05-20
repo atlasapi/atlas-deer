@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.query.common.InvalidAnnotationException;
+import org.atlasapi.query.common.InvalidIdentifierException;
 import org.atlasapi.query.common.InvalidParameterException;
 
 import com.google.common.collect.ImmutableMap;
@@ -47,8 +48,17 @@ public class ErrorSummary {
                 String.format("resource %s not found", SubstitutionTableNumberCodec.lowerCaseOnly().encode(missingId))
             );
         }
-        
     }
+
+	public static final class InvalidIdentifierErrorSummaryFactory implements ErrorSummaryFactory<InvalidIdentifierException> {
+
+		@Override
+		public ErrorSummary build(InvalidIdentifierException exception) {
+			return new ErrorSummary(exception, "RESOURCE_NOT_FOUND", HttpStatusCode.NOT_FOUND,
+					exception.getMessage()
+			);
+		}
+	}
 	
 	private static Map<Class<? extends Exception>, ErrorSummaryFactory<?>> factories = factoryMap();
 	
@@ -65,6 +75,7 @@ public class ErrorSummary {
 	private static Map<Class<? extends Exception>, ErrorSummaryFactory<?>> factoryMap() {
 	    
 		return ImmutableMap.<Class<? extends Exception>, ErrorSummaryFactory<?>>builder()
+			.put(InvalidIdentifierException.class, new InvalidIdentifierErrorSummaryFactory())
 		    .put(IllegalArgumentException.class, new DefaultErrorSummaryFactory("BAD_QUERY_ATTRIBUTE", HttpStatusCode.BAD_REQUEST))
 		    .put(InvalidParameterException.class, new DefaultErrorSummaryFactory("BAD_QUERY_ATTRIBUTE", HttpStatusCode.BAD_REQUEST))
 		    .put(MalformedDateTimeException.class, new DefaultErrorSummaryFactory("BAD_DATE_TIME_VALUE", HttpStatusCode.BAD_REQUEST))

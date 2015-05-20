@@ -46,7 +46,7 @@ public class ContentController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/{cid}.*", "/{cid}", ".*", "" })
+    @RequestMapping({ "/{id}.*", "/{id}", ".*", "" })
     public void fetchContent(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;

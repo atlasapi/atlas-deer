@@ -51,8 +51,8 @@ public class ScheduleController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "", ".*", "/{cid}.*", "/{cid}" })
-    public void writeChannelSchedule(HttpServletRequest request, HttpServletResponse response)
+    @RequestMapping({ "", ".*", "/{id}.*", "/{id}" })
+    public void getChannelSchedule(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;
         try {

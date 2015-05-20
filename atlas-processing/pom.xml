@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.atlasapi</groupId>
     <artifactId>atlas</artifactId>
-    <version>7.0.71-SNAPSHOT</version>
+    <version>7.0.139-SNAPSHOT</version>
   </parent>
   <artifactId>atlas-processing</artifactId>
   <packaging>war</packaging>
@@ -133,6 +133,26 @@
       <groupId>org.atlasapi</groupId>
       <version>${atlas.version}</version>
       <artifactId>atlas-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-graphite</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-jvm</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.rabbitmq</groupId>
+      <artifactId>amqp-client</artifactId>
+      <version>3.3.5</version>
     </dependency>
   </dependencies>
 

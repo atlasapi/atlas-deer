@@ -4,6 +4,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
 import com.google.common.base.Objects;
@@ -50,6 +53,32 @@ public class EquivalentSchedule {
         return Objects.toStringHelper(this)
             .addValue(channelSchedules)
             .toString();
+    }
+
+    public EquivalentSchedule withLimitedBroadcasts(final Integer count) {
+        Iterable<EquivalentChannelSchedule> limitedChannelSchedules = Iterables.transform(
+                channelSchedules,
+                new Function<EquivalentChannelSchedule, EquivalentChannelSchedule>() {
+                    @Override
+                    public EquivalentChannelSchedule apply(EquivalentChannelSchedule input) {
+                        return input.withLimitedBroadcasts(count);
+                    }
+                }
+        );
+
+        DateTime newEndTime = interval.getStart();
+        for (EquivalentChannelSchedule limitedChannelSchedule : limitedChannelSchedules) {
+            DateTime scheduleEndTime = limitedChannelSchedule.getInterval().getEnd();
+            if (scheduleEndTime.isAfter(newEndTime)) {
+                newEndTime = scheduleEndTime;
+            }
+        }
+        Interval newScheduleInterval = new Interval(interval.getStart(), newEndTime);
+
+        return new EquivalentSchedule(
+                ImmutableList.copyOf(limitedChannelSchedules),
+                newScheduleInterval
+        );
     }
     
 }

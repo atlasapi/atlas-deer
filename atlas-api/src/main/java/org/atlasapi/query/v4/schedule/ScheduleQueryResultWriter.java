@@ -3,34 +3,35 @@ package org.atlasapi.query.v4.schedule;
 import java.io.IOException;
 
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
 
 import com.google.common.collect.FluentIterable;
 
-public class ScheduleQueryResultWriter implements QueryResultWriter<ChannelSchedule> {
+import javax.servlet.http.HttpServletRequest;
+
+public class ScheduleQueryResultWriter extends QueryResultWriter<ChannelSchedule> {
 
     private final EntityListWriter<ChannelSchedule> scheduleWriter;
 
-    public ScheduleQueryResultWriter(EntityListWriter<ChannelSchedule> scheduleWriter) {
+    public ScheduleQueryResultWriter(
+            EntityListWriter<ChannelSchedule> scheduleWriter,
+            EntityWriter<Object> licenseWriter,
+            EntityWriter<HttpServletRequest> requestWriter
+    ) {
+        super(licenseWriter, requestWriter);
         this.scheduleWriter = scheduleWriter;
     }
 
     @Override
-    public void write(QueryResult<ChannelSchedule> result, ResponseWriter writer) throws IOException {
-        writer.startResponse();
-        writeResult(result, writer);
-        writer.finishResponse();
-    }
-
-    private void writeResult(QueryResult<ChannelSchedule> result, ResponseWriter writer)
+    protected void writeResult(QueryResult<ChannelSchedule> result, ResponseWriter writer)
         throws IOException {
 
-        OutputContext ctxt = outputContext(result.getContext());
+        OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
             FluentIterable<ChannelSchedule> resources = result.getResources();
@@ -38,13 +39,6 @@ public class ScheduleQueryResultWriter implements QueryResultWriter<ChannelSched
         } else {
             writer.writeObject(scheduleWriter, result.getOnlyResource(), ctxt);
         }
-    }
-
-    private OutputContext outputContext(QueryContext queryContext) {
-        return new OutputContext(
-            queryContext.getAnnotations(),
-            queryContext.getApplicationSources()
-        );
     }
 
 }

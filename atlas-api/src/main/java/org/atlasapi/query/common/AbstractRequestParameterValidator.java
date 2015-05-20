@@ -23,6 +23,13 @@ public abstract class AbstractRequestParameterValidator {
         if (!missingParams.isEmpty()) {
             throw new InvalidParameterException(missingParameterMessage(missingParams));
         }
+        Collection<String> conflictingParams = determineConflictingParameters(requestParams);
+        if (!conflictingParams.isEmpty()) {
+            throw new InvalidParameterException(conflictingParameterMessage(conflictingParams));
+        }
+        if (!missingParams.isEmpty()) {
+            throw new InvalidParameterException(conflictingParameterMessage(conflictingParams));
+        }
     
         return request;
     }
@@ -36,8 +43,12 @@ public abstract class AbstractRequestParameterValidator {
 
     protected abstract Collection<String> determineMissingParameters(Set<String> requestParams);
 
+    protected abstract Collection<String> determineConflictingParameters(Set<String> requestParams);
+
     protected abstract String invalidParameterMessage(Collection<String> invalidParams);
 
     protected abstract String missingParameterMessage(Collection<String> missingParams);
+
+    protected abstract String conflictingParameterMessage(Collection<String> conflictingParams);
 
 }

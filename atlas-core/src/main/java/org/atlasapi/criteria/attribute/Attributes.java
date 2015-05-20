@@ -17,6 +17,8 @@ package org.atlasapi.criteria.attribute;
 import java.util.List;
 import java.util.Map;
 
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
@@ -52,7 +54,9 @@ public class Attributes {
     public static final Attribute<String> DESCRIPTION_TAG = stringListAttribute("tag", Content.class);
     public static final Attribute<MediaType> DESCRIPTION_TYPE = new EnumValuedAttribute<MediaType>("mediaType", MediaType.class, Item.class);
 	public static final Attribute<String> TOPICS = stringListAttribute("topics", Content.class);
-	
+	public static final Attribute<String> CHANNEL_GROUP_TYPE = stringListAttribute("type", ChannelGroup.class);
+	public static final Attribute<String> CHANNEL_GROUP_CHANNEL_GENRES = stringListAttribute("channel_genres", ChannelGroup.class);
+
 	//public static final Attribute<Boolean> ITEM_IS_LONG_FORM = new BooleanValuedAttribute("isLongForm", Item.class).allowShortMatches();
 	
 	//public static final Attribute<Enum<MimeType>> ENCODING_DATA_CONTAINER_FORMAT = new EnumValuedAttribute<MimeType>("dataContainerFormat", MimeType.class, Encoding.class).allowShortMatches();
@@ -83,7 +87,17 @@ public class Attributes {
     public static final Attribute<Publisher> SOURCE_READS = EnumValuedAttribute.valueOf("source.reads", Publisher.class, Identified.class, true);
     public static final Attribute<Publisher> SOURCE_WRITES = EnumValuedAttribute.valueOf("source.writes", Publisher.class, Identified.class, true);
     public static final Attribute<Publisher> SOURCE_REQUEST_SOURCE = EnumValuedAttribute.valueOf("source", Publisher.class, Identified.class, true);
-	
+
+	//For Channels
+    public static final String BROADCASTER_PARAM = "broadcaster";
+    public static final String AVAILABLE_FROM_PARAM = "available_from";
+    public static final String MEDIA_TYPE_PARAM = "media_type";
+    public static final String ORDER_BY_PARAM = "order_by";
+	public static final Attribute<Publisher> BROADCASTER = EnumValuedAttribute.valueOf(BROADCASTER_PARAM, Publisher.class, Identified.class, true);
+	public static final Attribute<Publisher> AVAILABLE_FROM = EnumValuedAttribute.valueOf(AVAILABLE_FROM_PARAM, Publisher.class, Identified.class, true);
+	public static final Attribute<MediaType> MEDIA_TYPE = new EnumValuedAttribute<>(MEDIA_TYPE_PARAM, MediaType.class, Identified.class);
+	public static final Attribute<String> ORDER_BY = stringAttribute(ORDER_BY_PARAM, Channel.class);
+
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
 		ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,
 								    DESCRIPTION_GENRE,

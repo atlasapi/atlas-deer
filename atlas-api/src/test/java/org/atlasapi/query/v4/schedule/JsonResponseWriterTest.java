@@ -1,8 +1,11 @@
 package org.atlasapi.query.v4.schedule;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.Map;
@@ -39,7 +42,7 @@ public class JsonResponseWriterTest {
         mapper = new ObjectMapper();
         request = new StubHttpServletRequest();
         response = new StubHttpServletResponse();
-        ctxt = OutputContext.valueOf(QueryContext.standard());
+        ctxt = OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)));
         formatter = new JsonResponseWriter(request, response);
         formatter.startResponse();
     }
@@ -72,6 +75,31 @@ public class JsonResponseWriterTest {
         assertEquals("world", deser.get("hello"));
         assertEquals("monde", deser.get("bonjour"));
         assertEquals("hammerzeit", deser.get("halt"));
+    }
+
+
+    @Test
+    public void testWritingPrimitiveFields() throws Exception {
+
+        formatter.writeField("int", 1);
+        formatter.writeField("long", 4294967296L);
+        formatter.writeField("double", 3.5D);
+        formatter.writeField("boolean", true);
+        formatter.finishResponse();
+
+        Map<String, Object> deser = asMap(response);
+
+        assertEquals(1, deser.get("int"));
+        assertEquals(4294967296L, deser.get("long"));
+        assertEquals(3.5D, deser.get("double"));
+        assertEquals(true, deser.get("boolean"));
+    }
+
+    @Test
+    public void testWriteEmptyResponse() throws IOException {
+        formatter.finishResponse();
+        assertThat(asMap(response).isEmpty(), is(true));
+
     }
 
     @Test

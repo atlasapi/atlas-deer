@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.collect.Range;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
@@ -42,6 +43,16 @@ class ScheduleRequestParser {
         ".*schedules/([^.]+)(.[\\w\\d.]+)?$"
     );
     private static final Splitter commaSplitter = Splitter.on(",").omitEmptyStrings().trimResults();
+
+    private static final Range<Integer> COUNT_RANGE = Range.closed(1, 10);
+
+    private static final String FROM_PARAM = "from";
+    private static final String TO_PARAM = "to";
+    private static final String COUNT_PARAM = "count";
+    private static final String SOURCE_PARAM = "source";
+    private static final String ANNOTATIONS_PARAM = "annotations";
+    private static final String CALLBACK_PARAM = "callback";
+    private static final String ID_PARAM = "id";
     
     private final ApplicationSourcesFetcher applicationFetcher;
 
@@ -72,23 +83,25 @@ class ScheduleRequestParser {
 
     private SetBasedRequestParameterValidator singleRequestValidator(ApplicationSourcesFetcher fetcher) {
         ImmutableList<String> required = ImmutableList.<String>builder()
-            .add("from","to","source")
+            .add(FROM_PARAM, SOURCE_PARAM)
             .addAll(fetcher.getParameterNames())
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters("annotations", "callback")
+            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM)
+            .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
 
     private SetBasedRequestParameterValidator multiRequestValidator(ApplicationSourcesFetcher fetcher) {
         ImmutableList<String> required = ImmutableList.<String>builder()
-            .add("id", "from", "to", "source")
+            .add(ID_PARAM, FROM_PARAM, SOURCE_PARAM)
             .addAll(fetcher.getParameterNames())
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters("annotations", "callback")
+            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM)
+            .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
 
@@ -101,14 +114,20 @@ class ScheduleRequestParser {
     private ScheduleQuery parseSingleRequest(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
         singleValidator.validateParameters(request);
-        
+
         Publisher publisher = extractPublisher(request);
-        Interval queryInterval = extractInterval(request);
-        
         QueryContext context = parseContext(request, publisher);
-        
         Id channel = extractChannel(request);
-        return ScheduleQuery.single(publisher, queryInterval, context, channel);
+
+        DateTime from = extractFrom(request);
+        Optional<DateTime> to = extractTo(request);
+        if (to.isPresent()) {
+            checkInterval(from, to.get());
+            return ScheduleQuery.single(publisher, from, to.get(), context, channel);
+        }
+
+        Integer count = extractCount(request);
+        return ScheduleQuery.single(publisher, from, count, context, channel);
     }
 
     private ScheduleQuery parseMultiRequest(HttpServletRequest request)
@@ -117,11 +136,18 @@ class ScheduleRequestParser {
         multiValidator.validateParameters(request);
         
         Publisher publisher = extractPublisher(request);
-        Interval queryInterval = extractInterval(request);
         QueryContext context = parseContext(request, publisher);
-        
         List<Id> channels = extractChannels(request);
-        return ScheduleQuery.multi(publisher, queryInterval, context, channels);
+
+        DateTime from = extractFrom(request);
+        Optional<DateTime> to = extractTo(request);
+        if (to.isPresent()) {
+            checkInterval(from, to.get());
+            return ScheduleQuery.multi(publisher, from, to.get(), context, channels);
+        }
+
+        Integer count = extractCount(request);
+        return ScheduleQuery.multi(publisher, from, count, context, channels);
     }
 
 
@@ -132,12 +158,12 @@ class ScheduleRequestParser {
         checkArgument(appSources.isReadEnabled(publisher), "Source %s not enabled", publisher);
         
         ActiveAnnotations annotations = annotationExtractor.extractFromRequest(request);
-        QueryContext context = new QueryContext(appSources, annotations);
+        QueryContext context = new QueryContext(appSources, annotations, request);
         return context;
     }
 
     private List<Id> extractChannels(HttpServletRequest request) throws QueryParseException {
-        String csvCids = request.getParameter("id");
+        String csvCids = request.getParameter(ID_PARAM);
         List<String> cids = commaSplitter.splitToList(csvCids);
         List<String> invalidIds = Lists.newLinkedList();
         ImmutableList.Builder<Id> ids = ImmutableList.builder();
@@ -170,18 +196,36 @@ class ScheduleRequestParser {
         }
     }
 
-    private Interval extractInterval(HttpServletRequest request) {
+    private DateTime extractFrom(HttpServletRequest request) {
         DateTime now = clock.now();
-        DateTime from = dateTimeParser.parse(getParameter(request, "from"), now);
-        DateTime to = dateTimeParser.parse(getParameter(request, "to"), now);
-        
+        DateTime from = dateTimeParser.parse(getParameter(request, FROM_PARAM), now);
+        return from;
+    }
+
+    private Optional<DateTime> extractTo(HttpServletRequest request) {
+        DateTime now = clock.now();
+        String toParam = request.getParameter(TO_PARAM);
+        if (Strings.isNullOrEmpty(toParam)) {
+            return Optional.absent();
+        }
+        DateTime from = dateTimeParser.parse(toParam, now);
+        return Optional.of(from);
+    }
+
+    private void checkInterval(DateTime from, DateTime to) {
         Interval queryInterval = new Interval(from, to);
         checkArgument(!queryInterval.toDuration().isLongerThan(maxQueryDuration), "Query interval cannot be longer than %s", maxQueryDuration);
-        return queryInterval;
+    }
+
+    private Integer extractCount(HttpServletRequest request) {
+        Integer count = Integer.valueOf(getParameter(request, COUNT_PARAM));
+
+        checkArgument(COUNT_RANGE.contains(count),  "'count' must be between %s and %s, was %s", COUNT_RANGE.lowerEndpoint(), COUNT_RANGE.upperEndpoint(), count);
+        return count;
     }
 
     private Publisher extractPublisher(HttpServletRequest request) {
-        String pubKey = getParameter(request, "source");
+        String pubKey = getParameter(request, SOURCE_PARAM);
         Optional<Publisher> publisher = Sources.fromPossibleKey(pubKey);
         checkArgument(publisher.isPresent(), "Unknown source %s", pubKey);
         return publisher.get();

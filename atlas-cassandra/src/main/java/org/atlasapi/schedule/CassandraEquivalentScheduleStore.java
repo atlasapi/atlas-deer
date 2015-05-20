@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.QueryExecutionException;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.BroadcastSerializer;
@@ -33,11 +36,11 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.Equivalent;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 
@@ -64,6 +67,8 @@ import com.metabroadcast.common.time.Clock;
 
 public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
 
+    private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
+
     private final class ToEquivalentSchedule implements Function<List<ResultSet>, EquivalentSchedule> {
 
         private final Interval interval;
@@ -84,7 +89,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         private List<EquivalentChannelSchedule> toChannelSchedules(List<ResultSet> input,
                 Iterable<Channel> channels, final Interval interval) {
-            SetMultimap<Long, EquivalentScheduleEntry> entriesByChannel = transformToEntries(input, interval);
+            SetMultimap<Id, EquivalentScheduleEntry> entriesByChannel = transformToEntries(input, interval);
             ImmutableList.Builder<EquivalentChannelSchedule> channelSchedules = ImmutableList.builder();
             for (Channel channel : channels) {
                 Set<EquivalentScheduleEntry> entries = entriesByChannel.get(channel.getId());
@@ -93,10 +98,10 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             return channelSchedules.build();
         }
 
-        private SetMultimap<Long, EquivalentScheduleEntry> transformToEntries(
+        private SetMultimap<Id, EquivalentScheduleEntry> transformToEntries(
                 List<ResultSet> input, Interval interval) {
             ScheduleBroadcastFilter broadcastFilter = ScheduleBroadcastFilter.valueOf(interval);
-            ImmutableSetMultimap.Builder<Long, EquivalentScheduleEntry> channelEntries = ImmutableSetMultimap.builder();
+            ImmutableSetMultimap.Builder<Id, EquivalentScheduleEntry> channelEntries = ImmutableSetMultimap.builder();
             for (Row row : Iterables.concat(input)) {
                 deserializeRow(channelEntries, row, broadcastFilter);
             }
@@ -104,13 +109,13 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
 
         private void deserializeRow(
-                ImmutableSetMultimap.Builder<Long, EquivalentScheduleEntry> channelEntries,
+                ImmutableSetMultimap.Builder<Id, EquivalentScheduleEntry> channelEntries,
                 Row row, ScheduleBroadcastFilter broadcastFilter) {
             try {
                 Broadcast broadcast = deserialize(BROADCAST.valueFrom(row));
                 if (broadcastFilter.apply(broadcast.getTransmissionInterval())) {
                     Equivalent<Item> equivItems = deserialize(row);
-                    channelEntries.put(CHANNEL.valueFrom(row), 
+                    channelEntries.put(Id.valueOf(CHANNEL.valueFrom(row)),
                             new EquivalentScheduleEntry(broadcast, equivItems));
                 }
             } catch (IOException e) {
@@ -135,7 +140,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     items.add(item);
                 }
             }
-            return new Equivalent<Item>(graph, items.build());
+            return new Equivalent<>(graph, items.build());
         }
 
         private Broadcast deserialize(ByteBuffer bcastBytes) throws InvalidProtocolBufferException {
@@ -177,8 +182,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    public ListenableFuture<EquivalentSchedule> resolveSchedules(Iterable<Channel> channels,
-            final Interval interval, Publisher source, final Set<Publisher> selectedSources) {
+    public ListenableFuture<EquivalentSchedule> resolveSchedules(
+            Iterable<Channel> channels,
+            final Interval interval,
+            Publisher source,
+            final Set<Publisher> selectedSources
+    ) {
         final Set<Channel> chans = ImmutableSet.copyOf(channels);
         List<Statement> selects = selectStatements(source, channels, interval);
         ListenableFuture<List<ResultSet>> results = Futures.allAsList(Lists.transform(selects, 
@@ -192,6 +201,26 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return Futures.transform(results, new ToEquivalentSchedule(chans, interval, selectedSources));
     }
 
+    @Override
+    public ListenableFuture<EquivalentSchedule> resolveSchedules(
+            Iterable<Channel> channels,
+            DateTime start,
+            final Integer count,
+            Publisher source,
+            Set<Publisher> selectedSources
+    ) {
+        Interval interval = new Interval(start, start.plus(MAX_SCHEDULE_LENGTH));
+        return Futures.transform(
+                resolveSchedules(channels, interval, source, selectedSources),
+                new Function<EquivalentSchedule, EquivalentSchedule>() {
+                    @Override
+                    public EquivalentSchedule apply(EquivalentSchedule input) {
+                        return input.withLimitedBroadcasts(count);
+                    }
+                }
+        );
+    }
+
     private List<Statement> selectStatements(Publisher src, Iterable<Channel> channels, Interval interval) {
         ImmutableList.Builder<Statement> selects = ImmutableList.builder();
         Object[] days = daysIn(interval); 
@@ -199,7 +228,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             selects.add(QueryBuilder.select().all()
                 .from(EQUIVALENT_SCHEDULE_TABLE)
                 .where(eq(SOURCE.name(), src.key()))
-                    .and(eq(CHANNEL.name(), channel.getId()))
+                    .and(eq(CHANNEL.name(), channel.getId().longValue()))
                     .and(in(DAY.name(), days)));
         }
         return selects.build();
@@ -227,7 +256,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
         
         Statement updateBatch = batch(Iterables.toArray(Iterables.concat(updates, deletes), RegularStatement.class));
-        session.execute(updateBatch.setConsistencyLevel(write));
+        try {
+            session.execute(updateBatch.setConsistencyLevel(write));
+        } catch(NoHostAvailableException | QueryExecutionException e) {
+            throw new WriteException(e);
+        }
     }
 
     private List<RegularStatement> updateStatements(Publisher source, ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)

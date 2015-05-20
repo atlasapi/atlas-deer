@@ -58,7 +58,7 @@ public class AuthController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            QueryResult<OAuthProvider> queryResult = QueryResult.listResult(OAuthProvider.all(), QueryContext.standard());
+            QueryResult<OAuthProvider> queryResult = QueryResult.listResult(OAuthProvider.all(), QueryContext.standard(request));
             resultWriter.write(queryResult, writer);
         }  catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

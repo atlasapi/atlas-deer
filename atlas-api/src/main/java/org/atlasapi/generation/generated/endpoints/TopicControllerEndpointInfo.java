@@ -11,10 +11,10 @@ public class TopicControllerEndpointInfo implements EndpointClassInfo {
 
     private static final Set<Operation> operations = ImmutableSet.<Operation>builder()
             .add(
-                new Operation(RequestMethod.GET, "/{tid}.*")
+                new Operation(RequestMethod.GET, "/{id}.*")
             )
             .add(
-                new Operation(RequestMethod.GET, "/{tid}")
+                new Operation(RequestMethod.GET, "/{id}")
             )
             .add(
                 new Operation(RequestMethod.GET, ".*")
@@ -32,6 +32,11 @@ public class TopicControllerEndpointInfo implements EndpointClassInfo {
     @Override
     public String name() {
         return "topics";
+    }
+
+    @Override
+    public String modelKey() {
+        return "topic";
     }
 
     @Override

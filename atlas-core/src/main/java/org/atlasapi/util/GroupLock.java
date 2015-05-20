@@ -4,6 +4,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 
@@ -45,6 +48,7 @@ public final class GroupLock<T> {
     }
 
     private final Set<T> locked = Sets.newHashSet();
+    private final Logger log = LoggerFactory.getLogger(GroupLock.class);
     private final Ordering<? super T> ordering;
 
     private GroupLock(Ordering<? super T> ordering) {
@@ -68,10 +72,13 @@ public final class GroupLock<T> {
      *             thread was interrupted whilst waiting for the lock.
      */
     public void lock(T id) throws InterruptedException {
+        log.trace("{} trying to lock {}", Thread.currentThread().getName(), id.toString());
         synchronized (locked) {
             while (locked.contains(id)) {
+                log.trace("{} waiting on lock for {}", Thread.currentThread().getName(), id.toString());
                 locked.wait();
             }
+            log.trace("{} acquired lock for {}", Thread.currentThread().getName(), id.toString());
             locked.add(id);
         }
     }
@@ -91,8 +98,10 @@ public final class GroupLock<T> {
      * @throws InterruptedException
      */
     public void unlock(T id) {
+        log.trace("{} trying to unlock {}", Thread.currentThread().getName(), id.toString());
         synchronized (locked) {
             if (locked.remove(id)) {
+                log.trace("{} unlocked {}", Thread.currentThread().getName(), id.toString());
                 locked.notifyAll();
             }
         }
@@ -108,11 +117,14 @@ public final class GroupLock<T> {
      *             thread was interrupted whilst waiting for the lock.
      */
     public boolean tryLock(T id) throws InterruptedException {
+        log.trace("{} attempting to lock {}", Thread.currentThread().getName(), id.toString());
         synchronized (locked) {
             if (!locked.contains(id)) {
+                log.trace("{} got lock for {}", Thread.currentThread().getName(), id.toString());
                 lock(id);
                 return true;
             }
+            log.trace("{} didnt get lock {}", Thread.currentThread().getName(), id.toString());
             return false;
         }
     }

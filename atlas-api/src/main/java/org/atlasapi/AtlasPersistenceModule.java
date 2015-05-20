@@ -6,6 +6,9 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.mongodb.MongoClientOptions;
+import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentStore;
@@ -24,6 +27,11 @@ import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.segment.SegmentStore;
+import org.atlasapi.system.HealthModule;
+import org.atlasapi.system.legacy.LegacyChannelGroupResolver;
+import org.atlasapi.system.legacy.LegacyChannelGroupTransformer;
+import org.atlasapi.system.legacy.LegacyChannelResolver;
+import org.atlasapi.system.legacy.LegacyChannelTransformer;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
@@ -56,9 +64,13 @@ import com.netflix.astyanax.Keyspace;
 @Import({KafkaMessagingModule.class})
 public class AtlasPersistenceModule {
 
-    private final String mongoHost = Configurer.get("mongo.host").get();
-    private final Integer mongoPort = Configurer.get("mongo.port").toInt();
-    private final String mongoDbName = Configurer.get("mongo.name").get();
+    private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
+    private final Integer mongoWritePort = Configurer.get("mongo.write.port").toInt();
+    private final String mongoWriteDbName = Configurer.get("mongo.write.name").get();
+
+    private final String mongoReadHost = Configurer.get("mongo.read.host").get();
+    private final Integer mongoReadPort = Configurer.get("mongo.read.port").toInt();
+    private final String mongoReadDbName = Configurer.get("mongo.read.name").get();
     
     private final String cassandraCluster = Configurer.get("cassandra.cluster").get();
     private final String cassandraKeyspace = Configurer.get("cassandra.keyspace").get();
@@ -66,6 +78,8 @@ public class AtlasPersistenceModule {
     private final String cassandraPort = Configurer.get("cassandra.port").get();
     private final String cassandraConnectionTimeout = Configurer.get("cassandra.connectionTimeout").get();
     private final String cassandraClientThreads = Configurer.get("cassandra.clientThreads").get();
+    private final Integer cassandraConnectionsPerHostLocal = Configurer.get("cassandra.connectionsPerHost.local").toInt();
+    private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
  
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final String esCluster = Configurer.get("elasticsearch.cluster").get();
@@ -73,6 +87,8 @@ public class AtlasPersistenceModule {
     private final Parameter processingConfig = Configurer.get("processing.config");
 
     @Autowired MessagingModule messaging;
+    @Autowired HealthModule health;
+
 
     @PostConstruct
     public void init() {
@@ -84,10 +100,15 @@ public class AtlasPersistenceModule {
         Iterable<String> seeds = Splitter.on(",").split(cassandraSeeds);
         ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster, cassandraKeyspace, 
                 seeds, Integer.parseInt(cassandraPort), 
-                Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout));
+                Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout),
+                health.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
-        DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds);
+        DatastaxCassandraService cassandraService = new DatastaxCassandraService(
+                seeds,
+                cassandraConnectionsPerHostLocal,
+                cassandraConnectionsPerHostRemote
+        );
         cassandraService.startAsync().awaitRunning();
         return new CassandraPersistenceModule(messaging.messageSenderFactory(),
                 context,
@@ -145,13 +166,20 @@ public class AtlasPersistenceModule {
     }
 
     @Bean @Primary
-    public DatabasedMongo databasedMongo() {
-        return new DatabasedMongo(mongo(), mongoDbName);
+    public DatabasedMongo databasedReadMongo() {
+        return new DatabasedMongo(mongo(mongoReadHost, mongoReadPort), mongoReadDbName);
     }
 
-    @Bean @Primary
-    public Mongo mongo() {
-        Mongo mongo = new MongoClient(mongoHosts());
+    @Bean
+    public DatabasedMongo databasedWriteMongo() {
+        return new DatabasedMongo(mongo(mongoWriteHost, mongoWritePort), mongoWriteDbName);
+    }
+
+    public Mongo mongo(String mongoHost, Integer mongoPort) {
+        Mongo mongo = new MongoClient(
+                mongoHosts(mongoHost, mongoPort),
+                MongoClientOptions.builder().connectTimeout(10000).build()
+        );
         if (processingConfig == null || !processingConfig.toBoolean()) {
             mongo.setReadPreference(ReadPreference.secondaryPreferred());
         }
@@ -164,7 +192,7 @@ public class AtlasPersistenceModule {
 
             @Override
             public IdGenerator generator(String sequenceIdentifier) {
-                return new MongoSequentialIdGenerator(databasedMongo(), sequenceIdentifier);
+                return new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
             }
         };
     }
@@ -196,17 +224,17 @@ public class AtlasPersistenceModule {
     @Bean
     @Primary
     public ChannelStore channelStore() {
-        MongoChannelStore rawStore = new MongoChannelStore(databasedMongo(), channelGroupStore(), channelGroupStore());
+        MongoChannelStore rawStore = new MongoChannelStore(databasedReadMongo(), channelGroupStore(), channelGroupStore());
         return new CachingChannelStore(rawStore);
     }
     
     @Bean
     @Primary
     public ChannelGroupStore channelGroupStore() {
-        return new MongoChannelGroupStore(databasedMongo());
+        return new MongoChannelGroupStore(databasedReadMongo());
     }
 
-    private List<ServerAddress> mongoHosts() {
+    private List<ServerAddress> mongoHosts(String mongoHost, final Integer mongoPort) {
         Splitter splitter = Splitter.on(",").omitEmptyStrings().trimResults();
         return ImmutableList.copyOf(Iterables.filter(Iterables.transform(splitter.split(mongoHost), 
             new Function<String, ServerAddress>() {
@@ -227,4 +255,13 @@ public class AtlasPersistenceModule {
         return new MongoConnectionPoolProbe();
     }
 
+    @Bean
+    public ChannelResolver channelResolver() {
+        return new LegacyChannelResolver(channelStore(), new LegacyChannelTransformer());
+    }
+
+    @Bean
+    public ChannelGroupResolver channelGroupResolver() {
+        return new LegacyChannelGroupResolver(channelGroupStore(), new LegacyChannelGroupTransformer());
+    }
 }

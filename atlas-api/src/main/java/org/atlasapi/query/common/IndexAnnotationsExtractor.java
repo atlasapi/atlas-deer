@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
@@ -35,11 +36,10 @@ public class IndexAnnotationsExtractor implements AnnotationsExtractor {
 
         String serialisedAnnotations = request.getParameter(parameterName);
 
-        if (serialisedAnnotations == null) {
-            return ActiveAnnotations.standard();
-        }
 
-        return lookup.resolveSingleContext(csvSplitter.split(serialisedAnnotations));
+        Iterable<String> annotations = serialisedAnnotations == null ? ImmutableList.<String>of() : csvSplitter.split(serialisedAnnotations);
+
+        return lookup.resolveSingleContext(annotations);
     }
 
     @Override

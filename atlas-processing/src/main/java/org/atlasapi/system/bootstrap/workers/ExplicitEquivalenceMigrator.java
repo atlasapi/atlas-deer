@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import com.google.common.base.Throwables;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
@@ -20,7 +21,6 @@ import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
@@ -63,8 +63,16 @@ public class ExplicitEquivalenceMigrator {
         try {
             Set<LookupRef> legacyEquivRefs = resolveLegacyEquivalents(content).explicitEquivalents();
             if (!legacyEquivRefs.isEmpty()) {
+                log.trace("Resolved {} legacy explicit equiv refs for {}",
+                        legacyEquivRefs.size(), content.getId());
                 Set<ResourceRef> equivRefs = resolveLegacyContent(legacyEquivRefs);
-                return updateGraphStore(content, equivRefs);
+                log.trace("Dereferenced {} of {} explicit equivalents for {}",
+                        equivRefs.size(), legacyEquivRefs.size(), content.getId());
+                Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(
+                        content,
+                        equivRefs);
+                log.trace("Updated graph store? {}", graphUpdate.isPresent());
+                return graphUpdate;
             } else {
                 log.warn("Content {} has no explicit equivalents", content.getId());
                 return Optional.absent();

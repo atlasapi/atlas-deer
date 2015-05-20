@@ -1,5 +1,6 @@
 package org.atlasapi.messaging;
 
+import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,10 @@ public class KafkaMessagingModule implements MessagingModule {
     private String zookeeper;
     @Value("${messaging.system}")
     private String messagingSystem;
+    @Value("${messaging.backOffIntervalMillis}")
+    private Long backOffIntervalMillis;
+    @Value("${messaging.maxBackOffMillis}")
+    private Long maxBackOffMillis;
     
     public KafkaMessagingModule(String brokerUrl, String zookeeper, String messagingSystem) {
         this.brokerUrl = brokerUrl;
@@ -37,7 +42,12 @@ public class KafkaMessagingModule implements MessagingModule {
     @Override
     @Bean
     public MessageConsumerFactory<KafkaConsumer> messageConsumerFactory() {
-        return new KafkaMessageConsumerFactory(zookeeper, messagingSystem);
+        return new KafkaMessageConsumerFactory(
+                zookeeper,
+                messagingSystem,
+                Duration.millis(backOffIntervalMillis),
+                Duration.millis(maxBackOffMillis)
+        );
     }
     
 }

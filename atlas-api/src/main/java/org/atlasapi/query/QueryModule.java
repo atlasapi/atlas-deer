@@ -15,13 +15,19 @@ permissions and limitations under the License. */
 package org.atlasapi.query;
 
 import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
 import org.atlasapi.equivalence.DefaultMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.output.OutputContentMerger;
 import org.atlasapi.output.StrategyBackedEquivalentsMerger;
 import org.atlasapi.query.common.ContextualQueryExecutor;
 import org.atlasapi.query.common.QueryExecutor;
+import org.atlasapi.query.v4.channel.ChannelQueryExecutor;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryExecutor;
 import org.atlasapi.query.v4.content.IndexBackedEquivalentContentQueryExecutor;
 import org.atlasapi.query.v4.schedule.EquivalentScheduleResolverBackedScheduleQueryExecutor;
 import org.atlasapi.query.v4.schedule.ScheduleQueryExecutor;
@@ -56,6 +62,17 @@ public class QueryModule {
             mergingContentResolver());
     }
 
+    @Bean
+    public QueryExecutor<Channel> channelQueryExecutor() {
+        return new ChannelQueryExecutor(persistenceModule.channelResolver());
+    }
+
+    @Bean
+    public QueryExecutor<ChannelGroup> channelGroupQueryExecutor() {
+        return new ChannelGroupQueryExecutor(persistenceModule.channelGroupResolver());
+    }
+
+
     private MergingEquivalentsResolver<Content> mergingContentResolver() {
         return new DefaultMergingEquivalentsResolver<Content>(
             persistenceModule.getEquivalentContentStore(), 
@@ -69,7 +86,7 @@ public class QueryModule {
     
     @Qualifier("store")
     @Bean ScheduleQueryExecutor equivalentScheduleStoreScheduleQueryExecutor() {
-        return new EquivalentScheduleResolverBackedScheduleQueryExecutor(persistenceModule.channelStore(), 
+        return new EquivalentScheduleResolverBackedScheduleQueryExecutor(persistenceModule.channelResolver(),
             persistenceModule.getEquivalentScheduleStore(), equivalentsMerger());
     }
 
@@ -77,6 +94,11 @@ public class QueryModule {
     public SearchResolver v4SearchResolver() {
         // FIXME externalize timeout
         return new ContentResolvingSearcher(persistenceModule.contentSearcher(), persistenceModule.contentStore(), 60000);
+    }
+
+    @Bean
+    public ContainerSummaryResolver containerSummaryResolver() {
+        return new MergingEquivalentsResolverBackedContainerSummaryResolver(mergingContentResolver());
     }
 
 }

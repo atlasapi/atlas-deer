@@ -18,6 +18,8 @@ arg_parser.add_argument('-v2', dest='version2', default=4, type=int, choices=xra
 arg_parser.add_argument('-k', dest='key', help='API key to use')
 arg_parser.add_argument('-platform', metavar='platform', nargs='?', help='platform of channels to compare')
 arg_parser.add_argument('-offset', dest='offset', type=int, nargs='?', metavar='offset', help='initial platform offset')
+arg_parser.add_argument('-q', dest='quiet', action='store_true', default=False)
+
 
 arg_parser.add_argument('source', metavar='source', help='Source of the schedules to compare')
 arg_parser.add_argument('start', metavar='start', help='Start time of schedules to compare')
@@ -165,23 +167,40 @@ def compare(left, right):
   difference = False
   l = None
   r = None
+  l_prev = None
+  r_prev = None
   while len(left) > 0 and len(right) > 0:
     l = l if l != None else left.pop(0)
     r = r if r != None else right.pop(0)
     if (l.start > r.start):
       difference = True
       table.append(mismatch(None, r))
+      r_prev = r
       r = None
     elif (l.start < r.start):
       difference = True
       table.append(mismatch(l, None))
+      l_prev = l
       l = None
     else:
       row, diff = matching_start(l, r)
       difference = difference or diff
+      if l_prev is not None and r_prev is not None:
+          if l_prev.end < l.start and r_prev.end < r.start:
+              sys.stdout.write(color("31", "gap in broadcast "))
+              table.append(mismatch(None, None))
+              difference = True
+          elif l_prev.end > l.start and r_prev.end > r.start:
+              sys.stdout.write(color("31", "overlap in broadcast "))
+              table.append(mismatch(None, None))
+              difference = True
       table.append(row)
-      l = None
+      l_prev = l
+      r_prev = r
       r = None
+      l = None
+
+    
   if len(left) > 0:
     for l in left:
       difference = True
@@ -327,12 +346,13 @@ else:
     for day in days(start, end):
       s = day
       e = day+datetime.timedelta(1)
-      sys.stdout.write("\t%s: " % day.date())
-      sys.stdout.flush()
       req1, schedule1 = atlas1.get_schedule(source, channel, s, e)
       req2, schedule2 = atlas2.get_schedule(source, channel, s, e)
       table, difference = compare(schedule1, schedule2)
+      if not args.quiet or difference:
+        sys.stdout.write("\t%s: " % day.date())
+        sys.stdout.flush()
       if difference:
         print compare_params(channel, day)
-      else:
+      elif not args.quiet:
         print "no differences"

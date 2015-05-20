@@ -4,34 +4,33 @@ import java.io.IOException;
 
 import org.atlasapi.application.EndUserLicense;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
 
+import javax.servlet.http.HttpServletRequest;
 
-public class EndUserLicenseQueryResultWriter implements QueryResultWriter<EndUserLicense> {
+
+public class EndUserLicenseQueryResultWriter extends QueryResultWriter<EndUserLicense> {
     private final EntityListWriter<EndUserLicense> endUserLicenseListWriter;
     
-    public EndUserLicenseQueryResultWriter(EntityListWriter<EndUserLicense> endUserLicenseListWriter) {
-        super();
+    public EndUserLicenseQueryResultWriter(
+            EntityListWriter<EndUserLicense> endUserLicenseListWriter,
+            EntityWriter<Object> licenseWriter,
+            EntityWriter<HttpServletRequest> requestWriter
+    ) {
+        super(licenseWriter, requestWriter);
         this.endUserLicenseListWriter = endUserLicenseListWriter;
     }
 
     @Override
-    public void write(QueryResult<EndUserLicense> result, ResponseWriter responseWriter)
+    protected void writeResult(QueryResult<EndUserLicense> result, ResponseWriter writer)
             throws IOException {
-        responseWriter.startResponse();
-        writeResult(result, responseWriter);
-        responseWriter.finishResponse();
-    }
-    
-    private void writeResult(QueryResult<EndUserLicense> result, ResponseWriter writer)
-            throws IOException {
-        OutputContext ctxt = outputContext(result.getContext());
+        OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
             FluentIterable<EndUserLicense> resources = result.getResources();
@@ -39,10 +38,6 @@ public class EndUserLicenseQueryResultWriter implements QueryResultWriter<EndUse
         } else {
             writer.writeObject(endUserLicenseListWriter, result.getOnlyResource(), ctxt);
         }
-    }
-    
-    private OutputContext outputContext(QueryContext queryContext) {
-        return OutputContext.valueOf(queryContext);
     }
 
 }

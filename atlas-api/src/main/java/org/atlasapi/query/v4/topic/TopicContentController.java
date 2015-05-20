@@ -45,7 +45,7 @@ public class TopicContentController {
             this.resultWriter = checkNotNull(resultWriter);
     }
 
-    @RequestMapping({ "/4/topics/{tid}/content.*", "/4/topics/{tid}/content" })
+    @RequestMapping({ "/4/topics/{id}/content.*", "/4/topics/{id}/content" })
     public void writeSingleTopic(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
         ResponseWriter writer = null;

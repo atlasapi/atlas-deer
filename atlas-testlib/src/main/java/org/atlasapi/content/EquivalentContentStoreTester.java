@@ -14,6 +14,7 @@ import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.segment.SegmentEvent;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Optional;
@@ -48,9 +49,10 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
     }
 
     public void testWritingAnEquivalenceGraph() throws Exception {
-        Content content1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        Item content1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         content1.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         content1.setTitle("Two");
+        content1.setSegmentEvents(ImmutableList.of(new SegmentEvent()));
 
         Content content2 = new Item(Id.valueOf(2), Publisher.BBC);
         content2.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
@@ -71,6 +73,7 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         ImmutableSet<Content> set = resolved.get(content1.getId());
         assertThat(set, hasSize(2));
         assertThat(set, hasItems(content1, content2));
+        assertThat(Iterables.getOnlyElement(((Item) set.asList().get(0)).getSegmentEvents()).getPublisher(), is(Publisher.METABROADCAST));
     }
 
     public void testUpdatingContentInAnEquivalenceGraph() throws Exception {

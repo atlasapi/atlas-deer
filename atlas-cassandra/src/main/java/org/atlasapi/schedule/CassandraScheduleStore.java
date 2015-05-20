@@ -6,15 +6,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraUtil;
 import org.joda.time.DateTime;
@@ -128,7 +128,8 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
                     return input.getSourceId();
                 }
             }, ItemAndBroadcast.toBroadcast());
-    
+
+
     private CassandraScheduleStore(AstyanaxContext<Keyspace> context, String name, 
             ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender, Clock clock, 
             ConsistencyLevel readCl, ConsistencyLevel writeCl) {
@@ -273,9 +274,58 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
         for (LocalDate date : new ScheduleIntervalDates(interval)) {
             DateTime start = date.toDateTimeAtStartOfDay(DateTimeZones.UTC);
             Interval dayInterval = new Interval(start, start.plusDays(1));
-            channelSchedules.add(schedule(channel, dayInterval, rows.getRow(keyFor(source, channel, date))));
+            channelSchedules.add(schedule(channel, dayInterval, rows.getRow(keyFor(source, channel.getId().longValue(), date))));
         }
         return channelSchedules;
+    }
+
+    @Override
+    protected List<ChannelSchedule> resolveStaleScheduleBlocks(Publisher source, Channel channel, Interval interval) throws WriteException {
+        Rows<String, String> rows = fetchRows(source, channel, interval);
+        List<ChannelSchedule> channelSchedules = Lists.newArrayList();
+        for (LocalDate date : new ScheduleIntervalDates(interval)) {
+            channelSchedules.add(
+                    new ChannelSchedule(
+                            channel,
+                            interval,
+                            pastSchedule(
+                                    rows.getRow(
+                                            keyFor(source, channel.getId().longValue(), date)
+                                    )
+                            )
+                    )
+            );
+        }
+        return channelSchedules;
+    }
+
+    private Iterable<ItemAndBroadcast> pastSchedule(Row<String, String> row) {
+        return deserializePastBlocks(row);
+
+    }
+
+    private Iterable<ItemAndBroadcast> deserializePastBlocks(Row<String, String> row) {
+        if (row == null) {
+            return ImmutableList.of();
+        }
+        ColumnList<String> columns = row.getColumns();
+        Column<String> idColumn = columns.getColumnByName(IDS_COL);
+        Set<String> ids;
+        if (idColumn == null) {
+            ids = ImmutableSet.of();
+        } else {
+            ids = ImmutableSet.copyOf(Splitter.on(',').omitEmptyStrings().split(idColumn.getStringValue()));
+        }
+
+        ArrayList<ItemAndBroadcast> iabs = Lists.newArrayListWithCapacity(columns.size());
+        for (Column<String> column : columns) {
+            if (IDS_COL.equals(column.getName()) || UPDATED_COL.equals(column.getName()) || ids.contains(column.getName())) {
+                continue;
+            }
+            iabs.add(serializer.deserialize(column.getByteArrayValue()));
+        }
+
+        return iabs;
     }
 
     private Rows<String, String> fetchRows(Publisher source, Channel channel, Interval interval)
@@ -296,18 +346,18 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
     }
     
     private String key(Publisher source, ChannelSchedule block) {
-        return keyFor(source, block.getChannel(), block.getInterval().getStart().toLocalDate());
+        return keyFor(source, block.getChannel().getId().longValue(), block.getInterval().getStart().toLocalDate());
     }
     
-    private String keyFor(Publisher source, Channel channel, LocalDate day) {
-        return String.format("%s-%s-%s", source.key(), channel.getId(), day.toString());
+    private String keyFor(Publisher source, Long channelId, LocalDate day) {
+        return String.format("%s-%s-%s", source.key(), channelId, day.toString());
     }
 
     private Iterable<String> rowKeys(final Channel channel, Interval interval, final Publisher source) {
         return Iterables.transform(new ScheduleIntervalDates(interval), new Function<LocalDate, String>() {
             @Override
             public String apply(LocalDate input) {
-                return keyFor(source, channel, input);
+                return keyFor(source, channel.getId().longValue(), input);
             }
         });
     }

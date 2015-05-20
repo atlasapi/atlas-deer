@@ -23,12 +23,16 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.ContainerRef;
+import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentGroupRef;
@@ -42,7 +46,6 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.Item.ContainerSummary;
 import org.atlasapi.content.KeyPhrase;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Person;
@@ -76,6 +79,8 @@ import org.atlasapi.generation.parsing.StandardJavadocParser;
 import org.atlasapi.generation.parsing.TypeParser;
 import org.atlasapi.generation.processing.ControllerAnnotationProcessor;
 import org.atlasapi.generation.processing.FieldNameProcessor;
+import org.atlasapi.query.v4.channel.ChannelController;
+import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.schedule.ScheduleController;
 import org.atlasapi.query.v4.topic.TopicController;
@@ -96,6 +101,7 @@ public class MetaApiInfoClassGenerator {
 		@Override
 		public File apply(Class<?> input) {
 			String path = input.getName().replace(".", "/") + JAVA;
+			System.out.println(path);
 			try {
 				return new File(Resources.getResource(path).toURI());
 			} catch (URISyntaxException e) {
@@ -126,6 +132,8 @@ public class MetaApiInfoClassGenerator {
     			ContentController.class,
     			TopicController.class,
     			ScheduleController.class,
+                ChannelController.class,
+                ChannelGroupController.class,
     			Clip.class,
                 TopicRef.class,
                 ContainerRef.class,
@@ -151,6 +159,7 @@ public class MetaApiInfoClassGenerator {
                 ReleaseDate.class,
                 Alias.class,
                 ContentGroupRef.class,
+                ContainerSummary.class,
                 Segment.class,
                 SegmentRef.class,
                 MediaType.class,
@@ -158,6 +167,9 @@ public class MetaApiInfoClassGenerator {
                 KeyPhrase.class,
                 Broadcast.class,
                 ContentRef.class,
+                Channel.class,
+                ChannelGroup.class,
+                ChannelGroupMembership.class,
                 SeriesRef.class
 		);
     	ImmutableList<Class<?>> outputModelClasses = ImmutableList.<Class<?>>of(
@@ -197,7 +209,10 @@ public class MetaApiInfoClassGenerator {
                 KeyPhrase.class,
                 Broadcast.class,
                 ContentRef.class,
-                SeriesRef.class
+                SeriesRef.class,
+                Channel.class,
+                ChannelGroup.class,
+                ChannelGroupMembership.class
 		);
     	
     	SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();
@@ -261,7 +276,7 @@ public class MetaApiInfoClassGenerator {
 				fileManager, diagnosticCollector, 
 				Arrays.asList(
 						"-proc:only", 
-						"-s", "/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java"
+						"-s", "/Users/jamie/dev/atlas-deer/atlas-api/src/main/java"
 				), 
 				null, 
 				sourceCompilationUnits
@@ -282,8 +297,8 @@ public class MetaApiInfoClassGenerator {
 
 	private Iterable<? extends JavaFileObject> transformToCompilationUnits(Iterable<Class<?>> classes, 
 			StandardJavaFileManager fileManager) throws Exception {
-		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-core/src/main/java/");
-		addPath("/Users/oli/Documents/Code/atlas-deer/atlas-api/src/main/java/");
+		addPath("/Users/jamie/dev/atlas-deer/atlas-core/src/main/java");
+		addPath("/Users/jamie/dev/atlas-deer/atlas-api/src/main/java");
 		Iterable<File> sourceCompilationFiles = Iterables.transform(classes, CLASS_TO_FILE);
 		
 		return fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);

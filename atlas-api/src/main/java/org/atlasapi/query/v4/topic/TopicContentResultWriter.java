@@ -35,17 +35,10 @@ public class TopicContentResultWriter implements ContextualResultWriter<Topic, C
     private void writeResult(ContextualQueryResult<Topic, Content> result, ResponseWriter writer)
         throws IOException {
 
-        OutputContext ctxt = outputContext(result.getContext());
+        OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         writer.writeObject(topicWriter, result.getContextResult().getOnlyResource(), ctxt);
         writer.writeList(contentWriter, result.getResourceResult().getResources(), ctxt);
         
     }
-
-    private OutputContext outputContext(QueryContext queryContext) {
-        return new OutputContext(
-            queryContext.getAnnotations(),
-            queryContext.getApplicationSources());
-    }
-
 }

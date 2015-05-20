@@ -4,6 +4,8 @@ import java.util.Comparator;
 
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Sourced;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.Duration;
 
@@ -11,7 +13,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 
-public class SegmentEvent extends Identified {
+public class SegmentEvent extends Identified implements Sourced{
 
     private Integer position;
     private Duration offset;
@@ -22,6 +24,8 @@ public class SegmentEvent extends Identified {
     private SegmentRef segment;
     
     private String versionId;
+
+    private Publisher publisher;
     
     @FieldName("position")
     public Integer getPosition() {
@@ -95,4 +99,13 @@ public class SegmentEvent extends Identified {
         }
         
     };
+
+    @Override
+    public Publisher getPublisher() {
+        return publisher;
+    }
+
+    public void setPublisher(Publisher publisher) {
+        this.publisher = publisher;
+    }
 }

@@ -3,6 +3,7 @@ package org.atlasapi.users.videosource;
 import java.io.IOException;
 
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
@@ -12,27 +13,24 @@ import org.atlasapi.users.videosource.model.VideoSourceChannelResults;
 
 import com.google.common.collect.FluentIterable;
 
+import javax.servlet.http.HttpServletRequest;
 
-public class VideoSourceChannelResultsQueryResultWriter implements
+public class VideoSourceChannelResultsQueryResultWriter extends
         QueryResultWriter<VideoSourceChannelResults> {
- 
+
     private final EntityListWriter<VideoSourceChannelResults> resultsWriter;
-    
+
     public VideoSourceChannelResultsQueryResultWriter(
-            EntityListWriter<VideoSourceChannelResults> resultsWriter) {
-        super();
+            EntityListWriter<VideoSourceChannelResults> resultsWriter,
+            EntityWriter<Object> licenseWriter,
+            EntityWriter<HttpServletRequest> requestWriter
+    ) {
+        super(licenseWriter, requestWriter);
         this.resultsWriter = resultsWriter;
     }
 
     @Override
-    public void write(QueryResult<VideoSourceChannelResults> result, ResponseWriter responseWriter)
-            throws IOException {
-        responseWriter.startResponse();
-        writeResult(result, responseWriter);
-        responseWriter.finishResponse();
-    }
-    
-    private void writeResult(QueryResult<VideoSourceChannelResults> result, ResponseWriter writer)
+    protected void writeResult(QueryResult<VideoSourceChannelResults> result, ResponseWriter writer)
             throws IOException {
         OutputContext ctxt = outputContext(result.getContext());
 
@@ -43,7 +41,7 @@ public class VideoSourceChannelResultsQueryResultWriter implements
             writer.writeObject(resultsWriter, result.getOnlyResource(), ctxt);
         }
     }
-    
+
     private OutputContext outputContext(QueryContext queryContext) {
         return OutputContext.valueOf(queryContext);
     }

@@ -102,7 +102,7 @@ public class UsersController {
                 throw new NotFoundException(userId);
             }
             User modified = existing.get().copy().withLicenseAccepted(clock.now()).build();
-            UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(modified, UserAwareQueryContext.standard());
+            UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(modified, UserAwareQueryContext.standard(request));
             resultWriter.write(queryResult, writer);
             userStore.store(modified);
         } catch (Exception e) {
@@ -135,7 +135,7 @@ public class UsersController {
                 }
                 User modified = updateProfileFields(posted, existing.get(), editingUser);
                 userStore.store(modified);
-                UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(modified, UserAwareQueryContext.standard());
+                UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(modified, UserAwareQueryContext.standard(request));
                 resultWriter.write(queryResult, writer);
             } else {
                 throw new NotFoundException(userId);

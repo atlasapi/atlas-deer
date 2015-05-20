@@ -2,11 +2,11 @@ package org.atlasapi.schedule;
 
 import java.util.List;
 
+import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.channel.Channel;
 import org.joda.time.Interval;
 
 /**

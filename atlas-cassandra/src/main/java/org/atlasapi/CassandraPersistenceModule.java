@@ -197,5 +197,4 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     public EquivalentScheduleStore equivalentScheduleStore() {
         return this.equivalentScheduleStore;
     }
-
 }

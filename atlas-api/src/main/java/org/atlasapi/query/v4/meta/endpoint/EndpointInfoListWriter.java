@@ -34,12 +34,12 @@ public class EndpointInfoListWriter implements EntityListWriter<EndpointClassInf
 
     @Override
     public String listName() {
-        return "endpoints";
+        return "resources";
     }
 
     @Override
     public String fieldName(EndpointClassInfo entity) {
-        return "endpoint";
+        return "resource";
     }
 
 }

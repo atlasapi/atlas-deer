@@ -3,6 +3,7 @@ package org.atlasapi;
 import org.atlasapi.application.ApplicationModule;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.query.QueryWebModule;
+import org.atlasapi.system.HealthModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -15,6 +16,7 @@ import com.metabroadcast.common.webapp.properties.ContextConfigurer;
     KafkaMessagingModule.class, 
     ApplicationModule.class,
     QueryWebModule.class,
+    HealthModule.class
 })
 public class AtlasApiModule {
 

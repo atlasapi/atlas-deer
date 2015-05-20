@@ -3,6 +3,7 @@ package org.atlasapi.query.common;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,7 +62,7 @@ public class ContextualQueryParserTest {
         when(attributeParser.parse(req))
             .thenReturn(new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of()));
         when(queryContextParser.parseContext(req))
-            .thenReturn(new QueryContext(ApplicationSources.defaults(), ActiveAnnotations.standard()));
+            .thenReturn(new QueryContext(ApplicationSources.defaults(), ActiveAnnotations.standard(), mock(HttpServletRequest.class)));
         
         ContextualQuery<Topic,Content> query = parser.parse(req);
         
