@@ -42,11 +42,5 @@ public class SeriesSummaryAnnotation extends OutputAnnotation<Content> {
                 writer.writeObject(brandWriter, brand, ctxt);
             }
         }
-        if (entity instanceof Brand) {
-            Brand brand = (Brand) entity;
-            if (brand.getSeriesRefs() == null) {
-                writer.writeField();
-            }
-        }
     }
 }
