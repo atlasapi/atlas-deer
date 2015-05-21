@@ -2,7 +2,7 @@ package org.atlasapi.entity;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
-import org.atlasapi.channel.Service;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Player;
@@ -24,7 +24,7 @@ public enum ResourceType {
     SEGMENT(Segment.class),
     CHANNEL(Channel.class),
     CHANNEL_GROUP(ChannelGroup.class),
-    SERVICE(Service.class),
+    SERVICE(Platform.class),
     PLAYER(Player.class),
     ;
 

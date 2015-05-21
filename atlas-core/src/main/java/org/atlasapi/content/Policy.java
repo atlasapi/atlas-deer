@@ -16,6 +16,7 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
+import org.atlasapi.channel.Platform;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.ServiceRef;
 import org.atlasapi.meta.annotations.FieldName;
@@ -45,11 +46,22 @@ public class Policy extends Identified {
 
 	private ResourceRef playerRef;
 
+	private Platform platform;
+
 	private Network network;
 	
 	private DateTime actualAvailabilityStart;
 
-	public void setPlayerRef(ResourceRef playerRef) {
+    @FieldName("platform")
+    public Platform getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(Platform platform) {
+        this.platform = platform;
+    }
+
+    public void setPlayerRef(ResourceRef playerRef) {
 		this.playerRef = playerRef;
 	}
 
@@ -57,7 +69,7 @@ public class Policy extends Identified {
 		this.serviceRef = serviceRef;
 	}
 
-	@FieldName("playerRef")
+	@FieldName("player_ref")
 	public ResourceRef getPlayerRef() {
 		return playerRef;
 	}
@@ -185,10 +197,36 @@ public class Policy extends Identified {
 		return this;
 	}
 	
-	public Policy withService(ServiceRef service) {
+	public Policy withServiceRef(ServiceRef service) {
 		setServiceRef(service);
 		return this;
 	}
+
+    public enum Platform {
+        XBOX,
+        PC,
+        IOS,
+        YOUVIEW,
+        TALK_TALK,
+        BTVISION_CARDINAL,
+        YOUVIEW_IPLAYER,
+        YOUVIEW_ITVPLAYER,
+        YOUVIEW_4OD,
+        YOUVIEW_DEMAND5;
+
+        public String key() {
+            return name().toLowerCase();
+        }
+
+        public static Platform fromKey(String key) {
+            for (Platform platform: values()) {
+                if (platform.key().equals(key)) {
+                    return platform;
+                }
+            }
+            return null;
+        }
+    }
 	
 	public enum RevenueContract {
 	    PAY_TO_BUY,

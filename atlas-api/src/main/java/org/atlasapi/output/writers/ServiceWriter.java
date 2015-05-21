@@ -2,7 +2,7 @@ package org.atlasapi.output.writers;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import org.atlasapi.content.Player;
+import org.atlasapi.content.Service;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -10,14 +10,14 @@ import org.atlasapi.output.OutputContext;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
-public class PlayerWriter implements EntityWriter<Player> {
+public class ServiceWriter implements EntityWriter<Service> {
 
     private final ImageListWriter imageListWriter = new ImageListWriter();
     private final RelatedLinkWriter relatedLinkWriter = new RelatedLinkWriter();
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     @Override
-    public void write(@Nonnull Player entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull Service entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
         writer.writeField("title", entity.getTitle());
         writer.writeField("title", entity.getTitle());
         writer.writeField("description", entity.getDescription());
@@ -30,7 +30,7 @@ public class PlayerWriter implements EntityWriter<Player> {
 
     @Nonnull
     @Override
-    public String fieldName(Player entity) {
-        return "player";
+    public String fieldName(Service entity) {
+        return "service";
     }
 }

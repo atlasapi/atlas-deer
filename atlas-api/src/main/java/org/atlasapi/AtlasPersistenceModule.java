@@ -23,7 +23,13 @@ import org.atlasapi.media.channel.MongoChannelGroupStore;
 import org.atlasapi.media.channel.MongoChannelStore;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
+import org.atlasapi.persistence.content.mongo.MongoPlayerStore;
+import org.atlasapi.persistence.content.mongo.MongoServiceStore;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
+import org.atlasapi.persistence.player.CachingPlayerResolver;
+import org.atlasapi.persistence.player.PlayerResolver;
+import org.atlasapi.persistence.service.CachingServiceResolver;
+import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.segment.SegmentStore;
@@ -263,5 +269,15 @@ public class AtlasPersistenceModule {
     @Bean
     public ChannelGroupResolver channelGroupResolver() {
         return new LegacyChannelGroupResolver(channelGroupStore(), new LegacyChannelGroupTransformer());
+    }
+
+    @Bean
+    public PlayerResolver playerResolver() {
+        return new CachingPlayerResolver(new MongoPlayerStore(databasedReadMongo()));
+    }
+
+    @Bean
+    public ServiceResolver serviceResolver() {
+        return new CachingServiceResolver(new MongoServiceStore(databasedReadMongo()));
     }
 }

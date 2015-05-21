@@ -4,16 +4,24 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.Set;
 
+import com.google.common.base.Optional;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Location;
+import org.atlasapi.content.Player;
 import org.atlasapi.content.Policy;
+import org.atlasapi.content.Service;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.output.writers.ChannelGroupWriter;
 import org.atlasapi.output.writers.PlayerWriter;
+import org.atlasapi.output.writers.ServiceWriter;
+import org.atlasapi.persistence.player.PlayerResolver;
+import org.atlasapi.persistence.service.ServiceResolver;
+import org.atlasapi.system.legacy.LegacyPlayerTransformer;
+import org.atlasapi.system.legacy.LegacyServiceTransformer;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -27,30 +35,38 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     private final EncodedLocationWriter encodedLocationWriter;
-    private final PlayerWriter playerWriter;
 
 
-    public LocationsAnnotation(PlayerWriter playerWriter) {
-        this.encodedLocationWriter = new EncodedLocationWriter("locations");
-        this.playerWriter = checkNotNull(playerWriter);
+    public LocationsAnnotation(PlayerResolver playerResolver, ServiceResolver serviceResolver) {
+        this.encodedLocationWriter = new EncodedLocationWriter(
+                "locations", playerResolver, serviceResolver
+        );
     }
 
     public static final class EncodedLocationWriter implements EntityListWriter<EncodedLocation> {
 
-        private String listName;
+        private final PlayerResolver playerResolver;
+        private final EntityWriter<Player> playerWriter = new PlayerWriter();
+        private final EntityWriter<Service> serviceWriter = new ServiceWriter();
+        private final LegacyPlayerTransformer playerTransformer = new LegacyPlayerTransformer();
+        private final LegacyServiceTransformer serviceTransformer = new LegacyServiceTransformer();
+        private final ServiceResolver serviceResolver;
+        private final String listName;
 
-        public EncodedLocationWriter(String listName) {
-            this.listName = listName;
+        public EncodedLocationWriter(String listName, PlayerResolver playerResolver, ServiceResolver serviceResolver) {
+            this.listName = checkNotNull(listName);
+            this.serviceResolver = checkNotNull(serviceResolver);
+            this.playerResolver = checkNotNull(playerResolver);
         }
 
         private Boolean isAvailable(Policy input) {
-            return (input.getAvailabilityStart() == null || ! (new DateTime(input.getAvailabilityStart()).isAfterNow()))
-                && (input.getAvailabilityEnd() == null || new DateTime(input.getAvailabilityEnd()).isAfterNow());
+            return (input.getAvailabilityStart() == null || !(new DateTime(input.getAvailabilityStart()).isAfterNow()))
+                    && (input.getAvailabilityEnd() == null || new DateTime(input.getAvailabilityEnd()).isAfterNow());
         }
 
         @Override
         public void write(EncodedLocation entity, FieldWriter writer, OutputContext ctxt)
-            throws IOException {
+                throws IOException {
             Encoding encoding = entity.getEncoding();
             Location location = entity.getLocation();
             Policy policy = location.getPolicy();
@@ -67,10 +83,19 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("availability_end", policy.getAvailabilityEnd());
             writer.writeList("available_countries", "country", policy.getAvailableCountries(), ctxt);
             if (policy.getServiceRef() != null) {
-
+                Optional<org.atlasapi.media.entity.Service> maybeService =
+                        serviceResolver.serviceFor(policy.getServiceRef().getId().longValue());
+                if (maybeService.isPresent()) {
+                    Service service = serviceTransformer.apply(maybeService.get());
+                    writer.writeObject(serviceWriter, service, ctxt);
+                }
             }
             if (policy.getPlayerRef() != null) {
-
+                Optional<org.atlasapi.media.entity.Player> maybePlayer = playerResolver.playerFor(policy.getPlayerRef().getId().longValue());
+                if (maybePlayer.isPresent()) {
+                    Player player = playerTransformer.apply(maybePlayer.get());
+                    writer.writeObject(playerWriter, player, ctxt);
+                }
             }
             writer.writeField("service", policy.getServiceRef());
             writer.writeField("player", policy.getPlayerRef());
@@ -119,7 +144,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeList(encodedLocationWriter, encodedLocations(item), ctxt);
         }
     }
-    
+
 
     private Iterable<EncodedLocation> encodedLocations(Item item) {
         return encodedLocations(item.getManifestedAs());
@@ -127,16 +152,16 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
         return Iterables.concat(Iterables.transform(manifestedAs,
-            new Function<Encoding, Iterable<EncodedLocation>>() {
-                @Override
-                public Iterable<EncodedLocation> apply(Encoding encoding) {
-                    Builder<EncodedLocation> builder = ImmutableList.builder();
-                    for (Location location : encoding.getAvailableAt()) {
-                        builder.add(new EncodedLocation(encoding, location));
+                new Function<Encoding, Iterable<EncodedLocation>>() {
+                    @Override
+                    public Iterable<EncodedLocation> apply(Encoding encoding) {
+                        Builder<EncodedLocation> builder = ImmutableList.builder();
+                        for (Location location : encoding.getAvailableAt()) {
+                            builder.add(new EncodedLocation(encoding, location));
+                        }
+                        return builder.build();
                     }
-                    return builder.build();
                 }
-            }
         ));
     }
 }

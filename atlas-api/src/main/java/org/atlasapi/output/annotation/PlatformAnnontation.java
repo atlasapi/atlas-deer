@@ -6,7 +6,7 @@ import com.google.common.util.concurrent.Futures;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.channel.Service;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.FieldWriter;
@@ -32,12 +32,12 @@ public class PlatformAnnontation extends OutputAnnotation<ChannelGroup> {
 
     @Override
     public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if(!(entity instanceof Service)) {
+        if(!(entity instanceof Platform)) {
             return;
         }
-        Service service = (Service) entity;
+        Platform platform = (Platform) entity;
         Iterable<Id> regionIds = Iterables.transform(
-                service.getRegions(),
+                platform.getRegions(),
                 new Function<ChannelGroupRef, Id>() {
                     @Override
                     public Id apply(ChannelGroupRef input) {

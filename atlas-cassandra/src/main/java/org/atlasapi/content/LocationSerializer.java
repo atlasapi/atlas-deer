@@ -5,6 +5,7 @@ import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
 
 import java.util.Currency;
 
+import org.atlasapi.channel.Platform;
 import org.atlasapi.content.Policy.RevenueContract;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.PlayerRef;
@@ -56,6 +57,9 @@ public class LocationSerializer {
         }
         if (policy.getNetwork() != null) {
             builder.setNetwork(policy.getNetwork().key());
+        }
+        if (policy.getPlatform() != null) {
+            builder.setPlatform(policy.getPlatform().name());
         }
         if (policy.getServiceRef() != null) {
             ResourceRef serviceRef = policy.getServiceRef();
@@ -118,7 +122,7 @@ public class LocationSerializer {
             policy.setNetwork(Policy.Network.fromKey(msg.getNetwork()));
         }
         if (msg.hasPlatform()) {
-            //TODO WHATDO
+            policy.setPlatform(Policy.Platform.fromKey(msg.getPlatform()));
         }
         if (msg.hasPlayerId()) {
             policy.setPlayerRef(
