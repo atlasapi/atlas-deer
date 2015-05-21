@@ -97,8 +97,6 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
                     writer.writeObject(playerWriter, player, ctxt);
                 }
             }
-            writer.writeField("service", policy.getServiceRef());
-            writer.writeField("player", policy.getPlayerRef());
             writer.writeField("drm_playable_from", policy.getDrmPlayableFrom());
             if (policy.getPrice() != null) {
                 writer.writeField("currency", policy.getPrice().getCurrency());
