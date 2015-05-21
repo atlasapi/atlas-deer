@@ -560,7 +560,12 @@ public class QueryWebModule {
                 .register(BROADCASTS, new BroadcastsAnnotation(idCodec()), commonImplied)
                 .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec()), commonImplied)
                 .register(NEXT_BROADCASTS, new NextBroadcastAnnotation(new SystemClock(), idCodec()), commonImplied)
-                .register(AVAILABLE_LOCATIONS, new AvailableLocationsAnnotation(), commonImplied)
+                .register(AVAILABLE_LOCATIONS, new AvailableLocationsAnnotation(
+                                persistenceModule.playerResolver(),
+                                persistenceModule.serviceResolver()
+                        ),
+                        commonImplied
+                )
                 .register(IMAGES, new ImagesAnnotation(), commonImplied)
                         //.register(UPCOMING, new UpcomingAnnotation(idCodec(), upcomingChildrenResolver), commonImplied)
                         //.register(PRODUCTS, new ProductsAnnotation(productResolver), commonImplied)
