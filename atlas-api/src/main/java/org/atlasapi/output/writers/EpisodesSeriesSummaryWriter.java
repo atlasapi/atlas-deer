@@ -15,12 +15,12 @@ import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SeriesSummaryWriter implements EntityWriter<Episode> {
+public class EpisodesSeriesSummaryWriter implements EntityWriter<Episode> {
 
     private final NumberToShortStringCodec idCodec;
     private final ContainerSummaryResolver containerSummaryResolver;
 
-    public SeriesSummaryWriter(NumberToShortStringCodec idCodec, ContainerSummaryResolver containerSummaryResolver) {
+    public EpisodesSeriesSummaryWriter(NumberToShortStringCodec idCodec, ContainerSummaryResolver containerSummaryResolver) {
         this.idCodec = checkNotNull(idCodec);
         this.containerSummaryResolver = checkNotNull(containerSummaryResolver);
     }

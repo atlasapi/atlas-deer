@@ -1,10 +1,12 @@
 package org.atlasapi.output.annotation;
 
+import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Episode;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.output.writers.SeriesSummaryWriter;
+import org.atlasapi.output.writers.BrandSeriesSummaryWriter;
+import org.atlasapi.output.writers.EpisodesSeriesSummaryWriter;
 
 import java.io.IOException;
 
@@ -14,10 +16,12 @@ public class SeriesSummaryAnnotation extends OutputAnnotation<Content> {
 
     public static final String SERIES_FIELD = "series";
 
-    private final SeriesSummaryWriter summaryWriter;
+    private final EpisodesSeriesSummaryWriter episodeWriter;
+    private final BrandSeriesSummaryWriter brandWriter;
 
-    public SeriesSummaryAnnotation(SeriesSummaryWriter summaryWriter) {
-        this.summaryWriter = checkNotNull(summaryWriter);
+    public SeriesSummaryAnnotation(EpisodesSeriesSummaryWriter episodeWriter, BrandSeriesSummaryWriter brandWriter) {
+        this.episodeWriter = checkNotNull(episodeWriter);
+        this.brandWriter = checkNotNull(brandWriter);
     }
 
     @Override
@@ -27,7 +31,15 @@ public class SeriesSummaryAnnotation extends OutputAnnotation<Content> {
             if(episode.getSeriesRef() == null) {
                 writer.writeField(SERIES_FIELD, null);
             } else {
-                writer.writeObject(summaryWriter, episode, ctxt);
+                writer.writeObject(episodeWriter, episode, ctxt);
+            }
+        }
+        if (entity instanceof Brand) {
+            Brand brand = (Brand) entity;
+            if (brand.getSeriesRefs() == null) {
+                writer.writeField(SERIES_FIELD, null);
+            } else {
+                writer.writeObject(brandWriter, brand, ctxt);
             }
         }
     }
