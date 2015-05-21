@@ -59,7 +59,7 @@ public class LocationSerializer {
             builder.setNetwork(policy.getNetwork().key());
         }
         if (policy.getPlatform() != null) {
-            builder.setPlatform(policy.getPlatform().name());
+            builder.setPlatform(policy.getPlatform().key());
         }
         if (policy.getServiceRef() != null) {
             ResourceRef serviceRef = policy.getServiceRef();
