@@ -1,15 +1,12 @@
 package org.atlasapi.output.annotation;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.channel.Platform;
-import org.atlasapi.channel.Region;
+import org.atlasapi.channel.Service;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.FieldWriter;
@@ -22,42 +19,46 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class PlatformAnnotation extends OutputAnnotation<ChannelGroup> {
+public class ServicesAnnontation extends OutputAnnotation<ChannelGroup> {
 
-    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("platforms", "platform");
 
+    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("services", "service");
     private final ChannelGroupResolver channelGroupResolver;
 
-    public PlatformAnnotation(ChannelGroupResolver channelGroupResolver) {
-
+    public ServicesAnnontation(ChannelGroupResolver channelGroupResolver) {
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
     }
 
+
     @Override
     public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if(!(entity instanceof Region)) {
+        if(!(entity instanceof Service)) {
             return;
         }
-        Region region = (Region) entity;
-        if(region.getPlatform() == null) {
-            writer.writeField("parent", null);
-            return;
-        }
-        Id platformId = region.getPlatform().getId();
+        Service service = (Service) entity;
+        Iterable<Id> regionIds = Iterables.transform(
+                service.getRegions(),
+                new Function<ChannelGroupRef, Id>() {
+                    @Override
+                    public Id apply(ChannelGroupRef input) {
+                        return input.getId();
+                    }
+                }
+        );
 
 
-        ChannelGroup platform = Futures.get(
+        Iterable<ChannelGroup> channelGroups = Futures.get(
                 Futures.transform(
-                        channelGroupResolver.resolveIds(ImmutableSet.of(platformId)),
-                        new Function<Resolved<ChannelGroup>, ChannelGroup>() {
+                        channelGroupResolver.resolveIds(regionIds),
+                        new Function<Resolved<ChannelGroup>, Iterable<ChannelGroup>>() {
                             @Override
-                            public ChannelGroup apply(@Nullable Resolved<ChannelGroup> input) {
-                                return input.getResources().first().get();
+                            public Iterable<ChannelGroup> apply(@Nullable Resolved<ChannelGroup> input) {
+                                return input.getResources();
                             }
                         }
                 ), 1, TimeUnit.MINUTES, IOException.class
         );
 
-        writer.writeObject(CHANNEL_GROUP_WRITER, platform, ctxt);
+        writer.writeList(CHANNEL_GROUP_WRITER, channelGroups, ctxt);
     }
 }

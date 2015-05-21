@@ -5,7 +5,7 @@ import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
 
 import java.util.Currency;
 
-import org.atlasapi.content.Policy.Platform;
+import org.atlasapi.content.Policy.Service;
 import org.atlasapi.content.Policy.RevenueContract;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
@@ -52,8 +52,8 @@ public class LocationSerializer {
         if (policy.getNetwork() != null) {
             builder.setNetwork(policy.getNetwork().key());
         }
-        if (policy.getPlatform() != null) {
-            builder.setPlatform(policy.getPlatform().key());
+        if (policy.getService() != null) {
+            builder.setPlatform(policy.getService().key());
         }
         if (policy.getPrice() != null) {
             builder.setCurrency(policy.getPrice().getCurrency().getCurrencyCode());
@@ -100,7 +100,7 @@ public class LocationSerializer {
             policy.setNetwork(Policy.Network.fromKey(msg.getNetwork()));
         }
         if (msg.hasPlatform()) {
-            policy.setPlatform(Platform.fromKey(msg.getPlatform()));
+            policy.setService(Service.fromKey(msg.getPlatform()));
         }
         if (msg.hasAmount() && msg.hasCurrency()) {
             policy.setPrice(new Price(

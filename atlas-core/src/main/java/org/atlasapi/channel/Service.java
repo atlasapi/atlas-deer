@@ -10,17 +10,16 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
-import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Platform extends ChannelGroup<ChannelNumbering> {
+public class Service extends ChannelGroup<ChannelNumbering> {
 
     private final ImmutableSet<ChannelGroupRef> regions;
 
-    public Platform(
+    public Service(
             Id id,
             Publisher publisher,
             Set<ChannelNumbering> channels,
@@ -82,7 +81,7 @@ public class Platform extends ChannelGroup<ChannelNumbering> {
             return this;
         }
 
-        public Platform build() {
+        public Service build() {
             HashSet<ChannelGroupRef> regions = Sets.newHashSet(
                     Collections2.transform(
                             this.regionIds,
@@ -97,7 +96,7 @@ public class Platform extends ChannelGroup<ChannelNumbering> {
                             }
                     )
             );
-            return new Platform(
+            return new Service(
                     id,
                     publisher,
                     channels,

@@ -39,8 +39,8 @@ public class Policy extends Identified {
 	
 	private Price price;
 	
-	private Platform platform;
-	
+	private Service service;
+
 	private Network network;
 	
 	private DateTime actualAvailabilityStart;
@@ -76,9 +76,9 @@ public class Policy extends Identified {
 		return availabilityEnd;
 	}
     
-    @FieldName("platform")
-    public Platform getPlatform() {
-        return platform;
+    @FieldName("service")
+    public Service getService() {
+        return service;
     }
     
     @FieldName("network")
@@ -131,8 +131,8 @@ public class Policy extends Identified {
         this.price = price;
     }
 	
-	public void setPlatform(Platform platform) {
-		this.platform = platform;
+	public void setService(Service service) {
+		this.service = service;
 	}
 	
 	public void setNetwork(Network network) {
@@ -172,8 +172,8 @@ public class Policy extends Identified {
 		return this;
 	}
 	
-	public Policy withPlatform(Platform platform) {
-		setPlatform(platform);
+	public Policy withPlatform(Service service) {
+		setService(service);
 		return this;
 	}
 	
@@ -209,13 +209,13 @@ public class Policy extends Identified {
 	    copy.drmPlayableFrom = drmPlayableFrom;
 	    copy.price = price;
 	    copy.revenueContract = revenueContract;
-	    copy.platform = platform;
+	    copy.service = service;
 	    copy.network = network;
 	    copy.actualAvailabilityStart = actualAvailabilityStart;
 	    return copy;
 	}
 	
-	public enum Platform {
+	public enum Service {
 		XBOX,
 		PC,
 		IOS,
@@ -231,10 +231,10 @@ public class Policy extends Identified {
 			return name().toLowerCase();
 		}
 		    
-		public static Platform fromKey(String key) {
-			for (Platform platform: values()) {
-				if (platform.key().equals(key)) {
-					return platform;
+		public static Service fromKey(String key) {
+			for (Service service : values()) {
+				if (service.key().equals(key)) {
+					return service;
 				}
 			}
 			return null;
