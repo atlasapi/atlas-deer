@@ -83,19 +83,10 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("availability_end", policy.getAvailabilityEnd());
             writer.writeList("available_countries", "country", policy.getAvailableCountries(), ctxt);
             if (policy.getServiceRef() != null) {
-                Optional<org.atlasapi.media.entity.Service> maybeService =
-                        serviceResolver.serviceFor(policy.getServiceRef().getId().longValue());
-                if (maybeService.isPresent()) {
-                    Service service = serviceTransformer.apply(maybeService.get());
-                    writer.writeObject(serviceWriter, service, ctxt);
-                }
+                writeService(writer, ctxt, policy);
             }
             if (policy.getPlayerRef() != null) {
-                Optional<org.atlasapi.media.entity.Player> maybePlayer = playerResolver.playerFor(policy.getPlayerRef().getId().longValue());
-                if (maybePlayer.isPresent()) {
-                    Player player = playerTransformer.apply(maybePlayer.get());
-                    writer.writeObject(playerWriter, player, ctxt);
-                }
+                writePlayer(writer, ctxt, policy);
             }
             writer.writeField("drm_playable_from", policy.getDrmPlayableFrom());
             if (policy.getPrice() != null) {
@@ -124,6 +115,23 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("video_vertical_size", encoding.getVideoVerticalSize());
         }
 
+        private void writePlayer(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
+            Optional<org.atlasapi.media.entity.Player> maybePlayer = playerResolver.playerFor(policy.getPlayerRef().getId().longValue());
+            if (maybePlayer.isPresent()) {
+                Player player = playerTransformer.apply(maybePlayer.get());
+                writer.writeObject(playerWriter, player, ctxt);
+            }
+        }
+
+        private void writeService(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
+            Optional<org.atlasapi.media.entity.Service> maybeService =
+                    serviceResolver.serviceFor(policy.getServiceRef().getId().longValue());
+            if (maybeService.isPresent()) {
+                Service service = serviceTransformer.apply(maybeService.get());
+                writer.writeObject(serviceWriter, service, ctxt);
+            }
+        }
+
         @Override
         public String fieldName(EncodedLocation entity) {
             return "location";
@@ -150,15 +158,12 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
         return Iterables.concat(Iterables.transform(manifestedAs,
-                new Function<Encoding, Iterable<EncodedLocation>>() {
-                    @Override
-                    public Iterable<EncodedLocation> apply(Encoding encoding) {
-                        Builder<EncodedLocation> builder = ImmutableList.builder();
-                        for (Location location : encoding.getAvailableAt()) {
-                            builder.add(new EncodedLocation(encoding, location));
-                        }
-                        return builder.build();
+                encoding -> {
+                    Builder<EncodedLocation> builder = ImmutableList.builder();
+                    for (Location location : encoding.getAvailableAt()) {
+                        builder.add(new EncodedLocation(encoding, location));
                     }
+                    return builder.build();
                 }
         ));
     }
