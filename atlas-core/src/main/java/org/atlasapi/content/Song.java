@@ -47,7 +47,7 @@ public class Song extends Item {
     
     @Override
     public SongRef toRef() {
-        return new SongRef(getId(), getPublisher(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
+        return new SongRef(getId(), getSource(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
     }
 	
 	@Override

@@ -34,10 +34,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -76,7 +74,7 @@ public class ContentDebugController {
 
         @Override
         public Publisher apply(ResourceRef input) {
-            return input.getPublisher();
+            return input.getSource();
         }
     };
 

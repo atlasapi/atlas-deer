@@ -6,7 +6,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -40,7 +39,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         Iterable<Id> containerIds = ImmutableSet.of(id);
         ContainerSummary containerSummary = mock(ContainerSummary.class);
         Container container = mock(Container.class);
-        when(container.getPublisher()).thenReturn(Publisher.BBC);
+        when(container.getSource()).thenReturn(Publisher.BBC);
         when(container.getId()).thenReturn(id);
         when(container.copyWithEquivalentTo(Matchers.<Iterable<EquivalenceRef>>any())).thenReturn(container);
         when(container.toSummary()).thenReturn(containerSummary);
@@ -83,7 +82,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         Id id = Id.valueOf(1L);
         Iterable<Id> containerIds = ImmutableSet.of(id);
         Content nonContainer = mock(Content.class);
-        when(nonContainer.getPublisher()).thenReturn(Publisher.BBC);
+        when(nonContainer.getSource()).thenReturn(Publisher.BBC);
         when(nonContainer.getId()).thenReturn(id);
         when(nonContainer.copyWithEquivalentTo(Matchers.<Iterable<EquivalenceRef>>any())).thenReturn(nonContainer);
 

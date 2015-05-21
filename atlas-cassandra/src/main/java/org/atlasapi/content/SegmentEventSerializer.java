@@ -39,8 +39,8 @@ public class SegmentEventSerializer {
 
     private ContentProtos.SegmentRef serialize(SegmentRef ref) {
         ContentProtos.SegmentRef.Builder builder = ContentProtos.SegmentRef.newBuilder();
-        if (ref.getPublisher() != null) {
-            builder.setSource(ref.getPublisher().key());
+        if (ref.getSource() != null) {
+            builder.setSource(ref.getSource().key());
         }
         builder.setSegmentRef(ref.getId().longValue());
         return builder.build();

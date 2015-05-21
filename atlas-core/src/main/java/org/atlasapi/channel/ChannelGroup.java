@@ -37,7 +37,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
 
     @Override
     @FieldName("source")
-    public Publisher getPublisher() {
+    public Publisher getSource() {
         return publisher;
     }
 

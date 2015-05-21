@@ -51,7 +51,7 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         format.writeField("uri", entity.getCanonicalUri());
         format.writeList(IMAGE_WRITER, entity.getImages(), ctxt);
         format.writeList(AVAILABLE_FROM_WRITER, entity.getAvailableFrom(), ctxt);
-        format.writeObject(AVAILABLE_FROM_WRITER, entity.getPublisher(), ctxt);
+        format.writeObject(AVAILABLE_FROM_WRITER, entity.getSource(), ctxt);
         format.writeField("media_type", entity.getMediaType());
         format.writeObject(BROADCASTER_WRITER, entity.getBroadcaster(), ctxt);
         format.writeList(ALIAS_WRITER, entity.getAliases(), ctxt);

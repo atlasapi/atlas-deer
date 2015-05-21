@@ -1,5 +1,6 @@
 package org.atlasapi.output.annotation;
 
+import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Episode;
 import org.atlasapi.output.FieldWriter;
@@ -28,6 +29,12 @@ public class SeriesSummaryAnnotation extends OutputAnnotation<Content> {
                 writer.writeField(SERIES_FIELD, null);
             } else {
                 writer.writeObject(summaryWriter, episode, ctxt);
+            }
+        }
+        if (entity instanceof Brand) {
+            Brand brand = (Brand) entity;
+            if (brand.getSeriesRefs() == null) {
+                writer.writeField();
             }
         }
     }

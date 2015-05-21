@@ -32,7 +32,7 @@ public class ContentSerializerTest {
         Brand brand = new Brand();
         setContainerProperties(brand);
         brand.setSeriesRefs(ImmutableSet.of(
-            new SeriesRef(Id.valueOf(123L), brand.getPublisher(), "sort", 1, new DateTime(DateTimeZones.UTC))
+            new SeriesRef(Id.valueOf(123L), brand.getSource(), "sort", 1, new DateTime(DateTimeZones.UTC))
         ));
         
         ContentProtos.Content serialized = serializer.serialize(brand);
@@ -51,7 +51,7 @@ public class ContentSerializerTest {
         setContainerProperties(series);
         serializeAndCheck(series);
 
-        series.setBrandRef(new BrandRef(Id.valueOf(1234L), series.getPublisher()));
+        series.setBrandRef(new BrandRef(Id.valueOf(1234L), series.getSource()));
         serializeAndCheck(series);
         
         series.setTotalEpisodes(5);
@@ -95,7 +95,7 @@ public class ContentSerializerTest {
         episode.setEpisodeNumber(5);
         episode.setPartNumber(4);
         episode.setSeriesNumber(5);
-        SeriesRef seriesRef = new SeriesRef(Id.valueOf(5), episode.getPublisher(), "title", 5, new DateTime(DateTimeZones.LONDON));
+        SeriesRef seriesRef = new SeriesRef(Id.valueOf(5), episode.getSource(), "title", 5, new DateTime(DateTimeZones.LONDON));
         episode.setSeriesRef(seriesRef);
         
         ContentProtos.Content serialized = serializer.serialize(episode);
@@ -198,7 +198,7 @@ public class ContentSerializerTest {
 
     private void checkDescribedProperties(Described actual, Described expected) {
         checkIdentifiedProperties(actual, expected);
-        assertThat(actual.getPublisher(), is(expected.getPublisher()));
+        assertThat(actual.getSource(), is(expected.getSource()));
         assertThat(actual.getDescription(), is(expected.getDescription()));
         assertThat(actual.getFirstSeen(), is(expected.getFirstSeen()));
         assertThat(actual.getGenres(), is(expected.getGenres()));
@@ -227,13 +227,13 @@ public class ContentSerializerTest {
     private void setContainerProperties(Container container) {
         setContentProperties(container);
         container.setItemRefs(ImmutableSet.of(
-            new ItemRef(Id.valueOf(123L), container.getPublisher(), "sort", new DateTime(DateTimeZones.UTC))
+            new ItemRef(Id.valueOf(123L), container.getSource(), "sort", new DateTime(DateTimeZones.UTC))
         ));
     }
 
     private void setItemProperties(Item item) {
         setContentProperties(item);
-        item.setContainerRef(new BrandRef(Id.valueOf(4321), item.getPublisher()));
+        item.setContainerRef(new BrandRef(Id.valueOf(4321), item.getSource()));
         item.setContainerSummary(new ContainerSummary("brand", "title", "description", null));
         item.setBlackAndWhite(true);
         item.setCountriesOfOrigin(ImmutableSet.of(Countries.GB));

@@ -20,7 +20,7 @@ public class ExtendedIdentificationAnnotation extends OutputAnnotation<Identifie
         @Override
         public void write(EquivalenceRef entity, FieldWriter formatter, OutputContext ctxt) throws IOException {
             formatter.writeField("id", idCodec.encode(entity.getId().toBigInteger()));
-            formatter.writeField("source", entity.getPublisher().key());
+            formatter.writeField("source", entity.getSource().key());
         }
 
         @Override

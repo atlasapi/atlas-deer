@@ -26,7 +26,7 @@ public class ContentRefSerializer {
             private Builder serializeRef(ContentRef contentRef) {
                 CommonProtos.Reference.Builder ref = CommonProtos.Reference.newBuilder();
                 ref.setId(contentRef.getId().longValue());
-                ref.setSource(contentRef.getPublisher().key());
+                ref.setSource(contentRef.getSource().key());
                 ref.setType(contentRef.getContentType().toString());
                 return ref;
             }

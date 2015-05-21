@@ -23,7 +23,7 @@ public abstract class ResourceRef implements Identifiable, Sourced {
         return id;
     }
 
-    public Publisher getPublisher() {
+    public Publisher getSource() {
         return source;
     }
 

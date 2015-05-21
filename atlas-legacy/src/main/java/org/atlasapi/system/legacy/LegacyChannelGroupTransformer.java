@@ -36,13 +36,13 @@ public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer
     @Override
     public ChannelGroup apply(org.atlasapi.media.channel.ChannelGroup input) {
         if(input instanceof org.atlasapi.media.channel.Platform) {
-            return transformPlatform((org.atlasapi.media.channel.Platform) input);
+            return transformService((org.atlasapi.media.channel.Platform) input);
         } else {
             return transformRegion((org.atlasapi.media.channel.Region) input);
         }
     }
 
-    private Service transformPlatform(org.atlasapi.media.channel.Platform input) {
+    private Service transformService(org.atlasapi.media.channel.Platform input) {
         return Service.builder(input.getPublisher())
                 .withId(input.getId())
                 .withAvailableCountries(input.getAvailableCountries())

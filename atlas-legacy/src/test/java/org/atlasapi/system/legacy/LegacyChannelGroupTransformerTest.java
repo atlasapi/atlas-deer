@@ -74,7 +74,7 @@ public class LegacyChannelGroupTransformerTest {
         ChannelGroup transformed = this.objectUnderTest.apply(legacyPlatform);
 
         assertThat(transformed.getId().longValue(), is(id));
-        assertThat(transformed.getPublisher(), is(publisher));
+        assertThat(transformed.getSource(), is(publisher));
         assertThat(
                 Iterables.any(
                         ((Service) transformed).getRegions(),
@@ -189,7 +189,7 @@ public class LegacyChannelGroupTransformerTest {
         ChannelGroup transformed = this.objectUnderTest.apply(legacyRegion);
 
         assertThat(transformed.getId().longValue(), is(id));
-        assertThat(transformed.getPublisher(), is(publisher));
+        assertThat(transformed.getSource(), is(publisher));
         assertThat(((Region) transformed).getPlatform().getId().longValue(), is(platformId));
 
         assertThat(

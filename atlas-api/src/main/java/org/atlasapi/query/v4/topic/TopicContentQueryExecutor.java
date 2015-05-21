@@ -74,7 +74,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
                     final Topic topic = possibleTopic.get();
             
                     final QueryContext context = query.getContext();
-                    if (!context.getApplicationSources().isReadEnabled(topic.getPublisher())) {
+                    if (!context.getApplicationSources().isReadEnabled(topic.getSource())) {
                         throw new ForbiddenException(topic.getId());
                     }
         

@@ -19,13 +19,13 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ServicesAnnontation extends OutputAnnotation<ChannelGroup> {
+public class PlatformAnnontation extends OutputAnnotation<ChannelGroup> {
 
 
-    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("services", "service");
+    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("platforms", "platform");
     private final ChannelGroupResolver channelGroupResolver;
 
-    public ServicesAnnontation(ChannelGroupResolver channelGroupResolver) {
+    public PlatformAnnontation(ChannelGroupResolver channelGroupResolver) {
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
     }
 

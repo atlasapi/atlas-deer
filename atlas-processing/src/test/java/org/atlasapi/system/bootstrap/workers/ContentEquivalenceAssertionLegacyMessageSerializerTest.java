@@ -42,12 +42,12 @@ public class ContentEquivalenceAssertionLegacyMessageSerializerTest {
         assertThat(deserialized.getMessageId(), is(msg.getMessageId()));
         assertThat(deserialized.getTimestamp(), is(msg.getTimestamp()));
         assertThat(deserialized.getSubject().getId().longValue(), is(SubstitutionTableNumberCodec.lowerCaseOnly().decode(msg.getEntityId()).longValue()));
-        assertThat(deserialized.getSubject().getPublisher().toString(), is(msg.getEntitySource()));
+        assertThat(deserialized.getSubject().getSource().toString(), is(msg.getEntitySource()));
         assertThat(deserialized.getSubject().getResourceType(), is(ResourceType.CONTENT));
         assertThat(toKeys(deserialized.getPublishers()), is(msg.getSources()));
         assertThat(Iterables.getOnlyElement(deserialized.getAssertedAdjacents()).getId().longValue(), 
                 is(SubstitutionTableNumberCodec.lowerCaseOnly().decode(Iterables.getOnlyElement(adjs).getId()).longValue()));
-        assertThat(Iterables.getOnlyElement(deserialized.getAssertedAdjacents()).getPublisher().key(), 
+        assertThat(Iterables.getOnlyElement(deserialized.getAssertedAdjacents()).getSource().key(),
                 is(Iterables.getOnlyElement(adjs).getSource()));
         assertThat(Iterables.getOnlyElement(deserialized.getAssertedAdjacents()), instanceOf(ItemRef.class));
         

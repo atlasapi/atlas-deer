@@ -56,7 +56,7 @@ public class Film extends Item {
     
     @Override
     public FilmRef toRef() {
-        return new FilmRef(getId(), getPublisher(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
+        return new FilmRef(getId(), getSource(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
     }
 
     @Override

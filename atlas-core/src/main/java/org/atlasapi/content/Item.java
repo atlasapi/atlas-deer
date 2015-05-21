@@ -62,7 +62,7 @@ public class Item extends Content {
     
     @Override
     public ItemRef toRef() {
-        return new ItemRef(getId(), getPublisher(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
+        return new ItemRef(getId(), getSource(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
     }
 
     public void setContainerRef(ContainerRef containerRef) {

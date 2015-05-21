@@ -5,6 +5,9 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Currency;
 
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ServiceRef;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.joda.time.DateTime;
 import org.junit.Test;
@@ -37,7 +40,7 @@ public class LocationSerializerTest {
         policy.setAvailableCountries(ImmutableSet.of(Countries.GB));
         policy.setDrmPlayableFrom(new DateTime(DateTimeZones.UTC));
         policy.setNetwork(Policy.Network.WIFI);
-        policy.setService(Policy.Service.IOS);
+        policy.setServiceRef(new ServiceRef(Id.valueOf(10L), Publisher.METABROADCAST));
         policy.setPrice(new Price(Currency.getInstance("GBP"), 400));
         policy.setRevenueContract(Policy.RevenueContract.PAY_TO_BUY);
         
@@ -63,7 +66,7 @@ public class LocationSerializerTest {
         assertThat(deserializedPolicy.getAvailableCountries(), is(policy.getAvailableCountries()));
         assertThat(deserializedPolicy.getDrmPlayableFrom(), is(policy.getDrmPlayableFrom()));
         assertThat(deserializedPolicy.getNetwork(), is(policy.getNetwork()));
-        assertThat(deserializedPolicy.getService(), is(policy.getService()));
+        assertThat(deserializedPolicy.getServiceRef(), is(policy.getServiceRef()));
         assertThat(deserializedPolicy.getPrice(), is(policy.getPrice()));
         assertThat(deserializedPolicy.getRevenueContract(), is(policy.getRevenueContract()));
         

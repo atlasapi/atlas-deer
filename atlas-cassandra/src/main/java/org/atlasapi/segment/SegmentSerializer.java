@@ -43,7 +43,7 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
     public byte[] serialize(Segment src) {
         Builder builder = SegmentProtos.Segment.newBuilder();
         builder.setId(src.getId().longValue());
-        builder.setSource(src.getPublisher().key());
+        builder.setSource(src.getSource().key());
         if (src.getDuration() != null) {
             builder.setDuration(src.getDuration().toStandardSeconds().getSeconds());
         }

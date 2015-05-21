@@ -277,7 +277,7 @@ public class CassandraContentStoreIT {
     @Test(expected=WriteException.class)
     public void testWritingItemWithMissingBrandFails() throws Exception {
         Item item = create(new Item());
-        item.setContainerRef(new BrandRef(Id.valueOf(1235), item.getPublisher()));
+        item.setContainerRef(new BrandRef(Id.valueOf(1235), item.getSource()));
         
         store.writeContent(item);
         
@@ -289,7 +289,7 @@ public class CassandraContentStoreIT {
     public void testWritingSeriesWithMissingBrandFails() throws Exception {
         try {
             Series series = create(new Series());
-            series.setBrandRef(new BrandRef(Id.valueOf(1235), series.getPublisher()));
+            series.setBrandRef(new BrandRef(Id.valueOf(1235), series.getSource()));
             
             store.writeContent(series);
         } finally {
@@ -331,12 +331,12 @@ public class CassandraContentStoreIT {
         try {
                 
             Series series = create(new Series());
-            series.setBrandRef(new BrandRef(Id.valueOf(666), series.getPublisher()));
+            series.setBrandRef(new BrandRef(Id.valueOf(666), series.getSource()));
             
             Episode episode = create(new Episode());
     
-            episode.setContainerRef(new BrandRef(Id.valueOf(666), episode.getPublisher()));
-            episode.setSeriesRef(new SeriesRef(Id.valueOf(999), episode.getPublisher()));
+            episode.setContainerRef(new BrandRef(Id.valueOf(666), episode.getSource()));
+            episode.setSeriesRef(new SeriesRef(Id.valueOf(999), episode.getSource()));
             
             store.writeContent(episode);
         
@@ -351,12 +351,12 @@ public class CassandraContentStoreIT {
             Brand brand = create(new Brand());
 
             Series series = create(new Series());
-            series.setBrandRef(new BrandRef(Id.valueOf(666), series.getPublisher()));
+            series.setBrandRef(new BrandRef(Id.valueOf(666), series.getSource()));
 
             Episode episode = create(new Episode());
 
-            episode.setContainerRef(new BrandRef(Id.valueOf(666), episode.getPublisher()));
-            episode.setSeriesRef(new SeriesRef(Id.valueOf(999), episode.getPublisher()));
+            episode.setContainerRef(new BrandRef(Id.valueOf(666), episode.getSource()));
+            episode.setSeriesRef(new SeriesRef(Id.valueOf(999), episode.getSource()));
 
             when(clock.now()).thenReturn(new DateTime(DateTimeZones.UTC));
             when(idGenerator.generateRaw()).thenReturn(1234L);

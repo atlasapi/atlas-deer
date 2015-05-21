@@ -258,12 +258,12 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
     }
 
     private Publisher source(ScheduleHierarchy hier) {
-        Publisher source = hier.getItemAndBroadcast().getItem().getPublisher();
+        Publisher source = hier.getItemAndBroadcast().getItem().getSource();
         if (hier.getPrimaryContainer().isPresent()) {
-            checkSourcesAreEqual(source, hier.getPrimaryContainer().get().getPublisher());
+            checkSourcesAreEqual(source, hier.getPrimaryContainer().get().getSource());
         }
         if (hier.getPossibleSeries().isPresent()) {
-            checkSourcesAreEqual(source, hier.getPossibleSeries().get().getPublisher());
+            checkSourcesAreEqual(source, hier.getPossibleSeries().get().getSource());
         }
         return source;
     }

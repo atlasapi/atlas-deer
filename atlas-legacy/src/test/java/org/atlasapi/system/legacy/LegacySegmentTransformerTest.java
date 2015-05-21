@@ -4,16 +4,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 import org.atlasapi.media.SegmentType;
-import org.atlasapi.media.entity.Alias;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.Segment;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
 public class LegacySegmentTransformerTest {
 
@@ -33,7 +28,7 @@ public class LegacySegmentTransformerTest {
     public void transformLegacySegment() throws Exception {
         Segment deer = legacySegmentTransformer.apply(owl);
         assertThat(deer.getId().longValue(), is(owl.getId()));
-        assertThat(deer.getPublisher(), is(owl.getPublisher()));
+        assertThat(deer.getSource(), is(owl.getPublisher()));
         assertThat(deer.getType().name().toLowerCase(), is(owl.getType().name().toLowerCase()));
         assertThat(deer.getDuration(), is(owl.getDuration()));
     }

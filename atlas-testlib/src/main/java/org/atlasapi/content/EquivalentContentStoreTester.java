@@ -73,7 +73,7 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         ImmutableSet<Content> set = resolved.get(content1.getId());
         assertThat(set, hasSize(2));
         assertThat(set, hasItems(content1, content2));
-        assertThat(Iterables.getOnlyElement(((Item) set.asList().get(0)).getSegmentEvents()).getPublisher(), is(Publisher.METABROADCAST));
+        assertThat(Iterables.getOnlyElement(((Item) set.asList().get(0)).getSegmentEvents()).getSource(), is(Publisher.METABROADCAST));
     }
 
     public void testUpdatingContentInAnEquivalenceGraph() throws Exception {

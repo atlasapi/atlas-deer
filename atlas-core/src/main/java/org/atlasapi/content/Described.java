@@ -174,7 +174,7 @@ public abstract class Described extends Identified implements Sourced {
 	
 	@FieldName("publisher")
 	@Override
-	public Publisher getPublisher() {
+	public Publisher getSource() {
 		return publisher;
 	}
 

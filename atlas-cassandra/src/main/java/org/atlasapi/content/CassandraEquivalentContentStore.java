@@ -167,7 +167,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 if (content instanceof Item) {
                     Item item = (Item) content;
                     for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
-                        segmentEvent.setPublisher(item.getPublisher());
+                        segmentEvent.setPublisher(item.getSource());
                     }
                 }
                 EquivalenceGraph graphForContent = graphs.get(setId);
@@ -204,7 +204,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     //TODO more complex following of graph.
     private boolean contentSelected(Content content, EquivalenceGraph equivalenceGraph,
             Set<Publisher> selectedSources) {
-        return selectedSources.contains(content.getPublisher())
+        return selectedSources.contains(content.getSource())
             && equivalenceGraph.getEquivalenceSet().contains(content.getId());
     }
 

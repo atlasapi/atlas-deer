@@ -5,8 +5,13 @@ import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
 
 import java.util.Currency;
 
-import org.atlasapi.content.Policy.Service;
 import org.atlasapi.content.Policy.RevenueContract;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.PlayerRef;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.entity.ServiceRef;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
 
@@ -52,8 +57,21 @@ public class LocationSerializer {
         if (policy.getNetwork() != null) {
             builder.setNetwork(policy.getNetwork().key());
         }
-        if (policy.getService() != null) {
-            builder.setPlatform(policy.getService().key());
+        if (policy.getServiceRef() != null) {
+            ResourceRef serviceRef = policy.getServiceRef();
+            long id = serviceRef.getId().longValue();
+            String source = serviceRef.getSource().key();
+            builder.setServiceId(
+                    CommonProtos.Identification.newBuilder().setId(id).setSource(source).build()
+            );
+        }
+        if (policy.getPlayerRef() != null) {
+            ResourceRef playerRef = policy.getPlayerRef();
+            long id = playerRef.getId().longValue();
+            String source = playerRef.getSource().key();
+            builder.setPlayerId(
+                    CommonProtos.Identification.newBuilder().setId(id).setSource(source).build()
+            );
         }
         if (policy.getPrice() != null) {
             builder.setCurrency(policy.getPrice().getCurrency().getCurrencyCode());
@@ -100,7 +118,23 @@ public class LocationSerializer {
             policy.setNetwork(Policy.Network.fromKey(msg.getNetwork()));
         }
         if (msg.hasPlatform()) {
-            policy.setService(Service.fromKey(msg.getPlatform()));
+            //TODO WHATDO
+        }
+        if (msg.hasPlayerId()) {
+            policy.setPlayerRef(
+                    new PlayerRef(
+                            Id.valueOf(msg.getPlayerId().getId()),
+                            Publisher.fromKey(msg.getPlayerId().getSource()).requireValue()
+                    )
+            );
+        }
+        if (msg.hasServiceId()) {
+            policy.setServiceRef(
+                    new ServiceRef(
+                            Id.valueOf(msg.getServiceId().getId()),
+                            Publisher.fromKey(msg.getServiceId().getSource()).requireValue()
+                    )
+            );
         }
         if (msg.hasAmount() && msg.hasCurrency()) {
             policy.setPrice(new Price(

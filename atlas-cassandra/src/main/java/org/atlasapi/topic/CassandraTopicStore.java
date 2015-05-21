@@ -183,7 +183,7 @@ public class CassandraTopicStore extends AbstractTopicStore {
     
     @Override
     protected void doWrite(Topic topic, @Nullable Topic previous) {
-        checkArgument(previous == null || topic.getPublisher().equals(previous.getPublisher()));
+        checkArgument(previous == null || topic.getSource().equals(previous.getSource()));
         try {
             long id = topic.getId().longValue();
             MutationBatch batch = keyspace.prepareMutationBatch();

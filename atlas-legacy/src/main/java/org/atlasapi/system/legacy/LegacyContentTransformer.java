@@ -261,7 +261,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         org.atlasapi.media.segment.SegmentRef sr = input.getSegment();
         Id segmentId = Id.valueOf(sr.identifier());
         WriteResult<Segment, Segment> legacyMigrationResult = legacySegmentMigrator.migrateLegacySegment(segmentId);
-        se.setSegment(new SegmentRef(segmentId, legacyMigrationResult.getResource().getPublisher()));
+        se.setSegment(new SegmentRef(segmentId, legacyMigrationResult.getResource().getSource()));
         se.setVersionId(version.getCanonicalUri());
         return se;
     }
@@ -328,7 +328,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setAvailabilityLength(input.getAvailabilityLength());
         p.setRevenueContract(transformEnum(input.getRevenueContract(), Policy.RevenueContract.class));
         p.setPrice(input.getPrice());
-        p.setService(transformEnum(input.getPlatform(), Policy.Service.class));
+        p.setServiceRef(transformEnum(input.getPlatform(), Policy.Service.class));
         p.setNetwork(transformEnum(input.getNetwork(), Policy.Network.class));
         p.setActualAvailabilityStart(input.getActualAvailabilityStart());
         return p;

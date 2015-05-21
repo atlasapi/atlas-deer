@@ -23,7 +23,7 @@ public final class Sourceds {
 
         @Override
         public Publisher apply(Sourced input) {
-            return input.getPublisher();
+            return input.getSource();
         }
 
         @Override

@@ -42,7 +42,7 @@ public class ChannelGroupWriter implements EntityListWriter<ChannelGroup> {
         fieldWriter.writeField("title", entity.getTitle());
         fieldWriter.writeField("uri", entity.getCanonicalUri());
         fieldWriter.writeField("type", entity.getType());
-        fieldWriter.writeObject(SOURCE_WRITER, entity.getPublisher(), ctxt);
+        fieldWriter.writeObject(SOURCE_WRITER, entity.getSource(), ctxt);
         fieldWriter.writeList(ALIAS_WRITER, entity.getAliases(), ctxt);
         fieldWriter.writeList(COUNTRY_WRITER, entity.getAvailableCountries(), ctxt);
 

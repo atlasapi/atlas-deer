@@ -2,27 +2,20 @@ package org.atlasapi.output;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
-import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.segment.SegmentResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -70,18 +63,18 @@ public class SegmentRelatedLinkMergingFetcher {
         if (segmentEvents.isEmpty()) {
             return null;
         }
-        final Publisher chosenPublisher = Iterables.getFirst(segmentEvents, null).getPublisher();
+        final Publisher chosenPublisher = Iterables.getFirst(segmentEvents, null).getSource();
         Iterable<SegmentEvent> publisherSegments = Iterables.filter(segmentEvents, new Predicate<SegmentEvent>() {
             @Override
             public boolean apply(SegmentEvent input) {
-                return input.getPublisher().equals(chosenPublisher);
+                return input.getSource().equals(chosenPublisher);
             }
         });
 
         Iterable<SegmentEvent> otherPublisherSegments = Iterables.filter(segmentEvents, new Predicate<SegmentEvent>() {
             @Override
             public boolean apply(SegmentEvent input) {
-                return !input.getPublisher().equals(chosenPublisher);
+                return !input.getSource().equals(chosenPublisher);
             }
         });
 

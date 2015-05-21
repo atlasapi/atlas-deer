@@ -12,6 +12,8 @@ import org.atlasapi.content.Policy;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.writers.ChannelGroupWriter;
+import org.atlasapi.output.writers.PlayerWriter;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -19,10 +21,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     private final EncodedLocationWriter encodedLocationWriter;
+    private final PlayerWriter playerWriter;
+
+
+    public LocationsAnnotation(PlayerWriter playerWriter) {
+        this.encodedLocationWriter = new EncodedLocationWriter("locations");
+        this.playerWriter = checkNotNull(playerWriter);
+    }
 
     public static final class EncodedLocationWriter implements EntityListWriter<EncodedLocation> {
 
@@ -55,7 +66,14 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("availability_start", policy.getAvailabilityStart());
             writer.writeField("availability_end", policy.getAvailabilityEnd());
             writer.writeList("available_countries", "country", policy.getAvailableCountries(), ctxt);
-            writer.writeField("service", policy.getService());
+            if (policy.getServiceRef() != null) {
+
+            }
+            if (policy.getPlayerRef() != null) {
+
+            }
+            writer.writeField("service", policy.getServiceRef());
+            writer.writeField("player", policy.getPlayerRef());
             writer.writeField("drm_playable_from", policy.getDrmPlayableFrom());
             if (policy.getPrice() != null) {
                 writer.writeField("currency", policy.getPrice().getCurrency());
@@ -92,11 +110,6 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         public String listName() {
             return listName;
         }
-    }
-
-    public LocationsAnnotation() {
-        super();
-        this.encodedLocationWriter = new EncodedLocationWriter("locations");
     }
 
     @Override

@@ -101,7 +101,7 @@ public class SegmentEvent extends Identified implements Sourced{
     };
 
     @Override
-    public Publisher getPublisher() {
+    public Publisher getSource() {
         return publisher;
     }
 

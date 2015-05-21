@@ -17,7 +17,7 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
     public byte[] serialize(Topic topic) {
         Builder msg = TopicProtos.Topic.newBuilder()
             .setId(topic.getId().longValue())
-            .setSource(topic.getPublisher().key());
+            .setSource(topic.getSource().key());
         if (topic.getType() != null) {
             msg.setType(topic.getType().key());
         }

@@ -236,7 +236,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Adjacents result = adj;
         if (subject.equals(adj.getRef())) {
             result = updateSubjectAdjacents(adj, assertedAdjacents, sources);
-        } else if (sources.contains(adj.getPublisher())) {
+        } else if (sources.contains(adj.getSource())) {
             if (assertedAdjacents.contains(adj.getRef())) {
                 result = adj.copyWithAfferent(subject);
             } else if (adj.hasAfferentAdjacent(subject)) {

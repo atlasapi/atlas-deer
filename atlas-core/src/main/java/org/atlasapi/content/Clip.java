@@ -29,7 +29,7 @@ public class Clip extends Item {
 	
 	@Override
 	public ClipRef toRef() {
-	    return new ClipRef(getId(), getPublisher(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
+	    return new ClipRef(getId(), getSource(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
 	}
 	
 	public Clip() {}
