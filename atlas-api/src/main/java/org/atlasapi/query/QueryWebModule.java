@@ -70,10 +70,11 @@ import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.TopicsAnnotation;
+import org.atlasapi.output.writers.BrandSeriesSummaryWriter;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.RequestWriter;
-import org.atlasapi.output.writers.SeriesSummaryWriter;
+import org.atlasapi.output.writers.EpisodesSeriesSummaryWriter;
 import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
 import org.atlasapi.persistence.output.RecentlyBroadcastChildrenResolver;
@@ -526,7 +527,8 @@ public class QueryWebModule {
                 .register(
                         SERIES_SUMMARY,
                         new SeriesSummaryAnnotation(
-                                new SeriesSummaryWriter(idCodec(), containerSummaryResolver)
+                                new EpisodesSeriesSummaryWriter(idCodec(), containerSummaryResolver),
+                                new BrandSeriesSummaryWriter(idCodec(), containerSummaryResolver)
                         ),
                         commonImplied,
                         ImmutableSet.of(SERIES_REFERENCE)
