@@ -11,6 +11,8 @@ import org.atlasapi.content.Policy;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.LocationsAnnotation.EncodedLocationWriter;
+import org.atlasapi.persistence.player.PlayerResolver;
+import org.atlasapi.persistence.service.ServiceResolver;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -22,9 +24,10 @@ public class AvailableLocationsAnnotation extends OutputAnnotation<Content> {
 
     private final EncodedLocationWriter encodedLocationWriter;
 
-    public AvailableLocationsAnnotation() {
-        super();
-        this.encodedLocationWriter = new EncodedLocationWriter("available_locations");        
+    public AvailableLocationsAnnotation(PlayerResolver playerResolver, ServiceResolver serviceResolver) {
+        this.encodedLocationWriter = new EncodedLocationWriter(
+                "available_locations", playerResolver, serviceResolver
+        );
     }
 
     @Override
