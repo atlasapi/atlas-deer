@@ -43,7 +43,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             Encoding encoding = entity.getEncoding();
             Location location = entity.getLocation();
             Policy policy = location.getPolicy();
-            
+
             writer.writeField("uri", location.getUri());
             writer.writeField("available", isAvailable(policy));
             writer.writeField("transport_is_live", location.getTransportIsLive());
@@ -55,7 +55,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("availability_start", policy.getAvailabilityStart());
             writer.writeField("availability_end", policy.getAvailabilityEnd());
             writer.writeList("available_countries", "country", policy.getAvailableCountries(), ctxt);
-            writer.writeField("platform", policy.getPlatform());
+            writer.writeField("service", policy.getService());
             writer.writeField("drm_playable_from", policy.getDrmPlayableFrom());
             if (policy.getPrice() != null) {
                 writer.writeField("currency", policy.getPrice().getCurrency());

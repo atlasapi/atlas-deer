@@ -37,14 +37,14 @@ public class ChannelGroupWriter implements EntityListWriter<ChannelGroup> {
     }
 
     @Override
-    public void write(@Nonnull ChannelGroup entity, @Nonnull FieldWriter format, @Nonnull OutputContext ctxt) throws IOException {
-        format.writeField("id", idCode.encode(entity.getId().toBigInteger()));
-        format.writeField("title", entity.getTitle());
-        format.writeField("uri", entity.getCanonicalUri());
-        format.writeField("type", entity.getType());
-        format.writeObject(SOURCE_WRITER, entity.getPublisher(), ctxt);
-        format.writeList(ALIAS_WRITER, entity.getAliases(), ctxt);
-        format.writeList(COUNTRY_WRITER, entity.getAvailableCountries(), ctxt);
+    public void write(@Nonnull ChannelGroup entity, @Nonnull FieldWriter fieldWriter, @Nonnull OutputContext ctxt) throws IOException {
+        fieldWriter.writeField("id", idCode.encode(entity.getId().toBigInteger()));
+        fieldWriter.writeField("title", entity.getTitle());
+        fieldWriter.writeField("uri", entity.getCanonicalUri());
+        fieldWriter.writeField("type", entity.getType());
+        fieldWriter.writeObject(SOURCE_WRITER, entity.getPublisher(), ctxt);
+        fieldWriter.writeList(ALIAS_WRITER, entity.getAliases(), ctxt);
+        fieldWriter.writeList(COUNTRY_WRITER, entity.getAvailableCountries(), ctxt);
 
     }
 

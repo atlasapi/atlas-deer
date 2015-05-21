@@ -4,11 +4,10 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.intl.Country;
-import net.sf.cglib.core.Local;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelNumbering;
-import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.Service;
 import org.atlasapi.channel.Region;
 import org.atlasapi.media.entity.Publisher;
 import org.hamcrest.core.Is;
@@ -78,7 +77,7 @@ public class LegacyChannelGroupTransformerTest {
         assertThat(transformed.getPublisher(), is(publisher));
         assertThat(
                 Iterables.any(
-                        ((Platform) transformed).getRegions(),
+                        ((Service) transformed).getRegions(),
                         new Predicate<ChannelGroupRef>() {
                             @Override
                             public boolean apply(ChannelGroupRef input) {
@@ -92,7 +91,7 @@ public class LegacyChannelGroupTransformerTest {
 
         assertThat(
                 Iterables.any(
-                        ((Platform) transformed).getRegions(),
+                        ((Service) transformed).getRegions(),
                         new Predicate<ChannelGroupRef>() {
                             @Override
                             public boolean apply(ChannelGroupRef input) {
@@ -106,7 +105,7 @@ public class LegacyChannelGroupTransformerTest {
 
         assertThat(
                 Iterables.any(
-                        ((Platform) transformed).getChannels(),
+                        ((Service) transformed).getChannels(),
                         new Predicate<ChannelNumbering>() {
                             @Override
                             public boolean apply(ChannelNumbering input) {
@@ -124,7 +123,7 @@ public class LegacyChannelGroupTransformerTest {
 
         assertThat(
                 Iterables.any(
-                        ((Platform) transformed).getChannels(),
+                        ((Service) transformed).getChannels(),
                         new Predicate<ChannelNumbering>() {
                             @Override
                             public boolean apply(ChannelNumbering input) {
