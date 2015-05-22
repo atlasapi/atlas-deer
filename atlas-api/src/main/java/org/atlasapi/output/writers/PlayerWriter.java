@@ -19,7 +19,6 @@ public class PlayerWriter implements EntityWriter<Player> {
     @Override
     public void write(@Nonnull Player entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
         writer.writeField("title", entity.getTitle());
-        writer.writeField("title", entity.getTitle());
         writer.writeField("description", entity.getDescription());
         writer.writeField("image", entity.getImage());
         writer.writeField("thumbnail", entity.getThumbnail());
