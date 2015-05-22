@@ -16,9 +16,8 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
-import org.atlasapi.channel.Platform;
+import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.entity.ServiceRef;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
@@ -42,9 +41,9 @@ public class Policy extends Identified {
 	
 	private Price price;
 	
-	private ResourceRef serviceRef;
+	private Id serviceId;
 
-	private ResourceRef playerRef;
+	private Id playerId;
 
 	private Platform platform;
 
@@ -61,17 +60,17 @@ public class Policy extends Identified {
         this.platform = platform;
     }
 
-    public void setPlayerRef(ResourceRef playerRef) {
-		this.playerRef = playerRef;
+    public void setPlayerId(Id playerRef) {
+		this.playerId = playerRef;
 	}
 
-	public void setServiceRef(ResourceRef serviceRef) {
-		this.serviceRef = serviceRef;
+	public void setServiceId(Id serviceRef) {
+		this.serviceId = serviceId;
 	}
 
-	@FieldName("player_ref")
-	public ResourceRef getPlayerRef() {
-		return playerRef;
+	@FieldName("player")
+	public Id getPlayerRef() {
+		return playerId;
 	}
 
 	@FieldName("available_countries")
@@ -106,8 +105,8 @@ public class Policy extends Identified {
 	}
     
     @FieldName("service")
-    public ResourceRef getServiceRef() {
-        return serviceRef;
+    public Id getServiceRef() {
+        return serviceId;
     }
     
     @FieldName("network")
@@ -197,8 +196,8 @@ public class Policy extends Identified {
 		return this;
 	}
 	
-	public Policy withServiceRef(ServiceRef service) {
-		setServiceRef(service);
+	public Policy withServiceRef(Id service) {
+		setServiceId(service);
 		return this;
 	}
 
@@ -260,7 +259,8 @@ public class Policy extends Identified {
 	    copy.drmPlayableFrom = drmPlayableFrom;
 	    copy.price = price;
 	    copy.revenueContract = revenueContract;
-	    copy.serviceRef = serviceRef;
+	    copy.serviceId = serviceId;
+		copy.playerId = playerId;
 	    copy.network = network;
 	    copy.actualAvailabilityStart = actualAvailabilityStart;
 	    return copy;

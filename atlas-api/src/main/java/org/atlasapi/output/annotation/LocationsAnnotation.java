@@ -116,7 +116,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         }
 
         private void writePlayer(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
-            Optional<org.atlasapi.media.entity.Player> maybePlayer = playerResolver.playerFor(policy.getPlayerRef().getId().longValue());
+            Optional<org.atlasapi.media.entity.Player> maybePlayer
+                    = playerResolver.playerFor(policy.getPlayerRef().longValue());
             if (maybePlayer.isPresent()) {
                 Player player = playerTransformer.apply(maybePlayer.get());
                 writer.writeObject(playerWriter, player, ctxt);
@@ -125,7 +126,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
 
         private void writeService(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
             Optional<org.atlasapi.media.entity.Service> maybeService =
-                    serviceResolver.serviceFor(policy.getServiceRef().getId().longValue());
+                    serviceResolver.serviceFor(policy.getServiceRef().longValue());
             if (maybeService.isPresent()) {
                 Service service = serviceTransformer.apply(maybeService.get());
                 writer.writeObject(serviceWriter, service, ctxt);

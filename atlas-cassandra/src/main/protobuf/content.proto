@@ -175,8 +175,8 @@ message Location {
     optional string embed_id = 14;
     optional common.DateTime actual_availability_start = 15;
     optional common.DateTime drm_playable_from = 16;
-    optional common.Identification service_id = 18;
-    optional common.Identification player_id = 19;
+    optional int64 service_id = 18;
+    optional int64 player_id = 19;
 }
 
 message SegmentEvent {
