@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.entity.Id;
@@ -75,9 +76,22 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             Interval interval = new Interval(msg.getUpdateStart(), msg.getUpdateEnd());
             UpdateProgress result = taskFactory.create(src, Iterables.getOnlyElement(resolvedChannel.getResources()), interval).call();
             log.debug("{}: processed: {}", updateMsg, result);
+            if (!Publisher.PA.equals(src)) {
+                updatePaSchedule(updateMsg, resolvedChannel, interval);
+            }
         } catch (Exception e) {
             log.error("failed " + updateMsg, e);
         }
+    }
+
+    /**
+     * Force an update of the PA schedule. This is ahead of full equivalent
+     * schedule store maintenance
+     */
+    private void updatePaSchedule(String updateMsg, Resolved<Channel> resolvedChannel,
+            Interval interval) throws Exception {
+        UpdateProgress paResult = taskFactory.create(Publisher.PA, Iterables.getOnlyElement(resolvedChannel.getResources()), interval).call();
+        log.debug("{}: processed: {}", updateMsg, paResult);
     }
 
 }
