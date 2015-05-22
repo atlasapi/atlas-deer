@@ -329,8 +329,12 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setRevenueContract(transformEnum(input.getRevenueContract(), Policy.RevenueContract.class));
         p.setPrice(input.getPrice());
         p.setPlatform(transformEnum(input.getPlatform(), Policy.Platform.class));
-        p.setServiceId(Id.valueOf(input.getService()));
-        p.setPlayerId(Id.valueOf(input.getPlayer()));
+        if (input.getService() != null) {
+            p.setServiceId(Id.valueOf(input.getService()));
+        }
+        if (input.getPlayer() != null) {
+            p.setPlayerId(Id.valueOf(input.getPlayer()));
+        }
         p.setNetwork(transformEnum(input.getNetwork(), Policy.Network.class));
         p.setActualAvailabilityStart(input.getActualAvailabilityStart());
         return p;
