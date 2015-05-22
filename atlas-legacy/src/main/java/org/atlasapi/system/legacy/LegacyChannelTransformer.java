@@ -6,8 +6,6 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.MediaType;
-import org.atlasapi.content.RelatedLink;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.media.channel.ChannelNumbering;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
@@ -52,7 +50,7 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                 .withKey(input.getKey())
                 .withHighDefinition(input.getHighDefinition())
                 .withBroadcaster(input.getBroadcaster())
-                .withSource(input.getPublisher())
+                .withSource(input.getSource())
                 .withMediaType(
                         org.atlasapi.media.entity.MediaType.valueOf(
                                 input.getMediaType().toString().toUpperCase()

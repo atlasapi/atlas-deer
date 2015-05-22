@@ -113,7 +113,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     private ImmutableSet<Item> equivItems(Item item, Broadcast broadcast, Iterable<Item> graphItems) {
         ImmutableSet<Item> items = ImmutableSet.<Item>builder()
             .add(item)
-            .addAll(filterSources(itemsBySource(graphItems), broadcast, item.getPublisher()))
+            .addAll(filterSources(itemsBySource(graphItems), broadcast, item.getSource()))
             .build();
         return items;
     }
@@ -173,7 +173,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
             for (Content elem : graphContent.getResources()) {
                 if (elem instanceof Item) {
                     Item item = (Item) elem;
-                    Publisher src = item.getPublisher();
+                    Publisher src = item.getSource();
                     for (Broadcast bcast : Iterables.filter(item.getBroadcasts(),Broadcast.ACTIVELY_PUBLISHED)) {
                         Item copy = item.copy();
                         copy.setBroadcasts(ImmutableSet.of(bcast));

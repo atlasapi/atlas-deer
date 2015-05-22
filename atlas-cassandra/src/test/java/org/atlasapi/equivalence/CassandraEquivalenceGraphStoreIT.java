@@ -98,16 +98,16 @@ public class CassandraEquivalenceGraphStoreIT {
     @Test
     public void testUpdatingEquivalences() throws Exception {
 
-        Set<Publisher> sources = ImmutableSet.of(bbcItem.getPublisher(), paItem.getPublisher(), c4Item.getPublisher());
+        Set<Publisher> sources = ImmutableSet.of(bbcItem.getSource(), paItem.getSource(), c4Item.getSource());
         store.updateEquivalences(bbcItem.toRef(), ImmutableSet.<ResourceRef>of(paItem.toRef(), c4Item.toRef()), sources);
         
-        sources = ImmutableSet.of(itvItem.getPublisher(), fiveItem.getPublisher());
+        sources = ImmutableSet.of(itvItem.getSource(), fiveItem.getSource());
         store.updateEquivalences(itvItem.toRef(), ImmutableSet.<ResourceRef>of(fiveItem.toRef()), sources);
         
-        sources = ImmutableSet.of(itvItem.getPublisher(), paItem.getPublisher());
+        sources = ImmutableSet.of(itvItem.getSource(), paItem.getSource());
         store.updateEquivalences(itvItem.toRef(), ImmutableSet.<ResourceRef>of(paItem.toRef()), sources);
         
-        sources = ImmutableSet.of(itvItem.getPublisher(), paItem.getPublisher(), fiveItem.getPublisher());
+        sources = ImmutableSet.of(itvItem.getSource(), paItem.getSource(), fiveItem.getSource());
         store.updateEquivalences(itvItem.toRef(), ImmutableSet.<ResourceRef>of(), sources);
         
         ListenableFuture<OptionalMap<Id,EquivalenceGraph>> resolveIds = store.resolveIds(ImmutableList.of(Id.valueOf(3), Id.valueOf(1)));

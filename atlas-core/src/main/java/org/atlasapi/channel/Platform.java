@@ -15,11 +15,11 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Service extends ChannelGroup<ChannelNumbering> {
+public class Platform extends ChannelGroup<ChannelNumbering> {
 
     private final ImmutableSet<ChannelGroupRef> regions;
 
-    public Service(
+    public Platform(
             Id id,
             Publisher publisher,
             Set<ChannelNumbering> channels,
@@ -41,7 +41,7 @@ public class Service extends ChannelGroup<ChannelNumbering> {
 
     @Override
     public String getType() {
-        return "platform";
+        return "service";
     }
 
     public static class Builder {
@@ -81,7 +81,7 @@ public class Service extends ChannelGroup<ChannelNumbering> {
             return this;
         }
 
-        public Service build() {
+        public Platform build() {
             HashSet<ChannelGroupRef> regions = Sets.newHashSet(
                     Collections2.transform(
                             this.regionIds,
@@ -96,7 +96,7 @@ public class Service extends ChannelGroup<ChannelNumbering> {
                             }
                     )
             );
-            return new Service(
+            return new Platform(
                     id,
                     publisher,
                     channels,

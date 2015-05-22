@@ -35,7 +35,7 @@ public class EquivalenceSummary {
     public static class Ref implements Identifiable, Sourced {
 
         public static Ref valueOf(Described content) {
-            Publisher publisher = content.getPublisher();
+            Publisher publisher = content.getSource();
             Id id = content.getId();
             Id parentId = null;
             if (content instanceof Item) {
@@ -76,7 +76,7 @@ public class EquivalenceSummary {
             return this.id;
         }
         
-        public Publisher getPublisher() {
+        public Publisher getSource() {
             return this.publisher;
         }
         

@@ -16,6 +16,9 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
+import org.atlasapi.channel.Platform;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.entity.ServiceRef;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
@@ -39,12 +42,38 @@ public class Policy extends Identified {
 	
 	private Price price;
 	
-	private Service service;
+	private ResourceRef serviceRef;
+
+	private ResourceRef playerRef;
+
+	private Platform platform;
 
 	private Network network;
 	
 	private DateTime actualAvailabilityStart;
-    
+
+    @FieldName("platform")
+    public Platform getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(Platform platform) {
+        this.platform = platform;
+    }
+
+    public void setPlayerRef(ResourceRef playerRef) {
+		this.playerRef = playerRef;
+	}
+
+	public void setServiceRef(ResourceRef serviceRef) {
+		this.serviceRef = serviceRef;
+	}
+
+	@FieldName("player_ref")
+	public ResourceRef getPlayerRef() {
+		return playerRef;
+	}
+
 	@FieldName("available_countries")
     public Set<Country> getAvailableCountries() {
 		return availableCountries;
@@ -77,8 +106,8 @@ public class Policy extends Identified {
 	}
     
     @FieldName("service")
-    public Service getService() {
-        return service;
+    public ResourceRef getServiceRef() {
+        return serviceRef;
     }
     
     @FieldName("network")
@@ -131,10 +160,6 @@ public class Policy extends Identified {
         this.price = price;
     }
 	
-	public void setService(Service service) {
-		this.service = service;
-	}
-	
 	public void setNetwork(Network network) {
 	    this.network = network;
 	}
@@ -172,10 +197,36 @@ public class Policy extends Identified {
 		return this;
 	}
 	
-	public Policy withPlatform(Service service) {
-		setService(service);
+	public Policy withServiceRef(ServiceRef service) {
+		setServiceRef(service);
 		return this;
 	}
+
+    public enum Platform {
+        XBOX,
+        PC,
+        IOS,
+        YOUVIEW,
+        TALK_TALK,
+        BTVISION_CARDINAL,
+        YOUVIEW_IPLAYER,
+        YOUVIEW_ITVPLAYER,
+        YOUVIEW_4OD,
+        YOUVIEW_DEMAND5;
+
+        public String key() {
+            return name().toLowerCase();
+        }
+
+        public static Platform fromKey(String key) {
+            for (Platform platform: values()) {
+                if (platform.key().equals(key)) {
+                    return platform;
+                }
+            }
+            return null;
+        }
+    }
 	
 	public enum RevenueContract {
 	    PAY_TO_BUY,
@@ -209,36 +260,10 @@ public class Policy extends Identified {
 	    copy.drmPlayableFrom = drmPlayableFrom;
 	    copy.price = price;
 	    copy.revenueContract = revenueContract;
-	    copy.service = service;
+	    copy.serviceRef = serviceRef;
 	    copy.network = network;
 	    copy.actualAvailabilityStart = actualAvailabilityStart;
 	    return copy;
-	}
-	
-	public enum Service {
-		XBOX,
-		PC,
-		IOS,
-		YOUVIEW, 
-		TALK_TALK,
-		BTVISION_CARDINAL,
-		YOUVIEW_IPLAYER,
-		YOUVIEW_ITVPLAYER,
-		YOUVIEW_4OD,
-		YOUVIEW_DEMAND5;
-		
-		public String key() {
-			return name().toLowerCase();
-		}
-		    
-		public static Service fromKey(String key) {
-			for (Service service : values()) {
-				if (service.key().equals(key)) {
-					return service;
-				}
-			}
-			return null;
-		}
 	}
 	
 	public enum Network {

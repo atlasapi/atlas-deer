@@ -42,7 +42,7 @@ abstract public class AbstractSegmentStore implements SegmentStore {
     @Override
     public WriteResult<Segment, Segment> writeSegment(Segment segment) {
         checkNotNull(segment, "Cannot persist a null segment");
-        checkNotNull(segment.getPublisher(), "Cannot persist a segment without a publisher");
+        checkNotNull(segment.getSource(), "Cannot persist a segment without a publisher");
 
         Segment previous = getPreviousSegment(segment);
         if (previous != null) {
@@ -99,7 +99,7 @@ abstract public class AbstractSegmentStore implements SegmentStore {
     }
 
     private Segment getPreviousSegment(Segment segment) {
-        return resolvePrevious(segment.getId(), segment.getPublisher(), segment.getAliases()).orNull();
+        return resolvePrevious(segment.getId(), segment.getSource(), segment.getAliases()).orNull();
     }
 
     protected abstract Optional<Segment> resolvePrevious(Id id, Publisher source, Set<Alias> aliases);

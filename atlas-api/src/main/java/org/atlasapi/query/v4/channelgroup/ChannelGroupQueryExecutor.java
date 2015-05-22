@@ -84,7 +84,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ChannelGroup> {
                         Iterables.filter(channelGroups, new Predicate<ChannelGroup>() {
                             @Override
                             public boolean apply(ChannelGroup input) {
-                                return query.getContext().getApplicationSources().isReadEnabled(input.getPublisher());
+                                return query.getContext().getApplicationSources().isReadEnabled(input.getSource());
                             }
                         })),
                 query.getContext()

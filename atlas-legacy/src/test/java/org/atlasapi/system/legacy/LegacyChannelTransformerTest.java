@@ -53,7 +53,7 @@ public class LegacyChannelTransformerTest {
         Channel transformed = this.objectUnderTest.apply(legacyChannel);
 
         assertThat(transformed.getCanonicalUri(), is(uri));
-        assertThat(transformed.getPublisher(), is(source));
+        assertThat(transformed.getSource(), is(source));
         assertThat(transformed.getHighDefinition(), is(hightDefinition));
         assertThat(transformed.getBroadcaster(), is(broadcaster));
         assertThat(transformed.getParent().getId().longValue(), is(parentId));

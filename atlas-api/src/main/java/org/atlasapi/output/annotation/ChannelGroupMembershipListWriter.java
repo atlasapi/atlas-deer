@@ -10,13 +10,11 @@ import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
-import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -66,7 +64,7 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
             format.writeField("start_date", channelNumbering.getStartDate());
         }
 
-        format.writeObject(PUBLISHER_WRITER, entity.getChannel().getPublisher(), ctxt);
+        format.writeObject(PUBLISHER_WRITER, entity.getChannel().getSource(), ctxt);
 
     }
 

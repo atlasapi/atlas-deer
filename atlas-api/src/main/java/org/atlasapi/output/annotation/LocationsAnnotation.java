@@ -4,14 +4,24 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.Set;
 
+import com.google.common.base.Optional;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Location;
+import org.atlasapi.content.Player;
 import org.atlasapi.content.Policy;
+import org.atlasapi.content.Service;
 import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.writers.PlayerWriter;
+import org.atlasapi.output.writers.ServiceWriter;
+import org.atlasapi.persistence.player.PlayerResolver;
+import org.atlasapi.persistence.service.ServiceResolver;
+import org.atlasapi.system.legacy.LegacyPlayerTransformer;
+import org.atlasapi.system.legacy.LegacyServiceTransformer;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -19,27 +29,44 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     private final EncodedLocationWriter encodedLocationWriter;
 
+
+    public LocationsAnnotation(PlayerResolver playerResolver, ServiceResolver serviceResolver) {
+        this.encodedLocationWriter = new EncodedLocationWriter(
+                "locations", playerResolver, serviceResolver
+        );
+    }
+
     public static final class EncodedLocationWriter implements EntityListWriter<EncodedLocation> {
 
-        private String listName;
+        private final PlayerResolver playerResolver;
+        private final EntityWriter<Player> playerWriter = new PlayerWriter();
+        private final EntityWriter<Service> serviceWriter = new ServiceWriter();
+        private final LegacyPlayerTransformer playerTransformer = new LegacyPlayerTransformer();
+        private final LegacyServiceTransformer serviceTransformer = new LegacyServiceTransformer();
+        private final ServiceResolver serviceResolver;
+        private final String listName;
 
-        public EncodedLocationWriter(String listName) {
-            this.listName = listName;
+        public EncodedLocationWriter(String listName, PlayerResolver playerResolver, ServiceResolver serviceResolver) {
+            this.listName = checkNotNull(listName);
+            this.serviceResolver = checkNotNull(serviceResolver);
+            this.playerResolver = checkNotNull(playerResolver);
         }
 
         private Boolean isAvailable(Policy input) {
-            return (input.getAvailabilityStart() == null || ! (new DateTime(input.getAvailabilityStart()).isAfterNow()))
-                && (input.getAvailabilityEnd() == null || new DateTime(input.getAvailabilityEnd()).isAfterNow());
+            return (input.getAvailabilityStart() == null || !(new DateTime(input.getAvailabilityStart()).isAfterNow()))
+                    && (input.getAvailabilityEnd() == null || new DateTime(input.getAvailabilityEnd()).isAfterNow());
         }
 
         @Override
         public void write(EncodedLocation entity, FieldWriter writer, OutputContext ctxt)
-            throws IOException {
+                throws IOException {
             Encoding encoding = entity.getEncoding();
             Location location = entity.getLocation();
             Policy policy = location.getPolicy();
@@ -55,7 +82,12 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("availability_start", policy.getAvailabilityStart());
             writer.writeField("availability_end", policy.getAvailabilityEnd());
             writer.writeList("available_countries", "country", policy.getAvailableCountries(), ctxt);
-            writer.writeField("service", policy.getService());
+            if (policy.getServiceRef() != null) {
+                writeService(writer, ctxt, policy);
+            }
+            if (policy.getPlayerRef() != null) {
+                writePlayer(writer, ctxt, policy);
+            }
             writer.writeField("drm_playable_from", policy.getDrmPlayableFrom());
             if (policy.getPrice() != null) {
                 writer.writeField("currency", policy.getPrice().getCurrency());
@@ -83,6 +115,23 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("video_vertical_size", encoding.getVideoVerticalSize());
         }
 
+        private void writePlayer(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
+            Optional<org.atlasapi.media.entity.Player> maybePlayer = playerResolver.playerFor(policy.getPlayerRef().getId().longValue());
+            if (maybePlayer.isPresent()) {
+                Player player = playerTransformer.apply(maybePlayer.get());
+                writer.writeObject(playerWriter, player, ctxt);
+            }
+        }
+
+        private void writeService(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
+            Optional<org.atlasapi.media.entity.Service> maybeService =
+                    serviceResolver.serviceFor(policy.getServiceRef().getId().longValue());
+            if (maybeService.isPresent()) {
+                Service service = serviceTransformer.apply(maybeService.get());
+                writer.writeObject(serviceWriter, service, ctxt);
+            }
+        }
+
         @Override
         public String fieldName(EncodedLocation entity) {
             return "location";
@@ -94,11 +143,6 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         }
     }
 
-    public LocationsAnnotation() {
-        super();
-        this.encodedLocationWriter = new EncodedLocationWriter("locations");
-    }
-
     @Override
     public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         if (entity instanceof Item) {
@@ -106,7 +150,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeList(encodedLocationWriter, encodedLocations(item), ctxt);
         }
     }
-    
+
 
     private Iterable<EncodedLocation> encodedLocations(Item item) {
         return encodedLocations(item.getManifestedAs());
@@ -114,16 +158,13 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
         return Iterables.concat(Iterables.transform(manifestedAs,
-            new Function<Encoding, Iterable<EncodedLocation>>() {
-                @Override
-                public Iterable<EncodedLocation> apply(Encoding encoding) {
+                encoding -> {
                     Builder<EncodedLocation> builder = ImmutableList.builder();
                     for (Location location : encoding.getAvailableAt()) {
                         builder.add(new EncodedLocation(encoding, location));
                     }
                     return builder.build();
                 }
-            }
         ));
     }
 }

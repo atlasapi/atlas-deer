@@ -54,7 +54,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 public class EsContentIndex extends AbstractIdleService implements ContentIndex {
 
     private final Logger log = LoggerFactory.getLogger(EsContentIndex.class);
-    
+
     private static final int DEFAULT_LIMIT = 50;
 
     private final Node esClient;
@@ -66,11 +66,11 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private final EsQueryBuilder builder = new EsQueryBuilder();
 
     public EsContentIndex(Node esClient, String indexName, long requestTimeout) {
-        this.esClient = checkNotNull(esClient);        
+        this.esClient = checkNotNull(esClient);
         this.requestTimeout = requestTimeout;
         this.index = checkNotNull(indexName);
     }
-    
+
     @Override
     protected void startUp() throws IOException {
         if (createIndex(index)) {
@@ -78,10 +78,10 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         }
         log.info("Found existing indices {}", existingIndexes);
     }
-    
+
     @Override
     protected void shutDown() throws Exception {
-        
+
     }
     private boolean createIndex(String name) {
         ActionFuture<IndicesExistsResponse> exists = esClient.client().admin().indices().exists(
@@ -101,7 +101,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             return false;
         }
     }
-    
+
     private void putTypeMappings() throws IOException {
         log.info("Putting mapping for type {}", EsContent.TOP_LEVEL_CONTAINER);
         doMappingRequest(Requests.putMappingRequest(index)
@@ -123,14 +123,14 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         } catch (MergeMappingException mme) {
             log.info("Merge Mapping Exception: {}/{}", req.indices(), req.type());
         }
-        
+
     }
-    
+
 
     private void indexItem(Item item) {
         try {
             EsContent esContent = toEsContent(item);
-            
+
             BulkRequest requests = Requests.bulkRequest();
             IndexRequest mainIndexRequest;
             ContainerRef container = item.getContainerRef();
@@ -147,7 +147,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                     .id(getDocId(item))
                     .source(esContent.hasChildren(false).toMap());
             }
-            
+
             requests.add(mainIndexRequest);
             BulkResponse resp = timeoutGet(esClient.client().bulk(requests));
             log.debug("indexed {} ({}ms)", item, resp.getTookInMillis());
@@ -160,7 +160,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         return new EsContent()
             .id(item.getId().longValue())
             .type(ContentType.fromContent(item).get())
-            .source(item.getPublisher() != null ? item.getPublisher().key() : null)
+            .source(item.getSource() != null ? item.getSource().key() : null)
             .aliases(item.getAliases())
             .title(item.getTitle())
             .flattenedTitle(flattenedOrNull(item.getTitle()))
@@ -171,12 +171,12 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .locations(makeESLocations(item))
             .topics(makeESTopics(item));
     }
-    
+
     private void indexContainer(Container container) {
         EsContent indexed = new EsContent()
             .id(container.getId().longValue())
             .type(ContentType.fromContent(container).get())
-            .source(container.getPublisher() != null ? container.getPublisher().key() : null)
+            .source(container.getSource() != null ? container.getSource().key() : null)
             .aliases(container.getAliases())
             .title(container.getTitle())
             .flattenedTitle(flattenedOrNull(container.getTitle()))
@@ -202,7 +202,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private String flattenedOrNull(String string) {
         return string != null ? Strings.flatten(string) : null;
     }
-    
+
     private Collection<EsBroadcast> makeESBroadcasts(Item item) {
         Collection<EsBroadcast> esBroadcasts = new LinkedList<EsBroadcast>();
         for (Broadcast broadcast : item.getBroadcasts()) {
@@ -231,7 +231,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         Collection<EsLocation> esLocations = new LinkedList<EsLocation>();
         for (Encoding encoding : item.getManifestedAs()) {
             for (Location location : encoding.getAvailableAt()) {
-                if (location.getPolicy() != null 
+                if (location.getPolicy() != null
                     && location.getPolicy().getAvailabilityStart() != null
                     && location.getPolicy().getAvailabilityEnd() != null) {
                         esLocations.add(toEsLocation(location.getPolicy()));
@@ -296,11 +296,11 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private String getDocId(ItemRef child) {
         return String.valueOf(child.getId());
     }
-    
+
     private String getDocId(Content content) {
         return String.valueOf(content.getId());
     }
-    
+
     private String getDocId(ContainerRef container) {
         return String.valueOf(container.getId());
     }
@@ -330,7 +330,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             return null;
         }
     }
-    
+
     private <T> T timeoutGet(ActionFuture<T> future) {
         try {
             return future.actionGet(requestTimeout, TimeUnit.MILLISECONDS);
@@ -340,7 +340,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             throw Throwables.propagate(ese);
         }
     }
-    
+
     @Override
     public void index(Content content) throws IndexException {
         try {
@@ -360,20 +360,20 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             throw new IndexException(rie.getMessage(), rie.getCause());
         }
     };
-    
+
     private class RuntimeIndexException extends RuntimeException {
 
         public RuntimeIndexException(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
     }
-    
+
     @Override
-    public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query, 
+    public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
         Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
-        esClient.client()  
+        esClient.client()
             .prepareSearch(index)
             .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
             .setQuery(builder.buildQuery(query))
@@ -384,7 +384,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .setFrom(selection.getOffset())
             .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
             .execute(FutureSettingActionListener.setting(response));
-        
+
         return Futures.transform(response, new Function<SearchResponse, FluentIterable<Id>>() {
             @Override
             public FluentIterable<Id> apply(SearchResponse input) {

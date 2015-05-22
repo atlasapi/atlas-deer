@@ -35,7 +35,7 @@ public class IdentifiedSerializer {
         for (EquivalenceRef equivRef : identified.getEquivalentTo()) {
             id.addEquivs(CommonProtos.Reference.newBuilder()
                 .setId(equivRef.getId().longValue())
-                .setSource(equivRef.getPublisher().key())
+                .setSource(equivRef.getSource().key())
             );
         }
         return id;

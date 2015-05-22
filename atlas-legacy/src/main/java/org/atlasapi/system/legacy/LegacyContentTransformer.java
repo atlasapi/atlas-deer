@@ -23,6 +23,8 @@ import org.atlasapi.content.TransportSubType;
 import org.atlasapi.content.TransportType;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.PlayerRef;
+import org.atlasapi.entity.ServiceRef;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
@@ -261,7 +263,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         org.atlasapi.media.segment.SegmentRef sr = input.getSegment();
         Id segmentId = Id.valueOf(sr.identifier());
         WriteResult<Segment, Segment> legacyMigrationResult = legacySegmentMigrator.migrateLegacySegment(segmentId);
-        se.setSegment(new SegmentRef(segmentId, legacyMigrationResult.getResource().getPublisher()));
+        se.setSegment(new SegmentRef(segmentId, legacyMigrationResult.getResource().getSource()));
         se.setVersionId(version.getCanonicalUri());
         return se;
     }
@@ -269,7 +271,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private Encoding transformEncoding(org.atlasapi.media.entity.Encoding input, Version version) {
         Encoding e = new Encoding();
         setIdentifiedFields(e, input);
-        e.setAvailableAt(transformLocations(input));
+        e.setAvailableAt(transformLocations(input, version.getProvider()));
         e.setContainsAdvertising(input.getContainsAdvertising());
         e.setAdvertisingDuration(input.getAdvertisingDuration());
         e.setBitRate(input.getBitRate());
@@ -293,18 +295,18 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         return e;
     }
 
-    private ImmutableSet<Location> transformLocations(org.atlasapi.media.entity.Encoding input) {
+    private ImmutableSet<Location> transformLocations(org.atlasapi.media.entity.Encoding input, Publisher provider) {
         return ImmutableSet.copyOf(Iterables.transform(input.getAvailableAt(),
             new Function<org.atlasapi.media.entity.Location, Location>() {
                 @Override
                 public Location apply(org.atlasapi.media.entity.Location input) {
-                    return transformLocation(input);
+                    return transformLocation(input, provider);
                 }
             }
         ));
     }
     
-    private Location transformLocation(org.atlasapi.media.entity.Location input) {
+    private Location transformLocation(org.atlasapi.media.entity.Location input, Publisher provider) {
         Location l = new Location();
         setIdentifiedFields(l, input);
         l.setAvailable(input.getAvailable());
@@ -314,11 +316,11 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         l.setUri(input.getUri());
         l.setEmbedCode(input.getEmbedCode());
         l.setEmbedId(input.getEmbedId());
-        l.setPolicy(transformPolicy(input.getPolicy()));
+        l.setPolicy(transformPolicy(input.getPolicy(), provider));
         return l;
     }
 
-    private Policy transformPolicy(org.atlasapi.media.entity.Policy input) {
+    private Policy transformPolicy(org.atlasapi.media.entity.Policy input, Publisher provider) {
         Policy p = new Policy();
         setIdentifiedFields(p, input);
         p.setAvailabilityStart(input.getAvailabilityStart());
@@ -328,7 +330,9 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setAvailabilityLength(input.getAvailabilityLength());
         p.setRevenueContract(transformEnum(input.getRevenueContract(), Policy.RevenueContract.class));
         p.setPrice(input.getPrice());
-        p.setService(transformEnum(input.getPlatform(), Policy.Service.class));
+        p.setPlatform(transformEnum(input.getPlatform(), Policy.Platform.class));
+        p.setServiceRef(new ServiceRef(Id.valueOf(input.getService()), provider));
+        p.setPlayerRef(new PlayerRef(Id.valueOf(input.getPlayer()), provider));
         p.setNetwork(transformEnum(input.getNetwork(), Policy.Network.class));
         p.setActualAvailabilityStart(input.getActualAvailabilityStart());
         return p;

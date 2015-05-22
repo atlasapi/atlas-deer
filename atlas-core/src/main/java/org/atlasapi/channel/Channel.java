@@ -88,7 +88,7 @@ public class Channel extends Identified implements Sourced {
 
     @Override
     @FieldName("source")
-    public Publisher getPublisher() {
+    public Publisher getSource() {
         return this.publisher;
     }
 

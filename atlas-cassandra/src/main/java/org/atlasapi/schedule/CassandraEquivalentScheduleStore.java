@@ -136,7 +136,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 ContentProtos.Content msg =
                     ContentProtos.Content.parseDelimitedFrom(itemsStream);
                 Item item = (Item)contentSerializer.deserialize(msg);
-                if (selectedSources.contains(item.getPublisher())) {
+                if (selectedSources.contains(item.getSource())) {
                     items.add(item);
                 }
             }

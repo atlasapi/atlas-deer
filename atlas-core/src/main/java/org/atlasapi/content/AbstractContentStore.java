@@ -288,7 +288,7 @@ public abstract class AbstractContentStore implements ContentStore {
     @SuppressWarnings("unchecked")
     public final <C extends Content> WriteResult<C, Content> writeContent(C content) throws WriteException {
         checkNotNull(content, "write null content");
-        checkNotNull(content.getPublisher(), "write unsourced content");
+        checkNotNull(content.getSource(), "write unsourced content");
         try {
             WriteResult<C,Content> result = (WriteResult<C, Content>)content.accept(writingVisitor);
             if (result.written()) {
@@ -317,7 +317,7 @@ public abstract class AbstractContentStore implements ContentStore {
     }
 
     private Content getPreviousContent(Content c) {
-        return resolvePrevious(c.getId(), c.getPublisher(),  c.getAliases());
+        return resolvePrevious(c.getId(), c.getSource(),  c.getAliases());
     }
 
     protected abstract @Nullable Content resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases);

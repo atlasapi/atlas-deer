@@ -70,8 +70,8 @@ public final class EquivalenceGraph implements Identifiable {
         }
         
         @Override
-        public Publisher getPublisher() {
-            return subject.getPublisher();
+        public Publisher getSource() {
+            return subject.getSource();
         }
         
         public ResourceRef getRef() {
@@ -159,7 +159,7 @@ public final class EquivalenceGraph implements Identifiable {
         }
 
         private StringBuilder appendRef(StringBuilder builder, ResourceRef ref) {
-            return builder.append(ref.getId()).append('/').append(ref.getPublisher().key());
+            return builder.append(ref.getId()).append('/').append(ref.getSource().key());
         }
 
     }

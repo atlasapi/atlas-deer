@@ -40,7 +40,7 @@ public class ApplicationListWriter implements EntityListWriter<Application> {
         writer.writeField("created", entity.getCreated());
         writer.writeObject(credentialsWriter, entity.getCredentials(), ctxt);
         writer.writeObject(sourcesWriter, entity.getSources(), ctxt);
-        writer.writeObject(publisherWriter, entity.getPublisher(), ctxt);
+        writer.writeObject(publisherWriter, entity.getSource(), ctxt);
         ctxt.endResource();
 
     }

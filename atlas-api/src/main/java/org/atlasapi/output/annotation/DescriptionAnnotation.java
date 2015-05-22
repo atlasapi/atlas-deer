@@ -17,7 +17,7 @@ public class DescriptionAnnotation<T extends Described> extends
 
     @Override
     public void write(T entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        writer.writeObject(publisherWriter, entity.getPublisher(), ctxt);
+        writer.writeObject(publisherWriter, entity.getSource(), ctxt);
         if (entity instanceof Topic) {
             writer.writeField("topic_type", ((Topic) entity).getType()); 
         }

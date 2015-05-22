@@ -44,7 +44,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
             Optional<T> requested = Iterables.tryFind(equivalents, idIs(id.get()));
             
             if (requested.isPresent()
-                    && chosen.getPublisher().equals(requested.get().getPublisher())) {
+                    && chosen.getSource().equals(requested.get().getSource())) {
                 chosen = requested.get();
             }
         }

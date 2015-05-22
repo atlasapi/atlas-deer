@@ -60,7 +60,7 @@ public final class AliasIndex<A extends Identifiable & Sourced & Aliased> {
     
     public MutationBatch mutateAliases(A resource, @Nullable A previous) {
         checkNotNull(resource);
-        String columnKey = resource.getPublisher().key();
+        String columnKey = resource.getSource().key();
         long resourceId = resource.getId().longValue();
 
         MutationBatch batch = keyspace.prepareMutationBatch();

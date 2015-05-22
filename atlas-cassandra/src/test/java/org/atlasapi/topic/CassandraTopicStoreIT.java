@@ -171,14 +171,14 @@ public class CassandraTopicStoreIT {
             ImmutableList.of(sharedAlias), Publisher.METABROADCAST);
         assertThat(resolved.size(), is(1));
         Topic topic = resolved.get(sharedAlias).get();
-        assertThat(topic.getPublisher(), is(Publisher.METABROADCAST));
+        assertThat(topic.getSource(), is(Publisher.METABROADCAST));
         assertThat(topic.getId(), is(Id.valueOf(1235)));
 
         resolved = topicStore.resolveAliases(
             ImmutableList.of(sharedAlias), Publisher.DBPEDIA);
         assertThat(resolved.size(), is(1));
         topic = resolved.get(sharedAlias).get();
-        assertThat(topic.getPublisher(), is(Publisher.DBPEDIA));
+        assertThat(topic.getSource(), is(Publisher.DBPEDIA));
         assertThat(topic.getId(), is(Id.valueOf(1234)));
 
     }

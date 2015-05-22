@@ -24,7 +24,7 @@ public class EquivalenceRef implements Identifiable, Sourced {
     }
 
     public static final <T extends Identifiable & Sourced> EquivalenceRef valueOf(T t) {
-        return new EquivalenceRef(t.getId(), t.getPublisher());
+        return new EquivalenceRef(t.getId(), t.getSource());
     }
 
     private final Id id;
@@ -41,7 +41,7 @@ public class EquivalenceRef implements Identifiable, Sourced {
     }
 
     @FieldName("source")
-    public Publisher getPublisher() {
+    public Publisher getSource() {
         return this.source;
     }
 

@@ -43,7 +43,7 @@ public class ExplicitEquivalenceMigrator {
 
         @Override
         public Publisher apply(ResourceRef input) {
-            return input.getPublisher();
+            return input.getSource();
         }
     };
 

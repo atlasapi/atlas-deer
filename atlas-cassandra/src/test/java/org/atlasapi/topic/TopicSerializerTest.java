@@ -32,7 +32,7 @@ public class TopicSerializerTest {
     private void serializeAndCheck(Topic topic) {
         Topic serialized = serializer.deserialize(serializer.serialize(topic));
         assertThat(serialized.getId(), is(topic.getId()));
-        assertThat(serialized.getPublisher(), is(topic.getPublisher()));
+        assertThat(serialized.getSource(), is(topic.getSource()));
         assertThat(serialized.getAliases(), is(topic.getAliases()));
         assertThat(serialized.getType(), is(topic.getType()));
         assertThat(serialized.getTitle(), is(topic.getTitle()));

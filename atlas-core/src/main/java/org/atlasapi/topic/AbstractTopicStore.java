@@ -42,7 +42,7 @@ public abstract class AbstractTopicStore implements TopicStore {
     @Override
     public WriteResult<Topic, Topic> writeTopic(Topic topic) {
         checkNotNull(topic, "write null topic");
-        checkNotNull(topic.getPublisher(), "write unsourced topic");
+        checkNotNull(topic.getSource(), "write unsourced topic");
         
         Topic previous = getPreviousTopic(topic);
         if (previous != null) {
@@ -96,7 +96,7 @@ public abstract class AbstractTopicStore implements TopicStore {
     protected abstract void doWrite(Topic topic, Topic previous);
 
     private Topic getPreviousTopic(Topic topic) {
-        return resolvePrevious(topic.getId(), topic.getPublisher(), topic.getAliases());
+        return resolvePrevious(topic.getId(), topic.getSource(), topic.getAliases());
     }
     
     @Nullable

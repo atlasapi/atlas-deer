@@ -29,7 +29,7 @@ public class EntityUpdatedLegacyMessageSerializerTest {
         assertThat(deserialized.getMessageId(), is(msg.getMessageId()));
         assertThat(deserialized.getTimestamp(), is(msg.getTimestamp()));
         assertThat(deserialized.getUpdatedResource().getId().longValue(), is(1225L));
-        assertThat(deserialized.getUpdatedResource().getPublisher().toString(), is(msg.getEntitySource()));
+        assertThat(deserialized.getUpdatedResource().getSource().toString(), is(msg.getEntitySource()));
         assertThat(deserialized.getUpdatedResource().getResourceType(), is(ResourceType.CONTENT));
         
     }

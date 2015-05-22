@@ -177,7 +177,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
     private <C extends Container> C visitContainer(C container) {
         container = visitContent(container);
-        ContentRefSerializer refSerializer = new ContentRefSerializer(container.getPublisher());
+        ContentRefSerializer refSerializer = new ContentRefSerializer(container.getSource());
         ImmutableSet.Builder<ItemRef> childRefs = ImmutableSet.builder();
         for (int i = 0; i < msg.getChildrenCount(); i++) {
             childRefs.add((ItemRef)refSerializer.deserialize(msg.getChildren(i)));
@@ -190,7 +190,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     public Brand visit(Brand brand) {
         brand = visitContainer(brand);
         ImmutableSet.Builder<SeriesRef> seriesRefs = ImmutableSet.builder();
-        ContentRefSerializer refSerializer = new ContentRefSerializer(brand.getPublisher());
+        ContentRefSerializer refSerializer = new ContentRefSerializer(brand.getSource());
         for (int i = 0; i < msg.getSecondariesCount(); i++) {
             seriesRefs.add((SeriesRef)refSerializer.deserialize(msg.getSecondaries(i)));
         }
@@ -204,7 +204,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasContainerRef()) {
             series.setBrandRef(new BrandRef(
                 Id.valueOf(msg.getContainerRef().getId()),
-                Sources.fromPossibleKey(msg.getContainerRef().getSource()).or(series.getPublisher())
+                Sources.fromPossibleKey(msg.getContainerRef().getSource()).or(series.getSource())
             ));
         }
         series.withSeriesNumber(msg.hasSeriesNumber() ? msg.getSeriesNumber() : null);
@@ -218,7 +218,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasSeriesRef()) {
             episode.setSeriesRef(new SeriesRef(
                 Id.valueOf(msg.getSeriesRef().getId()),
-                Sources.fromPossibleKey(msg.getContainerRef().getSource()).or(episode.getPublisher())
+                Sources.fromPossibleKey(msg.getContainerRef().getSource()).or(episode.getSource())
             ));
         }
         episode.setSeriesNumber(msg.hasSeriesNumber() ? msg.getSeriesNumber() : null);
@@ -260,7 +260,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private <I extends Item> I visitItem(I item) {
         item = visitContent(item);
         if (msg.hasContainerRef()) {
-            ContentRefSerializer refSerializer = new ContentRefSerializer(item.getPublisher());
+            ContentRefSerializer refSerializer = new ContentRefSerializer(item.getSource());
             item.setContainerRef((ContainerRef)refSerializer.deserialize(msg.getContainerRef()));
         }
         if (msg.hasContainerSummary()) {

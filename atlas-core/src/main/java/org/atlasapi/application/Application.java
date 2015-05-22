@@ -80,7 +80,7 @@ public class Application implements Identifiable, Sourced {
     }
     
     @Override
-    public Publisher getPublisher() {
+    public Publisher getSource() {
         return Publisher.METABROADCAST;
     }
     

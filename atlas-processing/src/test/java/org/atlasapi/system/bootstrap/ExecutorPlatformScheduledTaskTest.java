@@ -19,7 +19,7 @@ import com.metabroadcast.common.scheduling.ScheduledTask;
 import com.metabroadcast.common.scheduling.ScheduledTask.TaskState;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 
-public class ExecutorServiceScheduledTaskTest {
+public class ExecutorPlatformScheduledTaskTest {
 
     
     @Test

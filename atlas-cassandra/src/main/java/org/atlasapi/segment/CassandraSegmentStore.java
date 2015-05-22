@@ -57,7 +57,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
     @Override
     protected void doWrite(Segment segment, Segment previous) {
-        checkArgument(previous == null || segment.getPublisher().equals(previous.getPublisher()),
+        checkArgument(previous == null || segment.getSource().equals(previous.getSource()),
                 "Cannot change the Source of a Segment!");
         try {
             log.trace("Writing Segment {}", segment.getId());

@@ -290,13 +290,13 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             encodings.addAll(notChosenItem.getManifestedAs());
         }
         ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
-        Publisher chosenPublisher = chosen.getPublisher();
+        Publisher chosenPublisher = chosen.getSource();
         for (SegmentEvent segmentEvent : chosen.getSegmentEvents()) {
             segmentEvents.add(segmentEvent);
         }
 
         for (T notChosenItem : notChosenOrdered) {
-            if(!chosenPublisher.equals(notChosenItem.getPublisher())) {
+            if(!chosenPublisher.equals(notChosenItem.getSource())) {
                 for (SegmentEvent segmentEvent : notChosenItem.getSegmentEvents()) {
                     segmentEvents.add(segmentEvent);
                 }
@@ -504,7 +504,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         @Override
         public TopicRef apply(TopicRef input) {
-            input.setPublisher(publishedContent.getPublisher());
+            input.setPublisher(publishedContent.getSource());
             return input;
         }
     }

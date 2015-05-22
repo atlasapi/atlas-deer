@@ -92,7 +92,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
         return new EsTopic()
             .id(topic.getId().longValue())
             .type(topic.getType())
-            .source(topic.getPublisher())
+            .source(topic.getSource())
             .aliases(topic.getAliases())
             .title(topic.getTitle())
             .description(topic.getDescription());

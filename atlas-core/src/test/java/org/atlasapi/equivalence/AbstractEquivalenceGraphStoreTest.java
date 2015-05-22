@@ -285,7 +285,7 @@ public class AbstractEquivalenceGraphStoreTest {
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
         
         makeEquivalent(bbcItem, 
-            ImmutableSet.of(bbcItem.getPublisher(), paItem.getPublisher(), c4Item.getPublisher()), paItem);
+            ImmutableSet.of(bbcItem.getSource(), paItem.getSource(), c4Item.getSource()), paItem);
         
         assertEfferentAdjacents(bbcItem, paItem);
         assertAfferentAdjacent(paItem, bbcItem);

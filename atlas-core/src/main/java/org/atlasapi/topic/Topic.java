@@ -117,7 +117,7 @@ public class Topic extends Described implements Sourced, Aliased {
     }
     
     public TopicRef toRef() {
-        return new TopicRef(getId(), getPublisher());
+        return new TopicRef(getId(), getSource());
     }
     
     @Override
@@ -164,7 +164,7 @@ public class Topic extends Described implements Sourced, Aliased {
     }
     
     @FieldName("publisher")
-    public Publisher getPublisher() {
+    public Publisher getSource() {
         return this.publisher;
     }
 }

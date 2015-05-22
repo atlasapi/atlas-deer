@@ -7,7 +7,7 @@ import com.metabroadcast.common.intl.Country;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelNumbering;
-import org.atlasapi.channel.Service;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.media.entity.Publisher;
 import org.hamcrest.core.Is;
@@ -74,10 +74,10 @@ public class LegacyChannelGroupTransformerTest {
         ChannelGroup transformed = this.objectUnderTest.apply(legacyPlatform);
 
         assertThat(transformed.getId().longValue(), is(id));
-        assertThat(transformed.getPublisher(), is(publisher));
+        assertThat(transformed.getSource(), is(publisher));
         assertThat(
                 Iterables.any(
-                        ((Service) transformed).getRegions(),
+                        ((Platform) transformed).getRegions(),
                         new Predicate<ChannelGroupRef>() {
                             @Override
                             public boolean apply(ChannelGroupRef input) {
@@ -91,7 +91,7 @@ public class LegacyChannelGroupTransformerTest {
 
         assertThat(
                 Iterables.any(
-                        ((Service) transformed).getRegions(),
+                        ((Platform) transformed).getRegions(),
                         new Predicate<ChannelGroupRef>() {
                             @Override
                             public boolean apply(ChannelGroupRef input) {
@@ -105,7 +105,7 @@ public class LegacyChannelGroupTransformerTest {
 
         assertThat(
                 Iterables.any(
-                        ((Service) transformed).getChannels(),
+                        ((Platform) transformed).getChannels(),
                         new Predicate<ChannelNumbering>() {
                             @Override
                             public boolean apply(ChannelNumbering input) {
@@ -123,7 +123,7 @@ public class LegacyChannelGroupTransformerTest {
 
         assertThat(
                 Iterables.any(
-                        ((Service) transformed).getChannels(),
+                        ((Platform) transformed).getChannels(),
                         new Predicate<ChannelNumbering>() {
                             @Override
                             public boolean apply(ChannelNumbering input) {
@@ -189,7 +189,7 @@ public class LegacyChannelGroupTransformerTest {
         ChannelGroup transformed = this.objectUnderTest.apply(legacyRegion);
 
         assertThat(transformed.getId().longValue(), is(id));
-        assertThat(transformed.getPublisher(), is(publisher));
+        assertThat(transformed.getSource(), is(publisher));
         assertThat(((Region) transformed).getPlatform().getId().longValue(), is(platformId));
 
         assertThat(

@@ -2,7 +2,6 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.media.entity.simple.SeriesSummary;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
@@ -72,7 +71,7 @@ public class Series extends Container {
     };
     
     public SeriesRef toRef() {
-        return new SeriesRef(getId(), getPublisher(), Strings.nullToEmpty(this.getTitle()), 
+        return new SeriesRef(getId(), getSource(), Strings.nullToEmpty(this.getTitle()),
                 this.seriesNumber, getThisOrChildLastUpdated());
     }
     

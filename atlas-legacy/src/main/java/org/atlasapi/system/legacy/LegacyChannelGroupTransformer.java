@@ -5,7 +5,7 @@ import com.google.common.collect.Iterables;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
-import org.atlasapi.channel.Service;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.media.entity.Publisher;
 
@@ -36,14 +36,14 @@ public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer
     @Override
     public ChannelGroup apply(org.atlasapi.media.channel.ChannelGroup input) {
         if(input instanceof org.atlasapi.media.channel.Platform) {
-            return transformPlatform((org.atlasapi.media.channel.Platform) input);
+            return transformService((org.atlasapi.media.channel.Platform) input);
         } else {
             return transformRegion((org.atlasapi.media.channel.Region) input);
         }
     }
 
-    private Service transformPlatform(org.atlasapi.media.channel.Platform input) {
-        return Service.builder(input.getPublisher())
+    private Platform transformService(org.atlasapi.media.channel.Platform input) {
+        return Platform.builder(input.getPublisher())
                 .withId(input.getId())
                 .withAvailableCountries(input.getAvailableCountries())
                 .withRegionIds(input.getRegions())
