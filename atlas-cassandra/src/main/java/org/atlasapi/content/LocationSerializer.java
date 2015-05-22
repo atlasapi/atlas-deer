@@ -112,7 +112,7 @@ public class LocationSerializer {
             policy.setPlayerId(Id.valueOf(msg.getPlayerId()));
         }
         if (msg.hasServiceId()) {
-            policy.setPlayerId(Id.valueOf(msg.getServiceId()));
+            policy.setServiceId(Id.valueOf(msg.getServiceId()));
         }
         if (msg.hasAmount() && msg.hasCurrency()) {
             policy.setPrice(new Price(
