@@ -65,7 +65,7 @@ public class Policy extends Identified {
 	}
 
 	public void setServiceId(Id serviceRef) {
-		this.serviceId = serviceId;
+		this.serviceId = serviceRef;
 	}
 
 	@FieldName("player")
