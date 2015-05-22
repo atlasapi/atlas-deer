@@ -23,6 +23,8 @@ import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.system.legacy.LegacyPlayerTransformer;
 import org.atlasapi.system.legacy.LegacyServiceTransformer;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -44,6 +46,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
     }
 
     public static final class EncodedLocationWriter implements EntityListWriter<EncodedLocation> {
+
+        private final static Logger log = LoggerFactory.getLogger(EncodedLocation.class);
 
         private final PlayerResolver playerResolver;
         private final EntityWriter<Player> playerWriter = new PlayerWriter();
@@ -121,6 +125,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             if (maybePlayer.isPresent()) {
                 Player player = playerTransformer.apply(maybePlayer.get());
                 writer.writeObject(playerWriter, player, ctxt);
+            } else {
+                log.warn("Failed to resolve Player {}", policy.getPlayerRef());
             }
         }
 
@@ -130,6 +136,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             if (maybeService.isPresent()) {
                 Service service = serviceTransformer.apply(maybeService.get());
                 writer.writeObject(serviceWriter, service, ctxt);
+            } else {
+                log.warn("Failed to resolve Service {}", policy.getServiceRef());
             }
         }
 
