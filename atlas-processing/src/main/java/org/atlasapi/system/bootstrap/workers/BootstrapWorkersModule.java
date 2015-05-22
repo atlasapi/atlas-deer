@@ -51,7 +51,7 @@ public class BootstrapWorkersModule {
 
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private Set<Publisher> ignoredScheduleSources
-            = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA));
+            = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT));
     @Autowired
     private AtlasPersistenceModule persistence;
     @Autowired
