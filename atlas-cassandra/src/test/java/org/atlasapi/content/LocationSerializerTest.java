@@ -6,9 +6,6 @@ import static org.junit.Assert.assertThat;
 import java.util.Currency;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.PlayerRef;
-import org.atlasapi.entity.ServiceRef;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.joda.time.DateTime;
 import org.junit.Test;

@@ -23,8 +23,6 @@ import org.atlasapi.content.TransportSubType;
 import org.atlasapi.content.TransportType;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.PlayerRef;
-import org.atlasapi.entity.ServiceRef;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;

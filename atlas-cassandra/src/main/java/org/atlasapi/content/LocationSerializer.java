@@ -7,11 +7,6 @@ import java.util.Currency;
 
 import org.atlasapi.content.Policy.RevenueContract;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.PlayerRef;
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.entity.ServiceRef;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
 
