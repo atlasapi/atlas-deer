@@ -8,7 +8,7 @@ public class LegacyServiceTransformer extends DescribedLegacyResourceTransformer
 
     @Override
     protected Service createDescribed(org.atlasapi.media.entity.Service input) {
-        return apply(input);
+        return new Service();
     }
 
     @Override

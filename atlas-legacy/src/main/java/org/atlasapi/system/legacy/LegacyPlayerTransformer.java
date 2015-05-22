@@ -9,7 +9,7 @@ public class LegacyPlayerTransformer extends DescribedLegacyResourceTransformer<
 
     @Override
     protected Player createDescribed(org.atlasapi.media.entity.Player input) {
-        return apply(input);
+        return new Player();
     }
 
     @Override
