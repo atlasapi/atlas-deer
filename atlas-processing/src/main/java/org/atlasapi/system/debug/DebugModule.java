@@ -19,12 +19,7 @@ public class DebugModule {
 
     @Bean
     public ContentDebugController contentDebugController() {
-        return new ContentDebugController(
-                legacyPersistenceModule.legacyContentResolver(),
-                persistenceModule.getEquivalentContentStore(),
-                persistenceModule.contentStore(),
-                explicitEquivalenceMigrator(),
-                legacyPersistenceModule.legacySegmentMigrator());
+        return new ContentDebugController(legacyPersistenceModule, persistenceModule, explicitEquivalenceMigrator());
     }
 
     public ExplicitEquivalenceMigrator explicitEquivalenceMigrator() {

@@ -3,17 +3,14 @@ package org.atlasapi.system.debug;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentResolver;
-import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
@@ -23,7 +20,7 @@ import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.ExplicitEquivalenceMigrator;
-import org.atlasapi.system.legacy.LegacySegmentMigrator;
+import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +34,10 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -54,45 +50,24 @@ public class ContentDebugController {
     private final NumberToShortStringCodec lowercase = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     private final Gson gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
-            new JsonSerializer<DateTime>() {
+            (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
+            .create();
 
-                @Override
-                public JsonElement serialize(DateTime src, Type typeOfSrc,
-                        JsonSerializationContext context) {
-                    return new JsonPrimitive(src.toString());
-                }
-            }).create();
-
-    private static final Function<Content, ResourceRef> TO_RESOURCE_REF = new Function<Content, ResourceRef>() {
-
-        @Override
-        public ResourceRef apply(Content input) {
-            return input.toRef();
-        }
-    };
-    private static final Function<ResourceRef, Publisher> TO_SOURCE = new Function<ResourceRef, Publisher>() {
-
-        @Override
-        public Publisher apply(ResourceRef input) {
-            return input.getSource();
-        }
-    };
+    private static final Function<Content, ResourceRef> TO_RESOURCE_REF = input -> input.toRef();
+    private static final Function<ResourceRef, Publisher> TO_SOURCE = input -> input.getSource();
 
     private final Logger log = LoggerFactory.getLogger(ContentDebugController.class);
-    private final ContentResolver legacyResolver;
-    private final EquivalentContentStore equivalentContentStore;
-    private final ContentStore contentStore;
+    private final LegacyPersistenceModule legacyPersistence;
+    private final AtlasPersistenceModule persistence;
     private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
-    private final LegacySegmentMigrator segmentMigrator;
 
-    public ContentDebugController(ContentResolver legacyResolver,
-            EquivalentContentStore equivalentContentStore, ContentStore contentStore,
-            ExplicitEquivalenceMigrator explicitEquivalenceMigrator, LegacySegmentMigrator segmentMigrator) {
+    public ContentDebugController(
+            LegacyPersistenceModule legacyPersistence,
+            AtlasPersistenceModule persistence,
+            ExplicitEquivalenceMigrator explicitEquivalenceMigrator) {
+        this.legacyPersistence = checkNotNull(legacyPersistence);
+        this.persistence = checkNotNull(persistence);
         this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
-        this.legacyResolver = checkNotNull(legacyResolver);
-        this.equivalentContentStore = checkNotNull(equivalentContentStore);
-        this.contentStore = checkNotNull(contentStore);
-        this.segmentMigrator = checkNotNull(segmentMigrator);
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -119,10 +94,26 @@ public class ContentDebugController {
         response.getWriter().write(lowercase.encode(BigInteger.valueOf(id)));
     }
 
+    /* Returns the JSON representation of a legacy content read from Mongo and translated to the v4 model */
+    @RequestMapping("/system/debug/content/{id}/legacy")
+    public void printLegacyContent(@PathVariable("id") String id,
+            final HttpServletResponse response) throws Exception {
+        ListenableFuture<Resolved<Content>> resolving = legacyPersistence.legacyContentResolver()
+                .resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id))));
+        Resolved<Content> resolved = Futures.get(resolving, Exception.class);
+        Content content = Iterables.getOnlyElement(resolved.getResources());
+        gson.toJson(content, response.getWriter());
+    }
+
+    /* Returns the JSON representation of a piece of content stored in the Cassandra store */
     @RequestMapping("/system/debug/content/{id}")
-    public void printContent(@PathVariable("id") Long id, final HttpServletResponse response) throws Exception {
-        ImmutableList<Id> ids = ImmutableList.of(Id.valueOf(id));
-        Resolved<Content> result = Futures.get(contentStore.resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class);
+    public void printContent(@PathVariable("id") String id, final HttpServletResponse response)
+            throws Exception {
+        Long decodedId = lowercase.decode(id).longValue();
+        ImmutableList<Id> ids = ImmutableList.of(Id.valueOf(decodedId));
+        Resolved<Content> result = Futures.get(
+                persistence.contentStore().resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
+        );
         Content content = result.getResources().first().orNull();
         gson.toJson(content, response.getWriter());
     }
@@ -148,24 +139,30 @@ public class ContentDebugController {
                 List<SegmentEvent> segmentEvents = item.getSegmentEvents();
                 if (!segmentEvents.isEmpty()) {
                     for (SegmentEvent segmentEvent : segmentEvents) {
-                        segmentMigrator.migrateLegacySegment(segmentEvent.getSegmentRef().getId());
+                        legacyPersistence.legacySegmentMigrator()
+                                .migrateLegacySegment(segmentEvent.getSegmentRef()
+                                        .getId());
                         log.info("Migrated segment " + segmentEvent.getSegmentRef().getId());
                     }
                 }
             }
 
             respString.append("Resolved legacy content ").append(content.getId());
-            WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
+            WriteResult<Content, Content> writeResult = persistence.contentStore().writeContent(
+                    content);
 
             if (!writeResult.written()) {
-                response.getWriter().write(respString.append("\nNo write occured when migrating content into C* store").toString());
+                response.getWriter()
+                        .write(respString.append(
+                                "\nNo write occured when migrating content into C* store")
+                                .toString());
                 response.setStatus(500);
                 return;
             }
             respString.append("\nMigrated content into C* content store");
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     explicitEquivalenceMigrator.migrateEquivalence(content);
-            equivalentContentStore.updateContent(content.toRef());
+            persistence.getEquivalentContentStore().updateContent(content.toRef());
             respString.append("\nEquivalent content store updated using content ref");
 
             response.setStatus(200);
@@ -177,7 +174,9 @@ public class ContentDebugController {
     }
 
     private Content resolveLegacyContent(Long id) {
-        return Iterables.getOnlyElement(Futures.getUnchecked(legacyResolver.resolveIds(
-                ImmutableList.of(Id.valueOf(id)))).getResources());
+        return Iterables.getOnlyElement(
+                Futures.getUnchecked(legacyPersistence.legacyContentResolver()
+                        .resolveIds(ImmutableList.of(Id.valueOf(id)))).getResources()
+        );
     }
 }
