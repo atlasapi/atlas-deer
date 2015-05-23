@@ -269,7 +269,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private Encoding transformEncoding(org.atlasapi.media.entity.Encoding input, Version version) {
         Encoding e = new Encoding();
         setIdentifiedFields(e, input);
-        e.setAvailableAt(transformLocations(input, version.getProvider()));
+        e.setAvailableAt(transformLocations(input));
         e.setContainsAdvertising(input.getContainsAdvertising());
         e.setAdvertisingDuration(input.getAdvertisingDuration());
         e.setBitRate(input.getBitRate());
@@ -293,18 +293,18 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         return e;
     }
 
-    private ImmutableSet<Location> transformLocations(org.atlasapi.media.entity.Encoding input, Publisher provider) {
+    private ImmutableSet<Location> transformLocations(org.atlasapi.media.entity.Encoding input) {
         return ImmutableSet.copyOf(Iterables.transform(input.getAvailableAt(),
             new Function<org.atlasapi.media.entity.Location, Location>() {
                 @Override
                 public Location apply(org.atlasapi.media.entity.Location input) {
-                    return transformLocation(input, provider);
+                    return transformLocation(input);
                 }
             }
         ));
     }
     
-    private Location transformLocation(org.atlasapi.media.entity.Location input, Publisher provider) {
+    private Location transformLocation(org.atlasapi.media.entity.Location input) {
         Location l = new Location();
         setIdentifiedFields(l, input);
         l.setAvailable(input.getAvailable());
@@ -314,11 +314,11 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         l.setUri(input.getUri());
         l.setEmbedCode(input.getEmbedCode());
         l.setEmbedId(input.getEmbedId());
-        l.setPolicy(transformPolicy(input.getPolicy(), provider));
+        l.setPolicy(transformPolicy(input.getPolicy()));
         return l;
     }
 
-    private Policy transformPolicy(org.atlasapi.media.entity.Policy input, Publisher provider) {
+    private Policy transformPolicy(org.atlasapi.media.entity.Policy input) {
         Policy p = new Policy();
         setIdentifiedFields(p, input);
         p.setAvailabilityStart(input.getAvailabilityStart());

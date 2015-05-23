@@ -39,7 +39,7 @@ public class LocationSerializerTest {
         policy.setDrmPlayableFrom(new DateTime(DateTimeZones.UTC));
         policy.setNetwork(Policy.Network.WIFI);
         policy.setPlatform(Policy.Platform.IOS);
-        policy.setServiceId(Id.valueOf(10l));
+        policy.setServiceId(Id.valueOf(10L));
         policy.setPlayerId(Id.valueOf(20L));
         policy.setPrice(new Price(Currency.getInstance("GBP"), 400));
         policy.setRevenueContract(Policy.RevenueContract.PAY_TO_BUY);
