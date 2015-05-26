@@ -14,17 +14,17 @@ public class BroadcastQueryBuilder {
 
     public static final String SCRIPT = ""
             + "if (_source.broadcasts != null) {"
-            + "  now = time();"
-            + "  t = Long.MAX_VALUE;"
-            + "  f = 1;"
-            + "  foreach (b : _source.broadcasts) {"
-            + "    candidate = abs(now - b.transmissionTimeInMillis);"
+            + " var now = DateTime.now().getMillis();"
+            + "  var t = Long.MAX_VALUE;"
+            + "  var f = 1;"
+            + "  for each (b in _source.broadcasts) {"
+            + "    var candidate = Math.abs(now - b.transmissionTimeInMillis);"
             + "    if (candidate < t) t = candidate;"
-            + "    if (b.repeat = false) f = firstBroadcastBoost;"
+            + "    if (b.repeat == false) f = firstBroadcastBoost;"
             + "  }"
             + "  _score + (_score * f * timeBoost * (1 / (1 + (t / (t < oneWeek ? 50 : 1)))));"
             + "} else _score;";
-    public static final String SCRIPT_LANG = "groovy";
+    public static final String SCRIPT_LANG = "javascript";
 
     public static QueryBuilder build(QueryBuilder childQuery, Float timeBoost,
             Float firstBroadcastBoost) {
