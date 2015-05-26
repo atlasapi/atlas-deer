@@ -30,6 +30,7 @@ import static org.atlasapi.annotation.Annotation.PLATFORM;
 import static org.atlasapi.annotation.Annotation.REGIONS;
 import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
 import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
+import static org.atlasapi.annotation.Annotation.SERIES;
 import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
 import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
@@ -96,14 +97,14 @@ import org.atlasapi.output.annotation.PlatformAnnontation;
 import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
+import org.atlasapi.output.annotation.SeriesAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.TopicsAnnotation;
-import org.atlasapi.output.writers.BrandSeriesSummaryWriter;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
-import org.atlasapi.output.writers.EpisodesSeriesSummaryWriter;
+import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
@@ -552,9 +553,7 @@ public class QueryWebModule {
                 .register(
                         SERIES_SUMMARY,
                         new SeriesSummaryAnnotation(
-                                new EpisodesSeriesSummaryWriter(idCodec(),
-                                        containerSummaryResolver),
-                                new BrandSeriesSummaryWriter(idCodec(), containerSummaryResolver)
+                                new SeriesSummaryWriter(idCodec(),containerSummaryResolver)
                         ),
                         commonImplied,
                         ImmutableSet.of(SERIES_REFERENCE)
@@ -571,6 +570,7 @@ public class QueryWebModule {
                         commonImplied,
                         ImmutableSet.of(BRAND_REFERENCE)
                 )
+                .register(SERIES, new SeriesAnnotation(), commonImplied)
                 .register(DESCRIPTION,
                         new ContentDescriptionAnnotation(),
                         ImmutableSet.of(ID, SERIES_REFERENCE, BRAND_REFERENCE))

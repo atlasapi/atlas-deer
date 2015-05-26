@@ -1,7 +1,9 @@
 package org.atlasapi.output.writers;
 
-import com.google.common.base.Optional;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.io.IOException;
+
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Episode;
@@ -11,16 +13,16 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 
-import java.io.IOException;
+import com.google.common.base.Optional;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public class EpisodesSeriesSummaryWriter implements EntityWriter<Episode> {
+public class SeriesSummaryWriter implements EntityWriter<Episode> {
 
     private final NumberToShortStringCodec idCodec;
     private final ContainerSummaryResolver containerSummaryResolver;
 
-    public EpisodesSeriesSummaryWriter(NumberToShortStringCodec idCodec, ContainerSummaryResolver containerSummaryResolver) {
+    public SeriesSummaryWriter(NumberToShortStringCodec idCodec,
+            ContainerSummaryResolver containerSummaryResolver) {
         this.idCodec = checkNotNull(idCodec);
         this.containerSummaryResolver = checkNotNull(containerSummaryResolver);
     }
@@ -28,7 +30,7 @@ public class EpisodesSeriesSummaryWriter implements EntityWriter<Episode> {
     @Override
     public void write(Episode entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         SeriesRef seriesRef = entity.getSeriesRef();
-        if(seriesRef == null) {
+        if (seriesRef == null) {
             return;
         }
         writer.writeField("id", idCodec.encode(seriesRef.getId().toBigInteger()));

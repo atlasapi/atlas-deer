@@ -3,6 +3,7 @@ package org.atlasapi.output.writers;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.content.Service;
+import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -27,7 +28,6 @@ public class ServiceWriter implements EntityWriter<Service> {
         writer.writeField("id", idCodec.encode(entity.getId().toBigInteger()));
     }
 
-    @Nonnull
     @Override
     public String fieldName(Service entity) {
         return "service";

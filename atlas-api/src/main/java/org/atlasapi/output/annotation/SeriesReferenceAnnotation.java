@@ -18,7 +18,6 @@ public class SeriesReferenceAnnotation extends OutputAnnotation<Content> {
     private final ResourceRefWriter seriesRefWriter;
 
     public SeriesReferenceAnnotation(NumberToShortStringCodec idCodec) {
-        super();
         seriesRefWriter = new ResourceRefWriter(SERIES_FIELD, idCodec);
     }
 
@@ -33,5 +32,4 @@ public class SeriesReferenceAnnotation extends OutputAnnotation<Content> {
             }
         }
     }
-
 }
