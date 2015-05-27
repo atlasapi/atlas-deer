@@ -98,7 +98,7 @@ public class EsContent extends EsObject {
             .endObject()
             .startObject(EsContent.GENRE)
                 .field("type").value("string")
-                .field("index").value("not_analyzed")
+                .field("index").value("analyzed")
             .endObject()
             .startObject(EsContent.PRICE)
                 .field("type").value("nested")

@@ -99,8 +99,8 @@ public class Attributes {
 	public static final Attribute<String> ORDER_BY = stringAttribute(ORDER_BY_PARAM, Channel.class);
 
     // For filtering
-    public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title.beginsWith", Content.class);
-    public static final Attribute<String> GENRE_TITLE = stringAttribute("genre", Container.class);
+    public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class);
+    public static final Attribute<String> GENRE = stringAttribute("genre", Container.class);
 
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
 		ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,

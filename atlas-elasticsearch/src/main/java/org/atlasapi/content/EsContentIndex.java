@@ -9,8 +9,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -36,17 +34,16 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -230,9 +227,14 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     private Iterable<EsPriceMapping> makeEsPrices(Set<Encoding> manifestedAs) {
+        if (manifestedAs == null) {
+            return ImmutableList.of();
+        }
         return manifestedAs.stream()
                 .flatMap(encoding -> encoding.getAvailableAt().stream())
+                .filter(p -> p != null)
                 .map(Location::getPolicy)
+                .filter(p -> p != null)
                 .map(Policy::getPrice)
                 .map(price -> new EsPriceMapping().currency(price.getCurrency()).value(price.getAmount()))
                 .collect(ImmutableCollectors.toList());
@@ -386,36 +388,30 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     @Override
     public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
-        Iterable<Publisher> publishers, Selection selection) {
+            Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
         esClient.client()
-            .prepareSearch(index)
-            .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
-            .setQuery(builder.buildQuery(query))
-            .addField(EsContent.ID)
-            .addSort(SortBuilders.fieldSort(EsContent.TOPICS+"."+EsTopicMapping.SUPERVISED).order(SortOrder.DESC))
-            .addSort(SortBuilders.fieldSort(EsContent.TOPICS+"."+EsTopicMapping.WEIGHTING).order(SortOrder.DESC))
-            .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
-            .setFrom(selection.getOffset())
-            .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
-            .execute(FutureSettingActionListener.setting(response));
+                .prepareSearch(index)
+                .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
+                .setQuery(builder.buildQuery(query))
+                .addField(EsContent.ID)
+                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.SUPERVISED).order(SortOrder.DESC))
+                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.WEIGHTING).order(SortOrder.DESC))
+                .addSort(SortBuilders.fieldSort(EsContent.PRICE + "." + EsPriceMapping.VALUE).order(SortOrder.ASC))
+                .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
+                .setFrom(selection.getOffset())
+                .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
+                .execute(FutureSettingActionListener.setting(response));
 
-        return Futures.transform(response, new Function<SearchResponse, FluentIterable<Id>>() {
-            @Override
-            public FluentIterable<Id> apply(SearchResponse input) {
-                /*
-                 * TODO: if 
-                 *  selection.offset + selection.limit < totalHits
-                 * then we have more: return for use with response. 
-                 */
-                return FluentIterable.from(input.getHits()).transform(new Function<SearchHit, Id>() {
-                    @Override
-                    public Id apply(SearchHit hit) {
-                        Long id = hit.field(EsContent.ID).<Number>value().longValue();
-                        return Id.valueOf(id);
-                    }
-                });
-            }
+        return Futures.transform(response, (SearchResponse input) -> {
+            /* TODO
+             * if selection.offset + selection.limit < totalHits
+             * then we have more: return for use with response.
+             */
+            return FluentIterable.from(input.getHits()).transform(hit -> {
+                Long id = hit.field(EsContent.ID).<Number>value().longValue();
+                return Id.valueOf(id);
+            });
         });
     }
 }

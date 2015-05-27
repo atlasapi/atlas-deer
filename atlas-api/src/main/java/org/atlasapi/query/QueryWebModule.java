@@ -360,7 +360,7 @@ public class QueryWebModule {
                         AttributeCoercers.floatCoercer()),
                 QueryAtomParser.valueOf(Attributes.CONTENT_TITLE_PREFIX,
                         AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.GENRE_TITLE,
+                QueryAtomParser.valueOf(Attributes.GENRE,
                         AttributeCoercers.stringCoercer())
         ));
     }

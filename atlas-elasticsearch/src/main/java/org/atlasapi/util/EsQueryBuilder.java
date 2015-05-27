@@ -63,13 +63,11 @@ public class EsQueryBuilder {
                     traversed.pop();
                 }
                 return node.pathSegments().isEmpty() ? conjuncts
-                                                    : nest(node, conjuncts);
+                                                     : nest(node, conjuncts);
             }
 
             private NestedQueryBuilder nest(IntermediateNode node, BoolQueryBuilder conjuncts) {
-                return QueryBuilders.nestedQuery(
-                        nestPath(node), conjuncts
-                        );
+                return QueryBuilders.nestedQuery(nestPath(node), conjuncts);
             }
 
             private String nestPath(IntermediateNode node) {
@@ -86,8 +84,7 @@ public class EsQueryBuilder {
                 AttributeQuery<?> query = node.getQuery();
                 QueryBuilder builder = queryForTerminal(node);
                 if (node.pathSegments().size() > 1) {
-                    builder = QueryBuilders.nestedQuery(query.getAttribute().getPathPrefix(),
-                            builder);
+                    builder = QueryBuilders.nestedQuery(query.getAttribute().getPathPrefix(), builder);
                 }
                 return builder;
             }
@@ -197,9 +194,10 @@ public class EsQueryBuilder {
         }
     }
 
-    private static class EsComparableOperatorVisitor<T extends Comparable<T>> extends EsEqualsOperatorVisitor<T>
+    private static class EsComparableOperatorVisitor<T extends Comparable<T>>
+            extends EsEqualsOperatorVisitor<T>
             implements ComparableOperatorVisitor<QueryBuilder>,
-                DateTimeOperatorVisitor<QueryBuilder> {
+            DateTimeOperatorVisitor<QueryBuilder> {
 
         public EsComparableOperatorVisitor(String name, List<T> value) {
             super(name, value);
