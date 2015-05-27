@@ -357,7 +357,11 @@ public class QueryWebModule {
                 QueryAtomParser.valueOf(Attributes.TOPIC_SUPERVISED,
                         AttributeCoercers.booleanCoercer()),
                 QueryAtomParser.valueOf(Attributes.TOPIC_WEIGHTING,
-                        AttributeCoercers.floatCoercer())
+                        AttributeCoercers.floatCoercer()),
+                QueryAtomParser.valueOf(Attributes.CONTENT_TITLE_PREFIX,
+                        AttributeCoercers.stringCoercer()),
+                QueryAtomParser.valueOf(Attributes.GENRE_TITLE,
+                        AttributeCoercers.stringCoercer())
         ));
     }
 

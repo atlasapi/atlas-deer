@@ -52,8 +52,8 @@ public class ContentController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            Query<Content> topicQuery = requestParser.parse(request);
-            QueryResult<Content> queryResult = queryExecutor.execute(topicQuery);
+            Query<Content> contentQuery = requestParser.parse(request);
+            QueryResult<Content> queryResult = queryExecutor.execute(contentQuery);
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
