@@ -9,6 +9,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -17,6 +19,7 @@ import org.atlasapi.util.EsPersistenceException;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
+import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.Strings;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
@@ -163,6 +166,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .source(item.getSource() != null ? item.getSource().key() : null)
             .aliases(item.getAliases())
             .title(item.getTitle())
+            .genre(item.getGenres())
+            .price(makeEsPrices(item.getManifestedAs()))
             .flattenedTitle(flattenedOrNull(item.getTitle()))
             .parentTitle(item.getTitle())
             .parentFlattenedTitle(flattenedOrNull(item.getTitle()))
@@ -179,6 +184,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .source(container.getSource() != null ? container.getSource().key() : null)
             .aliases(container.getAliases())
             .title(container.getTitle())
+            .genre(container.getGenres())
             .flattenedTitle(flattenedOrNull(container.getTitle()))
             .parentTitle(container.getTitle())
             .parentFlattenedTitle(flattenedOrNull(container.getTitle()))
@@ -221,6 +227,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .transmissionEndTime(toUtc(broadcast.getTransmissionEndTime()).toDate())
             .transmissionTimeInMillis(toUtc(broadcast.getTransmissionTime()).getMillis())
             .repeat(broadcast.getRepeat() != null ? broadcast.getRepeat() : false);
+    }
+
+    private Iterable<EsPriceMapping> makeEsPrices(Set<Encoding> manifestedAs) {
+        return manifestedAs.stream()
+                .flatMap(encoding -> encoding.getAvailableAt().stream())
+                .map(Location::getPolicy)
+                .map(Policy::getPrice)
+                .map(price -> new EsPriceMapping().currency(price.getCurrency()).value(price.getAmount()))
+                .collect(ImmutableCollectors.toList());
     }
 
     private DateTime toUtc(DateTime transmissionTime) {

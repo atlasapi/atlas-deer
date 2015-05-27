@@ -40,7 +40,7 @@ public class EsContentIndexTest {
         Logger root = Logger.getRootLogger();
         root.addAppender(new ConsoleAppender(
             new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
-        root.setLevel(Level.WARN);
+        root.setLevel(Level.INFO);
     }
     
     @AfterClass
