@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Sets;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
@@ -29,7 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 
-public class ExplicitEquivalenceMigrator {
+public class DirectAndExplicitEquivalenceMigrator {
 
     private static final Function<Content, ResourceRef> TO_RESOURCE_REF = new Function<Content, ResourceRef>() {
 
@@ -47,13 +48,13 @@ public class ExplicitEquivalenceMigrator {
         }
     };
 
-    private final Logger log = LoggerFactory.getLogger(ExplicitEquivalenceMigrator.class);
+    private final Logger log = LoggerFactory.getLogger(DirectAndExplicitEquivalenceMigrator.class);
     private final ContentResolver legacyResolver;
     private final LookupEntryStore legacyEquivalenceStore;
     private final EquivalenceGraphStore graphStore;
 
-    public ExplicitEquivalenceMigrator(ContentResolver legacyResolver,
-            LookupEntryStore legacyEquivalenceStore, EquivalenceGraphStore graphStore) {
+    public DirectAndExplicitEquivalenceMigrator(ContentResolver legacyResolver,
+                                                LookupEntryStore legacyEquivalenceStore, EquivalenceGraphStore graphStore) {
         this.legacyResolver = checkNotNull(legacyResolver);
         this.legacyEquivalenceStore = checkNotNull(legacyEquivalenceStore);
         this.graphStore = checkNotNull(graphStore);
@@ -61,7 +62,8 @@ public class ExplicitEquivalenceMigrator {
 
     public Optional<EquivalenceGraphUpdate> migrateEquivalence(Content content) {
         try {
-            Set<LookupRef> legacyEquivRefs = resolveLegacyEquivalents(content).explicitEquivalents();
+            LookupEntry legacyLookupEntry = resolveLegacyEquivalents(content);
+            Set<LookupRef> legacyEquivRefs = Sets.union(legacyLookupEntry.explicitEquivalents(), legacyLookupEntry.directEquivalents());
             if (!legacyEquivRefs.isEmpty()) {
                 log.trace("Resolved {} legacy explicit equiv refs for {}",
                         legacyEquivRefs.size(), content.getId());

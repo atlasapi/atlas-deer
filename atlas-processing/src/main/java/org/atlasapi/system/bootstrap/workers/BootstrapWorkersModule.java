@@ -136,8 +136,8 @@ public class BootstrapWorkersModule {
     }
 
 
-     public ExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
-        return new ExplicitEquivalenceMigrator(
+     public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
                 legacy.legacyContentResolver(),
                 legacy.legacyEquivalenceStore(),
                 persistence.getContentEquivalenceGraphStore()

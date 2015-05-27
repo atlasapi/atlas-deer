@@ -21,7 +21,7 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.system.bootstrap.workers.ExplicitEquivalenceMigrator;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -61,15 +61,15 @@ public class ContentDebugController {
     private final Logger log = LoggerFactory.getLogger(ContentDebugController.class);
     private final LegacyPersistenceModule legacyPersistence;
     private final AtlasPersistenceModule persistence;
-    private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+    private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
 
     public ContentDebugController(
             LegacyPersistenceModule legacyPersistence,
             AtlasPersistenceModule persistence,
-            ExplicitEquivalenceMigrator explicitEquivalenceMigrator) {
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator) {
         this.legacyPersistence = checkNotNull(legacyPersistence);
         this.persistence = checkNotNull(persistence);
-        this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
+        this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -185,7 +185,7 @@ public class ContentDebugController {
             }
             respString.append("\nMigrated content into C* content store");
             Optional<EquivalenceGraphUpdate> graphUpdate =
-                    explicitEquivalenceMigrator.migrateEquivalence(content);
+                    equivalenceMigrator.migrateEquivalence(content);
             persistence.getEquivalentContentStore().updateContent(content.toRef());
             respString.append("\nEquivalent content store updated using content ref");
 

@@ -33,14 +33,14 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
-    private final ExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+    private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     @Nullable private final Timer messagesTimer;
 
     public ContentReadWriteWorker(ContentResolver contentResolver, ContentWriter writer,
-            ExplicitEquivalenceMigrator explicitEquivalenceMigrator, @Nullable MetricRegistry metricsRegistry) {
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, @Nullable MetricRegistry metricsRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
-        this.explicitEquivalenceMigrator = checkNotNull(explicitEquivalenceMigrator);
+        this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("ContentReadWriteWorker")) : null);
     }
 
@@ -74,7 +74,7 @@ public class ContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
                     try {
                         log.trace("writing content " + content);
                         writer.writeContent(content);
-                        explicitEquivalenceMigrator.migrateEquivalence(content);
+                        equivalenceMigrator.migrateEquivalence(content);
                         log.trace("Finished writing content " + content);
                     } catch (MissingResourceException mre) {
                         log.warn("missing {} for {}, re-attempting", mre.getMissingId(), content);
