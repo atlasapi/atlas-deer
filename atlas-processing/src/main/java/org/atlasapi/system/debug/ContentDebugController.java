@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.metabroadcast.common.collect.OptionalMap;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
@@ -16,6 +17,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
@@ -116,6 +118,28 @@ public class ContentDebugController {
         );
         Content content = result.getResources().first().orNull();
         gson.toJson(content, response.getWriter());
+    }
+
+    /* Returns the JSON representation of a piece of equivalent content graph */
+    @RequestMapping("/system/debug/content/{id}/graph")
+    public void printContentEquivalence(@PathVariable("id") String id, final HttpServletResponse response)
+            throws Exception {
+        Id decodedId = Id.valueOf(lowercase.decode(id));
+        ImmutableList<Id> ids = ImmutableList.of(decodedId);
+        OptionalMap<Id, EquivalenceGraph> equivalenceGraph = Futures.get(
+                persistence.getContentEquivalenceGraphStore().resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
+        );
+        if(equivalenceGraph.get(decodedId).isPresent()) {
+            gson.toJson(equivalenceGraph.get(decodedId).get(), response.getWriter());
+        } else {
+            gson.toJson(
+                    String.format(
+                            "Equivalence graph for %s not found",
+                            id
+                    ),
+                    response.getWriter()
+            );
+        }
     }
 
     @RequestMapping("/system/debug/content/{id}/migrate")
