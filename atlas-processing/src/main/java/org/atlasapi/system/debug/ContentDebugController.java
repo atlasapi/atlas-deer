@@ -124,8 +124,8 @@ public class ContentDebugController {
     @RequestMapping("/system/debug/content/{id}/graph")
     public void printContentEquivalence(@PathVariable("id") String id, final HttpServletResponse response)
             throws Exception {
-        Long decodedId = lowercase.decode(id).longValue();
-        ImmutableList<Id> ids = ImmutableList.of(Id.valueOf(decodedId));
+        Id decodedId = Id.valueOf(lowercase.decode(id));
+        ImmutableList<Id> ids = ImmutableList.of(decodedId);
         OptionalMap<Id, EquivalenceGraph> equivalenceGraph = Futures.get(
                 persistence.getContentEquivalenceGraphStore().resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
         );
