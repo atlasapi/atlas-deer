@@ -21,6 +21,11 @@
             <version>${atlas.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.atlasapi</groupId>
+            <artifactId>atlas-cassandra</artifactId>
+            <version>${atlas.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>1.5.2</version>

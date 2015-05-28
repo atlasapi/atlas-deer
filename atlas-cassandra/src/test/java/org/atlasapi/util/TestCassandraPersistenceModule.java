@@ -77,7 +77,7 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         System.setProperty("messaging.destination.content.changes", "just-bloody-work");
         System.setProperty("messaging.destination.topics.changes", "just-bloody-work");
         System.setProperty("messaging.destination.schedule.changes", "just-bloody-work");
-    };
+    }
     
     @Override
     protected void startUp() throws ConnectionException {

@@ -6,6 +6,7 @@ import static org.atlasapi.util.ElasticSearchHelper.refresh;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpContentResolver;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
@@ -64,7 +66,7 @@ public class EsContentSearcherV3CompatibilityTest {
     @Before
     public void setUp() throws Exception {
         ElasticSearchHelper.refresh(esClient);
-        indexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000);
+        indexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver());
         indexer.startAsync().awaitRunning(10, TimeUnit.SECONDS);
         refresh(esClient);
     }

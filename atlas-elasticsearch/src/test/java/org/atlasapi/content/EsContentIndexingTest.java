@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import static org.atlasapi.util.ElasticSearchHelper.refresh;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +16,7 @@ import org.atlasapi.EsSchema;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpContentResolver;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -54,7 +56,7 @@ public final class EsContentIndexingTest {
     @Before
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient);
-        contentIndexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000);
+        contentIndexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver());
         contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     

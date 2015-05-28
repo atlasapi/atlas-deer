@@ -13,13 +13,17 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.TopicRef;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpContentResolver;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -32,12 +36,15 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.query.Selection;
 
 public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
-    private final EsContentIndex index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000);
+    private final EsContentIndex index = new EsContentIndex(
+            esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver()
+    );
 
     @BeforeClass
     public static void before() throws Exception {
@@ -51,7 +58,7 @@ public class EsPopularTopicsIndexTest {
     public void setup() {
         index.startAsync().awaitRunning();
     }
-    
+
     @After
     public void after() throws Exception {
         ElasticSearchHelper.clearIndices(esClient);
@@ -62,10 +69,10 @@ public class EsPopularTopicsIndexTest {
     public void testPopularTopics() throws Exception {
         Broadcast broadcast1 = new Broadcast(Id.valueOf(1), new DateTime(), new DateTime().plusHours(1));
         Broadcast broadcast2 = new Broadcast(Id.valueOf(1), new DateTime().plusHours(2), new DateTime().plusHours(3));
-        
+
         TopicRef topic1 = new TopicRef(Id.valueOf(1), 1.0f, Boolean.TRUE, TopicRef.Relationship.ABOUT);
         TopicRef topic2 = new TopicRef(Id.valueOf(2), 1.0f, Boolean.TRUE, TopicRef.Relationship.ABOUT);
-        
+
         Item item1 = new Item("uri1", "curie1", Publisher.METABROADCAST);
         item1.addBroadcast(broadcast1);
         item1.setId(Id.valueOf(1));
@@ -87,32 +94,33 @@ public class EsPopularTopicsIndexTest {
         item5.addBroadcast(broadcast2);
         item5.setId(Id.valueOf(5));
         item5.addTopicRef(topic2);
-        
+
         index.index(item1);
         index.index(item2);
         index.index(item3);
         index.index(item4);
         index.index(item5);
         refresh(esClient);
-        
+
         TopicResolver resolver = mock(TopicResolver.class);
         when(resolver.resolveIds(argThat(hasItems(Id.valueOf(1),Id.valueOf(2)))))
-            .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(new Topic(Id.valueOf(1)),new Topic(Id.valueOf(2))))));
-        
+            .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(new Topic(Id.valueOf(
+                    1)), new Topic(Id.valueOf(2))))));
+
         PopularTopicIndex searcher = new EsPopularTopicIndex(esClient);
-        
+
         Interval interval = new Interval(new DateTime().minusHours(1), new DateTime().plusHours(1));
-        
+
         FluentIterable<Id> topicIds = queryIndex(searcher, interval, Selection.offsetBy(0).withLimit(Integer.MAX_VALUE));
-        
+
         assertEquals(2, topicIds.size());
         assertEquals(1l, topicIds.get(0).longValue());
         assertEquals(2l, topicIds.get(1).longValue());
-        
+
         topicIds = queryIndex(searcher, interval, Selection.offsetBy(0).withLimit(1));
         assertEquals(1, topicIds.size());
         assertEquals(1, topicIds.get(0).longValue());
-        
+
         topicIds = queryIndex(searcher, interval, Selection.offsetBy(1).withLimit(1));
         assertEquals(1, topicIds.size());
         assertEquals(2, topicIds.get(0).longValue());

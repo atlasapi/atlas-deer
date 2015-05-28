@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.Currency;
@@ -20,6 +21,7 @@ import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpContentResolver;
 import org.elasticsearch.node.Node;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -56,7 +58,7 @@ public class EsContentIndexTest {
 
     @Before
     public void setup() {
-        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000);
+        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver());
         index.startAsync().awaitRunning();
     }
 

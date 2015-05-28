@@ -11,11 +11,16 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.Service.State;
 
+@Configuration
+@Import({ PersistenceModule.class })
 public class ElasticSearchContentIndexModule implements IndexModule {
 
     private final Logger log = LoggerFactory.getLogger(ElasticSearchContentIndexModule.class);
@@ -24,13 +29,15 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     private final EsTopicIndex topicIndex;
     private final EsPopularTopicIndex popularTopicsIndex;
     private final EsContentTitleSearcher contentSearcher;
+    @Autowired
+    private PersistenceModule persistenceModule;
 
     public ElasticSearchContentIndexModule(String seeds, String clusterName, long requestTimeout) {
         Node client = NodeBuilder.nodeBuilder().client(true).
                 clusterName(clusterName).
                 settings(ImmutableSettings.settingsBuilder().put("discovery.zen.ping.unicast.hosts", seeds)).
                 build().start();
-        this.contentIndex = new EsContentIndex(client, EsSchema.CONTENT_INDEX, requestTimeout);
+        this.contentIndex = new EsContentIndex(client, EsSchema.CONTENT_INDEX, requestTimeout, persistenceModule.contentStore());
         this.popularTopicsIndex = new EsPopularTopicIndex(client);
         this.topicIndex = new EsTopicIndex(client, EsSchema.TOPICS_INDEX, 60, TimeUnit.SECONDS);
         this.contentSearcher = new EsContentTitleSearcher(client);

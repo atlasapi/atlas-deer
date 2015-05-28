@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.EsPersistenceException;
 import org.atlasapi.util.EsQueryBuilder;
@@ -44,6 +46,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -62,13 +65,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private final long requestTimeout;
 
     private Set<String> existingIndexes;
+    private final ContentResolver resolver;
 
     private final EsQueryBuilder builder = new EsQueryBuilder();
 
-    public EsContentIndex(Node esClient, String indexName, long requestTimeout) {
+    public EsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver) {
         this.esClient = checkNotNull(esClient);
         this.requestTimeout = requestTimeout;
         this.index = checkNotNull(indexName);
+        this.resolver = checkNotNull(resolver);
     }
 
     @Override
@@ -190,6 +195,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .aliases(container.getAliases())
             .title(container.getTitle())
             .genre(container.getGenres())
+            .age(ageRestrictionFromContainer(container))
             .flattenedTitle(flattenedOrNull(container.getTitle()))
             .parentTitle(container.getTitle())
             .parentFlattenedTitle(flattenedOrNull(container.getTitle()))
@@ -209,6 +215,31 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         log.debug("indexed {}", container);
     }
 
+    private Integer ageRestrictionFromContainer(Container container) {
+        try {
+            if (container.getItemRefs() == null || container.getItemRefs().isEmpty()) {
+                return null;
+            }
+
+            Resolved<Content> resolved = Futures.get(
+                    resolver.resolveIds(Iterables.transform(container.getItemRefs(),
+                            ResourceRef::getId)),
+                    IOException.class
+            );
+
+            return ImmutableList.copyOf(resolved.getResources()).stream()
+                    .filter(i -> i instanceof Item)
+                    .map(i -> (Item) i)
+                    .filter(i -> (i.getRestrictions() != null) || !i.getRestrictions().isEmpty())
+                    .flatMap(i -> i.getRestrictions().stream())
+                    .map(Restriction::getMinimumAge)
+                    .filter(a -> a != null)
+                    .max(Integer::compare)
+                    .orElse(null);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
 
     private String flattenedOrNull(String string) {
         return string != null ? Strings.flatten(string) : null;
