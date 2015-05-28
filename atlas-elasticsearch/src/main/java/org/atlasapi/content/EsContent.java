@@ -33,6 +33,7 @@ public class EsContent extends EsObject {
     public final static String HAS_CHILDREN = "hasChildren";
     public final static String GENRE = "genre";
     public final static String PRICE = "price";
+    public static final String AGE = "age";
 
     public static final XContentBuilder getTopLevelMapping(String type) throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
@@ -98,11 +99,15 @@ public class EsContent extends EsObject {
             .endObject()
             .startObject(EsContent.GENRE)
                 .field("type").value("string")
-                .field("index").value("analyzed")
+                .field("index").value("not_analyzed")
             .endObject()
             .startObject(EsContent.PRICE)
                 .field("type").value("nested")
                 .rawField("properties", EsPriceMapping.getMapping().bytes())
+            .endObject()
+            .startObject(EsContent.AGE)
+                    .field("type").value("integer")
+                    .field("index").value("not_analyzed")
             .endObject()
         );
     }
@@ -195,6 +200,11 @@ public class EsContent extends EsObject {
 
     public EsContent price(Iterable<EsPriceMapping> prices) {
         properties.put(PRICE, Iterables.transform(prices, TO_MAP));
+        return this;
+    }
+
+    public EsContent age(Integer age) {
+        properties.put(AGE, age);
         return this;
     }
 

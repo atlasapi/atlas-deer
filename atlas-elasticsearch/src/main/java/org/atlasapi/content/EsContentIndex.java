@@ -11,15 +11,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.criteria.BooleanAttributeQuery;
-import org.atlasapi.criteria.DateTimeAttributeQuery;
-import org.atlasapi.criteria.EnumAttributeQuery;
-import org.atlasapi.criteria.FloatAttributeQuery;
-import org.atlasapi.criteria.IdAttributeQuery;
-import org.atlasapi.criteria.IntegerAttributeQuery;
-import org.atlasapi.criteria.MatchesNothing;
-import org.atlasapi.criteria.QueryVisitor;
-import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.EsPersistenceException;
@@ -41,7 +32,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -58,7 +48,6 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.time.DateTimeZones;
 
@@ -169,20 +158,28 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private EsContent toEsContent(Item item) {
         return new EsContent()
-            .id(item.getId().longValue())
-            .type(ContentType.fromContent(item).get())
-            .source(item.getSource() != null ? item.getSource().key() : null)
-            .aliases(item.getAliases())
-            .title(item.getTitle())
-            .genre(item.getGenres())
-            .price(makeEsPrices(item.getManifestedAs()))
-            .flattenedTitle(flattenedOrNull(item.getTitle()))
-            .parentTitle(item.getTitle())
-            .parentFlattenedTitle(flattenedOrNull(item.getTitle()))
-            .specialization(item.getSpecialization() != null ? item.getSpecialization().name() : null)
-            .broadcasts(makeESBroadcasts(item))
-            .locations(makeESLocations(item))
-            .topics(makeESTopics(item));
+                .id(item.getId().longValue())
+                .type(ContentType.fromContent(item).get())
+                .source(item.getSource() != null ? item.getSource().key() : null)
+                .aliases(item.getAliases())
+                .title(item.getTitle())
+                .genre(item.getGenres())
+                .age(item.getRestrictions().stream()
+                                .map(Restriction::getMinimumAge)
+                                .filter(a -> a != null)
+                                .max(Integer::compare)
+                                .orElse(null)
+                )
+                .price(makeEsPrices(item.getManifestedAs()))
+                .flattenedTitle(flattenedOrNull(item.getTitle()))
+                .parentTitle(item.getTitle())
+                .parentFlattenedTitle(flattenedOrNull(item.getTitle()))
+                .specialization(item.getSpecialization() != null ?
+                                item.getSpecialization().name() :
+                                null)
+                .broadcasts(makeESBroadcasts(item))
+                .locations(makeESLocations(item))
+                .topics(makeESTopics(item));
     }
 
     private void indexContainer(Container container) {
@@ -405,10 +402,13 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         SettableFuture<SearchResponse> response = SettableFuture.create();
         esClient.client()
                 .prepareSearch(index)
-                .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
+                .setTypes(EsContent.CHILD_ITEM,
+                        EsContent.TOP_LEVEL_CONTAINER,
+                        EsContent.TOP_LEVEL_ITEM)
                 .setQuery(builder.buildQuery(query))
                 .addField(EsContent.ID)
-                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.SUPERVISED).order(SortOrder.DESC))
+                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.SUPERVISED)
+                        .order(SortOrder.DESC))
                 .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.WEIGHTING).order(SortOrder.DESC))
                 .addSort(SortBuilders.fieldSort(EsContent.PRICE + "." + EsPriceMapping.VALUE).order(SortOrder.ASC))
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
