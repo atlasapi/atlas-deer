@@ -48,6 +48,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.time.DateTimeZones;
 
@@ -236,6 +237,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .map(Location::getPolicy)
                 .filter(p -> p != null)
                 .map(Policy::getPrice)
+                .filter(p -> p != null && p.getCurrency() != null)
                 .map(price -> new EsPriceMapping().currency(price.getCurrency()).value(price.getAmount()))
                 .collect(ImmutableCollectors.toList());
     }
