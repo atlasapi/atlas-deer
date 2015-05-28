@@ -34,6 +34,7 @@ import org.atlasapi.query.v4.schedule.ScheduleQueryExecutor;
 import org.atlasapi.query.v4.search.support.ContentResolvingSearcher;
 import org.atlasapi.query.v4.topic.IndexBackedTopicQueryExecutor;
 import org.atlasapi.query.v4.topic.TopicContentQueryExecutor;
+import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.topic.Topic;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,7 +88,7 @@ public class QueryModule {
     @Qualifier("store")
     @Bean ScheduleQueryExecutor equivalentScheduleStoreScheduleQueryExecutor() {
         return new EquivalentScheduleResolverBackedScheduleQueryExecutor(persistenceModule.channelResolver(),
-            persistenceModule.getEquivalentScheduleStore(), equivalentsMerger());
+            persistenceModule.getEquivalentScheduleStore(), equivalentsMerger(), FlexibleBroadcastMatcher.exactStartEnd());
     }
 
     @Bean

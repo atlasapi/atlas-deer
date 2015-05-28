@@ -53,6 +53,15 @@ public class FlexibleBroadcastMatcher {
             && endTimeMatch(subject, object);
     }
 
+    public Optional<Broadcast> findMatchingBroadcast(Broadcast subject, Iterable<Broadcast> objects) {
+        for (Broadcast object : objects) {
+            if (matches(subject, object)) {
+                return Optional.of(object);
+            }
+        }
+        return Optional.absent();
+    }
+
     private boolean channelsMatch(Broadcast subject, Broadcast object) {
         return subject.getChannelId().equals(object.getChannelId());
     }
