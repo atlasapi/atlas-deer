@@ -11,6 +11,15 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.BooleanAttributeQuery;
+import org.atlasapi.criteria.DateTimeAttributeQuery;
+import org.atlasapi.criteria.EnumAttributeQuery;
+import org.atlasapi.criteria.FloatAttributeQuery;
+import org.atlasapi.criteria.IdAttributeQuery;
+import org.atlasapi.criteria.IntegerAttributeQuery;
+import org.atlasapi.criteria.MatchesNothing;
+import org.atlasapi.criteria.QueryVisitor;
+import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.EsPersistenceException;
@@ -32,6 +41,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -238,7 +248,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .filter(p -> p != null)
                 .map(Policy::getPrice)
                 .filter(p -> p != null && p.getCurrency() != null)
-                .map(price -> new EsPriceMapping().currency(price.getCurrency()).value(price.getAmount()))
+                .map(price -> new EsPriceMapping().currency(price.getCurrency())
+                        .value(price.getAmount()))
                 .collect(ImmutableCollectors.toList());
     }
 
