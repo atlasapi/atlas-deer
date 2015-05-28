@@ -1,29 +1,35 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.atlasapi</groupId>
-    <artifactId>atlas</artifactId>
-    <version>7.0.145-SNAPSHOT</version>
-  </parent>
-  <artifactId>atlas-elasticsearch</artifactId>
-  <packaging>jar</packaging>
-  <dependencies>
-    <dependency>
-      <groupId>org.atlasapi</groupId>
-      <version>${atlas.version}</version>
-      <artifactId>atlas-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
-      <version>1.5.2</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-    </dependency>
-  </dependencies>
-  <name>Atlas ElasticSearch</name>
-  <description>ElasticSearch implementations of core Atlas index interfaces</description>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.atlasapi</groupId>
+        <artifactId>atlas</artifactId>
+        <version>7.0.145-SNAPSHOT</version>
+    </parent>
+    <artifactId>atlas-elasticsearch</artifactId>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>org.atlasapi</groupId>
+            <version>${atlas.version}</version>
+            <artifactId>atlas-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.atlasapi</groupId>
+            <artifactId>atlas-testlib</artifactId>
+            <version>${atlas.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>1.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+    </dependencies>
+    <name>Atlas ElasticSearch</name>
+    <description>ElasticSearch implementations of core Atlas index interfaces</description>
 </project>

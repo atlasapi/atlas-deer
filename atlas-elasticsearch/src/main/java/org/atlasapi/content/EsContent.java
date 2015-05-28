@@ -31,7 +31,9 @@ public class EsContent extends EsObject {
     public final static String LOCATIONS = "locations";
     public final static String TOPICS = "topics";
     public final static String HAS_CHILDREN = "hasChildren";
-    
+    public final static String GENRE = "genre";
+    public final static String PRICE = "price";
+
     public static final XContentBuilder getTopLevelMapping(String type) throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
             .startObject()
@@ -44,7 +46,7 @@ public class EsContent extends EsObject {
                 .endObject()
             .endObject();
     }
-     
+
     public static final XContentBuilder getChildMapping() throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
             .startObject()
@@ -60,23 +62,9 @@ public class EsContent extends EsObject {
                 .endObject()
             .endObject();
     }
-    
-
-    public static XContentBuilder getScheduleMapping() throws IOException {
-        return addSheduleOnlyProperties(XContentFactory.jsonBuilder()
-            .startObject()
-                .startObject(EsContent.TOP_LEVEL_ITEM)
-                    .startObject("_all")
-                        .field("enabled").value(false)
-                    .endObject()
-                    .startObject("properties"))
-                    .endObject()
-                .endObject()
-            .endObject();
-    }
 
     private static XContentBuilder addCommonProperties(XContentBuilder obj) throws IOException {
-        return addSheduleOnlyProperties(obj
+        return addScheduleOnlyProperties(obj
             .startObject(EsContent.TYPE)
                 .field("type").value("string")
                 .field("index").value("not_analyzed")
@@ -90,8 +78,8 @@ public class EsContent extends EsObject {
                 .field("index").value("analyzed")
             .endObject()
             .startObject(EsContent.FLATTENED_TITLE)
-                    .field("type").value("string")
-                    .field("index").value("analyzed")
+                .field("type").value("string")
+                .field("index").value("analyzed")
             .endObject()
             .startObject(EsContent.SOURCE)
                 .field("type").value("string")
@@ -107,10 +95,19 @@ public class EsContent extends EsObject {
             .endObject()
             .startObject(EsContent.LOCATIONS)
                 .field("type").value("nested")
-            .endObject());
+            .endObject()
+            .startObject(EsContent.GENRE)
+                .field("type").value("string")
+                .field("index").value("analyzed")
+            .endObject()
+            .startObject(EsContent.PRICE)
+                .field("type").value("nested")
+                .rawField("properties", EsPriceMapping.getMapping().bytes())
+            .endObject()
+        );
     }
 
-    private static XContentBuilder addSheduleOnlyProperties(XContentBuilder obj) throws IOException {
+    private static XContentBuilder addScheduleOnlyProperties(XContentBuilder obj) throws IOException {
         return obj.startObject(EsContent.ID)
                 .field("type").value("long")
                 .field("index").value("not_analyzed")
@@ -130,12 +127,12 @@ public class EsContent extends EsObject {
         properties.put(ID, id);
         return this;
     }
-    
+
     public EsContent type(ContentType type) {
         properties.put(TYPE, type.getKey());
         return this;
     }
-    
+
     public EsContent aliases(Iterable<Alias> aliases) {
         properties.put(ALIASES, Iterables.transform(aliases, Functions.compose(TO_MAP, EsAlias.toEsAlias())));
         return this;
@@ -145,7 +142,7 @@ public class EsContent extends EsObject {
         properties.put(TITLE, title);
         return this;
     }
-    
+
     public EsContent flattenedTitle(String flattenedTitle) {
         properties.put(FLATTENED_TITLE, flattenedTitle);
         return this;
@@ -155,12 +152,12 @@ public class EsContent extends EsObject {
         properties.put(PARENT_TITLE, parentTitle);
         return this;
     }
-    
+
     public EsContent parentFlattenedTitle(String parentFlattenedTitle) {
         properties.put(PARENT_FLATTENED_TITLE, parentFlattenedTitle);
         return this;
     }
-    
+
     public EsContent source(String publisher) {
         properties.put(SOURCE, publisher);
         return this;
@@ -185,9 +182,19 @@ public class EsContent extends EsObject {
         properties.put(TOPICS, Iterables.transform(topics, TO_MAP));
         return this;
     }
-    
+
     public EsContent hasChildren(Boolean hasChildren) {
         properties.put(HAS_CHILDREN, hasChildren);
+        return this;
+    }
+
+    public EsContent genre(Iterable<String> genre) {
+        properties.put(GENRE, genre);
+        return this;
+    }
+
+    public EsContent price(Iterable<EsPriceMapping> prices) {
+        properties.put(PRICE, Iterables.transform(prices, TO_MAP));
         return this;
     }
 

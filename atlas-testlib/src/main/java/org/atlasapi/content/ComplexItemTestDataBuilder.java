@@ -154,7 +154,7 @@ public class ComplexItemTestDataBuilder {
         return this;
     }
     
-    public ComplexItemTestDataBuilder withSegementEvents(SegmentEvent...segmentEvents) {
+    public ComplexItemTestDataBuilder withSegmentEvents(SegmentEvent... segmentEvents) {
         this.segmentEvents = ImmutableList.copyOf(segmentEvents);
         return this;
     }
