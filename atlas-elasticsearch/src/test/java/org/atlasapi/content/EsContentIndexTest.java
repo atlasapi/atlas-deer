@@ -4,6 +4,7 @@ import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.io.IOException;
 import java.util.Currency;
 import java.util.concurrent.TimeUnit;
 

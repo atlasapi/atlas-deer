@@ -190,7 +190,7 @@ public class EsQueryBuilder {
 
         @Override
         public QueryBuilder visit(Beginning beginning) {
-            return QueryBuilders.matchPhrasePrefixQuery(name, value.get(0));
+            return QueryBuilders.prefixQuery(name, value.get(0));
         }
     }
 
