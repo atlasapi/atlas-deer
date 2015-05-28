@@ -86,7 +86,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         } else if (input instanceof Container) {
             c = createBrand((Container)input);
         }
-        return setContentFields(c);
+        return setContentFields(c, input);
     }
 
     private org.atlasapi.content.Content createBrand(Container input) {
@@ -437,7 +437,9 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         return new BrandRef(Id.valueOf(ref.getId()), publisher);
     }
 
-    private <C extends org.atlasapi.content.Content> C setContentFields(C c) {
+    private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
+        c.setYear(input.getYear());
+        c.setLanguages(input.getLanguages());
         return c;
     }
 
