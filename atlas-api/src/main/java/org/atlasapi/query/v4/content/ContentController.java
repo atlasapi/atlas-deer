@@ -53,7 +53,7 @@ public class ContentController {
     }
 
     @RequestMapping({ "/{id}.*", "/{id}", ".*", "" })
-    public void fetchContent(HttpServletRequest request, HttpServletResponse response, @RequestParam("order_by") String orderBy)
+    public void fetchContent(HttpServletRequest request, HttpServletResponse response, @RequestParam(value = "order_by", required = false) String orderBy)
         throws IOException {
         ResponseWriter writer = null;
         try {
