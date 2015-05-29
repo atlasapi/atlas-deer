@@ -13,17 +13,14 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.content.Broadcast;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.TopicRef;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
-import org.atlasapi.util.NoOpContentResolver;
+import org.atlasapi.content.NoOpContentResolver;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -36,7 +33,6 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.query.Selection;
 
 public class EsPopularTopicsIndexTest {

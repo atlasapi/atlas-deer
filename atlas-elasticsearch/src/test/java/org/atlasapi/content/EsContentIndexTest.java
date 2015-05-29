@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
-import java.io.IOException;
 import java.util.Currency;
 import java.util.concurrent.TimeUnit;
 
@@ -21,7 +20,6 @@ import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
-import org.atlasapi.util.NoOpContentResolver;
 import org.elasticsearch.node.Node;
 import org.junit.After;
 import org.junit.AfterClass;

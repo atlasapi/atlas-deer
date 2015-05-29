@@ -1,7 +1,5 @@
-package org.atlasapi.util;
+package org.atlasapi.content;
 
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;

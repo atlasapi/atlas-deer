@@ -23,7 +23,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;
 import org.atlasapi.util.ElasticSearchHelper;
-import org.atlasapi.util.NoOpContentResolver;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
