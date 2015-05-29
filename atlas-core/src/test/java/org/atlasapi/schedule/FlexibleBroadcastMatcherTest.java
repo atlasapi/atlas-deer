@@ -1,8 +1,11 @@
 package org.atlasapi.schedule;
 
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.media.entity.Publisher;
@@ -16,7 +19,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 public class FlexibleBroadcastMatcherTest {
 
     FlexibleBroadcastMatcher matcher = new FlexibleBroadcastMatcher(
-        Duration.millis(5), 
+        Duration.millis(5),
         Optional.of(Duration.millis(5)
     ));
     
@@ -166,6 +169,25 @@ public class FlexibleBroadcastMatcherTest {
             new Broadcast(channel(1L), dateTime(10L), dateTime(15L)),
             new Broadcast(channel(1L), dateTime(10L), dateTime(16L))
         );
+    }
+
+    @Test
+    public void testFindsExactBroadcastInList() {
+
+         Broadcast subject = new Broadcast(channel(1L), dateTime(0L), dateTime(10L));
+         Broadcast object1 = new Broadcast(channel(1L), dateTime(1L), dateTime(10L));
+         Broadcast object2 = new Broadcast(channel(1L), dateTime(2L), dateTime(10L));
+         Broadcast object3 = new Broadcast(channel(2L), dateTime(0L), dateTime(10L));
+         Broadcast target = new Broadcast(channel(1L), dateTime(0L), dateTime(10L));
+         Broadcast object4 = new Broadcast(channel(1L), dateTime(3L), dateTime(10L));
+
+        Optional<Broadcast> result = FlexibleBroadcastMatcher.exactStartEnd().findMatchingBroadcast(
+                subject,
+                ImmutableList.of(object1, object2, object3, target, object4)
+        );
+
+        assertThat(result.get(), is(target));
+
     }
     
     private void matchesSymmetrically(FlexibleBroadcastMatcher matcher,

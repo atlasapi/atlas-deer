@@ -149,7 +149,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Adjacents subAdjs = subjGraph.getAdjacents(subject);
         
         if(subAdjs == null) {
-            log().warn("adjacents of %s not in graph %s", subject, subjGraph.getId());
+            log().warn("adjacents of {} not in graph {}", subject, subjGraph.getId());
             subAdjs = Adjacents.valueOf(subject);
         }
         
