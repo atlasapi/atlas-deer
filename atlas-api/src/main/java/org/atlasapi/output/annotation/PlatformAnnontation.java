@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class PlatformAnnontation extends OutputAnnotation<ChannelGroup> {
 
 
-    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("platforms", "platform");
+    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("regions", "region");
     private final ChannelGroupResolver channelGroupResolver;
 
     public PlatformAnnontation(ChannelGroupResolver channelGroupResolver) {
