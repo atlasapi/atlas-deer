@@ -96,12 +96,12 @@ public class Attributes {
 	public static final Attribute<Publisher> BROADCASTER = EnumValuedAttribute.valueOf(BROADCASTER_PARAM, Publisher.class, Identified.class, true);
 	public static final Attribute<Publisher> AVAILABLE_FROM = EnumValuedAttribute.valueOf(AVAILABLE_FROM_PARAM, Publisher.class, Identified.class, true);
 	public static final Attribute<MediaType> MEDIA_TYPE = new EnumValuedAttribute<>(MEDIA_TYPE_PARAM, MediaType.class, Identified.class);
-	public static final Attribute<String> ORDER_BY = stringAttribute(ORDER_BY_PARAM, Channel.class);
+	public static final Attribute<String> ORDER_BY_CHANNEL = stringAttribute(ORDER_BY_PARAM, Channel.class);
+    public static final Attribute<String> ORDER_BY_IDENTIFIED = stringAttribute(ORDER_BY_PARAM, Identified.class);
 
     // For filtering
     public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class);
-    public static final Attribute<String> GENRE = stringAttribute("genre", Container.class);
-	public static final Attribute<String> PRICE_ORDERING = stringAttribute("price.order", Container.class);
+    public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
 
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
 		ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,

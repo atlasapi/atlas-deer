@@ -360,7 +360,7 @@ public class QueryWebModule {
                         AttributeCoercers.floatCoercer()),
                 QueryAtomParser.valueOf(Attributes.CONTENT_TITLE_PREFIX,
                         AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.PRICE_ORDERING,
+                QueryAtomParser.valueOf(Attributes.ORDER_BY_IDENTIFIED,
                         AttributeCoercers.stringCoercer()),
                 QueryAtomParser.valueOf(Attributes.GENRE,
                         AttributeCoercers.stringCoercer())
@@ -470,7 +470,7 @@ public class QueryWebModule {
                                 AttributeCoercers.enumCoercer(Sources.fromKey())),
                         QueryAtomParser.valueOf(Attributes.BROADCASTER,
                                 AttributeCoercers.enumCoercer(Sources.fromKey())),
-                        QueryAtomParser.valueOf(Attributes.ORDER_BY,
+                        QueryAtomParser.valueOf(Attributes.ORDER_BY_CHANNEL,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(
                                 Attributes.MEDIA_TYPE,
