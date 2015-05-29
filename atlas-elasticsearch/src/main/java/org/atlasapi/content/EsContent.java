@@ -106,8 +106,8 @@ public class EsContent extends EsObject {
                 .rawField("properties", EsPriceMapping.getMapping().bytes())
             .endObject()
             .startObject(EsContent.AGE)
-                    .field("type").value("integer")
-                    .field("index").value("not_analyzed")
+                .field("type").value("integer")
+                .field("index").value("not_analyzed")
             .endObject()
         );
     }
