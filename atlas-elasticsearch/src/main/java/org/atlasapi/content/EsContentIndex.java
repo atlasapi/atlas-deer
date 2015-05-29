@@ -222,6 +222,11 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     private Integer ageRestrictionFromContainer(Container container) {
+        // TODO fix this, number of item refs in containers is too high to resolve without C* timeouts
+        if (true) {
+            return null;
+        }
+
         try {
             if (container.getItemRefs() == null || container.getItemRefs().isEmpty()) {
                 return null;
