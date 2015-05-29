@@ -445,8 +445,11 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         c.setClips(
                 Optional.ofNullable(input.getClips()).orElse(ImmutableList.of()).stream().map(
                         legacyClip -> {
-                            org.atlasapi.content.Clip newClip = new org.atlasapi.content.Clip(Id.valueOf(legacyClip.getId()), legacyClip.getPublisher());
-                            newClip.setCanonicalUri(legacyClip.getCanonicalUri());
+                            org.atlasapi.content.Clip newClip = new org.atlasapi.content.Clip(
+                                    legacyClip.getCanonicalUri(),
+                                    legacyClip.getCanonicalUri(),
+                                    legacyClip.getPublisher()
+                            );
                             newClip.setClipOf(legacyClip.getClipOf());
                             return newClip;
                         }
