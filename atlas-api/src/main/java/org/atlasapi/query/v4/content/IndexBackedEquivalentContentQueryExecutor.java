@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -87,11 +88,15 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     }
 
     private Optional<QueryOrdering> orderingFrom(Query<Content> query) {
-        Object order_by = query.getContext().getRequest().getParameterMap().get("order_by");
-        if (order_by == null) {
+        Map params = query.getContext().getRequest().getParameterMap();
+        if (!params.containsKey("order_by")) {
             return Optional.empty();
         }
-        return Optional.ofNullable(QueryOrdering.fromOrderBy((String) order_by));
+        String[] orderByVals = ((String[]) params.get("order_by"));
+        if (orderByVals[0] == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(QueryOrdering.fromOrderBy(orderByVals[0]));
     }
 
     private AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>> toEquivalentContent(
