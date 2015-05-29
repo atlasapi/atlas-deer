@@ -431,6 +431,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
             Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
+        log.debug(builder.buildQuery(query).toString());
         esClient.client()
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM,
@@ -438,8 +439,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                         EsContent.TOP_LEVEL_ITEM)
                 .setQuery(builder.buildQuery(query))
                 .addField(EsContent.ID)
-                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.SUPERVISED)
-                        .order(SortOrder.DESC))
+                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.SUPERVISED).order(SortOrder.DESC))
                 .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.WEIGHTING).order(SortOrder.DESC))
                 .addSort(SortBuilders.fieldSort(EsContent.PRICE + "." + EsPriceMapping.VALUE).order(SortOrder.ASC))
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
