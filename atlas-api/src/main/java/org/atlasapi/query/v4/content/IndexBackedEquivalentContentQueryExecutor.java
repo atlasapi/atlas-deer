@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +11,7 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.QueryOrdering;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -80,8 +82,16 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private ListenableFuture<QueryResult<Content>> executeListQuery(final Query<Content> query) {
         ListenableFuture<FluentIterable<Id>> hits
-            = index.query(query.getOperands(), sources(query), selection(query));
+            = index.query(query.getOperands(), sources(query), selection(query), orderingFrom(query));
         return Futures.transform(Futures.transform(hits, toEquivalentContent(query)), toQueryResult(query));
+    }
+
+    private Optional<QueryOrdering> orderingFrom(Query<Content> query) {
+        Object order_by = query.getContext().getRequest().getParameterMap().get("order_by");
+        if (order_by == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(QueryOrdering.fromOrderBy((String) order_by));
     }
 
     private AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>> toEquivalentContent(

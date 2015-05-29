@@ -25,6 +25,8 @@ import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.MediaType;
+import org.atlasapi.criteria.SortAttributeQuery;
+import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.Topic;

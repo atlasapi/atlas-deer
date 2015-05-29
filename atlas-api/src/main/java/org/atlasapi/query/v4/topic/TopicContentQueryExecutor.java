@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.topic;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.util.Optional;
 import java.util.Set;
 
 import org.atlasapi.annotation.Annotation;
@@ -26,7 +27,6 @@ import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -64,8 +64,10 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             @Override
             public ListenableFuture<ContextualQueryResult<Topic, Content>> apply(
                     Resolved<Topic> resolved) throws Exception {
-        
-                    Optional<Topic> possibleTopic = resolved.getResources().first();
+
+
+
+                    com.google.common.base.Optional<Topic> possibleTopic = resolved.getResources().first();
             
                     if (!possibleTopic.isPresent()) {
                         throw new NotFoundException(query.getContextQuery().getOnlyId());
@@ -125,8 +127,8 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         return index.query(
             query.getOperands(), 
             query.getContext().getApplicationSources().getEnabledReadSources(), 
-            query.getContext().getSelection().or(Selection.all())
-        );
+            query.getContext().getSelection().or(Selection.all()),
+                Optional.empty());
     }
 
 }
