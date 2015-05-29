@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import java.util.Optional;
+
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -10,8 +12,8 @@ import com.metabroadcast.common.query.Selection;
 
 public interface ContentIndex {
 
-    ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query, 
-        Iterable<Publisher> publishers, Selection selection);
+    ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> ordering);
     
     void index(Content content) throws IndexException;
     

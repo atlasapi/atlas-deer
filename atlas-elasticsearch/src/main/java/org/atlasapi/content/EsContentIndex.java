@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +41,8 @@ import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.sort.SortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -432,11 +435,10 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     @Override
     public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
-            Iterable<Publisher> publishers, Selection selection) {
+            Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> maybeOrder) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         log.debug(queryBuilder.buildQuery(query).toString());
-        List<SortBuilder> sorts = sortBuilder.buildSortQuery(query);
 
         SearchRequestBuilder reqBuilder = esClient.client()
                 .prepareSearch(index)
@@ -447,7 +449,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
 
-        sorts.forEach(reqBuilder::addSort);
+        if (maybeOrder.isPresent()) {
+            QueryOrdering order = maybeOrder.get();
+            reqBuilder.addSort(
+                    SortBuilders
+                            .fieldSort(order.getPath())
+                            .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
+            );
+        }
+
         reqBuilder.execute(FutureSettingActionListener.setting(response));
 
         return Futures.transform(response, (SearchResponse input) -> {

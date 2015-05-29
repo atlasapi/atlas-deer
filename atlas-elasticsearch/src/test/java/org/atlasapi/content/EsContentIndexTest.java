@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.util.Currency;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.ConsoleAppender;
@@ -80,8 +81,8 @@ public class EsContentIndexTest {
                 index.query(
                         querySet,
                         ImmutableList.of(Publisher.BBC),
-                        Selection.all()
-                ),
+                        Selection.all(),
+                        Optional.empty()),
                 Exception.class
         );
         assertThat(result.first().get(), is(Id.valueOf(10l)));
@@ -125,8 +126,8 @@ public class EsContentIndexTest {
                 index.query(
                         new AttributeQuerySet(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
-                        Selection.all()
-                ),
+                        Selection.all(),
+                        Optional.empty()),
                 Exception.class
         );
         assertThat(result.size(), is(1));
@@ -147,7 +148,7 @@ public class EsContentIndexTest {
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
         ListenableFuture<FluentIterable<Id>> result = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all());
+                Selection.all(), Optional.empty());
 
         FluentIterable<Id> ids = result.get(1, TimeUnit.SECONDS);
         assertThat(ids.first().get(), is(Id.valueOf(1)));
@@ -156,7 +157,8 @@ public class EsContentIndexTest {
                 .createQuery(Operators.EQUALS, ImmutableList.of(Publisher.BBC));
 
         querySet = new AttributeQuerySet(ImmutableList.of(query));
-        result = index.query(querySet, ImmutableList.of(Publisher.METABROADCAST), Selection.all());
+        result = index.query(querySet, ImmutableList.of(Publisher.METABROADCAST), Selection.all(),
+                Optional.empty());
 
         ids = result.get(1, TimeUnit.SECONDS);
         assertThat(ids.isEmpty(), is(true));
@@ -182,8 +184,8 @@ public class EsContentIndexTest {
         ListenableFuture<FluentIterable<Id>> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
-        );
+                Selection.all(),
+                Optional.empty());
 
         FluentIterable<Id> ids = result.get(1, TimeUnit.SECONDS);
         assertThat(ids.first().get(), is(Id.valueOf(1)));
@@ -214,7 +216,7 @@ public class EsContentIndexTest {
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
         ListenableFuture<FluentIterable<Id>> result = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all());
+                Selection.all(), Optional.empty());
 
         FluentIterable<Id> ids = result.get(1, TimeUnit.SECONDS);
         assertThat(ids.get(0), is(Id.valueOf(2)));
@@ -246,7 +248,7 @@ public class EsContentIndexTest {
 
         FluentIterable<Id> ids = index.query(
                 new AttributeQuerySet(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST), Selection.all())
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.first().get(), is(Id.valueOf(1)));
 
@@ -255,7 +257,7 @@ public class EsContentIndexTest {
 
         ids = index.query(
                 new AttributeQuerySet(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST), Selection.all())
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.first().isPresent(), is(false));
 
@@ -264,7 +266,7 @@ public class EsContentIndexTest {
 
         ids = index.query(
                 new AttributeQuerySet(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST), Selection.all())
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.first().get(), is(Id.valueOf(1)));
 
