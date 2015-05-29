@@ -2,7 +2,9 @@ package org.atlasapi.system.legacy;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.BrandRef;
@@ -440,6 +442,16 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
+        c.setClips(
+                Optional.ofNullable(input.getClips()).orElse(ImmutableList.of()).stream().map(
+                        legacyClip -> {
+                            org.atlasapi.content.Clip newClip = new org.atlasapi.content.Clip(Id.valueOf(legacyClip.getId()), legacyClip.getPublisher());
+                            newClip.setCanonicalUri(legacyClip.getCanonicalUri());
+                            newClip.setClipOf(legacyClip.getClipOf());
+                            return newClip;
+                        }
+                ).collect(Collectors.toList())
+        );
         return c;
     }
 
