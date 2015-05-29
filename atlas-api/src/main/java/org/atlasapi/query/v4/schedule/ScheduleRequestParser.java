@@ -88,7 +88,7 @@ class ScheduleRequestParser {
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM)
+            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
@@ -100,7 +100,7 @@ class ScheduleRequestParser {
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM)
+            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
