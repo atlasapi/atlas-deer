@@ -22,6 +22,7 @@ import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperatorVisitor;
 import org.atlasapi.criteria.operator.DateTimeOperatorVisitor;
 import org.atlasapi.criteria.operator.EqualsOperatorVisitor;
+import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.criteria.operator.Operators.After;
 import org.atlasapi.criteria.operator.Operators.Before;
 import org.atlasapi.criteria.operator.Operators.Beginning;
@@ -192,6 +193,14 @@ public class EsQueryBuilder {
         public QueryBuilder visit(Beginning beginning) {
             return QueryBuilders.prefixQuery(name, value.get(0));
         }
+
+        @Override public QueryBuilder visit(Operators.Ascending ascending) {
+            return null;
+        }
+
+        @Override public QueryBuilder visit(Operators.Descending ascending) {
+            return null;
+        }
     }
 
     private static class EsComparableOperatorVisitor<T extends Comparable<T>>
@@ -221,6 +230,14 @@ public class EsQueryBuilder {
         @Override
         public QueryBuilder visit(GreaterThan greaterThan) {
             return rangeMoreThan(name, value);
+        }
+
+        @Override public QueryBuilder visit(Operators.Ascending ascending) {
+            return null;
+        }
+
+        @Override public QueryBuilder visit(Operators.Descending ascending) {
+            return null;
         }
 
         @Override

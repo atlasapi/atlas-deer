@@ -35,6 +35,7 @@ public abstract class Attribute<T> implements QueryFactory<T> {
 	private final Class<? extends Identified> target;
 	private final boolean isCollectionOfValues;
 	private String alias;
+
 	
 	Attribute(String name, Class<? extends Identified> target) {
 		this(name, target, false);

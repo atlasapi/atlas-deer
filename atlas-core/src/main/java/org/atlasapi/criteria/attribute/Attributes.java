@@ -103,6 +103,7 @@ public class Attributes {
     public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class);
     public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
 
+
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
 		ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,
 								    DESCRIPTION_GENRE,

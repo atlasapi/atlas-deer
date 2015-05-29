@@ -24,6 +24,8 @@ public class Operators {
 
     public static final Equals EQUALS = new Equals();
     public static final Beginning BEGINNING = new Beginning();
+    public static final Ascending ASCENDING = new Ascending();
+    public static final Descending DESCENDING = new Descending();
 
     public static final ComparableOperator GREATER_THAN = new GreaterThan();
     public static final ComparableOperator LESS_THAN = new LessThan();
@@ -184,6 +186,52 @@ public class Operators {
 
         public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
             return Number.class.isAssignableFrom(lhs) && Number.class.isAssignableFrom(rhs);
+        }
+    }
+
+    public static class Ascending extends BaseOperator implements StringOperator, ComparableOperator, DateTimeOperator {
+
+        private Ascending() {
+            super("asc");
+        }
+
+        @Override public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
+            return true;
+        }
+
+        @Override public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
+            return visitor.visit(this);
+        }
+
+        @Override public <V> V accept(StringOperatorVisitor<V> visitor) {
+            return visitor.visit(this);
+        }
+
+        @Override public <V> V accept(ComparableOperatorVisitor<V> v) {
+            return v.visit(this);
+        }
+    }
+
+    public static class Descending extends BaseOperator implements StringOperator, ComparableOperator, DateTimeOperator {
+
+        private Descending() {
+            super("desc");
+        }
+
+        @Override public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
+            return true;
+        }
+
+        @Override public <V> V accept(StringOperatorVisitor<V> visitor) {
+            return visitor.visit(this);
+        }
+
+        @Override public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
+            return visitor.visit(this);
+        }
+
+        @Override public <V> V accept(ComparableOperatorVisitor<V> visitor) {
+            return visitor.visit(this);
         }
     }
 }
