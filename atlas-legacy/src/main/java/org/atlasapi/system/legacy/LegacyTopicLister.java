@@ -1,6 +1,7 @@
 package org.atlasapi.system.legacy;
 
 import org.atlasapi.entity.ResourceLister;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.mongo.MongoTopicStore;
 import org.atlasapi.topic.Topic;
 
@@ -20,6 +21,11 @@ public class LegacyTopicLister implements ResourceLister<Topic> {
     @Override
     public FluentIterable<Topic> list() {
         return FluentIterable.from(topicStore.all()).transform(transformer);
+    }
+
+    @Override
+    public FluentIterable<Topic> list(Iterable<Publisher> sources) {
+        throw new UnsupportedOperationException();
     }
 
 }

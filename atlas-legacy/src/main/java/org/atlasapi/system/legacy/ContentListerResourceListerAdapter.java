@@ -3,15 +3,19 @@ package org.atlasapi.system.legacy;
 import java.util.Iterator;
 
 import com.google.common.base.Function;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.ResourceLister;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.ContentCategory;
 import org.atlasapi.persistence.content.listing.ContentLister;
 import org.atlasapi.persistence.content.listing.ContentListingCriteria;
 import org.atlasapi.source.Sources;
 
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,14 +36,14 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
     }
 
     @Override
-    public FluentIterable<Content> list() {
+    public FluentIterable<Content> list(Iterable<Publisher> sources) {
         return new FluentIterable<Content>() {
             @Override
             public Iterator<Content> iterator() {
                 return Iterators.transform(
                         contentLister.listContent(
                                 ContentListingCriteria.defaultCriteria()
-                                        .forPublishers(Sources.all().asList())
+                                        .forPublishers(ImmutableList.copyOf(sources))
                                         .forContent(
                                                 ContentCategory.CONTAINER,
                                                 ContentCategory.PROGRAMME_GROUP,
@@ -67,6 +71,11 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
                 );
             }
         };
+    }
+    
+    @Override
+    public FluentIterable<Content> list() {
+        return list(Sources.all().asList());
     }
 
 }
