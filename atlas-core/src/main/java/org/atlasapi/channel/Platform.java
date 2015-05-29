@@ -41,7 +41,7 @@ public class Platform extends ChannelGroup<ChannelNumbering> {
 
     @Override
     public String getType() {
-        return "service";
+        return "platform";
     }
 
     public static class Builder {
