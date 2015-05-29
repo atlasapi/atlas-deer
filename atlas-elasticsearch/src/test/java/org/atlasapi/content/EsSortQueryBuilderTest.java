@@ -25,7 +25,7 @@ public class EsSortQueryBuilderTest {
                         new SortAttributeQuery(
                                 Attributes.ORDER_BY_IDENTIFIED,
                                 Operators.EQUALS,
-                                ImmutableList.of("price.value")
+                                ImmutableList.of("price.value.asc")
                         )
                 )
         );

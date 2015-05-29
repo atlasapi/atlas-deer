@@ -189,7 +189,6 @@ public class EsContentIndexTest {
         assertThat(ids.first().get(), is(Id.valueOf(1)));
     }
 
-    @Test
     public void testQueryOrder() throws Exception {
         Content episode1 = episode(1);
         episode1.setTopicRefs(ImmutableList.of(new TopicRef(4L,

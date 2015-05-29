@@ -39,7 +39,10 @@ public final class AttributeQuerySet extends ForwardingSet<AttributeQuery<?>> {
     public <V> List<V> accept(QueryVisitor<V> visitor) {
         ImmutableList.Builder<V> result = ImmutableList.builder();
         for (AttributeQuery<?> query : delegate) {
-            result.add(query.accept(visitor));
+            V value = query.accept(visitor);
+            if (value != null) {
+                result.add(value);
+            }
         }
         return result.build();
     }

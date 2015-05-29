@@ -66,7 +66,7 @@ public class EsSortQueryBuilder {
                 List<String> fieldAndSortOrder = Splitter.on(".").splitToList(Iterables.getOnlyElement(query.getValue()));
                 return SortBuilders
                         .fieldSort(fieldAndSortOrder.get(0))
-                        .order(SortOrder.valueOf(fieldAndSortOrder.get(1).toUpperCase()));
+                        .order(SortOrder.valueOf(fieldAndSortOrder.get(fieldAndSortOrder.size() - 1).toUpperCase()));
             }
         }).stream().filter(r -> r != null).collect(ImmutableCollectors.toList());
     }

@@ -10,6 +10,7 @@ import org.atlasapi.application.users.User;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.QueryVisitorAdapter;
+import org.atlasapi.criteria.SortAttributeQuery;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
@@ -22,6 +23,7 @@ import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
@@ -62,7 +64,8 @@ public class SourcesQueryExecutor implements UserAwareQueryExecutor<Publisher> {
                 public Publisher apply(Id input) {
                     return sourceIdCodec.decode(input).get();
                 }});
-            }}));
+            }
+        }));
    
         Iterable<Publisher> sources = null;
         if (Iterables.isEmpty(requestedSources)) {
