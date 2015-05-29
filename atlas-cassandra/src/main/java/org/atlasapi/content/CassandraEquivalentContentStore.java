@@ -88,6 +88,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     @Override
     public ListenableFuture<ResolvedEquivalents<Content>> resolveIds(Iterable<Id> ids,
             Set<Publisher> selectedSources, Set<Annotation> activeAnnotations) {
+
+        log.debug("Resolving IDs {}", Iterables.toString(ids));
         
         final SettableFuture<ResolvedEquivalents<Content>> result = SettableFuture.create();
   

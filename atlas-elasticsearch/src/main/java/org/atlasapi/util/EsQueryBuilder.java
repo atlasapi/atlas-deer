@@ -107,7 +107,7 @@ public class EsQueryBuilder {
             public QueryBuilder visit(StringAttributeQuery query) {
                 final List<String> values = query.getValue();
                 final String name = query.getAttributeName();
-                return query.accept(new EsStringOperatorVisitor(name, values));
+                return query.accept(new EsStringOperatorVisitor(query.getAttribute().javaAttributeName(), values));
             }
 
             @Override

@@ -438,8 +438,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> maybeOrder) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
-        log.debug(queryBuilder.buildQuery(query).toString());
-
         SearchRequestBuilder reqBuilder = esClient.client()
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)

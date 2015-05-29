@@ -101,7 +101,7 @@ public class Attributes {
 	public static final Attribute<String> ORDER_BY_CHANNEL = stringAttribute(ORDER_BY_PARAM, Channel.class);
 
     // For filtering
-    public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class);
+    public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class).withJavaAttribute("parentFlattenedTitle").withAlias("parentFlattenedTitle");
     public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
 
 
