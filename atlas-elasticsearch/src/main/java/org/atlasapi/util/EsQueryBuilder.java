@@ -18,6 +18,7 @@ import org.atlasapi.criteria.QueryNode.IntermediateNode;
 import org.atlasapi.criteria.QueryNode.TerminalNode;
 import org.atlasapi.criteria.QueryNodeVisitor;
 import org.atlasapi.criteria.QueryVisitor;
+import org.atlasapi.criteria.SortAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperatorVisitor;
 import org.atlasapi.criteria.operator.DateTimeOperatorVisitor;
@@ -159,6 +160,10 @@ public class EsQueryBuilder {
                 final String name = query.getAttributeName();
                 final List<Float> value = query.getValue();
                 return query.accept(new EsComparableOperatorVisitor<Float>(name, value));
+            }
+
+            @Override public QueryBuilder visit(SortAttributeQuery query) {
+                return null;
             }
         });
     }
