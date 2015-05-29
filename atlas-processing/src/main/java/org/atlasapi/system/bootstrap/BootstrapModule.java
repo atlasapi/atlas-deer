@@ -12,7 +12,9 @@ import javax.annotation.PostConstruct;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.metabroadcast.common.properties.Configurer;
+
 import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.SchedulerModule;
 import org.atlasapi.content.Content;
 import org.atlasapi.media.entity.Publisher;
@@ -46,6 +48,7 @@ public class BootstrapModule {
     @Autowired private LegacyPersistenceModule legacy;
     @Autowired private BootstrapWorkersModule workers;
     @Autowired private SchedulerModule scheduler;
+    @Autowired private ElasticSearchContentIndexModule search;
 
     @Bean
     BootstrapController bootstrapController() {
@@ -72,7 +75,9 @@ public class BootstrapModule {
 
     @Bean
     IndividualContentBootstrapController contentBootstrapController() {
-        return new IndividualContentBootstrapController(legacy.legacyContentResolver(), persistence.contentStore());
+        return new IndividualContentBootstrapController(legacy.legacyContentResolver(), 
+                legacy.legacyContentLister(),
+                persistence.contentStore(), search.contentIndex());
     }
 
     @Bean
