@@ -68,8 +68,9 @@ public class IndividualContentBootstrapController {
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         executorService.execute(() -> 
             {
-                contentLister.list(ImmutableList.of(fromKey.requireValue()))
-                             .transform(c -> c.accept(visitor));
+                for (Content c : contentLister.list(ImmutableList.of(fromKey.requireValue()))) {
+                    c.accept(visitor);
+                }
             });
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
