@@ -6,6 +6,7 @@ import static org.atlasapi.EsSchema.CONTENT_INDEX;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +18,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.EsPersistenceException;
 import org.atlasapi.util.EsQueryBuilder;
+import org.atlasapi.util.EsSortQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
 import org.atlasapi.util.ImmutableCollectors;
@@ -31,13 +33,13 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.search.sort.SortBuilder;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +69,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private Set<String> existingIndexes;
     private final ContentResolver resolver;
 
-    private final EsQueryBuilder builder = new EsQueryBuilder();
+    private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
+    private final EsSortQueryBuilder sortBuilder = new EsSortQueryBuilder();
 
     public EsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver) {
         this.esClient = checkNotNull(esClient);
@@ -417,7 +420,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         } catch (RuntimeIndexException rie) {
             throw new IndexException(rie.getMessage(), rie.getCause());
         }
-    };
+    }
 
     private class RuntimeIndexException extends RuntimeException {
 
@@ -431,21 +434,21 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
             Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
-        log.debug(builder.buildQuery(query).toString());
-        esClient.client()
+
+        log.debug(queryBuilder.buildQuery(query).toString());
+        List<SortBuilder> sorts = sortBuilder.buildSortQuery(query);
+
+        SearchRequestBuilder reqBuilder = esClient.client()
                 .prepareSearch(index)
-                .setTypes(EsContent.CHILD_ITEM,
-                        EsContent.TOP_LEVEL_CONTAINER,
-                        EsContent.TOP_LEVEL_ITEM)
-                .setQuery(builder.buildQuery(query))
+                .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
+                .setQuery(queryBuilder.buildQuery(query))
                 .addField(EsContent.ID)
-                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.SUPERVISED).order(SortOrder.DESC))
-                .addSort(SortBuilders.fieldSort(EsContent.TOPICS + "." + EsTopicMapping.WEIGHTING).order(SortOrder.DESC))
-                .addSort(SortBuilders.fieldSort(EsContent.PRICE + "." + EsPriceMapping.VALUE).order(SortOrder.ASC))
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
-                .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
-                .execute(FutureSettingActionListener.setting(response));
+                .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
+
+        sorts.forEach(reqBuilder::addSort);
+        reqBuilder.execute(FutureSettingActionListener.setting(response));
 
         return Futures.transform(response, (SearchResponse input) -> {
             /* TODO

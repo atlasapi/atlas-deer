@@ -67,4 +67,8 @@ public abstract class QueryVisitorAdapter<V> implements QueryVisitor<V> {
 	protected V defaultValue(AtomicQuery query) {
 		return null;
 	}
+
+	@Override public V visit(SortAttributeQuery query) {
+		return defaultValue(query);
+	}
 }

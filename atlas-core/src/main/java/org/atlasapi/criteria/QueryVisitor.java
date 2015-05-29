@@ -31,5 +31,7 @@ public interface QueryVisitor<T> {
 	T visit(IdAttributeQuery query);
 	
 	T visit(FloatAttributeQuery query);
+
+	T visit (SortAttributeQuery query);
 	
 }

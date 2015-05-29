@@ -8,6 +8,7 @@ import org.atlasapi.application.users.User;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.QueryVisitorAdapter;
+import org.atlasapi.criteria.SortAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
@@ -16,6 +17,7 @@ import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
 
@@ -31,7 +33,7 @@ public class SourceRequestQueryExecutor implements UserAwareQueryExecutor<Source
                 return null;
             }
         }
-     };
+    };
     
     public SourceRequestQueryExecutor(SourceRequestStore requestStore) {
         this.requestStore = requestStore;

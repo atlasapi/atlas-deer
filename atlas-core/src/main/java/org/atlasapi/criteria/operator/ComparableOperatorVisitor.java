@@ -14,6 +14,8 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.operator;
 
+import org.atlasapi.criteria.operator.Operators.Ascending;
+import org.atlasapi.criteria.operator.Operators.Descending;
 import org.atlasapi.criteria.operator.Operators.GreaterThan;
 import org.atlasapi.criteria.operator.Operators.LessThan;
 
@@ -23,4 +25,7 @@ public interface ComparableOperatorVisitor<V> extends EqualsOperatorVisitor<V> {
 
     V visit(GreaterThan greaterThan);
 
+    V visit (Ascending ascending);
+
+    V visit (Descending ascending);
 }
