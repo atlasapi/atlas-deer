@@ -61,6 +61,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 public class EsContentIndex extends AbstractIdleService implements ContentIndex {
 
+    public static final String CONTENT = "content";
     private final Logger log = LoggerFactory.getLogger(EsContentIndex.class);
 
     private static final int DEFAULT_LIMIT = 50;
@@ -416,7 +417,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     @Override
     public void index(Content content) throws IndexException {
         if (!content.isActivelyPublished()) {
-            unindexNoLongerPublishedContent(content);
+            unindexContent(content);
             return;
         }
         try {
@@ -439,35 +440,23 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         }
     }
 
-    private void unindexNoLongerPublishedContent(Content content) {
+    private void unindexContent(Content content) {
+        String id = content.getId().toBigInteger().toString();
+        log.debug("Content {} is not actively published, removing from index", id);
+        if (content instanceof Container) {
+            deleteFromIndex(id, EsContent.TOP_LEVEL_CONTAINER);
+        } else if (((Item) content).getContainerRef() != null) {
+            deleteFromIndex(id, EsContent.CHILD_ITEM);
+        } else {
+            deleteFromIndex(id, EsContent.TOP_LEVEL_ITEM);
+        }
+    }
+
+    private void deleteFromIndex(String id, String mappingType) {
         try {
-            log.debug("Content {} is not actively published, removing from index",
-                    content.getId().longValue());
-            DeleteRequest deleteReq;
-            if (content instanceof Container) {
-                deleteReq = new DeleteRequest(
-                        "content",
-                        EsContent.TOP_LEVEL_CONTAINER,
-                        content.getId().toBigInteger().toString()
-                );
-            } else if (((Item) content).getContainerRef() != null) {
-                deleteReq = new DeleteRequest(
-                        "content",
-                        EsContent.CHILD_ITEM,
-                        content.getId().toBigInteger().toString()
-                );
-            } else {
-                deleteReq = new DeleteRequest(
-                        "content",
-                        EsContent.TOP_LEVEL_ITEM,
-                        content.getId().toBigInteger().toString()
-                );
-            }
-            esClient.client().delete(deleteReq).get();
+            esClient.client().delete(new DeleteRequest(CONTENT, mappingType, id)).get();
         } catch (InterruptedException | ExecutionException e) {
-            log.warn("Failed to unindex content {} due to {}",
-                    content.getId().toBigInteger().toString(),
-                    e.toString());
+            log.error("Failed to delete content {} due to {}", id, e.toString());
         }
     }
 
