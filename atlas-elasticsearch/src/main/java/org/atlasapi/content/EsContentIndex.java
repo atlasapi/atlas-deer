@@ -6,10 +6,10 @@ import static org.atlasapi.EsSchema.CONTENT_INDEX;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -31,6 +31,7 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -40,7 +41,6 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
@@ -101,7 +101,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         if (!timeoutGet(exists).isExists()) {
             try {
                 log.info("Creating index {}", name);
-                timeoutGet(esClient.client().admin().indices().create(Requests.createIndexRequest(name)));
+                timeoutGet(esClient.client().admin().indices().create(Requests.createIndexRequest(
+                        name)));
             } catch (IndexAlreadyExistsException iaee) {
                 log.info("Already exists: {}", name);
                 return false;
@@ -205,7 +206,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .flattenedTitle(flattenedOrNull(container.getTitle()))
             .parentTitle(container.getTitle())
             .parentFlattenedTitle(flattenedOrNull(container.getTitle()))
-            .specialization(container.getSpecialization() != null ? container.getSpecialization().name() : null)
+            .specialization(container.getSpecialization() != null ?
+                            container.getSpecialization().name() :
+                            null)
             .topics(makeESTopics(container));
         if (!container.getItemRefs().isEmpty()) {
             indexed.hasChildren(Boolean.TRUE);
@@ -412,13 +415,19 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     @Override
     public void index(Content content) throws IndexException {
+        if (!content.isActivelyPublished()) {
+            unindexNoLongerPublishedContent(content);
+            return;
+        }
         try {
             content.accept(new ContentVisitorAdapter<Void>() {
+
                 @Override
                 protected Void visitItem(Item item) {
                     indexItem(item);
                     return null;
                 }
+
                 @Override
                 protected Void visitContainer(Container container) {
                     indexContainer(container);
@@ -427,6 +436,38 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             });
         } catch (RuntimeIndexException rie) {
             throw new IndexException(rie.getMessage(), rie.getCause());
+        }
+    }
+
+    private void unindexNoLongerPublishedContent(Content content) {
+        try {
+            log.debug("Content {} is not actively published, removing from index",
+                    content.getId().longValue());
+            DeleteRequest deleteReq;
+            if (content instanceof Container) {
+                deleteReq = new DeleteRequest(
+                        "content",
+                        EsContent.TOP_LEVEL_CONTAINER,
+                        content.getId().toBigInteger().toString()
+                );
+            } else if (((Item) content).getContainerRef() != null) {
+                deleteReq = new DeleteRequest(
+                        "content",
+                        EsContent.CHILD_ITEM,
+                        content.getId().toBigInteger().toString()
+                );
+            } else {
+                deleteReq = new DeleteRequest(
+                        "content",
+                        EsContent.TOP_LEVEL_ITEM,
+                        content.getId().toBigInteger().toString()
+                );
+            }
+            esClient.client().delete(deleteReq).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.warn("Failed to unindex content {} due to {}",
+                    content.getId().toBigInteger().toString(),
+                    e.toString());
         }
     }
 
