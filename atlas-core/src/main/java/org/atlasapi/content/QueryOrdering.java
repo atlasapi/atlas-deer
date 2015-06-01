@@ -15,7 +15,7 @@ public class QueryOrdering {
     public static QueryOrdering fromOrderBy(String orderBy) {
         int lastDot = orderBy.lastIndexOf(".");
         String path = orderBy.substring(0, lastDot);
-        String order = orderBy.substring(lastDot, orderBy.length() - 1);
+        String order = orderBy.substring(lastDot + 1, orderBy.length());
         if (order.equalsIgnoreCase("asc")) {
             return new QueryOrdering(path, true);
         } else {
