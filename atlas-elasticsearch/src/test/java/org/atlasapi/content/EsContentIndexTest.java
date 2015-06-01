@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 
 import java.util.Currency;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.ConsoleAppender;
@@ -33,6 +34,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.template.soy.exprtree.Operator;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.query.Selection;
 
@@ -277,5 +279,37 @@ public class EsContentIndexTest {
             index.index(content);
         }
         ElasticSearchHelper.refresh(esClient);
+    }
+
+    @Test
+    public void testUnindexingOfContentThatIsNoLongerPublished()
+            throws IndexException, ExecutionException, InterruptedException {
+        Item item = complexItem().withId(20l).build();
+        item.setPublisher(Publisher.METABROADCAST);
+        item.setActivelyPublished(true);
+        indexAndRefresh(item);
+
+        AttributeQuerySet querySet = new AttributeQuerySet(
+                ImmutableList.of(
+                        Attributes.ID.createQuery(Operators.EQUALS,
+                                ImmutableList.of(Id.valueOf(20l)))
+                )
+        );
+        FluentIterable<Id> resultWithItemPresent = index.query(querySet,
+                ImmutableList.of(Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.empty())
+                .get();
+        assertThat(resultWithItemPresent.first().get(), is(Id.valueOf(20l)));
+
+        item.setActivelyPublished(false);
+        indexAndRefresh(item);
+
+        FluentIterable<Id> resultWithItemAbsent = index.query(querySet,
+                ImmutableList.of(Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.empty())
+                .get();
+        assertThat(resultWithItemAbsent.first(), is(com.google.common.base.Optional.absent()));
     }
 }
