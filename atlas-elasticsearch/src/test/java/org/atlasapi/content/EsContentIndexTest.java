@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
 
 import java.util.Currency;
 import java.util.Optional;
@@ -34,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.template.soy.exprtree.Operator;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.query.Selection;
 
