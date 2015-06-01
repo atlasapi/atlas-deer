@@ -416,8 +416,11 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     @Override
     public void index(Content content) throws IndexException {
+        /* We unindex content before inserting any new records to avoid
+            duplicates when a piece of content changes type (e.g. from top level to child)
+         */
+        unindexContent(content);
         if (!content.isActivelyPublished()) {
-            unindexContent(content);
             return;
         }
         try {
@@ -443,13 +446,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private void unindexContent(Content content) {
         String id = content.getId().toBigInteger().toString();
         log.debug("Content {} is not actively published, removing from index", id);
-        if (content instanceof Container) {
-            deleteFromIndex(id, EsContent.TOP_LEVEL_CONTAINER);
-        } else if (((Item) content).getContainerRef() != null) {
-            deleteFromIndex(id, EsContent.CHILD_ITEM);
-        } else {
-            deleteFromIndex(id, EsContent.TOP_LEVEL_ITEM);
-        }
+        deleteFromIndex(id, EsContent.TOP_LEVEL_CONTAINER);
+        deleteFromIndex(id, EsContent.CHILD_ITEM);
+        deleteFromIndex(id, EsContent.TOP_LEVEL_ITEM);
     }
 
     private void deleteFromIndex(String id, String mappingType) {
