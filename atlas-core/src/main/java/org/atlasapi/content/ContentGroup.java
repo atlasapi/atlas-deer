@@ -79,8 +79,7 @@ public class ContentGroup extends Described implements MutableContentList, Equiv
     }
 
     public enum Type {
-
-        FRANCHISE, SEASON, PLAYLIST, PERSON;
+        FRANCHISE, SEASON, PLAYLIST, PERSON, ORGANISATION;
     }
     
     @Override
