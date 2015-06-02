@@ -25,14 +25,13 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.co
 		return Iterables.transform(legacy, this);
 	}
 
-	protected <E extends Enum<E>> E transformEnum(Enum<?> from, Class<E> to) {
+	protected static <E extends Enum<E>> E transformEnum(Enum<?> from, Class<E> to) {
 		if (from == null) {
 			return null;
 		}
 		try {
 			return Enum.valueOf(to, from.name());
 		} catch (IllegalArgumentException e) {
-			log.warn("{} missing constant {}", to, from);
 			return null;
 		}
 	}

@@ -6,10 +6,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ClipRef;
+import org.atlasapi.content.ContentGroupRef;
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.EpisodeRef;
@@ -29,6 +32,7 @@ import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Brand;
+import org.atlasapi.media.entity.ChildRef;
 import org.atlasapi.media.entity.Clip;
 import org.atlasapi.media.entity.Container;
 import org.atlasapi.media.entity.Content;
@@ -122,41 +126,49 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
 
     private <C extends org.atlasapi.content.Container> C setContainerFields(C c, final Container container) {
         c.setItemRefs(Iterables.filter(Iterables.transform(container.getChildRefs(),
-            new Function<org.atlasapi.media.entity.ChildRef, ItemRef>() {
-                @Override
-                public ItemRef apply(org.atlasapi.media.entity.ChildRef input) {
+                input -> {
                     if (input.getId() == null) {
                         log.warn("no id in ref for {} in {}", input, container);
                         return null;
                     }
-                    Id id = Id.valueOf(input.getId());
-                    DateTime updated = Objects.firstNonNull(input.getUpdated(),new DateTime(DateTimeZones.UTC));
-                    org.atlasapi.media.entity.EntityType type
-                        = transformEnum(input.getType(), org.atlasapi.media.entity.EntityType.class);
-                    switch (type) {
-                    case ITEM:
-                        return new ItemRef(id, container.getPublisher(), input.getSortKey(), updated);
-                    case CLIP:
-                        return new ClipRef(id, container.getPublisher(), input.getSortKey(), updated);
-                    case EPISODE:
-                        return new EpisodeRef(id, container.getPublisher(), input.getSortKey(), updated);
-                    case FILM:
-                        return new FilmRef(id, container.getPublisher(), input.getSortKey(), updated);
-                    case SONG:
-                        return new SongRef(id, container.getPublisher(), input.getSortKey(), updated);
-                    case CONTAINER:
-                    case BRAND:
-                    case SERIES:
-                    case PERSON:
-                    case CONTENT_GROUP:
-                    default:
-                        log.warn("Skipping ref {} of type {}", input.getId(), type);
-                        return null;
-                    }
+                    return legacyRefToRef(input, container.getPublisher());
                 }
-            }
-        ),Predicates.notNull()));
+        ), Predicates.notNull()));
         return c;
+    }
+
+    @Nullable
+    public static ItemRef legacyRefToRef(ChildRef input, Publisher source) {
+        if (input.getId() == null) {
+            return null;
+        }
+
+        Id id = Id.valueOf(input.getId());
+        DateTime updated = Objects.firstNonNull(input.getUpdated(), new DateTime(DateTimeZones.UTC));
+
+        org.atlasapi.media.entity.EntityType type = transformEnum(
+                input.getType(), org.atlasapi.media.entity.EntityType.class
+        );
+
+        switch (type) {
+            case ITEM:
+                return new ItemRef(id, source, input.getSortKey(), updated);
+            case CLIP:
+                return new ClipRef(id, source, input.getSortKey(), updated);
+            case EPISODE:
+                return new EpisodeRef(id, source, input.getSortKey(), updated);
+            case FILM:
+                return new FilmRef(id, source, input.getSortKey(), updated);
+            case SONG:
+                return new SongRef(id, source, input.getSortKey(), updated);
+            case CONTAINER:
+            case BRAND:
+            case SERIES:
+            case PERSON:
+            case CONTENT_GROUP:
+            default:
+                return null;
+        }
     }
 
     private org.atlasapi.content.Content createClip(Clip input) {
