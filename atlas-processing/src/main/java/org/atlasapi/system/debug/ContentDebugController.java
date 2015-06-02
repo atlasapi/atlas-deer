@@ -1,16 +1,24 @@
 package org.atlasapi.system.debug;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.metabroadcast.common.http.HttpStatusCode.BAD_REQUEST;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.collect.OptionalMap;
 import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
@@ -20,10 +28,16 @@ import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.schedule.EquivalentSchedule;
+import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.joda.time.DateTime;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -50,6 +64,9 @@ public class ContentDebugController {
 
     private final NumberToShortStringCodec uppercase = new SubstitutionTableNumberCodec();
     private final NumberToShortStringCodec lowercase = SubstitutionTableNumberCodec.lowerCaseOnly();
+    private static final DateTimeFormatter dateParser = ISODateTimeFormat.date();
+    private final ChannelResolver channelResolver;
+    private final EquivalentScheduleStore scheduleStore;
 
     private final Gson gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
             (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
@@ -66,10 +83,15 @@ public class ContentDebugController {
     public ContentDebugController(
             LegacyPersistenceModule legacyPersistence,
             AtlasPersistenceModule persistence,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator) {
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
+            ChannelResolver channelResolver,
+            EquivalentScheduleStore scheduleStore
+    ) {
         this.legacyPersistence = checkNotNull(legacyPersistence);
         this.persistence = checkNotNull(persistence);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
+        this.channelResolver = checkNotNull(channelResolver);
+        this.scheduleStore = checkNotNull(scheduleStore);
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -197,10 +219,70 @@ public class ContentDebugController {
         }
     }
 
+
+    @RequestMapping("/system/debug/schedule")
+    public void debugEquivalentSchedule(
+            @RequestParam(value = "channel", required = true) String channelId,
+            @RequestParam(value = "source", required = true) String sourceKey,
+            @RequestParam(value = "selectedSources", required = true) String selectedSourcesKeys,
+            @RequestParam(value = "day", required = true) String day,
+            final HttpServletResponse response
+    ) throws IOException {
+        try {
+
+            StringBuilder respString = new StringBuilder();
+            Publisher source = Publisher.fromKey(sourceKey).requireValue();
+            Set<Publisher> selectedSources = Splitter.on(",")
+                    .splitToList(selectedSourcesKeys)
+                    .stream()
+                    .map(key -> Publisher.fromKey(key).requireValue())
+                    .collect(Collectors.toSet());
+
+            LocalDate date;
+            try {
+                date = dateParser.parseLocalDate(day);
+            } catch (IllegalArgumentException iae) {
+                response.setStatus(400);
+                response.getWriter().write("Failed to parse "+day+", expected yyyy-MM-dd");
+                return;
+            }
+
+            Optional<Channel> channel = resolve(channelId);
+            if (!channel.isPresent()) {
+                response.setStatus(404);
+                response.getWriter().write("Unknown channel " + channelId);
+            }
+
+            EquivalentSchedule equivalentSchedule = Futures.get(scheduleStore.resolveSchedules(
+                    ImmutableSet.of(channel.get()),
+                    new Interval(date.toDateTimeAtStartOfDay(), date.plusDays(1).toDateTimeAtStartOfDay()),
+                    source,
+                    selectedSources
+            ), Exception.class);
+
+            gson.toJson(equivalentSchedule, response.getWriter());
+            response.setStatus(200);
+            response.flushBuffer();
+        } catch (Throwable t) {
+            t.printStackTrace(response.getWriter());
+        }
+    }
+
     private Content resolveLegacyContent(Long id) {
         return Iterables.getOnlyElement(
                 Futures.getUnchecked(legacyPersistence.legacyContentResolver()
                         .resolveIds(ImmutableList.of(Id.valueOf(id)))).getResources()
         );
+    }
+
+    private Optional<Channel> resolve(String channelId) throws Exception {
+        Id cid = Id.valueOf(lowercase.decode(channelId));
+        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList.of(cid));
+        Resolved<Channel> resolvedChannel = Futures.get(channelFuture, 1, TimeUnit.MINUTES, Exception.class);
+
+        if (resolvedChannel.getResources().isEmpty()) {
+            return Optional.absent();
+        }
+        return Optional.of(Iterables.getOnlyElement(resolvedChannel.getResources()));
     }
 }
