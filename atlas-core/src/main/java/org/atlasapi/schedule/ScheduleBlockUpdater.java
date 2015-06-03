@@ -36,17 +36,32 @@ class ScheduleBlockUpdater {
         
         Set<ItemAndBroadcast> staleEntries = Sets.newHashSet();
         List<ChannelSchedule> updatedBlocks = Lists.newArrayListWithCapacity(currentBlocks.size());
-        
+        ImmutableSet.Builder<ItemAndBroadcast> allUpdatedItemsAndBroadcasts = ImmutableSet.builder();
         for(ChannelSchedule block : currentBlocks) {
             List<ItemAndBroadcast> survivors = survivingEntries(block, validIds, broadcastFilter);
             staleEntries.addAll(staleBroadcasts(block, survivors));
-            updatedBlocks.add(block.copyWithEntries(ImmutableSet.<ItemAndBroadcast>builder()
+            ImmutableSet<ItemAndBroadcast> updatedItemAndBroadcasts = ImmutableSet.<ItemAndBroadcast>builder()
                     .addAll(updateItems(block, updatedSchedule))
                     .addAll(survivors)
-                    .build()));
+                    .build();
+            updatedBlocks.add(block.copyWithEntries(updatedItemAndBroadcasts));
+            allUpdatedItemsAndBroadcasts.addAll(updatedItemAndBroadcasts);
         }
+
+        ImmutableSet<ItemAndBroadcast> currentItemsAndBroadcasts = allUpdatedItemsAndBroadcasts.build();
+
+        /*
+        Sometimes a broadcast which was stale becomes current again
+        We need to make sure that it is not returned in stale broadcasts so that the actively published flag
+        is not set to false on it.
+        */
         for (ChannelSchedule pastBlock : staleBlocks) {
-            staleEntries.addAll(pastBlock.getEntries());
+            staleEntries.addAll(
+                    Sets.difference(
+                            ImmutableSet.copyOf(pastBlock.getEntries()),
+                            currentItemsAndBroadcasts
+                    )
+            );
         }
 
         return new ScheduleBlocksUpdate(updatedBlocks, staleEntries);
