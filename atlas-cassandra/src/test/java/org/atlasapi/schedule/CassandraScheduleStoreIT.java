@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.ImmutableSet;
 import com.netflix.astyanax.serializers.AsciiSerializer;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
@@ -32,6 +33,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.media.entity.ScheduleEntry;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -278,6 +280,65 @@ public class CassandraScheduleStoreIT {
                 )
         );
 
+    }
+
+
+    @Test
+    public void testBroadcastMovedToAnotherBlockAndBack() throws Exception {
+
+        DateTime start = new DateTime(2015,5,30,22,30,0,0,DateTimeZones.UTC);
+        DateTime end = new DateTime(2015,5,30,23,0,0,0,DateTimeZones.UTC);
+
+        DateTime newStart = new DateTime(2015,6,1,0,00,0,0,DateTimeZones.UTC);
+        DateTime newEnd = new DateTime(2015,6,1,0,30,0,0,DateTimeZones.UTC);
+
+        ItemAndBroadcast episode1Slot1 = itemAndBroadcast(1, "one", source, channel, start, end);
+        ItemAndBroadcast episode1Slot2 = itemAndBroadcast(1, "one", source, channel, newStart, newEnd);
+        ItemAndBroadcast episode2Slot1 = itemAndBroadcast(2, "two", source, channel, start, end);
+
+        ImmutableList<ScheduleHierarchy> hiers1 = ImmutableList.of(
+                ScheduleHierarchy.itemOnly(episode1Slot1)
+        );
+        ImmutableList<ScheduleHierarchy> hiers2 = ImmutableList.of(
+                ScheduleHierarchy.itemOnly(episode1Slot2)
+        );
+
+        ImmutableList<ScheduleHierarchy> hiers3 = ImmutableList.of(
+                ScheduleHierarchy.itemOnly(episode2Slot1)
+        );
+
+        Interval writtenInterval = new Interval(start, end);
+        Interval newWrittenInterval = new Interval(newStart, newEnd);
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("1")
+                .thenReturn("2")
+                .thenReturn("3")
+                .thenReturn("4")
+                .thenReturn("5")
+                .thenReturn("6")
+                .thenReturn("7")
+                .thenReturn("9")
+                .thenReturn("10")
+                .thenReturn("11")
+                .thenReturn("12");
+
+        //write a broadcast for a block
+        store.writeSchedule(hiers1, channel, writtenInterval);
+        //move this broadcast to the next day
+        store.writeSchedule(hiers2, channel, newWrittenInterval);
+        //overwrite the broadcast
+        store.writeSchedule(hiers3, channel, writtenInterval);
+        //write it again
+        store.writeSchedule(hiers1, channel, writtenInterval);
+
+        Item content = (Item)Iterables.getOnlyElement(Futures.get(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))), Exception.class).getResources());
+        Schedule schedule = Futures.get(store.resolve(ImmutableSet.of(channel), writtenInterval, source), Exception.class);
+
+        ItemAndBroadcast itemAndBroadcast = Iterables.getOnlyElement(Iterables.getOnlyElement(schedule.channelSchedules()).getEntries());
+
+        assertThat(itemAndBroadcast.getBroadcast().getSourceId(), is("one"));
+        assertThat(itemAndBroadcast.getItem().getId(), is(Id.valueOf(1)));
+        assertThat(Iterables.getOnlyElement(content.getBroadcasts()).isActivelyPublished(), is(true));
     }
     
     @Test
