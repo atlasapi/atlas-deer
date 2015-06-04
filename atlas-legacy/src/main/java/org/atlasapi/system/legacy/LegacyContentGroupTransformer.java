@@ -17,6 +17,7 @@ public class LegacyContentGroupTransformer extends DescribedLegacyResourceTransf
                 legacyGroup.getPublisher()
         );
 
+        contentGroup.setId(legacyGroup.getId());
         contentGroup.setType(ContentGroup.Type.valueOf(legacyGroup.getType().name()));
 
         ImmutableList<ContentRef> refs = legacyGroup.getContents().stream()

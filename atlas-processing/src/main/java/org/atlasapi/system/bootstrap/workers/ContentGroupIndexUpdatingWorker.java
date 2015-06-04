@@ -40,8 +40,8 @@ public class ContentGroupIndexUpdatingWorker implements Worker<ResourceUpdatedMe
             Resolved<ContentGroup> resolved =
                     Futures.get(resolver.resolveIds(ImmutableList.of(resource.getId())), IOException.class);
 
-            Optional<ContentGroup> cg = resolved.getResources().first();
-            if (!cg.isPresent()) {
+            Optional<ContentGroup> maybeContentGroup = resolved.getResources().first();
+            if (!maybeContentGroup.isPresent()) {
                 log.warn(
                         "Could not resolve count group {} in legacy store, skipping update",
                         msg.getUpdatedResource().getId()
@@ -49,7 +49,13 @@ public class ContentGroupIndexUpdatingWorker implements Worker<ResourceUpdatedMe
                 return;
             }
 
-            index.index(cg.get());
+
+            ContentGroup contentGroup = maybeContentGroup.get();
+            if (contentGroup.getId() == null) {
+                log.warn("Cannot index content group with no id - {}", contentGroup.toString());
+            }
+
+            index.index(contentGroup);
             log.debug("Finished processing of content group update {}", msg.getUpdatedResource());
         } catch (IOException | IndexException e) {
             log.error(
