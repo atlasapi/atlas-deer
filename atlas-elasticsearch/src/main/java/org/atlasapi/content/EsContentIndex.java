@@ -436,6 +436,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     @Override
     public void index(ContentGroup cg) throws IndexException {
+        log.debug("Indexing {}", cg);
         contentGroupIndexUpdater.index(cg);
     }
 

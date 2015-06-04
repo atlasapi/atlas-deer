@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.base.Objects;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -87,5 +88,12 @@ public class ContentGroup extends Described implements MutableContentList, Equiv
         super.copyWithEquivalentTo(refs);
         return this;
     }
-    
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("id", getId())
+                .add("contents", contents)
+                .toString();
+    }
 }
