@@ -16,11 +16,13 @@ import static org.atlasapi.serialization.protobuf.ContentProtos.Column.SEGMENTS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.SOURCE;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.TOPICS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.TYPE;
+import static org.atlasapi.serialization.protobuf.ContentProtos.Column.UPCOMING_CONTENT;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.netflix.astyanax.model.Column;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.serialization.protobuf.ContentProtos;
@@ -42,7 +44,8 @@ import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.model.ColumnList;
 
 public class ProtobufContentMarshaller implements ContentMarshaller {
-    
+    private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING";
+
     private final ListMultimap<ContentProtos.Column, FieldDescriptor> schema =
         Multimaps.index(
             ContentProtos.Content.getDescriptor().getFields(), 
@@ -84,6 +87,7 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             .put(TOPICS, ContentColumn.TOPICS)
             .put(GROUPS, ContentColumn.GROUPS)
             .put(SEGMENTS, ContentColumn.SEGMENTS)
+            .put(UPCOMING_CONTENT, ContentColumn.UPCOMNING_CONTENT)
         .build());
 
     @Override
@@ -93,6 +97,10 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             Entry<ContentProtos.Column, List<FieldDescriptor>> col = schemaList.get(i);
             if (isChildRefColumn(col.getKey())) {
                 handleChildRefColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
+                continue;
+            }
+            if (isUpcomingContentColumn(col.getKey())) {
+                handleUpcomingContentColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
             Builder builder = null;
@@ -116,6 +124,10 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
         }
     }
 
+    private boolean isUpcomingContentColumn(ContentProtos.Column key) {
+        return ContentProtos.Column.UPCOMING_CONTENT.equals(key);
+    }
+
     private void handleChildRefColumn(ColumnListMutation<String> mutation,
                                       ContentProtos.Content msg,
                                       FieldDescriptor fd) {
@@ -125,6 +137,25 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
                 .addRepeatedField(fd, cr)
                 .build();
             mutation.putColumn(String.valueOf(cr.getId()), col.toByteArray());
+        }
+    }
+
+    private void handleUpcomingContentColumn(ColumnListMutation<String> mutation,
+                                      ContentProtos.Content msg,
+                                      FieldDescriptor fd) {
+        if (msg.getRepeatedFieldCount(fd) == 1) {
+            ContentProtos.ItemAndBroadcastRef uc = (ContentProtos.ItemAndBroadcastRef) msg.getRepeatedField(fd, 0);
+            ContentProtos.Content col = ContentProtos.Content.newBuilder()
+                    .addRepeatedField(fd, uc)
+                    .build();
+            mutation.putColumn(
+                    String.format(
+                            "%s:%s",
+                            UPCOMING_CONTENT_PREFIX,
+                            uc.getItem().getId()
+                    ),
+                    col.toByteArray()
+            );
         }
     }
 
@@ -139,9 +170,9 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
     @Override
     public Content unmarshallCols(ColumnList<String> columns) {
         ContentProtos.Content.Builder builder = ContentProtos.Content.newBuilder();
-        for (int i = 0; i < columns.size(); i++) {
+        for (Column<String> column : columns) {
             try {
-                builder.mergeFrom(columns.getColumnByIndex(i).getByteArrayValue());
+                builder.mergeFrom(column.getByteArrayValue());
             } catch (InvalidProtocolBufferException e) {
                 throw Throwables.propagate(e);
             }

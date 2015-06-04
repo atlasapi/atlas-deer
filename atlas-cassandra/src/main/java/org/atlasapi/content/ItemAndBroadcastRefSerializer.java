@@ -16,24 +16,26 @@ import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
 public class ItemAndBroadcastRefSerializer {
 
 
-    public ContentProtos.ItemAndBroadcastRef.Builder serialize(ItemRef itemRef, BroadcastRef broadcastRef) {
+    public ContentProtos.ItemAndBroadcastRef.Builder serialize(ItemRef itemRef, Iterable<BroadcastRef> broadcastRefs) {
 
         ContentRefSerializer contentRefSerializer = new ContentRefSerializer(itemRef.getSource());
         CommonProtos.Reference.Builder itemRefBuilder = contentRefSerializer.serialize(itemRef);
 
         ContentProtos.ItemAndBroadcastRef.Builder builder = ContentProtos.ItemAndBroadcastRef.newBuilder();
 
-        CommonProtos.BroadcastRef.Builder broadcastRefBuilder = CommonProtos.BroadcastRef.newBuilder();
+        for (BroadcastRef broadcastRef : broadcastRefs) {
+            CommonProtos.Identification.Builder id = CommonProtos.Identification.newBuilder();
+            id.setId(broadcastRef.getChannelId().longValue());
 
-        CommonProtos.Identification.Builder id = CommonProtos.Identification.newBuilder();
-        id.setId(broadcastRef.getChannelId().longValue());
+            CommonProtos.BroadcastRef.Builder broadcastRefBuilder = CommonProtos.BroadcastRef.newBuilder();
+            broadcastRefBuilder.setSourceId(broadcastRef.getSourceId());
+            broadcastRefBuilder.setChannelId(id);
+            broadcastRefBuilder.setTransmissionTime(serializeDateTime(broadcastRef.getTransmissionInterval().getStart()));
+            broadcastRefBuilder.setTransmissionEndTime(serializeDateTime(broadcastRef.getTransmissionInterval().getEnd()));
 
-        broadcastRefBuilder.setSourceId(broadcastRef.getSourceId());
-        broadcastRefBuilder.setChannelId(id);
-        broadcastRefBuilder.setTransmissionTime(serializeDateTime(broadcastRef.getTransmissionInterval().getStart()));
-        broadcastRefBuilder.setTransmissionEndTime(serializeDateTime(broadcastRef.getTransmissionInterval().getEnd()));
+            builder.addBroadcast(broadcastRefBuilder);
+        }
 
-        builder.setBroadcast(broadcastRefBuilder);
         builder.setItem(itemRefBuilder);
         return builder;
     }
@@ -45,25 +47,25 @@ public class ItemAndBroadcastRefSerializer {
 
         for (ContentProtos.ItemAndBroadcastRef itemAndBroadcastRef : itemAndBroadcastRefs) {
             ItemRef itemRef = (ItemRef) contentRefSerializer.deserialize(itemAndBroadcastRef.getItem());
-            BroadcastRef broadcastRef = new BroadcastRef(
-                    itemAndBroadcastRef.getBroadcast().getSourceId(),
-                    Id.valueOf(itemAndBroadcastRef.getBroadcast().getChannelId().getId()),
-                    new Interval(
-                            deserializeDateTime(itemAndBroadcastRef.getBroadcast().getTransmissionTime()),
-                            deserializeDateTime(itemAndBroadcastRef.getBroadcast().getTransmissionEndTime())
-                    )
-            );
+            ImmutableList.Builder<BroadcastRef> broadcastRefs = ImmutableList.<BroadcastRef>builder();
 
-            ImmutableList<BroadcastRef> broadcastRefs = ImmutableList.<BroadcastRef>builder()
-                    .addAll(upcomingContent.getOrDefault(itemRef, ImmutableList.<BroadcastRef>of()))
-                    .add(broadcastRef)
-                    .build();
+            for (int i = 0; i < itemAndBroadcastRef.getBroadcastCount(); i++) {
+                CommonProtos.BroadcastRef broadcastProto = itemAndBroadcastRef.getBroadcast(i);
 
-
+                broadcastRefs.add(
+                        new BroadcastRef(
+                                broadcastProto.getSourceId(),
+                                Id.valueOf(broadcastProto.getChannelId().getId()),
+                                new Interval(
+                                        deserializeDateTime(broadcastProto.getTransmissionTime()),
+                                        deserializeDateTime(broadcastProto.getTransmissionEndTime())
+                                )
+                        )
+                );
+            }
             upcomingContent.put(
                     itemRef,
-                    broadcastRefs
-
+                    broadcastRefs.build()
             );
         }
 

@@ -17,5 +17,6 @@ public enum ContentColumn {
     LINKS,
     TOPICS,
     GROUPS,
-    SEGMENTS
+    SEGMENTS,
+    UPCOMNING_CONTENT
 }

@@ -109,7 +109,7 @@ message Summary {
 
 message ItemAndBroadcastRef {
     optional common.Reference item = 1;
-    optional common.BroadcastRef broadcast = 2;
+    repeated common.BroadcastRef broadcast = 2;
 }
 
 

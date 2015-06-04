@@ -224,9 +224,12 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
         }
         for (Map.Entry<ItemRef, Iterable<BroadcastRef>> upcomingContent : container.getUpcomingContent().entrySet()) {
             ItemRef upcomingItem = upcomingContent.getKey();
-            for (BroadcastRef broadcastRef : upcomingContent.getValue()) {
-                builder.addUpcomingContent(itemAndBroadcastRefSerializer.serialize(upcomingItem, broadcastRef));
-            }
+            builder.addUpcomingContent(
+                    itemAndBroadcastRefSerializer.serialize(
+                            upcomingItem,
+                            upcomingContent.getValue()
+                    )
+            );
         }
         return builder;
     }
