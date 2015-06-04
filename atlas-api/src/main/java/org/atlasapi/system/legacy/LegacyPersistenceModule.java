@@ -12,6 +12,7 @@ import org.atlasapi.persistence.content.DefaultEquivalentContentResolver;
 import org.atlasapi.persistence.content.EquivalentContentResolver;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.LookupResolvingContentResolver;
+import org.atlasapi.persistence.content.mongo.MongoContentGroupResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentLister;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoTopicStore;
@@ -106,6 +107,11 @@ public class LegacyPersistenceModule {
     @Bean @Qualifier("legacy")
     public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
         return new MongoSegmentResolver(persistence.databasedReadMongo(), new SubstitutionTableNumberCodec());
+    }
+
+    @Bean
+    public LegacyContentGroupResolver legacyContentGroupResolver() {
+        return new LegacyContentGroupResolver(new MongoContentGroupResolver(persistence.databasedReadMongo()));
     }
 
     private PersistenceAuditLog persistenceAuditLog() {

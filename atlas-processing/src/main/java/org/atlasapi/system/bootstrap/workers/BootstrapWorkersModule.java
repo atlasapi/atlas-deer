@@ -41,6 +41,7 @@ public class BootstrapWorkersModule {
 
     private String consumerSystem = Configurer.get("messaging.system").get();
     private String zookeeper = Configurer.get("messaging.zookeeper").get();
+    private String contentGroupChanges = Configurer.get("messaging.destination.content.group.changes").get();
     private String originSystem = Configurer.get("messaging.bootstrap.system").get();
     private Integer consumers = Configurer.get("messaging.bootstrap.consumers.default").toInt();
     private Integer maxConsumers = Configurer.get("messaging.bootstrap.consumers.max").toInt();
@@ -120,6 +121,7 @@ public class BootstrapWorkersModule {
         contentReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        contentGroupIndexUpdatingWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
 
     @PreDestroy
@@ -144,4 +146,17 @@ public class BootstrapWorkersModule {
         );
     }
 
+
+    public KafkaConsumer contentGroupIndexUpdatingWorker() {
+        ContentGroupIndexUpdatingWorker worker = new ContentGroupIndexUpdatingWorker(
+                persistence.contentIndex(),
+                legacy.legacyContentGroupResolver()
+        );
+        MessageSerializer<ResourceUpdatedMessage> serializer = new EntityUpdatedLegacyMessageSerializer();
+        return bootstrapQueueFactory().createConsumer(worker, serializer, contentGroupChanges, "ContentGroupBootstrap")
+            .withConsumerSystem(consumerSystem)
+            .withDefaultConsumers(consumers)
+            .withMaxConsumers(maxConsumers)
+            .build();
+    }
 }
