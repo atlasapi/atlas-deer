@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
@@ -73,7 +74,12 @@ import static org.atlasapi.EsSchema.CONTENT_INDEX;
 
 public class EsContentIndex extends AbstractIdleService implements ContentIndex {
 
-    public static final String CONTENT = "content";
+    private static final String CONTENT = "content";
+    private static final Function<SearchHit, Id> SEARCH_HIT_TO_ID = hit -> {
+        Long id = hit.field(EsContent.ID).<Number>value().longValue();
+        return Id.valueOf(id);
+    };
+
     private final Logger log = LoggerFactory.getLogger(EsContentIndex.class);
 
     private static final int DEFAULT_LIMIT = 50;
@@ -474,7 +480,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     @Override
-    public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
+    public ListenableFuture<ContentIndexQueryResult> query(AttributeQuerySet query,
             Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> maybeOrder) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
@@ -498,15 +504,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
         reqBuilder.execute(FutureSettingActionListener.setting(response));
 
+        /* TODO
+         * if selection.offset + selection.limit < totalHits
+         * then we have more: return for use with response.
+         */
         return Futures.transform(response, (SearchResponse input) -> {
-            /* TODO
-             * if selection.offset + selection.limit < totalHits
-             * then we have more: return for use with response.
-             */
-            return FluentIterable.from(input.getHits()).transform(hit -> {
-                Long id = hit.field(EsContent.ID).<Number>value().longValue();
-                return Id.valueOf(id);
-            });
+            return new ContentIndexQueryResult(
+                    input.getHits().getTotalHits(),
+                    FluentIterable.from(input.getHits()).transform(SEARCH_HIT_TO_ID)
+            );
         });
     }
 
