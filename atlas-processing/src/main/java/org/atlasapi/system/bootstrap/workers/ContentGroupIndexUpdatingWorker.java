@@ -35,6 +35,7 @@ public class ContentGroupIndexUpdatingWorker implements Worker<ResourceUpdatedMe
     @Override
     public void process(ResourceUpdatedMessage msg) throws RecoverableException {
         try {
+            log.debug("Starting processing of content group update {}", msg.getUpdatedResource());
             ResourceRef resource = msg.getUpdatedResource();
             Resolved<ContentGroup> resolved =
                     Futures.get(resolver.resolveIds(ImmutableList.of(resource.getId())), IOException.class);
@@ -49,6 +50,7 @@ public class ContentGroupIndexUpdatingWorker implements Worker<ResourceUpdatedMe
             }
 
             index.index(cg.get());
+            log.debug("Finished processing of content group update {}", msg.getUpdatedResource());
         } catch (IOException | IndexException e) {
             log.error(
                     "Failed to process update message for content group {} due to {}",

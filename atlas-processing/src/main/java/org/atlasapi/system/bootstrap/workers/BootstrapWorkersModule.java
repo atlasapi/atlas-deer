@@ -154,7 +154,7 @@ public class BootstrapWorkersModule {
         );
         MessageSerializer<ResourceUpdatedMessage> serializer = new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory().createConsumer(worker, serializer, contentGroupChanges, "ContentGroupBootstrap")
-            .withConsumerSystem(originSystem)
+            .withConsumerSystem(consumerSystem)
             .withDefaultConsumers(consumers)
             .withMaxConsumers(maxConsumers)
             .build();

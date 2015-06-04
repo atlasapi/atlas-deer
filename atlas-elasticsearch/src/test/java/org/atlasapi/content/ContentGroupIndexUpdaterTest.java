@@ -136,7 +136,7 @@ public class ContentGroupIndexUpdaterTest {
                 .get();
 
         assertThat(resp3.getField(EsContent.CONTENT_GROUPS).getValues().size(), is(1));
-        assertThat(resp3.getField(EsContent.CONTENT_GROUPS).getValues().size(), is(1));
+        assertThat(resp3.getField(EsContent.CONTENT_GROUPS).getValues().get(0), is(30l));
     }
 
     private Item item() {
