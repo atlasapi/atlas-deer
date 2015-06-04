@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.junit.Test;
@@ -45,15 +46,19 @@ public class ProtobufContentMarshallerTest {
         assertThat(col.getAllValues().size(), is(4));
         assertThat(col.getAllValues(), hasItems("IDENTIFICATION", "DESCRIPTION","SOURCE","TYPE"));
 
+        ImmutableList<Column<String>> columns = ImmutableList.of(
+                column(val.getAllValues().get(0)),
+                column(val.getAllValues().get(1)),
+                column(val.getAllValues().get(2)),
+                column(val.getAllValues().get(3))
+        );
         ColumnList<String> cols = mock(ColumnList.class);
-        when(cols.size()).thenReturn(4);
-        when(cols.getColumnByIndex(anyInt())).then(new Answer<Column<String>>() {
-            @Override
-            public Column<String> answer(InvocationOnMock invocation) throws Throwable {
-                return column(val.getAllValues().get((Integer)invocation.getArguments()[0]));
-            }
-        });
-        
+        when(cols.iterator())
+                .thenReturn(
+                    columns.iterator()
+                );
+
+
         Content unmarshalled = marshaller.unmarshallCols(cols);
 
         assertThat(unmarshalled.getId(), is(content.getId()));
