@@ -560,7 +560,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                         Sets.difference(contentToBeInGroup, contentCurrentlyInGroupIds).immutableCopy();
                 addGroupToContent(contentToAddGroupTo, group.getId());
             } catch (Exception e) {
-                log.error("Failed to update index for content group {} due to {}", group.getId(), e.toString());
+                log.error("Failed to update index for content group {} due to {}", group.getId(), e.getMessage());
+                e.printStackTrace();
             }
         }
 
