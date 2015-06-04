@@ -16,5 +16,7 @@ public interface ContentIndex {
             Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> ordering);
     
     void index(Content content) throws IndexException;
+
+    void index(ContentGroup contentGroup) throws IndexException;
     
 }

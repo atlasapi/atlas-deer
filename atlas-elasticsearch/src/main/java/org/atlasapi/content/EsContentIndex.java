@@ -1,17 +1,18 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.EsSchema.CONTENT_INDEX;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Objects;
+import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.time.DateTimeZones;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
@@ -32,32 +33,43 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.exists.ExistsRequestBuilder;
 import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.mapper.MergeMappingException;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.time.DateTimeZones;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.EsSchema.CONTENT_INDEX;
 
 public class EsContentIndex extends AbstractIdleService implements ContentIndex {
 
@@ -75,6 +87,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
     private final EsSortQueryBuilder sortBuilder = new EsSortQueryBuilder();
+    private final ContentGroupIndexUpdater contentGroupIndexUpdater = new ContentGroupIndexUpdater();
 
     public EsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver) {
         this.esClient = checkNotNull(esClient);
@@ -139,36 +152,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     }
 
-
-    private void indexItem(Item item) {
-        try {
-            EsContent esContent = toEsContent(item);
-
-            BulkRequest requests = Requests.bulkRequest();
-            IndexRequest mainIndexRequest;
-            ContainerRef container = item.getContainerRef();
-            if (container != null) {
-                fillParentData(esContent, container);
-                mainIndexRequest = Requests.indexRequest(CONTENT_INDEX)
-                    .type(EsContent.CHILD_ITEM)
-                    .id(getDocId(item))
-                    .source(esContent.toMap())
-                    .parent(getDocId(container));
-            } else {
-                mainIndexRequest = Requests.indexRequest(CONTENT_INDEX)
-                    .type(EsContent.TOP_LEVEL_ITEM)
-                    .id(getDocId(item))
-                    .source(esContent.hasChildren(false).toMap());
-            }
-
-            requests.add(mainIndexRequest);
-            BulkResponse resp = timeoutGet(esClient.client().bulk(requests));
-            log.debug("indexed {} ({}ms)", item, resp.getTookInMillis());
-        } catch (Exception e) {
-            throw new RuntimeIndexException("Error indexing " + item, e);
-        }
-    }
-
     private EsContent toEsContent(Item item) {
         return new EsContent()
                 .id(item.getId().longValue())
@@ -195,7 +178,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .topics(makeESTopics(item));
     }
 
-    private void indexContainer(Container container) {
+    private EsContent toEsContainer(Container container) {
         EsContent indexed = new EsContent()
             .id(container.getId().longValue())
             .type(ContentType.fromContent(container).get())
@@ -208,8 +191,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .parentTitle(container.getTitle())
             .parentFlattenedTitle(flattenedOrNull(container.getTitle()))
             .specialization(container.getSpecialization() != null ?
-                            container.getSpecialization().name() :
-                            null)
+                    container.getSpecialization().name() :
+                    null)
             .topics(makeESTopics(container));
         if (!container.getItemRefs().isEmpty()) {
             indexed.hasChildren(Boolean.TRUE);
@@ -217,6 +200,86 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         } else {
             indexed.hasChildren(Boolean.FALSE);
         }
+        return indexed;
+    }
+
+    private String flattenedOrNull(String string) {
+        return string != null ? Strings.flatten(string) : null;
+    }
+
+    private Collection<EsBroadcast> makeESBroadcasts(Item item) {
+        Collection<EsBroadcast> esBroadcasts = new LinkedList<EsBroadcast>();
+        for (Broadcast broadcast : item.getBroadcasts()) {
+            if (broadcast.isActivelyPublished()) {
+                esBroadcasts.add(toEsBroadcast(broadcast));
+            }
+        }
+        return esBroadcasts;
+    }
+
+    private EsBroadcast toEsBroadcast(Broadcast broadcast) {
+        return new EsBroadcast()
+                .id(broadcast.getSourceId())
+                .channel(broadcast.getChannelId().longValue())
+                .transmissionTime(toUtc(broadcast.getTransmissionTime()).toDate())
+                .transmissionEndTime(toUtc(broadcast.getTransmissionEndTime()).toDate())
+                .transmissionTimeInMillis(toUtc(broadcast.getTransmissionTime()).getMillis())
+                .repeat(broadcast.getRepeat() != null ? broadcast.getRepeat() : false);
+    }
+
+    private Iterable<EsPriceMapping> makeEsPrices(Set<Encoding> manifestedAs) {
+        if (manifestedAs == null) {
+            return ImmutableList.of();
+        }
+        return manifestedAs.stream()
+                .flatMap(encoding -> encoding.getAvailableAt().stream())
+                .filter(p -> p != null)
+                .map(Location::getPolicy)
+                .filter(p -> p != null)
+                .map(Policy::getPrice)
+                .filter(p -> p != null && p.getCurrency() != null)
+                .map(price -> new EsPriceMapping().currency(price.getCurrency()).value(price.getAmount()))
+                .collect(ImmutableCollectors.toList());
+    }
+
+    private DateTime toUtc(DateTime transmissionTime) {
+        return transmissionTime.toDateTime(DateTimeZones.UTC);
+    }
+
+    private EsLocation toEsLocation(Policy policy) {
+        return new EsLocation()
+                .availabilityTime(toUtc(policy.getAvailabilityStart()).toDate())
+                .availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
+    }
+
+    private Collection<EsLocation> makeESLocations(Item item) {
+        Collection<EsLocation> esLocations = new LinkedList<EsLocation>();
+        for (Encoding encoding : item.getManifestedAs()) {
+            for (Location location : encoding.getAvailableAt()) {
+                if (location.getPolicy() != null
+                        && location.getPolicy().getAvailabilityStart() != null
+                        && location.getPolicy().getAvailabilityEnd() != null) {
+                    esLocations.add(toEsLocation(location.getPolicy()));
+                }
+            }
+        }
+        return esLocations;
+    }
+
+    private Collection<EsTopicMapping> makeESTopics(Content content) {
+        Collection<EsTopicMapping> esTopics = new LinkedList<EsTopicMapping>();
+        for (TopicRef topic : content.getTopicRefs()) {
+            esTopics.add(new EsTopicMapping()
+                    .topicId(topic.getTopic().longValue())
+                    .supervised(topic.isSupervised())
+                    .weighting(topic.getWeighting())
+                    .relationship(topic.getRelationship()));
+        }
+        return esTopics;
+    }
+
+    private void indexContainer(Container container) {
+        EsContent indexed = toEsContainer(container);
         IndexRequest request = Requests.indexRequest(CONTENT_INDEX)
             .type(EsContent.TOP_LEVEL_CONTAINER)
             .id(getDocId(container))
@@ -224,6 +287,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         timeoutGet(esClient.client().index(request));
         log.debug("indexed {}", container);
     }
+
 
     private Integer ageRestrictionFromContainer(Container container) {
         // TODO fix this, number of item refs in containers is too high to resolve without C* timeouts
@@ -256,81 +320,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         }
     }
 
-    private String flattenedOrNull(String string) {
-        return string != null ? Strings.flatten(string) : null;
-    }
 
-    private Collection<EsBroadcast> makeESBroadcasts(Item item) {
-        Collection<EsBroadcast> esBroadcasts = new LinkedList<EsBroadcast>();
-        for (Broadcast broadcast : item.getBroadcasts()) {
-            if (broadcast.isActivelyPublished()) {
-                esBroadcasts.add(toEsBroadcast(broadcast));
-            }
-        }
-        return esBroadcasts;
-    }
 
-    private EsBroadcast toEsBroadcast(Broadcast broadcast) {
-        return new EsBroadcast()
-            .id(broadcast.getSourceId())
-            .channel(broadcast.getChannelId().longValue())
-            .transmissionTime(toUtc(broadcast.getTransmissionTime()).toDate())
-            .transmissionEndTime(toUtc(broadcast.getTransmissionEndTime()).toDate())
-            .transmissionTimeInMillis(toUtc(broadcast.getTransmissionTime()).getMillis())
-            .repeat(broadcast.getRepeat() != null ? broadcast.getRepeat() : false);
-    }
-
-    private Iterable<EsPriceMapping> makeEsPrices(Set<Encoding> manifestedAs) {
-        if (manifestedAs == null) {
-            return ImmutableList.of();
-        }
-        return manifestedAs.stream()
-                .flatMap(encoding -> encoding.getAvailableAt().stream())
-                .filter(p -> p != null)
-                .map(Location::getPolicy)
-                .filter(p -> p != null)
-                .map(Policy::getPrice)
-                .filter(p -> p != null && p.getCurrency() != null)
-                .map(price -> new EsPriceMapping().currency(price.getCurrency())
-                        .value(price.getAmount()))
-                .collect(ImmutableCollectors.toList());
-    }
-
-    private DateTime toUtc(DateTime transmissionTime) {
-        return transmissionTime.toDateTime(DateTimeZones.UTC);
-    }
-
-    private Collection<EsLocation> makeESLocations(Item item) {
-        Collection<EsLocation> esLocations = new LinkedList<EsLocation>();
-        for (Encoding encoding : item.getManifestedAs()) {
-            for (Location location : encoding.getAvailableAt()) {
-                if (location.getPolicy() != null
-                    && location.getPolicy().getAvailabilityStart() != null
-                    && location.getPolicy().getAvailabilityEnd() != null) {
-                        esLocations.add(toEsLocation(location.getPolicy()));
-                }
-            }
-        }
-        return esLocations;
-    }
-
-    private EsLocation toEsLocation(Policy policy) {
-        return new EsLocation()
-            .availabilityTime(toUtc(policy.getAvailabilityStart()).toDate())
-            .availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
-    }
-
-    private Collection<EsTopicMapping> makeESTopics(Content content) {
-        Collection<EsTopicMapping> esTopics = new LinkedList<EsTopicMapping>();
-        for (TopicRef topic : content.getTopicRefs()) {
-            esTopics.add(new EsTopicMapping()
-                .topicId(topic.getTopic().longValue())
-                .supervised(topic.isSupervised())
-                .weighting(topic.getWeighting())
-                .relationship(topic.getRelationship()));
-        }
-        return esTopics;
-    }
 
     private void fillParentData(EsContent child, ContainerRef parent) {
         Map<String, Object> indexedContainer = trySearchParent(parent);
@@ -443,17 +434,31 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         }
     }
 
-    private void unindexContent(Content content) {
-        String id = content.getId().toBigInteger().toString();
-        log.debug("Content {} is not actively published, removing from index", id);
-        deleteFromIndex(id, EsContent.TOP_LEVEL_CONTAINER);
-        deleteFromIndex(id, EsContent.CHILD_ITEM);
-        deleteFromIndex(id, EsContent.TOP_LEVEL_ITEM);
+    @Override
+    public void index(ContentGroup cg) throws IndexException {
+        contentGroupIndexUpdater.index(cg);
     }
 
-    private void deleteFromIndex(String id, String mappingType) {
+    private void unindexContent(Content content) {
+        Long id = content.getId().longValue();
+        log.debug("Content {} is not actively published, removing from index", id);
+        deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
+        deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
+        deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
+    }
+
+    private void deleteFromIndexIfExists(Long id, String mappingType) {
         try {
-            esClient.client().delete(new DeleteRequest(CONTENT, mappingType, id)).get();
+            boolean exists = new ExistsRequestBuilder(esClient.client())
+                    .setTypes(mappingType)
+                    .setQuery(QueryBuilders.termQuery(EsContent.ID, id.toString()))
+                    .execute()
+                    .get()
+                    .exists();
+
+            if (exists) {
+                esClient.client().delete(new DeleteRequest(CONTENT, mappingType, id.toString())).get();
+            }
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to delete content {} due to {}", id, e.toString());
         }
@@ -502,5 +507,176 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 return Id.valueOf(id);
             });
         });
+    }
+
+    private void indexItem(Item item) {
+        try {
+            EsContent esContent = toEsContent(item);
+
+            BulkRequest requests = Requests.bulkRequest();
+            IndexRequest mainIndexRequest;
+            ContainerRef container = item.getContainerRef();
+            if (container != null) {
+                fillParentData(esContent, container);
+                mainIndexRequest = Requests.indexRequest(CONTENT_INDEX)
+                        .type(EsContent.CHILD_ITEM)
+                        .id(getDocId(item))
+                        .source(esContent.toMap())
+                        .parent(getDocId(container));
+            } else {
+                mainIndexRequest = Requests.indexRequest(CONTENT_INDEX)
+                        .type(EsContent.TOP_LEVEL_ITEM)
+                        .id(getDocId(item))
+                        .source(esContent.hasChildren(false).toMap());
+            }
+
+            requests.add(mainIndexRequest);
+            BulkResponse resp = timeoutGet(esClient.client().bulk(requests));
+            log.debug("indexed {} ({}ms)", item, resp.getTookInMillis());
+        } catch (Exception e) {
+            throw new RuntimeIndexException("Error indexing " + item, e);
+        }
+    }
+
+    public class ContentGroupIndexUpdater {
+
+        public void index(ContentGroup group) {
+            try {
+                ImmutableSet<Id> contentToBeInGroup = groupToChildIds(group);
+                ImmutableSet<SearchHit> contentCurrentlyInGroup = findContentByContentGroup(group.getId());
+                ImmutableSet<SearchHit> contentToRemoveGroupFrom =
+                        findContentNoLongerInGroup(contentToBeInGroup, contentCurrentlyInGroup);
+
+                for (SearchHit hit : contentToRemoveGroupFrom) {
+                    removeGroupFromContentIndexEntry(hit, group.getId());
+                }
+
+                ImmutableSet<SearchHitField> contentCurrentlyInGroupIds =
+                        ImmutableSet.copyOf(Iterables.transform(contentCurrentlyInGroup, hit -> hit.field(EsContent.ID)));
+
+
+                ImmutableSet<Id> contentToAddGroupTo =
+                        Sets.difference(contentToBeInGroup, contentCurrentlyInGroupIds).immutableCopy();
+                addGroupToContent(contentToAddGroupTo, group.getId());
+            } catch (Exception e) {
+                log.error("Failed to update index for content group {} due to {}", group.getId(), e.toString());
+            }
+        }
+
+        private void addGroupToContent(Iterable<Id> contentIds, Id groupId) throws IOException {
+            Resolved<Content> resolved = Futures.get(
+                    resolver.resolveIds(contentIds),
+                    IOException.class
+            );
+            for (Content content : resolved.getResources().toList()) {
+                String mapping = typeMappingFor(content);
+                appendContentGroupToIndexEntryFor(content.getId(), groupId, mapping);
+            }
+        }
+
+        private String typeMappingFor(Content content) {
+            if (content instanceof Brand) {
+                return EsContent.TOP_LEVEL_CONTAINER;
+            }
+            if (content instanceof Series) {
+                Series series = (Series) content;
+                if (series.getBrandRef() == null) {
+                    return EsContent.TOP_LEVEL_CONTAINER;
+                } else {
+                    return EsContent.CHILD_ITEM;
+                }
+            }
+            if (content instanceof Item) {
+                Item item = (Item) content;
+                if (item.getContainerRef() == null) {
+                    return EsContent.TOP_LEVEL_ITEM;
+                } else {
+                    return EsContent.CHILD_ITEM;
+                }
+            }
+            return EsContent.TOP_LEVEL_ITEM;
+        }
+
+        private ImmutableSet<SearchHit> findContentNoLongerInGroup(
+                Set<Id> contentToBeInGroup, Set<SearchHit> contentCurrentlyInGroup) {
+
+            return contentCurrentlyInGroup.stream()
+                    .filter(hit -> !contentToBeInGroup.contains(Id.valueOf(hit.field(EsContent.CONTENT_GROUPS).<String>getValue())))
+                    .collect(ImmutableCollectors.toSet());
+
+        }
+
+        /* Removes the content group id provided from the index entry represented by the SearchHit */
+        private void removeGroupFromContentIndexEntry(SearchHit contentHit, Id groupId) throws ExecutionException, InterruptedException {
+            ImmutableList<String> newContentGroupsValue =
+                    removeGroupFromGroupList(contentHit, groupId);
+
+            Id contentId = Id.valueOf(contentHit.field(EsContent.ID).<Integer>getValue());
+            String typeMapping = contentHit.getType();
+
+            UpdateRequestBuilder reqBuilder =
+                    new UpdateRequestBuilder(esClient.client(), CONTENT, typeMapping, contentId.toString());
+            UpdateResponse result = reqBuilder.setDoc(EsContent.CONTENT_GROUPS, newContentGroupsValue)
+                    .setFields(EsContent.CONTENT_GROUPS)
+                    .execute()
+                    .get();
+        }
+
+        /* Add the content group id provided to the index entry represented by the SearchHit */
+        private void appendContentGroupToIndexEntryFor(Id contentId, Id groupId, String typeMapping) {
+            GetResponse resp = new GetRequestBuilder(esClient.client(), CONTENT)
+                    .setId(contentId.toString())
+                    .setFields(EsContent.CONTENT_GROUPS)
+                    .get();
+
+            GetField field = resp.getField(EsContent.CONTENT_GROUPS);
+
+            ImmutableList.Builder<Object> idList = ImmutableList.builder();
+            idList.add(groupId.toBigInteger());
+
+            if (field != null && field.getValues() != null) {
+                idList.addAll(field.getValues());
+            }
+
+            UpdateRequestBuilder reqBuilder =
+                    new UpdateRequestBuilder(esClient.client(), CONTENT, typeMapping, contentId.toString());
+            reqBuilder.setDoc(EsContent.CONTENT_GROUPS, idList.build())
+                    .setDetectNoop(true)
+                    .get();
+        }
+
+        /* Returns a list of content group ids taken from the SearchHit and having removed the specified Id */
+        private ImmutableList<String> removeGroupFromGroupList(SearchHit contentHit, Id groupId) {
+            return contentHit.field(EsContent.CONTENT_GROUPS).getValues().stream()
+                    .map(cgId -> Id.valueOf(String.valueOf(cgId)))
+                    .filter(cgId -> !groupId.equals(cgId))
+                    .map(Id::toString)
+                    .collect(ImmutableCollectors.toList());
+        }
+
+        private ImmutableSet<Id> groupToChildIds(ContentGroup group) {
+            return group.getContents()
+                    .stream()
+                    .map(ResourceRef::getId)
+                    .collect(ImmutableCollectors.toSet());
+        }
+
+        private ImmutableSet<SearchHit> findContentByContentGroup(Id id) throws IndexException {
+            SettableFuture<SearchResponse> result = SettableFuture.create();
+            TermFilterBuilder idFilter = FilterBuilders.termFilter(
+                    EsContent.CONTENT_GROUPS,
+                    id.toBigInteger().toString()
+            );
+
+            SearchRequestBuilder reqBuilder = new SearchRequestBuilder(esClient.client())
+                    .addFields(EsContent.ID, EsContent.CONTENT_GROUPS, EsContent.TYPE)
+                    .setPostFilter(idFilter);
+            reqBuilder.execute(FutureSettingActionListener.setting(result));
+
+            SearchHits hits = Futures.get(result, IndexException.class)
+                    .getHits();
+
+            return ImmutableSet.copyOf(hits.getHits());
+        }
     }
 }

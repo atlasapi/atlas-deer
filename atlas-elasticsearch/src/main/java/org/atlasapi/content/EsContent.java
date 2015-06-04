@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Id;
 import org.atlasapi.util.EsAlias;
 import org.atlasapi.util.EsObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -34,6 +35,7 @@ public class EsContent extends EsObject {
     public final static String GENRE = "genre";
     public final static String PRICE = "price";
     public static final String AGE = "age";
+    public static final String CONTENT_GROUPS = "contentGroups";
 
     public static final XContentBuilder getTopLevelMapping(String type) throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
@@ -107,6 +109,10 @@ public class EsContent extends EsObject {
             .endObject()
             .startObject(EsContent.AGE)
                 .field("type").value("integer")
+                .field("index").value("not_analyzed")
+            .endObject()
+            .startObject(EsContent.CONTENT_GROUPS)
+                .field("type").value("long")
                 .field("index").value("not_analyzed")
             .endObject()
         );
@@ -205,6 +211,11 @@ public class EsContent extends EsObject {
 
     public EsContent age(Integer age) {
         properties.put(AGE, age);
+        return this;
+    }
+
+    public EsContent contentGroups(Iterable<Id> contentGroupIds) {
+        properties.put(CONTENT_GROUPS, contentGroupIds);
         return this;
     }
 
