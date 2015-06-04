@@ -1,14 +1,19 @@
 package org.atlasapi.content;
 
+import com.google.common.collect.ImmutableMap;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.collect.ImmutableList;
 
+import java.util.List;
+import java.util.Map;
+
 public abstract class Container extends Content {
 
     protected ImmutableList<ItemRef> itemRefs = ImmutableList.of();
+    private Map<ItemRef, Iterable<BroadcastRef>> upcomingContent = ImmutableMap.of();
 
 	public Container(String uri, String curie, Publisher publisher) {
 		super(uri, curie, publisher);
@@ -44,5 +49,12 @@ public abstract class Container extends Content {
     public <V> V accept(ContentVisitor<V> visitor) {
         return accept((ContainerVisitor<V>) visitor);
     }
-    
+
+    public Map<ItemRef, Iterable<BroadcastRef>> getUpcomingContent() {
+        return upcomingContent;
+    }
+
+    public void setUpcomingContent(Map<ItemRef, Iterable<BroadcastRef>> upcomingContent) {
+        this.upcomingContent = ImmutableMap.copyOf(upcomingContent);
+    }
 }

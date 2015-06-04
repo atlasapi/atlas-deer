@@ -24,6 +24,13 @@ message Identification {
     optional string uri = 9;
 }
 
+message BroadcastRef {
+    optional string sourceId =1;
+    optional Identification channelId = 2;
+    optional DateTime transmission_time = 3;
+    optional DateTime transmission_end_time = 4;
+}
+
 message Reference {
     optional int64 id = 1;
     optional string source = 2;

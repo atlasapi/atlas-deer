@@ -96,7 +96,6 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
                 continue;
             }
             Builder builder = null;
-            ContentProtos.Content.newBuilder();
             for (int j = 0; j < col.getValue().size(); j++) {
                 FieldDescriptor fd = col.getValue().get(j);
                 if (fd.isRepeated()) {
