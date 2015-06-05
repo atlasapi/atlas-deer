@@ -301,17 +301,21 @@ public final class CassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void writeItemRef(ContainerRef containerRef, ItemRef childRef, Iterable<BroadcastRef> upcomingContent) {
+    protected void writeItemRef(
+            ContainerRef containerRef,
+            ItemRef childRef,
+            Iterable<BroadcastRef> upcomingContent,
+            Iterable<LocationSummary> availableContent
+    ) {
         try {
 
             Long rowId = containerRef.getId().longValue();
             Container container = new Brand();
             container.setItemRefs(ImmutableList.of(childRef));
             container.setThisOrChildLastUpdated(childRef.getUpdated());
-            if (Iterables.size(upcomingContent) > 0) {
-                container.setUpcomingContent(ImmutableMap.of(childRef, upcomingContent));
-            }
-            
+            container.setUpcomingContent(ImmutableMap.of(childRef, upcomingContent));
+            container.setAvailableContent(ImmutableMap.of(childRef, availableContent));
+
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
             ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);

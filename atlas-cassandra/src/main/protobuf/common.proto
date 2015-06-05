@@ -31,6 +31,13 @@ message BroadcastRef {
     optional DateTime transmission_end_time = 4;
 }
 
+message LocationSummary {
+    optional bool available =1;
+    optional string uri =2;
+    optional DateTime availability_start = 3;
+    optional DateTime availability_end = 4;
+}
+
 message Reference {
     optional int64 id = 1;
     optional string source = 2;

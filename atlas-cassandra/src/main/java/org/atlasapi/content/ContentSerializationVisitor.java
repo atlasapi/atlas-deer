@@ -30,6 +30,7 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     private final ReleaseDateSerializer releaseDateSerializer = new ReleaseDateSerializer();
     private final CertificateSerializer certificateSerializer = new CertificateSerializer();
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
+    private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
 
     
     private Builder visitIdentified(Identified ided) {
@@ -223,14 +224,22 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
             builder.addChildren(refSerializer.serialize(child));
         }
         for (Map.Entry<ItemRef, Iterable<BroadcastRef>> upcomingContent : container.getUpcomingContent().entrySet()) {
-            ItemRef upcomingItem = upcomingContent.getKey();
             builder.addUpcomingContent(
                     itemAndBroadcastRefSerializer.serialize(
-                            upcomingItem,
+                            upcomingContent.getKey(),
                             upcomingContent.getValue()
                     )
             );
         }
+        for (Map.Entry<ItemRef, Iterable<LocationSummary>> availableContent : container.getAvailableContent().entrySet()) {
+            builder.addAvailableContent(
+                    itemAndLocationSummarySerializer.serialize(
+                            availableContent.getKey(),
+                            availableContent.getValue()
+                    )
+            );
+        }
+
         return builder;
     }
 
