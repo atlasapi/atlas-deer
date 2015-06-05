@@ -313,13 +313,9 @@ public final class CassandraContentStore extends AbstractContentStore {
             Container container = new Brand();
             container.setItemRefs(ImmutableList.of(childRef));
             container.setThisOrChildLastUpdated(childRef.getUpdated());
-            if (Iterables.size(upcomingContent) > 0) {
-                container.setUpcomingContent(ImmutableMap.of(childRef, upcomingContent));
-            }
-            if (Iterables.size(availableContent) > 0) {
-                container.setAvailableContent(ImmutableMap.of(childRef, availableContent));
-            }
-            
+            container.setUpcomingContent(ImmutableMap.of(childRef, upcomingContent));
+            container.setAvailableContent(ImmutableMap.of(childRef, availableContent));
+
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
             ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);

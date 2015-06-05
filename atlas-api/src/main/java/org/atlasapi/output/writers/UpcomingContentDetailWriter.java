@@ -36,8 +36,8 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
                 .sorted(Broadcast.startTimeOrdering())
                 .collect(Collectors.toList());
 
-        broadcastWriter.write(Iterables.getFirst(sortedBroadcasts, null), writer, ctxt);
-        itemDetailWriter.write(entity, writer, ctxt);
+        writer.writeObject(broadcastWriter, Iterables.getFirst(sortedBroadcasts, null), ctxt);
+        writer.writeObject(itemDetailWriter, entity, ctxt);
     }
 
     @Nonnull

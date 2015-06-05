@@ -89,7 +89,7 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             .put(TOPICS, ContentColumn.TOPICS)
             .put(GROUPS, ContentColumn.GROUPS)
             .put(SEGMENTS, ContentColumn.SEGMENTS)
-            .put(UPCOMING_CONTENT, ContentColumn.UPCOMNING_CONTENT)
+            .put(UPCOMING_CONTENT, ContentColumn.UPCOMING_CONTENT)
             .put(AVAILABLE_CONTENT, ContentColumn.AVAILABLE_CONTENT)
         .build());
 
