@@ -11,6 +11,7 @@ import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,6 +21,7 @@ import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+@Controller
 public class ContentGroupBootstrapController {
 
     private final ContentIndex index;
@@ -31,7 +33,6 @@ public class ContentGroupBootstrapController {
         this.index = checkNotNull(index);
         this.resolver = checkNotNull(resolver);
     }
-
 
     @RequestMapping(value="/system/bootstrap/contentgroup/{id}", method= RequestMethod.POST)
     public void bootstrapContentGroup(@RequestParam("id") String id, HttpServletResponse resp) throws IOException, IndexException {
