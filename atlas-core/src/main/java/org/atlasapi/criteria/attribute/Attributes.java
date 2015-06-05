@@ -14,27 +14,23 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.attribute;
 
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.MediaType;
-import org.atlasapi.criteria.SortAttributeQuery;
-import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.Topic;
 import org.joda.time.DateTime;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
+import java.util.List;
+import java.util.Map;
 
 public class Attributes {
 
@@ -104,7 +100,7 @@ public class Attributes {
     // For filtering
     public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class).withJavaAttribute("parentFlattenedTitle").withAlias("parentFlattenedTitle");
     public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
-	public static final Attribute<String> CONTENT_GROUP = stringListAttribute("contentGroups", Content.class);
+	public static final Attribute<String> CONTENT_GROUP = stringListAttribute("contentGroup", Content.class).withJavaAttribute("contentGroups").withAlias("contentGroups");
 
 
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
