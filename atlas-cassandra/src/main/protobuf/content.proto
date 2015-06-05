@@ -25,6 +25,7 @@ enum Column {
     TYPE = 14;
     SOURCE = 15;
     UPCOMING_CONTENT = 16;
+    AVAILABLE_CONTENT = 17;
 }
 
 extend google.protobuf.FieldOptions {
@@ -60,6 +61,7 @@ message Content {
 
     repeated common.Reference children = 10  [(column)=CHILDREN];
     repeated ItemAndBroadcastRef upcoming_content = 55  [(column)=UPCOMING_CONTENT];
+    repeated ItemAndLocationSummary available_content = 56  [(column)=AVAILABLE_CONTENT];
     repeated common.Reference secondaries = 45 [(column)=SECONDARY];
     repeated Version deprecated_versions = 11;
     repeated Broadcast broadcasts = 12 [(column)=BROADCASTS];
@@ -110,6 +112,11 @@ message Summary {
 message ItemAndBroadcastRef {
     optional common.Reference item = 1;
     repeated common.BroadcastRef broadcast = 2;
+}
+
+message ItemAndLocationSummary {
+    optional common.Reference item = 1;
+    repeated common.LocationSummary location_summary = 2;
 }
 
 

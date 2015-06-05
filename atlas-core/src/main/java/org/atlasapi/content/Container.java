@@ -20,6 +20,7 @@ public abstract class Container extends Content {
 
     protected ImmutableList<ItemRef> itemRefs = ImmutableList.of();
     private Map<ItemRef, Iterable<BroadcastRef>> upcomingContent = ImmutableMap.of();
+    private Map<ItemRef, Iterable<LocationSummary>> availableContent = ImmutableMap.of();
 
 	public Container(String uri, String curie, Publisher publisher) {
 		super(uri, curie, publisher);
@@ -80,5 +81,13 @@ public abstract class Container extends Content {
                         input -> !Iterables.isEmpty(input)
                 )
         );
+    }
+
+    public Map<ItemRef, Iterable<LocationSummary>> getAvailableContent() {
+        return availableContent;
+    }
+
+    public void setAvailableContent(Map<ItemRef, Iterable<LocationSummary>> availableContent) {
+        this.availableContent = ImmutableMap.copyOf(availableContent);
     }
 }

@@ -172,6 +172,7 @@ public class ContentSerializerTest {
         checkContentProperties(actual, expected);
         assertThat(actual.getItemRefs(), is(expected.getItemRefs()));
         assertThat(actual.getUpcomingContent(), is(expected.getUpcomingContent()));
+        assertThat(actual.getAvailableContent(), is(expected.getAvailableContent()));
     }
 
     private void checkItemProperties(Item actual, Item expected) {
@@ -287,6 +288,49 @@ public class ContentSerializerTest {
                         )
                 ).build();
         container.setUpcomingContent(upcomingContent);
+
+        ImmutableMap<ItemRef, Iterable<LocationSummary>> availableContent = ImmutableMap.<ItemRef, Iterable<LocationSummary>>builder()
+                .put(
+                        new ItemRef(
+                                Id.valueOf(1),
+                                container.getSource(),
+                                "sort1",
+                                new DateTime(DateTimeZones.UTC)
+                        ),
+                        ImmutableList.of(
+                                new LocationSummary(
+                                        true,
+                                        "item1location1",
+                                        DateTime.now(DateTimeZone.UTC).minusHours(1),
+                                        DateTime.now(DateTimeZone.UTC).plusHours(1)
+                                ),
+                                new LocationSummary(
+                                        true,
+                                        "item1location2",
+                                        DateTime.now(DateTimeZone.UTC).minusHours(1),
+                                        DateTime.now(DateTimeZone.UTC).plusHours(1)
+                                )
+                        )
+                )
+                .put(
+                        new ItemRef(
+                                Id.valueOf(2),
+                                container.getSource(),
+                                "sort1",
+                                new DateTime(DateTimeZones.UTC)
+                        ),
+                        ImmutableList.of(
+                                new LocationSummary(
+                                        true,
+                                        "item2location1",
+                                        DateTime.now(DateTimeZone.UTC).minusHours(1),
+                                        DateTime.now(DateTimeZone.UTC).plusHours(1)
+                                )
+                        )
+                )
+                .build();
+
+        container.setAvailableContent(availableContent);
     }
 
     private void setItemProperties(Item item) {
