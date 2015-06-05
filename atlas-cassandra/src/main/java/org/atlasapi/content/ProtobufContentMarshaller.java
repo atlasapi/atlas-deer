@@ -178,7 +178,7 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             mutation.putColumn(
                     String.format(
                             "%s:%s",
-                            UPCOMING_CONTENT_PREFIX,
+                            AVAILABLE_CONTENT_PREFIX,
                             uc.getItem().getId()
                     ),
                     col.toByteArray()
