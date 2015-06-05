@@ -26,6 +26,7 @@ import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.KeyPhrase;
+import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.Person;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.ReleaseDate;
@@ -462,6 +463,20 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                         ImmutableMap.of()
                 )
         );
+
+        Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap(chosen.getAvailableContent());
+
+        for (Container equiv : notChosen) {
+            for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary : equiv.getAvailableContent().entrySet()) {
+                availableContent.putIfAbsent(
+                        itemRefAndLocationSummary.getKey(),
+                        itemRefAndLocationSummary.getValue()
+                );
+            }
+        }
+
+        chosen.setAvailableContent(availableContent);
+
 
     }
 
