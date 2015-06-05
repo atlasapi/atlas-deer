@@ -631,13 +631,13 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                     .setFields(EsContent.CONTENT_GROUPS)
                     .get();
 
-            GetField field = resp.getField(EsContent.CONTENT_GROUPS);
-
             ImmutableList.Builder<Object> idList = ImmutableList.builder();
             idList.add(groupId.toBigInteger());
 
-            if (field != null && field.getValues() != null) {
-                idList.addAll(field.getValues());
+            Map<String, GetField> fields = resp.getFields();
+
+            if (fields != null && fields.containsKey(EsContent.CONTENT_GROUPS)) {
+                idList.addAll(fields.get(EsContent.CONTENT_GROUPS).getValues());
             }
 
             UpdateRequestBuilder reqBuilder =
