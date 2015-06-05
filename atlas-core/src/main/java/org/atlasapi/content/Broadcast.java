@@ -22,6 +22,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.schedule.ScheduleBroadcastFilter;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
@@ -369,6 +370,10 @@ public class Broadcast extends Identified {
             return input.isActivelyPublished();
         }
     };
+
+    public static final java.util.function.Predicate<Broadcast> IS_UPCOMING = b -> b.getTransmissionEndTime().isAfter(DateTime.now(DateTimeZone.UTC));
+
+    public final static java.util.function.Function<Broadcast, BroadcastRef> TO_REF = b -> b.toRef();
     
     public static final Predicate<Broadcast> channelFilter(final Channel channel) {
         return new BroadcastChannelFilter(channel);

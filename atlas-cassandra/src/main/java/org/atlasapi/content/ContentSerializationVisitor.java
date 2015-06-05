@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.entity.Alias;
@@ -28,6 +29,8 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     private final ContainerSummarySerializer containerSummarySerializer = new ContainerSummarySerializer();
     private final ReleaseDateSerializer releaseDateSerializer = new ReleaseDateSerializer();
     private final CertificateSerializer certificateSerializer = new CertificateSerializer();
+    private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
+
     
     private Builder visitIdentified(Identified ided) {
         Builder builder = ContentProtos.Content.newBuilder();
@@ -218,6 +221,15 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
         ContentRefSerializer refSerializer = new ContentRefSerializer(container.getSource());
         for (ItemRef child : container.getItemRefs()) {
             builder.addChildren(refSerializer.serialize(child));
+        }
+        for (Map.Entry<ItemRef, Iterable<BroadcastRef>> upcomingContent : container.getUpcomingContent().entrySet()) {
+            ItemRef upcomingItem = upcomingContent.getKey();
+            builder.addUpcomingContent(
+                    itemAndBroadcastRefSerializer.serialize(
+                            upcomingItem,
+                            upcomingContent.getValue()
+                    )
+            );
         }
         return builder;
     }

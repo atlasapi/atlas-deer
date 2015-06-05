@@ -24,6 +24,7 @@ enum Column {
     CHILD_UPDATED = 13;
     TYPE = 14;
     SOURCE = 15;
+    UPCOMING_CONTENT = 16;
 }
 
 extend google.protobuf.FieldOptions {
@@ -58,6 +59,7 @@ message Content {
     optional string sort_key = 7 [(column)=DESC];
 
     repeated common.Reference children = 10  [(column)=CHILDREN];
+    repeated ItemAndBroadcastRef upcoming_content = 55  [(column)=UPCOMING_CONTENT];
     repeated common.Reference secondaries = 45 [(column)=SECONDARY];
     repeated Version deprecated_versions = 11;
     repeated Broadcast broadcasts = 12 [(column)=BROADCASTS];
@@ -104,6 +106,12 @@ message Summary {
     optional string description = 3;
     optional int32 position = 4;
 }
+
+message ItemAndBroadcastRef {
+    optional common.Reference item = 1;
+    repeated common.BroadcastRef broadcast = 2;
+}
+
 
 message Broadcast {
     optional common.Identification identification = 1;

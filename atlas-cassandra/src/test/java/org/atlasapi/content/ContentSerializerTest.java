@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import com.google.common.collect.ImmutableMap;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Serializer;
@@ -13,7 +14,9 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Test;
 
@@ -168,6 +171,7 @@ public class ContentSerializerTest {
     private void checkContainerProperties(Container actual, Container expected) {
         checkContentProperties(actual, expected);
         assertThat(actual.getItemRefs(), is(expected.getItemRefs()));
+        assertThat(actual.getUpcomingContent(), is(expected.getUpcomingContent()));
     }
 
     private void checkItemProperties(Item actual, Item expected) {
@@ -229,6 +233,60 @@ public class ContentSerializerTest {
         container.setItemRefs(ImmutableSet.of(
             new ItemRef(Id.valueOf(123L), container.getSource(), "sort", new DateTime(DateTimeZones.UTC))
         ));
+
+        ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>>builder()
+                .put(
+                        new ItemRef(
+                                Id.valueOf(1),
+                                container.getSource(),
+                                "sort",
+                                new DateTime(DateTimeZones.UTC)
+                        ),
+                        ImmutableList.of(
+                                new BroadcastRef(
+                                        "slot:id1",
+                                        Id.valueOf(2),
+                                        new Interval(
+                                                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                                                DateTime.now(DateTimeZone.UTC).plusHours(2)
+                                        )
+                                ),
+                                new BroadcastRef(
+                                        "slot:id2",
+                                        Id.valueOf(3),
+                                        new Interval(
+                                                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                                                DateTime.now(DateTimeZone.UTC).plusHours(3)
+                                        )
+                                )
+                        )
+                ).put(
+                        new ItemRef(
+                                Id.valueOf(2),
+                                container.getSource(),
+                                "sort",
+                                new DateTime(DateTimeZones.UTC)
+                        ),
+                        ImmutableList.of(
+                                new BroadcastRef(
+                                        "slot:id4",
+                                        Id.valueOf(2),
+                                        new Interval(
+                                                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                                                DateTime.now(DateTimeZone.UTC).plusHours(2)
+                                        )
+                                ),
+                                new BroadcastRef(
+                                        "slot:id5",
+                                        Id.valueOf(3),
+                                        new Interval(
+                                                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                                                DateTime.now(DateTimeZone.UTC).plusHours(3)
+                                        )
+                                )
+                        )
+                ).build();
+        container.setUpcomingContent(upcomingContent);
     }
 
     private void setItemProperties(Item item) {

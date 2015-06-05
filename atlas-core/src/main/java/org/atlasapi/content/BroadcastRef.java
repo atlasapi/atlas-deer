@@ -4,11 +4,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.meta.annotations.FieldName;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 
 import com.google.common.base.Objects;
 
 public final class BroadcastRef {
+
+    public static final java.util.function.Predicate<BroadcastRef> IS_UPCOMING = b -> b.getTransmissionInterval().getEnd().isAfter(DateTime.now(DateTimeZone.UTC));
+
 
     private final String sourceId;
     private final Id channelId;
