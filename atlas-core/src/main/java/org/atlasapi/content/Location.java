@@ -119,6 +119,15 @@ public class Location extends Identified {
     public Boolean isAvailable() {
         return AVAILABLE.apply(this);
     }
+
+    public LocationSummary toSummary() {
+        return new LocationSummary(
+                available,
+                uri,
+                policy != null ? policy.getAvailabilityStart() : null,
+                policy != null ? policy.getAvailabilityEnd(): null
+        );
+    }
     
     public Location copy() {
         Location copy = new Location();
@@ -142,7 +151,7 @@ public class Location extends Identified {
             return input.copy();
         }
     };
-    
+
     public static final Predicate<Location> AVAILABLE = l -> {
         DateTime now = DateTime.now(DateTimeZone.UTC);
         return l.getAvailable()

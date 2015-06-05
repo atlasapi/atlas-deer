@@ -88,6 +88,24 @@ public abstract class Container extends Content {
     }
 
     public void setAvailableContent(Map<ItemRef, Iterable<LocationSummary>> availableContent) {
-        this.availableContent = ImmutableMap.copyOf(availableContent);
+        this.availableContent = ImmutableMap.copyOf(
+                Maps.filterValues(
+                        Maps.transformValues(
+                                availableContent,
+                                new Function<Iterable<LocationSummary>, Iterable<LocationSummary>>() {
+                                    @Nullable
+                                    @Override
+                                    public Iterable<LocationSummary> apply(Iterable<LocationSummary> input) {
+                                        return ImmutableList.copyOf(input)
+                                                .stream()
+                                                .filter(LocationSummary::isAvailable)
+                                                .collect(Collectors.toList());
+                                    }
+
+                                }
+                        ),
+                        input -> !Iterables.isEmpty(input)
+                )
+        );
     }
 }

@@ -301,7 +301,12 @@ public final class CassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void writeItemRef(ContainerRef containerRef, ItemRef childRef, Iterable<BroadcastRef> upcomingContent) {
+    protected void writeItemRef(
+            ContainerRef containerRef,
+            ItemRef childRef,
+            Iterable<BroadcastRef> upcomingContent,
+            Iterable<LocationSummary> availableContent
+    ) {
         try {
 
             Long rowId = containerRef.getId().longValue();
@@ -310,6 +315,9 @@ public final class CassandraContentStore extends AbstractContentStore {
             container.setThisOrChildLastUpdated(childRef.getUpdated());
             if (Iterables.size(upcomingContent) > 0) {
                 container.setUpcomingContent(ImmutableMap.of(childRef, upcomingContent));
+            }
+            if (Iterables.size(availableContent) > 0) {
+                container.setAvailableContent(ImmutableMap.of(childRef, availableContent));
             }
             
             MutationBatch batch = keyspace.prepareMutationBatch();
