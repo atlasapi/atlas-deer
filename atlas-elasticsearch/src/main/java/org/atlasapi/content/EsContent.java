@@ -36,6 +36,7 @@ public class EsContent extends EsObject {
     public final static String PRICE = "price";
     public static final String AGE = "age";
     public static final String CONTENT_GROUPS = "contentGroups";
+    public static final String PARENT = "_parent";
 
     public static final XContentBuilder getTopLevelMapping(String type) throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
@@ -54,7 +55,7 @@ public class EsContent extends EsObject {
         return addCommonProperties(XContentFactory.jsonBuilder()
             .startObject()
                 .startObject(EsContent.CHILD_ITEM)
-                    .startObject("_parent")
+                    .startObject(PARENT)
                         .field("type").value(EsContent.TOP_LEVEL_CONTAINER)
                     .endObject()
                     .startObject("_all")

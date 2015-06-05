@@ -4,8 +4,10 @@ import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
@@ -43,6 +45,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.index.query.FilterBuilders;
@@ -618,18 +621,27 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
             UpdateRequestBuilder reqBuilder =
                     new UpdateRequestBuilder(esClient.client(), CONTENT, typeMapping, contentId.toString());
+
+            if (EsContent.CHILD_ITEM.equalsIgnoreCase(typeMapping)) {
+                reqBuilder.setParent(contentHit.field(EsContent.PARENT).<String>getValue());
+            }
+
             UpdateResponse result = reqBuilder.setDoc(EsContent.CONTENT_GROUPS, newContentGroupsValue)
                     .setFields(EsContent.CONTENT_GROUPS)
                     .execute()
                     .get();
         }
 
-        /* Add the content group id provided to the index entry represented by the SearchHit */
-        private void appendContentGroupToIndexEntryFor(Id contentId, Id groupId, String typeMapping) {
+        /* Add the content group id provided to the index entry for the provided content id */
+        private void appendContentGroupToIndexEntryFor(Id contentId, Id groupId, String typeMapping) throws IOException {
             GetResponse resp = new GetRequestBuilder(esClient.client(), CONTENT)
                     .setId(contentId.toString())
-                    .setFields(EsContent.CONTENT_GROUPS)
+                    .setFields(EsContent.CONTENT_GROUPS, EsContent.PARENT)
                     .get();
+
+            if (!resp.isExists()) {
+                return;
+            }
 
             ImmutableList.Builder<Object> idList = ImmutableList.builder();
             idList.add(groupId.toBigInteger());
@@ -642,8 +654,12 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
             UpdateRequestBuilder reqBuilder =
                     new UpdateRequestBuilder(esClient.client(), CONTENT, typeMapping, contentId.toString());
-            reqBuilder.setDoc(EsContent.CONTENT_GROUPS, idList.build())
-                    .get();
+
+            if (EsContent.CHILD_ITEM.equalsIgnoreCase(typeMapping)) {
+                reqBuilder.setParent(String.valueOf(resp.getField(EsContent.PARENT).getValue()));
+            }
+
+            reqBuilder.setDoc(EsContent.CONTENT_GROUPS, idList.build()).get();
         }
 
         /* Returns a list of content group ids taken from the SearchHit and having removed the specified Id */
@@ -670,7 +686,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             );
 
             SearchRequestBuilder reqBuilder = new SearchRequestBuilder(esClient.client())
-                    .addFields(EsContent.ID, EsContent.CONTENT_GROUPS, EsContent.TYPE)
+                    .addFields(EsContent.ID, EsContent.CONTENT_GROUPS, EsContent.TYPE, EsContent.PARENT)
                     .setPostFilter(idFilter);
             reqBuilder.execute(FutureSettingActionListener.setting(result));
 
