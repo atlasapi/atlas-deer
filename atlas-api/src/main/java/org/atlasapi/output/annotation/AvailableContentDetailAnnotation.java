@@ -45,7 +45,7 @@ public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> 
             return;
         }
 
-        Set<Id> contentIds = container.getUpcomingContent().keySet()
+        Set<Id> contentIds = container.getAvailableContent().keySet()
                 .stream()
                 .map(i -> i.getId())
                 .collect(Collectors.toSet());
