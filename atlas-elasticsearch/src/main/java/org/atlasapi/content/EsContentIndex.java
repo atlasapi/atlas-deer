@@ -643,7 +643,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             UpdateRequestBuilder reqBuilder =
                     new UpdateRequestBuilder(esClient.client(), CONTENT, typeMapping, contentId.toString());
             reqBuilder.setDoc(EsContent.CONTENT_GROUPS, idList.build())
-                    .setDetectNoop(true)
                     .get();
         }
 
