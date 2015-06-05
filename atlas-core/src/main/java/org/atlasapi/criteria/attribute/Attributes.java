@@ -21,6 +21,7 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Item;
@@ -103,6 +104,7 @@ public class Attributes {
     // For filtering
     public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class).withJavaAttribute("parentFlattenedTitle").withAlias("parentFlattenedTitle");
     public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
+	public static final Attribute<String> CONTENT_GROUP = stringListAttribute("contentGroups", Content.class);
 
 
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
