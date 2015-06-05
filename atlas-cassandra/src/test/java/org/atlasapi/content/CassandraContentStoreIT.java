@@ -12,10 +12,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.collect.ImmutableMap;
+import com.netflix.astyanax.ColumnListMutation;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.model.ColumnFamily;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -28,7 +34,9 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -66,13 +74,15 @@ public class CassandraContentStoreIT {
     @Mock private IdGenerator idGenerator;
     @Mock private MessageSender<ResourceUpdatedMessage> sender;
     @Mock private Clock clock;
-    
+
     private CassandraContentStore store;
-    
+
+    private static final String CONTENT_TABLE = "content";
+
     @Before
     public void before() {
         store = CassandraContentStore
-                .builder(context, "Content", hasher, sender, idGenerator)
+                .builder(context, CONTENT_TABLE, hasher, sender, idGenerator)
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)
@@ -89,8 +99,8 @@ public class CassandraContentStoreIT {
         context.start();
         tearDown();
         CassandraHelper.createKeyspace(context);
-        CassandraHelper.createColumnFamily(context, "Content", LongSerializer.get(), StringSerializer.get());
-        CassandraHelper.createColumnFamily(context, "Content_aliases", StringSerializer.get(), StringSerializer.get(), LongSerializer.get());
+        CassandraHelper.createColumnFamily(context, CONTENT_TABLE, LongSerializer.get(), StringSerializer.get());
+        CassandraHelper.createColumnFamily(context, "content_aliases", StringSerializer.get(), StringSerializer.get(), LongSerializer.get());
     }
     
     @AfterClass
@@ -102,8 +112,8 @@ public class CassandraContentStoreIT {
     
     @After
     public void clearCf() throws ConnectionException {
-        context.getClient().truncateColumnFamily("Content");
-        context.getClient().truncateColumnFamily("Content_aliases");
+        context.getClient().truncateColumnFamily(CONTENT_TABLE);
+        context.getClient().truncateColumnFamily("content_aliases");
     }
     
     @Test
@@ -686,6 +696,202 @@ public class CassandraContentStoreIT {
         
         verify(idGenerator, times(1)).generateRaw();
     }
+
+
+    @Test
+    public void testWriteUpcomingContentForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Series series1 = create(new Series());
+        series1.setBrand(brandWriteResult.getResource());
+
+        when(clock.now()).thenReturn(now.plusHours(1));
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        WriteResult<Series, Content> series1WriteResult = store.writeContent(series1);
+
+
+
+        Episode episode1 = create(new Episode());
+        episode1.setContainer(brandWriteResult.getResource());
+        episode1.setSeries(series1WriteResult.getResource());
+        Broadcast broadcast1 = new Broadcast(
+                Id.valueOf(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(2)
+        ).withId("sourceID:1");
+        Set<Broadcast> broadcasts = ImmutableSet.of(
+                broadcast1,
+                new Broadcast(
+                        Id.valueOf(1),
+                        DateTime.now(DateTimeZone.UTC).minusHours(2),
+                        DateTime.now(DateTimeZone.UTC).minusHours(1)
+                ).withId("sourceId:2")
+        );
+        episode1.setBroadcasts(
+            broadcasts
+        );
+
+
+
+        when(clock.now()).thenReturn(now.plusHours(2));
+        when(idGenerator.generateRaw()).thenReturn(1237L);
+        store.writeContent(episode1);
+
+        Map<ItemRef, Iterable<BroadcastRef>> expectedUpcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>> builder()
+                .put(episode1.toRef(), ImmutableList.of(broadcast1.toRef()))
+                .build();
+
+        Brand resolvedBrand = (Brand) resolve(1234L);
+        assertThat(resolvedBrand.getItemRefs().size(), is(1));
+        assertThat(resolvedBrand.getUpcomingContent(), is(expectedUpcomingContent));
+
+        Series resolvedSeries1 = (Series) resolve(1235L);
+        assertThat(resolvedSeries1.getBrandRef().getId().longValue(), is(1234L));
+        assertThat(resolvedSeries1.getItemRefs().size(), is(1));
+        assertThat(resolvedSeries1.getUpcomingContent(), is(expectedUpcomingContent));
+
+
+        Episode resolvedEpisode1 = (Episode) resolve(1237L);
+        assertThat(resolvedEpisode1.getFirstSeen(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getThisOrChildLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getContainerRef().getId().longValue(), is(1234L));
+        assertThat(resolvedEpisode1.getSeriesRef().getId().longValue(), is(1235L));
+        assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
+        assertThat(resolvedEpisode1.getBroadcasts(), is(broadcasts));
+
+    }
+
+
+    @Test
+    public void testFilterStaleUpcomingContentForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException, ConnectionException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Series series1 = create(new Series());
+        series1.setBrand(brandWriteResult.getResource());
+
+        when(clock.now()).thenReturn(now.plusHours(1));
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        WriteResult<Series, Content> series1WriteResult = store.writeContent(series1);
+
+
+
+        Episode episode1 = create(new Episode());
+        episode1.setContainer(brandWriteResult.getResource());
+        episode1.setSeries(series1WriteResult.getResource());
+        Broadcast broadcast1 = new Broadcast(
+                Id.valueOf(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(2)
+        ).withId("sourceID:1");
+        Set<Broadcast> broadcasts = ImmutableSet.of(
+                broadcast1
+        );
+        episode1.setBroadcasts(
+                broadcasts
+        );
+
+
+
+        Episode episode2 = create(new Episode());
+        episode2.setContainer(brandWriteResult.getResource());
+        episode2.setSeries(series1WriteResult.getResource());
+        Broadcast pastBroadcast = new Broadcast(
+                Id.valueOf(1),
+                DateTime.now(DateTimeZone.UTC).minusHours(2),
+                DateTime.now(DateTimeZone.UTC).minusHours(1)
+        ).withId("sourceId:2");
+        Set<Broadcast> broadcasts2= ImmutableSet.of(
+                pastBroadcast
+        );
+        episode2.setBroadcasts(
+                broadcasts2
+        );
+
+
+        when(clock.now()).thenReturn(now.plusHours(2));
+        when(idGenerator.generateRaw()).thenReturn(1237L);
+        store.writeContent(episode1);
+
+        when(idGenerator.generateRaw()).thenReturn(1238L);
+        store.writeContent(episode2);
+
+        ContentProtos.Content.Builder contentBuilder = ContentProtos.Content.newBuilder();
+
+        contentBuilder.addUpcomingContent(
+                new ItemAndBroadcastRefSerializer()
+                        .serialize(
+                                episode2.toRef(),
+                                ImmutableList.of(pastBroadcast.toRef()
+                                )
+                        )
+        );
+
+        ColumnFamily<Long, String> columnFamily = ColumnFamily.newColumnFamily(
+                CONTENT_TABLE,
+                LongSerializer.get(),
+                StringSerializer.get()
+        );
+
+        MutationBatch batch = context.getClient().prepareMutationBatch();
+        ColumnListMutation<String> mutation = batch.withRow(columnFamily, 1234L);
+        mutation.putColumn("UPCOMING:1238", contentBuilder.build().toByteArray());
+
+        ColumnListMutation<String> mutation2 = batch.withRow(columnFamily, 1235L);
+        mutation2.putColumn("UPCOMING:1238", contentBuilder.build().toByteArray());
+        batch.execute();
+
+
+
+        Map<ItemRef, Iterable<BroadcastRef>> expectedUpcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>> builder()
+                .put(episode1.toRef(), ImmutableList.of(broadcast1.toRef()))
+                .build();
+
+        Brand resolvedBrand = (Brand) resolve(1234L);
+        assertThat(resolvedBrand.getItemRefs().size(), is(2));
+        assertThat(resolvedBrand.getUpcomingContent(), is(expectedUpcomingContent));
+
+        Series resolvedSeries1 = (Series) resolve(1235L);
+        assertThat(resolvedSeries1.getBrandRef().getId().longValue(), is(1234L));
+        assertThat(resolvedSeries1.getItemRefs().size(), is(2));
+        assertThat(resolvedSeries1.getUpcomingContent(), is(expectedUpcomingContent));
+
+
+        Episode resolvedEpisode1 = (Episode) resolve(1237L);
+        assertThat(resolvedEpisode1.getFirstSeen(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getThisOrChildLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getContainerRef().getId().longValue(), is(1234L));
+        assertThat(resolvedEpisode1.getSeriesRef().getId().longValue(), is(1235L));
+        assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
+        assertThat(resolvedEpisode1.getBroadcasts(), is(broadcasts));
+
+
+        Episode resolvedEpisode2 = (Episode) resolve(1238L);
+        assertThat(resolvedEpisode2.getFirstSeen(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode2.getLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode2.getThisOrChildLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode2.getContainerRef().getId().longValue(), is(1234L));
+        assertThat(resolvedEpisode2.getSeriesRef().getId().longValue(), is(1235L));
+        assertThat(resolvedEpisode2.getContainerSummary().getTitle(), is("Brand"));
+        assertThat(resolvedEpisode2.getBroadcasts(), is(broadcasts2));
+
+    }
+
+
+
 
     private <T extends Content> T create(T content) {
         content.setPublisher(Publisher.BBC);

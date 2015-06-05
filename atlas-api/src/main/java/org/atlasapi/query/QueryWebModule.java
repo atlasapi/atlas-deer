@@ -35,6 +35,7 @@ import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
 import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
 import static org.atlasapi.annotation.Annotation.TOPICS;
+import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
 import javax.servlet.http.HttpServletRequest;
@@ -102,10 +103,13 @@ import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.TopicsAnnotation;
+import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
+import org.atlasapi.output.writers.ItemDetailWriter;
 import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.output.writers.RequestWriter;
+import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
 import org.atlasapi.persistence.output.RecentlyBroadcastChildrenResolver;
@@ -632,6 +636,16 @@ public class QueryWebModule {
                                 LOCATIONS,
                                 KEY_PHRASES,
                                 RELATED_LINKS))
+                .register(
+                        UPCOMING_CONTENT_DETAIL,
+                        new UpcomingContentDetailAnnotation(
+                                queryModule.mergingContentResolver(),
+                                new UpcomingContentDetailWriter(
+                                        new BroadcastWriter("broadcasts", idCodec()),
+                                        new ItemDetailWriter(new IdentificationSummaryAnnotation(idCodec()))
+                                )
+
+                        ), commonImplied)
                 .build());
     }
 

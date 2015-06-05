@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ProtoBufUtils;
@@ -20,6 +22,8 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
 import com.metabroadcast.common.intl.Countries;
 
+import java.util.Map;
+
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
     private static final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
@@ -33,7 +37,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private static final ContainerSummarySerializer containerSummarySerializer = new ContainerSummarySerializer();
     private static final ReleaseDateSerializer releaseDateSerializer = new ReleaseDateSerializer();
     private static final CertificateSerializer certificateSerializer = new CertificateSerializer();
-    
+    private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
+
+
     private ContentProtos.Content msg;
 
     public ContentDeserializationVisitor(ContentProtos.Content msg) {
@@ -183,6 +189,16 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             childRefs.add((ItemRef)refSerializer.deserialize(msg.getChildren(i)));
         }
         container.setItemRefs(Ordering.natural().immutableSortedCopy(childRefs.build()));
+        ImmutableList.Builder<ContentProtos.ItemAndBroadcastRef> itemAndBroadcastRefBuilder = ImmutableList.<ContentProtos.ItemAndBroadcastRef>builder();
+        for (int i = 0; i < msg.getUpcomingContentCount(); i++) {
+            itemAndBroadcastRefBuilder.add(msg.getUpcomingContent(i));
+        }
+        container.setUpcomingContent(
+                itemAndBroadcastRefSerializer.deserialize(
+                        itemAndBroadcastRefBuilder.build()
+                )
+        );
+
         return container;
     }
 

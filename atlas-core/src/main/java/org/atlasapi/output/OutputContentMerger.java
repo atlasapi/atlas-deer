@@ -7,8 +7,10 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.ImmutableMap;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.Container;
@@ -22,6 +24,7 @@ import org.atlasapi.content.Episode;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.KeyPhrase;
 import org.atlasapi.content.Person;
 import org.atlasapi.content.RelatedLink;
@@ -190,10 +193,15 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             );
     }
     
-    private <I extends Described, O> O first(Iterable<I> is, Function<? super I, ? extends O> transform) {
-        return Iterables.getFirst(Iterables.filter(Iterables.transform(is, transform), Predicates.notNull()), null);
+    private <I extends Described, O> O first(Iterable<I> is, Function<? super I, ? extends O> transform, O defaultValue) {
+        return Iterables.getFirst(Iterables.filter(Iterables.transform(is, transform), Predicates.notNull()), defaultValue);
     }
-    
+
+    private <I extends Described, O> O first(Iterable<I> is, Function<? super I, ? extends O> transform) {
+        return first(is, transform, null);
+    }
+
+
     private <T extends Content> void mergeContent(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
         mergeDescribed(sources, chosen, notChosen);
         for (T notChosenItem : notChosen) {
@@ -438,60 +446,23 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     };
 
-    public <T extends Item> void mergeIn(ApplicationSources sources, Container chosen, Iterable<Container> notChosen) {
+    public void mergeIn(ApplicationSources sources, Container chosen, Iterable<Container> notChosen) {
         mergeContent(sources, chosen, notChosen);
+        mergeContainer(sources, chosen, notChosen);
     }
 
-    enum ItemIdStrategy {
-
-        SERIES_EPISODE_NUMBER {
-
-            @Override
-            public Predicate<Item> match() {
-                return new Predicate<Item>() {
-
-                    @Override
-                    public boolean apply(Item item) {
-                        if (item instanceof Episode) {
-                            Episode episode = (Episode) item;
-                            return episode.getSeriesNumber() != null && episode.getEpisodeNumber() != null;
-                        }
-                        return false;
-                    }
-                };
-            }
-
-            @Override
-            @SuppressWarnings("unchecked")
-            public <T extends Item> Iterable<T> merge(List<T> items, List<T> matches) {
-                Map<SeriesAndEpisodeNumber, Episode> chosenItemLookup = Maps.newHashMap();
-                for (T item : Iterables.concat(items, matches)) {
-                    Episode episode = (Episode) item;
-                    SeriesAndEpisodeNumber se = new SeriesAndEpisodeNumber(episode);
-                    if (!chosenItemLookup.containsKey(se)) {
-                        chosenItemLookup.put(se, episode);
-                    } else {
-                        Item chosen = chosenItemLookup.get(se);
-                        for (Clip clip : item.getClips()) {
-                            chosen.addClip(clip);
-                        }
-                    }
-                }
-
-                return (Iterable<T>) SERIES_ORDER.immutableSortedCopy(chosenItemLookup.values());
-            }
-        };
-
-        protected abstract Predicate<Item> match();
-
-        static ItemIdStrategy findBest(Iterable<? extends Item> items) {
-            if (Iterables.all(items, ItemIdStrategy.SERIES_EPISODE_NUMBER.match())) {
-                return SERIES_EPISODE_NUMBER;
-            }
-            return null;
+    private void mergeContainer(ApplicationSources sources, Container chosen, Iterable<Container> notChosen) {
+        if (!chosen.getUpcomingContent().isEmpty()) {
+            return;
         }
+        chosen.setUpcomingContent(
+                first(
+                        notChosen,
+                        input -> input.getUpcomingContent().isEmpty() ? null : ImmutableMap.of(),
+                        ImmutableMap.of()
+                )
+        );
 
-        public abstract <T extends Item> Iterable<T> merge(List<T> items, List<T> matches);
     }
 
     private final static class TopicPublisherSetter implements Function<TopicRef, TopicRef> {

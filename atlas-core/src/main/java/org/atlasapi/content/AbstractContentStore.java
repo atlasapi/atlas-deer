@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -163,8 +164,17 @@ public abstract class AbstractContentStore implements ContentStore {
                 ContainerRef containerRef = item.getContainerRef();
                 item.setContainerSummary(getSummary(containerRef));
                 ensureId(item);
-                writeItemRef(containerRef, item.toRef());
+                writeItemRef(containerRef, item.toRef(), getUpcomingBroadcastRefs(item));
             }
+        }
+
+        private Iterable<BroadcastRef> getUpcomingBroadcastRefs(Item item) {
+            return item.getBroadcasts()
+                    .stream()
+                    .filter(Broadcast.IS_UPCOMING)
+                    .map(Broadcast.TO_REF)
+                    .collect(Collectors.toSet());
+
         }
 
         @Override
@@ -201,17 +211,19 @@ public abstract class AbstractContentStore implements ContentStore {
             episode.setContainerSummary(getSummary(primaryContainer));
 
             ItemRef childRef = null;
+            Iterable<BroadcastRef> upcomingBroadcasts = getUpcomingBroadcastRefs(episode);
             if (episode.getSeriesRef() != null) {
                 SeriesRef secondaryContainer = episode.getSeriesRef();
                 //TODO set series summary on episode
                 ContainerSummary summary = getSummary(secondaryContainer);
                 ensureId(episode);
                 childRef = episode.toRef();
-                writeItemRef(secondaryContainer, childRef);
+                writeItemRef(secondaryContainer, childRef, upcomingBroadcasts);
             }
             ensureId(episode);
             childRef = childRef == null ? episode.toRef() : childRef;
-            writeItemRef(primaryContainer, childRef);
+            writeItemRef(primaryContainer, childRef, upcomingBroadcasts);
+
         }
 
         @Override
@@ -350,7 +362,7 @@ public abstract class AbstractContentStore implements ContentStore {
      * thisOrChildLastUpdated time.
      * 
      * @param primary
-     * @param series
+     * @param seriesRef
      */
     protected abstract void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef);
 
@@ -359,7 +371,8 @@ public abstract class AbstractContentStore implements ContentStore {
      * thisOrChildLastUpdated time.
      * 
      * @param containerId
-     * @param child
+     * @param childRef
+     * @param upcomingContent
      */
-    protected abstract void writeItemRef(ContainerRef containerId, ItemRef childRef);
+    protected abstract void writeItemRef(ContainerRef containerId, ItemRef childRef, Iterable<BroadcastRef> upcomingContent);
 }
