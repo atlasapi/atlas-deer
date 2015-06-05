@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import static org.atlasapi.serialization.protobuf.ContentProtos.Column.AVAILABLE_CONTENT;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.BROADCASTS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.CHILDREN;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.CHILD_UPDATED;
@@ -45,16 +46,17 @@ import com.netflix.astyanax.model.ColumnList;
 
 public class ProtobufContentMarshaller implements ContentMarshaller {
     private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING";
+    private static final String AVAILABLE_CONTENT_PREFIX = "AVAILABLE";
 
     private final ListMultimap<ContentProtos.Column, FieldDescriptor> schema =
         Multimaps.index(
-            ContentProtos.Content.getDescriptor().getFields(), 
-            new Function<FieldDescriptor, ContentProtos.Column>(){
-                @Override
-                public ContentProtos.Column apply(FieldDescriptor fd) {
-                    return fd.getOptions().getExtension(ContentProtos.column);
+                ContentProtos.Content.getDescriptor().getFields(),
+                new Function<FieldDescriptor, ContentProtos.Column>() {
+                    @Override
+                    public ContentProtos.Column apply(FieldDescriptor fd) {
+                        return fd.getOptions().getExtension(ContentProtos.column);
+                    }
                 }
-            }
         );
     private final List<Entry<ContentProtos.Column, List<FieldDescriptor>>> schemaList =
         ImmutableList.copyOf(
@@ -87,7 +89,8 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             .put(TOPICS, ContentColumn.TOPICS)
             .put(GROUPS, ContentColumn.GROUPS)
             .put(SEGMENTS, ContentColumn.SEGMENTS)
-            .put(UPCOMING_CONTENT, ContentColumn.UPCOMNING_CONTENT)
+            .put(UPCOMING_CONTENT, ContentColumn.UPCOMING_CONTENT)
+            .put(AVAILABLE_CONTENT, ContentColumn.AVAILABLE_CONTENT)
         .build());
 
     @Override
@@ -101,6 +104,11 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             }
             if (isUpcomingContentColumn(col.getKey())) {
                 handleUpcomingContentColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
+                continue;
+            }
+
+            if (ContentProtos.Column.AVAILABLE_CONTENT.equals(col.getKey())) {
+                handleAvailableContentColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
             Builder builder = null;
@@ -145,6 +153,25 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
                                       FieldDescriptor fd) {
         if (msg.getRepeatedFieldCount(fd) == 1) {
             ContentProtos.ItemAndBroadcastRef uc = (ContentProtos.ItemAndBroadcastRef) msg.getRepeatedField(fd, 0);
+            ContentProtos.Content col = ContentProtos.Content.newBuilder()
+                    .addRepeatedField(fd, uc)
+                    .build();
+            mutation.putColumn(
+                    String.format(
+                            "%s:%s",
+                            UPCOMING_CONTENT_PREFIX,
+                            uc.getItem().getId()
+                    ),
+                    col.toByteArray()
+            );
+        }
+    }
+
+    private void handleAvailableContentColumn(ColumnListMutation<String> mutation,
+                                             ContentProtos.Content msg,
+                                             FieldDescriptor fd) {
+        if (msg.getRepeatedFieldCount(fd) == 1) {
+            ContentProtos.ItemAndLocationSummary uc = (ContentProtos.ItemAndLocationSummary) msg.getRepeatedField(fd, 0);
             ContentProtos.Content col = ContentProtos.Content.newBuilder()
                     .addRepeatedField(fd, uc)
                     .build();

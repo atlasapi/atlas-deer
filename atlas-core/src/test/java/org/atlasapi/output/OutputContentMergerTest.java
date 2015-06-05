@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import org.atlasapi.application.ApplicationSources;
@@ -15,6 +16,7 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.LocationSummary;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -180,6 +182,72 @@ public class OutputContentMergerTest {
         Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
 
         assertThat(merged.getUpcomingContent(), is(upcomingContent));
+
+    }
+
+    @Test
+    public void testMergedContentHasCorrectAvailableContent() {
+        Container one = brand(1L, "one", Publisher.BBC_KIWI);
+        Container two = brand(2L, "two", Publisher.METABROADCAST);
+        Container three = brand(3L, "three", Publisher.BBC_MUSIC);
+
+        Item item1 = item(4L, "item", Publisher.METABROADCAST);
+        item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZone.UTC));
+
+        Item item2 = item(5L, "item", Publisher.BBC_KIWI);
+        item2.setThisOrChildLastUpdated(DateTime.now(DateTimeZone.UTC));
+
+        setEquivalent(one, two, three);
+        setEquivalent(two, one, three);
+        setEquivalent(three, two, one);
+
+        LocationSummary locationSummary1 = new LocationSummary(
+                true,
+                "broadcast1",
+                DateTime.now(DateTimeZone.UTC).minusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1)
+        );
+
+        LocationSummary locationSummary2 = new LocationSummary(
+                true,
+                "broadcast2",
+                DateTime.now(DateTimeZone.UTC).minusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1)
+        );
+
+        ImmutableMap<ItemRef, Iterable<LocationSummary>> availableContent1 = ImmutableMap.<ItemRef, Iterable<LocationSummary>>builder()
+                .put(
+                        item1.toRef(),
+                        ImmutableList.of(
+                                locationSummary1
+                        )
+                ).build();
+
+        ImmutableMap<ItemRef, Iterable<LocationSummary>> availableContent2 = ImmutableMap.<ItemRef, Iterable<LocationSummary>>builder()
+                .put(
+                        item2.toRef(),
+                        ImmutableList.of(
+                                locationSummary2
+                        )
+                ).build();
+
+        one.setAvailableContent(
+                availableContent1
+        );
+        three.setAvailableContent(
+                availableContent2
+        );
+
+        ApplicationSources sources = sourcesWithPrecedence(Publisher.BBC_KIWI,Publisher.METABROADCAST,Publisher.BBC_MUSIC);
+
+        Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
+
+        Map<ItemRef, Iterable<LocationSummary>> expectedAvailableContent = ImmutableMap.<ItemRef, Iterable<LocationSummary>>builder()
+                .putAll(availableContent1)
+                .putAll(availableContent2)
+                .build();
+
+        assertThat(merged.getAvailableContent(), is(expectedAvailableContent));
 
     }
 

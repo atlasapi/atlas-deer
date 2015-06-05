@@ -164,7 +164,12 @@ public abstract class AbstractContentStore implements ContentStore {
                 ContainerRef containerRef = item.getContainerRef();
                 item.setContainerSummary(getSummary(containerRef));
                 ensureId(item);
-                writeItemRef(containerRef, item.toRef(), getUpcomingBroadcastRefs(item));
+                writeItemRef(
+                        containerRef,
+                        item.toRef(),
+                        getUpcomingBroadcastRefs(item),
+                        getAvailableLocations(item)
+                );
             }
         }
 
@@ -177,7 +182,17 @@ public abstract class AbstractContentStore implements ContentStore {
 
         }
 
-        @Override
+        private Iterable<LocationSummary> getAvailableLocations(Item item) {
+            return item.getManifestedAs()
+                    .stream()
+                    .flatMap(e -> e.getAvailableAt().stream())
+                    .filter(Location::isAvailable)
+                    .map(Location::toSummary)
+                    .collect(Collectors.toSet());
+        }
+
+
+            @Override
         public WriteResult<Episode,Content> visit(Episode episode) {
             checkArgument(episode.getContainerRef() != null, 
                     "can't write episode with null container");
@@ -212,17 +227,18 @@ public abstract class AbstractContentStore implements ContentStore {
 
             ItemRef childRef = null;
             Iterable<BroadcastRef> upcomingBroadcasts = getUpcomingBroadcastRefs(episode);
+            Iterable<LocationSummary> availableLocations = getAvailableLocations(episode);
             if (episode.getSeriesRef() != null) {
                 SeriesRef secondaryContainer = episode.getSeriesRef();
                 //TODO set series summary on episode
                 ContainerSummary summary = getSummary(secondaryContainer);
                 ensureId(episode);
                 childRef = episode.toRef();
-                writeItemRef(secondaryContainer, childRef, upcomingBroadcasts);
+                writeItemRef(secondaryContainer, childRef, upcomingBroadcasts, availableLocations);
             }
             ensureId(episode);
             childRef = childRef == null ? episode.toRef() : childRef;
-            writeItemRef(primaryContainer, childRef, upcomingBroadcasts);
+            writeItemRef(primaryContainer, childRef, upcomingBroadcasts, availableLocations);
 
         }
 
@@ -374,5 +390,10 @@ public abstract class AbstractContentStore implements ContentStore {
      * @param childRef
      * @param upcomingContent
      */
-    protected abstract void writeItemRef(ContainerRef containerId, ItemRef childRef, Iterable<BroadcastRef> upcomingContent);
+    protected abstract void writeItemRef(
+            ContainerRef containerId,
+            ItemRef childRef,
+            Iterable<BroadcastRef> upcomingContent,
+            Iterable<LocationSummary> availableContent
+    );
 }

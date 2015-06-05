@@ -1,5 +1,6 @@
 package org.atlasapi.query;
 
+import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
 import static org.atlasapi.annotation.Annotation.BRAND_REFERENCE;
 import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
@@ -65,6 +66,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
+import org.atlasapi.output.annotation.AvailableContentDetailAnnotation;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
 import org.atlasapi.output.annotation.BrandReferenceAnnotation;
 import org.atlasapi.output.annotation.BroadcastsAnnotation;
@@ -645,6 +647,19 @@ public class QueryWebModule {
                                         new ItemDetailWriter(new IdentificationSummaryAnnotation(idCodec()))
                                 )
 
+                        ), commonImplied)
+                .register(
+                        AVAILABLE_CONTENT_DETAIL,
+                        new AvailableContentDetailAnnotation(
+                                queryModule.mergingContentResolver(),
+                                new ItemDetailWriter(
+                                        new IdentificationSummaryAnnotation(idCodec()),
+                                        AvailableContentDetailAnnotation.AVAILABLE_CONTENT_DETAIL,
+                                        new LocationsAnnotation(
+                                                persistenceModule.playerResolver(),
+                                                persistenceModule.serviceResolver()
+                                        )
+                                )
                         ), commonImplied)
                 .build());
     }

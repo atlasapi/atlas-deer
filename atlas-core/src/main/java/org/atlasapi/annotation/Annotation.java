@@ -58,6 +58,7 @@ public enum Annotation {
     META_ENDPOINT,
     VARIATIONS,
     UPCOMING_CONTENT_DETAIL,
+    AVAILABLE_CONTENT_DETAIL,
     ;
     
     public String toKey() {

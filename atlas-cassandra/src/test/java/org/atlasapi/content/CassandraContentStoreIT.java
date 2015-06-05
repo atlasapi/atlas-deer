@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
@@ -887,6 +888,215 @@ public class CassandraContentStoreIT {
         assertThat(resolvedEpisode2.getSeriesRef().getId().longValue(), is(1235L));
         assertThat(resolvedEpisode2.getContainerSummary().getTitle(), is("Brand"));
         assertThat(resolvedEpisode2.getBroadcasts(), is(broadcasts2));
+
+    }
+
+    @Test
+    public void testWriteAvailableContentForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Series series1 = create(new Series());
+        series1.setBrand(brandWriteResult.getResource());
+
+        when(clock.now()).thenReturn(now.plusHours(1));
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        WriteResult<Series, Content> series1WriteResult = store.writeContent(series1);
+
+
+
+        Episode episode1 = create(new Episode());
+        episode1.setContainer(brandWriteResult.getResource());
+        episode1.setSeries(series1WriteResult.getResource());
+
+        Encoding encoding1 = new Encoding();
+        Encoding encoding2 = new Encoding();
+
+        Location location1 = new Location();
+        location1.setAvailable(true);
+        location1.setUri("location1");
+
+        Location location2 = new Location();
+        location2.setAvailable(true);
+        location2.setUri("location2");
+
+        Location location3 = new Location();
+        location3.setAvailable(true);
+        location3.setUri("location3");
+        Policy policy1 = new Policy();
+        policy1.setAvailabilityStart(now.minusHours(1));
+        policy1.setAvailabilityEnd(now.plusHours(1));
+        location3.setPolicy(policy1);
+
+        Location location4 = new Location();
+        location4.setAvailable(true);
+        location4.setUri("location4");
+        Policy policy2 = new Policy();
+        policy2.setAvailabilityStart(now.plusHours(1));
+        policy2.setAvailabilityEnd(now.plusHours(2));
+        location4.setPolicy(policy2);
+
+        encoding1.setAvailableAt(ImmutableSet.of(location1, location2));
+        encoding2.setAvailableAt(ImmutableSet.of(location3, location4));
+        episode1.setManifestedAs(ImmutableSet.of(encoding1, encoding2));
+
+
+        when(clock.now()).thenReturn(now.plusHours(2));
+        when(idGenerator.generateRaw()).thenReturn(1237L);
+        store.writeContent(episode1);
+
+        Brand resolvedBrand = (Brand) resolve(1234L);
+        assertThat(resolvedBrand.getItemRefs().size(), is(1));
+        assertThat(resolvedBrand.getAvailableContent().size(), is(1));
+        assertThat(
+                resolvedBrand.getAvailableContent().get(episode1.toRef()),
+                containsInAnyOrder(location1.toSummary(), location2.toSummary(), location3.toSummary())
+        );
+
+        Series resolvedSeries1 = (Series) resolve(1235L);
+        assertThat(resolvedSeries1.getBrandRef().getId().longValue(), is(1234L));
+        assertThat(resolvedSeries1.getItemRefs().size(), is(1));
+        assertThat(resolvedSeries1.getAvailableContent().size(), is(1));
+        assertThat(
+                resolvedSeries1.getAvailableContent().get(episode1.toRef()),
+                containsInAnyOrder(location1.toSummary(), location2.toSummary(), location3.toSummary())
+        );
+
+
+        Episode resolvedEpisode1 = (Episode) resolve(1237L);
+        assertThat(resolvedEpisode1.getFirstSeen(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getThisOrChildLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getContainerRef().getId().longValue(), is(1234L));
+        assertThat(resolvedEpisode1.getSeriesRef().getId().longValue(), is(1235L));
+        assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
+
+    }
+
+
+    @Test
+    public void testFilterContentNoLongerAvailableForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException, ConnectionException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Series series1 = create(new Series());
+        series1.setBrand(brandWriteResult.getResource());
+
+        when(clock.now()).thenReturn(now.plusHours(1));
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        WriteResult<Series, Content> series1WriteResult = store.writeContent(series1);
+
+
+
+        Episode episode1 = create(new Episode());
+        episode1.setContainer(brandWriteResult.getResource());
+        episode1.setSeries(series1WriteResult.getResource());
+
+        Encoding encoding1 = new Encoding();
+        Encoding encoding2 = new Encoding();
+
+        Location location1 = new Location();
+        location1.setAvailable(true);
+        location1.setUri("location1");
+
+        Location location2 = new Location();
+        location2.setAvailable(true);
+        location2.setUri("location2");
+
+        Location location3 = new Location();
+        location3.setAvailable(true);
+        location3.setUri("location3");
+        Policy policy1 = new Policy();
+        policy1.setAvailabilityStart(now.minusHours(1));
+        policy1.setAvailabilityEnd(now.plusHours(1));
+        location3.setPolicy(policy1);
+
+        Location location4 = new Location();
+        location4.setAvailable(true);
+        location4.setUri("location4");
+        Policy policy2 = new Policy();
+        policy2.setAvailabilityStart(now.plusHours(1));
+        policy2.setAvailabilityEnd(now.plusHours(2));
+        location4.setPolicy(policy2);
+
+        encoding1.setAvailableAt(ImmutableSet.of(location1, location2, location3));
+        encoding2.setAvailableAt(ImmutableSet.of(location4));
+        episode1.setManifestedAs(ImmutableSet.of(encoding1));
+
+
+        when(clock.now()).thenReturn(now.plusHours(2));
+        when(idGenerator.generateRaw()).thenReturn(1237L);
+        store.writeContent(episode1);
+
+        Episode episode2 = create(new Episode());
+        episode2.setContainer(brandWriteResult.getResource());
+        episode2.setSeries(series1WriteResult.getResource());
+        episode2.setManifestedAs(ImmutableSet.of(encoding2));
+
+        when(idGenerator.generateRaw()).thenReturn(1238L);
+        store.writeContent(episode2);
+
+        ContentProtos.Content.Builder contentBuilder = ContentProtos.Content.newBuilder();
+
+        contentBuilder.addAvailableContent(
+                new ItemAndLocationSummarySerializer()
+                        .serialize(
+                                episode2.toRef(),
+                                ImmutableList.of(location4.toSummary())
+                        )
+        );
+
+        ColumnFamily<Long, String> columnFamily = ColumnFamily.newColumnFamily(
+                CONTENT_TABLE,
+                LongSerializer.get(),
+                StringSerializer.get()
+        );
+
+        MutationBatch batch = context.getClient().prepareMutationBatch();
+        ColumnListMutation<String> mutation = batch.withRow(columnFamily, 1234L);
+        mutation.putColumn("AVAILABLE:1238", contentBuilder.build().toByteArray());
+
+        ColumnListMutation<String> mutation2 = batch.withRow(columnFamily, 1235L);
+        mutation2.putColumn("AVAILABLE:1238", contentBuilder.build().toByteArray());
+        batch.execute();
+
+
+
+        Brand resolvedBrand = (Brand) resolve(1234L);
+        assertThat(resolvedBrand.getItemRefs().size(), is(2));
+        assertThat(resolvedBrand.getAvailableContent().size(), is(1));
+        assertThat(
+                resolvedBrand.getAvailableContent().get(episode1.toRef()),
+                containsInAnyOrder(location1.toSummary(), location2.toSummary(), location3.toSummary())
+        );
+
+        Series resolvedSeries1 = (Series) resolve(1235L);
+        assertThat(resolvedSeries1.getBrandRef().getId().longValue(), is(1234L));
+        assertThat(resolvedSeries1.getItemRefs().size(), is(2));
+        assertThat(resolvedSeries1.getAvailableContent().size(), is(1));
+        assertThat(
+                resolvedSeries1.getAvailableContent().get(episode1.toRef()),
+                containsInAnyOrder(location1.toSummary(), location2.toSummary(), location3.toSummary())
+        );
+
+
+        Episode resolvedEpisode1 = (Episode) resolve(1237L);
+        assertThat(resolvedEpisode1.getFirstSeen(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getThisOrChildLastUpdated(), is(now.plusHours(2)));
+        assertThat(resolvedEpisode1.getContainerRef().getId().longValue(), is(1234L));
+        assertThat(resolvedEpisode1.getSeriesRef().getId().longValue(), is(1235L));
+        assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
 
     }
 

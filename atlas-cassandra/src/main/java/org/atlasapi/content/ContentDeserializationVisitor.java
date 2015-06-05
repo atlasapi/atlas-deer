@@ -38,6 +38,8 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private static final ReleaseDateSerializer releaseDateSerializer = new ReleaseDateSerializer();
     private static final CertificateSerializer certificateSerializer = new CertificateSerializer();
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
+    private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
+
 
 
     private ContentProtos.Content msg;
@@ -196,6 +198,16 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         container.setUpcomingContent(
                 itemAndBroadcastRefSerializer.deserialize(
                         itemAndBroadcastRefBuilder.build()
+                )
+        );
+
+        ImmutableList.Builder<ContentProtos.ItemAndLocationSummary> itemAndBroadcastSummaries = ImmutableList.builder();
+        for (int i = 0; i < msg.getAvailableContentCount(); i++) {
+            itemAndBroadcastSummaries.add(msg.getAvailableContent(i));
+        }
+        container.setAvailableContent(
+                itemAndLocationSummarySerializer.deserialize(
+                        itemAndBroadcastSummaries.build()
                 )
         );
 

@@ -1,0 +1,68 @@
+package org.atlasapi.output.annotation;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import org.atlasapi.annotation.Annotation;
+import org.atlasapi.content.Container;
+import org.atlasapi.content.Content;
+import org.atlasapi.content.Item;
+import org.atlasapi.entity.Id;
+import org.atlasapi.equivalence.MergingEquivalentsResolver;
+import org.atlasapi.equivalence.ResolvedEquivalents;
+import org.atlasapi.output.FieldWriter;
+import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.writers.ItemDetailWriter;
+
+import java.io.IOException;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> {
+
+    public static final String AVAILABLE_CONTENT_DETAIL = "available_content_detail";
+
+    private final MergingEquivalentsResolver<Content> contentResolver;
+    private final ItemDetailWriter itemDetailWriter;
+
+    public AvailableContentDetailAnnotation(
+            MergingEquivalentsResolver<Content> contentResolver,
+            ItemDetailWriter itemDetailWriter
+    ) {
+        this.contentResolver = contentResolver;
+        this.itemDetailWriter = itemDetailWriter;
+    }
+
+    @Override
+    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (!(entity instanceof Container)) {
+            return;
+        }
+
+        Container container = (Container) entity;
+        if (container.getUpcomingContent().isEmpty()) {
+            writer.writeList(itemDetailWriter, ImmutableList.of(), ctxt);
+            return;
+        }
+
+        Set<Id> contentIds = container.getUpcomingContent().keySet()
+                .stream()
+                .map(i -> i.getId())
+                .collect(Collectors.toSet());
+
+        final ResolvedEquivalents<Content> resolvedEquivalents = Futures.get(
+                contentResolver.resolveIds(
+                        contentIds,
+                        ctxt.getApplicationSources(),
+                        Annotation.all()
+                ),
+                IOException.class
+        );
+
+        Iterable<Item> items = StreamSupport.stream(resolvedEquivalents.getFirstElems().spliterator(), false)
+                .map(c -> (Item) c)
+                .collect(Collectors.toList());
+
+        writer.writeList(itemDetailWriter, items, ctxt);
+    }
+}

@@ -19,6 +19,8 @@ import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -113,6 +115,19 @@ public class Location extends Identified {
     public void setEmbedId(String embedId) {
         this.embedId = embedId;
     }
+
+    public Boolean isAvailable() {
+        return AVAILABLE.apply(this);
+    }
+
+    public LocationSummary toSummary() {
+        return new LocationSummary(
+                available,
+                uri,
+                policy != null ? policy.getAvailabilityStart() : null,
+                policy != null ? policy.getAvailabilityEnd(): null
+        );
+    }
     
     public Location copy() {
         Location copy = new Location();
@@ -136,11 +151,15 @@ public class Location extends Identified {
             return input.copy();
         }
     };
-    
-    public static final Predicate<Location> AVAILABLE_LOCATION = new Predicate<Location>() {
-        @Override
-        public boolean apply(Location input) {
-            return input.getAvailable();
-        }
+
+    public static final Predicate<Location> AVAILABLE = l -> {
+        DateTime now = DateTime.now(DateTimeZone.UTC);
+        return l.getAvailable()
+                && (
+                l.getPolicy() == null
+                || (
+                        (l.getPolicy().getAvailabilityStart() == null || now.isAfter(l.getPolicy().getAvailabilityStart())))
+                        && (l.getPolicy().getAvailabilityEnd() == null || now.isBefore(l.getPolicy().getAvailabilityEnd()))
+                );
     };
 }
