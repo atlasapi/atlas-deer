@@ -541,7 +541,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     public class ContentGroupIndexUpdater {
 
-        public void index(ContentGroup group) {
+        public void index(ContentGroup group) throws IndexException {
             try {
                 ImmutableSet<Id> contentToBeInGroup = groupToChildIds(group);
                 ImmutableSet<SearchHit> contentCurrentlyInGroup = findContentByContentGroup(group.getId());
@@ -560,8 +560,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                         Sets.difference(contentToBeInGroup, contentCurrentlyInGroupIds).immutableCopy();
                 addGroupToContent(contentToAddGroupTo, group.getId());
             } catch (Exception e) {
-                log.error("Failed to update index for content group {} due to {}", group.getId(), e.getMessage());
-                e.printStackTrace();
+                throw new IndexException(e);
             }
         }
 
@@ -571,6 +570,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                     IOException.class
             );
             for (Content content : resolved.getResources().toList()) {
+                log.info("Adding {} to content group {}", content.getId(), groupId);
                 String mapping = typeMappingFor(content);
                 appendContentGroupToIndexEntryFor(content.getId(), groupId, mapping);
             }
