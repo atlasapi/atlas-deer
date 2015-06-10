@@ -170,6 +170,8 @@ message Encoding {
     optional bool contains_advertising = 18;
     optional int32 advertising_duration = 19;
     optional bool is_three_d = 21;
+    optional string quality = 22;
+    optional string quality_detail = 23;
 }
 
 message Location {
@@ -192,6 +194,7 @@ message Location {
     optional common.DateTime drm_playable_from = 16;
     optional int64 service_id = 18;
     optional int64 player_id = 19;
+    repeated string subscription_packages = 20;
 }
 
 message SegmentEvent {

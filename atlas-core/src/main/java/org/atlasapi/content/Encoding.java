@@ -61,6 +61,9 @@ public class Encoding extends Identified {
     private Boolean hasDOG;
     private Boolean is3d;
     
+    private Quality quality;
+    private String qualityDetail;
+    
     private String versionId;
 
     @FieldName("available_at")
@@ -158,6 +161,16 @@ public class Encoding extends Identified {
         return is3d;
     }
 
+    @FieldName("quality")
+    public Quality getQuality() {
+        return quality;
+    }
+    
+    @FieldName("qualityDetail")
+    public String getQualityDetail() {
+        return qualityDetail;
+    }
+    
     @FieldName("source")
     public String getSource() {
         return this.source;
@@ -251,6 +264,14 @@ public class Encoding extends Identified {
         this.is3d = is3d;
     }
 
+    public void setQuality(Quality quality) {
+        this.quality = quality;
+    }
+    
+    public void setQualityDetail(String qualityDetail) {
+        this.qualityDetail = qualityDetail;
+    }
+    
     public void setSource(String source) {
         this.source = source;
     }

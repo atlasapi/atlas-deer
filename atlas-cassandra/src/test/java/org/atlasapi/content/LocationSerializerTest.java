@@ -43,7 +43,7 @@ public class LocationSerializerTest {
         policy.setPlayerId(Id.valueOf(20L));
         policy.setPrice(new Price(Currency.getInstance("GBP"), 400));
         policy.setRevenueContract(Policy.RevenueContract.PAY_TO_BUY);
-        
+        policy.setSubscriptionPackages(ImmutableSet.of("a", "b"));
         location.setPolicy(policy);
         
         byte[] bytes = serializer.serialize(location).build().toByteArray();
@@ -71,6 +71,7 @@ public class LocationSerializerTest {
         assertThat(deserializedPolicy.getPlayerRef(), is(policy.getPlayerRef()));
         assertThat(deserializedPolicy.getPrice(), is(policy.getPrice()));
         assertThat(deserializedPolicy.getRevenueContract(), is(policy.getRevenueContract()));
+        assertThat(deserializedPolicy.getSubscriptionPackages(), is(policy.getSubscriptionPackages()));
         
     }
 

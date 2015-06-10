@@ -20,6 +20,7 @@ import org.atlasapi.content.FilmRef;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Policy;
+import org.atlasapi.content.Quality;
 import org.atlasapi.content.ReleaseDate.ReleaseType;
 import org.atlasapi.content.Restriction;
 import org.atlasapi.content.SeriesRef;
@@ -304,6 +305,10 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         e.setHasDOG(input.getHasDOG());
         e.set3d(version.is3d());
         e.setVersionId(version.getCanonicalUri());
+        if (input.getQuality() != null) {
+            e.setQuality(Quality.valueOf(input.getQuality().name()));
+        }
+        e.setQualityDetail(input.getQualityDetail());
         return e;
     }
 
@@ -343,6 +348,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setRevenueContract(transformEnum(input.getRevenueContract(), Policy.RevenueContract.class));
         p.setPrice(input.getPrice());
         p.setPlatform(transformEnum(input.getPlatform(), Policy.Platform.class));
+        p.setSubscriptionPackages(input.getSubscriptionPackages());
         if (input.getService() != null) {
             p.setServiceId(Id.valueOf(input.getService()));
         }

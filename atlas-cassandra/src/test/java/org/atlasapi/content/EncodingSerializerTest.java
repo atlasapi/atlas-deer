@@ -38,6 +38,8 @@ public class EncodingSerializerTest {
         encoding.setVideoVerticalSize(5);
         encoding.set3d(true);
         encoding.setVersionId("version");
+        encoding.setQuality(Quality.SD);
+        encoding.setQualityDetail("quality_detail");
         
         ContentProtos.Encoding serialized = serializer.serialize(encoding).build();
         Encoding deserialized = serializer.deserialize(serialized);
@@ -63,6 +65,8 @@ public class EncodingSerializerTest {
         assertThat(deserialized.getVideoVerticalSize(), is(encoding.getVideoVerticalSize()));
         assertThat(deserialized.is3d(), is(encoding.is3d()));
         assertThat(deserialized.getVersionId(), is(encoding.getVersionId()));
+        assertThat(deserialized.getQuality(), is(encoding.getQuality()));
+        assertThat(deserialized.getQualityDetail(), is(encoding.getQualityDetail()));
         
     }
 
