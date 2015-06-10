@@ -170,6 +170,8 @@ message Encoding {
     optional bool contains_advertising = 18;
     optional int32 advertising_duration = 19;
     optional bool is_three_d = 21;
+    optional string quality = 22;
+    optional string quality_detail = 23;
 }
 
 message Location {

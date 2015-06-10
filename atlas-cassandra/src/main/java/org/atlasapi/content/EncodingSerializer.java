@@ -75,6 +75,12 @@ public class EncodingSerializer {
         if (encoding.getVersionId() != null) {
             builder.setVersion(encoding.getVersionId());
         }
+        if (encoding.getQuality() != null) {
+            builder.setQuality(encoding.getQuality().toString());
+        }
+        if (encoding.getQualityDetail() != null) {
+            builder.setQualityDetail(encoding.getQualityDetail());
+        }
         return builder;
     }
 
@@ -116,6 +122,8 @@ public class EncodingSerializer {
                                                                 : null);
         encoding.set3d(msg.hasIsThreeD() ? msg.getIsThreeD() : null);
         encoding.setVersionId(msg.hasVersion() ? msg.getVersion() : null);
+        encoding.setQuality(msg.hasQuality() ? Quality.valueOf(msg.getQuality()) : null);
+        encoding.setQualityDetail(msg.hasQualityDetail() ? msg.getQualityDetail() : null);
         return encoding;
     }
 

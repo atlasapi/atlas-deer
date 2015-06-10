@@ -108,6 +108,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("advertising_duration", encoding.getAdvertisingDuration());
             writer.writeField("contains_advertising", encoding.getContainsAdvertising());
             writer.writeField("source", encoding.getSource());
+            writer.writeField("quality", encoding.getQuality());
+            writer.writeField("quality_detail", encoding.getQualityDetail());
             writer.writeField("bit_rate", encoding.getBitRate());
             writer.writeField("audio_bit_rate", encoding.getAudioBitRate());
             writer.writeField("audio_channels", encoding.getAudioChannels());
