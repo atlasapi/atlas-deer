@@ -21,6 +21,7 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Country;
@@ -38,6 +39,8 @@ public class Policy extends Identified {
 	private Integer availabilityLength;
 	
 	private RevenueContract revenueContract;
+	
+	private Set<String> subscriptionPackages = ImmutableSet.of();
 	
 	private Price price;
 	
@@ -157,6 +160,14 @@ public class Policy extends Identified {
 	
 	public void setPrice(Price price) {
         this.price = price;
+    }
+	
+    public Set<String> getSubscriptionPackages() {
+        return subscriptionPackages;
+    }
+    
+    public void setSubscriptionPackages(Iterable<String> subscriptionPackages) {
+        this.subscriptionPackages = ImmutableSet.copyOf(subscriptionPackages);
     }
 	
 	public void setNetwork(Network network) {
