@@ -343,6 +343,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setRevenueContract(transformEnum(input.getRevenueContract(), Policy.RevenueContract.class));
         p.setPrice(input.getPrice());
         p.setPlatform(transformEnum(input.getPlatform(), Policy.Platform.class));
+        p.setSubscriptionPackages(input.getSubscriptionPackages());
         if (input.getService() != null) {
             p.setServiceId(Id.valueOf(input.getService()));
         }

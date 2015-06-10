@@ -98,7 +98,9 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
                 writer.writeField("price", policy.getPrice().getAmount());
             }
             writer.writeField("revenue_contract", policy.getRevenueContract());
-
+            writer.writeList("subscription_packages", "subscription_package", 
+                             policy.getSubscriptionPackages(), ctxt);
+            
             writer.writeField("data_container_format", encoding.getDataContainerFormat());
             writer.writeField("data_size", encoding.getDataSize());
             writer.writeField("distributor", encoding.getDistributor());

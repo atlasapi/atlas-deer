@@ -68,6 +68,9 @@ public class LocationSerializer {
         if (policy.getRevenueContract() != null) {
             builder.setRevenueContract(policy.getRevenueContract().key());
         }
+        if (policy.getSubscriptionPackages() != null) {
+            builder.addAllSubscriptionPackages(policy.getSubscriptionPackages());
+        }
         
         return builder;
     }
@@ -123,6 +126,7 @@ public class LocationSerializer {
         if (msg.hasRevenueContract()) {
             policy.setRevenueContract(RevenueContract.fromKey(msg.getRevenueContract()));
         }
+        policy.setSubscriptionPackages(msg.getSubscriptionPackagesList());
         location.setPolicy(policy);
         return location;
     }

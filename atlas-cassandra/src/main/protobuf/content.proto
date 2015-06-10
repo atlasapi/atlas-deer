@@ -192,6 +192,7 @@ message Location {
     optional common.DateTime drm_playable_from = 16;
     optional int64 service_id = 18;
     optional int64 player_id = 19;
+    repeated string subscription_packages = 20;
 }
 
 message SegmentEvent {
