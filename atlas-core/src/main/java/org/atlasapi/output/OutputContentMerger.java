@@ -453,10 +453,11 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private void mergeContainer(ApplicationSources sources, Container chosen, Iterable<Container> notChosen) {
+        Iterable<Container> notChosenContainers = Iterables.filter(notChosen, Container.class);
         if (chosen.getUpcomingContent().isEmpty()) {
             chosen.setUpcomingContent(
                     first(
-                            notChosen,
+                            notChosenContainers,
                             input -> input.getUpcomingContent().isEmpty() ? null : ImmutableMap.of(),
                             ImmutableMap.of()
                     )
@@ -465,7 +466,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap(chosen.getAvailableContent());
 
-        for (Container equiv : notChosen) {
+        for (Container equiv : notChosenContainers) {
             for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary : equiv.getAvailableContent().entrySet()) {
                 availableContent.putIfAbsent(
                         itemRefAndLocationSummary.getKey(),
@@ -475,7 +476,6 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         chosen.setAvailableContent(availableContent);
-
 
     }
 
