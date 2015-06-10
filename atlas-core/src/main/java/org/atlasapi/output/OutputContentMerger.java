@@ -10,7 +10,6 @@ import javax.annotation.Nullable;
 import com.google.common.collect.ImmutableMap;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Broadcast;
-import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.Container;
@@ -35,7 +34,6 @@ import org.atlasapi.content.TopicRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
-import org.atlasapi.equivalence.SeriesAndEpisodeNumber;
 import org.atlasapi.equivalence.SeriesOrder;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
@@ -212,6 +210,15 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         mergeTopics(chosen, notChosen);
         mergeKeyPhrases(chosen, notChosen);
+        Function<T, Integer> yearProjector = new Function<T, Integer>() {
+            @Override
+            public Integer apply(T input) {
+                return input.getYear();
+            }
+        };
+        if (chosen.getYear() == null) {
+            chosen.setYear(first(notChosen, yearProjector));
+        }
     }
 
     private <T extends Item> void mergeIn(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
