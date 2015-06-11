@@ -346,31 +346,34 @@ public class QueryWebModule {
     }
 
     private QueryAttributeParser contentQueryAttributeParser() {
-        return new QueryAttributeParser(ImmutableList.of(
-                QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())),
-                QueryAtomParser.valueOf(Attributes.CONTENT_TYPE,
-                        AttributeCoercers.enumCoercer(ContentType.fromKey())),
-                QueryAtomParser.valueOf(Attributes.SOURCE,
-                        AttributeCoercers.enumCoercer(Sources.fromKey())),
-                QueryAtomParser.valueOf(Attributes.ALIASES_NAMESPACE,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.ALIASES_VALUE,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.TOPIC_ID,
-                        AttributeCoercers.idCoercer(idCodec())),
-                QueryAtomParser.valueOf(Attributes.TOPIC_RELATIONSHIP,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.TOPIC_SUPERVISED,
-                        AttributeCoercers.booleanCoercer()),
-                QueryAtomParser.valueOf(Attributes.TOPIC_WEIGHTING,
-                        AttributeCoercers.floatCoercer()),
-                QueryAtomParser.valueOf(Attributes.CONTENT_TITLE_PREFIX,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.GENRE,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
-                        AttributeCoercers.stringCoercer())
-        ));
+        ImmutableList.Builder<QueryAtomParser<String, ? extends Comparable<?>>> parsers = ImmutableList.builder();
+        
+        parsers.add(QueryAtomParser.valueOf(Attributes.ID, 
+                        AttributeCoercers.idCoercer(idCodec())));
+        parsers.add(QueryAtomParser.valueOf(Attributes.CONTENT_TYPE,
+                        AttributeCoercers.enumCoercer(ContentType.fromKey())));
+        parsers.add(QueryAtomParser.valueOf(Attributes.SOURCE,
+                        AttributeCoercers.enumCoercer(Sources.fromKey())));
+        parsers.add(QueryAtomParser.valueOf(Attributes.ALIASES_NAMESPACE,
+                        AttributeCoercers.stringCoercer()));
+        parsers.add(QueryAtomParser.valueOf(Attributes.ALIASES_VALUE,
+                        AttributeCoercers.stringCoercer()));
+        parsers.add(QueryAtomParser.valueOf(Attributes.TOPIC_ID,
+                        AttributeCoercers.idCoercer(idCodec())));
+        parsers.add(QueryAtomParser.valueOf(Attributes.TOPIC_RELATIONSHIP,
+                        AttributeCoercers.stringCoercer()));
+        parsers.add(QueryAtomParser.valueOf(Attributes.TOPIC_SUPERVISED,
+                        AttributeCoercers.booleanCoercer()));
+        parsers.add(QueryAtomParser.valueOf(Attributes.TOPIC_WEIGHTING,
+                        AttributeCoercers.floatCoercer()));
+        parsers.add(QueryAtomParser.valueOf(Attributes.CONTENT_TITLE_PREFIX,
+                        AttributeCoercers.stringCoercer()));
+        parsers.add(QueryAtomParser.valueOf(Attributes.GENRE,
+                        AttributeCoercers.stringCoercer()));
+        parsers.add(QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
+                        AttributeCoercers.idCoercer(idCodec())));
+        
+        return new QueryAttributeParser(parsers.build());
     }
 
     private StandardQueryParser<Content> contentQueryParser() {
