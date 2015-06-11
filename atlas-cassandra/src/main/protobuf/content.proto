@@ -58,6 +58,7 @@ message Content {
     optional string media_type = 5 [(column)=DESC];
     optional string specialization = 6 [(column)=DESC];
     optional string sort_key = 7 [(column)=DESC];
+    optional double priority = 8 [(column)=DESC];
 
     repeated common.Reference children = 10  [(column)=CHILDREN];
     repeated ItemAndBroadcastRef upcoming_content = 55  [(column)=UPCOMING_CONTENT];

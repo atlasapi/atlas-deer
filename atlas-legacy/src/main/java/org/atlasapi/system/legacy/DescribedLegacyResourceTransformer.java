@@ -61,6 +61,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         }
         described.setThumbnail(input.getThumbnail());
         described.setTitle(input.getTitle());
+        described.setPriority(input.getPriority());
         return described;
     }
 

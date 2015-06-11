@@ -61,6 +61,8 @@ public abstract class Described extends Identified implements Sourced {
 
     private String presentationChannel;
 
+    private Double priority;
+    
     protected Set<RelatedLink> relatedLinks = ImmutableSet.of();
 	
 	public Described(String uri, String curie, Publisher publisher) {
@@ -109,6 +111,15 @@ public abstract class Described extends Identified implements Sourced {
 	public Set<String> getGenres() {
 		return this.genres;
 	}
+    
+    @FieldName("priority")
+    public Double getPriority() {
+        return priority;
+    }
+    
+    public void setPriority(Double priority) {
+        this.priority = priority;
+    }
 	
 	public void setTitle(String title) {
 		this.title = title;
