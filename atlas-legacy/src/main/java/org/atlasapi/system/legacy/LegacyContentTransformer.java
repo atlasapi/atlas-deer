@@ -307,6 +307,10 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         e.setVersionId(version.getCanonicalUri());
         if (input.getQuality() != null) {
             e.setQuality(Quality.valueOf(input.getQuality().name()));
+        } else {
+            if (Boolean.TRUE.equals(input.getHighDefinition())) {
+                e.setQuality(Quality.HD);
+            }
         }
         e.setQualityDetail(input.getQualityDetail());
         return e;
