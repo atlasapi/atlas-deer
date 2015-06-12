@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import com.google.common.base.Optional;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Item;
@@ -16,6 +17,7 @@ import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.PlayerWriter;
 import org.atlasapi.output.writers.ServiceWriter;
 import org.atlasapi.persistence.player.PlayerResolver;
@@ -43,12 +45,14 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         this.encodedLocationWriter = new EncodedLocationWriter(
                 "locations", playerResolver, serviceResolver
         );
+        
     }
 
     public static final class EncodedLocationWriter implements EntityListWriter<EncodedLocation> {
 
         private final static Logger log = LoggerFactory.getLogger(EncodedLocation.class);
 
+        private final AliasWriter aliasWriter;
         private final PlayerResolver playerResolver;
         private final EntityWriter<Player> playerWriter = new PlayerWriter();
         private final EntityWriter<Service> serviceWriter = new ServiceWriter();
@@ -61,6 +65,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             this.listName = checkNotNull(listName);
             this.serviceResolver = checkNotNull(serviceResolver);
             this.playerResolver = checkNotNull(playerResolver);
+            this.aliasWriter = new AliasWriter();
         }
 
         private Boolean isAvailable(Policy input) {
@@ -76,6 +81,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             Policy policy = location.getPolicy();
 
             writer.writeField("uri", location.getUri());
+            writer.writeList(aliasWriter, location.getAliases(), ctxt);
             writer.writeField("available", isAvailable(policy));
             writer.writeField("transport_is_live", location.getTransportIsLive());
             writer.writeField("transport_type", location.getTransportType());
