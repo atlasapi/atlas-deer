@@ -6,10 +6,13 @@ import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
 import java.util.Currency;
 
 import org.atlasapi.content.Policy.RevenueContract;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
 
+import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Countries;
 
@@ -28,6 +31,11 @@ public class LocationSerializer {
             builder.setTransportType(location.getTransportType().toString());
         }
         if (location.getUri() != null) { builder.setUri(location.getUri()); }
+        for (Alias alias : location.getAliases()) {
+            builder.addAliases(CommonProtos.Alias.newBuilder()
+                    .setNamespace(alias.getNamespace())
+                    .setValue(alias.getValue()));
+        }
         
         Policy policy = location.getPolicy();
         if (policy == null) {
@@ -128,6 +136,12 @@ public class LocationSerializer {
         }
         policy.setSubscriptionPackages(msg.getSubscriptionPackagesList());
         location.setPolicy(policy);
+        
+        ImmutableSet.Builder<Alias> aliases = ImmutableSet.builder();
+        for (CommonProtos.Alias alias : msg.getAliasesList()) {
+            aliases.add(new Alias(alias.getNamespace(), alias.getValue()));
+        }
+        location.setAliases(aliases.build());
         return location;
     }
     
