@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableMap;
+
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -219,6 +220,13 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getYear() == null) {
             chosen.setYear(first(notChosen, yearProjector));
         }
+        chosen.setGenres(projectFieldFromEquivalents(chosen, notChosen, new Function<T, Iterable<String>>() {
+
+            @Override
+            public Iterable<String> apply(T input) {
+                return input.getGenres();
+            }
+        }));
     }
 
     private <T extends Item> void mergeIn(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
