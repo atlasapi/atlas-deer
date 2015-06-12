@@ -58,7 +58,6 @@ message Content {
     optional string media_type = 5 [(column)=DESC];
     optional string specialization = 6 [(column)=DESC];
     optional string sort_key = 7 [(column)=DESC];
-    optional double priority = 8 [(column)=DESC];
 
     repeated common.Reference children = 10  [(column)=CHILDREN];
     repeated ItemAndBroadcastRef upcoming_content = 55  [(column)=UPCOMING_CONTENT];
@@ -83,6 +82,7 @@ message Content {
     repeated string genres = 39 [(column)=DESC];
     optional Summary container_summary = 43 [(column)=DESC];
     optional string website_url = 44 [(column)=DESC];
+    optional double priority = 61 [(column)=DESC];
 
     repeated Content clips = 24 [(column)=CLIPS];
     repeated KeyPhrase key_phrases = 25 [(column)=KEYPHRASES];
