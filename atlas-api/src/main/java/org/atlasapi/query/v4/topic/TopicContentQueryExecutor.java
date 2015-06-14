@@ -124,11 +124,15 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     }
     
     private ListenableFuture<FluentIterable<Id>> queryIndex(Query<Content> query) throws QueryExecutionException {
-        return index.query(
-            query.getOperands(), 
-            query.getContext().getApplicationSources().getEnabledReadSources(), 
+        try {
+        return Futures.immediateFuture(index.query(
+            query.getOperands(),
+            query.getContext().getApplicationSources().getEnabledReadSources(),
             query.getContext().getSelection().or(Selection.all()),
-                Optional.empty());
+                Optional.empty()).get().getFutureIds());
+        } catch (Exception e) {
+            throw new QueryExecutionException(e);
+        }
     }
 
 }
