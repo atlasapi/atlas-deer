@@ -49,6 +49,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
@@ -481,10 +482,13 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> maybeOrder) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
+        QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
+        log.debug(queryBuilder.toString());
+        
         SearchRequestBuilder reqBuilder = esClient.client()
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
-                .setQuery(queryBuilder.buildQuery(query))
+                .setQuery(queryBuilder)
                 .addField(EsContent.ID)
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
@@ -498,6 +502,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                             .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
             );
         }
+
+
 
         reqBuilder.execute(FutureSettingActionListener.setting(response));
 
