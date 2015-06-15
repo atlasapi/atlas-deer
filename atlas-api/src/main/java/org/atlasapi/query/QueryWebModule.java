@@ -1,46 +1,15 @@
 package org.atlasapi.query;
 
-import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
-import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
-import static org.atlasapi.annotation.Annotation.BRAND_REFERENCE;
-import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
-import static org.atlasapi.annotation.Annotation.BROADCASTS;
-import static org.atlasapi.annotation.Annotation.CHANNEL;
-import static org.atlasapi.annotation.Annotation.CHANNELS;
-import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
-import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
-import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
-import static org.atlasapi.annotation.Annotation.CLIPS;
-import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
-import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
-import static org.atlasapi.annotation.Annotation.DESCRIPTION;
-import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
-import static org.atlasapi.annotation.Annotation.EXTENDED_ID;
-import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.ID;
-import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
-import static org.atlasapi.annotation.Annotation.IMAGES;
-import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
-import static org.atlasapi.annotation.Annotation.LOCATIONS;
-import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
-import static org.atlasapi.annotation.Annotation.META_MODEL;
-import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.PARENT;
-import static org.atlasapi.annotation.Annotation.PEOPLE;
-import static org.atlasapi.annotation.Annotation.PLATFORM;
-import static org.atlasapi.annotation.Annotation.REGIONS;
-import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
-import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
-import static org.atlasapi.annotation.Annotation.SERIES;
-import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
-import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
-import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
-import static org.atlasapi.annotation.Annotation.TOPICS;
-import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
-import static org.atlasapi.annotation.Annotation.VARIATIONS;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -109,8 +78,8 @@ import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.ItemDetailWriter;
-import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.output.writers.RequestWriter;
+import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
 import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
@@ -173,16 +142,46 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
+import javax.servlet.http.HttpServletRequest;
+
+import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
+import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
+import static org.atlasapi.annotation.Annotation.BRAND_REFERENCE;
+import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
+import static org.atlasapi.annotation.Annotation.BROADCASTS;
+import static org.atlasapi.annotation.Annotation.CHANNEL;
+import static org.atlasapi.annotation.Annotation.CHANNELS;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
+import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
+import static org.atlasapi.annotation.Annotation.CLIPS;
+import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
+import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
+import static org.atlasapi.annotation.Annotation.DESCRIPTION;
+import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
+import static org.atlasapi.annotation.Annotation.EXTENDED_ID;
+import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ID;
+import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
+import static org.atlasapi.annotation.Annotation.IMAGES;
+import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
+import static org.atlasapi.annotation.Annotation.LOCATIONS;
+import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
+import static org.atlasapi.annotation.Annotation.META_MODEL;
+import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.PARENT;
+import static org.atlasapi.annotation.Annotation.PEOPLE;
+import static org.atlasapi.annotation.Annotation.PLATFORM;
+import static org.atlasapi.annotation.Annotation.REGIONS;
+import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
+import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
+import static org.atlasapi.annotation.Annotation.SERIES;
+import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
+import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
+import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
+import static org.atlasapi.annotation.Annotation.TOPICS;
+import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
+import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
 @Configuration
 @Import({ QueryModule.class, LicenseModule.class })
@@ -297,8 +296,13 @@ public class QueryWebModule {
                 contentQueryAttributeParser(),
                 contextParser);
 
-        return new TopicContentController(parser, queryModule.topicContentQueryExecutor(),
-                new TopicContentResultWriter(topicListWriter(), contentListWriter()));
+        return new TopicContentController(
+                parser,
+                queryModule.topicContentQueryExecutor(),
+                new TopicContentResultWriter(
+                        topicListWriter(), contentListWriter()
+                )
+        );
     }
 
     @Bean LinkCreator linkCreator() {
@@ -320,9 +324,11 @@ public class QueryWebModule {
                 selectionBuilder()
         );
 
-        return new ModelController(ModelClassInfoSingletonStore.INSTANCE,
+        return new ModelController(
+                ModelClassInfoSingletonStore.INSTANCE,
                 resultWriter,
-                contextParser);
+                contextParser
+        );
     }
 
     @Bean EndpointController endpointController() {
@@ -340,47 +346,55 @@ public class QueryWebModule {
                 selectionBuilder()
         );
 
-        return new EndpointController(EndpointClassInfoSingletonStore.INSTANCE,
+        return new EndpointController(
+                EndpointClassInfoSingletonStore.INSTANCE,
                 resultWriter,
-                contextParser);
+                contextParser
+        );
     }
 
     private QueryAttributeParser contentQueryAttributeParser() {
-        return new QueryAttributeParser(ImmutableList.of(
-                QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())),
-                QueryAtomParser.valueOf(Attributes.CONTENT_TYPE,
-                        AttributeCoercers.enumCoercer(ContentType.fromKey())),
-                QueryAtomParser.valueOf(Attributes.SOURCE,
-                        AttributeCoercers.enumCoercer(Sources.fromKey())),
-                QueryAtomParser.valueOf(Attributes.ALIASES_NAMESPACE,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.ALIASES_VALUE,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.TOPIC_ID,
-                        AttributeCoercers.idCoercer(idCodec())),
-                QueryAtomParser.valueOf(Attributes.TOPIC_RELATIONSHIP,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.TOPIC_SUPERVISED,
-                        AttributeCoercers.booleanCoercer()),
-                QueryAtomParser.valueOf(Attributes.TOPIC_WEIGHTING,
-                        AttributeCoercers.floatCoercer()),
-                QueryAtomParser.valueOf(Attributes.CONTENT_TITLE_PREFIX,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.GENRE,
-                        AttributeCoercers.stringCoercer()),
-                QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
-                        AttributeCoercers.stringCoercer())
-        ));
+        return new QueryAttributeParser(
+                ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.CONTENT_TYPE,
+                                AttributeCoercers.enumCoercer(ContentType.fromKey())),
+                        QueryAtomParser.valueOf(Attributes.SOURCE,
+                                AttributeCoercers.enumCoercer(Sources.fromKey())),
+                        QueryAtomParser.valueOf(Attributes.ALIASES_NAMESPACE,
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.ALIASES_VALUE,
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.TOPIC_ID,
+                                AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.TOPIC_RELATIONSHIP,
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.TOPIC_SUPERVISED,
+                                AttributeCoercers.booleanCoercer()),
+                        QueryAtomParser.valueOf(Attributes.TOPIC_WEIGHTING,
+                                AttributeCoercers.floatCoercer()),
+                        QueryAtomParser.valueOf(Attributes.CONTENT_TITLE_PREFIX,
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.GENRE,
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
+                                AttributeCoercers.stringCoercer())
+                )
+        );
     }
 
     private StandardQueryParser<Content> contentQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(configFetcher,
+        QueryContextParser contextParser = new QueryContextParser(
+                configFetcher,
                 userFetcher,
-                new IndexAnnotationsExtractor(contentAnnotationIndex()), selectionBuilder());
+                new IndexAnnotationsExtractor(contentAnnotationIndex()), selectionBuilder()
+        );
 
-        return new StandardQueryParser<Content>(Resource.CONTENT,
+        return new StandardQueryParser<>(
+                Resource.CONTENT,
                 contentQueryAttributeParser(),
-                idCodec(), contextParser);
+                idCodec(), contextParser
+        );
     }
 
     @Bean ChannelController channelController() {
@@ -469,7 +483,7 @@ public class QueryWebModule {
 
     private QueryAttributeParser channelQueryAttributeParser() {
         return new QueryAttributeParser(
-                ImmutableList.of(
+                ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
                         QueryAtomParser.valueOf(Attributes.ID,
                                 AttributeCoercers.idCoercer(idCodec())),
                         QueryAtomParser.valueOf(Attributes.AVAILABLE_FROM,
@@ -482,8 +496,8 @@ public class QueryWebModule {
                                 Attributes.MEDIA_TYPE,
                                 AttributeCoercers.enumCoercer(
                                         new Function<String, Optional<MediaType>>() {
-
-                                            @Override public Optional<MediaType> apply(
+                                            @Override
+                                            public Optional<MediaType> apply(
                                                     String input) {
                                                 return MediaType.fromKey(input);
                                             }
