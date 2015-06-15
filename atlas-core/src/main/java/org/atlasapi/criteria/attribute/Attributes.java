@@ -100,7 +100,7 @@ public class Attributes {
     // For filtering
     public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class).withJavaAttribute("parentFlattenedTitle").withAlias("parentFlattenedTitle");
     public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
-	public static final Attribute<Id> CONTENT_GROUP = idListAttribute("contentGroup", Content.class).withJavaAttribute("contentGroups").withAlias("contentGroups");
+	public static final Attribute<Id> CONTENT_GROUP = idListAttribute("contentGroups", Content.class).withJavaAttribute("contentGroups").withAlias("contentGroups");
 
 
     private static List<Attribute<?>> ALL_ATTRIBUTES = 
