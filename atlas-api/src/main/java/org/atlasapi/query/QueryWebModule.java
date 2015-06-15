@@ -378,7 +378,7 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.GENRE,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
-                                AttributeCoercers.stringCoercer())
+                                AttributeCoercers.idCoercer(idCodec()))
                 )
         );
     }
@@ -409,9 +409,11 @@ public class QueryWebModule {
         return new ChannelGroupController(
                 channelGroupQueryParser(),
                 channelGroupQueryExecutor,
-                new ChannelGroupQueryResultWriter(channelGroupListWriter(),
+                new ChannelGroupQueryResultWriter(
+                        channelGroupListWriter(),
                         licenseWriter,
-                        requestWriter())
+                        requestWriter()
+                )
         );
     }
 
