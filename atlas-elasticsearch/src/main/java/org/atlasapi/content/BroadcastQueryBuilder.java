@@ -14,9 +14,22 @@ public class BroadcastQueryBuilder {
 
     public static final String SCRIPT = ""
             + "if (_source.broadcasts != null) {"
-            + "  _score;"
-            + "} else _score;";
-    public static final String SCRIPT_LANG = "mvel";
+            + "  now = System.currentTimeMillis()"
+            + "  t = java.lang.Long.MAX_VALUE"
+            + "  f = 1"
+            + "  for (b in _source.broadcasts) {"
+            + "    candidate = (now - b.transmissionTimeInMillis).abs()"
+            + "    if (candidate < t) t = candidate"
+            + "    if (b.repeat = false) f = firstBroadcastBoost"
+            + "  }"
+            + "  g = 1"
+            + "  if (t < 604800000) {"
+            + "    g = 50"
+            + "  }"
+            + "  _score + (_score * f * timeBoost * (1 / (1 + (t / (t < oneWeek ? 50 : 1)))))"
+            + "} else { _score }";
+
+    public static final String SCRIPT_LANG = "groovy";
 
     public static QueryBuilder build(QueryBuilder childQuery, Float timeBoost,
             Float firstBroadcastBoost) {
