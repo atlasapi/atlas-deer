@@ -63,9 +63,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     private ListenableFuture<QueryResult<Content>> executeSingleQuery(final Query<Content> query) {
         final Id contentId = query.getOnlyId();
         return Futures.transform(resolve(query, contentId),
-            new Function<ResolvedEquivalents<Content>, QueryResult<Content>>() {
-                @Override
-                public QueryResult<Content> apply(ResolvedEquivalents<Content> input) {
+                (ResolvedEquivalents<Content> input) -> {
                     List<Content> equivs = input.get(contentId).asList();
                     if (equivs.isEmpty()) {
                         throw new UncheckedQueryExecutionException(new NotFoundException(contentId));
@@ -73,7 +71,6 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
                     Content resource = equivs.get(0);
                     return QueryResult.singleResult(resource, query.getContext());
                 }
-            }
         );
     }
 
@@ -101,22 +98,13 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>> toEquivalentContent(
             final Query<Content> query) {
-        return new AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>>() {
-            @Override
-            public ListenableFuture<ResolvedEquivalents<Content>> apply(FluentIterable<Id> input)
-                    throws Exception {
-                return resolver.resolveIds(input, applicationSources(query), annotations(query));
-            }
-        };
+        return input -> resolver.resolveIds(input, applicationSources(query), annotations(query));
     }
 
     private Function<ResolvedEquivalents<Content>, QueryResult<Content>> toQueryResult(final Query<Content> query) {
-        return new Function<ResolvedEquivalents<Content>, QueryResult<Content>>() {
-            @Override
-            public QueryResult<Content> apply(ResolvedEquivalents<Content> input) {
-                Iterable<Content> resources = input.getFirstElems();
-                return QueryResult.listResult(resources, query.getContext());
-            }
+        return input -> {
+            Iterable<Content> resources = input.getFirstElems();
+            return QueryResult.listResult(resources, query.getContext());
         };
     }
 
