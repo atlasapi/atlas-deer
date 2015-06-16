@@ -380,8 +380,6 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
                                 AttributeCoercers.idCoercer(idCodec())),
                         QueryAtomParser.valueOf(Attributes.SPECIALIZATION,
-                                AttributeCoercers.stringCoercer()),
-                        QueryAtomParser.valueOf(Attributes.TYPE,
                                 AttributeCoercers.stringCoercer())
                 )
         );
@@ -519,7 +517,7 @@ public class QueryWebModule {
                 new IndexAnnotationsExtractor(topicAnnotationIndex()), selectionBuilder());
 
         return new StandardQueryParser<Topic>(Resource.TOPIC,
-                new QueryAttributeParser(ImmutableList.of(
+                new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
                         QueryAtomParser.valueOf(Attributes.ID,
                                 AttributeCoercers.idCoercer(idCodec())),
                         QueryAtomParser.valueOf(Attributes.TOPIC_TYPE,

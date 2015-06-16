@@ -4,10 +4,8 @@ import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
@@ -45,7 +43,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.index.query.FilterBuilders;
@@ -479,7 +476,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     @Override
     public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
-            Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> maybeOrder) {
+            Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> maybeOrder, Optional<TitleQueryParams> searchParam) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
@@ -488,7 +485,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         SearchRequestBuilder reqBuilder = esClient.client()
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
-                .setQuery(queryBuilder)
                 .addField(EsContent.ID)
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
@@ -503,8 +499,14 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             );
         }
 
+        if (searchParam.isPresent()) {
+            TitleQueryParams titleQuery = searchParam.get();
+            queryBuilder = QueryBuilders.boolQuery()
+                    .must(queryBuilder)
+                    .must(TitleQueryBuilder.build(titleQuery.getSearchTerm(), titleQuery.getBoost().orElse(0F)));
+        }
 
-
+        reqBuilder.setQuery(queryBuilder);
         reqBuilder.execute(FutureSettingActionListener.setting(response));
 
         return Futures.transform(response, (SearchResponse input) -> {

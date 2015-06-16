@@ -128,7 +128,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             query.getOperands(), 
             query.getContext().getApplicationSources().getEnabledReadSources(), 
             query.getContext().getSelection().or(Selection.all()),
-                Optional.empty());
+                Optional.empty(), Optional.empty());
     }
 
 }
