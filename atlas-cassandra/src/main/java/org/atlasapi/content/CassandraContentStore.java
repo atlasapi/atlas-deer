@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Sets;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
@@ -71,12 +72,12 @@ public final class CassandraContentStore extends AbstractContentStore {
         private final ContentHasher hasher;
         private final MessageSender<ResourceUpdatedMessage> sender;
         private final IdGenerator idGenerator;
-        
+
         private ConsistencyLevel readCl = ConsistencyLevel.CL_QUORUM;
         private ConsistencyLevel writeCl = ConsistencyLevel.CL_QUORUM;
         private Clock clock = new SystemClock();
 
-        public Builder(AstyanaxContext<Keyspace> context, String name, 
+        public Builder(AstyanaxContext<Keyspace> context, String name,
                        ContentHasher hasher, MessageSender<ResourceUpdatedMessage> sender, IdGenerator idGenerator) {
             this.context = context;
             this.name = name;
@@ -84,53 +85,64 @@ public final class CassandraContentStore extends AbstractContentStore {
             this.sender = sender;
             this.idGenerator = idGenerator;
         }
-        
+
         public Builder withReadConsistency(ConsistencyLevel readCl) {
             this.readCl = readCl;
             return this;
         }
-        
+
         public Builder withWriteConsistency(ConsistencyLevel writeCl) {
             this.writeCl = writeCl;
             return this;
         }
-        
+
         public Builder withClock(Clock clock) {
             this.clock = clock;
             return this;
         }
-        
+
         public CassandraContentStore build() {
-            return new CassandraContentStore(context, name, readCl, writeCl, 
+            return new CassandraContentStore(context, name, readCl, writeCl,
                 hasher, idGenerator, sender, clock);
         }
-        
+
     }
+
+    private static final Set<ContentColumn> REQUIRED_CONTENT_COLUMNS = ImmutableSet.of(TYPE, SOURCE, IDENTIFICATION);
 
     private final Keyspace keyspace;
     private final ConsistencyLevel readConsistency;
     private final ConsistencyLevel writeConsistency;
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Content> aliasIndex;
-    
+
     private final ContentMarshaller marshaller = new ProtobufContentMarshaller();
     private final Function<Row<Long, String>, Content> rowToContent =
-        new Function<Row<Long, String>, Content>() {
-            @Override
-            public Content apply(Row<Long, String> input) {
-                if (input.getColumns().size() > 0) {
+            input -> {
+                if (!input.getColumns().isEmpty()) {
+                    verifyRequiredColumns(input.getKey(), input.getColumns());
                     return marshaller.unmarshallCols(input.getColumns());
                 }
                 return null;
+            };
+
+    private void verifyRequiredColumns(Long id, ColumnList<String> columns) {
+        for (ContentColumn requiredColumn : REQUIRED_CONTENT_COLUMNS) {
+            if(columns.getColumnByName(requiredColumn.toString()) == null) {
+                throw new CorruptContentException(
+                        String.format(
+                                "Missing required column '%s' in row with ID %s in CassandraContentStore.",
+                                requiredColumn.toString(),
+                                id
+                        )
+                );
             }
-        };
-    private final Function<Rows<Long, String>, Resolved<Content>> toResolvedContent = 
-        new Function<Rows<Long, String>, Resolved<Content>>() {
-            @Override
-            public Resolved<Content> apply(Rows<Long, String> rows) {
-                return Resolved.valueOf(FluentIterable.from(rows).transform(rowToContent).filter(Predicates.notNull()));
-            }
-        };
+        }
+
+    }
+
+    private final Function<Rows<Long, String>, Resolved<Content>> toResolvedContent =
+            rows -> Resolved.valueOf(FluentIterable.from(rows).transform(rowToContent).filter(Predicates.notNull()));
 
     public CassandraContentStore(AstyanaxContext<Keyspace> context,
         String cfName, ConsistencyLevel readConsistency, ConsistencyLevel writeConsistency, 
@@ -206,20 +218,22 @@ public final class CassandraContentStore extends AbstractContentStore {
     protected @Nullable
     Content resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases) {
         Content previous = null;
-        if (id != null) {
-            previous = resolve(id.longValue(), null);
-        } else {
-            try {
-                Set<Long> ids = aliasIndex.readAliases(source, aliases);
-                Long aliasId = Iterables.getFirst(ids, null);
-                if (aliasId != null) {
-                    previous = resolve(aliasId, null);
-                }
-            } catch (ConnectionException e) {
-                throw Throwables.propagate(e);
+        try {
+            if (id != null) {
+                previous = resolve(id.longValue(), null);
+            } else {
+                    Set<Long> ids = aliasIndex.readAliases(source, aliases);
+                    Long aliasId = Iterables.getFirst(ids, null);
+                    if (aliasId != null) {
+                        previous = resolve(aliasId, null);
+                    }
             }
+
+        } catch (ConnectionException e) {
+            throw Throwables.propagate(e);
+        } catch (CorruptContentException e) {
+            log.error("Previously written content is corrupt", e);
         }
-        
         return previous;
     }
 
@@ -231,9 +245,11 @@ public final class CassandraContentStore extends AbstractContentStore {
                 query = query.withColumnSlice(Collections2.transform(colNames, Functions.toStringFunction()));
             }
             ColumnList<String> cols = query.execute().getResult();
-            
-            return cols.size() > 0 ? marshaller.unmarshallCols(cols)
-                                   : null;
+            if(cols.isEmpty()) {
+                return null;
+            }
+            verifyRequiredColumns(longId, cols);
+            return marshaller.unmarshallCols(cols);
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
