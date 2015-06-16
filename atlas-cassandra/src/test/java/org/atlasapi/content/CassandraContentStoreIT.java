@@ -1100,6 +1100,47 @@ public class CassandraContentStoreIT {
 
     }
 
+    @Test(expected=CorruptContentException.class)
+    public void testWritingResolvingContainerWhichOnlyChildRefsThrowsCorrectException() throws Exception {
+
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+
+        ContentProtos.Content.Builder contentBuilder = ContentProtos.Content.newBuilder();
+
+        Episode episode2 = create(new Episode());
+        episode2.setId(12345L);
+        episode2.setThisOrChildLastUpdated(now);
+
+        Location location4 = new Location();
+        location4.setAvailable(true);
+        location4.setUri("location4");
+        Policy policy2 = new Policy();
+        policy2.setAvailabilityStart(now.plusHours(1));
+        policy2.setAvailabilityEnd(now.plusHours(2));
+        location4.setPolicy(policy2);
+
+        contentBuilder.addAvailableContent(
+                new ItemAndLocationSummarySerializer()
+                        .serialize(
+                                episode2.toRef(),
+                                ImmutableList.of(location4.toSummary())
+                        )
+        );
+
+        ColumnFamily<Long, String> columnFamily = ColumnFamily.newColumnFamily(
+                CONTENT_TABLE,
+                LongSerializer.get(),
+                StringSerializer.get()
+        );
+
+        MutationBatch batch = context.getClient().prepareMutationBatch();
+        ColumnListMutation<String> mutation = batch.withRow(columnFamily, 1234L);
+        mutation.putColumn("AVAILABLE:1238", contentBuilder.build().toByteArray());
+        batch.execute();
+
+        resolve(1234L);
+    }
 
 
 
