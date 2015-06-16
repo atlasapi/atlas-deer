@@ -378,7 +378,11 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.GENRE,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
-                                AttributeCoercers.idCoercer(idCodec()))
+                                AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.SPECIALIZATION,
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.TYPE,
+                                AttributeCoercers.stringCoercer())
                 )
         );
     }

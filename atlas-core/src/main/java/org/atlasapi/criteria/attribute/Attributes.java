@@ -101,9 +101,10 @@ public class Attributes {
     public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", Content.class).withJavaAttribute("parentFlattenedTitle").withAlias("parentFlattenedTitle");
     public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
 	public static final Attribute<Id> CONTENT_GROUP = idListAttribute("contentGroups", Content.class).withJavaAttribute("contentGroups").withAlias("contentGroups");
+	public static final Attribute<String> SPECIALIZATION = stringListAttribute("specialization", Content.class);
+	public static final Attribute<String> TYPE = stringListAttribute("type", Content.class);
 
-
-    private static List<Attribute<?>> ALL_ATTRIBUTES = 
+    private static List<Attribute<?>> ALL_ATTRIBUTES =
 		ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,
 								    DESCRIPTION_GENRE,
 								    DESCRIPTION_PUBLISHER,
