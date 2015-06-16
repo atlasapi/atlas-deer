@@ -120,20 +120,20 @@ public final class CassandraContentStore extends AbstractContentStore {
     private final Function<Row<Long, String>, Content> rowToContent =
             input -> {
                 if (!input.getColumns().isEmpty()) {
-                    verifyRequiredColumns(input);
+                    verifyRequiredColumns(input.getKey(), input.getColumns());
                     return marshaller.unmarshallCols(input.getColumns());
                 }
                 return null;
             };
 
-    private void verifyRequiredColumns(Row<Long, String> row) {
+    private void verifyRequiredColumns(Long id, ColumnList<String> columns) {
         for (ContentColumn requiredColumn : REQUIRED_CONTENT_COLUMNS) {
-            if(row.getColumns().getColumnByName(requiredColumn.toString()) == null) {
+            if(columns.getColumnByName(requiredColumn.toString()) == null) {
                 throw new CorruptContentException(
                         String.format(
                                 "Missing required column '%s' in row with ID %s in CassandraContentStore.",
                                 requiredColumn.toString(),
-                                row.getKey()
+                                id
                         )
                 );
             }
@@ -245,9 +245,11 @@ public final class CassandraContentStore extends AbstractContentStore {
                 query = query.withColumnSlice(Collections2.transform(colNames, Functions.toStringFunction()));
             }
             ColumnList<String> cols = query.execute().getResult();
-            
-            return cols.size() > 0 ? marshaller.unmarshallCols(cols)
-                                   : null;
+            if(cols.isEmpty()) {
+                return null;
+            }
+            verifyRequiredColumns(longId, cols);
+            return marshaller.unmarshallCols(cols);
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
