@@ -181,39 +181,19 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     }
 
     private Iterable<ContentProtos.SegmentEvent> serializeSegmentEvents(List<SegmentEvent> segmentEvents) {
-        return Iterables.transform(segmentEvents, new Function<SegmentEvent, ContentProtos.SegmentEvent>() {
-            @Override
-            public ContentProtos.SegmentEvent apply(SegmentEvent segmentEvent) {
-                return segmentEventSerializer.serialize(segmentEvent).build();
-            }
-        });
+        return Iterables.transform(segmentEvents, segmentEvent -> segmentEventSerializer.serialize(segmentEvent).build());
     }
     
     private Iterable<ContentProtos.Broadcast> serializeBroadcasts(Set<Broadcast> broadcasts) {
-      return Iterables.transform(broadcasts, new Function<Broadcast, ContentProtos.Broadcast>() {
-          @Override
-          public ContentProtos.Broadcast apply(Broadcast broadcast) {
-              return broadcastSerializer.serialize(broadcast).build();
-          }
-      });
+      return Iterables.transform(broadcasts, broadcast -> broadcastSerializer.serialize(broadcast).build());
     }
     
     private Iterable<ContentProtos.Encoding> serializeEncoding(Set<Encoding> encodings) {
-      return Iterables.transform(encodings, new Function<Encoding, ContentProtos.Encoding>() {
-          @Override
-          public ContentProtos.Encoding apply(Encoding encoding) {
-              return encodingSerializer.serialize(encoding).build();
-          }
-      });
+      return Iterables.transform(encodings, encoding -> encodingSerializer.serialize(encoding).build());
     }
 
     private Iterable<ContentProtos.Restriction> serializeRestrictions(Set<Restriction> restrictions) {
-        return Iterables.transform(restrictions, new Function<Restriction, ContentProtos.Restriction>() {
-            @Override
-            public ContentProtos.Restriction apply(Restriction restriction) {
-                return restrictionSerializer.serialize(restriction).build();
-            }
-        });
+        return Iterables.transform(restrictions, restriction -> restrictionSerializer.serialize(restriction).build());
     }
 
     
