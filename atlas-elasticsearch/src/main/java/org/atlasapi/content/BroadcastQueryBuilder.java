@@ -26,7 +26,7 @@ public class BroadcastQueryBuilder {
             + "  if (t < 604800000) {"
             + "    g = 50"
             + "  }"
-            + "  _score + (_score * f * timeBoost * (1 / (1 + (t / (t < oneWeek ? 50 : 1)))))"
+            + "  _score + (_score * f * timeBoost * (1 / (1 + (t / g))))"
             + "} else { _score }";
 
     public static final String SCRIPT_LANG = "groovy";
