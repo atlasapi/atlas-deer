@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.atlasapi</groupId>
     <artifactId>atlas</artifactId>
-    <version>7.0.168-SNAPSHOT</version>
+    <version>7.0.169-SNAPSHOT</version>
   </parent>
   <artifactId>atlas-core</artifactId>
   <name>Atlas Core</name>
