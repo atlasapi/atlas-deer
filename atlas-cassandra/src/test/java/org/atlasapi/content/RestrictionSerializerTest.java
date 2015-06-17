@@ -24,6 +24,8 @@ public class RestrictionSerializerTest {
         assertThat(deserialized.getMessage(), is(restriction.getMessage()));
         assertThat(deserialized.isRestricted(), is(restriction.isRestricted()));
         assertThat(deserialized.getMinimumAge(), is(restriction.getMinimumAge()));
+        assertThat(deserialized.getAuthority(), is(restriction.getAuthority()));
+        assertThat(deserialized.getRating(), is(restriction.getRating()));
 
     }
 }
