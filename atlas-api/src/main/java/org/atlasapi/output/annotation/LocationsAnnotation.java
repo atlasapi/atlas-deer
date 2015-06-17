@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Optional;
@@ -76,6 +77,20 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         @Override
         public void write(EncodedLocation entity, FieldWriter writer, OutputContext ctxt)
                 throws IOException {
+            Map params = ctxt.getRequest().getParameterMap();
+            if (params.containsKey("locations.available")) {
+                String[] paramVals = (String[]) params.get("locations.available");
+                if (paramVals.length == 1 && paramVals[0] != null &&
+                        Boolean.TRUE.toString().equalsIgnoreCase(paramVals[0])) {
+                    if (!entity.getLocation().getAvailable()) {
+                        return;
+                    }
+                }
+            }
+            writeLocation(entity, writer, ctxt);
+        }
+
+        private void writeLocation(EncodedLocation entity, FieldWriter writer, OutputContext ctxt) throws IOException {
             Encoding encoding = entity.getEncoding();
             Location location = entity.getLocation();
             Policy policy = location.getPolicy();
@@ -104,9 +119,9 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
                 writer.writeField("price", policy.getPrice().getAmount());
             }
             writer.writeField("revenue_contract", policy.getRevenueContract());
-            writer.writeList("subscription_packages", "subscription_package", 
+            writer.writeList("subscription_packages", "subscription_package",
                              policy.getSubscriptionPackages(), ctxt);
-            
+
             writer.writeField("data_container_format", encoding.getDataContainerFormat());
             writer.writeField("data_size", encoding.getDataSize());
             writer.writeField("distributor", encoding.getDistributor());
