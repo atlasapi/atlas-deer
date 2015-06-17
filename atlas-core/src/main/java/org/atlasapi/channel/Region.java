@@ -11,7 +11,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Region extends ChannelGroup<ChannelNumbering> {
+public class Region extends NumberedChannelGroup {
 
     private final ChannelGroupRef platform;
 

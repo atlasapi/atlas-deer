@@ -3,7 +3,8 @@ package org.atlasapi.content;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
-import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.Region;
 import org.atlasapi.entity.Id;
 
 import java.util.Comparator;
@@ -13,14 +14,14 @@ import java.util.stream.StreamSupport;
 
 public class ChannelsBroadcastFilter {
 
-    public Iterable<Broadcast> sortAndFilter(Iterable<Broadcast> broadcasts, List<Channel> regionChannels) {
+    public Iterable<Broadcast> sortAndFilter(Iterable<Broadcast> broadcasts, ChannelGroup<?> channelGroup) {
 
         if(Iterables.isEmpty(broadcasts)) {
             return ImmutableList.of();
         }
 
-        List<Id> channelIds = regionChannels.stream()
-                .map(Identified::getId)
+        List<Id> channelIds = StreamSupport.stream(channelGroup.getChannels().spliterator(), false)
+                .map(cn -> cn.getChannel().getId())
                 .collect(Collectors.toList());
 
         Ordering<Broadcast> channelOrdering = Ordering.from(new Comparator<Broadcast>() {

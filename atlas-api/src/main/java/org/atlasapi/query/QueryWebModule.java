@@ -379,6 +379,8 @@ public class QueryWebModule {
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
                                 AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.REGION,
+                                AttributeCoercers.idCoercer(idCodec())),
                         QueryAtomParser.valueOf(Attributes.SPECIALIZATION,
                                 AttributeCoercers.stringCoercer())
                 )
@@ -626,7 +628,7 @@ public class QueryWebModule {
                         ),
                         commonImplied
                 )
-                .register(BROADCASTS, new BroadcastsAnnotation(idCodec()), commonImplied)
+                .register(BROADCASTS, new BroadcastsAnnotation(idCodec(), channelGroupResolver), commonImplied)
                 .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec()), commonImplied)
                 .register(NEXT_BROADCASTS,
                         new NextBroadcastAnnotation(new SystemClock(), idCodec()),

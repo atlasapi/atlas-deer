@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.Region;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
@@ -38,8 +39,10 @@ public class Attributes {
     public static final Attribute<Publisher> SOURCE = EnumValuedAttribute.valueOf("source", Publisher.class, Identified.class, true);
     public static final Attribute<String> ALIASES_NAMESPACE = stringListAttribute("aliases.namespace", Identified.class);
     public static final Attribute<String> ALIASES_VALUE = stringListAttribute("aliases.value", Identified.class);
-    
-    public static final Attribute<Id> TOPIC_ID = idListAttribute("topics.topic.id", Identified.class);
+	public static final Attribute<Id> REGION = idListAttribute("region", Region.class);
+
+
+	public static final Attribute<Id> TOPIC_ID = idListAttribute("topics.topic.id", Identified.class);
     public static final Attribute<String> TOPIC_RELATIONSHIP = stringListAttribute("topics.relationship", Identified.class);
     public static final Attribute<Float> TOPIC_WEIGHTING = new FloatValuedAttribute("topics.weighting", Identified.class);
     public static final Attribute<Boolean> TOPIC_SUPERVISED = new BooleanValuedAttribute("topics.supervised", Identified.class);
@@ -174,5 +177,9 @@ public class Attributes {
 
 	private static IdAttribute idListAttribute(String name, Class<? extends Identified> target) {
 	    return new IdAttribute(name, target, true);
+	}
+
+	private static IdAttribute singleIdAttribute(String name, Class<? extends Identified> target) {
+		return new IdAttribute(name, target, false);
 	}
 }
