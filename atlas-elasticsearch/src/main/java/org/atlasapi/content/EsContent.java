@@ -37,6 +37,7 @@ public class EsContent extends EsObject {
     public static final String AGE = "age";
     public static final String CONTENT_GROUPS = "contentGroups";
     public static final String PARENT = "_parent";
+    public static final String PRIORITY = "priority";
 
     public static final XContentBuilder getTopLevelMapping(String type) throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
@@ -118,6 +119,10 @@ public class EsContent extends EsObject {
             .startObject(EsContent.CONTENT_GROUPS)
                 .field("type").value("long")
                 .field("index").value("not_analyzed")
+            .endObject()
+            .startObject(EsContent.PRIORITY)
+            .field("type").value("double")
+            .field("index").value("not_analyzed")
             .endObject()
         );
     }
@@ -223,4 +228,8 @@ public class EsContent extends EsObject {
         return this;
     }
 
+    public EsContent priority(Double priority) {
+        properties.put(PRIORITY, priority);
+        return this;
+    }
 }
