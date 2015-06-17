@@ -478,7 +478,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     @Override
     public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
-            Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> maybeOrder, Optional<TitleQueryParams> searchParam) {
+            Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
@@ -492,8 +492,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
 
-        if (maybeOrder.isPresent()) {
-            QueryOrdering order = maybeOrder.get();
+        if (queryParams.isPresent() && queryParams.get().getOrdering().isPresent()) {
+            QueryOrdering order = queryParams.get().getOrdering().get();
             reqBuilder.addSort(
                     SortBuilders
                             .fieldSort(order.getPath())
@@ -501,11 +501,11 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             );
         }
 
-        if (searchParam.isPresent()) {
-            TitleQueryParams titleQuery = searchParam.get();
+        if (queryParams.isPresent() && queryParams.get().getFuzzyQueryParams().isPresent()) {
+            FuzzyQueryParams searchParams = queryParams.get().getFuzzyQueryParams().get();
             queryBuilder = QueryBuilders.boolQuery()
                     .must(queryBuilder)
-                    .must(TitleQueryBuilder.build(titleQuery.getSearchTerm(), titleQuery.getBoost().orElse(0F)));
+                    .must(TitleQueryBuilder.build(searchParams.getSearchTerm(), searchParams.getBoost().orElse(0F)));
         }
 
         reqBuilder.setQuery(queryBuilder);

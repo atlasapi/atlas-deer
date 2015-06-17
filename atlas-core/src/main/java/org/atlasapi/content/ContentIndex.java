@@ -13,7 +13,7 @@ import com.metabroadcast.common.query.Selection;
 public interface ContentIndex {
 
     ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
-            Iterable<Publisher> publishers, Selection selection, Optional<QueryOrdering> ordering, Optional<TitleQueryParams> searchParam);
+            Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> searchParam);
     
     void index(Content content) throws IndexException;
 

@@ -3,7 +3,6 @@ package org.atlasapi.query.v4.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -12,16 +11,16 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
-import org.atlasapi.content.QueryOrdering;
-import org.atlasapi.content.TitleQueryParams;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
+import org.atlasapi.query.common.IndexQueryParser;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
+import org.atlasapi.query.common.QueryParseException;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
 
@@ -39,6 +38,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private final ContentIndex index;
     private final MergingEquivalentsResolver<Content> resolver;
+    private final IndexQueryParser indexQueryParser = new IndexQueryParser();
 
     public IndexBackedEquivalentContentQueryExecutor(ContentIndex contentIndex,
             MergingEquivalentsResolver<Content> equivalentContentResolver) {
@@ -80,60 +80,13 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     }
 
     private ListenableFuture<QueryResult<Content>> executeListQuery(final Query<Content> query) throws QueryExecutionException {
-        ListenableFuture<FluentIterable<Id>> hits
-            = index.query(query.getOperands(), sources(query), selection(query), orderingFrom(query), titleQueryFrom(query));
-        return Futures.transform(Futures.transform(hits, toEquivalentContent(query)), toQueryResult(query));
-    }
-
-    private Optional<QueryOrdering> orderingFrom(Query<Content> query) {
-        Map params = query.getContext().getRequest().getParameterMap();
-        if (!params.containsKey("order_by")) {
-            return Optional.empty();
+        try {
+            ListenableFuture<FluentIterable<Id>> hits
+                    = index.query(query.getOperands(), sources(query), selection(query), Optional.of(indexQueryParser.parse(query)));
+            return Futures.transform(Futures.transform(hits, toEquivalentContent(query)), toQueryResult(query));
+        } catch (QueryParseException qpe) {
+            throw new QueryExecutionException(qpe);
         }
-        String[] orderByVals = ((String[]) params.get("order_by"));
-        if (orderByVals[0] == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(QueryOrdering.fromOrderBy(orderByVals[0]));
-    }
-
-    private Optional<TitleQueryParams> titleQueryFrom(Query<Content> query) throws QueryExecutionException {
-        Optional<String> fuzzySearchString = getFuzzySearchString(query);
-        if (!fuzzySearchString.isPresent()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(new TitleQueryParams(fuzzySearchString.get(), getTitleBoostFrom(query)));
-    }
-
-    private Optional<Float> getTitleBoostFrom(Query<Content> query) throws QueryExecutionException {
-        Map params = query.getContext().getRequest().getParameterMap();
-        Object param = params.get("title_boost");
-        if (param == null) {
-            return Optional.empty();
-        }
-        String[] titleBoost = (String[]) param;
-        if (titleBoost.length > 1) {
-            throw new QueryExecutionException("Title boost param (titleBoost) has been specified more than once");
-        }
-        if (titleBoost[0] == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(Float.parseFloat(titleBoost[0]));
-    }
-
-    private Optional<String> getFuzzySearchString(Query<Content> query) throws QueryExecutionException {
-        Map params = query.getContext().getRequest().getParameterMap();
-        if (!params.containsKey("q")) {
-            return Optional.empty();
-        }
-        String[] searchParam = ((String[]) params.get("q"));
-        if (searchParam.length > 1) {
-            throw new QueryExecutionException("Search param (q) has been specified more than once");
-        }
-        if (searchParam[0] == null) {
-            return Optional.empty();
-        }
-        return Optional.of(searchParam[0]);
     }
 
     private AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>> toEquivalentContent(
