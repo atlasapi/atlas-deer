@@ -279,7 +279,7 @@ public class QueryWebModule {
     @Bean ContentController contentController() {
         return new ContentController(contentQueryParser(),
                 queryModule.contentQueryExecutor(),
-                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter()));
+                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter(), channelGroupResolver, idCodec()));
     }
 
     @Bean TopicContentController topicContentController() {
@@ -545,7 +545,7 @@ public class QueryWebModule {
     @Bean SearchController searchController() {
         return new SearchController(v4SearchResolver,
                 configFetcher,
-                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter()));
+                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter(), channelGroupResolver, idCodec()));
     }
 
     @Bean ResourceAnnotationIndex contentAnnotationIndex() {
@@ -628,7 +628,7 @@ public class QueryWebModule {
                         ),
                         commonImplied
                 )
-                .register(BROADCASTS, new BroadcastsAnnotation(idCodec(), channelGroupResolver), commonImplied)
+                .register(BROADCASTS, new BroadcastsAnnotation(idCodec()), commonImplied)
                 .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec()), commonImplied)
                 .register(NEXT_BROADCASTS,
                         new NextBroadcastAnnotation(new SystemClock(), idCodec()),
@@ -667,9 +667,8 @@ public class QueryWebModule {
                                 new UpcomingContentDetailWriter(
                                         new BroadcastWriter("broadcasts", idCodec()),
                                         new ItemDetailWriter(new IdentificationSummaryAnnotation(idCodec()))
-                                ),
-
-                                channelGroupResolver, idCodec()), commonImplied)
+                                )
+                        ), commonImplied)
                 .register(
                         AVAILABLE_CONTENT_DETAIL,
                         new AvailableContentDetailAnnotation(

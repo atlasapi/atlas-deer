@@ -7,17 +7,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import org.atlasapi.channel.ChannelGroup;
-import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.Region;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
-import org.atlasapi.criteria.attribute.Attributes;
-import org.atlasapi.entity.Id;
 import org.atlasapi.output.FieldWriter;
-import org.atlasapi.output.NotAcceptableException;
-import org.atlasapi.output.NotFoundException;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.util.ImmutableCollectors;
@@ -29,20 +24,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.Broadcast.ACTIVELY_PUBLISHED;
 
 public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     
     private final BroadcastWriter broadcastWriter;
-    private final ChannelGroupResolver channelGroupResolver;
-    private final NumberToShortStringCodec codec;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
     
-    public BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelGroupResolver channelGroupResolver) {
+    public BroadcastsAnnotation(NumberToShortStringCodec codec) {
         broadcastWriter = new BroadcastWriter("broadcasts", codec);
-        this.codec = checkNotNull(codec);
-        this.channelGroupResolver = checkNotNull(channelGroupResolver);
     }
 
     @Override
@@ -89,38 +79,18 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             }
         }
 
-        String regionParam = ctxt.getRequest().getParameter(Attributes.REGION.externalName());
-        if(!Strings.isNullOrEmpty(regionParam)) {
-            Id regionId = Id.valueOf(codec.decode(regionParam));
-            Optional<ChannelGroup> channelGroup = Futures.get(
-                    channelGroupResolver.resolveIds(ImmutableList.of(regionId)),
-                    1, TimeUnit.MINUTES,
-                    IOException.class
-            ).getResources().first();
-            if (!channelGroup.isPresent()) {
-                Throwables.propagate(new NotFoundException(regionId));
-            } else if (!(channelGroup.get() instanceof Region)) {
-                Throwables.propagate(new NotAcceptableException(
-                                String.format(
-                                        "%s is a channel group of type '%s', should be 'region",
-                                        regionParam,
-                                        channelGroup.get().getType()
-                                )
-                        )
-                );
-            }
+        if(ctxt.getRegion().isPresent()) {
             writer.writeList(
                     broadcastWriter,
                     channelsBroadcastFilter.sortAndFilter(
-                            broadcastStream.collect(Collectors.toList()),
-                            channelGroup.get()
+                            broadcastStream.collect(ImmutableCollectors.toList()),
+                            ctxt.getRegion().get()
                     ),
                     ctxt
             );
-            return;
+        } else {
+            writer.writeList(broadcastWriter, broadcastStream.collect(ImmutableCollectors.toList()), ctxt);
         }
-
-        writer.writeList(broadcastWriter, broadcastStream.collect(ImmutableCollectors.toList()), ctxt);
     }
 
 }

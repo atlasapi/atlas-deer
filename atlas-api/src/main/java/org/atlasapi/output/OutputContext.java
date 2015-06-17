@@ -3,9 +3,11 @@ package org.atlasapi.output;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.channel.Region;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.QueryContext;
@@ -24,26 +26,45 @@ import javax.servlet.http.HttpServletRequest;
 public class OutputContext {
 
     public static OutputContext valueOf(QueryContext standard) {
-        return new OutputContext(standard.getAnnotations(),
-                standard.getApplicationSources(), standard.getRequest());
+        return new OutputContext(
+                standard.getAnnotations(),
+                standard.getApplicationSources(),
+                standard.getRequest(),
+                null
+        );
+    }
+
+    public static OutputContext valueOf(QueryContext standard, Region region) {
+        return new OutputContext(
+                standard.getAnnotations(),
+                standard.getApplicationSources(),
+                standard.getRequest(),
+                region
+        );
     }
     
     public static OutputContext valueOf(UserAwareQueryContext standard) {
-        return new OutputContext(standard.getAnnotations(),
-                standard.getApplicationSources(), standard.getRequest());
+        return new OutputContext(
+                standard.getAnnotations(),
+                standard.getApplicationSources(),
+                standard.getRequest(),
+                null
+        );
     }
     
     private final ActiveAnnotations annotations;
     private final ApplicationSources applicationSources;
     private final List<Resource> resources;
     private final HttpServletRequest request;
+    private final Optional<Region> region;
 
     public OutputContext(ActiveAnnotations activeAnnotations,
-                         ApplicationSources applicationSources, HttpServletRequest request) {
+                         ApplicationSources applicationSources, HttpServletRequest request, Region region) {
         this.annotations = checkNotNull(activeAnnotations);
         this.applicationSources = checkNotNull(applicationSources);
         this.resources = Lists.newLinkedList();
         this.request = checkNotNull(request);
+        this.region = Optional.ofNullable(region);
     }
 
     public final OutputContext startResource(Resource resource) {
@@ -70,5 +91,9 @@ public class OutputContext {
 
     public HttpServletRequest getRequest() {
         return request;
+    }
+
+    public Optional<Region> getRegion() {
+        return region;
     }
 }
