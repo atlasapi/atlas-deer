@@ -667,9 +667,9 @@ public class QueryWebModule {
                                 new UpcomingContentDetailWriter(
                                         new BroadcastWriter("broadcasts", idCodec()),
                                         new ItemDetailWriter(new IdentificationSummaryAnnotation(idCodec()))
-                                )
+                                ),
 
-                        ), commonImplied)
+                                channelGroupResolver, idCodec()), commonImplied)
                 .register(
                         AVAILABLE_CONTENT_DETAIL,
                         new AvailableContentDetailAnnotation(
