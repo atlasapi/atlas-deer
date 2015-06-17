@@ -59,46 +59,31 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
 
     private AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, Content>> resolveContentToContextualQuery(
             final ContextualQuery<Topic, Content> query) {
-        return new AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, Content>>(){
+        return resolved -> {
+                com.google.common.base.Optional<Topic> possibleTopic = resolved.getResources().first();
 
-            @Override
-            public ListenableFuture<ContextualQueryResult<Topic, Content>> apply(
-                    Resolved<Topic> resolved) throws Exception {
-
-
-
-                    com.google.common.base.Optional<Topic> possibleTopic = resolved.getResources().first();
-            
-                    if (!possibleTopic.isPresent()) {
-                        throw new NotFoundException(query.getContextQuery().getOnlyId());
-                    }
-            
-                    final Topic topic = possibleTopic.get();
-            
-                    final QueryContext context = query.getContext();
-                    if (!context.getApplicationSources().isReadEnabled(topic.getSource())) {
-                        throw new ForbiddenException(topic.getId());
-                    }
-        
-                    return Futures.transform(resolveContent(queryIndex(query.getResourceQuery()), query.getContext()), 
-                            toContextualQuery(topic, context));
+                if (!possibleTopic.isPresent()) {
+                    throw new NotFoundException(query.getContextQuery().getOnlyId());
                 }
 
+                final Topic topic = possibleTopic.get();
+
+                final QueryContext context = query.getContext();
+                if (!context.getApplicationSources().isReadEnabled(topic.getSource())) {
+                    throw new ForbiddenException(topic.getId());
+                }
+
+                return Futures.transform(resolveContent(queryIndex(query.getResourceQuery()), query.getContext()),
+                        toContextualQuery(topic, context));
             };
     }
     
     private Function<ResolvedEquivalents<Content>, ContextualQueryResult<Topic, Content>> toContextualQuery(
             final Topic topic, final QueryContext context) {
-        return new Function<ResolvedEquivalents<Content>, ContextualQueryResult<Topic, Content>>() {
-            @Override
-            public ContextualQueryResult<Topic, Content> apply(ResolvedEquivalents<Content> content) {
-                return ContextualQueryResult.valueOf(
-                        QueryResult.singleResult(topic, context),
-                        QueryResult.listResult(content.getFirstElems(), context),
-                        context);
-            }
-
-        };
+        return content -> ContextualQueryResult.valueOf(
+                QueryResult.singleResult(topic, context),
+                QueryResult.listResult(content.getFirstElems(), context),
+                context);
     }
 
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
@@ -110,12 +95,8 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             ListenableFuture<FluentIterable<Id>> queryHits, 
             final ApplicationSources sources, final Set<Annotation> annotations) {
         return Futures.transform(queryHits,
-                new AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>>() {
-                    @Override
-                    public ListenableFuture<ResolvedEquivalents<Content>> apply(FluentIterable<Id> ids)
-                            throws Exception {
-                        return contentResolver.resolveIds(ids, sources, annotations);
-                    }
+                (FluentIterable<Id> ids) -> {
+                    return contentResolver.resolveIds(ids, sources, annotations);
                 });
     }
     
