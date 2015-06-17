@@ -28,11 +28,11 @@ public class IndexQueryParser {
             return Optional.empty();
         }
         String[] orderByVals = ((String[]) params.get("order_by"));
-        if (orderByVals[0] == null) {
-            return Optional.empty();
-        }
         if (orderByVals.length > 1) {
             throw new QueryParseException("Cannot specify multiple order_by values");
+        }
+        if (orderByVals.length == 0) {
+            return Optional.empty();
         }
         return Optional.ofNullable(QueryOrdering.fromOrderBy(orderByVals[0]));
     }
@@ -55,7 +55,7 @@ public class IndexQueryParser {
         if (titleBoost.length > 1) {
             throw new QueryParseException("Title boost param (titleBoost) has been specified more than once");
         }
-        if (titleBoost[0] == null) {
+        if (titleBoost.length == 0) {
             return Optional.empty();
         }
         return Optional.ofNullable(Float.parseFloat(titleBoost[0]));
