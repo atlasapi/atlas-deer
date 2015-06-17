@@ -49,6 +49,30 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         
     }
 
+    @Override
+    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        if (entity instanceof Item) {
+            Item item = (Item) entity;
+            writer.writeList(encodedLocationWriter, encodedLocations(item), ctxt);
+        }
+    }
+
+    private Iterable<EncodedLocation> encodedLocations(Item item) {
+        return encodedLocations(item.getManifestedAs());
+    }
+
+    private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
+        return Iterables.concat(Iterables.transform(manifestedAs,
+                encoding -> {
+                    Builder<EncodedLocation> builder = ImmutableList.builder();
+                    for (Location location : encoding.getAvailableAt()) {
+                        builder.add(new EncodedLocation(encoding, location));
+                    }
+                    return builder.build();
+                }
+        ));
+    }
+
     public static final class EncodedLocationWriter implements EntityListWriter<EncodedLocation> {
 
         private final static Logger log = LoggerFactory.getLogger(EncodedLocation.class);
@@ -120,7 +144,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             }
             writer.writeField("revenue_contract", policy.getRevenueContract());
             writer.writeList("subscription_packages", "subscription_package",
-                             policy.getSubscriptionPackages(), ctxt);
+                    policy.getSubscriptionPackages(), ctxt);
 
             writer.writeField("data_container_format", encoding.getDataContainerFormat());
             writer.writeField("data_size", encoding.getDataSize());
@@ -175,30 +199,5 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         public String listName() {
             return listName;
         }
-    }
-
-    @Override
-    public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (entity instanceof Item) {
-            Item item = (Item) entity;
-            writer.writeList(encodedLocationWriter, encodedLocations(item), ctxt);
-        }
-    }
-
-
-    private Iterable<EncodedLocation> encodedLocations(Item item) {
-        return encodedLocations(item.getManifestedAs());
-    }
-
-    private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
-        return Iterables.concat(Iterables.transform(manifestedAs,
-                encoding -> {
-                    Builder<EncodedLocation> builder = ImmutableList.builder();
-                    for (Location location : encoding.getAvailableAt()) {
-                        builder.add(new EncodedLocation(encoding, location));
-                    }
-                    return builder.build();
-                }
-        ));
     }
 }
