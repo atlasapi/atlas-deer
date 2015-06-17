@@ -84,7 +84,7 @@ public class TopicContentQueryExecutorTest {
         when(topicResolver.resolveIds(argThat(hasItems(topic.getId()))))
             .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
         when(contentIndex.query(emptyAttributeQuerySet, context.getApplicationSources().getEnabledReadSources(), Selection.all(),
-                Optional.empty(), Optional.empty()))
+                Optional.empty()))
             .thenReturn(Futures.immediateFuture(FluentIterable.from(ImmutableSet.of(content.getId()))));
         when(equivalentsResolver.resolveIds(argThat(hasItems(content.getId())), argThat(is(context.getApplicationSources())), argThat(is(context.getAnnotations().all()))))
             .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(Id.valueOf(1235), ImmutableSet.of(content)).build()));
@@ -112,7 +112,7 @@ public class TopicContentQueryExecutorTest {
             executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
         } catch (QueryExecutionException qee) {
             verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)), argThat(isA(Iterable.class)), argThat(isA(Selection.class)),
-                    argThat(isA(Optional.class)), Optional.empty());
+                    argThat(isA(Optional.class)));
             verify(equivalentsResolver, never()).resolveIds(argThat(isA(Iterable.class)), argThat(isA(ApplicationSources.class)), argThat(isA(Set.class)));
             throw qee.getCause();
         }
@@ -138,7 +138,7 @@ public class TopicContentQueryExecutorTest {
             executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
         } catch (QueryExecutionException qee) {
             verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)), argThat(isA(Iterable.class)), argThat(isA(Selection.class)),
-                    argThat(isA(Optional.class)), Optional.empty());
+                    argThat(isA(Optional.class)));
             verify(equivalentsResolver, never()).resolveIds(argThat(isA(Iterable.class)), argThat(isA(ApplicationSources.class)), argThat(isA(Set.class)));
             throw qee.getCause();
         }
