@@ -17,6 +17,7 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -58,8 +59,12 @@ public class OutputContext {
     private final HttpServletRequest request;
     private final Optional<Region> region;
 
-    public OutputContext(ActiveAnnotations activeAnnotations,
-                         ApplicationSources applicationSources, HttpServletRequest request, Region region) {
+    public OutputContext(
+            ActiveAnnotations activeAnnotations,
+            ApplicationSources applicationSources,
+            HttpServletRequest request,
+            @Nullable Region region
+    ) {
         this.annotations = checkNotNull(activeAnnotations);
         this.applicationSources = checkNotNull(applicationSources);
         this.resources = Lists.newLinkedList();

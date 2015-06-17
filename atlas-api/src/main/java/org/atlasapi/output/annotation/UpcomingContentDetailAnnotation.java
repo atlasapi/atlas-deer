@@ -80,6 +80,7 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
                     );
                     return item;
                 })
+                .filter(i -> !i.getBroadcasts().isEmpty())
                 .collect(Collectors.toList());
 
         writer.writeList(upcomingContentDetailWriter, items, ctxt);
