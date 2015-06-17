@@ -27,11 +27,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
     private final Set<String> parameterNames;
 
     public QueryAttributeParser(Iterable<? extends QueryAtomParser<String, ?>> attributeParsers) {
-        this.parsers = Maps.uniqueIndex(attributeParsers, new Function<QueryAtomParser<String, ?>, Attribute<?>>(){
-            @Override
-            public Attribute<?> apply(QueryAtomParser<String, ?> input) {
-                return input.getAttribute();
-            }});
+        this.parsers = Maps.uniqueIndex(attributeParsers, QueryAtomParser::getAttribute);
         this.attributesLookup = initLookup(parsers.keySet());
         this.parameterNames = attributesLookup.allKeys();
     }
@@ -63,12 +59,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
 
     private Iterable<String> splitVals(String[] value) {
         return FluentIterable.from(Arrays.asList(value))
-            .transformAndConcat(new Function<String, Iterable<String>>(){
-                @Override
-                public Iterable<String> apply(String input) {
-                    return valueSplitter.split(input);
-                }
-        });
+            .transformAndConcat(valueSplitter::split);
     }
 
     @SuppressWarnings("unchecked")
