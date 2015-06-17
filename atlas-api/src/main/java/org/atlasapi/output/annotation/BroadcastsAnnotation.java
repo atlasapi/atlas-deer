@@ -64,8 +64,8 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             }
         }
 
-        if (params.containsKey("broadcasts.transmissionStartTime.gt")) {
-            String[] paramVals = (String[]) params.get("broadcasts.transmissionStartTime.lt");
+        if (params.containsKey("broadcasts.transmissionEndTime.lt")) {
+            String[] paramVals = (String[]) params.get("broadcasts.transmissionEndTime.lt");
             if (paramVals.length > 1 && paramVals[0] != null) {
                 DateTime time = DateTime.parse(paramVals[0]);
                 broadcastStream.filter(b -> b.getTransmissionEndTime().isBefore(time));
