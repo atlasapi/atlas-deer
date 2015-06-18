@@ -14,10 +14,10 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupListWriter implements EntityListWriter<ChannelGroup> {
-    private final AnnotationRegistry<ChannelGroup> annotationRegistry;
+public class ChannelGroupListWriter implements EntityListWriter<ChannelGroup<?>> {
+    private final AnnotationRegistry<ChannelGroup<?>> annotationRegistry;
 
-    public ChannelGroupListWriter(AnnotationRegistry<ChannelGroup> annotationRegistry) {
+    public ChannelGroupListWriter(AnnotationRegistry<ChannelGroup<?>> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
@@ -28,11 +28,11 @@ public class ChannelGroupListWriter implements EntityListWriter<ChannelGroup> {
     }
 
     @Override
-    public void write(@Nonnull ChannelGroup entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull ChannelGroup<?> entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.CHANNEL_GROUP);
-        List<OutputAnnotation<? super ChannelGroup>> annotations = ctxt
+        List<OutputAnnotation<? super ChannelGroup<?>>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
-        for (OutputAnnotation<? super ChannelGroup> annotation : annotations) {
+        for (OutputAnnotation<? super ChannelGroup<?>> annotation : annotations) {
             annotation.write(entity, writer, ctxt);
         }
         ctxt.endResource();

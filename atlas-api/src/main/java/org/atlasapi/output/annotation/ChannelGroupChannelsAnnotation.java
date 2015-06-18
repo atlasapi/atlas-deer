@@ -1,12 +1,12 @@
 package org.atlasapi.output.annotation;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import org.atlasapi.channel.Channel;
@@ -16,19 +16,20 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.output.ChannelWithChannelGroupMembership;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasapi.channel.ChannelGroup> {
+public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ChannelGroup<?>> {
 
     private final ChannelGroupChannelWriter channelWriter;
     private final ChannelResolver channelResolver;
@@ -39,9 +40,13 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasap
     }
 
     @Override
-    public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ChannelGroup<?> entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
-        for (ChannelGroupMembership channelGroupMembership : (Iterable<ChannelGroupMembership>)entity.getChannels()) {
+        List<Id> orderedIds = StreamSupport.stream(entity.getChannels().spliterator(), false)
+                .map(cm -> cm.getChannel().getId())
+                .collect(Collectors.toList());
+        Ordering<Id> idOrdering = Ordering.explicit(orderedIds);
+        for (ChannelGroupMembership channelGroupMembership : entity.getChannels()) {
             builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
         }
 
@@ -51,11 +56,10 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasap
         Iterable<Channel> channels = Futures.get(
                 Futures.transform(
                         this.channelResolver.resolveIds(channelGroupMemberships.keySet()),
-                        new Function<Resolved<Channel>, Iterable<Channel>>() {
-                            @Override
-                            public Iterable<Channel> apply(Resolved<Channel> channelResolved) {
-                                return channelResolved.getResources();
-                            }
+                        (Resolved<Channel> channelResolved) -> {
+                            return StreamSupport.stream(channelResolved.getResources().spliterator(), false)
+                                    .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
+                                    .collect(Collectors.toList());
                         }
 
                 ), 1, TimeUnit.MINUTES, IOException.class

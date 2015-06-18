@@ -48,7 +48,7 @@ public class ChannelGroupQueryExecutorTest {
         Id channelGroupId = Id.valueOf(1L);
         ChannelGroup result = mock(ChannelGroup.class);
         QueryContext context = mock(QueryContext.class);
-        Query<ChannelGroup> channelQuery = mock(Query.class);
+        Query<ChannelGroup<?>> channelQuery = mock(Query.class);
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.getContext()).thenReturn(context);
@@ -59,7 +59,7 @@ public class ChannelGroupQueryExecutorTest {
                         )
                 );
 
-        QueryResult<ChannelGroup> queryResult = objectUnderTest.execute(channelQuery);
+        QueryResult<ChannelGroup<?>> queryResult = objectUnderTest.execute(channelQuery);
 
         assertThat(queryResult.getOnlyResource(), is(result));
 
@@ -76,7 +76,7 @@ public class ChannelGroupQueryExecutorTest {
         when(result3.getType()).thenReturn("platform");
 
         QueryContext context = mock(QueryContext.class);
-        Query<ChannelGroup> channelQuery = mock(Query.class);
+        Query<ChannelGroup<?>> channelQuery = mock(Query.class);
         ApplicationSources applicationSources = mock(ApplicationSources.class);
         Selection selection = Selection.ALL;
 
@@ -105,7 +105,7 @@ public class ChannelGroupQueryExecutorTest {
                         )
                 );
 
-        QueryResult<ChannelGroup> queryResult = objectUnderTest.execute(channelQuery);
+        QueryResult<ChannelGroup<?>> queryResult = objectUnderTest.execute(channelQuery);
 
         assertThat(queryResult.getResources(), containsInAnyOrder(result, result3));
     }

@@ -24,17 +24,17 @@ public class LegacyChannelGroupResolver implements ChannelGroupResolver {
 
 
     @Override
-    public ListenableFuture<Resolved<ChannelGroup>> allChannels() {
+    public ListenableFuture<Resolved<ChannelGroup<?>>> allChannels() {
         Iterable<org.atlasapi.media.channel.ChannelGroup> resolved = legacyResolver.channelGroups();
-        Iterable<ChannelGroup> transformed = transformer.transform(resolved);
+        Iterable<ChannelGroup<?>> transformed = transformer.transform(resolved);
         return Futures.immediateFuture(Resolved.valueOf(transformed));
     }
 
     @Override
-    public ListenableFuture<Resolved<ChannelGroup>> resolveIds(Iterable<Id> ids) {
+    public ListenableFuture<Resolved<ChannelGroup<?>>> resolveIds(Iterable<Id> ids) {
         Iterable<Long> lids = Iterables.transform(ids, Id.toLongValue());
         Iterable<org.atlasapi.media.channel.ChannelGroup> resolvedChannels = legacyResolver.channelGroupsFor(lids);
-        Iterable<ChannelGroup> transformed = transformer.transform(resolvedChannels);
+        Iterable<ChannelGroup<?>> transformed = transformer.transform(resolvedChannels);
         return Futures.immediateFuture(Resolved.valueOf(transformed));
     }
 }

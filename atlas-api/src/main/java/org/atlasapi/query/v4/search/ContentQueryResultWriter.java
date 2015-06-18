@@ -72,7 +72,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
         }
 
         Id regionId = Id.valueOf(codec.decode(regionParam));
-        com.google.common.base.Optional<ChannelGroup> channelGroup = Futures.get(
+        com.google.common.base.Optional<ChannelGroup<?>> channelGroup = Futures.get(
                 channelGroupResolver.resolveIds(ImmutableList.of(regionId)),
                 1, TimeUnit.MINUTES,
                 IOException.class

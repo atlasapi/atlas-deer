@@ -14,7 +14,7 @@ import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupQueryResultWriter extends QueryResultWriter<ChannelGroup> {
+public class ChannelGroupQueryResultWriter extends QueryResultWriter<ChannelGroup<?>> {
 
     private final ChannelGroupListWriter channelGroupListWriter;
 
@@ -28,11 +28,11 @@ public class ChannelGroupQueryResultWriter extends QueryResultWriter<ChannelGrou
     }
 
     @Override
-    protected void writeResult(QueryResult<ChannelGroup> result, ResponseWriter writer) throws IOException {
+    protected void writeResult(QueryResult<ChannelGroup<?>> result, ResponseWriter writer) throws IOException {
         OutputContext ctxt = outputContext(result.getContext());
 
         if (result.isListResult()) {
-            FluentIterable<ChannelGroup> resources = result.getResources();
+            FluentIterable<ChannelGroup<?>> resources = result.getResources();
             writer.writeList(channelGroupListWriter, resources, ctxt);
         } else {
             writer.writeObject(channelGroupListWriter, result.getOnlyResource(), ctxt);
