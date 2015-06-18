@@ -21,7 +21,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
     private final ImmutableSet<Country> availableCountries;
     private final ImmutableSet<TemporalField<String>> titles;
 
-    protected ChannelGroup(
+    public ChannelGroup(
             Id id,
             Publisher publisher,
             Set<T> channels,
@@ -41,7 +41,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
         return publisher;
     }
 
-    public Set<T> getChannels() {
+    public Iterable<T> getChannels() {
         return channels;
     }
 

@@ -15,7 +15,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Platform extends ChannelGroup<ChannelNumbering> {
+public class Platform extends NumberedChannelGroup {
 
     private final ImmutableSet<ChannelGroupRef> regions;
 

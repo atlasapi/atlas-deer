@@ -279,7 +279,7 @@ public class QueryWebModule {
     @Bean ContentController contentController() {
         return new ContentController(contentQueryParser(),
                 queryModule.contentQueryExecutor(),
-                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter()));
+                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter(), channelGroupResolver, idCodec()));
     }
 
     @Bean TopicContentController topicContentController() {
@@ -378,6 +378,8 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.GENRE,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
+                                AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.REGION,
                                 AttributeCoercers.idCoercer(idCodec())),
                         QueryAtomParser.valueOf(Attributes.SPECIALIZATION,
                                 AttributeCoercers.stringCoercer())
@@ -543,7 +545,7 @@ public class QueryWebModule {
     @Bean SearchController searchController() {
         return new SearchController(v4SearchResolver,
                 configFetcher,
-                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter()));
+                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter(), channelGroupResolver, idCodec()));
     }
 
     @Bean ResourceAnnotationIndex contentAnnotationIndex() {
@@ -659,7 +661,6 @@ public class QueryWebModule {
                                         new BroadcastWriter("broadcasts", idCodec()),
                                         new ItemDetailWriter(new IdentificationSummaryAnnotation(idCodec()))
                                 )
-
                         ), commonImplied)
                 .register(
                         AVAILABLE_CONTENT_DETAIL,
