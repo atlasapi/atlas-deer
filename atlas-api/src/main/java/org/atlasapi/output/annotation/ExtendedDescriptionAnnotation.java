@@ -13,6 +13,7 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.CertificateWriter;
 import org.atlasapi.output.writers.LanguageWriter;
 import org.atlasapi.output.writers.ReleaseDateWriter;
+import org.atlasapi.output.writers.RestrictionWriter;
 import org.atlasapi.output.writers.SubtitleWriter;
 
 import com.google.common.collect.ImmutableMap;
@@ -23,6 +24,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
     private final CertificateWriter certificateWriter;
     private final SubtitleWriter subtitleWriter;
     private final ReleaseDateWriter releaseDateWriter;
+    private final RestrictionWriter restrictionWriter;
 
     public ExtendedDescriptionAnnotation() {
         super();
@@ -30,6 +32,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         this.certificateWriter = new CertificateWriter();
         this.subtitleWriter = new SubtitleWriter(languageWriter);
         releaseDateWriter = new ReleaseDateWriter();
+        this.restrictionWriter = new RestrictionWriter();
     }
 
     private Map<String, Locale> initLocalMap() {
@@ -51,6 +54,8 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
             writer.writeField("black_and_white", item.getBlackAndWhite());
             writer.writeList("countries_of_origin","country", item.getCountriesOfOrigin(), ctxt);
             writer.writeField("schedule_only", item.isScheduleOnly());
+            writer.writeList(restrictionWriter, item.getRestrictions(), ctxt);
+            
         }
         
         if (desc instanceof Content) {

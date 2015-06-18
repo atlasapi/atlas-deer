@@ -15,6 +15,12 @@ public final class RestrictionSerializer {
         if (restriction.getMessage() != null) {
             message.setRestrictionMessage(restriction.getMessage());
         }
+        if (restriction.getAuthority() != null) {
+            message.setAuthority(restriction.getAuthority());
+        }
+        if (restriction.getRating() != null) {
+            message.setRating(restriction.getRating());
+        }
         return message;
     }
     
@@ -23,6 +29,8 @@ public final class RestrictionSerializer {
         restriction.setMinimumAge(msg.hasMinimumAge() ? msg.getMinimumAge() : null);
         restriction.setRestricted(msg.hasRestricted() ? msg.getRestricted() : null);
         restriction.setMessage(msg.hasRestrictionMessage() ? msg.getRestrictionMessage() : null);
+        restriction.setAuthority(msg.hasAuthority() ? msg.getAuthority() : null);
+        restriction.setRating(msg.hasRating() ? msg.getRating() : null);
         return restriction;
     }
     

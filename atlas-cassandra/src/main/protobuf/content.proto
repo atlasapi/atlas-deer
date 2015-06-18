@@ -101,6 +101,8 @@ message Restriction {
     optional bool restricted = 1;
     optional int32 minimum_age = 2;
     optional string restriction_message = 3;
+    optional string authority = 4;
+    optional string rating = 5;
 }
 
 message Summary {
