@@ -1,9 +1,11 @@
 package org.atlasapi.output.annotation;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
@@ -24,8 +26,12 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
 
     private final MergingEquivalentsResolver<Content> contentResolver;
     private final UpcomingContentDetailWriter upcomingContentDetailWriter;
+    private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
 
-    public UpcomingContentDetailAnnotation(MergingEquivalentsResolver<Content> contentResolver, UpcomingContentDetailWriter upcomingContentDetailWriter) {
+    public UpcomingContentDetailAnnotation(
+            MergingEquivalentsResolver<Content> contentResolver,
+            UpcomingContentDetailWriter upcomingContentDetailWriter
+    ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.upcomingContentDetailWriter = checkNotNull(upcomingContentDetailWriter);
     }
@@ -59,15 +65,22 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
         Iterable<Item> items = contentIds.stream()
                 .map(id -> {
                     Item item = (Item) resolvedEquivalents.get(id).asList().get(0);
+                    Iterable<Broadcast> upcomingBroadcasts = item.getBroadcasts()
+                            .stream()
+                            .filter(Broadcast.IS_UPCOMING)
+                            .collect(Collectors.toSet());
+                    if (ctxt.getRegion().isPresent()) {
+                        upcomingBroadcasts = channelsBroadcastFilter.sortAndFilter(
+                                upcomingBroadcasts,
+                                ctxt.getRegion().get()
+                        );
+                    }
                     item.setBroadcasts(
-                            item.getBroadcasts()
-                                    .stream()
-                                    .filter(Broadcast.IS_UPCOMING)
-                                    .collect(Collectors.toSet()
-                                    )
+                            ImmutableSet.copyOf(upcomingBroadcasts)
                     );
                     return item;
                 })
+                .filter(i -> !i.getBroadcasts().isEmpty())
                 .collect(Collectors.toList());
 
         writer.writeList(upcomingContentDetailWriter, items, ctxt);
