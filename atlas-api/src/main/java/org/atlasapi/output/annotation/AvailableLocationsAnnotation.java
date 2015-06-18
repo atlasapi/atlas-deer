@@ -49,9 +49,7 @@ public class AvailableLocationsAnnotation extends OutputAnnotation<Content> {
 
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
         return Iterables.concat(Iterables.transform(manifestedAs,
-            new Function<Encoding, Iterable<EncodedLocation>>() {
-                @Override
-                public Iterable<EncodedLocation> apply(Encoding encoding) {
+                encoding -> {
                     Builder<EncodedLocation> builder = ImmutableList.builder();
                     for (Location location : encoding.getAvailableAt()) {
                         if (isAvailable(location.getPolicy())) {
@@ -60,7 +58,6 @@ public class AvailableLocationsAnnotation extends OutputAnnotation<Content> {
                     }
                     return builder.build();
                 }
-            }
         ));
     }
 }

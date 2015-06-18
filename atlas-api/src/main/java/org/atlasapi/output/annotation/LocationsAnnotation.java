@@ -7,6 +7,8 @@ import java.util.Set;
 
 import com.google.common.base.Optional;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Item;
@@ -14,6 +16,7 @@ import org.atlasapi.content.Location;
 import org.atlasapi.content.Player;
 import org.atlasapi.content.Policy;
 import org.atlasapi.content.Service;
+import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
@@ -41,12 +44,10 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     private final EncodedLocationWriter encodedLocationWriter;
 
-
     public LocationsAnnotation(PlayerResolver playerResolver, ServiceResolver serviceResolver) {
         this.encodedLocationWriter = new EncodedLocationWriter(
                 "locations", playerResolver, serviceResolver
         );
-        
     }
 
     @Override
@@ -101,16 +102,6 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         @Override
         public void write(EncodedLocation entity, FieldWriter writer, OutputContext ctxt)
                 throws IOException {
-            Map params = ctxt.getRequest().getParameterMap();
-            if (params.containsKey("locations.available")) {
-                String[] paramVals = (String[]) params.get("locations.available");
-                if (paramVals.length == 1 && paramVals[0] != null &&
-                        Boolean.TRUE.toString().equalsIgnoreCase(paramVals[0])) {
-                    if (!entity.getLocation().getAvailable()) {
-                        return;
-                    }
-                }
-            }
             writeLocation(entity, writer, ctxt);
         }
 

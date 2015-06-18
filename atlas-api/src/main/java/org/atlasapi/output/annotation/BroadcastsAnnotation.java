@@ -37,11 +37,9 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
-    private final AnnotationRegistry<Content> annotationRegistry;
-    
-    public BroadcastsAnnotation(NumberToShortStringCodec codec, AnnotationRegistry<Content> annotationRegistry) {
+
+    public BroadcastsAnnotation(NumberToShortStringCodec codec) {
         broadcastWriter = new BroadcastWriter("broadcasts", codec);
-        this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
     @Override
@@ -54,12 +52,6 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     private void writeBroadcasts(FieldWriter writer, Item item, OutputContext ctxt) throws IOException {
         Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
                 .filter(b -> ACTIVELY_PUBLISHED.apply(b));
-        ImmutableMap<Class<?>, OutputAnnotation<? super Content>> activeAnnos =
-                Maps.uniqueIndex(ctxt.getAnnotations(annotationRegistry), OutputAnnotation::getClass);
-
-        if (activeAnnos.containsKey(UpcomingBroadcastsAnnotation.class)) {
-            broadcastStream.filter(b -> b.getTransmissionTime().isAfter(DateTime.now()));
-        }
 
         if(ctxt.getRegion().isPresent()) {
             writer.writeList(

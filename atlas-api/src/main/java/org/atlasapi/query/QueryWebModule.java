@@ -627,7 +627,7 @@ public class QueryWebModule {
                         commonImplied
                 )
                 .register(BROADCASTS, new BroadcastsAnnotation(idCodec()), commonImplied)
-                .register(UPCOMING_BROADCASTS, new UpcomingBroadcastsAnnotation(), commonImplied)
+                .register(UPCOMING_BROADCASTS, new UpcomingBroadcastsAnnotation(idCodec()), commonImplied)
                 .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec()), commonImplied)
                 .register(NEXT_BROADCASTS,
                         new NextBroadcastAnnotation(new SystemClock(), idCodec()),
