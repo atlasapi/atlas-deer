@@ -74,6 +74,7 @@ import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.TopicsAnnotation;
+import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
 import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
@@ -81,10 +82,6 @@ import org.atlasapi.output.writers.ItemDetailWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
-import org.atlasapi.persistence.output.MongoRecentlyBroadcastChildrenResolver;
-import org.atlasapi.persistence.output.MongoUpcomingItemsResolver;
-import org.atlasapi.persistence.output.RecentlyBroadcastChildrenResolver;
-import org.atlasapi.persistence.output.UpcomingItemsResolver;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.ImagesAnnotation;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
@@ -180,6 +177,7 @@ import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
 import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
 import static org.atlasapi.annotation.Annotation.TOPICS;
+import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
@@ -571,8 +569,12 @@ public class QueryWebModule {
     }
 
     @Bean EntityListWriter<Content> contentListWriter() {
+        return new ContentListWriter(contentAnnotations());
+    }
+
+    private AnnotationRegistry<Content> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
-        return new ContentListWriter(AnnotationRegistry.<Content>builder()
+        return AnnotationRegistry.<Content>builder()
                 .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
                 .register(ID, new IdentificationAnnotation(), commonImplied)
                 .register(EXTENDED_ID,
@@ -625,6 +627,7 @@ public class QueryWebModule {
                         commonImplied
                 )
                 .register(BROADCASTS, new BroadcastsAnnotation(idCodec()), commonImplied)
+                .register(UPCOMING_BROADCASTS, new UpcomingBroadcastsAnnotation(), commonImplied)
                 .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec()), commonImplied)
                 .register(NEXT_BROADCASTS,
                         new NextBroadcastAnnotation(new SystemClock(), idCodec()),
@@ -675,7 +678,7 @@ public class QueryWebModule {
                                         )
                                 )
                         ), commonImplied)
-                .build());
+                .build();
     }
 
     @Bean

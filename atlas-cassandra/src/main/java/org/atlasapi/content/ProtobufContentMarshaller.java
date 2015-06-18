@@ -45,7 +45,7 @@ import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.model.ColumnList;
 
 public class ProtobufContentMarshaller implements ContentMarshaller {
-    private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING";
+    private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING_BROADCASTS";
     private static final String AVAILABLE_CONTENT_PREFIX = "AVAILABLE";
 
     private final ListMultimap<ContentProtos.Column, FieldDescriptor> schema =

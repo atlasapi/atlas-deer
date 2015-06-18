@@ -848,10 +848,10 @@ public class CassandraContentStoreIT {
 
         MutationBatch batch = context.getClient().prepareMutationBatch();
         ColumnListMutation<String> mutation = batch.withRow(columnFamily, 1234L);
-        mutation.putColumn("UPCOMING:1238", contentBuilder.build().toByteArray());
+        mutation.putColumn("UPCOMING_BROADCASTS:1238", contentBuilder.build().toByteArray());
 
         ColumnListMutation<String> mutation2 = batch.withRow(columnFamily, 1235L);
-        mutation2.putColumn("UPCOMING:1238", contentBuilder.build().toByteArray());
+        mutation2.putColumn("UPCOMING_BROADCASTS:1238", contentBuilder.build().toByteArray());
         batch.execute();
 
 

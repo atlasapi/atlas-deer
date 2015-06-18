@@ -57,7 +57,18 @@ public class QueryContextParser implements ParameterNameProvider {
             userFetcher.getParameterNames(),
             annotationExtractor.getParameterNames(), 
             selectionBuilder.getParameterNames(),
-            ImmutableSet.of(JsonResponseWriter.CALLBACK, "order_by", "q", "title_boost"))));
+            ImmutableSet.of(
+                    JsonResponseWriter.CALLBACK,
+                    "order_by",
+                    "q",
+                    "title_boost",
+                    "locations.available",
+                    "broadcasts.transmissionStartTime.gt",
+                    "broadcasts.transmissionStartTime.lt",
+                    "broadcasts.transmissionEndTime.gt",
+                    "broadcasts.transmissionEndTime.lt"
+            )
+        )));
     }
     
     @Override

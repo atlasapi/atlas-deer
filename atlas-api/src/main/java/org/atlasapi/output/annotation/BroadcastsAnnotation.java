@@ -4,6 +4,9 @@ import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import org.atlasapi.channel.ChannelGroup;
@@ -12,27 +15,33 @@ import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
+import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.BroadcastWriter;
+import org.atlasapi.query.QueryWebModule;
 import org.atlasapi.util.ImmutableCollectors;
 import org.joda.time.DateTime;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.Broadcast.ACTIVELY_PUBLISHED;
 
 public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
+    private final AnnotationRegistry<Content> annotationRegistry;
     
-    public BroadcastsAnnotation(NumberToShortStringCodec codec) {
+    public BroadcastsAnnotation(NumberToShortStringCodec codec, AnnotationRegistry<Content> annotationRegistry) {
         broadcastWriter = new BroadcastWriter("broadcasts", codec);
+        this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
     @Override
@@ -45,38 +54,11 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     private void writeBroadcasts(FieldWriter writer, Item item, OutputContext ctxt) throws IOException {
         Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
                 .filter(b -> ACTIVELY_PUBLISHED.apply(b));
-        Map params = ctxt.getRequest().getParameterMap();
+        ImmutableMap<Class<?>, OutputAnnotation<? super Content>> activeAnnos =
+                Maps.uniqueIndex(ctxt.getAnnotations(annotationRegistry), OutputAnnotation::getClass);
 
-        if (params.containsKey("broadcasts.transmissionStartTime.gt")) {
-            String[] paramVals = (String[]) params.get("broadcasts.transmissionStartTime.gt");
-            if (paramVals.length > 1 && paramVals[0] != null) {
-                DateTime time = DateTime.parse(paramVals[0]);
-                broadcastStream.filter(b -> b.getTransmissionTime().isAfter(time));
-            }
-        }
-
-        if (params.containsKey("broadcasts.transmissionStartTime.lt")) {
-            String[] paramVals = (String[]) params.get("broadcasts.transmissionStartTime.lt");
-            if (paramVals.length > 1 && paramVals[0] != null) {
-                DateTime time = DateTime.parse(paramVals[0]);
-                broadcastStream.filter(b -> b.getTransmissionTime().isBefore(time));
-            }
-        }
-
-        if (params.containsKey("broadcasts.transmissionEndTime.gt")) {
-            String[] paramVals = (String[]) params.get("broadcasts.transmissionEndTime.gt");
-            if (paramVals.length > 1 && paramVals[0] != null) {
-                DateTime time = DateTime.parse(paramVals[0]);
-                broadcastStream.filter(b -> b.getTransmissionEndTime().isAfter(time));
-            }
-        }
-
-        if (params.containsKey("broadcasts.transmissionEndTime.lt")) {
-            String[] paramVals = (String[]) params.get("broadcasts.transmissionEndTime.lt");
-            if (paramVals.length > 1 && paramVals[0] != null) {
-                DateTime time = DateTime.parse(paramVals[0]);
-                broadcastStream.filter(b -> b.getTransmissionEndTime().isBefore(time));
-            }
+        if (activeAnnos.containsKey(UpcomingBroadcastsAnnotation.class)) {
+            broadcastStream.filter(b -> b.getTransmissionTime().isAfter(DateTime.now()));
         }
 
         if(ctxt.getRegion().isPresent()) {
