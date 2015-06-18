@@ -41,7 +41,7 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<org.atlasap
     @Override
     public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
-        for (ChannelGroupMembership channelGroupMembership : (Set<ChannelGroupMembership>)entity.getChannels()) {
+        for (ChannelGroupMembership channelGroupMembership : (Iterable<ChannelGroupMembership>)entity.getChannels()) {
             builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
         }
 
