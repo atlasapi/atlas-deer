@@ -49,11 +49,8 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
         ChannelGroup channelGroup = Futures.get(
                 Futures.transform(
                         this.channelGroupResolver.resolveIds(ImmutableSet.of(entity.getChannel().getId())),
-                        new Function<Resolved<ChannelGroup>, ChannelGroup>() {
-                            @Override
-                            public ChannelGroup apply(Resolved<ChannelGroup> input) {
-                                return input.getResources().first().get();
-                            }
+                        (Resolved<ChannelGroup<?>> input) -> {
+                            return input.getResources().first().get();
                         }
                 ), 1, TimeUnit.MINUTES, IOException.class
         );

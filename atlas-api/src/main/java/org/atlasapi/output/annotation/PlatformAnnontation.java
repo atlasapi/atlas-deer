@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class PlatformAnnontation extends OutputAnnotation<ChannelGroup> {
+public class PlatformAnnontation extends OutputAnnotation<ChannelGroup<?>> {
 
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("regions", "region");
@@ -47,14 +47,11 @@ public class PlatformAnnontation extends OutputAnnotation<ChannelGroup> {
         );
 
 
-        Iterable<ChannelGroup> channelGroups = Futures.get(
+        Iterable<ChannelGroup<?>> channelGroups = Futures.get(
                 Futures.transform(
                         channelGroupResolver.resolveIds(regionIds),
-                        new Function<Resolved<ChannelGroup>, Iterable<ChannelGroup>>() {
-                            @Override
-                            public Iterable<ChannelGroup> apply(@Nullable Resolved<ChannelGroup> input) {
-                                return input.getResources();
-                            }
+                        (Resolved<ChannelGroup<?>> input) -> {
+                            return input.getResources();
                         }
                 ), 1, TimeUnit.MINUTES, IOException.class
         );

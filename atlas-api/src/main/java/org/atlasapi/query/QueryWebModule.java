@@ -229,7 +229,7 @@ public class QueryWebModule {
 
     private
     @Autowired
-    QueryExecutor<ChannelGroup> channelGroupQueryExecutor;
+    QueryExecutor<ChannelGroup<?>> channelGroupQueryExecutor;
 
     private
     @Autowired
@@ -422,7 +422,7 @@ public class QueryWebModule {
     }
 
     private ChannelGroupListWriter channelGroupListWriter() {
-        return new ChannelGroupListWriter(AnnotationRegistry.<ChannelGroup>builder()
+        return new ChannelGroupListWriter(AnnotationRegistry.<ChannelGroup<?>>builder()
                 .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
                 .register(
                         CHANNELS,
@@ -436,7 +436,7 @@ public class QueryWebModule {
                 .build());
     }
 
-    private QueryParser<ChannelGroup> channelGroupQueryParser() {
+    private QueryParser<ChannelGroup<?>> channelGroupQueryParser() {
         QueryContextParser contextParser = new QueryContextParser(
                 configFetcher,
                 userFetcher,

@@ -7,7 +7,7 @@ import org.atlasapi.output.writers.ChannelGroupWriter;
 
 import java.io.IOException;
 
-public class ChannelGroupAnnotation extends OutputAnnotation<ChannelGroup> {
+public class ChannelGroupAnnotation extends OutputAnnotation<ChannelGroup<?>> {
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("channel_groups", "channels");
 

@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 public class ChannelNumberingOrdering extends Ordering<ChannelNumbering> {
 
     @Override
-    public int compare(@Nullable ChannelNumbering left, @Nullable ChannelNumbering right) {
+    public int compare(ChannelNumbering left, ChannelNumbering right) {
         String leftNumber = left.getChannelNumber();
         String rightNumber = right.getChannelNumber();
 
