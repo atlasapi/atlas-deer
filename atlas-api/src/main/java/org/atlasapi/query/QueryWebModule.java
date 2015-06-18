@@ -570,9 +570,6 @@ public class QueryWebModule {
 
     @Bean EntityListWriter<Content> contentListWriter() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
-        RecentlyBroadcastChildrenResolver recentlyBroadcastResolver = new MongoRecentlyBroadcastChildrenResolver(
-                mongo);
-        UpcomingItemsResolver upcomingChildrenResolver = new MongoUpcomingItemsResolver(mongo);
         return new ContentListWriter(AnnotationRegistry.<Content>builder()
                 .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
                 .register(ID, new IdentificationAnnotation(), commonImplied)
@@ -613,7 +610,6 @@ public class QueryWebModule {
                 .register(TOPICS,
                         new TopicsAnnotation(topicResolver, topicListWriter()),
                         commonImplied)
-                        //.register(CONTENT_GROUPS, new ContentGroupsAnnotation(contentGroupResolver), commonImplied)
                 .register(SEGMENT_EVENTS,
                         new SegmentEventsAnnotation(segmentRelatedLinkMergingFetcher()),
                         commonImplied)
@@ -638,9 +634,6 @@ public class QueryWebModule {
                         commonImplied
                 )
                 .register(IMAGES, new ImagesAnnotation(), commonImplied)
-                        //.register(UPCOMING, new UpcomingAnnotation(idCodec(), upcomingChildrenResolver), commonImplied)
-                        //.register(PRODUCTS, new ProductsAnnotation(productResolver), commonImplied)
-                        //.register(RECENTLY_BROADCAST, new RecentlyBroadcastAnnotation(idCodec(), recentlyBroadcastResolver), commonImplied)
                 .register(CHANNELS, new ChannelsAnnotation(), commonImplied)
                 .register(CONTENT_SUMMARY,
                         NullWriter.create(Content.class),
