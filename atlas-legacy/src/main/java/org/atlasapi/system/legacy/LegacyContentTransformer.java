@@ -409,6 +409,8 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         r.setRestricted(input.isRestricted());
         r.setMinimumAge(input.getMinimumAge());
         r.setMessage(input.getMessage());
+        r.setAuthority(input.getAuthority());
+        r.setRating(input.getRating());
         return r;
     }
 

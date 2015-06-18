@@ -10,7 +10,29 @@ public class Restriction extends Identified {
 	private Integer minimumAge = null;
 
 	private String message = null;
-
+	
+	private String authority = null;
+	
+	private String rating = null;
+	
+	public String getAuthority() {
+	    return authority;
+	}
+    
+	@FieldName("authority")
+    public void setAuthority(String authority) {
+        this.authority = authority;
+    }
+    
+    public String getRating() {
+        return rating;
+    }
+    
+    @FieldName("rating")
+    public void setRating(String rating) {
+        this.rating = rating;
+    }
+	
 	public void setRestricted(Boolean rated) {
 		this.restricted = rated;
 	}
@@ -74,12 +96,22 @@ public class Restriction extends Identified {
 		return restriction;
 	}
 	
+	public static Restriction from(String authority, String rating) {
+	    Restriction restriction = new Restriction();
+	    restriction.setRestricted(true);
+	    restriction.setAuthority(authority);
+	    restriction.setRating(rating);
+	    return restriction;
+	}
+	
 	public Restriction copy() {
 	    Restriction copy = new Restriction();
 	    Identified.copyTo(this, copy);
 	    copy.message = message;
 	    copy.minimumAge = minimumAge;
 	    copy.restricted = restricted;
+	    copy.authority = authority;
+	    copy.rating = rating;
 	    return copy;
 	}
 }
