@@ -4,6 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentGroupResolver;
 import org.atlasapi.content.EsContentIndex;
@@ -20,21 +22,29 @@ import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
+import javax.annotation.Nullable;
+
 public class ContentGroupIndexUpdatingWorker implements Worker<ResourceUpdatedMessage> {
 
     private static final Logger log = LoggerFactory.getLogger(ContentGroupIndexUpdatingWorker.class);
 
     private final EsContentIndex index;
     private final ContentGroupResolver resolver;
+    private final Timer messageTimer;
 
-    public ContentGroupIndexUpdatingWorker(EsContentIndex index, ContentGroupResolver resolver) {
+    public ContentGroupIndexUpdatingWorker(EsContentIndex index, ContentGroupResolver resolver, @Nullable MetricRegistry metrics) {
         this.index = checkNotNull(index);
         this.resolver = checkNotNull(resolver);
+        this.messageTimer = (metrics != null ? checkNotNull(metrics.timer(getClass().getSimpleName())) : null);
     }
 
     @Override
     public void process(ResourceUpdatedMessage msg) throws RecoverableException {
         try {
+            Timer.Context time = null;
+            if (messageTimer != null) {
+                time = messageTimer.time();
+            }
             log.info("Starting processing of content group update {}", msg.getUpdatedResource());
             ResourceRef resource = msg.getUpdatedResource();
             Resolved<ContentGroup> resolved =
@@ -46,6 +56,9 @@ public class ContentGroupIndexUpdatingWorker implements Worker<ResourceUpdatedMe
                         "Could not resolve count group {} in legacy store, skipping update",
                         msg.getUpdatedResource().getId()
                 );
+                if (time != null) {
+                    time.stop();
+                }
                 return;
             }
 
@@ -57,6 +70,9 @@ public class ContentGroupIndexUpdatingWorker implements Worker<ResourceUpdatedMe
 
             index.index(contentGroup);
             log.debug("Finished processing of content group update {}", msg.getUpdatedResource());
+            if (time != null) {
+                time.stop();
+            }
         } catch (IOException | IndexException e) {
             log.error(
                     "Failed to process update message for content group {} due to {}",

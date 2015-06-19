@@ -150,7 +150,8 @@ public class BootstrapWorkersModule {
     public KafkaConsumer contentGroupIndexUpdatingWorker() {
         ContentGroupIndexUpdatingWorker worker = new ContentGroupIndexUpdatingWorker(
                 persistence.contentIndex(),
-                legacy.legacyContentGroupResolver()
+                legacy.legacyContentGroupResolver(),
+                health.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer = new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory().createConsumer(worker, serializer, contentGroupChanges, "ContentGroupBootstrap")
