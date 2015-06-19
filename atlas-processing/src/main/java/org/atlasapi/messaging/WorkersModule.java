@@ -58,8 +58,8 @@ public class WorkersModule {
     public KafkaConsumer contentIndexerMessageListener() {
         return messaging.messageConsumerFactory().createConsumer(contentIndexingWorker(), 
                 serializer(ResourceUpdatedMessage.class), contentChanges, "ContentIndexer")
-                .withDefaultConsumers(100)
-                .withMaxConsumers(100)
+                .withDefaultConsumers(defaultIndexingConsumers)
+                .withMaxConsumers(maxIndexingConsumers)
                 .build();
     }
 
