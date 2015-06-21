@@ -61,8 +61,7 @@ public class ContentIndexingWorker implements Worker<ResourceUpdatedMessage> {
         }
     }
 
-    private ListenableFuture<Resolved<Content>> resolveContent(
-            final ResourceUpdatedMessage message) {
+    private ListenableFuture<Resolved<Content>> resolveContent(final ResourceUpdatedMessage message) {
         return contentResolver.resolveIds(ImmutableList.of(message.getUpdatedResource().getId()));
     }
 }

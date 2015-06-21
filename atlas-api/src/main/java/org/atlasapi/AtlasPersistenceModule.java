@@ -166,7 +166,9 @@ public class AtlasPersistenceModule {
     @Bean
     public ElasticSearchContentIndexModule esContentIndexModule() {
         ElasticSearchContentIndexModule module = 
-                new ElasticSearchContentIndexModule(esSeeds, esCluster, Long.parseLong(esRequestTimeout), persistenceModule().contentStore());
+                new ElasticSearchContentIndexModule(
+                        esSeeds, esCluster, Long.parseLong(esRequestTimeout), persistenceModule().contentStore(), health.metrics()
+                );
         module.init();
         return module;
     }
