@@ -1,5 +1,7 @@
 package org.atlasapi;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import org.atlasapi.content.CassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentHasher;
@@ -36,9 +38,12 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
     private static final int CQL_PORT = 9042;
+    private final MetricRegistry metrics;
     private String contentEquivalenceGraphChanges = Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
@@ -64,7 +69,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public CassandraPersistenceModule(MessageSenderFactory messageSenderFactory,
                                       AstyanaxContext<Keyspace> context, DatastaxCassandraService datastaxCassandraService,
-                                      String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher hasher, Iterable<String> cassNodes) {
+                                      String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher hasher, Iterable<String> cassNodes, MetricRegistry metrics) {
         this.messageSenderFactory = messageSenderFactory;
         this.keyspace = keyspace;
         this.context = context;
@@ -96,6 +101,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withEquivalence(segmentEquivalence())
                 .build();
         this.dataStaxService = datastaxCassandraService;
+        this.metrics = checkNotNull(metrics);
     }
 
     private Equivalence<Segment> segmentEquivalence() {
@@ -139,7 +145,24 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     private <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
-        return messageSenderFactory.makeMessageSender(dest, JacksonMessageSerializer.forType(type));
+        return new MessageSender<M>() {
+
+            private final Timer timer = metrics.timer(dest);
+            private final MessageSender<M> delegate =
+                    messageSenderFactory.makeMessageSender(dest, JacksonMessageSerializer.forType(type));
+
+            @Override
+            public void sendMessage(M message) throws MessagingException {
+                Timer.Context time = timer.time();
+                delegate.sendMessage(message);
+                time.stop();
+            }
+
+            @Override
+            public void close() throws Exception {
+                delegate.close();
+            }
+        };
     }
 
     @Override

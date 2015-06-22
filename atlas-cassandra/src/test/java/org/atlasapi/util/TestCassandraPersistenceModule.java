@@ -2,6 +2,7 @@ package org.atlasapi.util;
 
 import java.util.UUID;
 
+import com.codahale.metrics.MetricRegistry;
 import org.atlasapi.CassandraPersistenceModule;
 import org.atlasapi.ConfiguredAstyanaxContext;
 import org.atlasapi.DatastaxCassandraService;
@@ -98,7 +99,7 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         createTables(session, context);
         
         CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(messageSenderFactory, context, cassandraService,
-                keyspace, idGeneratorBuilder(), hasher, seeds);
+                keyspace, idGeneratorBuilder(), hasher, seeds, new MetricRegistry());
         persistenceModule.startAsync().awaitRunning();
         return persistenceModule;
     }

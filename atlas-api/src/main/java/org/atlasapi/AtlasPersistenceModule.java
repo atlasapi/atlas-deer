@@ -116,7 +116,8 @@ public class AtlasPersistenceModule {
                 cassandraConnectionsPerHostRemote
         );
         cassandraService.startAsync().awaitRunning();
-        return new CassandraPersistenceModule(messaging.messageSenderFactory(),
+        return new CassandraPersistenceModule(
+                messaging.messageSenderFactory(),
                 context,
                 cassandraService,
                 cassandraKeyspace,
@@ -126,7 +127,8 @@ public class AtlasPersistenceModule {
                         return UUID.randomUUID().toString();
                     }
                 },
-                seeds
+                seeds,
+                health.metrics()
         );
     }
     
