@@ -291,7 +291,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private ByteBuffer serialize(Content content) {
         ContentProtos.Content contentBuffer = contentSerializer.serialize(content);
-        return ByteBuffer.wrap(contentBuffer.toByteArray());
+        ByteBuffer buffer = ByteBuffer.wrap(contentBuffer.toByteArray());
+        /* Debug logging to investigate null content being written into equiv store */
+        if (!buffer.hasRemaining()) {
+            log.debug("ByteBuffer for serialised Content {} is empty!", content.getId());
+        }
+        return buffer;
     }
     
     private void updateIndexRows(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
