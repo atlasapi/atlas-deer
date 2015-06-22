@@ -6,10 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import com.google.common.collect.Ordering;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
@@ -36,8 +33,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.metabroadcast.common.query.Selection;
-
-import javax.annotation.Nullable;
 
 public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<Content> {
 
@@ -94,27 +89,16 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         }
     }
 
-    private AsyncFunction<FluentIterable<Id>, Iterable<Content>> toEquivalentContent(
+    private AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>> toEquivalentContent(
             final Query<Content> query) {
-        return input -> {
-            Ordering<Id> idOrdering = Ordering.explicit(input.toList());
-            return Futures.transform(
-                    resolver.resolveIds(input, applicationSources(query), annotations(query)),
-                    new Function<ResolvedEquivalents<Content>, Iterable<Content>>() {
-                        @Nullable
-                        @Override
-                        public Iterable<Content> apply(ResolvedEquivalents<Content> input) {
-                            return StreamSupport.stream(input.getFirstElems().spliterator(), false)
-                                    .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
-                                    .collect(Collectors.toList());
-                        }
-                    }
-            );
-        };
+        return input -> resolver.resolveIds(input, applicationSources(query), annotations(query));
     }
 
-    private Function<Iterable<Content>, QueryResult<Content>> toQueryResult(final Query<Content> query) {
-        return input -> QueryResult.listResult(input, query.getContext());
+    private Function<ResolvedEquivalents<Content>, QueryResult<Content>> toQueryResult(final Query<Content> query) {
+        return input -> {
+            Iterable<Content> resources = input.getFirstElems();
+            return QueryResult.listResult(resources, query.getContext());
+        };
     }
 
     private Selection selection(Query<Content> query) {
