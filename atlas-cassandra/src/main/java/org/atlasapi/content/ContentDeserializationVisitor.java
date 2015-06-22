@@ -125,6 +125,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasSpecialization()) {
             described.setSpecialization(Specialization.valueOf(msg.getSpecialization().toUpperCase()));
         }
+        if (msg.hasPriority()) {
+            described.setPriority(msg.getPriority());
+        }
         return described;
     }
     

@@ -118,6 +118,9 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
         for (RelatedLink relatedLink : content.getRelatedLinks()) {
             builder.addRelatedLink(relatedLinkSerializer.serialize(relatedLink));
         }
+        if (content.getPriority() != null) {
+            builder.setPriority(content.getPriority());
+        }
         return builder;
     }
 
