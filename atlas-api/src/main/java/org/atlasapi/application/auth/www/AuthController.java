@@ -42,7 +42,7 @@ public class AuthController {
     private final QueryResultWriter<OAuthProvider> resultWriter;
     private final UserFetcher userFetcher;
     private final NumberToShortStringCodec idCodec;
-    private final String USER_URL = "/4/users/%s.%s";
+    private final String USER_URL = "4/users/%s.%s";
     
     public AuthController(QueryResultWriter<OAuthProvider> resultWriter,
             UserFetcher userFetcher,
