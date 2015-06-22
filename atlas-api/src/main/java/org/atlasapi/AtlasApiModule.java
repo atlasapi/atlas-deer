@@ -12,11 +12,11 @@ import com.metabroadcast.common.webapp.properties.ContextConfigurer;
 
 @Configuration
 @Import({
-    AtlasPersistenceModule.class, 
-    KafkaMessagingModule.class, 
+    HealthModule.class,
+    AtlasPersistenceModule.class,
+    KafkaMessagingModule.class,
     ApplicationModule.class,
-    QueryWebModule.class,
-    HealthModule.class
+    QueryWebModule.class
 })
 public class AtlasApiModule {
 

@@ -67,7 +67,7 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 
 @Configuration
-@Import({KafkaMessagingModule.class, HealthModule.class})
+@Import({KafkaMessagingModule.class})
 public class AtlasPersistenceModule {
 
     private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
@@ -104,10 +104,10 @@ public class AtlasPersistenceModule {
     @Bean
     public CassandraPersistenceModule persistenceModule() {
         Iterable<String> seeds = Splitter.on(",").split(cassandraSeeds);
-        ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster, cassandraKeyspace, 
-                seeds, Integer.parseInt(cassandraPort), 
+        ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster, cassandraKeyspace,
+                seeds, Integer.parseInt(cassandraPort),
                 Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout),
-                HealthModule.metrics());
+                health.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(
@@ -128,7 +128,7 @@ public class AtlasPersistenceModule {
                     }
                 },
                 seeds,
-                HealthModule.metrics()
+                health.metrics()
         );
     }
     

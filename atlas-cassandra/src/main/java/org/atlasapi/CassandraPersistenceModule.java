@@ -2,6 +2,22 @@ package org.atlasapi;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.datastax.driver.core.Session;
+import com.google.common.base.Equivalence;
+import com.google.common.base.Objects;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.persistence.cassandra.CassandraDataStaxClient;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.metabroadcast.common.queue.Message;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenderFactory;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.SystemClock;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.model.ConsistencyLevel;
 import org.atlasapi.content.CassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentHasher;
@@ -21,29 +37,9 @@ import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.CassandraTopicStore;
 import org.atlasapi.topic.Topic;
 
-import com.datastax.driver.core.Session;
-import com.google.common.base.Equivalence;
-import com.google.common.base.Objects;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.metabroadcast.common.ids.IdGeneratorBuilder;
-import com.metabroadcast.common.persistence.cassandra.CassandraDataStaxClient;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.properties.Parameter;
-import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessageSenderFactory;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.SystemClock;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.model.ConsistencyLevel;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
     private static final int CQL_PORT = 9042;
-    private final MetricRegistry metrics;
     private String contentEquivalenceGraphChanges = Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
@@ -54,6 +50,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final String keyspace;
 
     private final AstyanaxContext<Keyspace> context;
+    private final MetricRegistry metrics;
     private final CassandraContentStore contentStore;
     private final CassandraTopicStore topicStore;
     private final CassandraScheduleStore scheduleStore;
@@ -68,11 +65,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
 
     public CassandraPersistenceModule(MessageSenderFactory messageSenderFactory,
-                                      AstyanaxContext<Keyspace> context, DatastaxCassandraService datastaxCassandraService,
-                                      String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher hasher, Iterable<String> cassNodes, MetricRegistry metrics) {
+            AstyanaxContext<Keyspace> context, DatastaxCassandraService datastaxCassandraService,
+            String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher hasher, Iterable<String> cassNodes, MetricRegistry metrics) {
         this.messageSenderFactory = messageSenderFactory;
         this.keyspace = keyspace;
         this.context = context;
+        this.metrics = metrics;
         ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
         com.datastax.driver.core.ConsistencyLevel datastaxReadConsistency = processing ? com.datastax.driver.core.ConsistencyLevel.QUORUM : com.datastax.driver.core.ConsistencyLevel.ONE;
         CassandraDataStaxClient dataStaxClient = new CassandraDataStaxClient(datastaxReadConsistency, com.datastax.driver.core.ConsistencyLevel.QUORUM);
@@ -101,7 +99,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withEquivalence(segmentEquivalence())
                 .build();
         this.dataStaxService = datastaxCassandraService;
-        this.metrics = checkNotNull(metrics);
     }
 
     private Equivalence<Segment> segmentEquivalence() {
@@ -147,9 +144,9 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
         return new MessageSender<M>() {
 
-            private final Timer timer = metrics.timer(dest);
             private final MessageSender<M> delegate =
                     messageSenderFactory.makeMessageSender(dest, JacksonMessageSerializer.forType(type));
+            private final Timer timer = metrics.timer(dest);
 
             @Override
             public void sendMessage(M message) throws MessagingException {

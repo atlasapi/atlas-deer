@@ -13,10 +13,10 @@ import com.metabroadcast.common.webapp.properties.ContextConfigurer;
 
 @Configuration
 @Import({
-    KafkaMessagingModule.class,
-    AtlasPersistenceModule.class, 
-    WorkersModule.class,
     ProcessingHealthModule.class,
+    KafkaMessagingModule.class,
+    AtlasPersistenceModule.class,
+    WorkersModule.class,
     BootstrapModule.class,
     DebugModule.class,
 })
