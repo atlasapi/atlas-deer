@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.model.auth.OAuthProvider;
 import org.atlasapi.application.users.User;
@@ -42,7 +43,7 @@ public class AuthController {
     private final QueryResultWriter<OAuthProvider> resultWriter;
     private final UserFetcher userFetcher;
     private final NumberToShortStringCodec idCodec;
-    private final String USER_URL = "/4/users/%s.%s";
+    private final String USER_URL = Configurer.get("atlas.uri").toString() + "/4/users/%s.%s";
     
     public AuthController(QueryResultWriter<OAuthProvider> resultWriter,
             UserFetcher userFetcher,
