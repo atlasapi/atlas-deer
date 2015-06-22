@@ -34,13 +34,17 @@ public class WorkersModule {
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private String contentEquivalenceGraphChanges = Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
     
-    private Integer defaultIndexingConsumers = Configurer.get("messaging.indexing.consumers.default").toInt();
-    private Integer maxIndexingConsumers = Configurer.get("messaging.indexing.consumers.max").toInt();
-    
-    private String equivSystem = Configurer.get("equiv.update.producer.system").get();
-    private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
+    private Integer defaultContentIndexers = Configurer.get("messaging.content.indexing.consumers.default").toInt();
+    private Integer maxContentIndexers = Configurer.get("messaging.content.indexing.consumers.max").toInt();
+
+    private Integer defaultTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.default").toInt();
+    private Integer maxTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.max").toInt();
+
     private Integer equivDefaultConsumers = Configurer.get("equiv.update.consumers.default").toInt();
     private Integer equivMaxConsumers = Configurer.get("equiv.update.consumers.max").toInt();
+
+    private String equivSystem = Configurer.get("equiv.update.producer.system").get();
+    private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
 
     @Autowired private KafkaMessagingModule messaging;
     @Autowired private AtlasPersistenceModule persistence;
@@ -56,10 +60,10 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public KafkaConsumer contentIndexerMessageListener() {
-        return messaging.messageConsumerFactory().createConsumer(contentIndexingWorker(), 
+        return messaging.messageConsumerFactory().createConsumer(contentIndexingWorker(),
                 serializer(ResourceUpdatedMessage.class), contentChanges, "ContentIndexer")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(defaultContentIndexers)
+                .withMaxConsumers(maxContentIndexers)
                 .build();
     }
 
@@ -78,8 +82,8 @@ public class WorkersModule {
     public KafkaConsumer topicIndexerMessageListener() {
         return messaging.messageConsumerFactory().createConsumer(topicIndexingWorker(), 
                 serializer(ResourceUpdatedMessage.class), topicChanges, "TopicIndexer")
-                .withDefaultConsumers(defaultIndexingConsumers)
-                .withMaxConsumers(maxIndexingConsumers)
+                .withDefaultConsumers(defaultTopicIndexers)
+                .withMaxConsumers(maxTopicIndexers)
                 .build();
     }
 
