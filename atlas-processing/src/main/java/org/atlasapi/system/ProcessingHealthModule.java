@@ -36,6 +36,14 @@ public class ProcessingHealthModule extends HealthModule {
             new DiskSpaceProbe()
     );
 
+    private static MetricRegistry metrics;
+    static {
+        metrics = new MetricRegistry();
+        registerMetrics("gc.", new GarbageCollectorMetricSet(), metrics);
+        registerMetrics("memory.", new MemoryUsageGaugeSet(), metrics);
+        registerMetrics("threads.", new ThreadStatesGaugeSet(), metrics);
+    }
+
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
     private @Autowired AtlasPersistenceModule persistenceModule;
@@ -49,15 +57,6 @@ public class ProcessingHealthModule extends HealthModule {
 
     public @Bean org.atlasapi.system.HealthController threadController() {
         return new org.atlasapi.system.HealthController();
-    }
-
-    public GraphiteReporter graphiteReporterFor(MetricRegistry metrics) {
-        GraphiteReporter reporter = GraphiteReporter.forRegistry(metrics)
-                .prefixedWith("atlas.deer." + environmentPrefix + ".")
-                .withClock(new Clock.UserTimeClock())
-                .build(new GraphiteUDP(graphiteHost, graphitePort));
-        reporter.start(1, TimeUnit.MINUTES);
-        return reporter;
     }
 
     public @Bean HealthProbe metricsProbe() {
@@ -90,11 +89,10 @@ public class ProcessingHealthModule extends HealthModule {
     }
 
     public @Bean MetricRegistry metrics() {
-        MetricRegistry metrics = new MetricRegistry();
-        registerMetrics("gc.", new GarbageCollectorMetricSet(), metrics);
-        registerMetrics("memory.", new MemoryUsageGaugeSet(), metrics);
-        registerMetrics("threads.", new ThreadStatesGaugeSet(), metrics);
-        graphiteReporterFor(metrics);
+        return metrics;
+    }
+
+    public static MetricRegistry staticMetrics() {
         return metrics;
     }
 
@@ -103,7 +101,7 @@ public class ProcessingHealthModule extends HealthModule {
         healthController.addProbes(probes);
     }
 
-    private void registerMetrics(String prefix, MetricSet metrics, MetricRegistry registry) {
+    private static void registerMetrics(String prefix, MetricSet metrics, MetricRegistry registry) {
         for (Map.Entry<String, Metric> metric : metrics.getMetrics().entrySet()) {
             registry.register(prefix.concat(metric.getKey()), metric.getValue());
         }

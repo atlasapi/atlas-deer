@@ -19,6 +19,7 @@ import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 @Configuration
 public class HealthModule {
 
+    private static final MetricRegistry metrics = new MetricRegistry();
     private final ImmutableList<HealthProbe> systemProbes = ImmutableList.of(
             new MemoryInfoProbe(),
             new DiskSpaceProbe()
@@ -40,7 +41,11 @@ public class HealthModule {
     }
 
     public @Bean MetricRegistry metrics() {
-        return new MetricRegistry();
+        return metrics;
+    }
+
+    public static MetricRegistry staticMetrics() {
+        return metrics;
     }
 
     @PostConstruct
