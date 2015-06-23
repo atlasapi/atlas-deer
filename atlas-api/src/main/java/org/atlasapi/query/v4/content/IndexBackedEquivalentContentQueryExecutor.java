@@ -3,7 +3,6 @@ package org.atlasapi.query.v4.content;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -82,21 +81,24 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         try {
             ListenableFuture<IndexQueryResult> result
                     = index.query(query.getOperands(), sources(query), selection(query), Optional.of(indexQueryParser.parse(query)));
-            return Futures.get(Futures.transform(result, toQueryResult(query)), QueryExecutionException.class);
+            return Futures.transform(result, toQueryResult(query));
         } catch (QueryParseException qpe) {
             throw new QueryExecutionException(qpe);
         }
     }
 
-    private Function<IndexQueryResult, ListenableFuture<QueryResult<Content>>> toQueryResult(final Query<Content> query) {
-        return input -> {
+    private Function<ListenableFuture<IndexQueryResult>, ListenableFuture<QueryResult<Content>>> toQueryResult(final Query<Content> query) {
+        return input -> Futures.transform(input, (IndexQueryResult i) -> {
+
             ListenableFuture<ResolvedEquivalents<Content>> resolving =
-                    resolver.resolveIds(input.getIds(), applicationSources(query), annotations(query));
+                    resolver.resolveIds(i.getIds(), applicationSources(query), annotations(query));
+
             return Futures.transform(resolving, (ResolvedEquivalents<Content> resolved) -> {
                 Iterable<Content> resources = resolved.getFirstElems();
-                return QueryResult.listResult(resources, query.getContext(), input.getTotalCount());
+                return QueryResult.listResult(resources, query.getContext(), i.getTotalCount());
             });
-        };
+            
+        });
     }
 
     private Selection selection(Query<Content> query) {
