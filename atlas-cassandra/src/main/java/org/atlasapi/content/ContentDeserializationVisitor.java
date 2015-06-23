@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ProtoBufUtils;
@@ -22,8 +21,6 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
 import com.metabroadcast.common.intl.Countries;
 
-import java.util.Map;
-
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
     private static final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
@@ -39,8 +36,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private static final CertificateSerializer certificateSerializer = new CertificateSerializer();
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
-
-
+    private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
 
     private ContentProtos.Content msg;
 
@@ -209,6 +205,14 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
                 itemAndLocationSummarySerializer.deserialize(
                         itemAndBroadcastSummaries.build()
                 )
+        );
+        ImmutableList.Builder<ContentProtos.ItemSummary> itemSummaries = ImmutableList.builder();
+
+        for (int i = 0; i < msg.getItemSummariesCount(); i++) {
+            itemSummaries.add(msg.getItemSummaries(i));
+        }
+        container.setItemSummaries(
+                itemSummarySerializer.deserialize(itemSummaries.build())
         );
 
         return container;
