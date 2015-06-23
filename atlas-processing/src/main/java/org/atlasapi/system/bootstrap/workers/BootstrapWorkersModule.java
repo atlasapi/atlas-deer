@@ -8,6 +8,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.KafkaMessagingModule;
@@ -61,6 +62,8 @@ public class BootstrapWorkersModule {
     private KafkaMessagingModule messaging;
     @Autowired
     private ProcessingHealthModule health;
+    @Autowired
+    private ElasticSearchContentIndexModule search;
 
     @Bean
     @Qualifier("bootstrap")
@@ -72,10 +75,11 @@ public class BootstrapWorkersModule {
     @Lazy(true)
     KafkaConsumer contentReadWriter() {
         ContentResolver legacyResolver = legacy.legacyContentResolver();
-        ContentReadWriteWorker worker = new ContentReadWriteWorker(
+        IndexingContentReadWriteWorker worker = new IndexingContentReadWriteWorker(
                 legacyResolver,
                 persistence.contentStore(),
                 explicitEquivalenceMigrator(),
+                search.contentIndex(),
                 health.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =

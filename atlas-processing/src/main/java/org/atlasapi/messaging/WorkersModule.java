@@ -34,9 +34,6 @@ public class WorkersModule {
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private String contentEquivalenceGraphChanges = Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
     
-    private Integer defaultContentIndexers = Configurer.get("messaging.content.indexing.consumers.default").toInt();
-    private Integer maxContentIndexers = Configurer.get("messaging.content.indexing.consumers.max").toInt();
-
     private Integer defaultTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.default").toInt();
     private Integer maxTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.max").toInt();
 
@@ -50,22 +47,6 @@ public class WorkersModule {
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private ProcessingHealthModule health;
     private ServiceManager consumerManager;
-
-    @Bean
-    @Lazy(true)
-    public Worker<ResourceUpdatedMessage> contentIndexingWorker() {
-        return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex(), health.metrics());
-    }
-
-    @Bean
-    @Lazy(true)
-    public KafkaConsumer contentIndexerMessageListener() {
-        return messaging.messageConsumerFactory().createConsumer(contentIndexingWorker(),
-                serializer(ResourceUpdatedMessage.class), contentChanges, "ContentIndexer")
-                .withDefaultConsumers(defaultContentIndexers)
-                .withMaxConsumers(maxContentIndexers)
-                .build();
-    }
 
     private <M extends Message> MessageSerializer<M> serializer(Class<M> cls) {
         return JacksonMessageSerializer.forType(cls);
@@ -179,8 +160,7 @@ public class WorkersModule {
             equivalentScheduleStoreGraphUpdateListener(),
             equivalentContentStoreGraphUpdateListener(),
             equivalentContentStoreContentUpdateListener(),
-            topicIndexerMessageListener(),
-            contentIndexerMessageListener()
+            topicIndexerMessageListener()
         ));
         consumerManager.startAsync().awaitHealthy(1, TimeUnit.MINUTES);
     }
