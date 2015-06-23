@@ -55,10 +55,20 @@ public class BootstrapModule {
         BootstrapController bootstrapController = new BootstrapController();
         
         bootstrapController.addBootstrapPair("legacy-content", new ResourceBootstrapper<Content>(legacy.legacyContentLister()),
-                concurrencyLevel -> new ContentWritingBootstrapListener(concurrencyLevel, persistence.contentStore())
+            new BootstrapListenerFactory<Content>() {
+                @Override
+                public BootstrapListener<Content> buildWithConcurrency(int concurrencyLevel) {
+                    return new ContentWritingBootstrapListener(concurrencyLevel, persistence.contentStore());
+                }
+            }
         );
         bootstrapController.addBootstrapPair("legacy-topics", new ResourceBootstrapper<Topic>(legacy.legacyTopicLister()),
-                concurrencyLevel -> new TopicWritingBootstrapListener(concurrencyLevel, persistence.topicStore())
+            new BootstrapListenerFactory<Topic>() {
+                @Override
+                public BootstrapListener<Topic> buildWithConcurrency(int concurrencyLevel) {
+                    return new TopicWritingBootstrapListener(concurrencyLevel, persistence.topicStore());
+                }
+            }
         );
         return bootstrapController;
     }
@@ -81,10 +91,10 @@ public class BootstrapModule {
         DayRangeGenerator dayRangeGenerator = new DayRangeGenerator().withLookAhead(7).withLookBack(7);
         Set<Publisher> sources = ImmutableSet.of(Publisher.PA);
         Supplier<Iterable<ChannelIntervalScheduleBootstrapTask>> supplier =
-                new SourceChannelIntervalTaskSupplier<>(taskFactory, persistence.channelResolver(), dayRangeGenerator, sources, new SystemClock());
+            new SourceChannelIntervalTaskSupplier<ChannelIntervalScheduleBootstrapTask>(taskFactory, persistence.channelResolver(), dayRangeGenerator, sources, new SystemClock());
         ExecutorService executor = Executors.newFixedThreadPool(10, 
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("schedule-bootstrap-%d").build());
-        return new ExecutorServiceScheduledTask<>(executor, supplier, 10, 1, TimeUnit.MINUTES);
+        return new ExecutorServiceScheduledTask<UpdateProgress>(executor, supplier, 10, 1, TimeUnit.MINUTES);
     }
     
     @Bean
@@ -123,7 +133,7 @@ public class BootstrapModule {
                         concurrencyLevel,
                         concurrencyLevel,
                         0, TimeUnit.MICROSECONDS,
-                        new ArrayBlockingQueue<>(100 * Runtime.getRuntime().availableProcessors()),
+                        new ArrayBlockingQueue<Runnable>(100 * Runtime.getRuntime().availableProcessors()),
                         new ThreadFactoryBuilder().setNameFormat(namePrefix + " Thread %d").build(),
                         new ThreadPoolExecutor.CallerRunsPolicy()
                 )
