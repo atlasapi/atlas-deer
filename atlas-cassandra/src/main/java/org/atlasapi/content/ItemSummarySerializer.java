@@ -18,7 +18,7 @@ public class ItemSummarySerializer {
             .put(EpisodeSummary.class, "episode")
             .build();
 
-    private static final Map<String, Function<ContentProtos.ItemSummary, ? extends ItemSummary>> TYPE_TO_CONSTRUCTOR = ImmutableMap.<String, Function<ContentProtos.ItemSummary, ? extends ItemSummary>>builder()
+    private static final Map<String, Function<ContentProtos.ItemSummary, ItemSummary>> TYPE_TO_CONSTRUCTOR = ImmutableMap.<String, Function<ContentProtos.ItemSummary, ItemSummary>>builder()
             .put(
                     "episode",
                     proto -> new EpisodeSummary(
