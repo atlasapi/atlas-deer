@@ -12,7 +12,6 @@ import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.intl.Countries;
 
@@ -31,6 +30,7 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     private final CertificateSerializer certificateSerializer = new CertificateSerializer();
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
+    private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
 
     
     private Builder visitIdentified(Identified ided) {
@@ -151,7 +151,7 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
         for (TopicRef topicRef : content.getTopicRefs()) {
             builder.addTopicRefs(topicRefSerializer.serialize(topicRef));
         }
-        
+
         if (content.getYear() != null) {
             builder.setYear(content.getYear());
         }
@@ -222,6 +222,13 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
                     )
             );
         }
+
+        builder.addAllItemSummaries(
+                Iterables.transform(
+                        container.getItemSummaries(),
+                        is -> itemSummarySerializer.serialize(is).build()
+                )
+        );
 
         return builder;
     }

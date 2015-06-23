@@ -235,6 +235,10 @@ public class Item extends Content {
         return SortKey.keyFrom(this);
     }
 
+    public ItemSummary toSummary() {
+        return new ItemSummary(toRef(), getTitle(), getDescription(), getImage());
+    }
+
     public static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
         @Override
         public Set<Broadcast> apply(Item input) {
