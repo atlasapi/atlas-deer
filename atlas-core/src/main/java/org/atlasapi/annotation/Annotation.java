@@ -59,6 +59,7 @@ public enum Annotation {
     VARIATIONS,
     UPCOMING_CONTENT_DETAIL,
     AVAILABLE_CONTENT_DETAIL,
+    SUB_ITEM_SUMMARIES
     ;
     
     public String toKey() {
