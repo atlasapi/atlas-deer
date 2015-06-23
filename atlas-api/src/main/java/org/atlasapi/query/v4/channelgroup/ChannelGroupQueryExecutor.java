@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.channelgroup;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
@@ -72,16 +73,18 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ChannelGroup<?>>
                 );
             }
         }
+        ImmutableList<ChannelGroup<?>> filteredChannelGroups = ImmutableList.copyOf(Iterables.filter(
+                channelGroups,
+                input -> {
+                    return query.getContext().getApplicationSources().isReadEnabled(input.getSource());
+                }
+        ));
         return QueryResult.listResult(
                 query.getContext().getSelection().get().applyTo(
-                        Iterables.filter(
-                                channelGroups,
-                                input -> {
-                                    return query.getContext().getApplicationSources().isReadEnabled(input.getSource());
-                                }
-                        )
+                        filteredChannelGroups
                 ),
-                query.getContext()
+                query.getContext(),
+                filteredChannelGroups.size()
         );
     }
 }

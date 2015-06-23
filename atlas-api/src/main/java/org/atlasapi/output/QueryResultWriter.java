@@ -1,10 +1,10 @@
 package org.atlasapi.output;
 
-import java.io.IOException;
-
 import org.atlasapi.query.common.QueryResult;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -36,6 +36,8 @@ public abstract class QueryResultWriter<T> {
                 result,
                 outputContext
         );
+
+        responseWriter.writeField("results", result.getTotalResults());
 
         responseWriter.writeObject(
                 requestWriter,

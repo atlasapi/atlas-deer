@@ -68,7 +68,7 @@ public class PopularTopicController {
             ApplicationSources sources = sourcesFetcher.sourcesFor(request).or(ApplicationSources.defaults());
             Interval interval = new Interval(dateTimeInQueryParser.parse(from), dateTimeInQueryParser.parse(to));
             ListenableFuture<FluentIterable<Id>> topicIds = index.popularTopics(interval, selection);
-            resultWriter.write(QueryResult.listResult(resolve(topicIds), new QueryContext(sources, ActiveAnnotations.standard(), request)), writer);
+            resultWriter.write(QueryResult.listResult(resolve(topicIds), new QueryContext(sources, ActiveAnnotations.standard(), request), Long.valueOf(topicIds.get().size())), writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);

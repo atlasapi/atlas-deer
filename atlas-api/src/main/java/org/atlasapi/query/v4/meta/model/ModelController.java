@@ -7,6 +7,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.generation.ModelClassInfoStore;
 import org.atlasapi.generation.model.ModelClassInfo;
@@ -74,7 +75,7 @@ public class ModelController {
 
     private QueryResult<ModelClassInfo> createListResultFrom(Iterable<ModelClassInfo> resources, HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        return QueryResult.listResult(resources, contextParser.parseContext(request));
+        return QueryResult.listResult(resources, contextParser.parseContext(request), ImmutableList.copyOf(resources).size());
     }
 
     @RequestMapping({"/4/meta/types/{key}.*", "/4/meta/types/{key}"})

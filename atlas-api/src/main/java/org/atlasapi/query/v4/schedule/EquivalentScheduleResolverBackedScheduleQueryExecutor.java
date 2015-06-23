@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.schedule;
 
+import static com.google.common.base.Preconditions.checkElementIndex;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -89,7 +90,8 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor implements Sc
         }
 
         if (query.isMultiChannel()) {
-            return QueryResult.listResult(channelSchedules(schedule, query), query.getContext());
+            List<ChannelSchedule> channelSchedules = channelSchedules(schedule, query);
+            return QueryResult.listResult(channelSchedules, query.getContext(), channelSchedules.size());
         }
         return QueryResult.singleResult(Iterables.getOnlyElement(channelSchedules(schedule, query)), query.getContext());
     }

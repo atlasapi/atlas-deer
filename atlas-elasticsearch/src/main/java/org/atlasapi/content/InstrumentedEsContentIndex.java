@@ -44,9 +44,9 @@ public class InstrumentedEsContentIndex extends EsContentIndex {
     }
 
     @Override
-    public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query, Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
+    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query, Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
         Timer.Context time = queryTimer.time();
-        ListenableFuture<FluentIterable<Id>> result = super.query(query, publishers, selection, queryParams);
+        ListenableFuture<IndexQueryResult> result = super.query(query, publishers, selection, queryParams);
         time.stop();
         return result;
     }

@@ -138,7 +138,7 @@ public class SearchController {
                     .isTopLevelOnly(!Strings.isNullOrEmpty(topLevel) ? Boolean.valueOf(topLevel) : null)
                     .withCurrentBroadcastsOnly(!Strings.isNullOrEmpty(currentBroadcastsOnly) ? Boolean.valueOf(currentBroadcastsOnly) : null)
                     .build(), appSources);
-            resultWriter.write(QueryResult.listResult(Iterables.filter(content, Content.class), QueryContext.standard(request)), writer);
+            resultWriter.write(QueryResult.listResult(Iterables.filter(content, Content.class), QueryContext.standard(request), Long.valueOf(content.size())), writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);

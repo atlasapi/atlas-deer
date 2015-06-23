@@ -1,16 +1,18 @@
 package org.atlasapi.query.v4.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Function;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.metabroadcast.common.query.Selection;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -24,15 +26,12 @@ import org.atlasapi.query.common.QueryParseException;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
 
-import com.google.common.base.Function;
-import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.metabroadcast.common.query.Selection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<Content> {
 
@@ -81,23 +80,22 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private ListenableFuture<QueryResult<Content>> executeListQuery(final Query<Content> query) throws QueryExecutionException {
         try {
-            ListenableFuture<FluentIterable<Id>> hits
+            ListenableFuture<IndexQueryResult> result
                     = index.query(query.getOperands(), sources(query), selection(query), Optional.of(indexQueryParser.parse(query)));
-            return Futures.transform(Futures.transform(hits, toEquivalentContent(query)), toQueryResult(query));
+            return Futures.get(Futures.transform(result, toQueryResult(query)), QueryExecutionException.class);
         } catch (QueryParseException qpe) {
             throw new QueryExecutionException(qpe);
         }
     }
 
-    private AsyncFunction<FluentIterable<Id>, ResolvedEquivalents<Content>> toEquivalentContent(
-            final Query<Content> query) {
-        return input -> resolver.resolveIds(input, applicationSources(query), annotations(query));
-    }
-
-    private Function<ResolvedEquivalents<Content>, QueryResult<Content>> toQueryResult(final Query<Content> query) {
+    private Function<IndexQueryResult, ListenableFuture<QueryResult<Content>>> toQueryResult(final Query<Content> query) {
         return input -> {
-            Iterable<Content> resources = input.getFirstElems();
-            return QueryResult.listResult(resources, query.getContext());
+            ListenableFuture<ResolvedEquivalents<Content>> resolving =
+                    resolver.resolveIds(input.getIds(), applicationSources(query), annotations(query));
+            return Futures.transform(resolving, (ResolvedEquivalents<Content> resolved) -> {
+                Iterable<Content> resources = resolved.getFirstElems();
+                return QueryResult.listResult(resources, query.getContext(), input.getTotalCount());
+            });
         };
     }
 

@@ -41,7 +41,7 @@ public class VideoSourceController {
         try {
             writer = writerResolver.writerFor(request, response);
             QueryResult<VideoSourceOAuthProvider> queryResult =
-                    QueryResult.listResult(VideoSourceOAuthProvider.all(), QueryContext.standard(request));
+                    QueryResult.listResult(VideoSourceOAuthProvider.all(), QueryContext.standard(request), VideoSourceOAuthProvider.all().size());
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

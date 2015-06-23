@@ -134,16 +134,18 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
             throw new QueryExecutionException(e);
         }
 
+        ImmutableList<Channel> filteredChannels = ImmutableList.copyOf(Iterables.filter(
+                channels,
+                input -> {
+                    return query.getContext().getApplicationSources().isReadEnabled(input.getBroadcaster());
+                }
+        ));
         return QueryResult.listResult(
                 query.getContext().getSelection().get().applyTo(
-                        Iterables.filter(
-                                channels,
-                                input -> {
-                                    return query.getContext().getApplicationSources().isReadEnabled(input.getBroadcaster());
-                                }
-                        )
+                        filteredChannels
                 ),
-                query.getContext()
+                query.getContext(),
+                filteredChannels.size()
         );
     }
 }

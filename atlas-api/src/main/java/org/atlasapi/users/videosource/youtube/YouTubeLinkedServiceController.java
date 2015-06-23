@@ -216,8 +216,9 @@ public class YouTubeLinkedServiceController {
         try {
             User user = userFetcher.userFor(request).get();
             writer =  writerResolver.writerFor(request, response);
+            List<VideoSourceChannelResults> channels = getChannelsForUser(user);
             QueryResult<VideoSourceChannelResults> queryResult =
-            QueryResult.listResult(getChannelsForUser(user), QueryContext.standard(request));
+            QueryResult.listResult(channels, QueryContext.standard(request), channels.size());
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

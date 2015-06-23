@@ -18,6 +18,7 @@ import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.Episode;
+import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -83,9 +84,10 @@ public class TopicContentQueryExecutorTest {
         
         when(topicResolver.resolveIds(argThat(hasItems(topic.getId()))))
             .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
+        FluentIterable<Id> returning = FluentIterable.from(ImmutableSet.of(content.getId()));
         when(contentIndex.query(emptyAttributeQuerySet, context.getApplicationSources().getEnabledReadSources(), Selection.all(),
                 Optional.empty()))
-            .thenReturn(Futures.immediateFuture(FluentIterable.from(ImmutableSet.of(content.getId()))));
+            .thenReturn(Futures.immediateFuture(new IndexQueryResult(returning, 0l)));
         when(equivalentsResolver.resolveIds(argThat(hasItems(content.getId())), argThat(is(context.getApplicationSources())), argThat(is(context.getAnnotations().all()))))
             .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(Id.valueOf(1235), ImmutableSet.of(content)).build()));
         

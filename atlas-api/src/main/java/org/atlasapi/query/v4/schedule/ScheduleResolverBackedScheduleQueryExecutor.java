@@ -75,7 +75,8 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
         );
         
         if (query.isMultiChannel()) {
-            return QueryResult.listResult(channelSchedules(schedule, query), query.getContext());
+            List<ChannelSchedule> channelSchedules = channelSchedules(schedule, query);
+            return QueryResult.listResult(channelSchedules, query.getContext(), channelSchedules.size());
         }
         return QueryResult.singleResult(Iterables.getOnlyElement(channelSchedules(schedule, query)), query.getContext());
     }

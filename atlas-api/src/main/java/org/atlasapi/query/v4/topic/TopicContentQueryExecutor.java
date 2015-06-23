@@ -10,6 +10,7 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
@@ -82,21 +83,21 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             final Topic topic, final QueryContext context) {
         return content -> ContextualQueryResult.valueOf(
                 QueryResult.singleResult(topic, context),
-                QueryResult.listResult(content.getFirstElems(), context),
+                QueryResult.listResult(content.getFirstElems(), context, Long.valueOf(content.size())),
                 context);
     }
 
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
-            ListenableFuture<FluentIterable<Id>> queryIndex, QueryContext context) {
+            ListenableFuture<IndexQueryResult> queryIndex, QueryContext context) {
         return resolveContent(queryIndex, context.getApplicationSources(), context.getAnnotations().all());
     }
 
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
-            ListenableFuture<FluentIterable<Id>> queryHits, 
+            ListenableFuture<IndexQueryResult> queryHits,
             final ApplicationSources sources, final Set<Annotation> annotations) {
         return Futures.transform(queryHits,
-                (FluentIterable<Id> ids) -> {
-                    return contentResolver.resolveIds(ids, sources, annotations);
+                (IndexQueryResult ids) -> {
+                    return contentResolver.resolveIds(ids.getIds(), sources, annotations);
                 });
     }
     
@@ -104,7 +105,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
         return topicResolver.resolveIds(ImmutableList.of(contextId));
     }
     
-    private ListenableFuture<FluentIterable<Id>> queryIndex(Query<Content> query) throws QueryExecutionException {
+    private ListenableFuture<IndexQueryResult> queryIndex(Query<Content> query) throws QueryExecutionException {
         return index.query(
             query.getOperands(), 
             query.getContext().getApplicationSources().getEnabledReadSources(), 

@@ -477,7 +477,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     @Override
-    public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query,
+    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
             Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
@@ -511,15 +511,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         reqBuilder.setQuery(queryBuilder);
         reqBuilder.execute(FutureSettingActionListener.setting(response));
 
+        /* TODO
+         * if selection.offset + selection.limit < totalHits
+         * then we have more: return for use with response.
+         */
         return Futures.transform(response, (SearchResponse input) -> {
-            /* TODO
-             * if selection.offset + selection.limit < totalHits
-             * then we have more: return for use with response.
-             */
-            return FluentIterable.from(input.getHits()).transform(hit -> {
+            return new IndexQueryResult(FluentIterable.from(input.getHits()).transform(hit -> {
                 Long id = hit.field(EsContent.ID).<Number>value().longValue();
                 return Id.valueOf(id);
-            });
+            }), input.getHits().getTotalHits());
         });
     }
 

@@ -77,7 +77,7 @@ public class EsContentIndexTest {
                 Operators.EQUALS, ImmutableList.of("horror")
         );
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(genreQuery));
-        FluentIterable<Id> result = Futures.get(
+        IndexQueryResult result = Futures.get(
                 index.query(
                         querySet,
                         ImmutableList.of(Publisher.BBC),
@@ -85,7 +85,7 @@ public class EsContentIndexTest {
                         Optional.empty()),
                 Exception.class
         );
-        assertThat(result.first().get(), is(Id.valueOf(10l)));
+        assertThat(result.getIds().first().get(), is(Id.valueOf(10l)));
     }
 
     @Test
@@ -122,7 +122,7 @@ public class EsContentIndexTest {
 
         AttributeQuery<String> query = Attributes.CONTENT_TITLE_PREFIX
                 .createQuery(Operators.BEGINNING, ImmutableList.of("te"));
-        FluentIterable<Id> result = Futures.get(
+        IndexQueryResult result = Futures.get(
                 index.query(
                         new AttributeQuerySet(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
@@ -130,8 +130,8 @@ public class EsContentIndexTest {
                         Optional.empty()),
                 Exception.class
         );
-        assertThat(result.size(), is(1));
-        assertThat(result.first().get(), is(item1.getId()));
+        assertThat(result.getIds().size(), is(1));
+        assertThat(result.getIds().first().get(), is(item1.getId()));
     }
 
     @Test
@@ -146,12 +146,12 @@ public class EsContentIndexTest {
                 .createQuery(Operators.EQUALS, ImmutableList.of(Publisher.METABROADCAST));
 
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
-        ListenableFuture<FluentIterable<Id>> result = index.query(querySet,
+        ListenableFuture<IndexQueryResult> result = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(), Optional.empty());
 
-        FluentIterable<Id> ids = result.get(1, TimeUnit.SECONDS);
-        assertThat(ids.first().get(), is(Id.valueOf(1)));
+        IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
+        assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
 
         query = Attributes.SOURCE
                 .createQuery(Operators.EQUALS, ImmutableList.of(Publisher.BBC));
@@ -161,7 +161,7 @@ public class EsContentIndexTest {
                 Optional.empty());
 
         ids = result.get(1, TimeUnit.SECONDS);
-        assertThat(ids.isEmpty(), is(true));
+        assertThat(ids.getIds().isEmpty(), is(true));
 
     }
 
@@ -181,14 +181,14 @@ public class EsContentIndexTest {
                 ImmutableList.of(Id.valueOf(2)));
 
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
-        ListenableFuture<FluentIterable<Id>> result = index.query(
+        ListenableFuture<IndexQueryResult> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(),
                 Optional.empty());
 
-        FluentIterable<Id> ids = result.get(1, TimeUnit.SECONDS);
-        assertThat(ids.first().get(), is(Id.valueOf(1)));
+        IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
+        assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
     }
 
     public void testQueryOrder() throws Exception {
@@ -214,14 +214,14 @@ public class EsContentIndexTest {
                 ImmutableList.of(Id.valueOf(4)));
 
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
-        ListenableFuture<FluentIterable<Id>> result = index.query(querySet,
+        ListenableFuture<IndexQueryResult> result = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(), Optional.empty());
 
-        FluentIterable<Id> ids = result.get(1, TimeUnit.SECONDS);
-        assertThat(ids.get(0), is(Id.valueOf(2)));
-        assertThat(ids.get(1), is(Id.valueOf(1)));
-        assertThat(ids.get(2), is(Id.valueOf(3)));
+        IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
+        assertThat(ids.getIds().get(0), is(Id.valueOf(2)));
+        assertThat(ids.getIds().get(1), is(Id.valueOf(1)));
+        assertThat(ids.getIds().get(2), is(Id.valueOf(3)));
     }
 
     private Content episode(int id) {
@@ -246,11 +246,11 @@ public class EsContentIndexTest {
         AttributeQuery<Float> query = Attributes.TOPIC_WEIGHTING.createQuery(
                 Operators.EQUALS, ImmutableList.of(1.0f));
 
-        FluentIterable<Id> ids = index.query(
+        IndexQueryResult ids = index.query(
                 new AttributeQuerySet(ImmutableList.of(query)),
                 ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
                 .get(1, TimeUnit.SECONDS);
-        assertThat(ids.first().get(), is(Id.valueOf(1)));
+        assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
 
         query = Attributes.TOPIC_WEIGHTING.createQuery(
                 Operators.LESS_THAN, ImmutableList.of(0.5f));
@@ -259,7 +259,7 @@ public class EsContentIndexTest {
                 new AttributeQuerySet(ImmutableList.of(query)),
                 ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
                 .get(1, TimeUnit.SECONDS);
-        assertThat(ids.first().isPresent(), is(false));
+        assertThat(ids.getIds().first().isPresent(), is(false));
 
         query = Attributes.TOPIC_WEIGHTING.createQuery(
                 Operators.GREATER_THAN, ImmutableList.of(0.5f));
@@ -268,7 +268,7 @@ public class EsContentIndexTest {
                 new AttributeQuerySet(ImmutableList.of(query)),
                 ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
                 .get(1, TimeUnit.SECONDS);
-        assertThat(ids.first().get(), is(Id.valueOf(1)));
+        assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
 
     }
 
@@ -293,21 +293,21 @@ public class EsContentIndexTest {
                                 ImmutableList.of(Id.valueOf(20l)))
                 )
         );
-        FluentIterable<Id> resultWithItemPresent = index.query(querySet,
+        IndexQueryResult resultWithItemPresent = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(),
                 Optional.empty())
                 .get();
-        assertThat(resultWithItemPresent.first().get(), is(Id.valueOf(20l)));
+        assertThat(resultWithItemPresent.getIds().first().get(), is(Id.valueOf(20l)));
 
         item.setActivelyPublished(false);
         indexAndRefresh(item);
 
-        FluentIterable<Id> resultWithItemAbsent = index.query(querySet,
+        IndexQueryResult resultWithItemAbsent = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(),
                 Optional.empty())
                 .get();
-        assertThat(resultWithItemAbsent.first(), is(com.google.common.base.Optional.absent()));
+        assertThat(resultWithItemAbsent.getIds().first(), is(com.google.common.base.Optional.absent()));
     }
 }

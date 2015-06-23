@@ -53,7 +53,7 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
     }
 
     private QueryResult<Topic> listResult(Resolved<Topic> resolved, Query<Topic> query) {
-        return QueryResult.listResult(resolved.getResources(), query.getContext());
+        return QueryResult.listResult(resolved.getResources(), query.getContext(), Long.valueOf(resolved.getResources().size()));
     }
 
     private ListenableFuture<FluentIterable<Id>> getTopicIds(Query<Topic> query)
