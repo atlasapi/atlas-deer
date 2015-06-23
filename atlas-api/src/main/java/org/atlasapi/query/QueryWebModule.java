@@ -73,12 +73,15 @@ import org.atlasapi.output.annotation.SeriesAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
+import org.atlasapi.output.annotation.SubItemSummariesAnnotations;
+import org.atlasapi.output.annotation.SubItemSummaryListWriter;
 import org.atlasapi.output.annotation.TopicsAnnotation;
 import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
 import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.ItemDetailWriter;
+import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
@@ -176,6 +179,7 @@ import static org.atlasapi.annotation.Annotation.SERIES;
 import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
 import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
+import static org.atlasapi.annotation.Annotation.SUB_ITEM_SUMMARIES;
 import static org.atlasapi.annotation.Annotation.TOPICS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
@@ -678,6 +682,16 @@ public class QueryWebModule {
                                         )
                                 )
                         ), commonImplied)
+                .register(
+                        SUB_ITEM_SUMMARIES,
+                        new SubItemSummariesAnnotations(
+                                new SubItemSummaryListWriter(
+                                        new ItemRefWriter(idCodec(), "items", "item")
+                                )
+                        )
+                        ,
+                        commonImplied
+                )
                 .build();
     }
 

@@ -134,13 +134,16 @@ public abstract class AbstractContentStore implements ContentStore {
         
         @Override
         public WriteResult<Item, Content> visit(Item item) {
+
+            if (item.getContainerRef() != null) {
+                item.setContainerSummary(getSummary(item.getContainerRef()));
+            }
             Content previous = getPreviousContent(item);
-            
             if (previous != null) {
                 return writeItemWithPrevious(item, previous);
             }
             updateTimes(item);
-            writeRefAndSummarizeContainer(item);
+            writeItemRefs(item);
             write(item, NO_PREVIOUS);
             return WriteResult.<Item,Content>written(item)
                 .build();
@@ -150,7 +153,7 @@ public abstract class AbstractContentStore implements ContentStore {
             boolean written = false;
             if (hashChanged(item, previous)) {
                 updateWithPevious(item, previous);
-                writeRefAndSummarizeContainer(item);
+                writeItemRefs(item);
                 write(item, previous);
                 written = true;
             } 
@@ -159,51 +162,23 @@ public abstract class AbstractContentStore implements ContentStore {
                 .build();
         }
 
-        private void writeRefAndSummarizeContainer(Item item) {
-            if (item.getContainerRef() != null) {
-                ContainerRef containerRef = item.getContainerRef();
-                item.setContainerSummary(getSummary(containerRef));
-                ensureId(item);
-                writeItemRef(
-                        containerRef,
-                        item.toRef(),
-                        getUpcomingBroadcastRefs(item),
-                        getAvailableLocations(item)
-                );
-            }
-        }
-
-        private Iterable<BroadcastRef> getUpcomingBroadcastRefs(Item item) {
-            return item.getBroadcasts()
-                    .stream()
-                    .filter(Broadcast.IS_UPCOMING)
-                    .map(Broadcast.TO_REF)
-                    .collect(Collectors.toSet());
-
-        }
-
-        private Iterable<LocationSummary> getAvailableLocations(Item item) {
-            return item.getManifestedAs()
-                    .stream()
-                    .flatMap(e -> e.getAvailableAt().stream())
-                    .filter(Location::isAvailable)
-                    .map(Location::toSummary)
-                    .collect(Collectors.toSet());
-        }
-
-
-            @Override
+        @Override
         public WriteResult<Episode,Content> visit(Episode episode) {
             checkArgument(episode.getContainerRef() != null, 
                     "can't write episode with null container");
-            
+
+            episode.setContainerSummary(getSummary(episode.getContainerRef()));
+            if (episode.getSeriesRef() != null) {
+                getSummary(episode.getSeriesRef());
+            }
+
             Content previous = getPreviousContent(episode);
             
             if (previous != null) {
                 return writeEpisodeWithExising(episode, previous);
             }
             updateTimes(episode);
-            writeRefsAndSummarizeContainers(episode);
+            writeItemRefs(episode);
             write(episode, NO_PREVIOUS);
             return WriteResult.<Episode,Content>written(episode).build();
         }
@@ -212,7 +187,7 @@ public abstract class AbstractContentStore implements ContentStore {
             boolean written = false;
             if (hashChanged(episode, previous)) {
                 updateWithPevious(episode, previous);
-                writeRefsAndSummarizeContainers(episode);
+                writeItemRefs(episode);
                 write(episode, previous);
                 written = true;
             } 
@@ -221,26 +196,6 @@ public abstract class AbstractContentStore implements ContentStore {
                 .build();
         }
         
-        private void writeRefsAndSummarizeContainers(Episode episode) {
-            ContainerRef primaryContainer = episode.getContainerRef();
-            episode.setContainerSummary(getSummary(primaryContainer));
-
-            ItemRef childRef = null;
-            Iterable<BroadcastRef> upcomingBroadcasts = getUpcomingBroadcastRefs(episode);
-            Iterable<LocationSummary> availableLocations = getAvailableLocations(episode);
-            if (episode.getSeriesRef() != null) {
-                SeriesRef secondaryContainer = episode.getSeriesRef();
-                //TODO set series summary on episode
-                ContainerSummary summary = getSummary(secondaryContainer);
-                ensureId(episode);
-                childRef = episode.toRef();
-                writeItemRef(secondaryContainer, childRef, upcomingBroadcasts, availableLocations);
-            }
-            ensureId(episode);
-            childRef = childRef == null ? episode.toRef() : childRef;
-            writeItemRef(primaryContainer, childRef, upcomingBroadcasts, availableLocations);
-
-        }
 
         @Override
         public WriteResult<Film,Content> visit(Film film) {
@@ -355,7 +310,7 @@ public abstract class AbstractContentStore implements ContentStore {
         doWriteContent(content, previous);
     }
 
-    private void ensureId(Content content) {
+    protected void ensureId(Content content) {
         if(content.getId() == null) {
             content.setId(Id.valueOf(idGenerator.generateRaw()));
         }
@@ -363,14 +318,14 @@ public abstract class AbstractContentStore implements ContentStore {
     
     protected abstract void doWriteContent(Content content, Content previous);
 
-    private final ContainerSummary getSummary(ContainerRef primary) {
+    protected final ContainerSummary getSummary(ContainerRef primary) {
         ContainerSummary summary = summarize(primary);
         if (summary != null) {
             return summary;
         }
         throw new RuntimeWriteException(new MissingResourceException(primary.getId()));
     }
-    
+
     protected abstract ContainerSummary summarize(ContainerRef primary);
 
     /**
@@ -386,14 +341,9 @@ public abstract class AbstractContentStore implements ContentStore {
      * Add a ref to the child in the container and update its
      * thisOrChildLastUpdated time.
      * 
-     * @param containerId
-     * @param childRef
-     * @param upcomingContent
+     * @param item
      */
-    protected abstract void writeItemRef(
-            ContainerRef containerId,
-            ItemRef childRef,
-            Iterable<BroadcastRef> upcomingContent,
-            Iterable<LocationSummary> availableContent
+    protected abstract void writeItemRefs(
+            Item item
     );
 }

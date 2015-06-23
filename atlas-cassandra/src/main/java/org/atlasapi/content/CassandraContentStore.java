@@ -8,6 +8,7 @@ import static org.atlasapi.content.ContentColumn.TYPE;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -15,7 +16,9 @@ import com.google.common.collect.Sets;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.RuntimeWriteException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraUtil;
@@ -257,7 +260,7 @@ public final class CassandraContentStore extends AbstractContentStore {
 
     @Override
     protected ContainerSummary summarize(ContainerRef id) {
-        Content resolved = resolve(id.getId().longValue(), 
+        Content resolved = resolve(id.getId().longValue(),
             ImmutableSet.of(TYPE, SOURCE, IDENTIFICATION, DESCRIPTION));
         if (resolved instanceof Container) {
             return summarize((Container)resolved);
@@ -317,29 +320,74 @@ public final class CassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void writeItemRef(
-            ContainerRef containerRef,
-            ItemRef childRef,
-            Iterable<BroadcastRef> upcomingContent,
-            Iterable<LocationSummary> availableContent
+    protected void writeItemRefs(
+            Item item
     ) {
         try {
 
-            Long rowId = containerRef.getId().longValue();
-            Container container = new Brand();
-            container.setItemRefs(ImmutableList.of(childRef));
-            container.setThisOrChildLastUpdated(childRef.getUpdated());
-            container.setUpcomingContent(ImmutableMap.of(childRef, upcomingContent));
-            container.setAvailableContent(ImmutableMap.of(childRef, availableContent));
+            ensureId(item);
+            ContainerRef containerRef = item.getContainerRef();
+            ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingBroadcasts = ImmutableMap.of(
+                    item.toRef(), getUpcomingBroadcastRefs(item)
+            );
+            ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
+                    item.toRef(), getAvailableLocations(item)
+            );
 
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
-            ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-            marshaller.marshallInto(mutation, container);
+            if (containerRef != null) {
+                Long rowId = containerRef.getId().longValue();
+                Container container = new Brand();
+                container.setItemRefs(ImmutableList.of(item.toRef()));
+                container.setThisOrChildLastUpdated(item.toRef().getUpdated());
+                container.setUpcomingContent(upcomingBroadcasts);
+                container.setAvailableContent(availableLocations);
+                if (!(item instanceof Episode) || ((Episode) item).getSeriesRef() == null) {
+                    container.setItemSummaries(ImmutableList.of(item.toSummary()));
+                }
+
+                ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
+                marshaller.marshallInto(mutation, container);
+            }
+
+            if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
+                Episode episode = (Episode) item;
+                Long rowId = episode.getSeriesRef().getId().longValue();
+                Container container = new Series();
+                container.setItemRefs(ImmutableList.of(item.toRef()));
+                container.setThisOrChildLastUpdated(item.toRef().getUpdated());
+                container.setUpcomingContent(upcomingBroadcasts);
+                container.setAvailableContent(availableLocations);
+                container.setItemSummaries(ImmutableList.of(episode.toSummary()));
+                ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
+                marshaller.marshallInto(mutation, container);
+            }
             batch.execute();
+
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
     }
+
+    private Iterable<BroadcastRef> getUpcomingBroadcastRefs(Item item) {
+        return item.getBroadcasts()
+                .stream()
+                .filter(Broadcast.IS_UPCOMING)
+                .map(Broadcast.TO_REF)
+                .collect(Collectors.toSet());
+
+    }
+
+    private Iterable<LocationSummary> getAvailableLocations(Item item) {
+        return item.getManifestedAs()
+                .stream()
+                .flatMap(e -> e.getAvailableAt().stream())
+                .filter(Location::isAvailable)
+                .map(Location::toSummary)
+                .collect(Collectors.toSet());
+    }
+
+
 
 }

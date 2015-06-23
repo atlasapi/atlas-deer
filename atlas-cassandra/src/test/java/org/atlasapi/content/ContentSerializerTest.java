@@ -173,6 +173,7 @@ public class ContentSerializerTest {
         assertThat(actual.getItemRefs(), is(expected.getItemRefs()));
         assertThat(actual.getUpcomingContent(), is(expected.getUpcomingContent()));
         assertThat(actual.getAvailableContent(), is(expected.getAvailableContent()));
+        assertThat(actual.getItemSummaries(), is(expected.getItemSummaries()));
     }
 
     private void checkItemProperties(Item actual, Item expected) {
@@ -331,6 +332,20 @@ public class ContentSerializerTest {
                 .build();
 
         container.setAvailableContent(availableContent);
+        container.setItemSummaries(
+                ImmutableList.of(
+                        new ItemSummary(
+                                new ItemRef(
+                                        Id.valueOf(2),
+                                        container.getSource(),
+                                        "sort1",
+                                        new DateTime(DateTimeZones.UTC)
+                                ),
+                                "Title",
+                                "Description", null
+                        )
+                )
+        );
     }
 
     private void setItemProperties(Item item) {

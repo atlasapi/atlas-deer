@@ -1142,6 +1142,111 @@ public class CassandraContentStoreIT {
         resolve(1234L);
     }
 
+    @Test
+    public void testWriteContentSummaryOnBrandForItem() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Item item = create(new Item());
+        item.setContainer(brandWriteResult.getResource());
+        item.setTitle("Title 1");
+        item.setImage("image1");
+        item.setDescription("description");
+
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        store.writeContent(item);
+
+        Brand resolved = (Brand)resolve(1234L);
+
+        ItemSummary storedSummary = Iterables.getOnlyElement(resolved.getItemSummaries());
+
+        assertThat(storedSummary.getItemRef(), is(item.toRef()));
+        assertThat(storedSummary.getTitle(), is(item.getTitle()));
+        assertThat(storedSummary.getImage().get(), is(item.getImage()));
+        assertThat(storedSummary.getDescription().get(), is(item.getDescription()));
+
+
+    }
+
+    @Test
+    public void testWriteContentSummaryOnBrandForEpisodeWithoutSeries() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Episode episode = create(new Episode());
+        episode.setContainer(brandWriteResult.getResource());
+        episode.setTitle("Title 1");
+        episode.setImage("image1");
+        episode.setDescription("description");
+        episode.setEpisodeNumber(42);
+
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        store.writeContent(episode);
+
+        Brand resolved = (Brand)resolve(1234L);
+
+        EpisodeSummary storedSummary = (EpisodeSummary)Iterables.getOnlyElement(resolved.getItemSummaries());
+
+        assertThat(storedSummary.getItemRef(), is(episode.toRef()));
+        assertThat(storedSummary.getTitle(), is(episode.getTitle()));
+        assertThat(storedSummary.getImage().get(), is(episode.getImage()));
+        assertThat(storedSummary.getDescription().get(), is(episode.getDescription()));
+        assertThat(storedSummary.getEpisodeNumber().get(), is(episode.getEpisodeNumber()));
+
+    }
+    @Test
+    public void testWriteContentSummaryOnSeriesForEpisodeWithSeries() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Series series1 = create(new Series());
+        series1.setBrand(brandWriteResult.getResource());
+
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        WriteResult<Series, Content> seriesWriteResult = store.writeContent(series1);
+
+        Episode episode = create(new Episode());
+        episode.setContainer(brandWriteResult.getResource());
+        episode.setSeries(seriesWriteResult.getResource());
+        episode.setTitle("Title 1");
+        episode.setImage("image1");
+        episode.setEpisodeNumber(42);
+        episode.setDescription("description");
+
+        when(idGenerator.generateRaw()).thenReturn(1236L);
+        store.writeContent(episode);
+
+        Brand resolvedBrand = (Brand)resolve(1234L);
+
+        Series resolvedSeries = (Series)resolve(1235L);
+
+        assertThat(resolvedBrand.getItemSummaries().isEmpty(), is(true));
+
+        EpisodeSummary storedSummary = (EpisodeSummary)Iterables.getOnlyElement(resolvedSeries.getItemSummaries());
+
+        assertThat(storedSummary.getItemRef(), is(episode.toRef()));
+        assertThat(storedSummary.getTitle(), is(episode.getTitle()));
+        assertThat(storedSummary.getImage().get(), is(episode.getImage()));
+        assertThat(storedSummary.getDescription().get(), is(episode.getDescription()));
+        assertThat(storedSummary.getEpisodeNumber().get(), is(episode.getEpisodeNumber()));
+
+
+    }
 
 
     private <T extends Content> T create(T content) {

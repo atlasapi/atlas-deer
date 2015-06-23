@@ -26,6 +26,7 @@ enum Column {
     SOURCE = 15;
     UPCOMING_CONTENT = 16;
     AVAILABLE_CONTENT = 17;
+    ITEM_SUMMARIES = 18;
 }
 
 extend google.protobuf.FieldOptions {
@@ -95,6 +96,7 @@ message Content {
     repeated ReleaseDate release_dates = 34 [(column)=DESC];
     repeated SegmentEvent segment_events = 37 [(column)=SEGMENTS];
     repeated Restriction restrictions = 60 [(column)=DESC];
+    repeated ItemSummary itemSummaries = 62 [(column)=ITEM_SUMMARIES];
 }
 
 message Restriction {
@@ -294,4 +296,13 @@ message TopicRef {
     optional bool supervised = 3;
     optional string relationship = 4;
     optional int32 offset = 5;
+}
+
+message ItemSummary {
+    required string type = 1;
+    required common.Reference itemRef = 2;
+    required string title = 3;
+    optional string description = 4;
+    optional string image = 5;
+    optional int32 episode_number = 6;
 }
