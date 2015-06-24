@@ -314,7 +314,6 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
             }
         }
         e.setQualityDetail(input.getQualityDetail());
-        e.setRestriction(transformRestriction(version.getRestriction()));
         return e;
     }
 
