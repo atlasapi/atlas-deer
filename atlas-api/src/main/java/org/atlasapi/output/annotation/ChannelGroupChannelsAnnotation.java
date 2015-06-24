@@ -43,13 +43,14 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ChannelGrou
     @Override
     public void write(ChannelGroup<?> entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
-        List<Id> orderedIds = StreamSupport.stream(entity.getChannelsAvailable(LocalDate.now()).spliterator(), false)
+        Iterable<? extends ChannelGroupMembership> availableChannels = entity.getChannelsAvailable(LocalDate.now());
+        List<Id> orderedIds = StreamSupport.stream(availableChannels.spliterator(), false)
                 //TODO fix channel appearing twice in ordering blowing this thing up
                 .map(cm -> cm.getChannel().getId())
                 .distinct()
                 .collect(Collectors.toList());
         Ordering<Id> idOrdering = Ordering.explicit(orderedIds);
-        for (ChannelGroupMembership channelGroupMembership : entity.getChannels()) {
+        for (ChannelGroupMembership channelGroupMembership : availableChannels) {
             builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
         }
 
