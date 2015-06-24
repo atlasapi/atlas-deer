@@ -111,8 +111,8 @@ public class LegacyChannelGroupTransformerTest {
                             public boolean apply(ChannelNumbering input) {
                                 return input.getChannelNumber().equals(channel1Number)
                                         && input.getChannel().getId().longValue() == channel1Id
-                                        && input.getStartDate() == startDate1
-                                        && input.getEndDate() == endDate1;
+                                        && input.getStartDate().get() == startDate1
+                                        && input.getEndDate().get() == endDate1;
 
                             }
                         }
@@ -129,8 +129,8 @@ public class LegacyChannelGroupTransformerTest {
                             public boolean apply(ChannelNumbering input) {
                                 return input.getChannelNumber().equals(channel2Number)
                                         && input.getChannel().getId().longValue() == channel2Id
-                                        && input.getStartDate() == startDate2
-                                        && input.getEndDate() == endDate2;
+                                        && input.getStartDate().get() == startDate2
+                                        && input.getEndDate().get() == endDate2;
 
                             }
                         }
@@ -200,8 +200,8 @@ public class LegacyChannelGroupTransformerTest {
                             public boolean apply(ChannelNumbering input) {
                                 return input.getChannelNumber().equals(channel1Number)
                                         && input.getChannel().getId().longValue() == channel1Id
-                                        && input.getStartDate() == startDate1
-                                        && input.getEndDate() == endDate1;
+                                        && input.getStartDate().get() == startDate1
+                                        && input.getEndDate().get() == endDate1;
 
                             }
                         }
@@ -218,8 +218,8 @@ public class LegacyChannelGroupTransformerTest {
                             public boolean apply(ChannelNumbering input) {
                                 return input.getChannelNumber().equals(channel2Number)
                                         && input.getChannel().getId().longValue() == channel2Id
-                                        && input.getStartDate() == startDate2
-                                        && input.getEndDate() == endDate2;
+                                        && input.getStartDate().get() == startDate2
+                                        && input.getEndDate().get() == endDate2;
 
                             }
                         }

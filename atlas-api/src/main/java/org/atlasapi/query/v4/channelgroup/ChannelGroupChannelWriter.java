@@ -30,7 +30,8 @@ public class ChannelGroupChannelWriter implements EntityListWriter<ChannelWithCh
         if (channelGroupMembership instanceof ChannelNumbering) {
             ChannelNumbering channelNumbering = ((ChannelNumbering) channelGroupMembership);
             format.writeField("channel_number",channelNumbering.getChannelNumber());
-            format.writeField("start_date", channelNumbering.getStartDate());
+            format.writeField("start_date", channelNumbering.getStartDate().orElse(null));
+            format.writeField("end_date", channelNumbering.getEndDate().orElse(null));
         }
 
     }

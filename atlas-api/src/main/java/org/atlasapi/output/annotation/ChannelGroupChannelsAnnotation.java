@@ -20,6 +20,7 @@ import org.atlasapi.output.ChannelWithChannelGroupMembership;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
+import org.joda.time.LocalDate;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,7 +43,7 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ChannelGrou
     @Override
     public void write(ChannelGroup<?> entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
-        List<Id> orderedIds = StreamSupport.stream(entity.getChannels().spliterator(), false)
+        List<Id> orderedIds = StreamSupport.stream(entity.getChannelsAvailable(LocalDate.now()).spliterator(), false)
                 //TODO fix channel appearing twice in ordering blowing this thing up
                 .map(cm -> cm.getChannel().getId())
                 .distinct()
