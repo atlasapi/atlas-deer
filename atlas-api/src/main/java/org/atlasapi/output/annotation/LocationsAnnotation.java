@@ -85,6 +85,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         private final LegacyPlayerTransformer playerTransformer = new LegacyPlayerTransformer();
         private final LegacyServiceTransformer serviceTransformer = new LegacyServiceTransformer();
         private final ServiceResolver serviceResolver;
+        private final PricingWriter pricingWriter = new PricingWriter();
         private final String listName;
 
         public EncodedLocationWriter(String listName, PlayerResolver playerResolver, ServiceResolver serviceResolver) {
@@ -136,6 +137,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("revenue_contract", policy.getRevenueContract());
             writer.writeList("subscription_packages", "subscription_package",
                     policy.getSubscriptionPackages(), ctxt);
+            writer.writeList(pricingWriter, policy.getPricing(), ctxt);
 
             writer.writeField("data_container_format", encoding.getDataContainerFormat());
             writer.writeField("data_size", encoding.getDataSize());

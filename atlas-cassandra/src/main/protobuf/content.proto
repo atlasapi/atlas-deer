@@ -201,6 +201,14 @@ message Location {
     optional int64 player_id = 19;
     repeated string subscription_packages = 20;
     repeated common.Alias aliases = 21 [(column)=IDENT];
+    repeated Pricing pricing = 22;
+}
+
+message Pricing {
+    required int32 amount = 1;
+    required string currency = 2;
+    optional common.DateTime start = 3;
+    optional common.DateTime end = 4;
 }
 
 message SegmentEvent {

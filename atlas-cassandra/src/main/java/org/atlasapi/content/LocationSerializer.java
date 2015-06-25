@@ -15,10 +15,12 @@ import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Countries;
+import org.atlasapi.util.ImmutableCollectors;
 
 
 public class LocationSerializer {
 
+    private final PricingSerializer pricingSerializer = new PricingSerializer();
     public ContentProtos.Location.Builder serialize(Location location) {
         Builder builder = ContentProtos.Location.newBuilder();
         if (location.getEmbedCode() != null) { builder.setEmbedCode(location.getEmbedCode()); }
@@ -79,7 +81,14 @@ public class LocationSerializer {
         if (policy.getSubscriptionPackages() != null) {
             builder.addAllSubscriptionPackages(policy.getSubscriptionPackages());
         }
-        
+        if(!policy.getPricing().isEmpty()) {
+            builder.addAllPricing(
+                    policy.getPricing().stream()
+                            .map(pricingSerializer::serialize)
+                            .collect(ImmutableCollectors.toList())
+            );
+        }
+
         return builder;
     }
     
@@ -135,6 +144,14 @@ public class LocationSerializer {
             policy.setRevenueContract(RevenueContract.fromKey(msg.getRevenueContract()));
         }
         policy.setSubscriptionPackages(msg.getSubscriptionPackagesList());
+        if(msg.getPricingCount() > 0) {
+            policy.setPricing(
+                    msg.getPricingList()
+                            .stream()
+                            .map(pricingSerializer::deserialize)
+                            .collect(ImmutableCollectors.toList())
+            );
+        }
         location.setPolicy(policy);
         
         ImmutableSet.Builder<Alias> aliases = ImmutableSet.builder();
