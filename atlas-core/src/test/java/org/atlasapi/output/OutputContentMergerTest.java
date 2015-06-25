@@ -16,6 +16,7 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -186,6 +187,40 @@ public class OutputContentMergerTest {
     }
 
     @Test
+    public void testMergedContentHasCorrectItemSummaries() {
+        Container one = brand(1L, "one", Publisher.BBC_KIWI);
+        Container two = brand(2L, "two", Publisher.METABROADCAST);
+        Container three = brand(3L, "three", Publisher.BBC_MUSIC);
+
+        Item item1 = item(4L, "item", Publisher.METABROADCAST);
+        item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZone.UTC));
+
+        setEquivalent(one, two, three);
+        setEquivalent(two, one, three);
+        setEquivalent(three, two, one);
+
+        List<ItemSummary> itemSummaries = ImmutableList.of(
+                new ItemSummary(
+                        new ItemRef(Id.valueOf(1), Publisher.METABROADCAST,"", DateTime.now()),
+                        "",
+                        "",
+                        ""
+                )
+        );
+
+        two.setItemSummaries(
+                itemSummaries
+        );
+
+        ApplicationSources sources = sourcesWithPrecedence(Publisher.BBC_KIWI,Publisher.METABROADCAST,Publisher.BBC_MUSIC);
+
+        Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
+
+        assertThat(merged.getItemSummaries(), is(itemSummaries));
+
+    }
+
+    @Test
     public void testMergedContentHasCorrectAvailableContent() {
         Container one = brand(1L, "one", Publisher.BBC_KIWI);
         Container two = brand(2L, "two", Publisher.METABROADCAST);
@@ -238,7 +273,7 @@ public class OutputContentMergerTest {
                 availableContent2
         );
 
-        ApplicationSources sources = sourcesWithPrecedence(Publisher.BBC_KIWI,Publisher.METABROADCAST,Publisher.BBC_MUSIC);
+        ApplicationSources sources = sourcesWithPrecedence(Publisher.BBC_KIWI, Publisher.METABROADCAST, Publisher.BBC_MUSIC);
 
         Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
 

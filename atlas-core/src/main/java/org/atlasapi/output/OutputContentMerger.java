@@ -473,8 +473,17 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             chosen.setUpcomingContent(
                     first(
                             notChosenContainers,
-                            input -> input.getUpcomingContent().isEmpty() ? null : ImmutableMap.of(),
+                            input -> input.getUpcomingContent().isEmpty() ? null : input.getUpcomingContent(),
                             ImmutableMap.of()
+                    )
+            );
+        }
+        if(chosen.getItemSummaries().isEmpty()) {
+            chosen.setItemSummaries(
+                    first(
+                            notChosenContainers,
+                            input -> input.getItemSummaries().isEmpty() ? null : input.getItemSummaries(),
+                            ImmutableList.of()
                     )
             );
         }

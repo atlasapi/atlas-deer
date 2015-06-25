@@ -5,11 +5,13 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.collect.ImmutableList;
+import org.atlasapi.util.ImmutableCollectors;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -115,6 +117,8 @@ public abstract class Container extends Content {
     }
 
     public void setItemSummaries(List<ItemSummary> itemSummaries) {
-        this.itemSummaries = itemSummaries;
+        this.itemSummaries = itemSummaries.stream()
+                .sorted(ItemSummary.ORDERING)
+                .collect(ImmutableCollectors.toList());
     }
 }

@@ -33,6 +33,7 @@ import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Brand;
+import org.atlasapi.media.entity.Certificate;
 import org.atlasapi.media.entity.ChildRef;
 import org.atlasapi.media.entity.Clip;
 import org.atlasapi.media.entity.Container;
@@ -467,6 +468,15 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
+        c.setCertificates(Iterables.transform(input.getCertificates(), new Function<Certificate, org.atlasapi.content.Certificate>() {
+
+            @Override
+            public org.atlasapi.content.Certificate apply(Certificate input) {
+                return new org.atlasapi.content.Certificate(input.classification(), input.country());
+            }
+            
+        }));
+    
         c.setClips(
                 Optional.ofNullable(input.getClips()).orElse(ImmutableList.of()).stream().map(
                         legacyClip -> {

@@ -8,6 +8,7 @@ import static org.atlasapi.serialization.protobuf.ContentProtos.Column.CLIPS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.DESC;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.GROUPS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.IDENT;
+import static org.atlasapi.serialization.protobuf.ContentProtos.Column.ITEM_SUMMARIES;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.KEYPHRASES;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.LINKS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.LOCATIONS;
@@ -23,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.google.protobuf.Descriptors;
 import com.netflix.astyanax.model.Column;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
@@ -47,6 +49,7 @@ import com.netflix.astyanax.model.ColumnList;
 public class ProtobufContentMarshaller implements ContentMarshaller {
     private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING_BROADCASTS";
     private static final String AVAILABLE_CONTENT_PREFIX = "AVAILABLE";
+    private static final String ITEM_SUMMARY_PREFIX = "ITEM_SUMMARY";
 
     private final ListMultimap<ContentProtos.Column, FieldDescriptor> schema =
         Multimaps.index(
@@ -91,6 +94,7 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             .put(SEGMENTS, ContentColumn.SEGMENTS)
             .put(UPCOMING_CONTENT, ContentColumn.UPCOMING_CONTENT)
             .put(AVAILABLE_CONTENT, ContentColumn.AVAILABLE_CONTENT)
+            .put(ITEM_SUMMARIES, ContentColumn.ITEM_SUMMARIES)
         .build());
 
     @Override
@@ -109,6 +113,11 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
 
             if (ContentProtos.Column.AVAILABLE_CONTENT.equals(col.getKey())) {
                 handleAvailableContentColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
+                continue;
+            }
+
+            if (ContentProtos.Column.ITEM_SUMMARIES.equals(col.getKey())) {
+                handleItemSummariesColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
             Builder builder = null;
@@ -180,6 +189,25 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
                             "%s:%s",
                             AVAILABLE_CONTENT_PREFIX,
                             uc.getItem().getId()
+                    ),
+                    col.toByteArray()
+            );
+        }
+    }
+
+    private void handleItemSummariesColumn(ColumnListMutation<String> mutation,
+                                           ContentProtos.Content msg,
+                                           FieldDescriptor fd) {
+        if (msg.getRepeatedFieldCount(fd) == 1) {
+            ContentProtos.ItemSummary uc = (ContentProtos.ItemSummary) msg.getRepeatedField(fd, 0);
+            ContentProtos.Content col = ContentProtos.Content.newBuilder()
+                    .addRepeatedField(fd, uc)
+                    .build();
+            mutation.putColumn(
+                    String.format(
+                            "%s:%s",
+                            ITEM_SUMMARY_PREFIX,
+                            uc.getItemRef().getId()
                     ),
                     col.toByteArray()
             );

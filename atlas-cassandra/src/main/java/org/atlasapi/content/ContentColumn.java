@@ -20,4 +20,5 @@ public enum ContentColumn {
     SEGMENTS,
     UPCOMING_CONTENT,
     AVAILABLE_CONTENT,
+    ITEM_SUMMARIES,
     }
