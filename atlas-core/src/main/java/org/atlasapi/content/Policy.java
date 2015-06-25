@@ -14,10 +14,13 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
+import java.util.List;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.media.entity.simple.*;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
@@ -43,6 +46,8 @@ public class Policy extends Identified {
 	private Set<String> subscriptionPackages = ImmutableSet.of();
 	
 	private Price price;
+
+	private List<Pricing> pricing = ImmutableList.of();
 	
 	private Id serviceId;
 
@@ -212,7 +217,15 @@ public class Policy extends Identified {
 		return this;
 	}
 
-    public enum Platform {
+	public List<Pricing> getPricing() {
+		return pricing;
+	}
+
+	public void setPricing(List<Pricing> pricing) {
+		this.pricing = ImmutableList.copyOf(pricing);
+	}
+
+	public enum Platform {
         XBOX,
         PC,
         IOS,

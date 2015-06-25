@@ -5,9 +5,11 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Currency;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
@@ -44,6 +46,20 @@ public class LocationSerializerTest {
         policy.setPrice(new Price(Currency.getInstance("GBP"), 400));
         policy.setRevenueContract(Policy.RevenueContract.PAY_TO_BUY);
         policy.setSubscriptionPackages(ImmutableSet.of("a", "b"));
+        policy.setPricing(
+                ImmutableList.of(
+                        new Pricing(
+                                DateTime.now(DateTimeZone.UTC),
+                                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                                new Price(Currency.getInstance("GBP"), 1)
+                        ),
+                        new Pricing(
+                                DateTime.now(DateTimeZone.UTC).minusHours(1),
+                                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                                new Price(Currency.getInstance("USD"), 2)
+                        )
+                )
+        );
         location.setPolicy(policy);
         
         byte[] bytes = serializer.serialize(location).build().toByteArray();
@@ -72,6 +88,7 @@ public class LocationSerializerTest {
         assertThat(deserializedPolicy.getPrice(), is(policy.getPrice()));
         assertThat(deserializedPolicy.getRevenueContract(), is(policy.getRevenueContract()));
         assertThat(deserializedPolicy.getSubscriptionPackages(), is(policy.getSubscriptionPackages()));
+        assertThat(deserializedPolicy.getPricing(), is(policy.getPricing()));
         
     }
 

@@ -12,7 +12,6 @@ import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ClipRef;
-import org.atlasapi.content.ContentGroupRef;
 import org.atlasapi.content.Description;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.EpisodeRef;
@@ -20,6 +19,7 @@ import org.atlasapi.content.FilmRef;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Policy;
+import org.atlasapi.content.Pricing;
 import org.atlasapi.content.Quality;
 import org.atlasapi.content.ReleaseDate.ReleaseType;
 import org.atlasapi.content.Restriction;
@@ -51,6 +51,7 @@ import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
+import org.atlasapi.util.ImmutableCollectors;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
@@ -362,6 +363,12 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         }
         p.setNetwork(transformEnum(input.getNetwork(), Policy.Network.class));
         p.setActualAvailabilityStart(input.getActualAvailabilityStart());
+        p.setPricing(
+                input.getPricing()
+                .stream()
+                .map(legacy -> new Pricing(legacy.getStartTime(), legacy.getEndTime(), legacy.getPrice()))
+                .collect(ImmutableCollectors.toList())
+        );
         return p;
     }
 
