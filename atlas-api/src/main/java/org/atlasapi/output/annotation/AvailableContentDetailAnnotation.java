@@ -40,7 +40,7 @@ public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> 
         }
 
         Container container = (Container) entity;
-        if (container.getUpcomingContent().isEmpty()) {
+        if (container.getAvailableContent().isEmpty()) {
             writer.writeList(itemDetailWriter, ImmutableList.of(), ctxt);
             return;
         }
