@@ -172,12 +172,20 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .parentTitle(item.getTitle())
                 .parentFlattenedTitle(flattenedOrNull(item.getTitle()))
                 .specialization(item.getSpecialization() != null ?
-                                item.getSpecialization().name() :
-                                null)
+                        item.getSpecialization().name() :
+                        null)
                 .priority(item.getPriority())
                 .broadcasts(makeESBroadcasts(item))
+                .broadcastStartTimeInMillis(itemToBroadcastStartTimes(item))
                 .locations(makeESLocations(item))
                 .topics(makeESTopics(item));
+    }
+
+    private Iterable<Long> itemToBroadcastStartTimes(Item item) {
+        return item.getBroadcasts().stream()
+                .filter(b -> b.getTransmissionTime() != null)
+                .map(b -> b.getTransmissionTime().getMillis())
+                .collect(ImmutableCollectors.toList());
     }
 
     private EsContent toEsContainer(Container container) {
@@ -226,7 +234,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .channel(broadcast.getChannelId().longValue())
                 .transmissionTime(toUtc(broadcast.getTransmissionTime()).toDate())
                 .transmissionEndTime(toUtc(broadcast.getTransmissionEndTime()).toDate())
-                .transmissionTimeInMillis(toUtc(broadcast.getTransmissionTime()).getMillis())
                 .repeat(broadcast.getRepeat() != null ? broadcast.getRepeat() : false);
     }
 

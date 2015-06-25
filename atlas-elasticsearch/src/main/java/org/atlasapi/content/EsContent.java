@@ -121,8 +121,12 @@ public class EsContent extends EsObject {
                 .field("index").value("not_analyzed")
             .endObject()
             .startObject(EsContent.PRIORITY)
-            .field("type").value("double")
-            .field("index").value("not_analyzed")
+                .field("type").value("double")
+                .field("index").value("not_analyzed")
+            .endObject()
+            .startObject(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS)
+                .field("type").value("long")
+                .field("index").value("not_analyzed")
             .endObject()
         );
     }
@@ -232,4 +236,10 @@ public class EsContent extends EsObject {
         properties.put(PRIORITY, priority);
         return this;
     }
+
+    public EsContent broadcastStartTimeInMillis(Iterable<Long> startTimes) {
+        properties.put(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS, startTimes);
+        return this;
+    }
+
 }

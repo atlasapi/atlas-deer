@@ -33,11 +33,6 @@ public class EsBroadcast extends EsObject {
         return this;
     }
     
-    public EsBroadcast transmissionTimeInMillis(Long transmissionTimeInMillis) {
-        properties.put(TRANSMISSION_TIME_IN_MILLIS, transmissionTimeInMillis);
-        return this;
-    }
-    
     public EsBroadcast repeat(Boolean repeat) {
         properties.put(REPEAT, repeat);
         return this;
