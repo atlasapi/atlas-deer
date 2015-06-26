@@ -8,13 +8,19 @@ import org.atlasapi.query.v4.channel.ChannelWriter;
 
 import java.io.IOException;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ChannelAnnotation extends OutputAnnotation<Channel> {
 
-    private static final ChannelWriter CHANNEL_WRITER = new ChannelWriter("channels", "channel");
+    private final ChannelWriter channelWriter;
+
+    public ChannelAnnotation(ChannelWriter channelWriter) {
+        this.channelWriter = checkNotNull(channelWriter);
+    }
 
     @Override
     public void write(Channel entity, FieldWriter format, OutputContext ctxt) throws IOException {
-        CHANNEL_WRITER.write(entity, format, ctxt);
+        channelWriter.write(entity, format, ctxt);
     }
 
 }

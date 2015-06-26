@@ -30,6 +30,7 @@ import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
 import org.atlasapi.output.AnnotationRegistry;
+import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
@@ -103,6 +104,7 @@ import org.atlasapi.query.common.StandardQueryParser;
 import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
+import org.atlasapi.query.v4.channel.ChannelWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
@@ -153,6 +155,7 @@ import static org.atlasapi.annotation.Annotation.CHANNEL;
 import static org.atlasapi.annotation.Annotation.CHANNELS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CLIPS;
 import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
@@ -421,18 +424,29 @@ public class QueryWebModule {
         );
     }
 
+    private ChannelWriter channelWriter() {
+        return new ChannelWriter(
+                channelGroupResolver,
+                "channels",
+                "channel",
+                new ChannelGroupSummaryWriter(idCodec())
+        );
+    }
     private ChannelGroupListWriter channelGroupListWriter() {
         return new ChannelGroupListWriter(AnnotationRegistry.<ChannelGroup<?>>builder()
                 .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
                 .register(
                         CHANNELS,
                         new ChannelGroupChannelsAnnotation(
-                                new ChannelGroupChannelWriter(),
+                                new ChannelGroupChannelWriter(
+                                        channelWriter()
+                                ),
                                 channelResolver),
                         CHANNEL_GROUP
                 )
                 .register(REGIONS, new PlatformAnnontation(channelGroupResolver), CHANNEL_GROUP)
                 .register(PLATFORM, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
+                .register(CHANNEL_GROUPS_SUMMARY,  NullWriter.create(ChannelGroup.class),ImmutableList.of(CHANNELS, CHANNEL_GROUP))
                 .build());
     }
 
@@ -723,7 +737,7 @@ public class QueryWebModule {
     protected EntityListWriter<Channel> channelListWriter() {
         return new ChannelListWriter(
                 AnnotationRegistry.<Channel>builder()
-                        .registerDefault(CHANNEL, new ChannelAnnotation())
+                        .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))
                         .register(
                                 CHANNEL_GROUPS,
                                 new ChannelGroupMembershipAnnotation(
@@ -735,9 +749,9 @@ public class QueryWebModule {
                                 ),
                                 CHANNEL
                         )
-                        .register(PARENT, new ParentChannelAnnotation(channelResolver), CHANNEL)
+                        .register(PARENT, new ParentChannelAnnotation(channelWriter(), channelResolver), CHANNEL)
                         .register(VARIATIONS,
-                                new ChannelVariationAnnotation(channelResolver),
+                                new ChannelVariationAnnotation(channelResolver, channelWriter()),
                                 CHANNEL)
                         .build());
     }
