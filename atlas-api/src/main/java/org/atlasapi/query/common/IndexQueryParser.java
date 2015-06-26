@@ -19,7 +19,7 @@ import java.util.Optional;
  */
 public class IndexQueryParser {
 
-    private final NumberToShortStringCodec codec = new SubstitutionTableNumberCodec();
+    private final NumberToShortStringCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     public IndexQueryParams parse(Query<?> query) throws QueryParseException {
         return new IndexQueryParams(
