@@ -115,7 +115,9 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("uri", location.getUri());
             writer.writeList(aliasWriter, location.getAliases(), ctxt);
             writer.writeField("available", isAvailable(policy));
-            writer.writeField("duration", Ints.saturatedCast(encoding.getDuration().getStandardSeconds()));
+            writer.writeField("duration", 
+                                encoding.getDuration() == null ? null 
+                                                               : Ints.saturatedCast(encoding.getDuration().getStandardSeconds()));
             writer.writeField("transport_is_live", location.getTransportIsLive());
             writer.writeField("transport_type", location.getTransportType());
             writer.writeField("transport_sub_type", location.getTransportSubType());
