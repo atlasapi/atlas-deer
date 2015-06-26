@@ -7,6 +7,7 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.output.FieldWriter;
@@ -47,7 +48,7 @@ public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> 
 
         Set<Id> contentIds = container.getAvailableContent().keySet()
                 .stream()
-                .map(i -> i.getId())
+                .map(ResourceRef::getId)
                 .collect(Collectors.toSet());
 
         final ResolvedEquivalents<Content> resolvedEquivalents = Futures.get(

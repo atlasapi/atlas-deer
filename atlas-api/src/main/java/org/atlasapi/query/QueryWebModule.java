@@ -36,6 +36,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
+import org.atlasapi.output.annotation.AvailableContentAnnotation;
 import org.atlasapi.output.annotation.AvailableContentDetailAnnotation;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
 import org.atlasapi.output.annotation.BrandReferenceAnnotation;
@@ -146,6 +147,7 @@ import org.springframework.context.annotation.Import;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
 import static org.atlasapi.annotation.Annotation.BRAND_REFERENCE;
@@ -693,6 +695,11 @@ public class QueryWebModule {
                                                 persistenceModule.serviceResolver()
                                         )
                                 )
+                        ), commonImplied)
+                .register(
+                        AVAILABLE_CONTENT,
+                        new AvailableContentAnnotation(
+                                new ItemRefWriter(idCodec(), AVAILABLE_CONTENT.toKey())
                         ), commonImplied)
                 .register(
                         SUB_ITEM_SUMMARIES,
