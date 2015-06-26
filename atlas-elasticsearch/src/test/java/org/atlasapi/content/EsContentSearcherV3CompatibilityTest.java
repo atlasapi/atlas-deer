@@ -18,6 +18,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
@@ -65,7 +66,7 @@ public class EsContentSearcherV3CompatibilityTest {
     @Before
     public void setUp() throws Exception {
         ElasticSearchHelper.refresh(esClient);
-        indexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver());
+        indexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
         indexer.startAsync().awaitRunning(10, TimeUnit.SECONDS);
         refresh(esClient);
     }

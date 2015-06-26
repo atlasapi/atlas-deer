@@ -13,6 +13,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
@@ -55,7 +56,7 @@ public final class EsContentIndexingTest {
     @Before
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient);
-        contentIndexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver());
+        contentIndexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
         contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     

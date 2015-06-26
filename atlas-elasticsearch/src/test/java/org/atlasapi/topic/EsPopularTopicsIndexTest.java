@@ -12,6 +12,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.Item;
@@ -39,7 +40,7 @@ public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
     private final EsContentIndex index = new EsContentIndex(
-            esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver()
+            esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class)
     );
 
     @BeforeClass

@@ -1,8 +1,10 @@
 package org.atlasapi.query.common;
 
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import org.atlasapi.content.IndexQueryParams;
 import org.atlasapi.content.QueryOrdering;
 import org.atlasapi.content.FuzzyQueryParams;
+import org.atlasapi.entity.Id;
 
 import java.util.Map;
 import java.util.Optional;
@@ -18,8 +20,17 @@ public class IndexQueryParser {
     public IndexQueryParams parse(Query<?> query) throws QueryParseException {
         return new IndexQueryParams(
                 titleQueryFrom(query),
-                orderingFrom(query)
+                orderingFrom(query),
+                regionIdFrom(query)
         );
+    }
+
+    private Optional<Id> regionIdFrom(Query<?> query) {
+        String stringRegionId = query.getContext().getRequest().getParameter("region");
+        if (Strings.isNullOrEmpty(stringRegionId)) {
+            return Optional.empty();
+        }
+        return Optional.of(Id.valueOf(stringRegionId));
     }
 
     private Optional<QueryOrdering> orderingFrom(Query<?> query) throws QueryParseException {

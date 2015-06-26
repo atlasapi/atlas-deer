@@ -5,6 +5,7 @@ import com.codahale.metrics.Timer;
 import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -21,8 +22,8 @@ public class InstrumentedEsContentIndex extends EsContentIndex {
     private final Timer contentIndexTimer;
     private final Timer queryTimer;
 
-    public InstrumentedEsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics) {
-        super(esClient, indexName, requestTimeout, resolver);
+    public InstrumentedEsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
+        super(esClient, indexName, requestTimeout, resolver, channelGroupResolver);
         this.metrics = checkNotNull(metrics);
         this.contentGroupIndexTimer = metrics.timer("EsContentIndex.index(ContentGroup)");
         this.contentIndexTimer = metrics.timer("EsContentIndex.index(Content)");

@@ -66,7 +66,8 @@ public class QueryContextParser implements ParameterNameProvider {
                     "broadcasts.transmissionStartTime.gt",
                     "broadcasts.transmissionStartTime.lt",
                     "broadcasts.transmissionEndTime.gt",
-                    "broadcasts.transmissionEndTime.lt"
+                    "broadcasts.transmissionEndTime.lt",
+                    "region"
             )
         )));
     }

@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.Currency;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
@@ -57,7 +59,7 @@ public class EsContentIndexTest {
 
     @Before
     public void setup() {
-        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver());
+        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
         index.startAsync().awaitRunning();
     }
 

@@ -29,6 +29,7 @@ import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.schedule.ChannelSchedule;
+import org.atlasapi.system.legacy.NoOpChannelResolver;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class ScheduleQueryResultWriterTest {
     private final AnnotationRegistry<Content> contentAnnotations = AnnotationRegistry.<Content>builder().build();
     private final AnnotationRegistry<Channel> channelAnnotations = AnnotationRegistry.<Channel>builder().build();
     private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
-    private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter("broadcasts", SubstitutionTableNumberCodec.lowerCaseOnly(), mock(ChannelResolver.class));
+    private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter("broadcasts", SubstitutionTableNumberCodec.lowerCaseOnly(), new NoOpChannelResolver());
     private final EntityListWriter<ChannelSchedule> scheduleWriter
         = new ScheduleListWriter(new ChannelListWriter(channelAnnotations), new ScheduleEntryListWriter(contentWriter, broadcastWriter));
     private final EntityWriter<Object> licenseWriter = new LicenseWriter(new License("test"));

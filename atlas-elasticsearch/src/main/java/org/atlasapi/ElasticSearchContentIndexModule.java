@@ -3,6 +3,7 @@ package org.atlasapi;
 import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.MetricRegistry;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.EsContentTitleSearcher;
@@ -28,12 +29,12 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     private final EsPopularTopicIndex popularTopicsIndex;
     private final EsContentTitleSearcher contentSearcher;
 
-    public ElasticSearchContentIndexModule(String seeds, String clusterName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics) {
+    public ElasticSearchContentIndexModule(String seeds, String clusterName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
         Node client = NodeBuilder.nodeBuilder().client(true).
                 clusterName(clusterName).
                 settings(ImmutableSettings.settingsBuilder().put("discovery.zen.ping.unicast.hosts", seeds)).
                 build().start();
-        this.contentIndex = new InstrumentedEsContentIndex(client, EsSchema.CONTENT_INDEX, requestTimeout, resolver, metrics);
+        this.contentIndex = new InstrumentedEsContentIndex(client, EsSchema.CONTENT_INDEX, requestTimeout, resolver, metrics, channelGroupResolver);
         this.popularTopicsIndex = new EsPopularTopicIndex(client);
         this.topicIndex = new EsTopicIndex(client, EsSchema.TOPICS_INDEX, 60, TimeUnit.SECONDS);
         this.contentSearcher = new EsContentTitleSearcher(client);

@@ -13,6 +13,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.time.DateTimeZones;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
@@ -82,6 +85,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private final Node esClient;
     private final String index;
     private final long requestTimeout;
+    private final ChannelGroupResolver channelGroupResolver;
 
     private Set<String> existingIndexes;
     private final ContentResolver resolver;
@@ -90,11 +94,12 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private final EsSortQueryBuilder sortBuilder = new EsSortQueryBuilder();
     private final ContentGroupIndexUpdater contentGroupIndexUpdater = new ContentGroupIndexUpdater();
 
-    public EsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver) {
+    public EsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver, ChannelGroupResolver channelGroupResolver) {
         this.esClient = checkNotNull(esClient);
         this.requestTimeout = requestTimeout;
         this.index = checkNotNull(indexName);
         this.resolver = checkNotNull(resolver);
+        this.channelGroupResolver = checkNotNull(channelGroupResolver);
     }
 
     @Override
@@ -490,7 +495,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
         log.debug(queryBuilder.toString());
-        
+
         SearchRequestBuilder reqBuilder = esClient.client()
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
@@ -499,20 +504,18 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
 
-        if (queryParams.isPresent() && queryParams.get().getOrdering().isPresent()) {
-            QueryOrdering order = queryParams.get().getOrdering().get();
-            reqBuilder.addSort(
-                    SortBuilders
-                            .fieldSort(order.getPath())
-                            .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
-            );
-        }
+        if (queryParams.isPresent()) {
+            if (queryParams.get().getOrdering().isPresent()) {
+                addSortOrder(queryParams, reqBuilder);
+            }
 
-        if (queryParams.isPresent() && queryParams.get().getFuzzyQueryParams().isPresent()) {
-            FuzzyQueryParams searchParams = queryParams.get().getFuzzyQueryParams().get();
-            queryBuilder = QueryBuilders.boolQuery()
-                    .must(queryBuilder)
-                    .must(TitleQueryBuilder.build(searchParams.getSearchTerm(), searchParams.getBoost().orElse(0F)));
+            if (queryParams.get().getFuzzyQueryParams().isPresent()) {
+                queryBuilder = addTitleQuery(queryParams, queryBuilder);
+            }
+
+            if (queryParams.get().getRegionId().isPresent()) {
+                queryBuilder = addRegionFilter(queryParams, queryBuilder);
+            }
         }
 
         reqBuilder.setQuery(queryBuilder);
@@ -528,6 +531,49 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 return Id.valueOf(id);
             }), input.getHits().getTotalHits());
         });
+    }
+
+    private void addSortOrder(Optional<IndexQueryParams> queryParams, SearchRequestBuilder reqBuilder) {
+        QueryOrdering order = queryParams.get().getOrdering().get();
+        reqBuilder.addSort(
+                SortBuilders
+                        .fieldSort(order.getPath())
+                        .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
+        );
+    }
+
+    private QueryBuilder addTitleQuery(Optional<IndexQueryParams> queryParams, QueryBuilder queryBuilder) {
+        FuzzyQueryParams searchParams = queryParams.get().getFuzzyQueryParams().get();
+        queryBuilder = QueryBuilders.boolQuery()
+                .must(queryBuilder)
+                .must(TitleQueryBuilder.build(searchParams.getSearchTerm(), searchParams.getBoost().orElse(0F)));
+        return queryBuilder;
+    }
+
+    @SuppressWarnings("unchecked")
+    private QueryBuilder addRegionFilter(Optional<IndexQueryParams> queryParams, QueryBuilder queryBuilder) {
+        Id regionId = queryParams.get().getRegionId().get();
+        ChannelGroup region;
+        try {
+            Resolved<ChannelGroup<?>> resolved = Futures.get(
+                    channelGroupResolver.resolveIds(ImmutableList.of(regionId)), IOException.class
+            );
+            region = resolved.getResources().first().get();
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+
+        ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(region.<ChannelNumbering>getChannels());
+        ImmutableList<Id> channelsIdsForRegion = channels.stream()
+                        .map(c -> c.getChannel().getId())
+                        .collect(ImmutableCollectors.toList());
+
+        queryBuilder = QueryBuilders.boolQuery()
+                .must(queryBuilder)
+                .must(QueryBuilders.nestedQuery(
+                        EsContent.BROADCASTS, QueryBuilders.termsQuery(EsBroadcast.CHANNEL, channelsIdsForRegion)
+                ));
+        return queryBuilder;
     }
 
     private void indexItem(Item item) {

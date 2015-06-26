@@ -8,6 +8,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -49,7 +50,7 @@ public class ContentGroupIndexUpdaterTest {
 
     @Before
     public void setup() {
-        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, contentResolver());
+        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, contentResolver(), mock(ChannelGroupResolver.class));
         index.startAsync().awaitRunning();
     }
 

@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -20,9 +21,13 @@ import com.google.common.primitives.Ints;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.v4.channel.ChannelWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     
+    private static final Logger log = LoggerFactory.getLogger(BroadcastWriter.class);
+
     private static final String ELEMENT_NAME = "broadcast";
     
     private final AliasWriter aliasWriter = new AliasWriter();
@@ -55,8 +60,13 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeField("broadcast_on", codec.encode(entity.getChannelId().toBigInteger()));
         Channel channel = null;
         if (entity.getChannelId() != null) {
-            channel = Futures.get(channelResolver.resolveIds(ImmutableList.of(entity.getChannelId())), IOException.class)
-                    .getResources().first().get();
+            Optional<Channel> maybeChannel = Futures.get(channelResolver.resolveIds(ImmutableList.of(entity.getChannelId())), IOException.class)
+                    .getResources().first();
+            if (maybeChannel.isPresent()) {
+                channel = maybeChannel.get();
+            } else {
+                log.error("Unable to resolve channel {}", entity.getChannelId());
+            }
         }
         writer.writeObject(channelWriter, channel, ctxt);
         writer.writeField("schedule_date", entity.getScheduleDate());

@@ -11,6 +11,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
@@ -84,7 +85,7 @@ public class EsContentTitleSearcherTest {
         item2.setContainerRef(brand1.toRef());
         item3.setContainerRef(brand2.toRef());
 
-        EsContentIndex contentIndex = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver());
+        EsContentIndex contentIndex = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
         contentIndex.startAsync().awaitRunning();
 
         EsContentTitleSearcher contentSearcher = new EsContentTitleSearcher(esClient);
