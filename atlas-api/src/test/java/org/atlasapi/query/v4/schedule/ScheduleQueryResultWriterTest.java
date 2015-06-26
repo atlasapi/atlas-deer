@@ -47,7 +47,7 @@ public class ScheduleQueryResultWriterTest {
     private final AnnotationRegistry<Content> contentAnnotations = AnnotationRegistry.<Content>builder().build();
     private final AnnotationRegistry<Channel> channelAnnotations = AnnotationRegistry.<Channel>builder().build();
     private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
-    private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter("broadcasts", SubstitutionTableNumberCodec.lowerCaseOnly(), new NoOpChannelResolver());
+    private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter("broadcasts", SubstitutionTableNumberCodec.lowerCaseOnly(), new NoOpChannelResolver(), new NoOpChannelGroupResolver());
     private final EntityListWriter<ChannelSchedule> scheduleWriter
         = new ScheduleListWriter(new ChannelListWriter(channelAnnotations), new ScheduleEntryListWriter(contentWriter, broadcastWriter));
     private final EntityWriter<Object> licenseWriter = new LicenseWriter(new License("test"));

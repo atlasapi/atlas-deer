@@ -7,11 +7,14 @@ import java.io.IOException;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -33,16 +36,19 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     private final AliasWriter aliasWriter = new AliasWriter();
     private final BroadcastIdAliasMapping aliasMapping = new BroadcastIdAliasMapping();
     private final BlackoutRestrictionWriter blackoutRestrictionWriter = new BlackoutRestrictionWriter();
-    private final ChannelWriter channelWriter = new ChannelWriter("channels", "channel");
+    private final ChannelWriter channelWriter;
 
     private final String listName;
     private final NumberToShortStringCodec codec;
     private final ChannelResolver channelResolver;
 
-    public BroadcastWriter(String listName, NumberToShortStringCodec codec, ChannelResolver channelResolver) {
+    public BroadcastWriter(String listName, NumberToShortStringCodec codec, ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
         this.listName = checkNotNull(listName);
         this.codec = checkNotNull(codec);
         this.channelResolver = checkNotNull(channelResolver);
+        this.channelWriter = new ChannelWriter(
+                channelGroupResolver, "channels", "channel", new ChannelGroupSummaryWriter(new SubstitutionTableNumberCodec())
+        );
     }
 
     @Override

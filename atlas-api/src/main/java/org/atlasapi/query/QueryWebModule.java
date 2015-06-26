@@ -263,7 +263,7 @@ public class QueryWebModule {
     @Bean ScheduleController v4ScheduleController() {
         EntityListWriter<ItemAndBroadcast> entryListWriter =
                 new ScheduleEntryListWriter(contentListWriter(),
-                        new BroadcastWriter("broadcasts", idCodec(), channelResolver));
+                        new BroadcastWriter("broadcasts", idCodec(), channelResolver, channelGroupResolver));
         ScheduleListWriter scheduleWriter = new ScheduleListWriter(channelListWriter(),
                 entryListWriter);
         return new ScheduleController(queryModule.equivalentScheduleStoreScheduleQueryExecutor(),
@@ -642,11 +642,11 @@ public class QueryWebModule {
                         ),
                         commonImplied
                 )
-                .register(BROADCASTS, new BroadcastsAnnotation(idCodec(), channelResolver), commonImplied)
-                .register(UPCOMING_BROADCASTS, new UpcomingBroadcastsAnnotation(idCodec(), channelResolver), commonImplied)
-                .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec(), channelResolver), commonImplied)
+                .register(BROADCASTS, new BroadcastsAnnotation(idCodec(), channelResolver, channelGroupResolver), commonImplied)
+                .register(UPCOMING_BROADCASTS, new UpcomingBroadcastsAnnotation(idCodec(), channelResolver, channelGroupResolver), commonImplied)
+                .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec(), channelResolver, channelGroupResolver), commonImplied)
                 .register(NEXT_BROADCASTS,
-                        new NextBroadcastAnnotation(new SystemClock(), idCodec(), channelResolver),
+                        new NextBroadcastAnnotation(new SystemClock(), idCodec(), channelResolver, channelGroupResolver),
                         commonImplied)
                 .register(AVAILABLE_LOCATIONS, new AvailableLocationsAnnotation(
                                 persistenceModule.playerResolver(),
@@ -677,7 +677,7 @@ public class QueryWebModule {
                         new UpcomingContentDetailAnnotation(
                                 queryModule.mergingContentResolver(),
                                 new UpcomingContentDetailWriter(
-                                        new BroadcastWriter("broadcasts", idCodec(), channelResolver),
+                                        new BroadcastWriter("broadcasts", idCodec(), channelResolver, channelGroupResolver),
                                         new ItemDetailWriter(new IdentificationSummaryAnnotation(idCodec()))
                                 )
                         ), commonImplied)
