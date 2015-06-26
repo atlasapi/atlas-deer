@@ -1,9 +1,19 @@
 package org.atlasapi.query.v4.channel;
 
+import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ChannelGroupSummary;
+import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
@@ -11,9 +21,13 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.ImageListWriter;
 import org.atlasapi.output.writers.RelatedLinkWriter;
+import org.atlasapi.util.ImmutableCollectors;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;
@@ -26,14 +40,23 @@ public class ChannelWriter implements EntityListWriter<Channel>{
     private static final AliasWriter ALIAS_WRITER = new AliasWriter();
     private static final ImageListWriter IMAGE_WRITER = new ImageListWriter();
     private static final RelatedLinkWriter RELATED_LINKS_WRITER = new RelatedLinkWriter();
+    private final ChannelGroupResolver channelGroupResolver;
 
     private final String listName;
     private final String fieldName;
     private final NumberToShortStringCodec idCode = SubstitutionTableNumberCodec.lowerCaseOnly();
+    private final ChannelGroupSummaryWriter channelGroupSummaryWriter;
 
-    public ChannelWriter(String listName, String fieldName) {
+    public ChannelWriter(
+            ChannelGroupResolver channelGroupResolver,
+            String listName,
+            String fieldName,
+            ChannelGroupSummaryWriter channelGroupSummaryWriter
+    ) {
+        this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.listName = checkNotNull(listName);
         this.fieldName = checkNotNull(fieldName);
+        this.channelGroupSummaryWriter = checkNotNull(channelGroupSummaryWriter);
     }
 
 
@@ -60,6 +83,34 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         format.writeField("regional", entity.getRegional());
         format.writeList(RELATED_LINKS_WRITER, entity.getRelatedLinks(), ctxt);
         format.writeField("start_date", entity.getStartDate());
+
+
+        if(!Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations")) &&
+                Splitter.on(',')
+                        .splitToList(
+                                ctxt.getRequest().getParameter("annotations")
+                        ).contains(Annotation.CHANNEL_GROUPS_SUMMARY.toKey())
+                ) {
+
+            ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
+                    .stream()
+                    .map(cg -> cg.getChannelGroup().getId())
+                    .collect(ImmutableCollectors.toList());
+
+            List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
+                    Futures.get(
+                            channelGroupResolver.resolveIds(channelGroupIds),
+                            1, TimeUnit.MINUTES,
+                            IOException.class
+                    ).getResources().spliterator(), false
+            )
+                    .map(ChannelGroup::toSummary)
+                    .collect(ImmutableCollectors.toList());
+
+            format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
+
+
+        }
 
     }
 

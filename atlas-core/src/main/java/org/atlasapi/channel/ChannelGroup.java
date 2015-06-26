@@ -70,4 +70,8 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
     public String getType() {
         return "channel_group";
     }
+
+    public ChannelGroupSummary toSummary() {
+        return new ChannelGroupSummary(getId(), getAliases(), getTitle(), getType());
+    }
 }

@@ -16,6 +16,7 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
 import org.atlasapi.media.channel.ChannelGroupStore;
 import org.atlasapi.media.channel.ChannelStore;
@@ -241,7 +242,9 @@ public class AtlasPersistenceModule {
     @Bean
     @Primary
     public ChannelGroupStore channelGroupStore() {
-        return new MongoChannelGroupStore(databasedReadMongo());
+        return new CachingChannelGroupStore(
+                new MongoChannelGroupStore(databasedReadMongo())
+        );
     }
 
     private List<ServerAddress> mongoHosts(String mongoHost, final Integer mongoPort) {

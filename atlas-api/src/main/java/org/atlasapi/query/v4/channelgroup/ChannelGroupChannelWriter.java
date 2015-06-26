@@ -12,9 +12,15 @@ import org.atlasapi.query.v4.channel.ChannelWriter;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ChannelGroupChannelWriter implements EntityListWriter<ChannelWithChannelGroupMembership> {
 
-    private static final ChannelWriter CHANNEL_WRITER = new ChannelWriter("channels", "channel");
+    private final ChannelWriter channelWriter;
+
+    public ChannelGroupChannelWriter(ChannelWriter channelWriter) {
+        this.channelWriter = checkNotNull(channelWriter);
+    }
 
     @Override
     public String listName() {
@@ -26,7 +32,7 @@ public class ChannelGroupChannelWriter implements EntityListWriter<ChannelWithCh
         Channel channel = entity.getChannel();
         ChannelGroupMembership channelGroupMembership = entity.getChannelGroupMembership();
 
-        format.writeObject(CHANNEL_WRITER, "channel", channel, ctxt);
+        format.writeObject(channelWriter, "channel", channel, ctxt);
         if (channelGroupMembership instanceof ChannelNumbering) {
             ChannelNumbering channelNumbering = ((ChannelNumbering) channelGroupMembership);
             format.writeField("channel_number",channelNumbering.getChannelNumber());

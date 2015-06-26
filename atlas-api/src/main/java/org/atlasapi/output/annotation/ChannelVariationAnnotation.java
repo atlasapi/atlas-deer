@@ -21,12 +21,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ChannelVariationAnnotation extends OutputAnnotation<Channel> {
 
     private final ChannelResolver channelResolver;
-    private final ChannelWriter CHANNEL_WRITER = new ChannelWriter("variations", "variation");
+    private final ChannelWriter channelWriter;
 
     public ChannelVariationAnnotation(
-            ChannelResolver channelResolver
+            ChannelResolver channelResolver,
+            ChannelWriter channelWriter
     ) {
         this.channelResolver = checkNotNull(channelResolver);
+        this.channelWriter = channelWriter;
     }
 
     @Override
@@ -44,6 +46,6 @@ public class ChannelVariationAnnotation extends OutputAnnotation<Channel> {
                 return input.getResources();
             }
         }), 1, TimeUnit.MINUTES, IOException.class);
-        format.writeList(CHANNEL_WRITER, channels, ctxt);
+        format.writeList(channelWriter, channels, ctxt);
     }
 }

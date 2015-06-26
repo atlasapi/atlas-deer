@@ -10,7 +10,6 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.v4.channel.ChannelWriter;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -19,11 +18,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ParentChannelAnnotation extends OutputAnnotation<Channel> {
 
-    private static final ChannelWriter CHANNEL_WRITER = new ChannelWriter("parents", "parent");
+    private final ChannelWriter channelWriter;
 
     private final ChannelResolver channelResolver;
 
-    public ParentChannelAnnotation(ChannelResolver channelResolver) {
+    public ParentChannelAnnotation(
+            ChannelWriter channelWriter,
+            ChannelResolver channelResolver
+    ) {
+        this.channelWriter = checkNotNull(channelWriter);
         this.channelResolver = checkNotNull(channelResolver);
     }
 
@@ -41,7 +44,7 @@ public class ParentChannelAnnotation extends OutputAnnotation<Channel> {
                             }
                     ), 1, TimeUnit.MINUTES, IOException.class
             );
-            format.writeObject(CHANNEL_WRITER, "parent", parentChannel, ctxt);
+            format.writeObject(channelWriter, "parent", parentChannel, ctxt);
         } else {
             format.writeField("parent", null);
         }
