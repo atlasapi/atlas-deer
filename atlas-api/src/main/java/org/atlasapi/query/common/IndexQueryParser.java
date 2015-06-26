@@ -1,6 +1,8 @@
 package org.atlasapi.query.common;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.content.IndexQueryParams;
 import org.atlasapi.content.QueryOrdering;
 import org.atlasapi.content.FuzzyQueryParams;
@@ -17,6 +19,8 @@ import java.util.Optional;
  */
 public class IndexQueryParser {
 
+    private final NumberToShortStringCodec codec = new SubstitutionTableNumberCodec();
+
     public IndexQueryParams parse(Query<?> query) throws QueryParseException {
         return new IndexQueryParams(
                 titleQueryFrom(query),
@@ -30,7 +34,7 @@ public class IndexQueryParser {
         if (Strings.isNullOrEmpty(stringRegionId)) {
             return Optional.empty();
         }
-        return Optional.of(Id.valueOf(stringRegionId));
+        return Optional.of(Id.valueOf(codec.decode(stringRegionId)));
     }
 
     private Optional<QueryOrdering> orderingFrom(Query<?> query) throws QueryParseException {
