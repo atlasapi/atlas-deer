@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.joda.time.Duration;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
@@ -40,6 +41,7 @@ public class EncodingSerializerTest {
         encoding.setVersionId("version");
         encoding.setQuality(Quality.SD);
         encoding.setQualityDetail("quality_detail");
+        encoding.setDuration(Duration.standardHours(1));
         
         ContentProtos.Encoding serialized = serializer.serialize(encoding).build();
         Encoding deserialized = serializer.deserialize(serialized);
@@ -67,6 +69,7 @@ public class EncodingSerializerTest {
         assertThat(deserialized.getVersionId(), is(encoding.getVersionId()));
         assertThat(deserialized.getQuality(), is(encoding.getQuality()));
         assertThat(deserialized.getQualityDetail(), is(encoding.getQualityDetail()));
+        assertThat(deserialized.getDuration(), is(encoding.getDuration()));
         
     }
 

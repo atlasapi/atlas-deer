@@ -39,6 +39,11 @@ public class EncodingSerializer {
         if (encoding.getDataSize() != null) {
             builder.setDataSize(encoding.getDataSize());
         }
+        
+        if (encoding.getDuration() != null) {
+            builder.setDuration(encoding.getDuration().getStandardSeconds());
+        }
+        
         if (encoding.getDistributor() != null) {
             builder.setDistributor(encoding.getDistributor());
         }

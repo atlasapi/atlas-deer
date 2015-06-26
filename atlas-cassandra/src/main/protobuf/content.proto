@@ -177,6 +177,7 @@ message Encoding {
     optional bool is_three_d = 21;
     optional string quality = 22;
     optional string quality_detail = 23;
+    optional int64 duration = 24;
 }
 
 message Location {
