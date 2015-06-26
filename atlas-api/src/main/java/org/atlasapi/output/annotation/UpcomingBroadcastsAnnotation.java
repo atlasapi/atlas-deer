@@ -1,6 +1,7 @@
 package org.atlasapi.output.annotation;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
 import org.atlasapi.content.Content;
@@ -25,8 +26,8 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
 
-    public UpcomingBroadcastsAnnotation(NumberToShortStringCodec codec) {
-        this.broadcastWriter = new BroadcastWriter("broadcasts", codec);
+    public UpcomingBroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver) {
+        this.broadcastWriter = new BroadcastWriter("broadcasts", codec, channelResolver);
     }
 
     @Override

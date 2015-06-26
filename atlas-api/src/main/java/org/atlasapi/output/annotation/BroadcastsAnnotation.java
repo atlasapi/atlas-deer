@@ -10,6 +10,7 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.Region;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
@@ -38,8 +39,8 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
 
-    public BroadcastsAnnotation(NumberToShortStringCodec codec) {
-        broadcastWriter = new BroadcastWriter("broadcasts", codec);
+    public BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver) {
+        broadcastWriter = new BroadcastWriter("broadcasts", codec, channelResolver);
     }
 
     @Override

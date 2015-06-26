@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
@@ -21,10 +22,10 @@ public class NextBroadcastAnnotation extends OutputAnnotation<Content> {
     private final BroadcastWriter broadcastWriter;
     private final Clock clock;
 
-    public NextBroadcastAnnotation(Clock clock, NumberToShortStringCodec codec) {
+    public NextBroadcastAnnotation(Clock clock, NumberToShortStringCodec codec, ChannelResolver channelResolver) {
         super();
         this.clock = clock;
-        this.broadcastWriter = new BroadcastWriter("next_broadcasts", codec);
+        this.broadcastWriter = new BroadcastWriter("next_broadcasts", codec, channelResolver);
     }
 
     @Override
