@@ -46,6 +46,7 @@ public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer
                 .withRegionIds(input.getRegions())
                 .withTitles(input.getAllTitles())
                 .withChannels(transformChannelNumbering(input.getChannelNumberings(), input.getPublisher()))
+                .withAliases(transformAliases(input))
                 .build();
     }
 
@@ -56,6 +57,7 @@ public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer
                 .withPlaformId(input.getPlatform())
                 .withTitles(input.getAllTitles())
                 .withChannels(transformChannelNumbering(input.getChannelNumberings(), input.getPublisher()))
+                .withAliases(transformAliases(input))
                 .build();
     }
 }
