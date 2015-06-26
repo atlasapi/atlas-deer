@@ -23,6 +23,11 @@ public class BroadcastQueryBuilder {
                                         .to(minusThirtyDays)
                         )
                 )
-        ).add(ScoreFunctionBuilders.gaussDecayFunction(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS, DateTime.now(), minusThirtyDays)).boost(timeBoost);
+        ).add(ScoreFunctionBuilders.gaussDecayFunction(
+                        EsBroadcast.TRANSMISSION_TIME_IN_MILLIS,
+                        DateTime.now(),
+                        minusThirtyDays
+                )
+        ).boost(timeBoost);
     }
 }
