@@ -1,11 +1,16 @@
 package org.atlasapi.output.writers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 
+import com.google.common.util.concurrent.Futures;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -13,6 +18,8 @@ import org.atlasapi.output.OutputContext;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.v4.channel.ChannelWriter;
 
 public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     
@@ -21,13 +28,16 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     private final AliasWriter aliasWriter = new AliasWriter();
     private final BroadcastIdAliasMapping aliasMapping = new BroadcastIdAliasMapping();
     private final BlackoutRestrictionWriter blackoutRestrictionWriter = new BlackoutRestrictionWriter();
+    private final ChannelWriter channelWriter = new ChannelWriter("channels", "channel");
 
     private final String listName;
-    private NumberToShortStringCodec codec;
+    private final NumberToShortStringCodec codec;
+    private final ChannelResolver channelResolver;
 
-    public BroadcastWriter(String listName, NumberToShortStringCodec codec) {
+    public BroadcastWriter(String listName, NumberToShortStringCodec codec, ChannelResolver channelResolver) {
         this.listName = checkNotNull(listName);
         this.codec = checkNotNull(codec);
+        this.channelResolver = checkNotNull(channelResolver);
     }
 
     @Override
@@ -43,6 +53,12 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeField("transmission_end_time", entity.getTransmissionEndTime());
         writer.writeField("broadcast_duration", Ints.saturatedCast(entity.getBroadcastDuration().getStandardSeconds()));
         writer.writeField("broadcast_on", codec.encode(entity.getChannelId().toBigInteger()));
+        Channel channel = null;
+        if (entity.getChannelId() != null) {
+            channel = Futures.get(channelResolver.resolveIds(ImmutableList.of(entity.getChannelId())), IOException.class)
+                    .getResources().first().get();
+        }
+        writer.writeObject(channelWriter, channel, ctxt);
         writer.writeField("schedule_date", entity.getScheduleDate());
         writer.writeField("repeat", entity.getRepeat());
         writer.writeField("subtitled", entity.getSubtitled());
