@@ -564,15 +564,14 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         }
 
         ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(region.<ChannelNumbering>getChannels());
-        ImmutableList<Id> channelsIdsForRegion = channels.stream()
+        ImmutableList<Long> channelsIdsForRegion = channels.stream()
                         .map(c -> c.getChannel().getId())
+                        .map(Id::longValue)
                         .collect(ImmutableCollectors.toList());
 
         queryBuilder = QueryBuilders.boolQuery()
                 .must(queryBuilder)
-                .must(QueryBuilders.nestedQuery(
-                        EsContent.BROADCASTS, QueryBuilders.termsQuery(EsBroadcast.CHANNEL, channelsIdsForRegion)
-                ));
+                .must(QueryBuilders.termsQuery(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion));
         return queryBuilder;
     }
 
