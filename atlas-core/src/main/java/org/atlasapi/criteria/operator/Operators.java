@@ -104,7 +104,7 @@ public class Operators {
         }
 
         public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
-            return lhs.equals(rhs);
+            return lhs.isAssignableFrom(rhs);
         }
 
         @Override
