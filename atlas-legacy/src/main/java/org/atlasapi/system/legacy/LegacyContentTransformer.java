@@ -53,6 +53,7 @@ import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
 import org.atlasapi.util.ImmutableCollectors;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -307,6 +308,9 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         e.setHasDOG(input.getHasDOG());
         e.set3d(version.is3d());
         e.setVersionId(version.getCanonicalUri());
+        if (version.getDuration() != null) {
+            e.setDuration(Duration.standardSeconds(version.getDuration()));
+        }
         if (input.getQuality() != null) {
             e.setQuality(Quality.valueOf(input.getQuality().name()));
         } else {
