@@ -85,12 +85,7 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         format.writeField("start_date", entity.getStartDate());
 
 
-        if(!Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations")) &&
-                Splitter.on(',')
-                        .splitToList(
-                                ctxt.getRequest().getParameter("annotations")
-                        ).contains(Annotation.CHANNEL_GROUPS_SUMMARY.toKey())
-                ) {
+        if(hasChannelGroupSummaryAnnotation(ctxt)) {
 
             ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
                     .stream()
@@ -118,5 +113,14 @@ public class ChannelWriter implements EntityListWriter<Channel>{
     @Override
     public String fieldName(Channel entity) {
         return fieldName;
+    }
+
+    private boolean hasChannelGroupSummaryAnnotation(OutputContext ctxt) {
+        return !Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
+                &&
+                Splitter.on(',')
+                        .splitToList(
+                                ctxt.getRequest().getParameter("annotations")
+                        ).contains(Annotation.CHANNEL_GROUPS_SUMMARY.toKey());
     }
 }
