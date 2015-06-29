@@ -22,6 +22,7 @@ public class ChannelsBroadcastFilter {
 
         List<Id> channelIds = StreamSupport.stream(channelGroup.getChannels().spliterator(), false)
                 .map(cn -> cn.getChannel().getId())
+                .distinct()
                 .collect(Collectors.toList());
 
         Ordering<Broadcast> channelOrdering = Ordering.from(new Comparator<Broadcast>() {
