@@ -2,6 +2,7 @@ package org.atlasapi.system.legacy;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,6 +47,7 @@ import org.atlasapi.media.entity.ReleaseDate;
 import org.atlasapi.media.entity.Series;
 import org.atlasapi.media.entity.Song;
 import org.atlasapi.media.entity.Subtitles;
+import org.atlasapi.media.entity.TopicRef;
 import org.atlasapi.media.entity.Version;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
@@ -117,13 +119,13 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private org.atlasapi.content.Content createBrand(final Brand brand) {
         org.atlasapi.content.Brand b = new org.atlasapi.content.Brand();
         b.setSeriesRefs(Iterables.transform(brand.getSeriesRefs(),
-            new Function<org.atlasapi.media.entity.SeriesRef, SeriesRef>() {
-                @Override
-                public SeriesRef apply(org.atlasapi.media.entity.SeriesRef input) {
-                    return new SeriesRef(Id.valueOf(input.getId()), brand.getPublisher(),
-                            input.getTitle(), input.getSeriesNumber(), input.getUpdated());
+                new Function<org.atlasapi.media.entity.SeriesRef, SeriesRef>() {
+                    @Override
+                    public SeriesRef apply(org.atlasapi.media.entity.SeriesRef input) {
+                        return new SeriesRef(Id.valueOf(input.getId()), brand.getPublisher(),
+                                input.getTitle(), input.getSeriesNumber(), input.getUpdated());
+                    }
                 }
-            }
         ));
         return setContainerFields(b, brand);
     }
@@ -369,9 +371,9 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setActualAvailabilityStart(input.getActualAvailabilityStart());
         p.setPricing(
                 input.getPricing()
-                .stream()
-                .map(legacy -> new Pricing(legacy.getStartTime(), legacy.getEndTime(), legacy.getPrice()))
-                .collect(ImmutableCollectors.toList())
+                        .stream()
+                        .map(legacy -> new Pricing(legacy.getStartTime(), legacy.getEndTime(), legacy.getPrice()))
+                        .collect(ImmutableCollectors.toList())
         );
         return p;
     }
@@ -437,21 +439,21 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         org.atlasapi.content.Film f = new org.atlasapi.content.Film();
         f.setWebsiteUrl(input.getWebsiteUrl());
         f.setSubtitles(Iterables.transform(input.getSubtitles(),
-            new Function<Subtitles, org.atlasapi.content.Subtitles>() {
-                @Override
-                public org.atlasapi.content.Subtitles apply(Subtitles input) {
-                    return new org.atlasapi.content.Subtitles(input.code());
+                new Function<Subtitles, org.atlasapi.content.Subtitles>() {
+                    @Override
+                    public org.atlasapi.content.Subtitles apply(Subtitles input) {
+                        return new org.atlasapi.content.Subtitles(input.code());
+                    }
                 }
-            }
         ));
         f.setReleaseDates(Iterables.transform(input.getReleaseDates(),
-            new Function<ReleaseDate, org.atlasapi.content.ReleaseDate>() {
-                @Override
-                public org.atlasapi.content.ReleaseDate apply(ReleaseDate input) {
-                    ReleaseType type = transformEnum(input.type(), ReleaseType.class);
-                    return new org.atlasapi.content.ReleaseDate(input.date(), input.country(), type);
+                new Function<ReleaseDate, org.atlasapi.content.ReleaseDate>() {
+                    @Override
+                    public org.atlasapi.content.ReleaseDate apply(ReleaseDate input) {
+                        ReleaseType type = transformEnum(input.type(), ReleaseType.class);
+                        return new org.atlasapi.content.ReleaseDate(input.date(), input.country(), type);
+                    }
                 }
-            }
         ));
         return setItemFields(f, input);
     }
@@ -479,6 +481,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
+        c.setTopicRefs(translateTopicRefs(input.getTopicRefs()));
         c.setCertificates(Iterables.transform(input.getCertificates(), new Function<Certificate, org.atlasapi.content.Certificate>() {
 
             @Override
@@ -502,6 +505,18 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
                 ).collect(Collectors.toList())
         );
         return c;
+    }
+
+    private Iterable<org.atlasapi.content.TopicRef> translateTopicRefs(List<TopicRef> topicRefs) {
+        return topicRefs.stream()
+                .map(tr -> org.atlasapi.content.TopicRef.valueOf(
+                                Id.valueOf(tr.getTopic()),
+                                tr.getWeighting(),
+                                tr.isSupervised(),
+                                org.atlasapi.content.TopicRef.Relationship.fromString(tr.getRelationship().name()).get()
+                        )
+                )
+                .collect(ImmutableCollectors.toList());
     }
 
     @Override

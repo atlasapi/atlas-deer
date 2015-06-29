@@ -24,6 +24,10 @@ public class TopicRef {
     private Relationship relationship;
     private Integer offset;
 
+    public static TopicRef valueOf(Id topicId, Float weighting, Boolean supervised, Relationship relationship) {
+        return new TopicRef(topicId, weighting, supervised,relationship);
+    }
+
     public TopicRef(Topic topic, Float weighting, Boolean supervised, Relationship relationship) {
         this(topic, weighting, supervised, relationship, null);
     }
