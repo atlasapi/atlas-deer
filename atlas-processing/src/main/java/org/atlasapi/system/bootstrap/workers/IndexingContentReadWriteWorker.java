@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
 
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
@@ -86,10 +87,13 @@ public class IndexingContentReadWriteWorker implements Worker<ResourceUpdatedMes
                         log.warn("missing {} for {}, re-attempting", mre.getMissingId(), content);
                         readAndWriteThenIndex(mre.getMissingId());
                         readAndWriteThenIndex(id, attempt + 1);
+                        log.error(Throwables.getStackTraceAsString(mre));
                     } catch (WriteException we) {
                         log.error("failed to write " + id + "-" + content, we);
+                        log.error(Throwables.getStackTraceAsString(we));
                     } catch (IndexException ie) {
-                        log.error("Failed to index {} - {}", content.getId(), ie);
+                        log.error("Failed to index {} - {}", content.getId(), ie.getMessage());
+                        log.error(Throwables.getStackTraceAsString(ie));
                     }
                 }
             }
