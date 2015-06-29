@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -20,6 +21,7 @@ import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
@@ -79,19 +81,22 @@ public class ContentDebugController {
     private final LegacyPersistenceModule legacyPersistence;
     private final AtlasPersistenceModule persistence;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
+    private final ContentIndex index;
 
     public ContentDebugController(
             LegacyPersistenceModule legacyPersistence,
             AtlasPersistenceModule persistence,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             ChannelResolver channelResolver,
-            EquivalentScheduleStore scheduleStore
+            EquivalentScheduleStore scheduleStore,
+            ContentIndex index
     ) {
         this.legacyPersistence = checkNotNull(legacyPersistence);
         this.persistence = checkNotNull(persistence);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.channelResolver = checkNotNull(channelResolver);
         this.scheduleStore = checkNotNull(scheduleStore);
+        this.index = checkNotNull(index);
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -164,20 +169,26 @@ public class ContentDebugController {
         }
     }
 
+    @RequestMapping("/system/debug/content/{id}/index")
+    public void indexContent(@PathVariable("id") String id, final HttpServletResponse response) throws IOException {
+        try {
+            Id decodedId = Id.valueOf(lowercase.decode(id).longValue());
+            Resolved<Content> resolved =
+                    Futures.get(persistence.contentStore().resolveIds(ImmutableList.of(decodedId)), IOException.class);
+            index.index(resolved.getResources().first().get());
+            response.getWriter().write("Successfully indexed content");
+        } catch (Exception e) {
+            Throwables.propagate(e);
+        }
+    }
+
     @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(@PathVariable("id") String id,
-            @RequestParam(value = "publisher", required = true) String publisherKey,
             final HttpServletResponse response) throws IOException {
         try {
             Long decodedId = lowercase.decode(id).longValue();
 
             StringBuilder respString = new StringBuilder();
-            Maybe<Publisher> publisherMaybe = Publisher.fromKey(publisherKey);
-            if (publisherMaybe.isNothing()) {
-                response.setStatus(400);
-                response.getWriter().write("Supply a valid publisher key");
-                return;
-            }
 
             Content content = resolveLegacyContent(decodedId);
             if (content instanceof Item) {
