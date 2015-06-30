@@ -4,10 +4,15 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
+import org.atlasapi.content.Certificate;
+import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ItemRef;
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.CertificateWriter;
@@ -17,6 +22,7 @@ import org.atlasapi.output.writers.RestrictionWriter;
 import org.atlasapi.output.writers.SubtitleWriter;
 
 import com.google.common.collect.ImmutableMap;
+import org.atlasapi.util.ImmutableCollectors;
 
 public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
 
@@ -57,12 +63,9 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
             writer.writeList(restrictionWriter, item.getRestrictions(), ctxt);
             
         }
-        
-        if (desc instanceof Content) {
-            Content content = (Content) desc;
-            writer.writeList(languageWriter, content.getLanguages(), ctxt);
-            writer.writeList(certificateWriter, content.getCertificates(), ctxt);
-        }
+
+        writer.writeList(certificateWriter, desc.getCertificates(), ctxt);
+        writer.writeList(languageWriter, desc.getLanguages(), ctxt);
 
         if (desc instanceof Film) {
             Film film = (Film) desc;

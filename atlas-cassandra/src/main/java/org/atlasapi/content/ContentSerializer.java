@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
 
@@ -30,9 +31,10 @@ public final class ContentSerializer implements Serializer<Content, ContentProto
     }
 
     private ImmutableBiMap<String, Class<? extends Content>> typeNameMap;
-    private static final ContentSerializationVisitor serializationVisitor = new ContentSerializationVisitor();
+    private final ContentSerializationVisitor serializationVisitor;
 
-    public ContentSerializer() {
+    public ContentSerializer(ContentSerializationVisitor visitor) {
+        this.serializationVisitor = checkNotNull(visitor);
         ImmutableBiMap.Builder<String, Class<? extends Content>> typeNameMap = ImmutableBiMap.builder();
         for (Class<? extends Content> type : supportedTypes) {
             typeNameMap.put(typeString(type), type);

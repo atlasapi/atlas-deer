@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Optional;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Item;
@@ -36,6 +36,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.Ints;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -114,6 +115,9 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("uri", location.getUri());
             writer.writeList(aliasWriter, location.getAliases(), ctxt);
             writer.writeField("available", isAvailable(policy));
+            writer.writeField("duration", 
+                                encoding.getDuration() == null ? null 
+                                                               : Ints.saturatedCast(encoding.getDuration().getStandardSeconds()));
             writer.writeField("transport_is_live", location.getTransportIsLive());
             writer.writeField("transport_type", location.getTransportType());
             writer.writeField("transport_sub_type", location.getTransportSubType());

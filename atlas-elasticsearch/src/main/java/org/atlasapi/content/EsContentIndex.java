@@ -284,6 +284,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private Collection<EsTopicMapping> makeESTopics(Content content) {
         Collection<EsTopicMapping> esTopics = new LinkedList<EsTopicMapping>();
         for (TopicRef topic : content.getTopicRefs()) {
+            log.info("Indexing content {} with topic {}", content.getId(), topic.getTopic());
             esTopics.add(new EsTopicMapping()
                     .topicId(topic.getTopic().longValue())
                     .supervised(topic.isSupervised())

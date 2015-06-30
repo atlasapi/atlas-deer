@@ -73,12 +73,19 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final EquivalenceGraphSerializer graphSerializer = new EquivalenceGraphSerializer();
-    private final ContentSerializer contentSerializer = new ContentSerializer();
+    private final ContentSerializer contentSerializer;
     
     public CassandraEquivalentContentStore(ContentResolver contentResolver,
             EquivalenceGraphStore graphStore, Session session, ConsistencyLevel read,
             ConsistencyLevel write) {
         super(contentResolver, graphStore);
+        this.contentSerializer = new
+
+
+
+
+
+                ContentSerializer(new ContentSerializationVisitor(contentResolver));
         this.session = session;
         this.readConsistency = read;
         this.writeConsistency = write;

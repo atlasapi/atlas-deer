@@ -1,6 +1,7 @@
 package org.atlasapi.system.legacy;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.intl.Country;
@@ -9,6 +10,7 @@ import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.media.entity.Publisher;
 import org.hamcrest.core.Is;
 import org.joda.time.LocalDate;
@@ -17,7 +19,6 @@ import org.junit.Test;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
 
@@ -71,6 +72,12 @@ public class LegacyChannelGroupTransformerTest {
         legacyPlatform.setChannelNumberings(channelNumberings);
         legacyPlatform.setPublisher(publisher);
         legacyPlatform.setAvailableCountries(availableCountries);
+        legacyPlatform.setAliases(
+                ImmutableSet.of(
+                        new org.atlasapi.media.entity.Alias("namespace1", "value1"),
+                        new org.atlasapi.media.entity.Alias("namespace2", "value2")
+                )
+        );
         ChannelGroup transformed = this.objectUnderTest.apply(legacyPlatform);
 
         assertThat(transformed.getId().longValue(), is(id));
@@ -140,6 +147,15 @@ public class LegacyChannelGroupTransformerTest {
         );
 
         assertThat(transformed.getAvailableCountries(), Is.<Set>is(availableCountries));
+        assertThat(
+                transformed.getAliases(),
+                is(
+                        ImmutableSet.of(
+                                new Alias("namespace1", "value1"),
+                                new Alias("namespace2", "value2")
+                        )
+                )
+        );
     }
 
 
@@ -186,6 +202,12 @@ public class LegacyChannelGroupTransformerTest {
         legacyRegion.setChannelNumberings(channelNumberings);
         legacyRegion.setPublisher(publisher);
         legacyRegion.setAvailableCountries(availableCountries);
+        legacyRegion.setAliases(
+                ImmutableSet.of(
+                        new org.atlasapi.media.entity.Alias("namespace1", "value1"),
+                        new org.atlasapi.media.entity.Alias("namespace2", "value2")
+                )
+        );
         ChannelGroup transformed = this.objectUnderTest.apply(legacyRegion);
 
         assertThat(transformed.getId().longValue(), is(id));
@@ -229,5 +251,14 @@ public class LegacyChannelGroupTransformerTest {
         );
 
         assertThat(transformed.getAvailableCountries(), Is.<Set>is(availableCountries));
+        assertThat(
+                transformed.getAliases(),
+                is(
+                        ImmutableSet.of(
+                                new Alias("namespace1", "value1"),
+                                new Alias("namespace2", "value2")
+                        )
+                )
+        );
     }
 }

@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.atlasapi.meta.annotations.FieldName;
+import org.joda.time.Duration;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -37,6 +38,7 @@ public class Encoding extends Identified {
 	
 	private Boolean containsAdvertising;
     private Integer advertisingDuration;
+    private Duration duration;
 
     private Integer bitRate;
 
@@ -76,7 +78,7 @@ public class Encoding extends Identified {
     }
 
     public void addAvailableAt(Location location) {
-    	this.availableAt.add(location);    
+    	this.availableAt.add(location);
     }
 
     public boolean removeAvailableAt(Location location) {
@@ -149,6 +151,11 @@ public class Encoding extends Identified {
     @FieldName("distributor")
     public String getDistributor() {
         return this.distributor;
+    }
+    
+    @FieldName("duration")
+    public Duration getDuration() {
+        return this.duration;
     }
 
     @FieldName("d_o_g")
@@ -254,6 +261,10 @@ public class Encoding extends Identified {
 
     public void setDistributor(String distributor) {
         this.distributor = distributor;
+    }
+    
+    public void setDuration(Duration duration) {
+        this.duration = duration;
     }
 
     public void setHasDOG(Boolean hasDOG) {
@@ -389,6 +400,7 @@ public class Encoding extends Identified {
 	    copy.videoProgressiveScan = videoProgressiveScan;
 	    copy.videoVerticalSize = videoVerticalSize;
         copy.versionId = versionId;
+        copy.duration = duration;
 	    return copy;
 	}
 	
@@ -405,4 +417,5 @@ public class Encoding extends Identified {
             return input.availableAt;
         }
     };
+
 }

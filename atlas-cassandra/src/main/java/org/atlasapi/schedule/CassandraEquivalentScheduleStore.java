@@ -28,6 +28,7 @@ import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.BroadcastSerializer;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
+import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
@@ -167,7 +168,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final ConsistencyLevel write;
     private final Clock clock;
     
-    private final ContentSerializer contentSerializer = new ContentSerializer();
+    private final ContentSerializer contentSerializer;
     private final EquivalenceGraphSerializer graphSerializer = new EquivalenceGraphSerializer();
     private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
     
@@ -175,6 +176,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ContentResolver contentStore, Session session, ConsistencyLevel read,
             ConsistencyLevel write, Clock clock) {
         super(graphStore, contentStore);
+        this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(contentStore));
         this.session = checkNotNull(session);
         this.read = checkNotNull(read);
         this.write = checkNotNull(write);

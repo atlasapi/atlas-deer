@@ -1,8 +1,10 @@
 package org.atlasapi.channel;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.metabroadcast.common.intl.Country;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
@@ -47,15 +49,16 @@ public class Region extends NumberedChannelGroup {
         private Set<Country> availableCountries= Sets.newHashSet();
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private ChannelGroupRef platformRef;
+        private Set<Alias> aliases = Sets.newHashSet();
 
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
         }
-
         public Builder withId(Long id) {
             this.id = Id.valueOf(id);
             return this;
         }
+
         public Builder withChannels(Iterable<ChannelNumbering> channels) {
             Iterables.addAll(this.channels, channels);
             return this;
@@ -81,9 +84,14 @@ public class Region extends NumberedChannelGroup {
             return this;
         }
 
+        public Builder withAliases(Iterable<Alias> aliases) {
+            Iterables.addAll(this.aliases, aliases);
+            return this;
+        }
+
 
         public Region build() {
-            return new Region(
+            Region region = new Region(
                     id,
                     publisher,
                     channels,
@@ -91,6 +99,8 @@ public class Region extends NumberedChannelGroup {
                     titles,
                     platformRef
             );
+            region.setAliases(ImmutableSet.copyOf(aliases));
+            return region;
         }
 
     }

@@ -76,7 +76,7 @@ import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.SubItemSummariesAnnotations;
-import org.atlasapi.output.annotation.SubItemSummaryListWriter;
+import org.atlasapi.output.writers.SubItemSummaryListWriter;
 import org.atlasapi.output.annotation.TopicsAnnotation;
 import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
 import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
