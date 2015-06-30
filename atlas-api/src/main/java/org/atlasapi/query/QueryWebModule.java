@@ -76,6 +76,7 @@ import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 import org.atlasapi.output.annotation.SubItemAnnotation;
 import org.atlasapi.output.annotation.SubItemSummariesAnnotations;
+import org.atlasapi.output.writers.SeriesWriter;
 import org.atlasapi.output.writers.SubItemSummaryListWriter;
 import org.atlasapi.output.annotation.TopicsAnnotation;
 import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
@@ -619,7 +620,7 @@ public class QueryWebModule {
                         commonImplied,
                         ImmutableSet.of(BRAND_REFERENCE)
                 )
-                .register(SERIES, new SeriesAnnotation(), commonImplied)
+                .register(SERIES, new SeriesAnnotation(new SeriesWriter(persistenceModule.contentStore())), commonImplied)
                 .register(DESCRIPTION,
                         new ContentDescriptionAnnotation(),
                         ImmutableSet.of(ID, SERIES_REFERENCE, BRAND_REFERENCE))

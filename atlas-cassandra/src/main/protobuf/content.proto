@@ -97,6 +97,7 @@ message Content {
     repeated SegmentEvent segment_events = 37 [(column)=SEGMENTS];
     repeated Restriction restrictions = 60 [(column)=DESC];
     repeated ItemSummary itemSummaries = 62 [(column)=ITEM_SUMMARIES];
+    repeated int32 releaseYears = 63 [(column)=DESC];
 }
 
 message Restriction {

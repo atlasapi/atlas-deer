@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -249,7 +250,27 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                 .map(certificateSerializer::serialize)
                 .collect(ImmutableCollectors.toSet()));
 
+        builder.addAllReleaseYears(aggregateReleaseYears(container));
+
         return builder;
+    }
+
+    private ImmutableSet<Integer> aggregateReleaseYears(Container container) {
+        try {
+            ImmutableSet.Builder<Integer> certs = ImmutableSet.builder();
+            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 50)) {
+                Resolved<Content> resolved = Futures.get(
+                        resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
+                        IOException.class
+                );
+                resolved.getResources().toList().stream()
+                        .map(Content::getYear)
+                        .forEach(certs::add);
+            }
+            return certs.add(container.getYear()).build();
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     private Set<Certificate> aggregateCertificates(Container container) {
