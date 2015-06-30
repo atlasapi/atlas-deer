@@ -513,7 +513,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
                                 Id.valueOf(tr.getTopic()),
                                 tr.getWeighting(),
                                 tr.isSupervised(),
-                                org.atlasapi.content.TopicRef.Relationship.fromString(tr.getRelationship().name()).get()
+                                org.atlasapi.content.TopicRef.Relationship.valueOf(tr.getRelationship().name())
                         )
                 )
                 .collect(ImmutableCollectors.toList());
