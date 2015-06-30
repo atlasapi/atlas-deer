@@ -143,7 +143,7 @@ public class Item extends Content {
     public void setRestrictions(Set<Restriction> restrictions) {
         this.restrictions = restrictions;
     }
-    
+
     public void addRestriction(Restriction restriction) {
         checkNotNull(restriction);
         restrictions.add(restriction);
@@ -153,7 +153,7 @@ public class Item extends Content {
     public Set<Restriction> getRestrictions() {
         return restrictions;
     }
-    
+
     @FieldName("segment_events")
     public List<SegmentEvent> getSegmentEvents() {
         return segmentEvents;

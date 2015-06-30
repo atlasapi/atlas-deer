@@ -13,11 +13,17 @@ import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ItemAndBroadcastSerializer implements Serializer<ItemAndBroadcast, byte[]> {
 
-    private final ContentSerializer contentSerializer = new ContentSerializer();
+    private final ContentSerializer contentSerializer;
     private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
-    
+
+    public ItemAndBroadcastSerializer(ContentSerializer contentSerializer) {
+        this.contentSerializer = checkNotNull(contentSerializer);
+    }
+
     @Override
     public byte[] serialize(ItemAndBroadcast src) {
         try {

@@ -28,7 +28,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 public class ContentSerializerTest {
     
-    private final Serializer<Content,ContentProtos.Content> serializer = new ContentSerializer();
+    private final Serializer<Content,ContentProtos.Content> serializer = new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver()));
 
     @Test
     public void testDeSerializesBrand() {

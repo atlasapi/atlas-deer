@@ -23,7 +23,7 @@ import com.netflix.astyanax.model.ColumnList;
 
 public class ProtobufContentMarshallerTest {
 
-    private final ContentMarshaller marshaller = new ProtobufContentMarshaller();
+    private final ContentMarshaller marshaller = new ProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver())));
 
     @Test
     @SuppressWarnings("unchecked")

@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.ContentSerializationVisitor;
+import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.util.ResolveException;
@@ -120,7 +122,7 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
     private final ConsistencyLevel readCl;
     private final ConsistencyLevel writeCl;
     
-    private final ItemAndBroadcastSerializer serializer = new ItemAndBroadcastSerializer();
+    private final ItemAndBroadcastSerializer serializer;
     private final Function<ItemAndBroadcast, String> toBroadacstId = Functions.compose(
             new Function<Broadcast, String>() {
                 @Override
@@ -134,6 +136,7 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
             ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender, Clock clock, 
             ConsistencyLevel readCl, ConsistencyLevel writeCl) {
         super(contentStore, messageSender);
+        this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(contentStore)));
         this.keyspace = context.getClient();
         this.cf = ColumnFamily.newColumnFamily(name, StringSerializer.get(), StringSerializer.get());
         this.clock = clock;

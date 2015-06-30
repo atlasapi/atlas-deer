@@ -1,11 +1,17 @@
 package org.atlasapi.content;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.ProtoBufUtils;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
@@ -14,8 +20,11 @@ import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
 
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.intl.Countries;
+import org.atlasapi.util.ImmutableCollectors;
 
-final class ContentSerializationVisitor implements ContentVisitor<Builder> {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     
     private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
     private final EncodingSerializer encodingSerializer = new EncodingSerializer();
@@ -31,7 +40,12 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
+    private final ContentResolver resolver;
 
+
+    public ContentSerializationVisitor(ContentResolver resolver) {
+        this.resolver = checkNotNull(resolver);
+    }
     
     private Builder visitIdentified(Identified ided) {
         Builder builder = ContentProtos.Content.newBuilder();
@@ -230,7 +244,30 @@ final class ContentSerializationVisitor implements ContentVisitor<Builder> {
                 )
         );
 
+
+        builder.addAllCertificates(aggregateCertificates(container).stream()
+                .map(certificateSerializer::serialize)
+                .collect(ImmutableCollectors.toSet()));
+
         return builder;
+    }
+
+    private Set<Certificate> aggregateCertificates(Container container) {
+        try {
+            ImmutableSet.Builder<Certificate> certs = ImmutableSet.builder();
+            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 50)) {
+                Resolved<Content> resolved = Futures.get(
+                        resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
+                        IOException.class
+                );
+                resolved.getResources().toList().stream()
+                        .flatMap(i -> i.getCertificates().stream())
+                        .forEach(certs::add);
+            }
+            return certs.build();
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     @Override

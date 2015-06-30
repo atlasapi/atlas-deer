@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.AVAILABLE_CONTENT;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.BROADCASTS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.CHILDREN;
@@ -50,6 +51,11 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
     private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING_BROADCASTS";
     private static final String AVAILABLE_CONTENT_PREFIX = "AVAILABLE";
     private static final String ITEM_SUMMARY_PREFIX = "ITEM_SUMMARY";
+    private final Serializer<Content, ContentProtos.Content> serializer;
+
+    public ProtobufContentMarshaller(Serializer<Content, ContentProtos.Content> serialiser) {
+        this.serializer = checkNotNull(serialiser);
+    }
 
     private final ListMultimap<ContentProtos.Column, FieldDescriptor> schema =
         Multimaps.index(
@@ -73,7 +79,6 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             })
         .entrySet());
     
-    private final Serializer<Content, ContentProtos.Content> serializer = new ContentSerializer();
     private final EnumBiMap<ContentProtos.Column, ContentColumn> columnLookup = EnumBiMap.create(
         ImmutableMap.<ContentProtos.Column, ContentColumn> builder()
             .put(TYPE, ContentColumn.TYPE)

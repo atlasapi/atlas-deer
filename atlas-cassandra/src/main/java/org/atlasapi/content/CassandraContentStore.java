@@ -119,7 +119,7 @@ public final class CassandraContentStore extends AbstractContentStore {
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Content> aliasIndex;
 
-    private final ContentMarshaller marshaller = new ProtobufContentMarshaller();
+    private final ContentMarshaller marshaller = new ProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
     private final Function<Row<Long, String>, Content> rowToContent =
             input -> {
                 if (!input.getColumns().isEmpty()) {
