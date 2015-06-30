@@ -5,6 +5,7 @@ import org.atlasapi.serialization.protobuf.ContentProtos.Encoding.Builder;
 
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.media.MimeType;
+import org.joda.time.Duration;
 
 public class EncodingSerializer {
 
@@ -129,6 +130,7 @@ public class EncodingSerializer {
         encoding.setVersionId(msg.hasVersion() ? msg.getVersion() : null);
         encoding.setQuality(msg.hasQuality() ? Quality.valueOf(msg.getQuality()) : null);
         encoding.setQualityDetail(msg.hasQualityDetail() ? msg.getQualityDetail() : null);
+        encoding.setDuration(msg.hasDuration() ? Duration.standardSeconds(msg.getDuration()) : null);
         return encoding;
     }
 

@@ -19,6 +19,7 @@ import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -63,8 +64,12 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
         );
 
         Iterable<Item> items = contentIds.stream()
-                .map(id -> {
-                    Item item = (Item) resolvedEquivalents.get(id).asList().get(0);
+                .flatMap(id -> {
+                    ImmutableList<Content> equivs = resolvedEquivalents.get(id).asList();
+                    if(equivs.isEmpty()) {
+                        return Stream.empty();
+                    }
+                    Item item = (Item)equivs.get(0);
                     Iterable<Broadcast> upcomingBroadcasts = item.getBroadcasts()
                             .stream()
                             .filter(Broadcast.IS_UPCOMING)
@@ -78,7 +83,7 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
                     item.setBroadcasts(
                             ImmutableSet.copyOf(upcomingBroadcasts)
                     );
-                    return item;
+                    return Stream.of(item);
                 })
                 .filter(i -> !i.getBroadcasts().isEmpty())
                 .collect(Collectors.toList());
