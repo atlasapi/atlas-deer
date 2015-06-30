@@ -9,7 +9,7 @@ import org.joda.time.DateTime;
 public class BroadcastQueryBuilder {
 
 
-    public static QueryBuilder build(QueryBuilder childQuery, Float timeBoost, Float firstBroadcastBoost) {
+    public static QueryBuilder build(QueryBuilder childQuery, Float timeBoost) {
         DateTime minusThirtyDays = DateTime.now().minusDays(30);
         DateTime plusThirtyDays = DateTime.now().plusDays(30);
 
@@ -19,8 +19,8 @@ public class BroadcastQueryBuilder {
                         FilterBuilders.nestedFilter(
                                 EsContent.BROADCASTS,
                                 FilterBuilders.rangeFilter(EsBroadcast.TRANSMISSION_TIME)
-                                        .from(plusThirtyDays.getMillis())
-                                        .to(minusThirtyDays.getMillis())
+                                        .from(plusThirtyDays)
+                                        .to(minusThirtyDays)
                         )
                 )
         ).add(ScoreFunctionBuilders.gaussDecayFunction(
