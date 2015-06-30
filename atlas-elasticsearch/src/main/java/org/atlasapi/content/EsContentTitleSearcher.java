@@ -73,7 +73,6 @@ public class EsContentTitleSearcher implements ContentTitleSearcher {
 
         if (search.getBroadcastWeighting() != 0.0f) {
             broadcastQuery = BroadcastQueryBuilder.build(titleQuery,
-                search.getBroadcastWeighting(),
                 1f);
         } else {
             broadcastQuery = titleQuery;

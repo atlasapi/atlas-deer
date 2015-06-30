@@ -495,7 +495,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
-        log.debug(queryBuilder.toString());
+
 
         SearchRequestBuilder reqBuilder = esClient.client()
                 .prepareSearch(index)
@@ -517,7 +517,17 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             if (queryParams.get().getRegionId().isPresent()) {
                 queryBuilder = addRegionFilter(queryParams, queryBuilder);
             }
+
+            if (queryParams.get().getBroadcastWeighting().isPresent()) {
+                queryBuilder = BroadcastQueryBuilder.build(
+                        queryBuilder,
+                        queryParams.get().getBroadcastWeighting().get()
+                );
+            }
+
         }
+
+        log.debug(queryBuilder.toString());
 
         reqBuilder.setQuery(queryBuilder);
         reqBuilder.execute(FutureSettingActionListener.setting(response));
