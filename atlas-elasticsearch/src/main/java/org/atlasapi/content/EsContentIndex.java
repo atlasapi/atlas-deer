@@ -516,6 +516,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             if (queryParams.get().getRegionId().isPresent()) {
                 queryBuilder = addRegionFilter(queryParams, queryBuilder);
             }
+
         }
 
         log.debug(queryBuilder.toString());

@@ -25,8 +25,27 @@ public class IndexQueryParser {
         return new IndexQueryParams(
                 titleQueryFrom(query),
                 orderingFrom(query),
-                regionIdFrom(query)
+                regionIdFrom(query),
+                broadcastWeightingFrom(query),
+                titleWeightingFrom(query)
         );
+
+    }
+
+    private Optional<Float> broadcastWeightingFrom(Query<?> query) {
+        String broadcastWeight = query.getContext().getRequest().getParameter("broadcastWeight");
+        if (Strings.isNullOrEmpty(broadcastWeight)) {
+            return Optional.empty();
+        }
+        return Optional.of(Float.parseFloat(broadcastWeight));
+    }
+
+    private Optional<Float> titleWeightingFrom(Query<?> query) {
+        String titleWeight = query.getContext().getRequest().getParameter("titleWeight");
+        if (Strings.isNullOrEmpty(titleWeight)) {
+            return Optional.empty();
+        }
+        return Optional.of(Float.parseFloat(titleWeight));
     }
 
     private Optional<Id> regionIdFrom(Query<?> query) {
