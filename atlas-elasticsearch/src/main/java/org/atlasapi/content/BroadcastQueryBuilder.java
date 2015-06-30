@@ -19,14 +19,14 @@ public class BroadcastQueryBuilder {
                         FilterBuilders.nestedFilter(
                                 EsContent.BROADCASTS,
                                 FilterBuilders.rangeFilter(EsBroadcast.TRANSMISSION_TIME)
-                                        .from(plusThirtyDays)
-                                        .to(minusThirtyDays)
+                                        .from(plusThirtyDays.getMillis())
+                                        .to(minusThirtyDays.getMillis())
                         )
                 )
         ).add(ScoreFunctionBuilders.gaussDecayFunction(
                         EsBroadcast.TRANSMISSION_TIME_IN_MILLIS,
-                        DateTime.now(),
-                        minusThirtyDays
+                        DateTime.now().getMillis(),
+                        minusThirtyDays.getMillis()
                 )
         ).boost(timeBoost);
     }
