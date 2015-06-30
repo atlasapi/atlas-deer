@@ -1,4 +1,4 @@
-package org.atlasapi.output.annotation;
+package org.atlasapi.output.writers;
 
 import org.atlasapi.content.EpisodeSummary;
 import org.atlasapi.content.ItemSummary;
