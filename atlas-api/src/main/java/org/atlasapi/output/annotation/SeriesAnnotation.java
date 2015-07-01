@@ -8,9 +8,15 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SeriesWriter;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class SeriesAnnotation extends OutputAnnotation<Content> {
 
-    private final SeriesWriter seriesWriter = new SeriesWriter();
+    private final SeriesWriter seriesWriter;
+
+    public SeriesAnnotation(SeriesWriter seriesWriter) {
+        this.seriesWriter = checkNotNull(seriesWriter);
+    }
 
     @Override
     public void write(Content entity, FieldWriter writer, OutputContext ctxt)
