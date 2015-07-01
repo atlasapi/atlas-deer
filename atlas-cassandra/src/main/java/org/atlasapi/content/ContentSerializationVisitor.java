@@ -257,7 +257,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
 
     private ImmutableSet<Integer> aggregateReleaseYears(Container container) {
         try {
-            ImmutableSet.Builder<Integer> certs = ImmutableSet.builder();
+            ImmutableSet.Builder<Integer> releaseYears = ImmutableSet.builder();
             for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 50)) {
                 Resolved<Content> resolved = Futures.get(
                         resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
@@ -265,9 +265,14 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                 );
                 resolved.getResources().toList().stream()
                         .map(Content::getYear)
-                        .forEach(certs::add);
+                        .filter(y -> y != null)
+                        .distinct()
+                        .forEach(releaseYears::add);
             }
-            return certs.add(container.getYear()).build();
+            if (container.getYear() != null) {
+                return releaseYears.add(container.getYear()).build();
+            }
+            return releaseYears.build();
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
@@ -283,6 +288,8 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                 );
                 resolved.getResources().toList().stream()
                         .flatMap(i -> i.getCertificates().stream())
+                        .filter(cert -> cert != null)
+                        .distinct()
                         .forEach(certs::add);
             }
             return certs.build();
