@@ -30,7 +30,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -172,10 +171,10 @@ public class EsContentIndexTest {
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
-        content.setTopicRefs(ImmutableList.of(new TopicRef(2L,
+        content.setTags(ImmutableList.of(new Tag(2L,
                 1.0f,
                 true,
-                TopicRef.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT)));
 
         indexAndRefresh(content);
 
@@ -195,20 +194,20 @@ public class EsContentIndexTest {
 
     public void testQueryOrder() throws Exception {
         Content episode1 = episode(1);
-        episode1.setTopicRefs(ImmutableList.of(new TopicRef(4L,
+        episode1.setTags(ImmutableList.of(new Tag(4L,
                 1.0f,
                 true,
-                TopicRef.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT)));
         Content episode2 = episode(2);
-        episode2.setTopicRefs(ImmutableList.of(new TopicRef(4L,
+        episode2.setTags(ImmutableList.of(new Tag(4L,
                 1.5f,
                 true,
-                TopicRef.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT)));
         Content episode3 = episode(3);
-        episode3.setTopicRefs(ImmutableList.of(new TopicRef(4L,
+        episode3.setTags(ImmutableList.of(new Tag(4L,
                 2.0f,
                 false,
-                TopicRef.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT)));
 
         indexAndRefresh(episode1, episode2, episode3);
 
@@ -238,10 +237,10 @@ public class EsContentIndexTest {
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
-        content.setTopicRefs(ImmutableList.of(new TopicRef(2L,
+        content.setTags(ImmutableList.of(new Tag(2L,
                 1.0f,
                 true,
-                TopicRef.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT)));
 
         indexAndRefresh(content);
 

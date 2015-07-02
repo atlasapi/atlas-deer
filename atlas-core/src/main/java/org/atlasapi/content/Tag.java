@@ -15,7 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
-public class TopicRef {
+public class Tag {
 
     private Id topic;
     private Publisher publisher;
@@ -24,27 +24,27 @@ public class TopicRef {
     private Relationship relationship;
     private Integer offset;
 
-    public static TopicRef valueOf(Id topicId, Float weighting, Boolean supervised, Relationship relationship) {
-        return new TopicRef(topicId, weighting, supervised,relationship);
+    public static Tag valueOf(Id topicId, Float weighting, Boolean supervised, Relationship relationship) {
+        return new Tag(topicId, weighting, supervised,relationship);
     }
 
-    public TopicRef(Topic topic, Float weighting, Boolean supervised, Relationship relationship) {
+    public Tag(Topic topic, Float weighting, Boolean supervised, Relationship relationship) {
         this(topic, weighting, supervised, relationship, null);
     }
 
-    public TopicRef(Topic topic, Float weighting, Boolean supervised, Relationship relationship, Integer offset) {
+    public Tag(Topic topic, Float weighting, Boolean supervised, Relationship relationship, Integer offset) {
         this(topic.getId(), weighting, supervised, relationship, offset);
     }
 
-    public TopicRef(long topicId, Float weighting, Boolean supervised, Relationship relationship) {
+    public Tag(long topicId, Float weighting, Boolean supervised, Relationship relationship) {
         this(Id.valueOf(topicId), weighting, supervised, relationship, null);
     }
     
-    public TopicRef(Id topicId, Float weighting, Boolean supervised, Relationship relationship) {
+    public Tag(Id topicId, Float weighting, Boolean supervised, Relationship relationship) {
         this(topicId, weighting, supervised, relationship, null);
     }
 
-    public TopicRef(Id topicId, Float weighting, Boolean supervised, Relationship relationship, Integer offset) {
+    public Tag(Id topicId, Float weighting, Boolean supervised, Relationship relationship, Integer offset) {
         this.topic = topicId;
         this.weighting = weighting;
         this.supervised = supervised;
@@ -120,8 +120,8 @@ public class TopicRef {
         if (this == that) {
             return true;
         }
-        if (that instanceof TopicRef) {
-            TopicRef other = (TopicRef) that;
+        if (that instanceof Tag) {
+            Tag other = (Tag) that;
             return Objects.equal(supervised, other.supervised)
                 && Objects.equal(weighting, other.weighting)
                 && Objects.equal(topic, other.topic)

@@ -56,7 +56,7 @@ import org.atlasapi.content.Restriction;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Synopses;
-import org.atlasapi.content.TopicRef;
+import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Identifiable;
@@ -135,7 +135,7 @@ public class MetaApiInfoClassGenerator {
                 ChannelController.class,
                 ChannelGroupController.class,
     			Clip.class,
-                TopicRef.class,
+                Tag.class,
                 ContainerRef.class,
                 Item.class,
                 Certificate.class,
@@ -177,7 +177,7 @@ public class MetaApiInfoClassGenerator {
     			Described.class,
     			Identified.class,
     			Clip.class,
-    			TopicRef.class,
+    			Tag.class,
                 ContainerRef.class,
                 Item.class,
                 Certificate.class,

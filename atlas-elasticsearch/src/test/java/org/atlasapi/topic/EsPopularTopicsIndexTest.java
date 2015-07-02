@@ -16,7 +16,7 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.TopicRef;
+import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -67,8 +67,8 @@ public class EsPopularTopicsIndexTest {
         Broadcast broadcast1 = new Broadcast(Id.valueOf(1), new DateTime(), new DateTime().plusHours(1));
         Broadcast broadcast2 = new Broadcast(Id.valueOf(1), new DateTime().plusHours(2), new DateTime().plusHours(3));
 
-        TopicRef topic1 = new TopicRef(Id.valueOf(1), 1.0f, Boolean.TRUE, TopicRef.Relationship.ABOUT);
-        TopicRef topic2 = new TopicRef(Id.valueOf(2), 1.0f, Boolean.TRUE, TopicRef.Relationship.ABOUT);
+        Tag topic1 = new Tag(Id.valueOf(1), 1.0f, Boolean.TRUE, Tag.Relationship.ABOUT);
+        Tag topic2 = new Tag(Id.valueOf(2), 1.0f, Boolean.TRUE, Tag.Relationship.ABOUT);
 
         Item item1 = new Item("uri1", "curie1", Publisher.METABROADCAST);
         item1.addBroadcast(broadcast1);
