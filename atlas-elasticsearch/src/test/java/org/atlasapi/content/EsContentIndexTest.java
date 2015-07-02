@@ -244,7 +244,7 @@ public class EsContentIndexTest {
 
         indexAndRefresh(content);
 
-        AttributeQuery<Float> query = Attributes.TOPIC_WEIGHTING.createQuery(
+        AttributeQuery<Float> query = Attributes.TAG_WEIGHTING.createQuery(
                 Operators.EQUALS, ImmutableList.of(1.0f));
 
         IndexQueryResult ids = index.query(
@@ -253,7 +253,7 @@ public class EsContentIndexTest {
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
 
-        query = Attributes.TOPIC_WEIGHTING.createQuery(
+        query = Attributes.TAG_WEIGHTING.createQuery(
                 Operators.LESS_THAN, ImmutableList.of(0.5f));
 
         ids = index.query(
@@ -262,7 +262,7 @@ public class EsContentIndexTest {
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().isPresent(), is(false));
 
-        query = Attributes.TOPIC_WEIGHTING.createQuery(
+        query = Attributes.TAG_WEIGHTING.createQuery(
                 Operators.GREATER_THAN, ImmutableList.of(0.5f));
 
         ids = index.query(
