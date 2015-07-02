@@ -92,11 +92,6 @@
       <artifactId>astyanax-thrift</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.metabroadcast.common.persistence</groupId>
-      <artifactId>common-persistence</artifactId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
       <groupId>com.netflix.astyanax</groupId>
       <artifactId>astyanax-cassandra</artifactId>
       <exclusions>
@@ -106,11 +101,10 @@
         </exclusion>
       </exclusions>
     </dependency>
-      <dependency>
-          <groupId>com.metabroadcast.common.persistence</groupId>
-          <artifactId>common-persistence</artifactId>
-          <version>1.0-SNAPSHOT</version>
-          <scope>test</scope>
-      </dependency>
+    <dependency>
+        <groupId>com.metabroadcast.common.persistence</groupId>
+        <artifactId>common-persistence</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 </project>
