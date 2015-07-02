@@ -8,6 +8,7 @@ import com.google.common.base.Objects;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.persistence.cassandra.CassandraDataStaxClient;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.Message;
