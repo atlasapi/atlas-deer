@@ -283,13 +283,13 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private Collection<EsTopicMapping> makeESTopics(Content content) {
         Collection<EsTopicMapping> esTopics = new LinkedList<EsTopicMapping>();
-        for (TopicRef topic : content.getTopicRefs()) {
-            log.info("Indexing content {} with topic {}", content.getId(), topic.getTopic());
+        for (Tag tag : content.getTags()) {
+            log.info("Indexing content {} with tag {}", content.getId(), tag.getTopic());
             esTopics.add(new EsTopicMapping()
-                    .topicId(topic.getTopic().longValue())
-                    .supervised(topic.isSupervised())
-                    .weighting(topic.getWeighting())
-                    .relationship(topic.getRelationship()));
+                    .topicId(tag.getTopic().longValue())
+                    .supervised(tag.isSupervised())
+                    .weighting(tag.getWeighting())
+                    .relationship(tag.getRelationship()));
         }
         return esTopics;
     }

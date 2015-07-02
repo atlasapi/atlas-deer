@@ -6,9 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.ProtoBufUtils;
@@ -31,7 +29,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final EncodingSerializer encodingSerializer = new EncodingSerializer();
     private final SegmentEventSerializer segmentEventSerializer = new SegmentEventSerializer();
     private final RestrictionSerializer restrictionSerializer = new RestrictionSerializer();
-    private final TopicRefSerializer topicRefSerializer = new TopicRefSerializer();
+    private final TagSerializer tagSerializer = new TagSerializer();
     private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
     private final KeyPhraseSerializer keyPhraseSerializer = new KeyPhraseSerializer();
     private final CrewMemberSerializer crewMemberSerializer = new CrewMemberSerializer();
@@ -163,8 +161,8 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             builder.addKeyPhrases(keyPhraseSerializer.serialize(keyPhrase));
         }
         
-        for (TopicRef topicRef : content.getTopicRefs()) {
-            builder.addTopicRefs(topicRefSerializer.serialize(topicRef));
+        for (Tag tag : content.getTags()) {
+            builder.addTopicRefs(tagSerializer.serialize(tag));
         }
 
         if (content.getYear() != null) {

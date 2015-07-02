@@ -46,8 +46,7 @@ public abstract class Described extends Identified implements Sourced {
 	private Specialization specialization;
 	
 	private ImmutableSet<String> genres = ImmutableSet.of();
-	private Set<String> tags = Sets.newHashSet();
-	
+
 	protected Publisher publisher;
 	private String image;
 	private Set<Image> images = ImmutableSet.of();
@@ -170,19 +169,6 @@ public abstract class Described extends Identified implements Sourced {
         this.longDescription = longDescription;
     }
 
-    @FieldName("tags")
-	public Set<String> getTags() {
-		return tags;
-	}
-	
-	public void setTags(Set<String> tags) {
-	    if (tags != null && ! tags.isEmpty()) {
-	        this.tags = Sets.newHashSet(Iterables.transform(tags, MoreStrings.TO_LOWER));
-	    } else {
-	        this.tags = tags;
-	    }
-	}
-	
 	@FieldName("publisher")
 	@Override
 	public Publisher getSource() {
@@ -310,7 +296,6 @@ public abstract class Described extends Identified implements Sourced {
         to.mediaType = from.mediaType;
         to.publisher = from.publisher;
         to.specialization = from.specialization;
-        to.tags = Sets.newHashSet(from.tags);
         to.thisOrChildLastUpdated = from.thisOrChildLastUpdated;
         to.thumbnail = from.thumbnail;
         to.title = from.title;

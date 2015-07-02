@@ -111,8 +111,8 @@ public final class EsContentIndexingTest {
 
         Broadcast broadcast2 = new Broadcast(Id.valueOf(1), now.plusHours(2), now.plusHours(3));
 
-        TopicRef topic1 = new TopicRef(Id.valueOf(1), 1.0f, Boolean.TRUE, TopicRef.Relationship.ABOUT);
-        TopicRef topic2 = new TopicRef(Id.valueOf(2), 1.0f, Boolean.TRUE, TopicRef.Relationship.ABOUT);
+        Tag topic1 = new Tag(Id.valueOf(1), 1.0f, Boolean.TRUE, Tag.Relationship.ABOUT);
+        Tag topic2 = new Tag(Id.valueOf(2), 1.0f, Boolean.TRUE, Tag.Relationship.ABOUT);
 
         Item item1 = new Item("uri1", "curie1", Publisher.METABROADCAST);
         item1.addBroadcast(broadcast1);

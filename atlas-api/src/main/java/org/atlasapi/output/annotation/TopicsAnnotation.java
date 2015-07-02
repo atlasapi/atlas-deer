@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.Content;
-import org.atlasapi.content.TopicRef;
+import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -23,9 +23,9 @@ import com.google.common.util.concurrent.Futures;
 
 public class TopicsAnnotation extends OutputAnnotation<Content> {
 
-    private static final Function<TopicRef, Id> REF_TO_ID = new Function<TopicRef, Id>() {
+    private static final Function<Tag, Id> TAG_TO_ID = new Function<Tag, Id>() {
         @Override
-        public Id apply(TopicRef input) {
+        public Id apply(Tag input) {
             return input.getTopic();
         }
     };
@@ -57,14 +57,14 @@ public class TopicsAnnotation extends OutputAnnotation<Content> {
 
     @Override
     public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        List<TopicRef> topicRefs = entity.getTopicRefs();
-        Iterable<Topic> topics = resolve(Lists.transform(topicRefs, REF_TO_ID));
+        List<Tag> tags = entity.getTags();
+        Iterable<Topic> topics = resolve(Lists.transform(tags, TAG_TO_ID));
         final Map<Id, Topic> topicsMap = Maps.uniqueIndex(topics, TOPIC_ID);
         
-        writer.writeList(new EntityListWriter<TopicRef>() {
+        writer.writeList(new EntityListWriter<Tag>() {
 
             @Override
-            public void write(TopicRef entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+            public void write(Tag entity, FieldWriter writer, OutputContext ctxt) throws IOException {
                 writer.writeObject(topicWriter, topicsMap.get(entity.getTopic()), ctxt);
                 writer.writeField("supervised", entity.isSupervised());
                 writer.writeField("weighting", entity.getWeighting());
@@ -74,15 +74,15 @@ public class TopicsAnnotation extends OutputAnnotation<Content> {
 
             @Override
             public String listName() {
-                return "topics";
+                return "tags";
             }
 
             @Override
-            public String fieldName(TopicRef entity) {
-                return "topicref";
+            public String fieldName(Tag entity) {
+                return "tag";
             }
 
-        }, topicRefs, ctxt);
+        }, tags, ctxt);
     }
 
 }

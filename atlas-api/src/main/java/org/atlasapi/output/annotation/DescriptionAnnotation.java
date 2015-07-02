@@ -19,7 +19,10 @@ public class DescriptionAnnotation<T extends Described> extends
     public void write(T entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeObject(publisherWriter, entity.getSource(), ctxt);
         if (entity instanceof Topic) {
-            writer.writeField("topic_type", ((Topic) entity).getType()); 
+            Topic topic = (Topic) entity;
+            writer.writeField("namespace", topic.getNamespace());
+            writer.writeField("value", topic.getValue());
+            writer.writeField("topic_type", topic.getType());
         }
         writer.writeField("title", entity.getTitle());
         writer.writeField("description", entity.getDescription());

@@ -26,6 +26,7 @@ import org.atlasapi.content.ReleaseDate.ReleaseType;
 import org.atlasapi.content.Restriction;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.SongRef;
+import org.atlasapi.content.Tag;
 import org.atlasapi.content.TransportSubType;
 import org.atlasapi.content.TransportType;
 import org.atlasapi.entity.Alias;
@@ -481,7 +482,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
-        c.setTopicRefs(translateTopicRefs(input.getTopicRefs()));
+        c.setTags(translateTopicRefs(input.getTopicRefs()));
         c.setCertificates(Iterables.transform(input.getCertificates(), new Function<Certificate, org.atlasapi.content.Certificate>() {
 
             @Override
@@ -507,13 +508,13 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         return c;
     }
 
-    private Iterable<org.atlasapi.content.TopicRef> translateTopicRefs(List<TopicRef> topicRefs) {
+    private Iterable<Tag> translateTopicRefs(List<TopicRef> topicRefs) {
         return topicRefs.stream()
-                .map(tr -> org.atlasapi.content.TopicRef.valueOf(
+                .map(tr -> Tag.valueOf(
                                 Id.valueOf(tr.getTopic()),
                                 tr.getWeighting(),
                                 tr.isSupervised(),
-                                org.atlasapi.content.TopicRef.Relationship.valueOf(tr.getRelationship().name())
+                                Tag.Relationship.valueOf(tr.getRelationship().name())
                         )
                 )
                 .collect(ImmutableCollectors.toList());

@@ -31,7 +31,7 @@ import org.atlasapi.content.Person;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Subtitles;
-import org.atlasapi.content.TopicRef;
+import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -209,7 +209,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 chosen.addClip(clip);
             }
         }
-        mergeTopics(chosen, notChosen);
+        mergeTags(chosen, notChosen);
         mergeKeyPhrases(chosen, notChosen);
         Function<T, Integer> yearProjector = new Function<T, Integer>() {
             @Override
@@ -246,14 +246,12 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }));
     }
 
-    private <T extends Content> void mergeTopics(T chosen, Iterable<T> notChosen) {
-        Function<T, Iterable<TopicRef>> topicRefsProjector = new Function<T, Iterable<TopicRef>>() {
-            @Override
-            public Iterable<TopicRef> apply(T input) {
-                return Iterables.transform(input.getTopicRefs(), new TopicPublisherSetter(input));
-            }
-        };
-        chosen.setTopicRefs(projectFieldFromEquivalents(chosen, notChosen, topicRefsProjector));
+    private <T extends Content> void mergeTags(T chosen, Iterable<T> notChosen) {
+        chosen.setTags(projectFieldFromEquivalents(
+                chosen,
+                notChosen,
+                input -> Iterables.transform(input.getTags(), new TagPublisherSetter(input)))
+        );
     }
 
     private void mergeFilmProperties(ApplicationSources sources, Film chosen, Iterable<Film> notChosen) {
@@ -503,16 +501,16 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     }
 
-    private final static class TopicPublisherSetter implements Function<TopicRef, TopicRef> {
+    private final static class TagPublisherSetter implements Function<Tag, Tag> {
 
         private final Content publishedContent;
 
-        public TopicPublisherSetter(Content publishedContent) {
+        public TagPublisherSetter(Content publishedContent) {
             this.publishedContent = publishedContent;
         }
 
         @Override
-        public TopicRef apply(TopicRef input) {
+        public Tag apply(Tag input) {
             input.setPublisher(publishedContent.getSource());
             return input;
         }

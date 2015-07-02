@@ -54,7 +54,7 @@ public class EsTopicMapping extends EsObject {
         return this;
     }
     
-    public EsTopicMapping relationship(TopicRef.Relationship relationship) {
+    public EsTopicMapping relationship(Tag.Relationship relationship) {
         if (relationship != null) {
             properties.put(RELATIONSHIP, relationship.toString());
         }

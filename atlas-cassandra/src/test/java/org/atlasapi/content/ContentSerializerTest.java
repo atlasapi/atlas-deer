@@ -198,7 +198,7 @@ public class ContentSerializerTest {
         assertThat(actual.getKeyPhrases(), is(expected.getKeyPhrases()));
         assertThat(actual.getLanguages(), is(expected.getLanguages()));
         assertThat(actual.getRelatedLinks(), is(expected.getRelatedLinks()));
-        assertThat(actual.getTopicRefs(), is(expected.getTopicRefs()));
+        assertThat(actual.getTags(), is(expected.getTags()));
         assertThat(actual.getYear(), is(expected.getYear()));
     }
 
@@ -374,7 +374,7 @@ public class ContentSerializerTest {
         content.setLanguages(ImmutableSet.of("en"));
         content.setPeople(ImmutableList.of(CrewMember.crewMember("id", "Jim", "director", Publisher.BBC)));
         content.setRelatedLinks(ImmutableSet.of(RelatedLink.twitterLink("twitter").build()));
-        content.setTopicRefs(ImmutableSet.of(new TopicRef(1L, 1.0f, true, TopicRef.Relationship.TRANSCRIPTION)));
+        content.setTags(ImmutableSet.of(new Tag(1L, 1.0f, true, Tag.Relationship.TRANSCRIPTION)));
         content.setYear(1234);
     }
 
