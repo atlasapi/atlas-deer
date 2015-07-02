@@ -125,6 +125,7 @@ public class Image {
         private MimeType mimeType;
         private DateTime availabilityStart;
         private DateTime availabilityEnd;
+        private Boolean hasTitleArt;
 
         public Builder(String uri) {
             this.uri = uri;
@@ -208,6 +209,11 @@ public class Image {
             return this;
         }
 
+        public Builder withHasTitleArt(Boolean hasTitleArt) {
+            this.hasTitleArt = hasTitleArt;
+            return this;
+        }
+
         public Image build() {
             Image image = new Image(uri);
             image.setHeight(height);
@@ -219,6 +225,7 @@ public class Image {
             image.setMimeType(mimeType);
             image.setAvailabilityStart(availabilityStart);
             image.setAvailabilityEnd(availabilityEnd);
+            image.setHasTitleArt(hasTitleArt);
             return image;
         }
     }
@@ -233,6 +240,7 @@ public class Image {
     private MimeType mimeType;
     private DateTime availabilityStart;
     private DateTime availabilityEnd;
+    private Boolean hasTitleArt;
     
     public Image(String uri) {
         this.uri = checkNotNull(uri);
@@ -327,7 +335,15 @@ public class Image {
     public void setAvailabilityEnd(DateTime availabilityEnd) {
         this.availabilityEnd = availabilityEnd;
     }
-    
+
+    public Boolean getHasTitleArt() {
+        return hasTitleArt;
+    }
+
+    public void setHasTitleArt(Boolean hasTitleArt) {
+        this.hasTitleArt = hasTitleArt;
+    }
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
