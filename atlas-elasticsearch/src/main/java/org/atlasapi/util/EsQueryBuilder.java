@@ -98,7 +98,7 @@ public class EsQueryBuilder {
 
             @Override
             public QueryBuilder visit(final IntegerAttributeQuery query) {
-                final String name = query.getAttributeName();
+                final String name = query.getAttribute().javaAttributeName();
                 final List<Integer> values = query.getValue();
                 return query.accept(new EsComparableOperatorVisitor<Integer>(name, values));
             }
@@ -106,7 +106,7 @@ public class EsQueryBuilder {
             @Override
             public QueryBuilder visit(StringAttributeQuery query) {
                 final List<String> values = query.getValue();
-                final String name = query.getAttributeName();
+                final String name = query.getAttribute().javaAttributeName();
                 return query.accept(new EsStringOperatorVisitor(query.getAttribute().javaAttributeName(), values));
             }
 
@@ -149,7 +149,7 @@ public class EsQueryBuilder {
 
             @Override
             public QueryBuilder visit(IdAttributeQuery query) {
-                final String name = query.getAttributeName();
+                final String name = query.getAttribute().javaAttributeName();
                 final List<Long> value = Lists.transform(query.getValue(), Id.toLongValue());
                 return query.accept(new EsComparableOperatorVisitor<Long>(name, value));
 
@@ -157,7 +157,7 @@ public class EsQueryBuilder {
 
             @Override
             public QueryBuilder visit(FloatAttributeQuery query) {
-                final String name = query.getAttributeName();
+                final String name = query.getAttribute().javaAttributeName();
                 final List<Float> value = query.getValue();
                 return query.accept(new EsComparableOperatorVisitor<Float>(name, value));
             }
