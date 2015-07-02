@@ -53,7 +53,6 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         described.setShortDescription(input.getShortDescription());
         described.setSynopses(getSynopses(input));
         described.setSpecialization(transformEnum(input.getSpecialization(), Specialization.class));
-        described.setTags(input.getTags());
         if (input.getThisOrChildLastUpdated() != null) {
             described.setThisOrChildLastUpdated(input.getThisOrChildLastUpdated());
         } else {

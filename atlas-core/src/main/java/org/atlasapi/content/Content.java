@@ -35,7 +35,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     private transient String readHash;
     private ImmutableList<Clip> clips = ImmutableList.of();
     private Set<KeyPhrase> keyPhrases = ImmutableSet.of();
-    private ImmutableList<TopicRef> topicRefs = ImmutableList.of();
+    private ImmutableList<Tag> tags = ImmutableList.of();
     private ImmutableList<ContentGroupRef> contentGroupRefs = ImmutableList.of();
     private List<CrewMember> people = Lists.newArrayList();
     private Set<String> languages = ImmutableSet.of();
@@ -60,17 +60,17 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         return clips;
     }
 
-    public void setTopicRefs(Iterable<TopicRef> topicRefs) {
-        this.topicRefs = ImmutableList.copyOf(topicRefs);
+    public void setTags(Iterable<Tag> tags) {
+        this.tags = ImmutableList.copyOf(tags);
     }
 
-    public void addTopicRef(TopicRef topicRef) {
-        topicRefs = ImmutableList.<TopicRef>builder().add(topicRef).addAll(topicRefs).build();
+    public void addTopicRef(Tag tag) {
+        tags = ImmutableList.<Tag>builder().add(tag).addAll(tags).build();
     }
 
     @FieldName("topic_refs")
-    public List<TopicRef> getTopicRefs() {
-        return topicRefs;
+    public List<Tag> getTags() {
+        return tags;
     }
 
     public void setContentGroupRefs(Iterable<ContentGroupRef> contentGroupRefs) {
@@ -136,7 +136,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         to.clips = ImmutableList.copyOf(Iterables.transform(from.clips, Clip.COPIES));
         to.keyPhrases = from.keyPhrases;
         to.relatedLinks = from.relatedLinks;
-        to.topicRefs = from.topicRefs;
+        to.tags = from.tags;
         to.readHash = from.readHash;
         to.people = Lists.newArrayList(Iterables.transform(from.people, CrewMember.COPY));
         to.languages = from.languages;

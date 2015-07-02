@@ -31,7 +31,6 @@ public class ComplexItemTestDataBuilder {
     private Set<String> genres;
     private String image;
     private Publisher publisher;
-    private Set<String> tags;
     private String thumbnail;
     private String title;
     private Long id;
@@ -61,7 +60,6 @@ public class ComplexItemTestDataBuilder {
         genres = ImmutableSet.of("http://test.metabroadcast.com/genres/default");
         image = "http://test.metabroadcast.com/images/default";
         publisher = Publisher.BBC;
-        tags = ImmutableSet.of();
         thumbnail = "http://test.metabroadcast.com/thumbnails/default";
         title = "Default Test Item";
         manifestedAs = Sets.newLinkedHashSet();
@@ -92,7 +90,6 @@ public class ComplexItemTestDataBuilder {
         item.setGenres(genres);
         item.setImage(image);
         item.setPublisher(publisher);
-        item.setTags(tags);
         item.setThumbnail(thumbnail);
         item.setTitle(title);
         item.setCanonicalUri(uri);
@@ -118,11 +115,6 @@ public class ComplexItemTestDataBuilder {
     
     public ComplexItemTestDataBuilder withId(Long id) {
         this.id = id;
-        return this;
-    }
-    
-    public ComplexItemTestDataBuilder withTags(String... tags) {
-        this.tags = ImmutableSet.copyOf(tags);
         return this;
     }
     

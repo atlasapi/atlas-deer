@@ -27,7 +27,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private static final EncodingSerializer encodingSerializer = new EncodingSerializer();
     private static final SegmentEventSerializer segmentEventSerializer = new SegmentEventSerializer();
     private static final RestrictionSerializer restrictionSerializer = new RestrictionSerializer();
-    private static final TopicRefSerializer topicRefSerializer = new TopicRefSerializer();
+    private static final TagSerializer tagSerializer = new TagSerializer();
     private static final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
     private static final KeyPhraseSerializer keyPhraseSerializer = new KeyPhraseSerializer();
     private static final CrewMemberSerializer crewMemberSerializer = new CrewMemberSerializer();
@@ -169,11 +169,11 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         content.setRelatedLinks(links.build());
         
-        ImmutableSet.Builder<TopicRef> topicRefs = ImmutableSet.builder();
+        ImmutableSet.Builder<Tag> topicRefs = ImmutableSet.builder();
         for (int i = 0; i < msg.getTopicRefsCount(); i++) {
-            topicRefs.add(topicRefSerializer.deserialize(msg.getTopicRefs(i)));
+            topicRefs.add(tagSerializer.deserialize(msg.getTopicRefs(i)));
         }
-        content.setTopicRefs(topicRefs.build());
+        content.setTags(topicRefs.build());
         
         if (msg.hasYear()) {
             content.setYear(msg.getYear());

@@ -2,6 +2,7 @@ package org.atlasapi.generation.generated.model;
 
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
+import org.atlasapi.content.Tag;
 import org.atlasapi.generation.model.ModelClassInfo;
 import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
@@ -149,7 +150,7 @@ public class TopicRefInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.content.TopicRef.class;
+        return Tag.class;
     }
 
 }
