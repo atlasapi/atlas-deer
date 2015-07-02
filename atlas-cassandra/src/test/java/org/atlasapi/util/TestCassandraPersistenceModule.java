@@ -3,9 +3,9 @@ package org.atlasapi.util;
 import java.util.UUID;
 
 import com.codahale.metrics.MetricRegistry;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import org.atlasapi.CassandraPersistenceModule;
 import org.atlasapi.ConfiguredAstyanaxContext;
-import org.atlasapi.DatastaxCassandraService;
 import org.atlasapi.PersistenceModule;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;

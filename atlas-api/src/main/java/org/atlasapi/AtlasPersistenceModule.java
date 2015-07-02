@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.mongodb.MongoClientOptions;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;

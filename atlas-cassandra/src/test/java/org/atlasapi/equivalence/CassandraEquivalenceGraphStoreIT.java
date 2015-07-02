@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
 
-import org.atlasapi.DatastaxCassandraService;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
