@@ -723,7 +723,7 @@ public class QueryWebModule {
                 .register(EXTENDED_ID,
                         new ExtendedIdentificationAnnotation(idCodec()),
                         ImmutableSet.of(ID))
-                .register(DESCRIPTION, new DescriptionAnnotation<Topic>(), ImmutableSet.of(ID))
+                .register(DESCRIPTION, new DescriptionAnnotation<>(), ImmutableSet.of(EXTENDED_ID))
                 .build());
     }
 

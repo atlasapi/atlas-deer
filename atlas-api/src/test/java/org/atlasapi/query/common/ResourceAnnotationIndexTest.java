@@ -48,7 +48,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testListLookupAttachedTopContextless() throws Exception {
-        check(channelIndex.resolveListContext(ImmutableList.of("topics")),
+        check(channelIndex.resolveListContext(ImmutableList.of("tags")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.ID
         );
@@ -56,7 +56,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testListLookupAttachedTopContext() throws Exception {
-        check(channelIndex.resolveListContext(ImmutableList.of("channels.topics")),
+        check(channelIndex.resolveListContext(ImmutableList.of("channels.tags")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.ID
         );
@@ -64,7 +64,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testListLookupAttachedSubContextless() throws Exception {
-        check(channelIndex.resolveListContext(ImmutableList.of("topics.topic.extended_description")),
+        check(channelIndex.resolveListContext(ImmutableList.of("tags.topic.extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.EXTENDED_DESCRIPTION
         );
@@ -72,7 +72,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testListLookupAttachedSubContext() throws Exception {
-        check(channelIndex.resolveListContext(ImmutableList.of("channels.topics.topic.extended_description")),
+        check(channelIndex.resolveListContext(ImmutableList.of("channels.tags.topic.extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.EXTENDED_DESCRIPTION
         );
@@ -94,7 +94,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testSingleLookupAttachedTopContextless() throws Exception {
-        check(channelIndex.resolveSingleContext(ImmutableList.of("topics")),
+        check(channelIndex.resolveSingleContext(ImmutableList.of("tags")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.ID
         );
@@ -102,7 +102,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testSingleLookupAttachedTopContext() throws Exception {
-        check(channelIndex.resolveSingleContext(ImmutableList.of("channel.topics")),
+        check(channelIndex.resolveSingleContext(ImmutableList.of("channel.tags")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.ID
         );
@@ -110,7 +110,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testSingleLookupAttachedSubContextless() throws Exception {
-        check(channelIndex.resolveSingleContext(ImmutableList.of("topics.topic.extended_description")),
+        check(channelIndex.resolveSingleContext(ImmutableList.of("tags.topic.extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.EXTENDED_DESCRIPTION
         );
@@ -118,7 +118,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testSingleLookupAttachedSubContext() throws Exception {
-        check(channelIndex.resolveSingleContext(ImmutableList.of("channel.topics.topic.extended_description")),
+        check(channelIndex.resolveSingleContext(ImmutableList.of("channel.tags.topic.extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.EXTENDED_DESCRIPTION
         );
@@ -126,14 +126,14 @@ public class ResourceAnnotationIndexTest {
 
     @Test
     public void testSingleLookupMixed() throws Exception {
-        check(channelIndex.resolveSingleContext(ImmutableList.of("channel.topics","extended_description")),
+        check(channelIndex.resolveSingleContext(ImmutableList.of("channel.tags","extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS, Annotation.EXTENDED_DESCRIPTION
         );
     }
 
     @Test
     public void testListLookupMixed() throws Exception {
-        check(channelIndex.resolveListContext(ImmutableList.of("channels.topics","extended_description")),
+        check(channelIndex.resolveListContext(ImmutableList.of("channels.tags","extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS, Annotation.EXTENDED_DESCRIPTION
         );
     }
@@ -171,7 +171,7 @@ public class ResourceAnnotationIndexTest {
 
     @Test
     public void testCombinedLookupAttachedTopContextless() throws Exception {
-        check(combinedIndex.resolve(ImmutableList.of("topics")),
+        check(combinedIndex.resolve(ImmutableList.of("tags")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.ID
         );
@@ -179,7 +179,7 @@ public class ResourceAnnotationIndexTest {
 
     @Test
     public void testCombinedLookupAttachedTopContext() throws Exception {
-        check(combinedIndex.resolve(ImmutableList.of("channels.topics")),
+        check(combinedIndex.resolve(ImmutableList.of("channels.tags")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.ID
         );
@@ -187,7 +187,7 @@ public class ResourceAnnotationIndexTest {
 
     @Test
     public void testCombinedLookupAttachedSubContextless() throws Exception {
-        check(combinedIndex.resolve(ImmutableList.of("topics.topic.extended_description")),
+        check(combinedIndex.resolve(ImmutableList.of("tags.topic.extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.EXTENDED_DESCRIPTION
         );
@@ -195,7 +195,7 @@ public class ResourceAnnotationIndexTest {
     
     @Test
     public void testCombinedLookupAttachedSubContext() throws Exception {
-        check(combinedIndex.resolve(ImmutableList.of("channels.topics.topic.extended_description")),
+        check(combinedIndex.resolve(ImmutableList.of("channels.tags.topic.extended_description")),
             ImmutableList.of(Resource.CHANNEL), Annotation.TAGS,
             ImmutableList.of(Resource.CHANNEL, Resource.TOPIC), Annotation.EXTENDED_DESCRIPTION
         );
