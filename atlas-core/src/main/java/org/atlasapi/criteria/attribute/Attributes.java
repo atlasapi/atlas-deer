@@ -42,10 +42,10 @@ public class Attributes {
 	public static final Attribute<Id> REGION = idListAttribute("region", Region.class);
 
 
-	public static final Attribute<Id> TOPIC_ID = idListAttribute("tags.topic.id", Identified.class);
-    public static final Attribute<String> TAG_RELATIONSHIP = stringListAttribute("tag.relationship", Identified.class);
-    public static final Attribute<Float> TAG_WEIGHTING = new FloatValuedAttribute("tag.weighting", Identified.class);
-    public static final Attribute<Boolean> TAG_SUPERVISED = new BooleanValuedAttribute("tag.supervised", Identified.class);
+	public static final Attribute<Id> TOPIC_ID = idListAttribute("tags.topic.id", Identified.class).withJavaAttribute("topics.topic.id");
+    public static final Attribute<String> TAG_RELATIONSHIP = stringListAttribute("tag.relationship", Identified.class).withJavaAttribute("topic.relationship");
+    public static final Attribute<Float> TAG_WEIGHTING = new FloatValuedAttribute("tag.weighting", Identified.class).withJavaAttribute("topic.weighting");
+    public static final Attribute<Boolean> TAG_SUPERVISED = new BooleanValuedAttribute("tag.supervised", Identified.class).withJavaAttribute("topic.supervised");
 
     public static final Attribute<Topic.Type> TOPIC_TYPE = EnumValuedAttribute.valueOf("type", Topic.Type.class, Topic.class, true);
     public static final Attribute<ContentType> CONTENT_TYPE = EnumValuedAttribute.valueOf("type", ContentType.class, Content.class, true);
@@ -55,7 +55,7 @@ public class Attributes {
     public static final Attribute<String> DESCRIPTION_GENRE = stringListAttribute("genre", Content.class);
     public static final Attribute<String> DESCRIPTION_TAG = stringListAttribute("tag", Content.class);
     public static final Attribute<MediaType> DESCRIPTION_TYPE = new EnumValuedAttribute<MediaType>("mediaType", MediaType.class, Item.class);
-	public static final Attribute<String> TAGS = stringListAttribute("tags", Content.class);
+	public static final Attribute<String> TAGS = stringListAttribute("tags", Content.class).withJavaAttribute("topics");
 	public static final Attribute<String> CHANNEL_GROUP_TYPE = stringListAttribute("type", ChannelGroup.class);
 	public static final Attribute<String> CHANNEL_GROUP_CHANNEL_GENRES = stringListAttribute("channel_genres", ChannelGroup.class);
 
