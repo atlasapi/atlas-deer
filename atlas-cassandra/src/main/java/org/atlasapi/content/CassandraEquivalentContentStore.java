@@ -300,7 +300,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         ContentProtos.Content contentBuffer = contentSerializer.serialize(content);
         ByteBuffer buffer = ByteBuffer.wrap(contentBuffer.toByteArray());
         /* Debug logging to investigate null content being written into equiv store */
-        if (!buffer.hasRemaining()) {
+        if (contentSerializer.deserialize(contentBuffer) == null ||
+                buffer.array().length == 0) {
             log.warn("ByteBuffer for serialised Content {} is empty!", content.getId());
         }
         return buffer;
