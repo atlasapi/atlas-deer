@@ -81,6 +81,7 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.co
 		image.setMimeType(input.getMimeType());
 		image.setAvailabilityStart(input.getAvailabilityStart());
 		image.setAvailabilityEnd(input.getAvailabilityEnd());
+		image.setHasTitleArt(input.hasTitleArt());
 		return image;
 	}
 
