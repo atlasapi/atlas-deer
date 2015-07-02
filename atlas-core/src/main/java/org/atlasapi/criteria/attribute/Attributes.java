@@ -56,9 +56,7 @@ public class Attributes {
     public static final Attribute<String> DESCRIPTION_TAG = stringListAttribute("tag", Content.class);
     public static final Attribute<MediaType> DESCRIPTION_TYPE = new EnumValuedAttribute<MediaType>("mediaType", MediaType.class, Item.class);
 	public static final Attribute<String> TOPICS = stringListAttribute("topics", Content.class);
-	public static final Attribute<String> CHANNEL_GROUP_TYPE =
-
-            stringListAttribute("type", ChannelGroup.class);
+	public static final Attribute<String> CHANNEL_GROUP_TYPE = stringListAttribute("type", ChannelGroup.class);
 	public static final Attribute<String> CHANNEL_GROUP_CHANNEL_GENRES = stringListAttribute("channel_genres", ChannelGroup.class);
 
 	//public static final Attribute<Boolean> ITEM_IS_LONG_FORM = new BooleanValuedAttribute("isLongForm", Item.class).allowShortMatches();
