@@ -11,6 +11,9 @@ public class LegacyTopicTransformer extends DescribedLegacyResourceTransformer<T
     protected org.atlasapi.topic.Topic createDescribed(Topic input) {
         org.atlasapi.topic.Topic topic = new org.atlasapi.topic.Topic();
         topic.setType(transformEnum(input.getType(), org.atlasapi.topic.Topic.Type.class));
+        topic.setTitle(input.getTitle());
+        topic.setDescription(input.getDescription());
+        topic.setPublisher(input.getPublisher());
         return topic;
     }
 

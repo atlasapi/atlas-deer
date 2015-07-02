@@ -20,8 +20,6 @@ public class DescriptionAnnotation<T extends Described> extends
         writer.writeObject(publisherWriter, entity.getSource(), ctxt);
         if (entity instanceof Topic) {
             Topic topic = (Topic) entity;
-            writer.writeField("namespace", topic.getNamespace());
-            writer.writeField("value", topic.getValue());
             writer.writeField("topic_type", topic.getType());
         }
         writer.writeField("title", entity.getTitle());

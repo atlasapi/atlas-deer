@@ -24,7 +24,7 @@ public enum Annotation {
     CLIPS,
     PEOPLE,
     PEOPLE_DETAIL,
-    TOPICS,
+    TAGS,
     CONTENT_GROUPS,
     SEGMENT_EVENTS,
     RELATED_LINKS,

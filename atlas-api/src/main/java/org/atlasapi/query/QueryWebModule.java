@@ -186,7 +186,7 @@ import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
 import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
 import static org.atlasapi.annotation.Annotation.SUB_ITEM_SUMMARIES;
-import static org.atlasapi.annotation.Annotation.TOPICS;
+import static org.atlasapi.annotation.Annotation.TAGS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
@@ -567,7 +567,7 @@ public class QueryWebModule {
 
     @Bean ResourceAnnotationIndex contentAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.CONTENT, Annotation.all())
-                .attach(Annotation.TOPICS, topicAnnotationIndex(), Annotation.ID)
+                .attach(Annotation.TAGS, topicAnnotationIndex(), Annotation.ID)
                 .build();
     }
 
@@ -630,7 +630,7 @@ public class QueryWebModule {
                 .register(SUB_ITEMS, new SubItemAnnotation(idCodec()), commonImplied)
                 .register(CLIPS, new ClipsAnnotation(), commonImplied)
                 .register(PEOPLE, new PeopleAnnotation(), commonImplied)
-                .register(TOPICS,
+                .register(TAGS,
                         new TopicsAnnotation(topicResolver, topicListWriter()),
                         commonImplied)
                 .register(SEGMENT_EVENTS,

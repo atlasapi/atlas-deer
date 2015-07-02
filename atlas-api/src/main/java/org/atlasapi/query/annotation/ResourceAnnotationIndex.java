@@ -34,19 +34,19 @@ import com.google.common.collect.Multimap;
  * Indices can be attached to others so {@link Annotation}s for a resource type
  * apply where that type appears within the model of another. The
  * {@code Resource.TOPIC} index can be attached to the {@code Resource.CONTENT}
- * index given an attachment {@code Annotation}, e.g. {@code TOPICS}, and an
+ * index given an attachment {@code Annotation}, e.g. {@code TAGS}, and an
  * implicitly-activated {@code Annotation} in the attached index, e.g.
  * {@code ID}.
  * </p>
  * 
  * <p>
  * {@code 'topics'} or {@code 'content.topics'} :
- * {@code [([CONTENT] -> TOPICS), ([CONTENT, TOPIC] -> ID)]}
+ * {@code [([CONTENT] -> TAGS), ([CONTENT, TOPIC] -> ID)]}
  * </p>
  * <p>
  * {@code 'topics.topic.description'} or
  * {@code 'content.topics.topic.description'} :
- * {@code [([CONTENT] -> TOPICS), ([CONTENT, TOPIC] -> DESCRIPTION)]}
+ * {@code [([CONTENT] -> TAGS), ([CONTENT, TOPIC] -> DESCRIPTION)]}
  * </p>
  * 
  * <p>
