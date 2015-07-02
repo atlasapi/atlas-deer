@@ -288,14 +288,13 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             List<T> topImageMatches = sources.getSourcedImagePrecedenceOrdering().leastOf(Iterables.filter(all, HAS_AVAILABLE_IMAGE_SET), 1);
             if (!topImageMatches.isEmpty()) {
                 T top = topImageMatches.get(0);
-
                 top.getImages().forEach(img -> img.setSource(top.getSource()));
-
                 chosen.setImages(top.getImages());
                 chosen.setImage(top.getImage());
                 chosen.setThumbnail(top.getThumbnail());
 
             } else {
+                chosen.getImages().forEach(img -> img.setSource(chosen.getSource()));
                 chosen.setImage(null);
             }
         }
