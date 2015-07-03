@@ -40,7 +40,12 @@ public abstract class Attribute<T> implements QueryFactory<T> {
 	Attribute(String name, Class<? extends Identified> target) {
 		this(name, target, false);
 	}
-	
+
+	Attribute(String name, String javaAttributeName, Class<? extends Identified> target) {
+		this(name, javaAttributeName, target, false);
+	}
+
+
 	Attribute(String name, Class<? extends Identified> target, boolean isCollectionOfValues) {
 		this.name = checkNotNull(name);
 		this.pathParts = ImmutableList.copyOf(PATH_SPLITTER.split(name));
@@ -48,6 +53,15 @@ public abstract class Attribute<T> implements QueryFactory<T> {
 		this.target = target;
 		this.isCollectionOfValues = isCollectionOfValues;
 		this.javaAttributeName = name;
+	}
+
+	Attribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
+		this.name = checkNotNull(name);
+		this.javaAttributeName = checkNotNull(javaAttributeName);
+		this.pathParts = ImmutableList.copyOf(PATH_SPLITTER.split(javaAttributeName));
+		this.pathPrefix = PATH_JOINER.join(pathParts.subList(0, pathParts.size()-1));
+		this.target = target;
+		this.isCollectionOfValues = isCollectionOfValues;
 	}
 	
 	@Override
@@ -79,11 +93,6 @@ public abstract class Attribute<T> implements QueryFactory<T> {
 
 	public boolean isCollectionOfValues() {
 		return isCollectionOfValues;
-	}
-	
-	public Attribute<T> withJavaAttribute(String javaAttribute) {
-		this.javaAttributeName = javaAttribute;
-		return this;
 	}
 	
 	public Attribute<T> allowShortMatches() {

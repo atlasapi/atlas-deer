@@ -11,9 +11,17 @@ public class BooleanValuedAttribute extends Attribute<Boolean> {
 	BooleanValuedAttribute(String name, Class<? extends Identified> target) {
 		super(name, target);
 	}
-	
+
+	public BooleanValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
+		super(name, javaAttributeName, target);
+	}
+
 	public BooleanValuedAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
 		super(name, target, isCollection);
+	}
+
+	public BooleanValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
+		super(name, javaAttributeName, target, isCollectionOfValues);
 	}
 
 	@Override

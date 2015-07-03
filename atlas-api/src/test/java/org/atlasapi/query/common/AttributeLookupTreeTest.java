@@ -48,8 +48,8 @@ public class AttributeLookupTreeTest {
     public void testDoesntProduceNullWhenBestMatchIsNonLeafNode() {
         AttributeLookupTree tree = new AttributeLookupTree();
         
-        tree.put(Attributes.TOPIC_RELATIONSHIP);
-        tree.put(Attributes.TOPIC_SUPERVISED);
+        tree.put(Attributes.TAG_RELATIONSHIP);
+        tree.put(Attributes.TAG_SUPERVISED);
         
         assertNotNull(tree.attributeFor(Attributes.TOPIC_ID.externalName()));
         

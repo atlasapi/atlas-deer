@@ -21,6 +21,8 @@ public class DescriptionAnnotation<T extends Described> extends
         if (entity instanceof Topic) {
             Topic topic = (Topic) entity;
             writer.writeField("topic_type", topic.getType());
+            writer.writeField("namespace", topic.getNamespace());
+            writer.writeField("value", topic.getValue());
         }
         writer.writeField("title", entity.getTitle());
         writer.writeField("description", entity.getDescription());
