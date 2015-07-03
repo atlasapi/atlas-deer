@@ -155,6 +155,9 @@ public class IndividualContentBootstrapController {
                     Optional<EquivalenceGraphUpdate> graphUpdate =
                             equivalenceMigrator.migrateEquivalence(content);
                     persistence.getEquivalentContentStore().updateContent(content.toRef());
+                    if (graphUpdate.isPresent()) {
+                        persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
+                    }
                     return writeResult;
                 } catch (Exception e) {
                     log.error(String.format("Bootstrapping: %s %s", content.getId(), content), e);
