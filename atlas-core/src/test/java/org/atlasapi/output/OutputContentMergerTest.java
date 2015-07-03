@@ -115,7 +115,7 @@ public class OutputContentMergerTest {
         one.setImages(ImmutableList.of(Image.builder("test1").build(), Image.builder("test2").build()));
         two.setImages(ImmutableList.of(Image.builder("test3").build(), Image.builder("test4").build()));
 
-        ApplicationSources sources = sourcesWithPrecedence(Publisher.METABROADCAST, Publisher.BBC, Publisher.PA);
+        ApplicationSources sources = sourcesWithPrecedence(true, Publisher.METABROADCAST, Publisher.BBC, Publisher.PA);
         Item merged = merger.merge(one, ImmutableList.of(two, three), sources);
 
         ImmutableSet<Image> images = merged.getImages().stream()
