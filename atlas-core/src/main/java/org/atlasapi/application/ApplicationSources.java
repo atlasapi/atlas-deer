@@ -26,6 +26,7 @@ public class ApplicationSources {
     private final List<SourceReadEntry> reads;
     private final List<Publisher> writes;
     private final ImmutableSet<Publisher> enabledReadSources;
+    private final Boolean imagePrecedenceEnabled;
     
     private static final Predicate<SourceReadEntry> ENABLED_READS_FILTER = new Predicate<SourceReadEntry>() {
         @Override
@@ -58,6 +59,7 @@ public class ApplicationSources {
         this.precedence = builder.precedence;
         this.reads = ImmutableList.copyOf(builder.reads);
         this.writes = ImmutableList.copyOf(builder.writes);
+        this.imagePrecedenceEnabled = builder.imagePrecedenceEnabled;
         this.enabledReadSources = ImmutableSet.copyOf(
                                     Iterables.transform(
                                       Iterables.filter(this.getReads(), ENABLED_READS_FILTER), 
@@ -112,7 +114,8 @@ public class ApplicationSources {
     }
     
     public boolean imagePrecedenceEnabled() {
-        return imagePrecedence() != null;
+        // The default behaviour should be enabled if not specified
+        return imagePrecedenceEnabled == null || imagePrecedenceEnabled;
     }
     
     public Ordering<Publisher> imagePrecedenceOrdering() {
@@ -232,6 +235,7 @@ public class ApplicationSources {
     public static class Builder {
 
         public boolean precedence = false;
+        private boolean imagePrecedenceEnabled = true;
         private List<SourceReadEntry> reads = Lists.newLinkedList();
         private List<Publisher> writes = Lists.newLinkedList();
 
@@ -247,6 +251,11 @@ public class ApplicationSources {
 
         public Builder withWritableSources(List<Publisher> writes) {
             this.writes = writes;
+            return this;
+        }
+        
+        public Builder withImagePrecedenceEnabled(boolean imagePrecedenceEnabled) {
+            this.imagePrecedenceEnabled = imagePrecedenceEnabled;
             return this;
         }
 
