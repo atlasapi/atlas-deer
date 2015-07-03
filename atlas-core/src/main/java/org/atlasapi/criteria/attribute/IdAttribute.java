@@ -27,11 +27,19 @@ public class IdAttribute extends Attribute<Id> {
 	public IdAttribute(String name, Class<? extends Identified> target) {
 		super(name, target);
 	}
-	
+
+	public IdAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
+		super(name, javaAttributeName, target);
+	}
+
 	public IdAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
 		super(name, target, isCollection);
 	}
-	
+
+	public IdAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
+		super(name, javaAttributeName, target, isCollectionOfValues);
+	}
+
 	@Override
 	public String toString() {
 		return "id attribute: " + name;

@@ -25,9 +25,17 @@ public class IntegerValuedAttribute extends Attribute<Integer> {
 	IntegerValuedAttribute(String name, Class<? extends Identified> target) {
 		super(name, target);
 	}
-	
+
+	public IntegerValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
+		super(name, javaAttributeName, target);
+	}
+
 	public IntegerValuedAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
 		super(name, target, isCollection);
+	}
+
+	public IntegerValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
+		super(name, javaAttributeName, target, isCollectionOfValues);
 	}
 
 	@Override

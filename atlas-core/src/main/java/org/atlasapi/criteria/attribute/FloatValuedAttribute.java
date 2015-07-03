@@ -25,9 +25,17 @@ public class FloatValuedAttribute extends Attribute<Float> {
 	FloatValuedAttribute(String name, Class<? extends Identified> target) {
 		super(name, target);
 	}
-	
+
+	public FloatValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
+		super(name, javaAttributeName, target);
+	}
+
 	public FloatValuedAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
 		super(name, target, isCollection);
+	}
+
+	public FloatValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
+		super(name, javaAttributeName, target, isCollectionOfValues);
 	}
 
 	@Override

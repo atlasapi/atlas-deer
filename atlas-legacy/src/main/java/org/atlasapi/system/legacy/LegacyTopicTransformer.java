@@ -14,6 +14,8 @@ public class LegacyTopicTransformer extends DescribedLegacyResourceTransformer<T
         topic.setTitle(input.getTitle());
         topic.setDescription(input.getDescription());
         topic.setPublisher(input.getPublisher());
+        topic.setNamespace(input.getNamespace());
+        topic.setValue(input.getValue());
         return topic;
     }
 

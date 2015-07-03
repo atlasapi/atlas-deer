@@ -25,11 +25,19 @@ public class StringValuedAttribute extends Attribute<String> {
 	public StringValuedAttribute(String name, Class<? extends Identified> target) {
 		super(name, target);
 	}
-	
+
+	public StringValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
+		super(name, javaAttributeName, target);
+	}
+
 	public StringValuedAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
 		super(name, target, isCollection);
 	}
-	
+
+	public StringValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
+		super(name, javaAttributeName, target, isCollectionOfValues);
+	}
+
 	@Override
 	public String toString() {
 		return "String valued attribute: " + name;
