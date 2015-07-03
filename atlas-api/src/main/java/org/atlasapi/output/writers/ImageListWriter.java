@@ -37,7 +37,7 @@ public class ImageListWriter implements EntityListWriter<Image> {
         writer.writeField("height", entity.getHeight());
 
         writer.writeField("hasTitleArt", entity.hasTitleArt());
-        sourceWriter.write(entity.getSource(), writer, ctxt);
+        writer.writeObject(sourceWriter, entity.getSource(), ctxt);
 
     }
 
