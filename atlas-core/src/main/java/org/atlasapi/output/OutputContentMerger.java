@@ -285,8 +285,8 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Described> void applyImagePrefs(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
+        Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
         if (sources.imagePrecedenceEnabled()) {
-            Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
             List<T> topImageMatches = sources.getSourcedImagePrecedenceOrdering().leastOf(Iterables.filter(all, HAS_AVAILABLE_IMAGE_SET), 1);
             if (!topImageMatches.isEmpty()) {
                 T top = topImageMatches.get(0);
@@ -296,6 +296,13 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             } else {
                 chosen.setImage(null);
             }
+        } else {
+            chosen.setImages(projectFieldFromEquivalents(chosen, notChosen, new Function<T, Iterable<Image>>() {
+                @Override
+                public Set<Image> apply(T input) {
+                    return input.getImages();
+                }
+            }));;
         }
     }
 
