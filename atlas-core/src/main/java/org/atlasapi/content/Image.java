@@ -2,18 +2,20 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.ImageAspectRatio;
 import org.atlasapi.media.entity.ImageColor;
 import org.atlasapi.media.entity.ImageTheme;
 import org.atlasapi.media.entity.ImageType;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Predicate;
 import com.metabroadcast.common.media.MimeType;
 
-public class Image {
-    
+public class Image implements Sourced {
+
     public enum AspectRatio {
         SIXTEEN_BY_NINE("16x9"),
         FOUR_BY_THREE("4x3");
@@ -125,6 +127,8 @@ public class Image {
         private MimeType mimeType;
         private DateTime availabilityStart;
         private DateTime availabilityEnd;
+        private Boolean hasTitleArt;
+        private Publisher source;
 
         public Builder(String uri) {
             this.uri = uri;
@@ -208,6 +212,16 @@ public class Image {
             return this;
         }
 
+        public Builder withHasTitleArt(Boolean hasTitleArt) {
+            this.hasTitleArt = hasTitleArt;
+            return this;
+        }
+
+        public Builder withSource(Publisher source) {
+            this.source = source;
+            return this;
+        }
+
         public Image build() {
             Image image = new Image(uri);
             image.setHeight(height);
@@ -219,6 +233,8 @@ public class Image {
             image.setMimeType(mimeType);
             image.setAvailabilityStart(availabilityStart);
             image.setAvailabilityEnd(availabilityEnd);
+            image.setHasTitleArt(hasTitleArt);
+            image.setSource(source);
             return image;
         }
     }
@@ -233,6 +249,8 @@ public class Image {
     private MimeType mimeType;
     private DateTime availabilityStart;
     private DateTime availabilityEnd;
+    private Boolean hasTitleArt;
+    private Publisher source;
     
     public Image(String uri) {
         this.uri = checkNotNull(uri);
@@ -327,7 +345,24 @@ public class Image {
     public void setAvailabilityEnd(DateTime availabilityEnd) {
         this.availabilityEnd = availabilityEnd;
     }
-    
+
+    public Boolean hasTitleArt() {
+        return hasTitleArt;
+    }
+
+    public void setHasTitleArt(Boolean hasTitleArt) {
+        this.hasTitleArt = hasTitleArt;
+    }
+
+    @Override
+    public Publisher getSource() {
+        return source;
+    }
+
+    public void setSource(Publisher source) {
+        this.source = source;
+    }
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {

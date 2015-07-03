@@ -14,6 +14,7 @@ import org.atlasapi.content.Brand;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
@@ -23,6 +24,7 @@ import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
+import org.atlasapi.util.ImmutableCollectors;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -98,6 +100,28 @@ public class OutputContentMergerTest {
         sources = sourcesWithPrecedence(Publisher.TED,Publisher.BBC);
         mergePermutations(contents, sources, three, two.getId());
 
+    }
+
+    @Test
+    public void testSourceSetOnImagesFromParent() throws Exception {
+        Item one = item(1l, "o", Publisher.METABROADCAST);
+        Item two = item(2l, "k", Publisher.BBC);
+        Item three = item(3l, "D", Publisher.PA);
+        setEquivalent(one, two, three);
+        setEquivalent(two, one, three);
+        setEquivalent(three, two, one);
+
+        one.setImages(ImmutableList.of(Image.builder("test1").build(), Image.builder("test2").build()));
+        two.setImages(ImmutableList.of(Image.builder("test3").build(), Image.builder("test4").build()));
+
+        ApplicationSources sources = sourcesWithPrecedence(Publisher.METABROADCAST, Publisher.BBC, Publisher.PA);
+        Item merged = merger.merge(one, ImmutableList.of(two, three), sources);
+
+        ImmutableSet<Image> images = merged.getImages().stream()
+                .filter(img -> img.getSource() != null)
+                .collect(ImmutableCollectors.toSet());
+
+        assertThat(images.size(), is(2));
     }
 
     @Test
