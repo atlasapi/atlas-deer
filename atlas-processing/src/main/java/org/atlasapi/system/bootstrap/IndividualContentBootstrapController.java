@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
@@ -24,9 +25,11 @@ import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.listing.ContentLister;
 import org.atlasapi.persistence.content.listing.ContentListingCriteria;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -35,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -52,9 +56,15 @@ public class IndividualContentBootstrapController {
     private final ResourceLister<Content> contentLister;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final ContentIndex contentIndex;
+    private final AtlasPersistenceModule persistence;
+    private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
 
     public IndividualContentBootstrapController(ContentResolver read, 
-            ResourceLister<Content> contentLister, ContentWriter write, ContentIndex contentIndex) {
+            ResourceLister<Content> contentLister, ContentWriter write, 
+            ContentIndex contentIndex, AtlasPersistenceModule persistence,
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator) {
+        this.persistence = checkNotNull(persistence);
+        this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.read = checkNotNull(read);
         this.write = checkNotNull(write);
         this.contentLister = checkNotNull(contentLister);
@@ -142,6 +152,9 @@ public class IndividualContentBootstrapController {
                     content.setReadHash(null);
                     WriteResult<Content, Content> writeResult = write.writeContent(content);
                     contentIndex.index(content);
+                    Optional<EquivalenceGraphUpdate> graphUpdate =
+                            equivalenceMigrator.migrateEquivalence(content);
+                    persistence.getEquivalentContentStore().updateContent(content.toRef());
                     return writeResult;
                 } catch (Exception e) {
                     log.error(String.format("Bootstrapping: %s %s", content.getId(), content), e);

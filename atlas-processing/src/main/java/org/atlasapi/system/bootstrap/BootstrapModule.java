@@ -20,6 +20,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.Topic;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,7 +78,15 @@ public class BootstrapModule {
     IndividualContentBootstrapController contentBootstrapController() {
         return new IndividualContentBootstrapController(legacy.legacyContentResolver(), 
                 legacy.legacyContentLister(),
-                persistence.contentStore(), search.contentIndex());
+                persistence.contentStore(), search.contentIndex(), persistence, explicitEquivalenceMigrator());
+    }
+    
+    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
+                legacy.legacyContentResolver(),
+                legacy.legacyEquivalenceStore(),
+                persistence.getContentEquivalenceGraphStore()
+        );
     }
 
     @Bean
