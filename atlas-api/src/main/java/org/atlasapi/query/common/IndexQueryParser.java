@@ -3,9 +3,10 @@ package org.atlasapi.query.common;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.content.IndexQueryParams;
 import org.atlasapi.content.QueryOrdering;
-import org.atlasapi.content.FuzzyQueryParams;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 
 import java.util.Map;

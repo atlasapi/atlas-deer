@@ -12,7 +12,7 @@ import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.AbstractRequestParameterValidator;
 import org.atlasapi.query.common.QueryAttributeParser;
-import org.atlasapi.query.common.QueryParseException;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.QueryRequestParameterValidator;
 import org.atlasapi.query.common.Resource;
 

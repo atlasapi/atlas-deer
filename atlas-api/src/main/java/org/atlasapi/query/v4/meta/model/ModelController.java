@@ -20,7 +20,7 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.UnsupportedFormatException;
 import org.atlasapi.query.common.ContextualQueryContextParser;
 import org.atlasapi.query.common.QueryExecutionException;
-import org.atlasapi.query.common.QueryParseException;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.QueryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

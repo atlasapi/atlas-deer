@@ -19,7 +19,7 @@ import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
 import org.atlasapi.query.common.InvalidAnnotationException;
 import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.common.QueryParseException;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.SetBasedRequestParameterValidator;
 import org.atlasapi.source.Sources;
 import org.elasticsearch.common.collect.ImmutableList;

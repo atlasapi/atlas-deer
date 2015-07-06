@@ -1,12 +1,12 @@
 package org.atlasapi.content;
 
-import java.util.Optional;
-
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
+
+import java.util.Optional;
 
 public interface ContentIndex {
 

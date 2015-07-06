@@ -1,4 +1,4 @@
-package org.atlasapi.query.common;
+package org.atlasapi.content;
 
 
 public class QueryParseException extends Exception {

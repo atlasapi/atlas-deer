@@ -1,10 +1,10 @@
 package org.atlasapi.content;
 
+import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.entity.Id;
 
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexQueryParams {

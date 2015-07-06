@@ -1,5 +1,7 @@
 package org.atlasapi.query.common;
 
+import org.atlasapi.content.QueryParseException;
+
 import java.util.List;
 
 public class InvalidAnnotationException extends QueryParseException {

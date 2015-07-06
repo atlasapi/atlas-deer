@@ -1,5 +1,7 @@
 package org.atlasapi.query.common;
 
+import org.atlasapi.content.QueryParseException;
+
 public class InvalidIdentifierException extends QueryParseException {
 
     public InvalidIdentifierException(String message, Throwable cause) {

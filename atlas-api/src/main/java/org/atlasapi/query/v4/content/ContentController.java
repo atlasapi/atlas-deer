@@ -1,13 +1,11 @@
 package org.atlasapi.query.v4.content;
 
 import java.io.IOException;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Content;
-import org.atlasapi.content.QueryOrdering;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
@@ -23,9 +21,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import com.google.api.client.repackaged.com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 
 /**
  * An endpoint for serving pieces of Content. Content can be fetched either by

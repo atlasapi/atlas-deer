@@ -1,6 +1,8 @@
 package org.atlasapi.query.common;
 
 
+import org.atlasapi.content.QueryParseException;
+
 public class InvalidParameterException extends QueryParseException {
 
     public InvalidParameterException() {

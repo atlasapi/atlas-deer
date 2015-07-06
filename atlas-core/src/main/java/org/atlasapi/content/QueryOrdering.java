@@ -12,8 +12,11 @@ public class QueryOrdering {
         this.ascending = ascending;
     }
 
-    public static QueryOrdering fromOrderBy(String orderBy) {
+    public static QueryOrdering fromOrderBy(String orderBy) throws QueryParseException {
         int lastDot = orderBy.lastIndexOf(".");
+        if (lastDot == -1) {
+            throw new QueryParseException("Missing .asc or .desc operator after " + orderBy);
+        }
         String path = orderBy.substring(0, lastDot);
         String order = orderBy.substring(lastDot + 1, orderBy.length());
         if (order.equalsIgnoreCase("asc")) {

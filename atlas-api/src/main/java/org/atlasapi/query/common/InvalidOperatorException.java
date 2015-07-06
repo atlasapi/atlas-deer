@@ -1,5 +1,7 @@
 package org.atlasapi.query.common;
 
+import org.atlasapi.content.QueryParseException;
+
 public class InvalidOperatorException extends QueryParseException {
 
     public InvalidOperatorException() {

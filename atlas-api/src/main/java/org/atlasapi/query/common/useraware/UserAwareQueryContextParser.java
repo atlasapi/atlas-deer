@@ -13,7 +13,7 @@ import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 import org.atlasapi.query.common.ParameterNameProvider;
-import org.atlasapi.query.common.QueryParseException;
+import org.atlasapi.content.QueryParseException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
