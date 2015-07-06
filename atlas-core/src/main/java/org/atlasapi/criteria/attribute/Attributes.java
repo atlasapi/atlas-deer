@@ -56,32 +56,11 @@ public class Attributes {
     public static final Attribute<String> DESCRIPTION_TAG = stringListAttribute("tag", Content.class);
     public static final Attribute<MediaType> DESCRIPTION_TYPE = new EnumValuedAttribute<MediaType>("mediaType", MediaType.class, Item.class);
     public static final Attribute<String> TAGS = stringListAttribute("tags", "topics", Content.class);
-    public static final Attribute<String> TAGS = stringListAttribute("tags.topic.id", "topics", Content.class);
     public static final Attribute<String> CHANNEL_GROUP_TYPE = stringListAttribute("type", ChannelGroup.class);
     public static final Attribute<String> CHANNEL_GROUP_CHANNEL_GENRES = stringListAttribute("channel_genres", ChannelGroup.class);
 
-    //public static final Attribute<Boolean> ITEM_IS_LONG_FORM = new BooleanValuedAttribute("isLongForm", Item.class).allowShortMatches();
-
-    //public static final Attribute<Enum<MimeType>> ENCODING_DATA_CONTAINER_FORMAT = new EnumValuedAttribute<MimeType>("dataContainerFormat", MimeType.class, Encoding.class).allowShortMatches();
-
-    // enums
-    //public static final Attribute<Enum<TransportType>> LOCATION_TRANSPORT_TYPE = new EnumValuedAttribute<TransportType>("transportType", TransportType.class, Location.class).allowShortMatches();
-
-    // Simple integer-valued attributes
-    //public static final Attribute<Integer> EPISODE_POSITION = integerAttribute("position", "episodeNumber",  Episode.class).allowShortMatches();
-
-    //public static final Attribute<Integer> EPISODE_SEASON_POSITION = integerAttribute("seasonPosition", "seriesNumber",  Episode.class).allowShortMatches();
-
-    //public static final Attribute<Integer> VERSION_DURATION = integerAttribute("duration", Version.class).allowShortMatches();
-    //public static final Attribute<Enum<Publisher>> VERSION_PROVIDER = new EnumValuedAttribute<Publisher>("provider", Publisher.class, Version.class);
-
     // Time based attributes
     public static final Attribute<DateTime> BRAND_THIS_OR_CHILD_LAST_UPDATED = dateTimeAttribute("thisOrChildLastUpdated", Container.class).allowShortMatches();
-    //public static final Attribute<String> BROADCAST_ON = stringAttribute("broadcastOn", Broadcast.class).allowShortMatches().withAlias("channel");
-
-    //public static final Attribute<Boolean> LOCATION_AVAILABLE = new BooleanValuedAttribute("available", Location.class).allowShortMatches();
-
-    //public static final Attribute<String> POLICY_AVAILABLE_COUNTRY = new StringValuedAttribute("availableCountries", Policy.class, true).allowShortMatches();
 
     public static final Attribute<String> TOPIC_NAMESPACE = stringAttribute("namespace", Topic.class);
     public static final Attribute<String> TOPIC_VALUE = stringAttribute("value", Topic.class);
@@ -114,17 +93,7 @@ public class Attributes {
                     DESCRIPTION_TYPE,
                     BRAND_THIS_OR_CHILD_LAST_UPDATED,
                     TOPIC_NAMESPACE,
-                    TOPIC_VALUE/*,
-                                    VERSION_DURATION,
-								    VERSION_PROVIDER,
-								    BROADCAST_ON,
-								    LOCATION_TRANSPORT_TYPE,
-								    POLICY_AVAILABLE_COUNTRY,
-								    EPISODE_POSITION,
-								    EPISODE_SEASON_POSITION,
-								    LOCATION_AVAILABLE,
-								    ENCODING_DATA_CONTAINER_FORMAT,
-								    ITEM_IS_LONG_FORM*/);
+                    TOPIC_VALUE);
 
     public static final Map<String, Attribute<?>> lookup = lookupTable();
 
