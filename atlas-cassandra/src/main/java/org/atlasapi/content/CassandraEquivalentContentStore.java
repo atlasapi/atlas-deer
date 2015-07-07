@@ -9,15 +9,19 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -53,7 +57,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
+
+import javax.annotation.Nullable;
 
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
@@ -201,12 +206,28 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private Content deserialize(Row row) {
+        long setId = row.getLong(SET_ID_KEY);
         try {
+            //This is a workaround for a 'data' column being null for some old pieces of content.
+            if (row.getBytes(DATA_KEY) == null) {
+                long contentId = row.getLong(CONTENT_ID_KEY);
+                log.warn(
+                        "'{}' column empty for row  set_id = {}, content_id = {}, in '{}' column family",
+                        DATA_KEY,
+                        setId,
+                        contentId,
+                        EQUIVALENT_CONTENT_TABLE
+                );
+                Content content = resolvedContentFromNonEquivalentContentStore(Id.valueOf(contentId));
+                updateDataColumn(setId, content);
+                return content;
+
+            }
             ByteString bytes = ByteString.copyFrom(row.getBytes(DATA_KEY));
             ContentProtos.Content buffer = ContentProtos.Content.parseFrom(bytes);
             return contentSerializer.deserialize(buffer);
-        } catch (InvalidProtocolBufferException e) {
-            throw new RuntimeException(row.getLong(SET_ID_KEY)+":"+row.getLong(CONTENT_ID_KEY), e);
+        } catch (IOException e) {
+            throw new RuntimeException(setId +":"+row.getLong(CONTENT_ID_KEY), e);
         }
     }
 
@@ -321,6 +342,32 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     @Override
     protected void updateInSet(EquivalenceGraph graph, Content content) {
         session.execute(dataRowUpdateFor(graph, content).setConsistencyLevel(writeConsistency));
+    }
+
+
+    private Content resolvedContentFromNonEquivalentContentStore(Id contentId) throws IOException {
+        return Futures.get(
+                Futures.transform(
+                        getContentResolver().resolveIds(ImmutableList.of(contentId)),
+                        new Function<Resolved<Content>, Content>() {
+                            @Nullable
+                            @Override
+                            public Content apply(Resolved<Content> input) {
+                                return Iterables.getOnlyElement(input.getResources());
+                            }
+                        }
+                ),
+                1, TimeUnit.MINUTES,
+                IOException.class
+        );
+    }
+
+    private void updateDataColumn(Long setId, Content content) {
+        Statement statement = update((EQUIVALENT_CONTENT_TABLE))
+                .where(eq(SET_ID_KEY, setId))
+                .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
+                .with(set(DATA_KEY, serialize(content)));
+        session.executeAsync(statement);
     }
 
 }
