@@ -73,11 +73,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.EsSchema.CONTENT_INDEX;
 
 public class EsContentIndex extends AbstractIdleService implements ContentIndex {
 
-    public static final String CONTENT = "content";
     private final Logger log = LoggerFactory.getLogger(EsContentIndex.class);
 
     private static final int DEFAULT_LIMIT = 50;
@@ -295,7 +293,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private void indexContainer(Container container) {
         EsContent indexed = toEsContainer(container);
-        IndexRequest request = Requests.indexRequest(CONTENT_INDEX)
+        IndexRequest request = Requests.indexRequest(index)
             .type(EsContent.TOP_LEVEL_CONTAINER)
             .id(getDocId(container))
             .source(indexed.toMap());
@@ -356,7 +354,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 if (parent.getTitle() != null) {
                     indexedChild.put(EsContent.PARENT_TITLE, parent.getTitle());
                     indexedChild.put(EsContent.PARENT_FLATTENED_TITLE, Strings.flatten(parent.getTitle()));
-                    bulk.add(Requests.indexRequest(CONTENT_INDEX).
+                    bulk.add(Requests.indexRequest(index).
                             type(EsContent.CHILD_ITEM).
                             parent(getDocId(parent)).
                             id(getDocId(child)).
@@ -385,7 +383,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     private Map<String, Object> trySearchParent(ContainerRef parent) {
-        GetRequest request = Requests.getRequest(CONTENT_INDEX).id(getDocId(parent));
+        GetRequest request = Requests.getRequest(index).id(getDocId(parent));
         GetResponse response = timeoutGet(esClient.client().get(request));
         if (response.isExists()) {
             return response.getSource();
@@ -396,7 +394,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private Map<String, Object> trySearchChild(Container parent, ItemRef child) {
         try {
-            GetRequest request = Requests.getRequest(CONTENT_INDEX)
+            GetRequest request = Requests.getRequest(index)
                     .parent(getDocId(parent))
                     .id(getDocId(child));
             GetResponse response = timeoutGet(esClient.client().get(request));
@@ -467,7 +465,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                     .exists();
 
             if (exists) {
-                esClient.client().delete(new DeleteRequest(CONTENT, mappingType, id.toString())).get();
+                esClient.client().delete(new DeleteRequest(index, mappingType, id.toString())).get();
             }
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to delete content {} due to {}", id, e.toString());
@@ -588,13 +586,13 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             ContainerRef container = item.getContainerRef();
             if (container != null) {
                 fillParentData(esContent, container);
-                mainIndexRequest = Requests.indexRequest(CONTENT_INDEX)
+                mainIndexRequest = Requests.indexRequest(index)
                         .type(EsContent.CHILD_ITEM)
                         .id(getDocId(item))
                         .source(esContent.toMap())
                         .parent(getDocId(container));
             } else {
-                mainIndexRequest = Requests.indexRequest(CONTENT_INDEX)
+                mainIndexRequest = Requests.indexRequest(index)
                         .type(EsContent.TOP_LEVEL_ITEM)
                         .id(getDocId(item))
                         .source(esContent.hasChildren(false).toMap());
