@@ -15,6 +15,4 @@ public interface ContentIndex {
     
     void index(Content content) throws IndexException;
 
-    void index(ContentGroup contentGroup) throws IndexException;
-    
 }

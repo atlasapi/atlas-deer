@@ -29,13 +29,6 @@ public class InstrumentedEsContentIndex extends EsContentIndex {
     }
 
     @Override
-    public void index(ContentGroup cg) throws IndexException {
-        Timer.Context time = contentGroupIndexTimer.time();
-        super.index(cg);
-        time.stop();
-    }
-
-    @Override
     public void index(Content content) throws IndexException {
         Timer.Context time = contentIndexTimer.time();
         super.index(content);

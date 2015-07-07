@@ -1,8 +1,6 @@
 package org.atlasapi.system.debug;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.ElasticSearchContentIndexModule;
-import org.atlasapi.system.bootstrap.ContentGroupBootstrapController;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,13 +36,4 @@ public class DebugModule {
                 persistenceModule.getContentEquivalenceGraphStore()
         );
     }
-
-    @Bean
-    public ContentGroupBootstrapController contentGroupBootstrapController() {
-        return new ContentGroupBootstrapController(
-                persistenceModule.contentIndex(),
-                legacyPersistenceModule.legacyContentGroupResolver()
-        );
-    }
-
 }

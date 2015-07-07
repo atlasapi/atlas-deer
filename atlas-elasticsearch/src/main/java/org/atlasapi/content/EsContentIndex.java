@@ -92,7 +92,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
     private final EsSortQueryBuilder sortBuilder = new EsSortQueryBuilder();
-    private final ContentGroupIndexUpdater contentGroupIndexUpdater = new ContentGroupIndexUpdater();
 
     public EsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver, ChannelGroupResolver channelGroupResolver) {
         this.esClient = checkNotNull(esClient);
@@ -450,12 +449,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         }
     }
 
-    @Override
-    public void index(ContentGroup cg) throws IndexException {
-        log.debug("Indexing {}", cg);
-        contentGroupIndexUpdater.index(cg);
-    }
-
     private void unindexContent(Content content) {
         Long id = content.getId().longValue();
         log.debug("Content {} is not actively published, removing from index", id);
@@ -615,158 +608,4 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         }
     }
 
-    public class ContentGroupIndexUpdater {
-
-        public void index(ContentGroup group) throws IndexException {
-            try {
-                ImmutableSet<Id> contentToBeInGroup = groupToChildIds(group);
-                ImmutableSet<SearchHit> contentCurrentlyInGroup = findContentByContentGroup(group.getId());
-                ImmutableSet<SearchHit> contentToRemoveGroupFrom =
-                        findContentNoLongerInGroup(contentToBeInGroup, contentCurrentlyInGroup);
-
-                for (SearchHit hit : contentToRemoveGroupFrom) {
-                    removeGroupFromContentIndexEntry(hit, group.getId());
-                }
-
-                ImmutableSet<SearchHitField> contentCurrentlyInGroupIds =
-                        ImmutableSet.copyOf(Iterables.transform(contentCurrentlyInGroup, hit -> hit.field(EsContent.ID)));
-
-
-                ImmutableSet<Id> contentToAddGroupTo =
-                        Sets.difference(contentToBeInGroup, contentCurrentlyInGroupIds).immutableCopy();
-                addGroupToContent(contentToAddGroupTo, group.getId());
-            } catch (Exception e) {
-                throw new IndexException(e);
-            }
-        }
-
-        private void addGroupToContent(Iterable<Id> contentIds, Id groupId) throws IOException {
-            Resolved<Content> resolved = Futures.get(
-                    resolver.resolveIds(contentIds),
-                    IOException.class
-            );
-            for (Content content : resolved.getResources().toList()) {
-                log.info("Adding {} to content group {}", content.getId(), groupId);
-                String mapping = typeMappingFor(content);
-                appendContentGroupToIndexEntryFor(content.getId(), groupId, mapping);
-            }
-        }
-
-        private String typeMappingFor(Content content) {
-            if (content instanceof Brand) {
-                return EsContent.TOP_LEVEL_CONTAINER;
-            }
-            if (content instanceof Series) {
-                Series series = (Series) content;
-                if (series.getBrandRef() == null) {
-                    return EsContent.TOP_LEVEL_CONTAINER;
-                } else {
-                    return EsContent.CHILD_ITEM;
-                }
-            }
-            if (content instanceof Item) {
-                Item item = (Item) content;
-                if (item.getContainerRef() == null) {
-                    return EsContent.TOP_LEVEL_ITEM;
-                } else {
-                    return EsContent.CHILD_ITEM;
-                }
-            }
-            return EsContent.TOP_LEVEL_ITEM;
-        }
-
-        private ImmutableSet<SearchHit> findContentNoLongerInGroup(
-                Set<Id> contentToBeInGroup, Set<SearchHit> contentCurrentlyInGroup) {
-
-            return contentCurrentlyInGroup.stream()
-                    .filter(hit -> !contentToBeInGroup.contains(Id.valueOf(hit.field(EsContent.CONTENT_GROUPS).<String>getValue())))
-                    .collect(ImmutableCollectors.toSet());
-
-        }
-
-        /* Removes the content group id provided from the index entry represented by the SearchHit */
-        private void removeGroupFromContentIndexEntry(SearchHit contentHit, Id groupId) throws ExecutionException, InterruptedException {
-            ImmutableList<String> newContentGroupsValue =
-                    removeGroupFromGroupList(contentHit, groupId);
-
-            Id contentId = Id.valueOf(contentHit.field(EsContent.ID).<Integer>getValue());
-            String typeMapping = contentHit.getType();
-
-            UpdateRequestBuilder reqBuilder =
-                    new UpdateRequestBuilder(esClient.client(), CONTENT, typeMapping, contentId.toString());
-
-            if (EsContent.CHILD_ITEM.equalsIgnoreCase(typeMapping)) {
-                reqBuilder.setParent(contentHit.field(EsContent.PARENT).<String>getValue());
-            }
-
-            UpdateResponse result = reqBuilder.setDoc(EsContent.CONTENT_GROUPS, newContentGroupsValue)
-                    .setFields(EsContent.CONTENT_GROUPS)
-                    .execute()
-                    .get();
-        }
-
-        /* Add the content group id provided to the index entry for the provided content id */
-        private void appendContentGroupToIndexEntryFor(Id contentId, Id groupId, String typeMapping) throws IOException {
-            GetResponse resp = new GetRequestBuilder(esClient.client(), CONTENT)
-                    .setId(contentId.toString())
-                    .setFields(EsContent.CONTENT_GROUPS, EsContent.PARENT)
-                    .get();
-
-            if (!resp.isExists()) {
-                return;
-            }
-
-            ImmutableList.Builder<Object> idList = ImmutableList.builder();
-            idList.add(groupId.toBigInteger());
-
-            Map<String, GetField> fields = resp.getFields();
-
-            if (fields != null && fields.containsKey(EsContent.CONTENT_GROUPS)) {
-                idList.addAll(fields.get(EsContent.CONTENT_GROUPS).getValues());
-            }
-
-            UpdateRequestBuilder reqBuilder =
-                    new UpdateRequestBuilder(esClient.client(), CONTENT, typeMapping, contentId.toString());
-
-            if (EsContent.CHILD_ITEM.equalsIgnoreCase(typeMapping)) {
-                reqBuilder.setParent(String.valueOf(resp.getField(EsContent.PARENT).getValue()));
-            }
-
-            reqBuilder.setDoc(EsContent.CONTENT_GROUPS, idList.build()).get();
-        }
-
-        /* Returns a list of content group ids taken from the SearchHit and having removed the specified Id */
-        private ImmutableList<String> removeGroupFromGroupList(SearchHit contentHit, Id groupId) {
-            return contentHit.field(EsContent.CONTENT_GROUPS).getValues().stream()
-                    .map(cgId -> Id.valueOf(String.valueOf(cgId)))
-                    .filter(cgId -> !groupId.equals(cgId))
-                    .map(Id::toString)
-                    .collect(ImmutableCollectors.toList());
-        }
-
-        private ImmutableSet<Id> groupToChildIds(ContentGroup group) {
-            return group.getContents()
-                    .stream()
-                    .map(ResourceRef::getId)
-                    .collect(ImmutableCollectors.toSet());
-        }
-
-        private ImmutableSet<SearchHit> findContentByContentGroup(Id id) throws IndexException {
-            SettableFuture<SearchResponse> result = SettableFuture.create();
-            TermFilterBuilder idFilter = FilterBuilders.termFilter(
-                    EsContent.CONTENT_GROUPS,
-                    id.toBigInteger().toString()
-            );
-
-            SearchRequestBuilder reqBuilder = new SearchRequestBuilder(esClient.client())
-                    .addFields(EsContent.ID, EsContent.CONTENT_GROUPS, EsContent.TYPE, EsContent.PARENT)
-                    .setPostFilter(idFilter);
-            reqBuilder.execute(FutureSettingActionListener.setting(result));
-
-            SearchHits hits = Futures.get(result, IndexException.class)
-                    .getHits();
-
-            return ImmutableSet.copyOf(hits.getHits());
-        }
-    }
 }
