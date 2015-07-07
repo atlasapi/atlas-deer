@@ -360,6 +360,11 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             return Iterables.getOnlyElement(deerContent.getResources());
         }
 
+        log.warn(
+                "Content {} not found in Deer content store. Trying Owl",
+                contentId.longValue()
+        );
+
         Resolved<Content> owlContent = Futures.get(
                 legacyContentResolver.resolveIds(ImmutableList.of(contentId)),
                 1, TimeUnit.MINUTES,
