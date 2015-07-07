@@ -24,6 +24,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.MediaType;
+import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
@@ -388,7 +389,7 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.CONTENT_GROUP,
                                 AttributeCoercers.idCoercer(idCodec())),
                         QueryAtomParser.valueOf(Attributes.SPECIALIZATION,
-                                AttributeCoercers.stringCoercer())
+                                AttributeCoercers.enumCoercer(Specialization.FROM_KEY()))
                 )
         );
     }

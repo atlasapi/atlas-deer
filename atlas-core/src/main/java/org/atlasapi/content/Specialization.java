@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
 import com.metabroadcast.common.base.Maybe;
@@ -21,6 +23,16 @@ public enum Specialization {
             }
         }
         return Maybe.nothing();
+    }
+
+    public static Function<String, Optional<Specialization>> FROM_KEY() {
+        return str -> {
+            Maybe<Specialization> maybe = Specialization.fromKey(str);
+            if (maybe.hasValue()) {
+                return Optional.of(maybe.requireValue());
+            }
+            return Optional.absent();
+        };
     }
 
     public static Iterable<Specialization> fromCsv(String csv) {
