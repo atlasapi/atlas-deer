@@ -120,6 +120,15 @@ public class EsQueryBuilder {
             @Override
             public QueryBuilder visit(EnumAttributeQuery<?> query) {
                 final String name = query.getAttributeName();
+                /* Specialization is current indexed as uppercase and so we have this bodge
+                    to ensure matches, remove once reindexing has been completed with lowercase values */
+                if ("specialization".equalsIgnoreCase(name)) {
+                    return query.accept(
+                            new EsEqualsOperatorVisitor<>(
+                                    name, Lists.transform(query.getValue(), v -> v.name())
+                            )
+                    );
+                }
                 final List<String> values = Lists.transform(query.getValue(),
                         Functions.toStringFunction());
                 return query.accept(new EsEqualsOperatorVisitor<String>(name, values));

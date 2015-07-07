@@ -22,9 +22,11 @@ import org.atlasapi.channel.Region;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
+import org.atlasapi.content.Described;
 import org.atlasapi.content.Identified;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.MediaType;
+import org.atlasapi.content.Specialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.Topic;
@@ -84,7 +86,7 @@ public class Attributes {
     public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute("title", "parentFlattenedTitle", Content.class).withAlias("parentFlattenedTitle");
     public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
     public static final Attribute<Id> CONTENT_GROUP = idListAttribute("contentGroups", "contentGroups", Content.class).withAlias("contentGroups");
-    public static final Attribute<String> SPECIALIZATION = stringListAttribute("specialization", Content.class);
+    public static final Attribute<Specialization> SPECIALIZATION = new EnumValuedAttribute<>("specialization", Specialization.class, Described.class);
 
     private static List<Attribute<?>> ALL_ATTRIBUTES =
             ImmutableList.<Attribute<?>>of(DESCRIPTION_TAG,
