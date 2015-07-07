@@ -29,12 +29,12 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     private final EsPopularTopicIndex popularTopicsIndex;
     private final EsContentTitleSearcher contentSearcher;
 
-    public ElasticSearchContentIndexModule(String seeds, String clusterName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
+    public ElasticSearchContentIndexModule(String seeds, String clusterName, String indexName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
         Node client = NodeBuilder.nodeBuilder().client(true).
                 clusterName(clusterName).
                 settings(ImmutableSettings.settingsBuilder().put("discovery.zen.ping.unicast.hosts", seeds)).
                 build().start();
-        this.contentIndex = new InstrumentedEsContentIndex(client, EsSchema.CONTENT_INDEX, requestTimeout, resolver, metrics, channelGroupResolver);
+        this.contentIndex = new InstrumentedEsContentIndex(client, indexName, requestTimeout, resolver, metrics, channelGroupResolver);
         this.popularTopicsIndex = new EsPopularTopicIndex(client);
         this.topicIndex = new EsTopicIndex(client, EsSchema.TOPICS_INDEX, 60, TimeUnit.SECONDS);
         this.contentSearcher = new EsContentTitleSearcher(client);

@@ -91,6 +91,7 @@ public class AtlasPersistenceModule {
  
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final String esCluster = Configurer.get("elasticsearch.cluster").get();
+    private final String esIndex = Configurer.get("elasticsearch.index").get();
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
 
@@ -171,7 +172,7 @@ public class AtlasPersistenceModule {
     public ElasticSearchContentIndexModule esContentIndexModule() {
         ElasticSearchContentIndexModule module =
                 new ElasticSearchContentIndexModule(
-                        esSeeds, esCluster, Long.parseLong(esRequestTimeout), persistenceModule().contentStore(), health.metrics(), channelGroupResolver()
+                        esSeeds, esCluster, esIndex, Long.parseLong(esRequestTimeout), persistenceModule().contentStore(), health.metrics(), channelGroupResolver()
                 );
         module.init();
         return module;
