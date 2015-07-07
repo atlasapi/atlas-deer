@@ -19,11 +19,11 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.elasticsearch.action.get.GetResponse;
@@ -104,8 +104,8 @@ public class EsTopicIndexTest {
         AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
             Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
         ));
-        Iterable<Id> ids = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), Selection.ALL));
-        assertThat(Iterables.getOnlyElement(ids),is(topic.getId()));
+        IndexQueryResult result = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), Selection.ALL));
+        assertThat(Iterables.getOnlyElement(result.getIds()),is(topic.getId()));
     }
 
     @Test
@@ -119,8 +119,8 @@ public class EsTopicIndexTest {
             Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId())),
             Attributes.ALIASES_VALUE.createQuery(Operators.EQUALS, ImmutableList.of("Alias"))
         ));
-        Iterable<Id> ids = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), Selection.ALL));
-        assertThat(Iterables.getOnlyElement(ids),is(topic.getId()));
+        IndexQueryResult result = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), Selection.ALL));
+        assertThat(Iterables.getOnlyElement(result.getIds()),is(topic.getId()));
     }
 
     @Test
@@ -133,8 +133,8 @@ public class EsTopicIndexTest {
         AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
             Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
         ));
-        Iterable<Id> ids = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), Selection.ALL));
-        assertThat(Iterables.isEmpty(ids), is(true));
+        IndexQueryResult result = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), Selection.ALL));
+        assertThat(Iterables.isEmpty(result.getIds()), is(true));
     }
 
     @Test
@@ -149,21 +149,21 @@ public class EsTopicIndexTest {
         AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
             Attributes.ALIASES_VALUE.createQuery(Operators.EQUALS, ImmutableList.of("Alias"))
         ));
-        Iterable<Id> ids = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
+        IndexQueryResult result = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
             Selection.ALL));
-        assertThat(Iterables.size(ids), is(2));
+        assertThat(Iterables.size(result.getIds()), is(2));
 
-        ids = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
+        result = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
             new Selection(0,1)));
-        assertThat(Iterables.getOnlyElement(ids), is(topic1.getId()));
+        assertThat(Iterables.getOnlyElement(result.getIds()), is(topic1.getId()));
 
-        ids = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
+        result = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
             new Selection(1,1)));
-        assertThat(Iterables.getOnlyElement(ids), is(topic2.getId()));
+        assertThat(Iterables.getOnlyElement(result.getIds()), is(topic2.getId()));
 
-        ids = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
+        result = Futures.getUnchecked(index.query(query, ImmutableList.of(Publisher.DBPEDIA), 
             new Selection(1,5)));
-        assertThat(Iterables.getOnlyElement(ids), is(topic2.getId()));
+        assertThat(Iterables.getOnlyElement(result.getIds()), is(topic2.getId()));
     }
 
     private Topic topic(int id, Publisher source, String title, String description, Alias... aliases) {
