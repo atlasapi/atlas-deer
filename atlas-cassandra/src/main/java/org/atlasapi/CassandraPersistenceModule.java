@@ -20,9 +20,7 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import org.atlasapi.content.CassandraContentStore;
-import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentHasher;
-import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -37,6 +35,9 @@ import org.atlasapi.segment.CassandraSegmentStore;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.CassandraTopicStore;
 import org.atlasapi.topic.Topic;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+
 
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
@@ -59,7 +60,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final DatastaxCassandraService dataStaxService;
 
     private CassandraEquivalenceGraphStore contentEquivalenceGraphStore;
-    private CassandraEquivalentContentStore equivalentContentStore;
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
 
     private MessageSenderFactory messageSenderFactory;
@@ -134,11 +134,9 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     protected void startUp() throws Exception {
         dataStaxService.awaitRunning();
         Session session = dataStaxService.getSession(keyspace);
-        com.datastax.driver.core.ConsistencyLevel read = processing ? com.datastax.driver.core.ConsistencyLevel.QUORUM
-                : com.datastax.driver.core.ConsistencyLevel.ONE;
-        com.datastax.driver.core.ConsistencyLevel write = com.datastax.driver.core.ConsistencyLevel.QUORUM;
+        com.datastax.driver.core.ConsistencyLevel read = getReadConsistencyLevel();
+        com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
         this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class), session, read, write);
-        this.equivalentContentStore = new CassandraEquivalentContentStore(contentStore, contentEquivalenceGraphStore, session, read, write);
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(contentEquivalenceGraphStore, contentStore, session, read, write, new SystemClock());
     }
 
@@ -207,13 +205,23 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         };
     }
 
+    public Session getSession() {
+        return dataStaxService.getSession(keyspace);
+    };
+
     public EquivalenceGraphStore contentEquivalenceGraphStore() {
         return this.contentEquivalenceGraphStore;
     }
 
-    public EquivalentContentStore equivalentContentStore() {
-        return this.equivalentContentStore;
+    public com.datastax.driver.core.ConsistencyLevel getReadConsistencyLevel() {
+       return  processing ? com.datastax.driver.core.ConsistencyLevel.QUORUM
+                : com.datastax.driver.core.ConsistencyLevel.ONE;
     }
+
+    public com.datastax.driver.core.ConsistencyLevel getWriteConsistencyLevel() {
+        return  com.datastax.driver.core.ConsistencyLevel.QUORUM;
+    }
+
 
     public EquivalentScheduleStore equivalentScheduleStore() {
         return this.equivalentScheduleStore;

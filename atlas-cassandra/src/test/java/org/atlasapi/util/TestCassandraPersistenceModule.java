@@ -3,10 +3,12 @@ package org.atlasapi.util;
 import java.util.UUID;
 
 import com.codahale.metrics.MetricRegistry;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import org.atlasapi.CassandraPersistenceModule;
 import org.atlasapi.ConfiguredAstyanaxContext;
 import org.atlasapi.PersistenceModule;
+import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentStore;
@@ -15,6 +17,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.segment.SegmentStore;
+import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.topic.TopicStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,9 +161,16 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         return persistenceModule.contentEquivalenceGraphStore();
     }
 
-    @Override
     public EquivalentContentStore equivalentContentStore() {
-        return persistenceModule.equivalentContentStore();
+        return new CassandraEquivalentContentStore(
+                contentStore(),
+                new NoOpLegacyContentResolver(),
+                persistenceModule.contentEquivalenceGraphStore(),
+                cassandraService.getCluster().connect(keyspace),
+                ConsistencyLevel.ONE,
+                ConsistencyLevel.ONE
+
+        );
     }
 
     @Override
@@ -172,4 +182,9 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         return cassandraService.getSession(keyspace);
     }
 
+    private static final class NoOpLegacyContentResolver extends LegacyContentResolver {
+
+    }
 }
+
+

@@ -71,6 +71,11 @@
     <dependency>
       <groupId>org.atlasapi</groupId>
       <version>${atlas.version}</version>
+      <artifactId>atlas-legacy</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.atlasapi</groupId>
+      <version>${atlas.version}</version>
       <artifactId>atlas-testlib</artifactId>
       <scope>test</scope>
     </dependency>

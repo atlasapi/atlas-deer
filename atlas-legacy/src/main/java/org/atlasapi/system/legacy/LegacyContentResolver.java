@@ -46,7 +46,11 @@ public class LegacyContentResolver implements ContentResolver {
         this.contentResolver = contentResolver;
         this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
     }
-    
+
+    protected LegacyContentResolver() {
+
+    }
+
     @Override
     public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
         Iterable<Long> lids = Iterables.transform(ids, Id.toLongValue());

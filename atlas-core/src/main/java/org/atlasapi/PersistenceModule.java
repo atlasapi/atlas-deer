@@ -20,8 +20,6 @@ public interface PersistenceModule {
 
     EquivalenceGraphStore contentEquivalenceGraphStore();
 
-    EquivalentContentStore equivalentContentStore();
-
     EquivalentScheduleStore equivalentScheduleStore();
 
 

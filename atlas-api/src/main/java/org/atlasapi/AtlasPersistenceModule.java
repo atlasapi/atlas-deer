@@ -6,16 +6,20 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.mongodb.MongoClientOptions;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
+import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.EsContentTitleSearcher;
+import org.atlasapi.content.NullContentResolver;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
@@ -23,11 +27,16 @@ import org.atlasapi.media.channel.ChannelGroupStore;
 import org.atlasapi.media.channel.ChannelStore;
 import org.atlasapi.media.channel.MongoChannelGroupStore;
 import org.atlasapi.media.channel.MongoChannelStore;
+import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
+import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
+import org.atlasapi.persistence.content.KnownTypeContentResolver;
+import org.atlasapi.persistence.content.mongo.MongoContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoPlayerStore;
 import org.atlasapi.persistence.content.mongo.MongoServiceStore;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
+import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.persistence.player.CachingPlayerResolver;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.CachingServiceResolver;
@@ -40,6 +49,8 @@ import org.atlasapi.system.legacy.LegacyChannelGroupResolver;
 import org.atlasapi.system.legacy.LegacyChannelGroupTransformer;
 import org.atlasapi.system.legacy.LegacyChannelResolver;
 import org.atlasapi.system.legacy.LegacyChannelTransformer;
+import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
@@ -160,7 +171,15 @@ public class AtlasPersistenceModule {
     
     @Bean
     public EquivalentContentStore getEquivalentContentStore() {
-        return persistenceModule().equivalentContentStore();
+        return  new CassandraEquivalentContentStore(
+                persistenceModule().contentStore(),
+                legacyContentResolver(),
+                persistenceModule().contentEquivalenceGraphStore(),
+                persistenceModule().getSession(),
+                persistenceModule().getReadConsistencyLevel(),
+                persistenceModule().getWriteConsistencyLevel()
+        );
+
     }
 
     @Bean
@@ -288,5 +307,26 @@ public class AtlasPersistenceModule {
     @Bean
     public ServiceResolver serviceResolver() {
         return new CachingServiceResolver(new MongoServiceStore(databasedReadMongo()));
+    }
+
+    public LegacyContentResolver legacyContentResolver() {
+        DatabasedMongo mongoDb = databasedReadMongo();
+        KnownTypeContentResolver contentResolver = new MongoContentResolver(mongoDb, legacyEquivalenceStore());
+        return new LegacyContentResolver(legacyEquivalenceStore(), contentResolver, legacySegmentMigrator(), channelStore());
+    }
+
+    public MongoLookupEntryStore legacyEquivalenceStore() {
+        return new MongoLookupEntryStore(
+                databasedReadMongo().collection("lookup"),
+                new NoLoggingPersistenceAuditLog(),
+                ReadPreference.primaryPreferred());
+    }
+
+    public LegacySegmentMigrator legacySegmentMigrator() {
+        return new LegacySegmentMigrator(legacySegmentResolver(), segmentStore());
+    }
+
+    public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
+        return new MongoSegmentResolver(databasedReadMongo(), new SubstitutionTableNumberCodec());
     }
 }

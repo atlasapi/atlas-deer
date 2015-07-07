@@ -8,6 +8,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -30,6 +31,7 @@ import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +71,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private static final String GRAPH_KEY = "graph";
     private static final String CONTENT_ID_KEY = "content_id";
     private static final String DATA_KEY = "data";
-    
+
+    private final LegacyContentResolver legacyContentResolver;
     private final Session session;
     private final ConsistencyLevel writeConsistency;
     private final ConsistencyLevel readConsistency;
@@ -80,22 +83,24 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private final EquivalenceGraphSerializer graphSerializer = new EquivalenceGraphSerializer();
     private final ContentSerializer contentSerializer;
     
-    public CassandraEquivalentContentStore(ContentResolver contentResolver,
-            EquivalenceGraphStore graphStore, Session session, ConsistencyLevel read,
-            ConsistencyLevel write) {
+    public CassandraEquivalentContentStore(
+            ContentResolver contentResolver,
+            LegacyContentResolver legacyContentResolver,
+            EquivalenceGraphStore graphStore,
+            Session session,
+            ConsistencyLevel read,
+            ConsistencyLevel write
+    ) {
         super(contentResolver, graphStore);
-        this.contentSerializer = new
-
-
-
-
-
-                ContentSerializer(new ContentSerializationVisitor(contentResolver));
+        this.legacyContentResolver = checkNotNull(legacyContentResolver);
+        this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(contentResolver));
         this.session = session;
         this.readConsistency = read;
         this.writeConsistency = write;
         this.index = new SecondaryIndex(session, EQUIVALENT_CONTENT_INDEX, read);
     }
+
+
 
     @Override
     public ListenableFuture<ResolvedEquivalents<Content>> resolveIds(Iterable<Id> ids,
@@ -346,20 +351,21 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
 
     private Content resolvedContentFromNonEquivalentContentStore(Id contentId) throws IOException {
-        return Futures.get(
-                Futures.transform(
-                        getContentResolver().resolveIds(ImmutableList.of(contentId)),
-                        new Function<Resolved<Content>, Content>() {
-                            @Nullable
-                            @Override
-                            public Content apply(Resolved<Content> input) {
-                                return Iterables.getOnlyElement(input.getResources());
-                            }
-                        }
-                ),
+        Resolved<Content> deerContent = Futures.get(
+                getContentResolver().resolveIds(ImmutableList.of(contentId)),
                 1, TimeUnit.MINUTES,
                 IOException.class
         );
+        if (!deerContent.getResources().isEmpty()) {
+            return Iterables.getOnlyElement(deerContent.getResources());
+        }
+
+        Resolved<Content> owlContent = Futures.get(
+                legacyContentResolver.resolveIds(ImmutableList.of(contentId)),
+                1, TimeUnit.MINUTES,
+                IOException.class
+        );
+        return Iterables.getOnlyElement(owlContent.getResources());
     }
 
     private void updateDataColumn(Long setId, Content content) {
