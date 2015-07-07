@@ -30,9 +30,10 @@ import com.metabroadcast.common.collect.OptionalMap;
 public abstract class AbstractEquivalentContentStore implements EquivalentContentStore {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
-    private final ContentResolver contentResolver;
-    private final EquivalenceGraphStore graphStore;
 
+    private final ContentResolver contentResolver;
+
+    private final EquivalenceGraphStore graphStore;
     private static final GroupLock<Id> lock = GroupLock.natural();
 
     public AbstractEquivalentContentStore(ContentResolver contentResolver, EquivalenceGraphStore graphStore) {
@@ -82,7 +83,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             .build();
     }
 
-    protected abstract void updateEquivalences(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent, 
+    protected abstract void updateEquivalences(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent,
             EquivalenceGraphUpdate update);
 
     private OptionalMap<Id, Content> resolveIds(Iterable<Id> ids) throws WriteException {
@@ -99,16 +100,16 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             lock.lock(ref.getId());
             ImmutableList<Id> ids = ImmutableList.of(ref.getId());
             OptionalMap<Id, Content> resolvedContent = resolveIds(ids);
-            
+
             Optional<Content> possibleContent = resolvedContent.get(ref.getId());
             if (!possibleContent.isPresent()) {
                 throw new WriteException("update failed. content not found for id " + ref.getId());
             }
             Content content = possibleContent.get();
-            
+
             ListenableFuture<OptionalMap<Id, EquivalenceGraph>> graphs = graphStore.resolveIds(ids);
             Optional<EquivalenceGraph> possibleGraph = get(graphs).get(ref.getId());
-            
+
             if (possibleGraph.isPresent()) {
                 updateInSet(possibleGraph.get(), content);
             } else {
@@ -123,5 +124,9 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     }
 
     protected abstract void updateInSet(EquivalenceGraph graph, Content content);
+
+    protected ContentResolver getContentResolver() {
+        return contentResolver;
+    }
 
 }
