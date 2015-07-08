@@ -36,7 +36,7 @@ public class ImageSerializerTest {
         builder.withWidth(6);
         
         Image image = builder.build();
-        Image deserialized = serializer.deserialize(serializer.serialize(image).build());
+        Image deserialized = serializer.deserialize(serializer.serialize(image));
         
         assertThat(deserialized.getAspectRatio(), is(equalTo(image.getAspectRatio())));
         assertThat(deserialized.getAvailabilityStart(), is(equalTo(image.getAvailabilityStart())));
