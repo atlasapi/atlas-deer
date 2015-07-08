@@ -23,6 +23,7 @@ import com.metabroadcast.common.intl.Countries;
 
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
+    private static final ImageSerializer imageSerializer = new ImageSerializer();
     private static final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
     private static final EncodingSerializer encodingSerializer = new EncodingSerializer();
     private static final SegmentEventSerializer segmentEventSerializer = new SegmentEventSerializer();
@@ -110,7 +111,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         
         ImmutableSet.Builder<Image> images = ImmutableSet.builder();
         for (ContentProtos.Image image : msg.getImagesList()) {
-            images.add(new Image(image.getUri()));
+            images.add(imageSerializer.deserialize(image));
         }
         described.setImages(images.build());
         described.setGenres(msg.getGenresList());
