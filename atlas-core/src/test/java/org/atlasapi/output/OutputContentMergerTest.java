@@ -1,6 +1,7 @@
 package org.atlasapi.output;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.List;
@@ -123,6 +124,28 @@ public class OutputContentMergerTest {
                 .collect(ImmutableCollectors.toSet());
 
         assertThat(images.size(), is(2));
+    }
+    
+    @Test
+    public void testSourceSetOnImagesWhenImagePrecidenceDisabled() throws Exception {
+        Item one = item(1l, "o", Publisher.METABROADCAST);
+        Item two = item(2l, "k", Publisher.BBC);
+        Item three = item(3l, "D", Publisher.PA);
+        setEquivalent(one, two, three);
+        setEquivalent(two, one, three);
+        setEquivalent(three, two, one);
+
+        one.setImages(ImmutableList.of(Image.builder("test1").build(), Image.builder("test2").build()));
+        two.setImages(ImmutableList.of(Image.builder("test3").build(), Image.builder("test4").build()));
+
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.METABROADCAST, Publisher.BBC, Publisher.PA);
+        Item merged = merger.merge(one, ImmutableList.of(two, three), sources);
+
+        ImmutableSet<Image> images = merged.getImages().stream()
+                .filter(img -> img.getSource() != null)
+                .collect(ImmutableCollectors.toSet());
+
+        assertThat(images.size(), is(4));
     }
 
     @Test
