@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.concurrent.TimeUnit;
 
+import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.NotFoundException;
@@ -18,7 +19,6 @@ import org.atlasapi.topic.TopicResolver;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
@@ -35,12 +35,13 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 
     @Override
     public QueryResult<Topic> execute(Query<Topic> query) throws QueryExecutionException {
-        return resultFor(Futures.get(resolve(getTopicIds(query)),
-            1, TimeUnit.MINUTES, QueryExecutionException.class), query);
+        IndexQueryResult result = Futures.get(getResults(query), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        Resolved<Topic> resolved = Futures.get(resolve(result.getIds()), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        return resultFor(resolved, query, result.getTotalCount());
     }
 
-    private QueryResult<Topic> resultFor(Resolved<Topic> resolved, Query<Topic> query) throws NotFoundException {
-        return query.isListQuery() ? listResult(resolved, query)
+    private QueryResult<Topic> resultFor(Resolved<Topic> resolved, Query<Topic> query, Long totalCount) throws NotFoundException {
+        return query.isListQuery() ? listResult(resolved, query, totalCount)
                                    : singleResult(resolved, query);
     }
 
@@ -52,17 +53,18 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
         return QueryResult.singleResult(topic, query.getContext());
     }
 
-    private QueryResult<Topic> listResult(Resolved<Topic> resolved, Query<Topic> query) {
-        return QueryResult.listResult(resolved.getResources(), query.getContext(), Long.valueOf(resolved.getResources().size()));
+    private QueryResult<Topic> listResult(Resolved<Topic> resolved, Query<Topic> query, Long totalCount) {
+        return QueryResult.listResult(resolved.getResources(), query.getContext(), totalCount);
     }
 
-    private ListenableFuture<FluentIterable<Id>> getTopicIds(Query<Topic> query)
+    private ListenableFuture<IndexQueryResult> getResults(Query<Topic> query)
             throws QueryExecutionException {
         return query.isListQuery() ? queryIndex(query)
-                                   : Futures.immediateFuture(FluentIterable.from(ImmutableList.of(query.getOnlyId())));
+                                   : Futures.immediateFuture(
+                                           new IndexQueryResult(FluentIterable.from(ImmutableList.of(query.getOnlyId())), 1L));
     }
 
-    private ListenableFuture<FluentIterable<Id>> queryIndex(Query<Topic> query)
+    private ListenableFuture<IndexQueryResult> queryIndex(Query<Topic> query)
             throws QueryExecutionException {
         return index.query(
             query.getOperands(), 
@@ -71,15 +73,8 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
         );
     }
 
-    private ListenableFuture<Resolved<Topic>> resolve(ListenableFuture<FluentIterable<Id>> ids) {
-        return Futures.transform(ids, new AsyncFunction<FluentIterable<Id>, Resolved<Topic>>() {
-
-            @Override
-            public ListenableFuture<Resolved<Topic>> apply(FluentIterable<Id> ids)
-                    throws Exception {
-                return resolver.resolveIds(ids);
-            }
-        });
+    private ListenableFuture<Resolved<Topic>> resolve(FluentIterable<Id> ids) {
+        return resolver.resolveIds(ids);
     }
 
 }

@@ -6,6 +6,7 @@ import static org.atlasapi.topic.EsTopic.SOURCE;
 
 import java.util.concurrent.TimeUnit;
 
+import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -99,7 +100,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
     }
     
     @Override
-    public ListenableFuture<FluentIterable<Id>> query(AttributeQuerySet query, 
+    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query, 
         Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
         esClient.client()  
@@ -112,21 +113,21 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
             .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
             .execute(FutureSettingActionListener.setting(response));
         
-        return Futures.transform(response, new Function<SearchResponse, FluentIterable<Id>>() {
+        return Futures.transform(response, new Function<SearchResponse, IndexQueryResult>() {
             @Override
-            public FluentIterable<Id> apply(SearchResponse input) {
+            public IndexQueryResult apply(SearchResponse input) {
                 /*
                  * TODO: if 
                  *  selection.offset + selection.limit < totalHits
                  * then we have more: return for use with response. 
                  */
-                return FluentIterable.from(input.getHits()).transform(new Function<SearchHit, Id>() {
+                return new IndexQueryResult(FluentIterable.from(input.getHits()).transform(new Function<SearchHit, Id>() {
                     @Override
                     public Id apply(SearchHit hit) {
                         Long id = hit.field(ID).<Number>value().longValue();
                         return Id.valueOf(id);
                     }
-                });
+                }), input.getHits().getTotalHits());
             }
         });
     }

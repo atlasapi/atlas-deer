@@ -259,6 +259,11 @@ message Image {
     optional string copyright = 6;
     optional common.DateTime availability_start = 7;
     optional common.DateTime availability_end = 8;
+    optional bool has_title_art = 9;
+    optional string aspect_ratio = 10;
+    optional string color = 11;
+    optional string theme = 12;
+    optional string mime_type = 13;
 }
 
 message KeyPhrase {
