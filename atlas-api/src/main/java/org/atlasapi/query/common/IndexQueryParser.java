@@ -40,14 +40,15 @@ public class IndexQueryParser {
     }
 
     private Optional<List<List<Id>>> topicIdsFrom(Query<?> query) {
-        String[] topicIds = (String[]) query.getContext().getRequest().getParameterMap().get("tags.topic.id");
-        if (topicIds == null || topicIds.length == 0) {
+        String topicIds = query.getContext().getRequest().getParameter("tags.topic.id");
+        if (Strings.isNullOrEmpty(topicIds)) {
             return Optional.empty();
         }
         ImmutableList.Builder<List<Id>> builder = ImmutableList.builder();
-        Splitter splitter = Splitter.on(",");
-        for (String idCsv : topicIds) {
-            builder.add(Lists.transform(splitter.splitToList(idCsv), id -> Id.valueOf(codec.decode(id))));
+        Splitter commaSplitter = Splitter.on(",");
+        Splitter carretSplitter = Splitter.on("^");
+        for (String idCsv : commaSplitter.splitToList(topicIds)) {
+            builder.add(Lists.transform(carretSplitter.splitToList(idCsv), id -> Id.valueOf(codec.decode(id))));
         }
         return Optional.of(builder.build());
     }
