@@ -19,6 +19,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.topic.EsTopic;
 import org.atlasapi.util.EsPersistenceException;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.EsSortQueryBuilder;
@@ -42,6 +43,12 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
+import org.elasticsearch.index.query.BoolFilterBuilder;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.NestedFilterBuilder;
+import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
@@ -506,17 +513,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 );
             }
             if (queryParams.get().getTopicFilterIds().isPresent()) {
-                List<List<Id>> topicIds = queryParams.get().getTopicFilterIds().get();
-                for (List<Id> idSet : topicIds) {
-                    queryBuilder = QueryBuilders.boolQuery()
-                            .must(queryBuilder)
-                            .must(
-                                    QueryBuilders.termsQuery(
-                                            EsContent.TOPICS + "." + EsContent.TOPICS + "." + EsContent.ID,
-                                            Iterables.transform(idSet, Id::longValue)
-                                    ).minimumMatch(idSet.size())
-                            );
-                }
+                queryBuilder = applyTopicIdFilters(queryParams, queryBuilder);
             }
         }
 
@@ -535,6 +532,24 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 return Id.valueOf(id);
             }), input.getHits().getTotalHits());
         });
+    }
+
+    public QueryBuilder applyTopicIdFilters(Optional<IndexQueryParams> queryParams, QueryBuilder queryBuilder) {
+        List<List<Id>> topicIds = queryParams.get().getTopicFilterIds().get();
+        ImmutableList.Builder<FilterBuilder> topicIdQueries = ImmutableList.builder();
+        for (List<Id> idSet : topicIds) {
+            NestedFilterBuilder nestedFilter = FilterBuilders.nestedFilter(
+                    EsContent.TOPICS + "." + EsTopic.TYPE_NAME,
+                    FilterBuilders.termsFilter(
+                            EsContent.TOPICS + "." + EsTopic.TYPE_NAME + "." + EsContent.ID,
+                            Iterables.transform(idSet, Id::longValue)
+                    )
+            );
+            topicIdQueries.add(nestedFilter);
+        }
+        BoolFilterBuilder topicIdBoolFilter = FilterBuilders.boolFilter();
+        topicIdQueries.build().forEach(topicIdBoolFilter::should);
+        return QueryBuilders.filteredQuery(queryBuilder, topicIdBoolFilter);
     }
 
     private void addSortOrder(Optional<IndexQueryParams> queryParams, SearchRequestBuilder reqBuilder) {
@@ -573,10 +588,12 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                         .map(Id::longValue)
                         .collect(ImmutableCollectors.toList());
 
-        queryBuilder = QueryBuilders.boolQuery()
-                .must(queryBuilder)
-                .must(QueryBuilders.termsQuery(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion));
-        return queryBuilder;
+        return QueryBuilders.filteredQuery(
+                queryBuilder,
+                FilterBuilders.termsFilter(
+                        EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion
+                )
+        );
     }
 
     private void indexItem(Item item) {
