@@ -70,7 +70,8 @@ public class QueryContextParser implements ParameterNameProvider {
                     "broadcasts.transmissionEndTime.lt",
                     "region",
                     "broadcastWeight",
-                    "titleWeight"
+                    "titleWeight",
+                    "tags.topic.id"
             )
         )));
     }

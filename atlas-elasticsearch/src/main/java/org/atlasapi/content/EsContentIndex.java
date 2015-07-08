@@ -4,9 +4,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -38,25 +36,16 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.exists.ExistsRequestBuilder;
 import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateRequestBuilder;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.index.get.GetField;
 import org.elasticsearch.index.mapper.MergeMappingException;
-import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
-import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
@@ -66,6 +55,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -515,7 +505,19 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                         queryParams.get().getBroadcastWeighting().get()
                 );
             }
-
+            if (queryParams.get().getTopicFilterIds().isPresent()) {
+                List<List<Id>> topicIds = queryParams.get().getTopicFilterIds().get();
+                for (List<Id> idSet : topicIds) {
+                    queryBuilder = QueryBuilders.boolQuery()
+                            .must(queryBuilder)
+                            .must(
+                                    QueryBuilders.termsQuery(
+                                            EsContent.TOPICS + "." + EsContent.TOPICS + "." + EsContent.ID,
+                                            Iterables.transform(idSet, Id::longValue)
+                                    ).minimumMatch(idSet.size())
+                            );
+                }
+            }
         }
 
         log.debug(queryBuilder.toString());

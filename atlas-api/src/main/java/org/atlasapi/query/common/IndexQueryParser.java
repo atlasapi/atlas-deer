@@ -1,6 +1,10 @@
 package org.atlasapi.query.common;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.content.FuzzyQueryParams;
@@ -9,6 +13,7 @@ import org.atlasapi.content.QueryOrdering;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,9 +33,23 @@ public class IndexQueryParser {
                 orderingFrom(query),
                 regionIdFrom(query),
                 broadcastWeightingFrom(query),
-                titleWeightingFrom(query)
+                titleWeightingFrom(query),
+                topicIdsFrom(query)
         );
 
+    }
+
+    private Optional<List<List<Id>>> topicIdsFrom(Query<?> query) {
+        String[] topicIds = (String[]) query.getContext().getRequest().getParameterMap().get("tags.topic.id");
+        if (topicIds == null || topicIds.length == 0) {
+            return Optional.empty();
+        }
+        ImmutableList.Builder<List<Id>> builder = ImmutableList.builder();
+        Splitter splitter = Splitter.on(",");
+        for (String idCsv : topicIds) {
+            builder.add(Lists.transform(splitter.splitToList(idCsv), id -> Id.valueOf(codec.decode(id))));
+        }
+        return Optional.of(builder.build());
     }
 
     private Optional<Float> broadcastWeightingFrom(Query<?> query) {

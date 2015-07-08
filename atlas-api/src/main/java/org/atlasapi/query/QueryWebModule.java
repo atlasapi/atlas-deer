@@ -303,7 +303,8 @@ public class QueryWebModule {
         ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<Topic, Content>(
                 Resource.TOPIC, Attributes.TOPIC_ID, Resource.CONTENT, idCodec(),
                 contentQueryAttributeParser(),
-                contextParser);
+                contextParser
+        );
 
         return new TopicContentController(
                 parser,
@@ -374,8 +375,6 @@ public class QueryWebModule {
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.ALIASES_VALUE,
                                 AttributeCoercers.stringCoercer()),
-                        QueryAtomParser.valueOf(Attributes.TOPIC_ID,
-                                AttributeCoercers.idCoercer(idCodec())),
                         QueryAtomParser.valueOf(Attributes.TAG_RELATIONSHIP,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.TAG_SUPERVISED,

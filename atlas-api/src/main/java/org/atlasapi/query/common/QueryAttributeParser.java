@@ -51,13 +51,15 @@ public class QueryAttributeParser implements ParameterNameProvider {
             Optional<Attribute<?>> attribute = attributesLookup.attributeFor(param.getKey());
             if (attribute.isPresent()) {
                 QueryAtomParser<String, ?> parser = parsers.get(attribute.get());
-                operands.add(parser.parse(param.getKey(), splitVals(param.getValue())));
+                for (String paramString : param.getValue()) {
+                    operands.add(parser.parse(param.getKey(), splitVals(paramString)));
+                }
             }
         }
         return operands.build();
     }
 
-    private Iterable<String> splitVals(String[] value) {
+    private Iterable<String> splitVals(String value) {
         return FluentIterable.from(Arrays.asList(value))
             .transformAndConcat(valueSplitter::split);
     }
