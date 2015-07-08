@@ -44,11 +44,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.NestedFilterBuilder;
-import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
@@ -513,7 +510,10 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 );
             }
             if (queryParams.get().getTopicFilterIds().isPresent()) {
-                queryBuilder = applyTopicIdFilters(queryParams, queryBuilder);
+                queryBuilder = applyTopicIdFilters(
+                        queryParams.get().getTopicFilterIds().get(),
+                        queryBuilder
+                );
             }
         }
 
@@ -534,22 +534,30 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         });
     }
 
-    public QueryBuilder applyTopicIdFilters(Optional<IndexQueryParams> queryParams, QueryBuilder queryBuilder) {
-        List<List<Id>> topicIds = queryParams.get().getTopicFilterIds().get();
+    public QueryBuilder applyTopicIdFilters(List<List<Id>> topicIdSets, QueryBuilder queryBuilder) {
         ImmutableList.Builder<FilterBuilder> topicIdQueries = ImmutableList.builder();
-        for (List<Id> idSet : topicIds) {
-            NestedFilterBuilder nestedFilter = FilterBuilders.nestedFilter(
-                    EsContent.TOPICS + "." + EsTopic.TYPE_NAME,
-                    FilterBuilders.termsFilter(
-                            EsContent.TOPICS + "." + EsTopic.TYPE_NAME + "." + EsContent.ID,
-                            Iterables.transform(idSet, Id::longValue)
-                    )
-            );
-            topicIdQueries.add(nestedFilter);
+        for (List<Id> idSet : topicIdSets) {
+            BoolFilterBuilder filterForThisSet = FilterBuilders.boolFilter();
+            for (Id id : idSet) {
+                addFilterForTopicId(filterForThisSet, id);
+            }
+            topicIdQueries.add(filterForThisSet);
         }
         BoolFilterBuilder topicIdBoolFilter = FilterBuilders.boolFilter();
         topicIdQueries.build().forEach(topicIdBoolFilter::should);
         return QueryBuilders.filteredQuery(queryBuilder, topicIdBoolFilter);
+    }
+
+    private void addFilterForTopicId(BoolFilterBuilder filterBuilder, Id id) {
+        filterBuilder.must(
+                FilterBuilders.nestedFilter(
+                        EsContent.TOPICS + "." + EsTopic.TYPE_NAME,
+                        FilterBuilders.termFilter(
+                                EsContent.TOPICS + "." + EsTopic.TYPE_NAME + "." + EsContent.ID,
+                                id
+                        )
+                )
+        );
     }
 
     private void addSortOrder(Optional<IndexQueryParams> queryParams, SearchRequestBuilder reqBuilder) {
