@@ -301,6 +301,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             chosen.setImages(projectFieldFromEquivalents(chosen, notChosen, new Function<T, Iterable<Image>>() {
                 @Override
                 public Set<Image> apply(T input) {
+                    input.getImages().forEach(img -> img.setSource(input.getSource()));
                     return input.getImages();
                 }
             }));;
