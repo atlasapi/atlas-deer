@@ -204,7 +204,17 @@ public class EsQueryBuilderTest {
             assertThat(Iterables.getOnlyElement(hits).id(), is("one"));
         }
     }
-    
+
+    @Test
+    public void testPrefixQueryForNonLetterCharacters() throws Exception {
+        AttributeQuerySet queries = new AttributeQuerySet(ImmutableList.<AttributeQuery<?>>of(
+                ONE_FIRST.createQuery(Operators.BEGINNING, ImmutableList.of("#"))
+        ));
+        SearchHits hits = queryHits(queries);
+        assertThat(Iterables.getOnlyElement(hits).id(), is("one"));
+    }
+
+
     @Test
     public void testPrefixQuery() throws Exception {
         AttributeQuerySet queries = new AttributeQuerySet(ImmutableList.<AttributeQuery<?>>of(

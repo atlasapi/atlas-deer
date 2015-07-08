@@ -48,6 +48,8 @@ import com.google.common.collect.Ordering;
 public class EsQueryBuilder {
 
     private static final Joiner PATH_JOINER = Joiner.on(".");
+    private static final String NON_LETTER_PREFIX = "#";
+    private static final String NON_LETTER_PREFIX_REGEX = "[^a-zA-Z]+.*";
 
     public QueryBuilder buildQuery(AttributeQuerySet operands) {
         return operands.accept(new QueryNodeVisitor<QueryBuilder>() {
@@ -205,7 +207,11 @@ public class EsQueryBuilder {
 
         @Override
         public QueryBuilder visit(Beginning beginning) {
-            return QueryBuilders.prefixQuery(name, value.get(0));
+            String prefix = value.get(0);
+            if (NON_LETTER_PREFIX.equals(prefix)) {
+                return QueryBuilders.regexpQuery(name, NON_LETTER_PREFIX_REGEX);
+            }
+            return QueryBuilders.prefixQuery(name, prefix);
         }
 
         @Override public QueryBuilder visit(Operators.Ascending ascending) {

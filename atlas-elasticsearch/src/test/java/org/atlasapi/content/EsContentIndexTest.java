@@ -135,6 +135,28 @@ public class EsContentIndexTest {
         assertThat(result.getIds().first().get(), is(item1.getId()));
     }
 
+
+    @Test
+    public void testTitlePrefixQueryWithNonLetterCharacter() throws Exception {
+        Item item1 = complexItem().withTitle("1test").withId(30l).build();
+        Item item2 = complexItem().withTitle("not!").withId(20l).build();
+
+        indexAndRefresh(item1, item2);
+
+        AttributeQuery<String> query = Attributes.CONTENT_TITLE_PREFIX
+                .createQuery(Operators.BEGINNING, ImmutableList.of("#"));
+        IndexQueryResult result = Futures.get(
+                index.query(
+                        new AttributeQuerySet(ImmutableList.of(query)),
+                        ImmutableList.of(Publisher.BBC),
+                        Selection.all(),
+                        Optional.empty()),
+                Exception.class
+        );
+        assertThat(result.getIds().size(), is(1));
+        assertThat(result.getIds().first().get(), is(item1.getId()));
+    }
+
     @Test
     public void testSourceQuery() throws Exception {
         Content content = new Episode();
