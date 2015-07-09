@@ -10,6 +10,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -34,7 +35,8 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
     @Override
     public Iterable<ChannelNumbering> getChannelsAvailable(LocalDate date) {
         return StreamSupport.stream(super.getChannelsAvailable(date).spliterator(), false)
-                .collect(Collectors.groupingBy(ChannelNumbering::getChannelNumber))
+                //we need to use randomUUID in order to avoid deduplicating chanels which have no numbering
+                .collect(Collectors.groupingBy(cn -> cn.getChannelNumber().orElse(UUID.randomUUID().toString())))
                 .values()
                 .stream()
                 .map(

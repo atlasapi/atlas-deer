@@ -57,7 +57,7 @@ public class ChannelGroupMembershipListWriter implements EntityListWriter<Channe
         format.writeObject(CHANNEL_GROUP_WRITER, "channel_group", channelGroup, ctxt);
         if (entity instanceof ChannelNumbering) {
             ChannelNumbering channelNumbering = ((ChannelNumbering) entity);
-            format.writeField("channel_number",channelNumbering.getChannelNumber());
+            format.writeField("channel_number",channelNumbering.getChannelNumber().orElse(null));
             format.writeField("start_date", channelNumbering.getStartDate());
         }
 

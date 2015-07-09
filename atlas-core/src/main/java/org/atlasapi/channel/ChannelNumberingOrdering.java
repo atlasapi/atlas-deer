@@ -21,8 +21,8 @@ public class ChannelNumberingOrdering extends Ordering<ChannelNumbering> {
 
     @Override
     public int compare(ChannelNumbering left, ChannelNumbering right) {
-        String leftNumber = left.getChannelNumber();
-        String rightNumber = right.getChannelNumber();
+        String leftNumber = left.getChannelNumber().orElse(null);
+        String rightNumber = right.getChannelNumber().orElse(null);
 
         if (leftNumber != null) {
             if (rightNumber != null) {
