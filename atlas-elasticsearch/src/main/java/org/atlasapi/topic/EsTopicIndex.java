@@ -22,6 +22,7 @@ import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,6 +112,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
             .setPostFilter(FiltersBuilder.buildForPublishers(SOURCE, publishers))
             .setFrom(selection.getOffset())
             .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
+            .addSort(EsTopic.ID, SortOrder.ASC)
             .execute(FutureSettingActionListener.setting(response));
         
         return Futures.transform(response, new Function<SearchResponse, IndexQueryResult>() {
