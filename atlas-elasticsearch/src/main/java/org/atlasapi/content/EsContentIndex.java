@@ -517,6 +517,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             }
         }
 
+        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
+
         log.debug(queryBuilder.toString());
 
         reqBuilder.setQuery(queryBuilder);
