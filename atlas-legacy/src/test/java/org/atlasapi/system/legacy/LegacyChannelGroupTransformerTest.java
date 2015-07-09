@@ -24,9 +24,7 @@ import static org.mockito.Mockito.mock;
 
 public class LegacyChannelGroupTransformerTest {
 
-
     private LegacyChannelGroupTransformer objectUnderTest = new LegacyChannelGroupTransformer();
-
 
 
     @Test
@@ -113,16 +111,10 @@ public class LegacyChannelGroupTransformerTest {
         assertThat(
                 Iterables.any(
                         ((Platform) transformed).getChannels(),
-                        new Predicate<ChannelNumbering>() {
-                            @Override
-                            public boolean apply(ChannelNumbering input) {
-                                return input.getChannelNumber().equals(channel1Number)
-                                        && input.getChannel().getId().longValue() == channel1Id
-                                        && input.getStartDate().get() == startDate1
-                                        && input.getEndDate().get() == endDate1;
-
-                            }
-                        }
+                        input -> input.getChannelNumber().get().equals(channel1Number)
+                                && input.getChannel().getId().longValue() == channel1Id
+                                && input.getStartDate().get() == startDate1
+                                && input.getEndDate().get() == endDate1
 
                 ),
                 is(true)
@@ -134,7 +126,7 @@ public class LegacyChannelGroupTransformerTest {
                         new Predicate<ChannelNumbering>() {
                             @Override
                             public boolean apply(ChannelNumbering input) {
-                                return input.getChannelNumber().equals(channel2Number)
+                                return input.getChannelNumber().get().equals(channel2Number)
                                         && input.getChannel().getId().longValue() == channel2Id
                                         && input.getStartDate().get() == startDate2
                                         && input.getEndDate().get() == endDate2;
@@ -220,7 +212,7 @@ public class LegacyChannelGroupTransformerTest {
                         new Predicate<ChannelNumbering>() {
                             @Override
                             public boolean apply(ChannelNumbering input) {
-                                return input.getChannelNumber().equals(channel1Number)
+                                return input.getChannelNumber().get().equals(channel1Number)
                                         && input.getChannel().getId().longValue() == channel1Id
                                         && input.getStartDate().get() == startDate1
                                         && input.getEndDate().get() == endDate1;
@@ -238,7 +230,7 @@ public class LegacyChannelGroupTransformerTest {
                         new Predicate<ChannelNumbering>() {
                             @Override
                             public boolean apply(ChannelNumbering input) {
-                                return input.getChannelNumber().equals(channel2Number)
+                                return input.getChannelNumber().get().equals(channel2Number)
                                         && input.getChannel().getId().longValue() == channel2Id
                                         && input.getStartDate().get() == startDate2
                                         && input.getEndDate().get() == endDate2;
