@@ -4,6 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Ordering;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -23,6 +25,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
 
+import javax.annotation.Nullable;
+
 public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 
     private final TopicIndex index;
@@ -37,7 +41,12 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
     public QueryResult<Topic> execute(Query<Topic> query) throws QueryExecutionException {
         IndexQueryResult result = Futures.get(getResults(query), 1, TimeUnit.MINUTES, QueryExecutionException.class);
         Resolved<Topic> resolved = Futures.get(resolve(result.getIds()), 1, TimeUnit.MINUTES, QueryExecutionException.class);
-        return resultFor(resolved, query, result.getTotalCount());
+        /* We do to ensure the content resolved from the store is in the order
+            specified by the index */
+        Resolved<Topic> orderedResolved = Resolved.valueOf(Ordering.explicit(result.getIds().toList())
+                .onResultOf(Topic::getId)
+                .immutableSortedCopy(resolved.getResources()));
+        return resultFor(orderedResolved, query, result.getTotalCount());
     }
 
     private QueryResult<Topic> resultFor(Resolved<Topic> resolved, Query<Topic> query, Long totalCount) throws NotFoundException {
