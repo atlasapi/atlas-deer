@@ -12,10 +12,10 @@ public class QueryOrdering {
         this.ascending = ascending;
     }
 
-    public static QueryOrdering fromOrderBy(String orderBy) throws QueryParseException {
+    public static QueryOrdering fromOrderBy(String orderBy) {
         int lastDot = orderBy.lastIndexOf(".");
         if (lastDot == -1) {
-            throw new QueryParseException("Missing .asc or .desc operator after " + orderBy);
+            throw new IllegalArgumentException("Missing .asc or .desc operator after " + orderBy);
         }
         String path = orderBy.substring(0, lastDot);
         String order = orderBy.substring(lastDot + 1, orderBy.length());

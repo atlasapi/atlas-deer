@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-import org.atlasapi.content.FuzzyQueryParams;
 import org.atlasapi.entity.Id;
 
 import java.util.List;
@@ -15,10 +14,10 @@ public class IndexQueryParams {
     private final Optional<Id> regionId;
     private final Optional<Float> broadcastWeighting;
     private final Optional<Float> titleWeighting;
-    private final Optional<List<List<Id>>> topicFilterIds;
+    private final Optional<List<List<InclusionExclusionId>>> topicFilterIds;
 
     public IndexQueryParams(Optional<FuzzyQueryParams> fuzzyQueryParams, Optional<QueryOrdering> ordering,
-            Optional<Id> regionId, Optional<Float> broadcastWeighting, Optional<Float> titleWeighting, Optional<List<List<Id>>> topicFilterIds) {
+            Optional<Id> regionId, Optional<Float> broadcastWeighting, Optional<Float> titleWeighting, Optional<List<List<InclusionExclusionId>>> topicFilterIds) {
         this.fuzzyQueryParams = checkNotNull(fuzzyQueryParams);
         this.ordering = checkNotNull(ordering);
         this.regionId = checkNotNull(regionId);
@@ -47,7 +46,7 @@ public class IndexQueryParams {
         return titleWeighting;
     }
 
-    public Optional<List<List<Id>>> getTopicFilterIds() {
+    public Optional<List<List<InclusionExclusionId>>> getTopicFilterIds() {
         return topicFilterIds;
     }
 }

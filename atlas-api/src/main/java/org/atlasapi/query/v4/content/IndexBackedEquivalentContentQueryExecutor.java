@@ -17,7 +17,7 @@ import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
-import org.atlasapi.query.common.IndexQueryParser;
+import org.atlasapi.content.IndexQueryParser;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
@@ -82,8 +82,8 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
             ListenableFuture<IndexQueryResult> result
                     = index.query(query.getOperands(), sources(query), selection(query), Optional.of(indexQueryParser.parse(query)));
             return Futures.get(Futures.transform(result, toQueryResult(query)), QueryExecutionException.class);
-        } catch (QueryParseException qpe) {
-            throw new QueryExecutionException(qpe);
+        } catch (Exception e) {
+            throw new QueryExecutionException(e);
         }
     }
 
