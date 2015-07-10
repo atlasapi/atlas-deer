@@ -144,6 +144,31 @@ public class CassandraContentStoreIT {
     }
 
     @Test
+    public void testWriteAndReadTopLevelItemWithActivelyPublishedFalse() throws Exception {
+        Content content = create(new Item());
+        content.setTitle("title");
+        content.setActivelyPublished(false);
+
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+
+        WriteResult<Content, Content> writeResult = store.writeContent(content);
+        assertTrue(writeResult.written());
+        assertThat(writeResult.getResource().getId().longValue(), is(1234l));
+        assertFalse(writeResult.getPrevious().isPresent());
+        Content item = resolve(content.getId().longValue());
+
+        assertThat(item.getId(), is(writeResult.getResource().getId()));
+        assertThat(item.getTitle(), is(content.getTitle()));
+        assertThat(item.getFirstSeen(), is(now));
+        assertThat(item.getLastUpdated(), is(now));
+        assertThat(item.getThisOrChildLastUpdated(), is(now));
+        assertThat(item.isActivelyPublished(), is(false));
+
+    }
+
+    @Test
     public void testWriteAndReadTopLevelItemWithBroadcast() throws Exception {
         Item item = create(new Item());
         item.setTitle("title");

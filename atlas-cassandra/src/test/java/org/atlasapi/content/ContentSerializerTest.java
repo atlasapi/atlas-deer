@@ -89,6 +89,20 @@ public class ContentSerializerTest {
         Item deserializedItem = (Item)deserialized;
         checkItemProperties(deserializedItem, item);
     }
+
+    @Test
+    public void testDeSerializesItemWithActivelyPublishedFalse() {
+        Item item = new Item();
+        setItemProperties(item);
+        item.setActivelyPublished(false);
+
+        ContentProtos.Content serialized = serializer.serialize(item);
+        Content deserialized = serializer.deserialize(serialized);
+
+        assertThat(deserialized, is(instanceOf(Item.class)));
+        Item deserializedItem = (Item)deserialized;
+        checkItemProperties(deserializedItem, item);
+    }
     
     
     @Test
@@ -220,6 +234,7 @@ public class ContentSerializerTest {
         assertThat(actual.getThisOrChildLastUpdated(), is(expected.getThisOrChildLastUpdated()));
         assertThat(actual.getThumbnail(), is(expected.getThumbnail()));
         assertThat(actual.getTitle(), is(expected.getTitle()));
+        assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
     }
 
     private void checkIdentifiedProperties(Identified actual, Identified expected) {

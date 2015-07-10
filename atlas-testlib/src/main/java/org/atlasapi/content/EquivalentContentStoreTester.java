@@ -208,5 +208,37 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         assertThat(Iterables.getOnlyElement(set), is(content));
         assertTrue(resolved.get(Id.valueOf(4)).isEmpty());
     }
+
+    public void testDoesntResolveNotActivelyPublishedContent() throws Exception {
+        Item content1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        content1.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
+        content1.setTitle("Two");
+        content1.setSegmentEvents(ImmutableList.of(new SegmentEvent()));
+
+        Content content2 = new Item(Id.valueOf(2), Publisher.BBC);
+        content2.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
+        content2.setTitle("Three");
+
+        getSubjectGenerator().getContentStore().writeContent(content1);
+        getSubjectGenerator().getContentStore().writeContent(content2);
+
+        Optional<EquivalenceGraphUpdate> update
+                = getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(content1.toRef(), ImmutableSet.<ResourceRef>of(content2.toRef()),
+                ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC));
+
+
+        content2.setActivelyPublished(false);
+
+        getSubjectGenerator().getContentStore().writeContent(content2);
+        getSubjectGenerator().getEquivalentContentStore().updateEquivalences(update.get());
+
+        ResolvedEquivalents<Content> resolved
+                = get(getSubjectGenerator().getEquivalentContentStore().resolveIds(ImmutableList.of(content1.getId()), ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC), Annotation.all()));
+
+        ImmutableSet<Content> set = resolved.get(content1.getId());
+        assertThat(set, hasSize(1));
+        assertThat(set, hasItems(content1));
+        assertThat(Iterables.getOnlyElement(((Item) set.asList().get(0)).getSegmentEvents()).getSource(), is(Publisher.METABROADCAST));
+    }
     
 }

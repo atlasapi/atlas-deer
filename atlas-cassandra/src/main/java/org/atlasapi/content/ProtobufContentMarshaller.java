@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.serialization.protobuf.ContentProtos.Column.ACTIVELY_PUBLISHED;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.AVAILABLE_CONTENT;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.BROADCASTS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.CHILDREN;
@@ -100,6 +101,7 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
             .put(UPCOMING_CONTENT, ContentColumn.UPCOMING_CONTENT)
             .put(AVAILABLE_CONTENT, ContentColumn.AVAILABLE_CONTENT)
             .put(ITEM_SUMMARIES, ContentColumn.ITEM_SUMMARIES)
+            .put(ACTIVELY_PUBLISHED, ContentColumn.ACTIVELY_PUBLISHED)
         .build());
 
     @Override

@@ -239,7 +239,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     //TODO more complex following of graph.
     private boolean contentSelected(Content content, EquivalenceGraph equivalenceGraph,
             Set<Publisher> selectedSources) {
-        return selectedSources.contains(content.getSource())
+        return content.isActivelyPublished()
+            && selectedSources.contains(content.getSource())
             && equivalenceGraph.getEquivalenceSet().contains(content.getId());
     }
 
