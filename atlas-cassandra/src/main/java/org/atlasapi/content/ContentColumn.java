@@ -21,4 +21,5 @@ public enum ContentColumn {
     UPCOMING_CONTENT,
     AVAILABLE_CONTENT,
     ITEM_SUMMARIES,
+    ACTIVELY_PUBLISHED,
     }
