@@ -135,6 +135,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (content.getPriority() != null) {
             builder.setPriority(content.getPriority());
         }
+        builder.setActivelyPublished(content.isActivelyPublished());
         return builder;
     }
 

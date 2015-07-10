@@ -125,6 +125,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasPriority()) {
             described.setPriority(msg.getPriority());
         }
+        if(msg.hasActivelyPublished()) {
+            described.setActivelyPublished(msg.getActivelyPublished());
+        }
         return described;
     }
     
