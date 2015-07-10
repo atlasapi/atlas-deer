@@ -556,7 +556,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 EsContent.TOPICS + "." + EsTopic.TYPE_NAME,
                 FilterBuilders.termFilter(
                         EsContent.TOPICS + "." + EsTopic.TYPE_NAME + "." + EsContent.ID,
-                        id
+                        id.getId()
                 )
         );
         if (id.isExcluded()) {
