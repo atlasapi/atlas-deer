@@ -194,6 +194,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .title(container.getTitle())
             .genre(container.getGenres())
             .age(ageRestrictionFromContainer(container))
+            .price(makeEsPrices(container.getManifestedAs()))
             .flattenedTitle(flattenedOrNull(container.getTitle()))
             .parentTitle(container.getTitle())
             .parentFlattenedTitle(flattenedOrNull(container.getTitle()))
@@ -201,6 +202,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                     container.getSpecialization().name() :
                     null)
             .priority(container.getPriority())
+            .locations(makeESLocations(container))
             .topics(makeESTopics(container));
         if (!container.getItemRefs().isEmpty()) {
             indexed.hasChildren(Boolean.TRUE);
@@ -259,9 +261,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
     }
 
-    private Collection<EsLocation> makeESLocations(Item item) {
+    private Collection<EsLocation> makeESLocations(Content content) {
         Collection<EsLocation> esLocations = new LinkedList<EsLocation>();
-        for (Encoding encoding : item.getManifestedAs()) {
+        for (Encoding encoding : content.getManifestedAs()) {
             for (Location location : encoding.getAvailableAt()) {
                 if (location.getPolicy() != null
                         && location.getPolicy().getAvailabilityStart() != null

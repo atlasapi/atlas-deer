@@ -182,7 +182,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasYear()) {
             content.setYear(msg.getYear());
         }
-        
+        content.setManifestedAs(getEncodings());
         return content;
     }
 
@@ -300,7 +300,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         item = visitContent(item);
         if (msg.hasContainerRef()) {
             ContentRefSerializer refSerializer = new ContentRefSerializer(item.getSource());
-            item.setContainerRef((ContainerRef)refSerializer.deserialize(msg.getContainerRef()));
+            item.setContainerRef((ContainerRef) refSerializer.deserialize(msg.getContainerRef()));
         }
         if (msg.hasContainerSummary()) {
             item.setContainerSummary(containerSummarySerializer.deserialize(msg.getContainerSummary()));
@@ -313,7 +313,6 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             item.setIsLongForm(msg.getLongform());
         }
         item.setBroadcasts(getBroadcasts());
-        item.setManifestedAs(getEncodings());
         item.setSegmentEvents(getSegmentEvents());
         item.setRestrictions(getRestrictions());
         return item;

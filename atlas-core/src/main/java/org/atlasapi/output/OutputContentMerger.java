@@ -52,7 +52,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 
-public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
+public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     
     private static final Ordering<Episode> SERIES_ORDER = Ordering.from(new SeriesOrder());
 
@@ -227,6 +227,7 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 return input.getGenres();
             }
         }));
+        mergeEncodings(sources, chosen, notChosen);
     }
 
     private <T extends Item> void mergeIn(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
@@ -317,10 +318,8 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 matchAndMerge(chosenBroadcast, notChosenOrdered);
             }
         }
-        HashSet<Encoding> encodings = Sets.newHashSet(chosen.getManifestedAs());
         for (T notChosenItem : notChosen) {
             notChosenItem.setBroadcasts(Sets.<Broadcast>newHashSet());
-            encodings.addAll(notChosenItem.getManifestedAs());
         }
         ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
         Publisher chosenPublisher = chosen.getSource();
@@ -336,6 +335,15 @@ public class  OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             }
         }
         chosen.setSegmentEvents(segmentEvents.build());
+    }
+
+
+    private <T extends Content> void mergeEncodings(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
+        List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
+        HashSet<Encoding> encodings = Sets.newHashSet(chosen.getManifestedAs());
+        for (T notChosenItem : notChosenOrdered) {
+            encodings.addAll(notChosenItem.getManifestedAs());
+        }
         chosen.setManifestedAs(encodings);
     }
     

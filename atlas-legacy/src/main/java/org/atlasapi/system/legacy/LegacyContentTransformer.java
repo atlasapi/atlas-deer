@@ -201,9 +201,12 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
 
     private <I extends org.atlasapi.content.Item> void transformVersions(I i, Set<org.atlasapi.media.entity.Version> versions) {
         i.setRestrictions(getRestrictions(versions));
-        i.setManifestedAs(getEncodings(versions));
         i.setBroadcasts(getBroadcasts(versions));
         i.setSegmentEvents(getSegmentEvents(versions));
+    }
+
+    private <I extends org.atlasapi.content.Content> void transformEncodings(I i, Set<org.atlasapi.media.entity.Version> versions) {
+        i.setManifestedAs(getEncodings(versions));
     }
 
     private Set<Restriction> getRestrictions(Set<Version> versions) {
@@ -489,7 +492,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
             public org.atlasapi.content.Certificate apply(Certificate input) {
                 return new org.atlasapi.content.Certificate(input.classification(), input.country());
             }
-            
+
         }));
     
         c.setClips(
@@ -505,6 +508,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
                         }
                 ).collect(Collectors.toList())
         );
+        transformEncodings(c, input.getVersions());
         return c;
     }
 

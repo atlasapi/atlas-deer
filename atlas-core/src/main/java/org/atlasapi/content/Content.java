@@ -16,6 +16,7 @@ package org.atlasapi.content;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.collect.Sets;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
@@ -30,6 +31,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public abstract class Content extends Described implements Aliased, Sourced, Equivalable<Content> {
 
     private transient String readHash;
@@ -41,6 +44,8 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     private Set<String> languages = ImmutableSet.of();
     private Set<Certificate> certificates = ImmutableSet.of();
     private Integer year = null;
+    private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
+
 
     public Content(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
@@ -142,6 +147,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         to.languages = from.languages;
         to.certificates = from.certificates;
         to.year = from.year;
+        to.manifestedAs = Sets.newHashSet(from.manifestedAs);
     }
 
     public void setReadHash(String readHash) {
@@ -183,19 +189,26 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         return year;
     }
 
-    public static final Function<Content, List<Clip>> TO_CLIPS = new Function<Content, List<Clip>>() {
-        @Override
-        public List<Clip> apply(Content input) {
-            return input.getClips();
-        }
-    };
-
     public abstract <V> V accept(ContentVisitor<V> visitor);
     
     public abstract ContentRef toRef();
     
     public static final Function<Content, ContentRef> toContentRef() {
         return ToContentRefFunction.INSTANCE;
+    }
+
+    @FieldName("manifested_as")
+    public Set<Encoding> getManifestedAs() {
+        return manifestedAs;
+    }
+
+    public void setManifestedAs(Set<Encoding> manifestedAs) {
+        this.manifestedAs = manifestedAs;
+    }
+
+    public void addManifestedAs(Encoding encoding) {
+        checkNotNull(encoding);
+        manifestedAs.add(encoding);
     }
     
     private enum ToContentRefFunction implements Function<Content, ContentRef> {

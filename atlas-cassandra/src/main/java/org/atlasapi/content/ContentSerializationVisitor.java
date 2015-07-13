@@ -170,6 +170,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (content.getYear() != null) {
             builder.setYear(content.getYear());
         }
+        builder.addAllEncodings(serializeEncoding(content.getManifestedAs()));
         return builder;
     }
 
@@ -192,7 +193,6 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             builder.setLongform(item.getIsLongForm());
         }
         builder.addAllBroadcasts(serializeBroadcasts(item.getBroadcasts()));
-        builder.addAllEncodings(serializeEncoding(item.getManifestedAs()));
         builder.addAllSegmentEvents(serializeSegmentEvents(item.getSegmentEvents()));
         builder.addAllRestrictions(serializeRestrictions(item.getRestrictions()));
         return builder;

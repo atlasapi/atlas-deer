@@ -44,22 +44,21 @@ public class Item extends Content {
     private Set<Country> countriesOfOrigin = Sets.newHashSet();
     private String sortKey;
     private ContainerSummary containerSummary;
-    private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
     private Set<Broadcast> broadcasts = Sets.newLinkedHashSet();
-    private List<SegmentEvent> segmentEvents = ImmutableList.of(); 
+    private List<SegmentEvent> segmentEvents = ImmutableList.of();
     private Set<Restriction> restrictions = Sets.newHashSet();
 
     public Item(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
     }
-    
+
     public Item(Id id, Publisher source) {
         super(id, source);
     }
 
     public Item() {
     }
-    
+
     @Override
     public ItemRef toRef() {
         return new ItemRef(getId(), getSource(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
@@ -111,21 +110,7 @@ public class Item extends Content {
     public Boolean getBlackAndWhite() {
         return blackAndWhite;
     }
-    
-    @FieldName("manifested_as")
-    public Set<Encoding> getManifestedAs() {
-        return manifestedAs;
-    }
 
-    public void setManifestedAs(Set<Encoding> manifestedAs) {
-        this.manifestedAs = manifestedAs;
-    }
-    
-    public void addManifestedAs(Encoding encoding) {
-        checkNotNull(encoding);
-        manifestedAs.add(encoding);
-    }
-    
     @FieldName("broadcasts")
     public Set<Broadcast> getBroadcasts() {
         return broadcasts;
@@ -182,7 +167,6 @@ public class Item extends Content {
         to.containerSummary = from.containerSummary;
         to.isLongForm = from.isLongForm;
         to.broadcasts = Sets.newHashSet(from.broadcasts);
-        to.manifestedAs = Sets.newHashSet(from.manifestedAs);
         to.segmentEvents = Lists.newArrayList(from.segmentEvents);
         to.restrictions = Sets.newHashSet(from.restrictions);
         to.blackAndWhite = from.blackAndWhite;
@@ -243,13 +227,6 @@ public class Item extends Content {
         @Override
         public Set<Broadcast> apply(Item input) {
             return input.broadcasts;
-        }
-    };
-    
-    public static final Function<Item, Set<Encoding>> TO_ENCODINGS = new Function<Item, Set<Encoding>>() {
-        @Override
-        public Set<Encoding> apply(Item input) {
-            return input.manifestedAs;
         }
     };
     
