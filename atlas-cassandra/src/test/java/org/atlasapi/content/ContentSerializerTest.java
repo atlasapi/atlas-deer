@@ -198,7 +198,6 @@ public class ContentSerializerTest {
         assertThat(actual.getCountriesOfOrigin(), is(expected.getCountriesOfOrigin()));
         assertThat(actual.getIsLongForm(), is(expected.getIsLongForm()));
         assertThat(actual.getBroadcasts().isEmpty(), is(false));
-        assertThat(actual.getManifestedAs().isEmpty(), is(false));
         assertThat(actual.getSegmentEvents().isEmpty(), is(false));
         assertThat(actual.getRestrictions().isEmpty(), is(false));
     }
@@ -214,6 +213,7 @@ public class ContentSerializerTest {
         assertThat(actual.getRelatedLinks(), is(expected.getRelatedLinks()));
         assertThat(actual.getTags(), is(expected.getTags()));
         assertThat(actual.getYear(), is(expected.getYear()));
+        assertThat(actual.getManifestedAs().isEmpty(), is(false));
     }
 
     private void checkDescribedProperties(Described actual, Described expected) {
@@ -372,10 +372,9 @@ public class ContentSerializerTest {
         item.setIsLongForm(true);
         
         item.setBroadcasts(ImmutableSet.of(
-            new Broadcast(Id.valueOf(1), new DateTime(DateTimeZones.UTC), new DateTime(DateTimeZones.UTC)),
-            new Broadcast(Id.valueOf(2), new DateTime(DateTimeZones.UTC), new DateTime(DateTimeZones.UTC))
+                new Broadcast(Id.valueOf(1), new DateTime(DateTimeZones.UTC), new DateTime(DateTimeZones.UTC)),
+                new Broadcast(Id.valueOf(2), new DateTime(DateTimeZones.UTC), new DateTime(DateTimeZones.UTC))
         ));
-        item.setManifestedAs(ImmutableSet.of(encoding("one")));
         item.setSegmentEvents(ImmutableSet.of(segmentEvent(10L)));
         item.setRestrictions(ImmutableSet.of(Restriction.from(14, "old")));
     }
@@ -390,6 +389,7 @@ public class ContentSerializerTest {
         content.setPeople(ImmutableList.of(CrewMember.crewMember("id", "Jim", "director", Publisher.BBC)));
         content.setRelatedLinks(ImmutableSet.of(RelatedLink.twitterLink("twitter").build()));
         content.setTags(ImmutableSet.of(new Tag(1L, 1.0f, true, Tag.Relationship.TRANSCRIPTION)));
+        content.setManifestedAs(ImmutableSet.of(encoding("one")));
         content.setYear(1234);
     }
 

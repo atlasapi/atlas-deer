@@ -53,14 +53,11 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
 
     @Override
     public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if (entity instanceof Item) {
-            Item item = (Item) entity;
-            writer.writeList(encodedLocationWriter, encodedLocations(item), ctxt);
-        }
+        writer.writeList(encodedLocationWriter, encodedLocations(entity), ctxt);
     }
 
-    private Iterable<EncodedLocation> encodedLocations(Item item) {
-        return encodedLocations(item.getManifestedAs());
+    private Iterable<EncodedLocation> encodedLocations(Content content) {
+        return encodedLocations(content.getManifestedAs());
     }
 
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {

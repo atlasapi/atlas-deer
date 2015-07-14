@@ -1,8 +1,10 @@
 package org.atlasapi.output;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import org.atlasapi.content.Brand;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
@@ -127,7 +130,7 @@ public class OutputContentMergerTest {
     }
     
     @Test
-    public void testSourceSetOnImagesWhenImagePrecidenceDisabled() throws Exception {
+    public void testSourceSetOnImagesWhenImagePrecedenceDisabled() throws Exception {
         Item one = item(1l, "o", Publisher.METABROADCAST);
         Item two = item(2l, "k", Publisher.BBC);
         Item three = item(3l, "D", Publisher.PA);
@@ -249,7 +252,7 @@ public class OutputContentMergerTest {
 
         List<ItemSummary> itemSummaries = ImmutableList.of(
                 new ItemSummary(
-                        new ItemRef(Id.valueOf(1), Publisher.METABROADCAST,"", DateTime.now()),
+                        new ItemRef(Id.valueOf(1), Publisher.METABROADCAST, "", DateTime.now()),
                         "",
                         "",
                         ""
@@ -331,6 +334,33 @@ public class OutputContentMergerTest {
                 .build();
 
         assertThat(merged.getAvailableContent(), is(expectedAvailableContent));
+
+    }
+
+    @Test
+    public void testMergedContentHasCorrectEncodings() {
+        Container one = brand(1L, "one", Publisher.BBC_KIWI);
+        Container two = brand(2L, "two", Publisher.METABROADCAST);
+        Container three = brand(3L, "three", Publisher.BBC_MUSIC);
+
+
+        setEquivalent(one, two, three);
+        setEquivalent(two, one, three);
+        setEquivalent(three, two, one);
+
+        Encoding encoding1 = mock(Encoding.class);
+        Encoding encoding2 = mock(Encoding.class);
+        Encoding encoding3 = mock(Encoding.class);
+        Encoding encoding4 = mock(Encoding.class);
+
+        one.setManifestedAs(ImmutableSet.of(encoding1, encoding2));
+        two.setManifestedAs(ImmutableSet.of(encoding3, encoding4));
+
+        ApplicationSources sources = sourcesWithPrecedence(true, Publisher.BBC_KIWI, Publisher.METABROADCAST, Publisher.BBC_MUSIC);
+
+        Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
+
+        assertThat(merged.getManifestedAs(), is(ImmutableSet.of(encoding1, encoding2, encoding3, encoding4)));
 
     }
     
