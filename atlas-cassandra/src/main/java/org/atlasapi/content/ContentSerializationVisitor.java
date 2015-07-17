@@ -1,13 +1,10 @@
 package org.atlasapi.content;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.intl.Countries;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.ProtoBufUtils;
 import org.atlasapi.entity.util.Resolved;
@@ -16,15 +13,17 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
-
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.intl.Countries;
 import org.atlasapi.util.ImmutableCollectors;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
-    
+
     private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
     private final ImageSerializer imageSerializer = new ImageSerializer();
     private final EncodingSerializer encodingSerializer = new EncodingSerializer();
@@ -46,12 +45,12 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     public ContentSerializationVisitor(ContentResolver resolver) {
         this.resolver = checkNotNull(resolver);
     }
-    
+
     private Builder visitIdentified(Identified ided) {
         Builder builder = ContentProtos.Content.newBuilder();
         if (ided.getId() != null) {
             builder.setId(ided.getId().longValue())
-                .setType(ided.getClass().getSimpleName().toLowerCase());
+                    .setType(ided.getClass().getSimpleName().toLowerCase());
         }
         if (ided.getLastUpdated() != null) {
             builder.setLastUpdated(ProtoBufUtils.serializeDateTime(ided.getLastUpdated()));
@@ -66,13 +65,13 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         for (EquivalenceRef equivRef : ided.getEquivalentTo()) {
             builder.addEquivs(CommonProtos.Reference.newBuilder()
-                .setId(equivRef.getId().longValue())
-                .setSource(equivRef.getSource().key())
+                            .setId(equivRef.getId().longValue())
+                            .setSource(equivRef.getSource().key())
             );
         }
         return builder;
     }
-    
+
     private Builder visitDescribed(Described content) {
         Builder builder = visitIdentified(content);
         if (content.getThisOrChildLastUpdated() != null) {
@@ -153,16 +152,16 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         for (ContentGroupRef groupRef : content.getContentGroupRefs()) {
             builder.addContentGroupsBuilder()
-                .setId(groupRef.getId().longValue())
-                .build();
+                    .setId(groupRef.getId().longValue())
+                    .build();
         }
-        
+
         builder.addAllLanguage(content.getLanguages());
-        
+
         for (KeyPhrase keyPhrase : content.getKeyPhrases()) {
             builder.addKeyPhrases(keyPhraseSerializer.serialize(keyPhrase));
         }
-        
+
         for (Tag tag : content.getTags()) {
             builder.addTopicRefs(tagSerializer.serialize(tag));
         }
@@ -201,20 +200,20 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private Iterable<ContentProtos.SegmentEvent> serializeSegmentEvents(List<SegmentEvent> segmentEvents) {
         return Iterables.transform(segmentEvents, segmentEvent -> segmentEventSerializer.serialize(segmentEvent).build());
     }
-    
+
     private Iterable<ContentProtos.Broadcast> serializeBroadcasts(Set<Broadcast> broadcasts) {
-      return Iterables.transform(broadcasts, broadcast -> broadcastSerializer.serialize(broadcast).build());
+        return Iterables.transform(broadcasts, broadcast -> broadcastSerializer.serialize(broadcast).build());
     }
-    
+
     private Iterable<ContentProtos.Encoding> serializeEncoding(Set<Encoding> encodings) {
-      return Iterables.transform(encodings, encoding -> encodingSerializer.serialize(encoding).build());
+        return Iterables.transform(encodings, encoding -> encodingSerializer.serialize(encoding).build());
     }
 
     private Iterable<ContentProtos.Restriction> serializeRestrictions(Set<Restriction> restrictions) {
         return Iterables.transform(restrictions, restriction -> restrictionSerializer.serialize(restriction).build());
     }
 
-    
+
     private Builder visitContainer(Container container) {
         Builder builder = visitContent(container);
         ContentRefSerializer refSerializer = new ContentRefSerializer(container.getSource());
@@ -258,17 +257,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private ImmutableSet<Integer> aggregateReleaseYears(Container container) {
         try {
             ImmutableSet.Builder<Integer> releaseYears = ImmutableSet.builder();
-            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 50)) {
-                Resolved<Content> resolved = Futures.get(
-                        resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
-                        IOException.class
-                );
-                resolved.getResources().toList().stream()
-                        .map(Content::getYear)
-                        .filter(y -> y != null)
-                        .distinct()
-                        .forEach(releaseYears::add);
-            }
+            Resolved<Content> resolved = Futures.get(
+                    resolver.resolveIds(Iterables.transform(container.getItemRefs(), ItemRef::getId)),
+                    IOException.class
+            );
+            resolved.getResources().toList().stream()
+                    .map(Content::getYear)
+                    .filter(y -> y != null)
+                    .distinct()
+                    .forEach(releaseYears::add);
             if (container.getYear() != null) {
                 return releaseYears.add(container.getYear()).build();
             }
@@ -281,17 +278,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private Set<Certificate> aggregateCertificates(Container container) {
         try {
             ImmutableSet.Builder<Certificate> certs = ImmutableSet.builder();
-            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 50)) {
-                Resolved<Content> resolved = Futures.get(
-                        resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
-                        IOException.class
-                );
-                resolved.getResources().toList().stream()
-                        .flatMap(i -> i.getCertificates().stream())
-                        .filter(cert -> cert != null)
-                        .distinct()
-                        .forEach(certs::add);
-            }
+            Resolved<Content> resolved = Futures.get(
+                    resolver.resolveIds(Iterables.transform(container.getItemRefs(), ItemRef::getId)),
+                    IOException.class
+            );
+            resolved.getResources().toList().stream()
+                    .flatMap(i -> i.getCertificates().stream())
+                    .filter(cert -> cert != null)
+                    .distinct()
+                    .forEach(certs::add);
             return certs.build();
         } catch (Exception e) {
             throw Throwables.propagate(e);
@@ -347,7 +342,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     public Builder visit(Film film) {
         Builder builder = visitItem(film);
         for (ReleaseDate releaseDate : film.getReleaseDates()) {
-            builder.addReleaseDates(releaseDateSerializer .serialize(releaseDate));
+            builder.addReleaseDates(releaseDateSerializer.serialize(releaseDate));
         }
         if (film.getWebsiteUrl() != null) {
             builder.setWebsiteUrl(film.getWebsiteUrl());
@@ -376,10 +371,10 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     public Builder visit(Item item) {
         return visitItem(item);
     }
-    
+
     @Override
     public Builder visit(Clip clip) {
         return visitItem(clip);
     }
-    
+
 }
