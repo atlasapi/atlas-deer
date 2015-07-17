@@ -2,16 +2,21 @@ package org.atlasapi.output.annotation;
 
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.ItemSummary;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -63,8 +68,18 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
             writer.writeList(restrictionWriter, item.getRestrictions(), ctxt);
             
         }
-
-        writer.writeList(certificateWriter, desc.getCertificates(), ctxt);
+        if (desc instanceof Container) {
+            Container container = (Container) desc;
+            ImmutableSet<Certificate> childCerts = container.getItemSummaries().stream()
+                    .map(ItemSummary::getCertificates)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .flatMap(Collection::stream)
+                    .collect(ImmutableCollectors.toSet());
+            writer.writeList(certificateWriter, Sets.union(desc.getCertificates(), childCerts), ctxt);
+        } else {
+            writer.writeList(certificateWriter, desc.getCertificates(), ctxt);
+        }
         writer.writeList(languageWriter, desc.getLanguages(), ctxt);
 
         if (desc instanceof Film) {

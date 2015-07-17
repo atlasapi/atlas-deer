@@ -2,8 +2,10 @@ package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.atlasapi.util.ImmutableCollectors;
 
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,7 @@ import java.util.stream.StreamSupport;
 
 public class ItemSummarySerializer {
 
+    private static final CertificateSerializer certificateSerializer = new CertificateSerializer();
     private static final Map<Class<? extends ItemSummary>, String> CLASS_TO_TYPE = ImmutableMap.<Class<? extends ItemSummary>, String>builder()
             .put(ItemSummary.class, "item")
             .put(EpisodeSummary.class, "episode")
@@ -26,17 +29,27 @@ public class ItemSummarySerializer {
                             proto.getTitle(),
                             proto.hasDescription() ? proto.getDescription() : null,
                             proto.hasImage() ? proto.getImage() : null,
-                            proto.hasEpisodeNumber() ? proto.getEpisodeNumber() : null
+                            proto.hasEpisodeNumber() ? proto.getEpisodeNumber() : null,
+                            proto.hasReleaseYear() ? proto.getReleaseYear() : null,
+                            proto.getCertificatesList().stream()
+                                    .map(certificateSerializer::deserialize)
+                                    .collect(ImmutableCollectors.toSet())
                     )
             )
             .put("item", proto -> new ItemSummary(
-                            (ItemRef) new ContentRefSerializer(null).deserialize(proto.getItemRef()),
-                            proto.getTitle(),
-                            proto.hasDescription() ? proto.getDescription() : null,
-                            proto.hasImage() ? proto.getImage() : null
+                    (ItemRef) new ContentRefSerializer(null).deserialize(proto.getItemRef()),
+                    proto.getTitle(),
+                    proto.hasDescription() ? proto.getDescription() : null,
+                    proto.hasImage() ? proto.getImage() : null,
+                    proto.hasReleaseYear() ? proto.getReleaseYear() : null,
+                    proto.getCertificatesList().stream()
+                            .map(certificateSerializer::deserialize)
+                            .collect(ImmutableCollectors.toSet())
                     )
             )
             .build();
+
+
 
     public ContentProtos.ItemSummary.Builder serialize(ItemSummary itemSummary) {
 
@@ -57,6 +70,13 @@ public class ItemSummarySerializer {
         }
         if (itemSummary instanceof EpisodeSummary && ((EpisodeSummary) itemSummary).getEpisodeNumber().isPresent()) {
             builder.setEpisodeNumber(((EpisodeSummary) itemSummary).getEpisodeNumber().get());
+        }
+        if (itemSummary.getCertificates().isPresent()) {
+            ImmutableSet<Certificate> certs = itemSummary.getCertificates().get();
+            ImmutableList<ContentProtos.Certificate> serialisedCerts = certs.stream()
+                            .map(certificateSerializer::serialize)
+                            .collect(ImmutableCollectors.toList());
+            builder.addAllCertificates(serialisedCerts);
         }
         return builder;
     }

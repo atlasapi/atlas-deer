@@ -1,11 +1,11 @@
 package org.atlasapi.output.writers;
 
-import java.io.IOException;
-
-import javax.annotation.Nonnull;
-
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.Series;
@@ -14,9 +14,10 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.util.ImmutableCollectors;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import javax.annotation.Nonnull;
+import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -30,7 +31,8 @@ public class SeriesWriter implements EntityListWriter<SeriesRef> {
         this.contentResolver = checkNotNull(contentResolver);
     }
 
-    @Override public void write(@Nonnull SeriesRef entity, @Nonnull FieldWriter writer,
+    @Override
+    public void write(@Nonnull SeriesRef entity, @Nonnull FieldWriter writer,
             @Nonnull OutputContext ctxt) throws IOException {
 
         writer.writeField("id", idCodec.encode(entity.getId().toBigInteger()));
@@ -40,14 +42,30 @@ public class SeriesWriter implements EntityListWriter<SeriesRef> {
         Resolved<Content> resolved =
                 Futures.get(contentResolver.resolveIds(ImmutableList.of(entity.getId())), IOException.class);
         Series series = (Series) resolved.getResources().first().get();
-        writer.writeList("release_years", "release_year", series.getReleaseYears(), ctxt);
+
+        writer.writeList("release_years", "release_year", aggregateReleaseYears(series), ctxt);
     }
 
-    @Override public String fieldName(SeriesRef entity) {
+    private Iterable<Integer> aggregateReleaseYears(Series series) {
+        ImmutableSet<Integer> childReleaseYears = series.getItemSummaries().stream()
+                .filter(i -> i.getReleaseYear().isPresent())
+                .map(i -> i.getReleaseYear().get())
+                .collect(ImmutableCollectors.toSet());
+
+        return Sets.union(
+                childReleaseYears, series.getYear() != null ?
+                        ImmutableSet.of(series.getYear()) :
+                        ImmutableSet.of()
+        );
+    }
+
+    @Override
+    public String fieldName(SeriesRef entity) {
         return "series";
     }
 
-    @Override public String listName() {
+    @Override
+    public String listName() {
         return "series";
     }
 }

@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
+import com.metabroadcast.common.intl.Countries;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ImmutableCollectors;
@@ -21,35 +22,45 @@ public class ItemSummaryTest {
                 new ItemRef(Id.valueOf(1), Publisher.METABROADCAST, "", DateTime.now()),
                 "title1",
                 "desc",
-                "im"
+                "im",
+                2012,
+                ImmutableList.of(new Certificate("PG", Countries.GB))
         );
         EpisodeSummary itemSummary2 = new EpisodeSummary(
                 new ItemRef(Id.valueOf(2), Publisher.METABROADCAST, "", DateTime.now()),
                 "title1",
                 "desc",
                 "im",
-                null
+                null,
+                2012,
+                ImmutableList.of(new Certificate("PG", Countries.GB))
         );
         EpisodeSummary itemSummary3 = new EpisodeSummary(
                 new ItemRef(Id.valueOf(3), Publisher.METABROADCAST, "", DateTime.now()),
                 "title1",
                 "desc",
                 "im",
-                1
+                1,
+                2012,
+                ImmutableList.of(new Certificate("PG", Countries.GB))
         );
         EpisodeSummary itemSummary4 = new EpisodeSummary(
                 new ItemRef(Id.valueOf(4), Publisher.METABROADCAST, "", DateTime.now()),
                 "title1",
                 "desc",
                 "im",
-                2
+                2,
+                2012,
+                ImmutableList.of(new Certificate("PG", Countries.GB))
         );
         EpisodeSummary itemSummary5 = new EpisodeSummary(
                 new ItemRef(Id.valueOf(5), Publisher.METABROADCAST, "", DateTime.now()),
                 "title1",
                 "desc",
                 "im",
-                3
+                3,
+                2012,
+                ImmutableList.of(new Certificate("PG", Countries.GB))
         );
 
         List<ItemSummary> itemSummaries = ImmutableList.of(itemSummary1, itemSummary2, itemSummary3, itemSummary4, itemSummary5);

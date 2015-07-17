@@ -256,6 +256,9 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     }
 
     private ImmutableSet<Integer> aggregateReleaseYears(Container container) {
+        if (container instanceof Series) {
+            return container.getYear() != null ? ImmutableSet.of(container.getYear()) : ImmutableSet.of();
+        }
         try {
             ImmutableSet.Builder<Integer> releaseYears = ImmutableSet.builder();
             for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 150)) {
@@ -279,6 +282,9 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     }
 
     private Set<Certificate> aggregateCertificates(Container container) {
+        if (container instanceof Series) {
+            return container.getCertificates() != null ? ImmutableSet.copyOf(container.getCertificates()) : ImmutableSet.of();
+        }
         try {
             ImmutableSet.Builder<Certificate> certs = ImmutableSet.builder();
             for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 150)) {

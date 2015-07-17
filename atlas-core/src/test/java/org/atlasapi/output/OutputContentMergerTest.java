@@ -11,11 +11,13 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 
+import com.metabroadcast.common.intl.Countries;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BroadcastRef;
+import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
@@ -255,7 +257,9 @@ public class OutputContentMergerTest {
                         new ItemRef(Id.valueOf(1), Publisher.METABROADCAST, "", DateTime.now()),
                         "",
                         "",
-                        ""
+                        "",
+                        2012,
+                        ImmutableList.of(new Certificate("PG", Countries.GB))
                 )
         );
 

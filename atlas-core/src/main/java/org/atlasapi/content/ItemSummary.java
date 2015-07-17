@@ -1,10 +1,12 @@
 package org.atlasapi.content;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -32,12 +34,17 @@ public class ItemSummary {
     private final String title;
     private final Optional<String> description;
     private final Optional<String> image;
+    private final Optional<Integer> releaseYear;
+    private final Optional<ImmutableSet<Certificate>> certificate;
 
-    public ItemSummary(ItemRef itemRef, String title, @Nullable String description, @Nullable String image) {
+    public ItemSummary(ItemRef itemRef, String title, @Nullable String description, @Nullable String image, @Nullable Integer releaseYear, @Nullable Iterable<Certificate> certs) {
         this.itemRef = checkNotNull(itemRef);
         this.title = checkNotNull(title);
         this.description = Optional.ofNullable(description);
         this.image = Optional.ofNullable(image);
+        this.releaseYear = Optional.ofNullable(releaseYear);
+        this.certificate = Optional.ofNullable(certs != null ? ImmutableSet.copyOf(certs) : ImmutableSet.of());
+
     }
 
     public ItemRef getItemRef() {
@@ -50,6 +57,14 @@ public class ItemSummary {
 
     public Optional<String> getImage() {
         return image;
+    }
+
+    public Optional<Integer> getReleaseYear() {
+        return releaseYear;
+    }
+
+    public Optional<ImmutableSet<Certificate>> getCertificates() {
+        return certificate;
     }
 
     @Override

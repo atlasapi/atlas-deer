@@ -357,7 +357,9 @@ public class ContentSerializerTest {
                                         new DateTime(DateTimeZones.UTC)
                                 ),
                                 "Title",
-                                "Description", null
+                                "Description", null,
+                                2012,
+                                ImmutableList.of(new Certificate("PG", Countries.GB))
                         )
                 )
         );

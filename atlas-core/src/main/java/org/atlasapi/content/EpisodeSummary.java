@@ -13,8 +13,10 @@ public class EpisodeSummary extends ItemSummary {
             String title,
             @Nullable String description,
             @Nullable String image,
-            @Nullable Integer episodeNumber) {
-        super(itemRef, title, description, image);
+            @Nullable Integer episodeNumber,
+            @Nullable Integer releaseYear,
+            @Nullable Iterable<Certificate> certs) {
+        super(itemRef, title, description, image, releaseYear, certs);
         this.episodeNumber = Optional.ofNullable(episodeNumber);
     }
 

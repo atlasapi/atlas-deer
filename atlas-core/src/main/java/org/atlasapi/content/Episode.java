@@ -115,7 +115,7 @@ public class Episode extends Item {
 
 	@Override
 	public ItemSummary toSummary() {
-		return new EpisodeSummary(toRef(), getTitle(), getDescription(), getImage() ,getEpisodeNumber());
+		return new EpisodeSummary(toRef(), getTitle(), getDescription(), getImage() ,getEpisodeNumber(), getYear(), getCertificates());
 	}
 
     public <V> V accept(ItemVisitor<V> visitor) {

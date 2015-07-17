@@ -322,4 +322,6 @@ message ItemSummary {
     optional string description = 4;
     optional string image = 5;
     optional int32 episode_number = 6;
+    optional int32 releaseYear = 7;
+    repeated Certificate certificates = 8;
 }

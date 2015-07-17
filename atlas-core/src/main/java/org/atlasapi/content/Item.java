@@ -220,7 +220,7 @@ public class Item extends Content {
     }
 
     public ItemSummary toSummary() {
-        return new ItemSummary(toRef(), getTitle(), getDescription(), getImage());
+        return new ItemSummary(toRef(), getTitle(), getDescription(), getImage(), getYear(), getCertificates());
     }
 
     public static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
