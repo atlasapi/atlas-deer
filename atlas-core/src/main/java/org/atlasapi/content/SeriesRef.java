@@ -29,6 +29,15 @@ public class SeriesRef extends ContainerRef implements Comparable<SeriesRef> {
     public SeriesRef(Id id, Publisher source) {
         this(id, source, null, null, null, null, null);
     }
+
+    public SeriesRef(Id id, Publisher source, String title, Integer seriesNumber, DateTime updated) {
+        super(id, source);
+        this.title = title;
+        this.seriesNumber = seriesNumber;
+        this.updated = updated;
+        this.releaseYear = null;
+        this.certificates = null;
+    }
     
     public SeriesRef(Id id, Publisher source, String title, Integer seriesNumber, DateTime updated, Integer releaseYear, Iterable<Certificate> certs) {
         super(id, source);

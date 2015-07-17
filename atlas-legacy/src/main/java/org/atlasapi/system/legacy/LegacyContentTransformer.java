@@ -124,7 +124,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
                     @Override
                     public SeriesRef apply(org.atlasapi.media.entity.SeriesRef input) {
                         return new SeriesRef(Id.valueOf(input.getId()), brand.getPublisher(),
-                                input.getTitle(), input.getSeriesNumber(), input.getUpdated());
+                                input.getTitle(), input.getSeriesNumber(), input.getUpdated(), null, null);
                     }
                 }
         ));
@@ -475,7 +475,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     }
 
     private SeriesRef transformToSeriesRef(org.atlasapi.media.entity.ParentRef seriesRef, Publisher publisher) {
-        return new SeriesRef(Id.valueOf(seriesRef.getId()), publisher, null, null, null);
+        return new SeriesRef(Id.valueOf(seriesRef.getId()), publisher, null, null, null, null, null);
     }
 
     private BrandRef transformToBrandRef(org.atlasapi.media.entity.ParentRef ref, Publisher publisher) {

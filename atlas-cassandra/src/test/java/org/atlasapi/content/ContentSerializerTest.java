@@ -35,7 +35,7 @@ public class ContentSerializerTest {
         Brand brand = new Brand();
         setContainerProperties(brand);
         brand.setSeriesRefs(ImmutableSet.of(
-            new SeriesRef(Id.valueOf(123L), brand.getSource(), "sort", 1, new DateTime(DateTimeZones.UTC))
+            new SeriesRef(Id.valueOf(123L), brand.getSource(), "sort", 1, new DateTime(DateTimeZones.UTC), null, null)
         ));
         
         ContentProtos.Content serialized = serializer.serialize(brand);
@@ -112,7 +112,7 @@ public class ContentSerializerTest {
         episode.setEpisodeNumber(5);
         episode.setPartNumber(4);
         episode.setSeriesNumber(5);
-        SeriesRef seriesRef = new SeriesRef(Id.valueOf(5), episode.getSource(), "title", 5, new DateTime(DateTimeZones.LONDON));
+        SeriesRef seriesRef = new SeriesRef(Id.valueOf(5), episode.getSource(), "title", 5, new DateTime(DateTimeZones.LONDON), null, null);
         episode.setSeriesRef(seriesRef);
         
         ContentProtos.Content serialized = serializer.serialize(episode);

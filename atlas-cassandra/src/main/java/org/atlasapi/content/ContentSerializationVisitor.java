@@ -246,11 +246,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         );
 
 
-        builder.addAllCertificates(aggregateCertificates(container).stream()
-                .map(certificateSerializer::serialize)
-                .collect(ImmutableCollectors.toSet()));
+        if (container.getCertificates() != null) {
+            builder.addAllCertificates(container.getCertificates().stream()
+                    .map(certificateSerializer::serialize)
+                    .collect(ImmutableCollectors.toSet()));
+        }
 
-        builder.addAllReleaseYears(aggregateReleaseYears(container));
+        if (container.getYear() != null) {
+            builder.addReleaseYears(container.getYear());
+        }
 
         return builder;
     }

@@ -184,7 +184,7 @@ public class ItemDisplayTitleWriterTest {
         Episode entity = new Episode();
         entity.setSpecial(false);
         entity.setContainerSummary(new ContainerSummary("brand", "Brand Title", "Brand Desc", null));
-        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Series Title", 24, new DateTime()));
+        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Series Title", 24, new DateTime(), null, null));
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
@@ -201,7 +201,7 @@ public class ItemDisplayTitleWriterTest {
         Episode entity = new Episode();
         entity.setSpecial(false);
         entity.setContainerSummary(new ContainerSummary("brand", "Brand Title", "Brand Desc", null));
-        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, null, 24, new DateTime()));
+        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, null, 24, new DateTime(), null, null));
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
@@ -218,7 +218,7 @@ public class ItemDisplayTitleWriterTest {
         Episode entity = new Episode();
         entity.setSpecial(false);
         entity.setContainerSummary(new ContainerSummary("brand", "Brand Title", "Brand Desc", null));
-        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, null, null, new DateTime()));
+        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, null, null, new DateTime(), null, null));
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
@@ -235,7 +235,7 @@ public class ItemDisplayTitleWriterTest {
         Episode entity = new Episode();
         entity.setSpecial(false);
         entity.setContainerSummary(new ContainerSummary("brand", "Brand Title", "Brand Desc", null));
-        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, null, null, new DateTime()));
+        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, null, null, new DateTime(), null, null));
         entity.setEpisodeNumber(null);
         entity.setTitle(null);
         
@@ -252,7 +252,7 @@ public class ItemDisplayTitleWriterTest {
         Episode entity = new Episode();
         entity.setSpecial(false);
         entity.setContainerSummary(new ContainerSummary("brand", "Brand Title", "Brand Desc", null));
-        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Brand Title", null, new DateTime()));
+        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Brand Title", null, new DateTime(), null, null));
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
@@ -269,7 +269,7 @@ public class ItemDisplayTitleWriterTest {
         Episode entity = new Episode();
         entity.setSpecial(false);
         entity.setContainerSummary(null);
-        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Series Title", 24, new DateTime()));
+        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Series Title", 24, new DateTime(), null, null));
         entity.setEpisodeNumber(42);
         entity.setTitle("Sausages");
         
@@ -328,7 +328,7 @@ public class ItemDisplayTitleWriterTest {
         Episode entity = new Episode();
         entity.setSpecial(false);
         entity.setContainerSummary(new ContainerSummary("brand", "Silent Witness", "Shhh", null));
-        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Series 17", 17, new DateTime()));
+        entity.setSeriesRef(new SeriesRef(Id.valueOf(1L), Publisher.METABROADCAST, "Series 17", 17, new DateTime(), null, null));
         entity.setEpisodeNumber(5);
         entity.setTitle("Fraternity Part 2");
         

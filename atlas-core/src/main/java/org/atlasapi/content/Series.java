@@ -72,7 +72,7 @@ public class Series extends Container {
     
     public SeriesRef toRef() {
         return new SeriesRef(getId(), getSource(), Strings.nullToEmpty(this.getTitle()),
-                this.seriesNumber, getThisOrChildLastUpdated());
+                this.seriesNumber, getThisOrChildLastUpdated(), getYear(), getCertificates());
     }
     
     public void setTotalEpisodes(Integer totalEpisodes) {
