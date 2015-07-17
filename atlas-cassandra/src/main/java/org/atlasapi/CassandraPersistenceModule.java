@@ -35,8 +35,6 @@ import org.atlasapi.segment.CassandraSegmentStore;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.CassandraTopicStore;
 import org.atlasapi.topic.Topic;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
@@ -69,13 +67,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             AstyanaxContext<Keyspace> context, DatastaxCassandraService datastaxCassandraService,
             String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher hasher, Iterable<String> cassNodes, MetricRegistry metrics) {
         this.messageSenderFactory = messageSenderFactory;
+        this.dataStaxService = datastaxCassandraService;
         this.keyspace = keyspace;
         this.context = context;
         this.metrics = metrics;
         ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
-        com.datastax.driver.core.ConsistencyLevel datastaxReadConsistency = processing ? com.datastax.driver.core.ConsistencyLevel.QUORUM : com.datastax.driver.core.ConsistencyLevel.ONE;
-        CassandraDataStaxClient dataStaxClient = new CassandraDataStaxClient(datastaxReadConsistency, com.datastax.driver.core.ConsistencyLevel.QUORUM);
-        dataStaxClient.connect(cassNodes, CQL_PORT);
         this.contentStore = CassandraContentStore.builder(context, "content",
                 hasher, sender(contentChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
                 .withReadConsistency(readConsistency)
@@ -94,12 +90,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withKeyspace(keyspace)
                 .withTableName("segments")
                 .withAliasIndex(AliasIndex.<Segment>create(context.getClient(), "segments_aliases"))
-                .withDataStaxClient(dataStaxClient)
+                .withCassandraSession(getSession())
                 .withIdGenerator(idGeneratorBuilder.generator("segment"))
                 .withMessageSender(nullMessageSender())
                 .withEquivalence(segmentEquivalence())
                 .build();
-        this.dataStaxService = datastaxCassandraService;
+
     }
 
     private Equivalence<Segment> segmentEquivalence() {

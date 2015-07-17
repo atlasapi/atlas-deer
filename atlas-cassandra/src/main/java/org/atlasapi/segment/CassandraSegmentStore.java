@@ -10,6 +10,8 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.datastax.driver.core.RegularStatement;
+import com.datastax.driver.core.Session;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
@@ -37,14 +39,14 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
    private static final String SEGMENT = "column1";
 
-    private final CassandraDataStaxClient cassandra;
+    private final Session cassandra;
     private final AliasIndex<Segment> aliasIndex;
     private final String keyspace;
     private final String tableName;
     private final SegmentSerializer segmentSerializer = new SegmentSerializer();
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private CassandraSegmentStore(CassandraDataStaxClient cassandra, String keyspace, String tableName,
+    private CassandraSegmentStore(Session cassandra, String keyspace, String tableName,
                                  AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
                                  Equivalence<? super Segment> equivalence,
                                  MessageSender<ResourceUpdatedMessage> sender) {
@@ -62,13 +64,13 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
         try {
             log.trace("Writing Segment {}", segment.getId());
             long id = segment.getId().longValue();
-            String query = QueryBuilder.insertInto(keyspace, tableName)
+            RegularStatement stmt = QueryBuilder.insertInto(keyspace, tableName)
                     .value(CassandraUtil.KEY, id)
                     .value(SEGMENT, "segment")
                     .value(CassandraUtil.VALUE, ByteBuffer.wrap(segmentSerializer.serialize(segment)))
-                    .setForceNoValues(true)
-                    .getQueryString();
-            cassandra.executeWriteQuery(query);
+                    .setForceNoValues(true);
+
+            cassandra.execute(stmt);
             /* TODO Write CQL implementation of AliasIndex so that these may be batched together */
             aliasIndex.mutateAliases(segment, previous).execute();
         } catch (ConnectionException e) {
@@ -115,11 +117,10 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     }
 
     private ResultSet executeReadQuery(Iterable<Id> ids) {
-        String query = select().from(keyspace, tableName)
+        RegularStatement stmt = select().from(keyspace, tableName)
                 .where(in(CassandraUtil.KEY, idsToArray(ids)))
-                .setForceNoValues(true)
-                .getQueryString();
-        return cassandra.executeReadQuery(query);
+                .setForceNoValues(true);
+        return cassandra.execute(stmt);
     }
 
     private Iterable<Segment> transformResultSet(ResultSet rows) {
@@ -149,7 +150,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
     public static class Builder {
 
-        private CassandraDataStaxClient cassandra;
+        private Session cassandra;
         private String keyspace;
         private String tableName;
         private AliasIndex<Segment> segmentIndex;
@@ -161,7 +162,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
         }
 
-        public Builder withDataStaxClient(CassandraDataStaxClient cassandra) {
+        public Builder withCassandraSession(Session cassandra) {
             this.cassandra = cassandra;
             return this;
         }
