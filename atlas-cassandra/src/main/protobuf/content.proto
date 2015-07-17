@@ -92,7 +92,7 @@ message Content {
     repeated TopicRef topic_refs = 27  [(column)=TOPICS];
     repeated common.Reference content_groups = 29 [(column)=GROUPS];
     repeated CrewMember crew_members = 28  [(column)=PEOPLE];
-    repeated Certificate certificates = 32 [(column)=DESC];
+    repeated common.Certificate certificates = 32 [(column)=DESC];
     repeated Subtitle subtitles = 33  [(column)=DESC];
     repeated ReleaseDate release_dates = 34 [(column)=DESC];
     repeated SegmentEvent segment_events = 37 [(column)=SEGMENTS];
@@ -292,10 +292,7 @@ message CrewMember {
     optional string character = 5;
 }
 
-message Certificate {
-    optional string country = 1;
-    optional string classification = 2;
-}
+
 
 message Subtitle {
     optional string language = 1;
@@ -323,5 +320,5 @@ message ItemSummary {
     optional string image = 5;
     optional int32 episode_number = 6;
     optional int32 releaseYear = 7;
-    repeated Certificate certificates = 8;
+    repeated common.Certificate certificates = 8;
 }

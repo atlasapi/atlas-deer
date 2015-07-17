@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.util.List;
+import java.util.Set;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -18,20 +19,24 @@ public class SeriesRef extends ContainerRef implements Comparable<SeriesRef> {
     private final String title;
     private final DateTime updated;
     private final Integer seriesNumber;
+    private final Integer releaseYear;
+    private final ImmutableSet<Certificate> certificates;
     
     public static List<SeriesRef> dedupeAndSort(Iterable<SeriesRef> seriesRefs) {
         return NATURAL.immutableSortedCopy(ImmutableSet.copyOf(seriesRefs));
     }
     
     public SeriesRef(Id id, Publisher source) {
-        this(id, source, null, null, null);
+        this(id, source, null, null, null, null, null);
     }
     
-    public SeriesRef(Id id, Publisher source, String title, Integer seriesNumber, DateTime updated) {
+    public SeriesRef(Id id, Publisher source, String title, Integer seriesNumber, DateTime updated, Integer releaseYear, Iterable<Certificate> certs) {
         super(id, source);
         this.title =  title;
         this.seriesNumber = seriesNumber;
         this.updated = updated;
+        this.releaseYear = releaseYear;
+        this.certificates = certs != null ? ImmutableSet.copyOf(certs) : ImmutableSet.of();
     }
     
     @FieldName("content_type")
@@ -54,7 +59,15 @@ public class SeriesRef extends ContainerRef implements Comparable<SeriesRef> {
     public Integer getSeriesNumber() {
         return seriesNumber;
     }
-    
+
+    public ImmutableSet<Certificate> getCertificates() {
+        return certificates;
+    }
+
+    public Integer getReleaseYear() {
+        return releaseYear;
+    }
+
     @Override
     public int compareTo(SeriesRef comparableTo) {
         if (seriesNumber != null && comparableTo.seriesNumber != null) {

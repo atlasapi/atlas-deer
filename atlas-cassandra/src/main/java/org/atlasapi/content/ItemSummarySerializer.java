@@ -73,7 +73,7 @@ public class ItemSummarySerializer {
         }
         if (itemSummary.getCertificates().isPresent()) {
             ImmutableSet<Certificate> certs = itemSummary.getCertificates().get();
-            ImmutableList<ContentProtos.Certificate> serialisedCerts = certs.stream()
+            ImmutableList<CommonProtos.Certificate> serialisedCerts = certs.stream()
                             .map(certificateSerializer::serialize)
                             .collect(ImmutableCollectors.toList());
             builder.addAllCertificates(serialisedCerts);

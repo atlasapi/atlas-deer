@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ProtoBufUtils;
 import org.atlasapi.media.entity.Publisher;
@@ -7,6 +8,7 @@ import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference.Builder;
 import org.atlasapi.source.Sources;
+import org.atlasapi.util.ImmutableCollectors;
 import org.joda.time.DateTime;
 
 import com.google.common.primitives.Ints;
@@ -15,6 +17,7 @@ import com.google.common.primitives.Ints;
 public class ContentRefSerializer {
 
     private final Publisher deflt;
+    private final CertificateSerializer certificateSerializer = new CertificateSerializer();
 
     public ContentRefSerializer(Publisher deflt) {
         this.deflt = deflt;
@@ -78,6 +81,15 @@ public class ContentRefSerializer {
                 if (seriesRef.getUpdated() != null) {
                     builder.setUpdated(ProtoBufUtils.serializeDateTime(seriesRef.getUpdated()));
                 }
+                if (seriesRef.getCertificates() != null) {
+                    ImmutableSet<CommonProtos.Certificate> certs = seriesRef.getCertificates().stream()
+                            .map(certificateSerializer::serialize)
+                            .collect(ImmutableCollectors.toSet());
+                    builder.addAllCertificates(certs);
+                }
+                if (seriesRef.getReleaseYear() != null) {
+                    builder.setReleaseYear(seriesRef.getReleaseYear());
+                }
                 return builder;
             }
         });
@@ -127,7 +139,10 @@ public class ContentRefSerializer {
 
             @Override
             public ContentRef visitSeries(ContentType contentType) {
-                return new SeriesRef(id, src, sortKey, position, updated);
+                ImmutableSet<Certificate> certs = ref.getCertificatesList().stream()
+                                .map(certificateSerializer::deserialize)
+                                .collect(ImmutableCollectors.toSet());
+                return new SeriesRef(id, src, sortKey, position, updated, ref.getReleaseYear(), certs);
             }
 
         });

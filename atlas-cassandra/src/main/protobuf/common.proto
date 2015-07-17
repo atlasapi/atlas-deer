@@ -45,9 +45,16 @@ message Reference {
     optional string sort = 4;
     optional DateTime updated = 5;
     optional int64 position = 6;
+    repeated Certificate certificates = 7;
+    optional int32 releaseYear = 8;
 }
 
 message Alias {
     optional string value = 1;
     optional string namespace = 2;
+}
+
+message Certificate {
+    optional string country = 1;
+    optional string classification = 2;
 }

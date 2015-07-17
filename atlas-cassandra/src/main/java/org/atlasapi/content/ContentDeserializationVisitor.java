@@ -134,7 +134,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private <C extends Content> C visitContent(C content) {
         content = visitDescribed(content);
         ImmutableSet.Builder<Certificate> certificates = ImmutableSet.builder();
-        for (ContentProtos.Certificate cert : msg.getCertificatesList()) {
+        for (CommonProtos.Certificate cert : msg.getCertificatesList()) {
             certificates.add(certificateSerializer.deserialize(cert));
         }
         content.setCertificates(certificates.build());

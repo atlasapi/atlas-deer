@@ -255,55 +255,6 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         return builder;
     }
 
-    private ImmutableSet<Integer> aggregateReleaseYears(Container container) {
-        if (container instanceof Series) {
-            return container.getYear() != null ? ImmutableSet.of(container.getYear()) : ImmutableSet.of();
-        }
-        try {
-            ImmutableSet.Builder<Integer> releaseYears = ImmutableSet.builder();
-            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 125)) {
-                Resolved<Content> resolved = Futures.get(
-                        resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
-                        IOException.class
-                );
-                resolved.getResources().toList().stream()
-                        .map(Content::getYear)
-                        .filter(y -> y != null)
-                        .distinct()
-                        .forEach(releaseYears::add);
-            }
-            if (container.getYear() != null) {
-                return releaseYears.add(container.getYear()).build();
-            }
-            return releaseYears.build();
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
-    private Set<Certificate> aggregateCertificates(Container container) {
-        if (container instanceof Series) {
-            return container.getCertificates() != null ? ImmutableSet.copyOf(container.getCertificates()) : ImmutableSet.of();
-        }
-        try {
-            ImmutableSet.Builder<Certificate> certs = ImmutableSet.builder();
-            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 125)) {
-                Resolved<Content> resolved = Futures.get(
-                        resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
-                        IOException.class
-                );
-                resolved.getResources().toList().stream()
-                        .flatMap(i -> i.getCertificates().stream())
-                        .filter(cert -> cert != null)
-                        .distinct()
-                        .forEach(certs::add);
-            }
-            return certs.build();
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
     @Override
     public Builder visit(Brand brand) {
         Builder builder = visitContainer(brand);

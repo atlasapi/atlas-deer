@@ -24,7 +24,6 @@ public abstract class Container extends Content {
     private Map<ItemRef, Iterable<BroadcastRef>> upcomingContent = ImmutableMap.of();
     private Map<ItemRef, Iterable<LocationSummary>> availableContent = ImmutableMap.of();
     private List<ItemSummary> itemSummaries = ImmutableList.of();
-    private List<Integer> releaseYears = ImmutableList.of();
 
 	public Container(String uri, String curie, Publisher publisher) {
 		super(uri, curie, publisher);
@@ -121,13 +120,5 @@ public abstract class Container extends Content {
         this.itemSummaries = itemSummaries.stream()
                 .sorted(ItemSummary.ORDERING)
                 .collect(ImmutableCollectors.toList());
-    }
-
-    public void setReleaseYears(List<Integer> releaseYears) {
-        this.releaseYears = releaseYears;
-    }
-
-    public List<Integer> getReleaseYears() {
-        return releaseYears;
     }
 }
