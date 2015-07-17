@@ -261,7 +261,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         try {
             ImmutableSet.Builder<Integer> releaseYears = ImmutableSet.builder();
-            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 150)) {
+            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 125)) {
                 Resolved<Content> resolved = Futures.get(
                         resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
                         IOException.class
@@ -287,7 +287,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         try {
             ImmutableSet.Builder<Certificate> certs = ImmutableSet.builder();
-            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 150)) {
+            for (List<ItemRef> refBatch : Iterables.partition(container.getItemRefs(), 125)) {
                 Resolved<Content> resolved = Futures.get(
                         resolver.resolveIds(Iterables.transform(refBatch, ItemRef::getId)),
                         IOException.class
