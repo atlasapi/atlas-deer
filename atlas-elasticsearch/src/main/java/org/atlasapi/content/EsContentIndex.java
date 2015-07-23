@@ -544,7 +544,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private QueryBuilder addContainerAvailabilityFilter(QueryBuilder queryBuilder) {
         return QueryBuilders.hasChildQuery(
-                EsContent.CHILD_ITEM,
+                EsContent. CHILD_ITEM,
                 QueryBuilders.nestedQuery(
                         EsContent.LOCATIONS,
                         QueryBuilders.boolQuery()
@@ -590,7 +590,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         QueryOrdering order = queryParams.get().getOrdering().get();
         reqBuilder.addSort(
                 SortBuilders
-                        .fieldSort(order.getPath())
+                        .fieldSort(order.getPath().equalsIgnoreCase("title") ? "flattenedTitle" : order.getPath())
                         .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
         );
     }
