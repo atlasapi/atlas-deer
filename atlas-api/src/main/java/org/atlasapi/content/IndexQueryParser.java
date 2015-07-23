@@ -33,8 +33,17 @@ public class IndexQueryParser {
                 regionIdFrom(query),
                 broadcastWeightingFrom(query),
                 titleWeightingFrom(query),
-                topicIdsFrom(query)
+                topicIdsFrom(query),
+                containerAvailabilityFilterFrom(query)
         );
+    }
+
+    private Boolean containerAvailabilityFilterFrom(Query<?> query) {
+        String param = query.getContext().getRequest().getParameter("brand.series.availability");
+        if (!Strings.isNullOrEmpty(param)) {
+            return true;
+        }
+        return false;
     }
 
     private Optional<List<List<InclusionExclusionId>>> topicIdsFrom(Query<?> query) {

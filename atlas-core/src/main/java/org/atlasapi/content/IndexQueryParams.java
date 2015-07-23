@@ -15,15 +15,18 @@ public class IndexQueryParams {
     private final Optional<Float> broadcastWeighting;
     private final Optional<Float> titleWeighting;
     private final Optional<List<List<InclusionExclusionId>>> topicFilterIds;
+    private final Boolean containerAvailabilityFilter;
 
     public IndexQueryParams(Optional<FuzzyQueryParams> fuzzyQueryParams, Optional<QueryOrdering> ordering,
-            Optional<Id> regionId, Optional<Float> broadcastWeighting, Optional<Float> titleWeighting, Optional<List<List<InclusionExclusionId>>> topicFilterIds) {
+            Optional<Id> regionId, Optional<Float> broadcastWeighting, Optional<Float> titleWeighting, Optional<List<List<InclusionExclusionId>>> topicFilterIds,
+            Boolean containerAvailability) {
         this.fuzzyQueryParams = checkNotNull(fuzzyQueryParams);
         this.ordering = checkNotNull(ordering);
         this.regionId = checkNotNull(regionId);
         this.broadcastWeighting = checkNotNull(broadcastWeighting);
         this.titleWeighting = checkNotNull(titleWeighting);
         this.topicFilterIds = checkNotNull(topicFilterIds);
+        this.containerAvailabilityFilter = containerAvailability;
     }
 
     public Optional<FuzzyQueryParams> getFuzzyQueryParams() {
@@ -48,5 +51,9 @@ public class IndexQueryParams {
 
     public Optional<List<List<InclusionExclusionId>>> getTopicFilterIds() {
         return topicFilterIds;
+    }
+
+    public Boolean shouldFilterUnavailableContainers() {
+        return containerAvailabilityFilter;
     }
 }

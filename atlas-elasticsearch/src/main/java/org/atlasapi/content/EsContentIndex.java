@@ -518,6 +518,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                         queryBuilder
                 );
             }
+            if (queryParams.get().shouldFilterUnavailableContainers()) {
+                queryBuilder = addContainerAvailabilityFilter(queryBuilder);
+            }
         }
 
         reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
@@ -537,6 +540,21 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 return Id.valueOf(id);
             }), input.getHits().getTotalHits());
         });
+    }
+
+    private QueryBuilder addContainerAvailabilityFilter(QueryBuilder queryBuilder) {
+        return QueryBuilders.hasChildQuery(
+                EsContent.CHILD_ITEM,
+                QueryBuilders.nestedQuery(
+                        EsContent.LOCATIONS,
+                        QueryBuilders.boolQuery()
+                                .must(QueryBuilders.rangeQuery("availabilityTime")
+                                        .gte(DateTime.now().toString()))
+                                .must(QueryBuilders.rangeQuery("availabilityEndTime")
+                                        .lte(DateTime.now().toString()))
+                                .must(queryBuilder)
+                )
+        );
     }
 
     public QueryBuilder applyTopicIdFilters(List<List<InclusionExclusionId>> topicIdSets, QueryBuilder queryBuilder) {

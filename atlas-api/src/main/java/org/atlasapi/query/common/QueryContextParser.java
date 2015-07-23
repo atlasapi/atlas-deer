@@ -71,7 +71,8 @@ public class QueryContextParser implements ParameterNameProvider {
                     "region",
                     "broadcastWeight",
                     "titleWeight",
-                    "tags.topic.id"
+                    "tags.topic.id",
+                    "brand.series.available"
             )
         )));
     }
