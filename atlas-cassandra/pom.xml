@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.atlasapi</groupId>
     <artifactId>atlas</artifactId>
-    <version>7.0.228-SNAPSHOT</version>
+    <version>7.0.229-SNAPSHOT</version>
   </parent>
   <artifactId>atlas-cassandra</artifactId>
   <packaging>jar</packaging>
