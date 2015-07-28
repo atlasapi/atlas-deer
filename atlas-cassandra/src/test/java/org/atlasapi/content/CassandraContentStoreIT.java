@@ -610,7 +610,7 @@ public class CassandraContentStoreIT {
         store.writeContent(series);
         
         resolved = store.resolveAliases(
-            ImmutableSet.of(bbcBrandAlias, bbcSeriesAlias), Publisher.BBC);
+                ImmutableSet.of(bbcBrandAlias, bbcSeriesAlias), Publisher.BBC);
         
         assertThat(resolved.size(), is(2));
         assertThat(resolved.get(bbcBrandAlias).get().getId(), is(Id.valueOf(1234L)));
@@ -1270,7 +1270,45 @@ public class CassandraContentStoreIT {
         assertThat(storedSummary.getDescription().get(), is(episode.getDescription()));
         assertThat(storedSummary.getEpisodeNumber().get(), is(episode.getEpisodeNumber()));
 
+    }
 
+    @Test
+    public void testDeleteSeriesReferenceIfContentIsNotActivelyPublished() throws Exception {
+
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Series series1 = create(new Series());
+        series1.setBrand(brandWriteResult.getResource());
+
+        when(clock.now()).thenReturn(now.plusHours(1));
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        store.writeContent(series1);
+
+        Series series2 = create(new Series());
+        series2.setBrand(brandWriteResult.getResource());
+
+        when(clock.now()).thenReturn(now.plusHours(1));
+        when(idGenerator.generateRaw()).thenReturn(1236L);
+        store.writeContent(series2);
+
+
+        Brand resolvedBrand = (Brand) resolve(1234L);
+        assertThat(resolvedBrand.getSeriesRefs(), is(ImmutableList.of(series1.toRef(), series2.toRef())));
+
+        series1.setActivelyPublished(false);
+
+        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+
+        store.writeContent(series1);
+
+        resolvedBrand = (Brand) resolve(1234L);
+        assertThat(resolvedBrand.getSeriesRefs(), is(ImmutableList.of(series2.toRef())));
     }
 
 
