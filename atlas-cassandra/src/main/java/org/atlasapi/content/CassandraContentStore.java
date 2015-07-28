@@ -302,8 +302,12 @@ public final class CassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef) {
+    protected void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef, Boolean activelyPublished) {
         try {
+            if(!activelyPublished) {
+                removeSeriesRef(primary, seriesRef);
+                return;
+            }
             Long rowId = primary.getId().longValue();
             Brand container = new Brand();
             container.setSeriesRefs(ImmutableList.of(seriesRef));
@@ -317,6 +321,15 @@ public final class CassandraContentStore extends AbstractContentStore {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
+    }
+
+    private void removeSeriesRef(BrandRef brandRef, SeriesRef seriesRef) throws ConnectionException {
+        Long rowId = brandRef.getId().longValue();
+        String columnId = seriesRef.getId().toString();
+        MutationBatch batch = keyspace.prepareMutationBatch();
+        ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
+        mutation.deleteColumn(columnId);
+        batch.execute();
     }
 
     @Override
