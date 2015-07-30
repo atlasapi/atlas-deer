@@ -93,16 +93,18 @@ public class IndividualContentBootstrapController {
                 for (Content c : contentLister.list(ImmutableList.of(fromKey.requireValue()))) {
                     bootstrapExecutorService.submit(
                             () -> {
+                                log.info(
+                                        "Content type: {}, id: {}, activelyPublished: {}, count: {}",
+                                        ContentType.fromContent(c).get(),
+                                        c.getId(),
+                                        c.isActivelyPublished(),
+                                        atomicInteger.incrementAndGet()
+                                );
                                 c.accept(visitor);
-                                atomicInteger.incrementAndGet();
+
                             }
                     );
                 }
-                log.info(
-                        "Finished bootstrapping source: {}, bootstrapped {} items",
-                        sourceString,
-                        atomicInteger.get()
-                );
             }
         );
         resp.setStatus(HttpStatus.ACCEPTED.value());
