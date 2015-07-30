@@ -173,11 +173,7 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
                     .addRepeatedField(fd, uc)
                     .build();
             mutation.putColumn(
-                    String.format(
-                            "%s:%s",
-                            UPCOMING_CONTENT_PREFIX,
-                            uc.getItem().getId()
-                    ),
+                    buildUpcomingContentKey(uc.getItem().getId()),
                     col.toByteArray()
             );
         }
@@ -192,11 +188,7 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
                     .addRepeatedField(fd, uc)
                     .build();
             mutation.putColumn(
-                    String.format(
-                            "%s:%s",
-                            AVAILABLE_CONTENT_PREFIX,
-                            uc.getItem().getId()
-                    ),
+                    buildAvailableContentKey(uc.getItem().getId()),
                     col.toByteArray()
             );
         }
@@ -211,14 +203,34 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
                     .addRepeatedField(fd, uc)
                     .build();
             mutation.putColumn(
-                    String.format(
-                            "%s:%s",
-                            ITEM_SUMMARY_PREFIX,
-                            uc.getItemRef().getId()
-                    ),
+                    buildItemSummaryKey(uc.getItemRef().getId()),
                     col.toByteArray()
             );
         }
+    }
+
+    public static String buildItemSummaryKey(Long id) {
+        return String.format(
+                "%s:%s",
+                ITEM_SUMMARY_PREFIX,
+                id
+        );
+    }
+
+    public static String buildAvailableContentKey(Long id) {
+        return String.format(
+                "%s:%s",
+                AVAILABLE_CONTENT_PREFIX,
+                id
+        );
+    }
+
+    public static String buildUpcomingContentKey(Long id) {
+        return String.format(
+                "%s:%s",
+                UPCOMING_CONTENT_PREFIX,
+                id
+        );
     }
 
     private boolean isChildRefColumn(ContentProtos.Column key) {

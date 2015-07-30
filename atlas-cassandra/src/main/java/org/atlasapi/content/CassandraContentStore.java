@@ -8,17 +8,15 @@ import static org.atlasapi.content.ContentColumn.TYPE;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import com.google.common.collect.Sets;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.RuntimeWriteException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraUtil;
@@ -305,7 +303,10 @@ public final class CassandraContentStore extends AbstractContentStore {
     protected void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef, Boolean activelyPublished) {
         try {
             if(!activelyPublished) {
-                removeSeriesRef(primary, seriesRef);
+                MutationBatch batch = keyspace.prepareMutationBatch();
+                batch.setConsistencyLevel(writeConsistency);
+                removeContentRef(primary, seriesRef, batch);
+                batch.execute();
                 return;
             }
             Long rowId = primary.getId().longValue();
@@ -323,22 +324,42 @@ public final class CassandraContentStore extends AbstractContentStore {
         }
     }
 
-    private void removeSeriesRef(BrandRef brandRef, SeriesRef seriesRef) throws ConnectionException {
-        Long rowId = brandRef.getId().longValue();
-        String columnId = seriesRef.getId().toString();
-        MutationBatch batch = keyspace.prepareMutationBatch();
+    private void removeContentRef(ContainerRef containerRef, ContentRef contentRef, MutationBatch batch) throws ConnectionException {
+        Long rowId = containerRef.getId().longValue();
+        String columnId = contentRef.getId().toString();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(columnId);
-        batch.execute();
     }
+
+    private void removeItemSummaries(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+        Long rowId = containerRef.getId().longValue();
+        ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
+        mutation.deleteColumn(ProtobufContentMarshaller.buildItemSummaryKey(itemRef.getId().longValue()));
+    }
+
+    private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+        Long rowId = containerRef.getId().longValue();
+        ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
+        mutation.deleteColumn(ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId().longValue()));
+    }
+
+    private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+        Long rowId = brancontainerRefRef.getId().longValue();
+        ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
+        mutation.deleteColumn(ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId().longValue()));
+    }
+
 
     @Override
     protected void writeItemRefs(
             Item item
     ) {
         try {
-
             ensureId(item);
+            if(!item.isActivelyPublished()) {
+                removeItemRefsFromContainers(item);
+                return;
+            }
             ContainerRef containerRef = item.getContainerRef();
             ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingBroadcasts = ImmutableMap.of(
                     item.toRef(), getUpcomingBroadcastRefs(item)
@@ -381,6 +402,26 @@ public final class CassandraContentStore extends AbstractContentStore {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
+    }
+
+    private void removeItemRefsFromContainers(Item item) throws ConnectionException {
+        MutationBatch batch = keyspace.prepareMutationBatch();
+        batch.setConsistencyLevel(writeConsistency);
+        if (item.getContainerRef() != null) {
+            removeAllReferencesToItem(item.getContainerRef(), item.toRef(), batch);
+        }
+        if(item instanceof Episode && ((Episode) item).getSeriesRef() != null){
+            Episode episode = (Episode) item;
+            removeAllReferencesToItem(episode.getSeriesRef(), episode.toRef(), batch);
+        }
+        batch.execute();
+    }
+
+    private void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+        removeContentRef(containerRef, itemRef, batch);
+        removeItemSummaries(containerRef, itemRef, batch);
+        removeAvailableContent(containerRef, itemRef, batch);
+        removeUpcomingContent(containerRef, itemRef, batch);
     }
 
     private Iterable<BroadcastRef> getUpcomingBroadcastRefs(Item item) {
