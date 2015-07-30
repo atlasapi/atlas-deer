@@ -12,9 +12,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.Temporal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -266,12 +265,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             log.warn("Empty content for " + update);
             return;
         }
-        Instant instant = Instant.now();
+        Instant start = Instant.now();
         updateDataRows(graphsAndContent);
         updateIndexRows(graphsAndContent);
         deleteStaleSets(update.getDeleted());
         deleteStaleRows(update.getUpdated(), update.getCreated());
-        log.info("updateEquivalences() took {}ms", Instant.now().minus(instant.toEpochMilli(), ChronoUnit.MILLIS));
+        log.info("updateEquivalences() for {} took {}ms", Duration.between(start, Instant.now()).toMillis());
     }
 
     private void deleteStaleRows(EquivalenceGraph updated, ImmutableSet<EquivalenceGraph> created) {

@@ -305,6 +305,7 @@ public abstract class Described extends Identified implements Sourced {
         to.shortDescription = from.shortDescription;
         to.mediumDescription = from.mediumDescription;
         to.longDescription = from.longDescription;
+        to.activelyPublished = from.activelyPublished;
     }
     
     public abstract Described copy();

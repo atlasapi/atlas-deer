@@ -73,7 +73,7 @@ public class DirectAndExplicitEquivalenceMigrator {
                 Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(
                         content,
                         equivRefs);
-                log.trace("Updated graph store? {}", graphUpdate.isPresent());
+                log.trace("Updated graph store for {}? {}", content.getId(), graphUpdate.isPresent());
                 return graphUpdate;
             } else {
                 log.warn("Content {} has no explicit equivalents", content.getId());

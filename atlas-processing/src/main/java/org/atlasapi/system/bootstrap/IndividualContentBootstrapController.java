@@ -74,7 +74,7 @@ public class IndividualContentBootstrapController {
     @RequestMapping(value="/system/bootstrap/source", method=RequestMethod.POST) 
     public void bootstrapSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
         ContentVisitorAdapter<String> visitor = visitor();
-        log.info("Bootstrapping source: {}, id");
+        log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         executorService.execute(() -> 
             {
@@ -117,7 +117,7 @@ public class IndividualContentBootstrapController {
             
             @Override
             public String visit(Brand brand) {
-                WriteResult<?, Content> brandWrite = write(brand.copy());
+                WriteResult<?, Content> brandWrite = write(brand);
                 int series = resolveAndWrite(Iterables.transform(brand.getSeriesRefs(), Identifiables.toId()));
                 int childs = resolveAndWrite(Iterables.transform(brand.getItemRefs(), Identifiables.toId()));
                 return String.format("%s s:%s c:%s", brandWrite, series, childs);
@@ -125,7 +125,7 @@ public class IndividualContentBootstrapController {
             
             @Override
             public String visit(Series series) {
-                WriteResult<?, Content> seriesWrite = write(series.copy());
+                WriteResult<?, Content> seriesWrite = write(series);
                 int childs = resolveAndWrite(Iterables.transform(series.getItemRefs(), Identifiables.toId()));
                 return String.format("%s c:%s", seriesWrite, childs);
             }
@@ -148,7 +148,12 @@ public class IndividualContentBootstrapController {
 
             private WriteResult<? extends Content, Content> write(Content content) {
                 try {
-                    log.info(ContentType.fromContent(content).get() + " " + content.getId());
+                    log.info(
+                            "Content type: {}, id: {}, activelyPublished: {}",
+                            ContentType.fromContent(content).get(),
+                            content.getId(),
+                            content.isActivelyPublished()
+                    );
                     content.setReadHash(null);
                     WriteResult<Content, Content> writeResult = write.writeContent(content);
                     contentIndex.index(content);
