@@ -3,9 +3,12 @@ package org.atlasapi.system.bootstrap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -48,21 +51,28 @@ import com.metabroadcast.common.base.Maybe;
 
 @Controller
 public class IndividualContentBootstrapController {
-    
-    private final Logger log = LoggerFactory.getLogger(getClass());
 
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final ContentResolver read;
+
     private final ContentWriter write;
     private final ResourceLister<Content> contentLister;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final ContentIndex contentIndex;
     private final AtlasPersistenceModule persistence;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
+    private final Integer maxSourceBootstrapThreads;
 
-    public IndividualContentBootstrapController(ContentResolver read, 
-            ResourceLister<Content> contentLister, ContentWriter write, 
-            ContentIndex contentIndex, AtlasPersistenceModule persistence,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator) {
+    public IndividualContentBootstrapController(
+            ContentResolver read,
+            ResourceLister<Content> contentLister,
+            ContentWriter write,
+            ContentIndex contentIndex,
+            AtlasPersistenceModule persistence,
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
+            Integer maxSourceBootstrapThreads
+    ) {
+        this.maxSourceBootstrapThreads = maxSourceBootstrapThreads;
         this.persistence = checkNotNull(persistence);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.read = checkNotNull(read);
@@ -76,12 +86,25 @@ public class IndividualContentBootstrapController {
         ContentVisitorAdapter<String> visitor = visitor();
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
-        executorService.execute(() -> 
+        executorService.execute(() ->
             {
+                AtomicInteger atomicInteger = new AtomicInteger();
+                ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
                 for (Content c : contentLister.list(ImmutableList.of(fromKey.requireValue()))) {
-                    c.accept(visitor);
+                    bootstrapExecutorService.submit(
+                            () -> {
+                                c.accept(visitor);
+                                atomicInteger.incrementAndGet();
+                            }
+                    );
                 }
-            });
+                log.info(
+                        "Finished bootstrapping source: {}, bootstrapped {} items",
+                        sourceString,
+                        atomicInteger.get()
+                );
+            }
+        );
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
  
@@ -155,14 +178,29 @@ public class IndividualContentBootstrapController {
                             content.isActivelyPublished()
                     );
                     content.setReadHash(null);
+                    Instant start = Instant.now();
                     WriteResult<Content, Content> writeResult = write.writeContent(content);
+                    Instant cassandraReadEnd = Instant.now();
                     contentIndex.index(content);
+                    Instant indexingEnd = Instant.now();
                     Optional<EquivalenceGraphUpdate> graphUpdate =
                             equivalenceMigrator.migrateEquivalence(content);
+                    Instant equivalenceUpdateEnd = Instant.now();
                     persistence.getEquivalentContentStore().updateContent(content.toRef());
+                    Instant equivalenceContentUpdateEnd = Instant.now();
                     if (graphUpdate.isPresent()) {
                         persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
                     }
+                    Instant end = Instant.now();
+                    log.info(
+                            "Update for {} write: {}ms, index: {}ms, equivalnce migration: {}ms, equivalent content update {}ms, total: {}ms",
+                            content.getId(),
+                            Duration.between(start, cassandraReadEnd).toMillis(),
+                            Duration.between(cassandraReadEnd, indexingEnd).toMillis(),
+                            Duration.between(indexingEnd, equivalenceUpdateEnd).toMillis(),
+                            Duration.between(equivalenceUpdateEnd, equivalenceContentUpdateEnd).toMillis(),
+                            Duration.between(start, end).toMillis()
+                    );
                     return writeResult;
                 } catch (Exception e) {
                     log.error(String.format("Bootstrapping: %s %s", content.getId(), content), e);

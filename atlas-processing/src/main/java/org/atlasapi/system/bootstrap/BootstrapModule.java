@@ -44,6 +44,7 @@ public class BootstrapModule {
     //we only need 2 here, on to run the bootstrap and one to be able to return quickly when it's running
     private static final Integer NUMBER_OF_SCHECHULE_CONTROLLER_THREADS = 2;
     private static final Integer NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS = Configurer.get("boootstrap.schedule.numThreads").toInt();
+    private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS = Configurer.get("boootstrap.source.numThreads").toInt();
 
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private LegacyPersistenceModule legacy;
@@ -78,7 +79,7 @@ public class BootstrapModule {
     IndividualContentBootstrapController contentBootstrapController() {
         return new IndividualContentBootstrapController(legacy.legacyContentResolver(), 
                 legacy.legacyContentLister(),
-                persistence.contentStore(), search.contentIndex(), persistence, explicitEquivalenceMigrator());
+                persistence.contentStore(), search.contentIndex(), persistence, explicitEquivalenceMigrator(), NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS);
     }
     
     public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {

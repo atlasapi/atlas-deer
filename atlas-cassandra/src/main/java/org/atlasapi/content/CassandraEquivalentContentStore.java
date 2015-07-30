@@ -62,8 +62,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 
-import javax.annotation.Nullable;
-
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
     private static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
@@ -270,7 +268,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         updateIndexRows(graphsAndContent);
         deleteStaleSets(update.getDeleted());
         deleteStaleRows(update.getUpdated(), update.getCreated());
-        log.info("updateEquivalences() for {} took {}ms", Duration.between(start, Instant.now()).toMillis());
+        log.info("updateEquivalences() took {}ms", Duration.between(start, Instant.now()).toMillis());
     }
 
     private void deleteStaleRows(EquivalenceGraph updated, ImmutableSet<EquivalenceGraph> created) {
