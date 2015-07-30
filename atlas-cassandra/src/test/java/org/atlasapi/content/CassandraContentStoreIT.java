@@ -742,7 +742,6 @@ public class CassandraContentStoreIT {
         WriteResult<Series, Content> series1WriteResult = store.writeContent(series1);
 
 
-
         Episode episode1 = create(new Episode());
         episode1.setContainer(brandWriteResult.getResource());
         episode1.setSeries(series1WriteResult.getResource());
@@ -1321,6 +1320,188 @@ public class CassandraContentStoreIT {
     private Content resolve(Long id) throws InterruptedException, ExecutionException, TimeoutException {
         Resolved<Content> resolved = store.resolveIds(ImmutableList.of(Id.valueOf(id))).get(1, TimeUnit.SECONDS);
         return Iterables.getOnlyElement(resolved.getResources());
+    }
+
+
+    @Test
+    public void testDeletesItemReferencesFromContainersWhenContentIsNoLongerActivelyPublished() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+        Series series1 = create(new Series());
+        series1.setBrand(brandWriteResult.getResource());
+
+        when(idGenerator.generateRaw()).thenReturn(1235L);
+        WriteResult<Series, Content> seriesWriteResult = store.writeContent(series1);
+
+        Episode episode = create(new Episode());
+        episode.setContainer(brandWriteResult.getResource());
+        episode.setSeries(seriesWriteResult.getResource());
+        episode.setTitle("Title 1");
+        episode.setImage("image1");
+        episode.setEpisodeNumber(42);
+        episode.setDescription("description");
+
+        Broadcast broadcast1 = new Broadcast(
+                Id.valueOf(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(2)
+        ).withId("sourceID:1");
+        Set<Broadcast> broadcasts = ImmutableSet.of(
+                broadcast1,
+                new Broadcast(
+                        Id.valueOf(1),
+                        DateTime.now(DateTimeZone.UTC).minusHours(2),
+                        DateTime.now(DateTimeZone.UTC).minusHours(1)
+                ).withId("sourceId:2")
+        );
+        episode.setBroadcasts(
+                broadcasts
+        );
+
+        Encoding encoding = new Encoding();
+
+        Location location = new Location();
+        location.setAvailable(true);
+        location.setUri("location");
+        Policy policy1 = new Policy();
+        policy1.setAvailabilityStart(now.minusHours(1));
+        policy1.setAvailabilityEnd(now.plusHours(1));
+        location.setPolicy(policy1);
+
+
+        encoding.setAvailableAt(ImmutableSet.of(location));
+        episode.setManifestedAs(ImmutableSet.of(encoding));
+
+
+        when(idGenerator.generateRaw()).thenReturn(1236L);
+        store.writeContent(episode);
+
+        Map<ItemRef, Iterable<BroadcastRef>> expectedUpcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>> builder()
+                .put(episode.toRef(), ImmutableList.of(broadcast1.toRef()))
+                .build();
+
+        Brand resolvedBrand = (Brand)resolve(1234L);
+
+        Series resolvedSeries = (Series)resolve(1235L);
+
+
+        EpisodeSummary storedSummary = (EpisodeSummary)Iterables.getOnlyElement(resolvedSeries.getItemSummaries());
+
+        assertThat(storedSummary.getItemRef().getId(), is(episode.getId()));
+        assertThat(resolvedSeries.getItemRefs(), is(ImmutableList.of(episode.toRef())));
+        assertThat(resolvedSeries.getUpcomingContent(), is(expectedUpcomingContent));
+        assertThat(resolvedSeries.getAvailableContent().get(episode.toRef()), containsInAnyOrder(location.toSummary()));
+
+        assertThat(resolvedBrand.getUpcomingContent(), is(expectedUpcomingContent));
+        assertThat(resolvedBrand.getAvailableContent().get(episode.toRef()), containsInAnyOrder(location.toSummary()));
+
+        episode.setActivelyPublished(false);
+        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+
+        store.writeContent(episode);
+
+        resolvedBrand = (Brand)resolve(1234L);
+
+        resolvedSeries = (Series)resolve(1235L);
+
+        assertThat(resolvedSeries.getItemSummaries().isEmpty(), is(true) );
+        assertThat(resolvedSeries.getItemRefs().isEmpty(), is(true));
+        assertThat(resolvedSeries.getUpcomingContent().isEmpty(), is(true));
+        assertThat(resolvedSeries.getAvailableContent().isEmpty(), is(true));
+
+        assertThat(resolvedBrand.getUpcomingContent().isEmpty(), is(true));
+        assertThat(resolvedBrand.getAvailableContent().isEmpty(), is(true));
+        assertThat(resolvedBrand.getItemRefs().isEmpty(), is(true));
+
+    }
+
+    @Test
+    public void testDeletesItemWithoutSeriesReferencesFromContainersWhenContentIsNoLongerActivelyPublished() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+
+        Brand brand = create(new Brand());
+
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
+
+
+
+        Episode episode = create(new Episode());
+        episode.setContainer(brandWriteResult.getResource());
+        episode.setTitle("Title 1");
+        episode.setImage("image1");
+        episode.setEpisodeNumber(42);
+        episode.setDescription("description");
+
+        Broadcast broadcast1 = new Broadcast(
+                Id.valueOf(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(2)
+        ).withId("sourceID:1");
+        Set<Broadcast> broadcasts = ImmutableSet.of(
+                broadcast1,
+                new Broadcast(
+                        Id.valueOf(1),
+                        DateTime.now(DateTimeZone.UTC).minusHours(2),
+                        DateTime.now(DateTimeZone.UTC).minusHours(1)
+                ).withId("sourceId:2")
+        );
+        episode.setBroadcasts(
+                broadcasts
+        );
+
+        Encoding encoding = new Encoding();
+
+        Location location = new Location();
+        location.setAvailable(true);
+        location.setUri("location");
+        Policy policy1 = new Policy();
+        policy1.setAvailabilityStart(now.minusHours(1));
+        policy1.setAvailabilityEnd(now.plusHours(1));
+        location.setPolicy(policy1);
+
+
+        encoding.setAvailableAt(ImmutableSet.of(location));
+        episode.setManifestedAs(ImmutableSet.of(encoding));
+
+
+        when(idGenerator.generateRaw()).thenReturn(1236L);
+        store.writeContent(episode);
+
+        Map<ItemRef, Iterable<BroadcastRef>> expectedUpcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>> builder()
+                .put(episode.toRef(), ImmutableList.of(broadcast1.toRef()))
+                .build();
+
+        Brand resolvedBrand = (Brand)resolve(1234L);
+
+        EpisodeSummary storedSummary = (EpisodeSummary)Iterables.getOnlyElement(resolvedBrand.getItemSummaries());
+
+        assertThat(storedSummary.getItemRef().getId(), is(episode.getId()));
+
+        assertThat(resolvedBrand.getItemRefs(), is(ImmutableList.of(episode.toRef())));
+        assertThat(resolvedBrand.getUpcomingContent(), is(expectedUpcomingContent));
+        assertThat(resolvedBrand.getAvailableContent().get(episode.toRef()), containsInAnyOrder(location.toSummary()));
+
+        episode.setActivelyPublished(false);
+        when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
+
+        store.writeContent(episode);
+
+        resolvedBrand = (Brand)resolve(1234L);
+
+        assertThat(resolvedBrand.getItemRefs().isEmpty(), is(true));
+        assertThat(resolvedBrand.getItemSummaries().isEmpty(), is(true) );
+        assertThat(resolvedBrand.getUpcomingContent().isEmpty(), is(true));
+        assertThat(resolvedBrand.getAvailableContent().isEmpty(), is(true));
+
+
     }
 
 }
