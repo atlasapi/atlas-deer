@@ -28,7 +28,7 @@ public class ImageSerializerTest {
         builder.withAvailabilityEnd(new DateTime(2014, DateTimeConstants.JANUARY, 1, 0, 0, 0, 0).withZone(DateTimeZone.UTC));
         builder.withAvailabilityStart(new DateTime(2013, DateTimeConstants.JANUARY, 1, 0, 0, 0, 0).withZone(DateTimeZone.UTC));
         builder.withColor(Color.BLACK_AND_WHITE);
-        builder.withHasTitleArt(true);
+        builder.withHasTitleArt(false);
         builder.withHeight(123);
         builder.withMimeType(MimeType.APPLICATION_ATOM_XML);
         builder.withTheme(Theme.DARK_OPAQUE);

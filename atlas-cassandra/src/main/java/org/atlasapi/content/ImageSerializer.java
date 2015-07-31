@@ -79,7 +79,7 @@ public class ImageSerializer {
             builder.withTheme(Theme.valueOf(msg.getTheme()));
         }
         if (msg.hasHasTitleArt()) {
-            builder.withHasTitleArt(msg.hasHasTitleArt());
+            builder.withHasTitleArt(msg.getHasTitleArt());
         }
         if (msg.hasMimeType()) {
             builder.withMimeType(MimeType.fromString(msg.getMimeType()));
