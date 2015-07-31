@@ -59,6 +59,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         writer.writeList("genres", "genre", desc.getGenres(), ctxt);
         writer.writeField("presentation_channel", desc.getPresentationChannel());
         writer.writeField("priority", desc.getPriority());
+        writer.writeField("long_description", desc.getLongDescription());
         
         if (desc instanceof Item) {
             Item item = (Item) desc;
