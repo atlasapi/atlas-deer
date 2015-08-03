@@ -27,6 +27,7 @@ public class SubItemSummariesAnnotations extends OutputAnnotation<Content> {
             Container container = (Container) entity;
             ImmutableList<ItemSummary> summaries = Ordering.natural()
                     .onResultOf((ItemSummary summary) -> summary.getItemRef().getSortKey())
+                    .reverse()
                     .nullsLast()
                     .immutableSortedCopy(container.getItemSummaries());
             writer.writeList(subItemSummaryListWriter, summaries, ctxt);

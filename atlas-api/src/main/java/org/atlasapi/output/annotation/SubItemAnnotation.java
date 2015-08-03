@@ -28,6 +28,7 @@ public class SubItemAnnotation extends OutputAnnotation<Content> {
             Container container = (Container) entity;
             ImmutableList<ItemRef> orderedRefs = Ordering.natural()
                     .onResultOf(ItemRef::getSortKey)
+                    .reverse()
                     .nullsLast()
                     .immutableSortedCopy(container.getItemRefs());
             writer.writeList(childRefWriter, orderedRefs, ctxt);

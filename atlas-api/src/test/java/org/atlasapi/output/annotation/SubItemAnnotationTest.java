@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class SubItemAnnotationTest {
 
     @Test
-    public void testOrderingOfSubItemsIsBasedLexographicallyOnSortKey() throws Exception {
+    public void testOrderingOfSubItemsIsBasedReverseLexographicallyOnSortKey() throws Exception {
         SubItemAnnotation anno = new SubItemAnnotation(SubstitutionTableNumberCodec.lowerCaseOnly());
 
         Series series = new Series();
@@ -47,7 +47,7 @@ public class SubItemAnnotationTest {
         verify(writer).writeList(any(), captor.capture(), any());
 
         Iterator<ItemRef> sortedItemRefIterator = captor.getValue().iterator();
-        assertThat(sortedItemRefIterator.next().getSortKey(), is("10"));
         assertThat(sortedItemRefIterator.next().getSortKey(), is("20"));
+        assertThat(sortedItemRefIterator.next().getSortKey(), is("10"));
     }
 }
