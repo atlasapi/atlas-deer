@@ -72,7 +72,9 @@ public class QueryContextParser implements ParameterNameProvider {
                     "broadcastWeight",
                     "titleWeight",
                     "tags.topic.id",
-                    "brand.series.available"
+                    "brand.series.available",
+                    "sum_items.limit",
+                    "sum_items.offset"
             )
         )));
     }
