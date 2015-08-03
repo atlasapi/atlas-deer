@@ -36,7 +36,12 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         Ordering<Sourced> equivsOrdering = applicationEquivalentsOrdering(sources);
         ImmutableList<T> sortedEquivalents = equivsOrdering.immutableSortedCopy(equivalents);
         if (trivialMerge(sortedEquivalents)) {
-            return sortedEquivalents;
+            return ImmutableList.of(
+                    strategy.merge(Iterables.getFirst(sortedEquivalents, null),
+                            ImmutableList.of(),
+                            sources
+                    )
+            );
         }
         T chosen = sortedEquivalents.get(0);
         
@@ -52,7 +57,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         Iterable<T> notChosen = Iterables.filter(sortedEquivalents, Predicates.not(idIs(chosen.getId())));
         return ImmutableList.of(strategy.merge(chosen, notChosen, sources));
     }
-    
+
 
     private boolean trivialMerge(ImmutableList<?> sortedEquivalents) {
         return sortedEquivalents.isEmpty() || sortedEquivalents.size() == 1;
