@@ -28,6 +28,7 @@ enum Column {
     AVAILABLE_CONTENT = 17;
     ITEM_SUMMARIES = 18;
     ACTIVELY_PUBLISHED = 19;
+    GENERIC_DESCRIPTION=20;
 }
 
 extend google.protobuf.FieldOptions {
@@ -100,6 +101,7 @@ message Content {
     repeated ItemSummary itemSummaries = 62 [(column)=ITEM_SUMMARIES];
     repeated int32 releaseYears = 63 [(column)=DESC];
     optional bool activelyPublished = 64 [(column)=ACTIVELY_PUBLISHED];
+    optional bool genericDescription = 65 [(column)=GENERIC_DESCRIPTION];
 }
 
 message Restriction {

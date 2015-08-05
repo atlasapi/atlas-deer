@@ -171,6 +171,9 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             builder.setYear(content.getYear());
         }
         builder.addAllEncodings(serializeEncoding(content.getManifestedAs()));
+        if (content.isGenericDescription() != null) {
+            builder.setGenericDescription(content.isGenericDescription());
+        }
         return builder;
     }
 
