@@ -45,6 +45,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     private Set<Certificate> certificates = ImmutableSet.of();
     private Integer year = null;
     private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
+    private Boolean genericDescription = null;
 
 
     public Content(String uri, String curie, Publisher publisher) {
@@ -135,6 +136,15 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         this.people = people;
     }
 
+    @FieldName("genericDescription")
+    public Content setGenericDescription(Boolean isGenericDescription) {
+        this.genericDescription = isGenericDescription;
+        return this;
+    }
+
+    public Boolean isGenericDescription() {
+        return genericDescription;
+    }
 
     public static void copyTo(Content from, Content to) {
         Described.copyTo(from, to);
@@ -148,6 +158,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         to.certificates = from.certificates;
         to.year = from.year;
         to.manifestedAs = Sets.newHashSet(from.manifestedAs);
+        to.genericDescription = from.genericDescription;
     }
 
     public void setReadHash(String readHash) {

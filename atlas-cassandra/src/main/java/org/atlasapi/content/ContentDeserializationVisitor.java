@@ -183,6 +183,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             content.setYear(msg.getYear());
         }
         content.setManifestedAs(getEncodings());
+        if (msg.hasGenericDescription()) {
+            content.setGenericDescription(msg.getGenericDescription());
+        }
         return content;
     }
 
