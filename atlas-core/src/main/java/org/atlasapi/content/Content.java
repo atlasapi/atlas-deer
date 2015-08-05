@@ -45,7 +45,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     private Set<Certificate> certificates = ImmutableSet.of();
     private Integer year = null;
     private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
-    private Boolean genericDescription = null;
+    private Boolean genericDescription = Boolean.FALSE;
 
 
     public Content(String uri, String curie, Publisher publisher) {
