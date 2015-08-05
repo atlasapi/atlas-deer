@@ -356,7 +356,7 @@ public final class CassandraContentStore extends AbstractContentStore {
     ) {
         try {
             ensureId(item);
-            if(!item.isActivelyPublished()) {
+            if(!item.isActivelyPublished() || item.isGenericDescription() == true) {
                 removeItemRefsFromContainers(item);
                 return;
             }
