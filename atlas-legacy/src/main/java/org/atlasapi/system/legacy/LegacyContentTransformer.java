@@ -486,6 +486,7 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
         c.setTags(translateTopicRefs(input.getTopicRefs()));
+        c.setGenericDescription(input.getGenericDescription());
         c.setCertificates(Iterables.transform(input.getCertificates(), new Function<Certificate, org.atlasapi.content.Certificate>() {
 
             @Override

@@ -94,5 +94,4 @@ public class LegacyContentTransformerTest {
 
         assertThat(transformed.getBroadcasts().size(), is(0));
     }
-
 }

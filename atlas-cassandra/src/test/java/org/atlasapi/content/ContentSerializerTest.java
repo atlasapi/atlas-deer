@@ -214,6 +214,7 @@ public class ContentSerializerTest {
         assertThat(actual.getTags(), is(expected.getTags()));
         assertThat(actual.getYear(), is(expected.getYear()));
         assertThat(actual.getManifestedAs().isEmpty(), is(false));
+        assertThat(actual.isGenericDescription(), is(expected.isGenericDescription()));
     }
 
     private void checkDescribedProperties(Described actual, Described expected) {
@@ -393,6 +394,7 @@ public class ContentSerializerTest {
         content.setTags(ImmutableSet.of(new Tag(1L, 1.0f, true, Tag.Relationship.TRANSCRIPTION)));
         content.setManifestedAs(ImmutableSet.of(encoding("one")));
         content.setYear(1234);
+        content.setGenericDescription(true);
     }
 
     private void setDescribedProperties(Described described) {

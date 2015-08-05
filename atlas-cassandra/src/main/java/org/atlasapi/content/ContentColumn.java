@@ -22,4 +22,5 @@ public enum ContentColumn {
     AVAILABLE_CONTENT,
     ITEM_SUMMARIES,
     ACTIVELY_PUBLISHED,
+    GENERIC_DESCRIPTION
     }
