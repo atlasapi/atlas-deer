@@ -60,6 +60,7 @@ public class ApplicationModelTranslator implements Function<org.atlasapi.applica
                 .withPrecedence(input.precedenceEnabled())
                 .withReadableSources(reads)
                 .withWritableSources(input.writableSources().asList())
+                .withContentHierarchyPrecedence(input.contentHierarchyPrecedence().orNull())
                 .build()
                 .copyWithMissingSourcesPopulated();
     }
@@ -103,6 +104,8 @@ public class ApplicationModelTranslator implements Function<org.atlasapi.applica
             configuration = configuration.copyWithPrecedence(precedence);
         }
         configuration = configuration.copyWithWritableSources(input.getWrites());
+        configuration = configuration.copyWithContentHierarchyPrecedence(input.contentHierarchyPrecedence().orNull());
+        configuration = configuration.copyWithImagePrecedenceEnabled(input.imagePrecedenceEnabled());
         return configuration;
     }
     

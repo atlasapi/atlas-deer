@@ -12,7 +12,7 @@ public class ImmutableCollectors {
                 ImmutableList.Builder::new,
                 ImmutableList.Builder::add,
                 (b1, b2) -> b1.addAll(b2.build()),
-                ImmutableList.Builder::build
+                (builder) -> builder.build()
         );
     }
 
