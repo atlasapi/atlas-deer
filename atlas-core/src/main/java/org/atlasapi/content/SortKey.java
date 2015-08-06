@@ -33,7 +33,18 @@ public enum SortKey {
             return null;
         }
     },
-    
+    EPISODE("55") {
+        @Override
+        protected String generateFrom(Item item) {
+            if (item instanceof Episode) {
+                Episode episode = (Episode) item;
+                if (episode.getEpisodeNumber() != null) {
+                    return EPISODE.append(String.format("%010d"));
+                }
+            }
+            return null;
+        }
+    },
     BROADCAST("75") {
         @Override
         protected String generateFrom(Item item) {
