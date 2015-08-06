@@ -74,7 +74,11 @@ public class QueryContextParser implements ParameterNameProvider {
                     "tags.topic.id",
                     "brand.series.available",
                     "sub_items.limit",
-                    "sub_items.offset"
+                    "sub_items.offset",
+                    "sub_items.ordering",
+                    "sub_items_summaries.limit",
+                    "sub_items_summaries.offset",
+                    "sub_items_summaries.ordering"
             )
         )));
     }

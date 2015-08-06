@@ -43,11 +43,37 @@ public class SubItemAnnotationTest {
         FieldWriter writer = Mockito.mock(FieldWriter.class);
 
         ArgumentCaptor<Iterable> captor = ArgumentCaptor.forClass(Iterable.class);
-        anno.write(series, writer, OutputContext.valueOf(QueryContext.standard(new MockHttpServletRequest("GET", ""))));
+        MockHttpServletRequest httpReq = new MockHttpServletRequest("GET", "");
+        httpReq.setParameter("sub_item.ordering", "reverse");
+        anno.write(series, writer, OutputContext.valueOf(QueryContext.standard(httpReq)));
         verify(writer).writeList(any(), captor.capture(), any());
 
         Iterator<ItemRef> sortedItemRefIterator = captor.getValue().iterator();
         assertThat(sortedItemRefIterator.next().getSortKey(), is("20"));
         assertThat(sortedItemRefIterator.next().getSortKey(), is("10"));
+    }
+
+    @Test
+    public void testOrderingOfSubItemsIsBasedLexographicallyOnSortKey() throws Exception {
+        SubItemAnnotation anno = new SubItemAnnotation(SubstitutionTableNumberCodec.lowerCaseOnly());
+
+        Series series = new Series();
+        EpisodeRef episodeOne = new EpisodeRef(Id.valueOf(10l), Publisher.METABROADCAST, "10", DateTime.now());
+        EpisodeRef episodeTwo = new EpisodeRef(Id.valueOf(20l), Publisher.METABROADCAST, "20", DateTime.now());
+        series.setItemRefs(ImmutableList.of(episodeOne, episodeTwo));
+
+        FieldWriter writer = Mockito.mock(FieldWriter.class);
+
+        ArgumentCaptor<Iterable> captor = ArgumentCaptor.forClass(Iterable.class);
+
+        MockHttpServletRequest httpReq = new MockHttpServletRequest("GET", "");
+        httpReq.setParameter("sub_items.ordering", "reverse");
+
+        anno.write(series, writer, OutputContext.valueOf(QueryContext.standard(httpReq)));
+        verify(writer).writeList(any(), captor.capture(), any());
+
+        Iterator<ItemRef> sortedItemRefIterator = captor.getValue().iterator();
+        assertThat(sortedItemRefIterator.next().getSortKey(), is("10"));
+        assertThat(sortedItemRefIterator.next().getSortKey(), is("20"));
     }
 }
