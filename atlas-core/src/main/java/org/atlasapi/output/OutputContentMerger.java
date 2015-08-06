@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import com.google.common.collect.ImmutableMap;
 
 import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Clip;
@@ -60,6 +61,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     @Deprecated
     public <T extends Described> List<T> merge(ApplicationSources sources, List<T> contents) {
         Ordering<Sourced> publisherComparator = sources.getSourcedReadOrdering();
+        
         List<T> merged = Lists.newArrayListWithCapacity(contents.size());
         Set<T> processed = Sets.newHashSet();
 
@@ -485,20 +487,30 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private void mergeContainer(ApplicationSources sources, Container chosen, Iterable<Container> notChosen) {
-        Iterable<Container> notChosenContainers = Iterables.filter(notChosen, Container.class);
+        
+        Iterable<Container> orderedEquivalents;
+        Optional<Ordering<Sourced>> sourcedContentHierarchyOrdering = sources.getSourcedContentHierarchyOrdering();
+        if (sourcedContentHierarchyOrdering.isPresent()) {
+            orderedEquivalents = sourcedContentHierarchyOrdering.get().sortedCopy(Iterables.concat(ImmutableSet.of(chosen), notChosen));
+        } else {
+            orderedEquivalents = Iterables.concat(ImmutableSet.of(chosen), notChosen);
+        }
+        
+        Iterable<Container> contentHierarchySourceOrderedContainers = Iterables.filter(orderedEquivalents, Container.class);
         if (chosen.getUpcomingContent().isEmpty()) {
             chosen.setUpcomingContent(
                     first(
-                            notChosenContainers,
+                            contentHierarchySourceOrderedContainers,
                             input -> input.getUpcomingContent().isEmpty() ? null : input.getUpcomingContent(),
                             ImmutableMap.of()
                     )
             );
         }
+        
         if(chosen.getItemSummaries().isEmpty()) {
             chosen.setItemSummaries(
                     first(
-                            notChosenContainers,
+                            contentHierarchySourceOrderedContainers,
                             input -> input.getItemSummaries().isEmpty() ? null : input.getItemSummaries(),
                             ImmutableList.of()
                     )
@@ -507,7 +519,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap(chosen.getAvailableContent());
 
-        for (Container equiv : notChosenContainers) {
+        for (Container equiv : contentHierarchySourceOrderedContainers) {
             for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary : equiv.getAvailableContent().entrySet()) {
                 availableContent.putIfAbsent(
                         itemRefAndLocationSummary.getKey(),
@@ -517,6 +529,24 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         chosen.setAvailableContent(availableContent);
+        chosen.setItemRefs(first(
+                                contentHierarchySourceOrderedContainers,
+                                input -> input.getItemRefs().isEmpty() ? null : input.getItemRefs(),
+                                ImmutableList.of()
+                           )
+                );
+        
+        if (chosen instanceof Brand) {
+            Iterable<Brand> contentHierarchySourceOrderedBrands = Iterables.filter(contentHierarchySourceOrderedContainers, Brand.class);
+            Brand chosenBrand = (Brand) chosen;
+            chosenBrand.setSeriesRefs(
+                    first(
+                            contentHierarchySourceOrderedBrands,
+                            input -> input.getSeriesRefs().isEmpty() ? null : input.getSeriesRefs(),
+                            ImmutableList.of()
+                    
+                    ));
+        }
 
     }
 

@@ -1,17 +1,13 @@
 package org.atlasapi.output;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
-
-import com.metabroadcast.common.intl.Countries;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
@@ -30,21 +26,21 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.util.ImmutableCollectors;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.junit.Test;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.metabroadcast.common.intl.Countries;
 
 
 public class OutputContentMergerTest {
@@ -390,6 +386,59 @@ public class OutputContentMergerTest {
         
         Content merged = merger.merge(item1,  ImmutableList.of(item2), sources);
         assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image1.org/"));
+    }
+    
+    @Test
+    public void testContentHierarchyMergingWhenNoPrecidenceDefined() {
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
+        Brand bbcBrand = brand(1, "http://bbc.co.uk/brand", Publisher.BBC);
+        List<ItemRef> bbcEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(3), Publisher.BBC, "1", DateTime.now()));
+        bbcBrand.setItemRefs(bbcEpisodes);
+        
+        Brand paBrand = brand(2, "http://pressassociation.com/brand", Publisher.PA);
+        List<ItemRef> paEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(4), Publisher.PA, "1", DateTime.now()));
+        paBrand.setItemRefs(paEpisodes);
+        
+        Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
+        assertThat(merged.getItemRefs(), is(equalTo(bbcEpisodes)));
+    }
+    
+    @Test
+    public void testContentHierarchyMergingWhenPrecidenceDifferentFromMainPrecedence() {
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
+                                        .copy()
+                                        .withContentHierarchyPrecedence(ImmutableList.of(Publisher.PA, Publisher.BBC))
+                                        .build();
+        
+        Brand bbcBrand = brand(1, "http://bbc.co.uk/brand", Publisher.BBC);
+        List<ItemRef> bbcEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(3), Publisher.BBC, "1", DateTime.now()));
+        bbcBrand.setItemRefs(bbcEpisodes);
+        
+        Brand paBrand = brand(2, "http://pressassociation.com/brand", Publisher.PA);
+        List<ItemRef> paEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(4), Publisher.PA, "1", DateTime.now()));
+        paBrand.setItemRefs(paEpisodes);
+        
+        Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
+        assertThat(merged.getItemRefs(), is(equalTo(paEpisodes)));
+    }
+    
+    @Test
+    public void testContentHierarchyMergingWhenPrecidenceSameAsMainPrecedence() {
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
+                .copy()
+                .withContentHierarchyPrecedence(ImmutableList.of(Publisher.BBC, Publisher.PA))
+                .build();
+
+        Brand bbcBrand = brand(1, "http://bbc.co.uk/brand", Publisher.BBC);
+        List<ItemRef> bbcEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(3), Publisher.BBC, "1", DateTime.now()));
+        bbcBrand.setItemRefs(bbcEpisodes);
+        
+        Brand paBrand = brand(2, "http://pressassociation.com/brand", Publisher.PA);
+        List<ItemRef> paEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(4), Publisher.PA, "1", DateTime.now()));
+        paBrand.setItemRefs(paEpisodes);
+        
+        Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
+        assertThat(merged.getItemRefs(), is(equalTo(bbcEpisodes)));   
     }
 
     private Brand brand(long id, String uri, Publisher source) {

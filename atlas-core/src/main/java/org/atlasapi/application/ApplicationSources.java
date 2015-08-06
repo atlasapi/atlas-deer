@@ -12,6 +12,7 @@ import org.atlasapi.entity.Sourceds;
 import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -25,6 +26,7 @@ public class ApplicationSources {
     private final boolean precedence;
     private final List<SourceReadEntry> reads;
     private final List<Publisher> writes;
+    private final Optional<List<Publisher>> contentHierarchyPrecedence;
     private final ImmutableSet<Publisher> enabledReadSources;
     private final Boolean imagePrecedenceEnabled;
     
@@ -59,6 +61,7 @@ public class ApplicationSources {
         this.precedence = builder.precedence;
         this.reads = ImmutableList.copyOf(builder.reads);
         this.writes = ImmutableList.copyOf(builder.writes);
+        this.contentHierarchyPrecedence = builder.contentHierarchyPrecedence;
         this.imagePrecedenceEnabled = builder.imagePrecedenceEnabled;
         this.enabledReadSources = ImmutableSet.copyOf(
                                     Iterables.transform(
@@ -83,6 +86,18 @@ public class ApplicationSources {
         return Ordering.explicit(Lists.transform(reads, READ_TO_PUBLISHER));
     }
     
+    private Optional<Ordering<Publisher>> contentHierarchyPrecedenceOrdering() {
+        if (contentHierarchyPrecedence.isPresent()) {
+            return Optional.of(Ordering.explicit(contentHierarchyPrecedence.get()));
+        } else {
+            return Optional.absent();
+        }
+    }
+    
+    public Optional<List<Publisher>> contentHierarchyPrecedence() {
+        return contentHierarchyPrecedence;
+    }
+    
     private ImmutableList<Publisher> peoplePrecedence() {
         return ImmutableList.of(Publisher.RADIO_TIMES, Publisher.PA, Publisher.BBC, Publisher.C4, Publisher.ITV);
     }
@@ -93,13 +108,17 @@ public class ApplicationSources {
     
     public Ordering<Publisher> peoplePrecedenceOrdering() {
         // Add missing publishers
-        List<Publisher> publishers = Lists.newArrayList(peoplePrecedence());
+        return orderingIncludingMissingPublishers(peoplePrecedence());
+    }
+    
+    private Ordering<Publisher> orderingIncludingMissingPublishers(List<Publisher> publishers) {
+        List<Publisher> fullListOfPublishers = Lists.newArrayList(publishers);
         for (Publisher publisher : Publisher.values()) {
-            if (!publishers.contains(publisher)) {
-                publishers.add(publisher);
+            if (!fullListOfPublishers.contains(publisher)) {
+                fullListOfPublishers.add(publisher);
             }
         }
-        return Ordering.explicit(publishers);
+        return Ordering.explicit(fullListOfPublishers);
     }
     
     public Ordering<Sourced> getSourcedPeoplePrecedenceOrdering() {
@@ -150,6 +169,14 @@ public class ApplicationSources {
     public Ordering<Sourced> getSourcedReadOrdering() {
         Ordering<Publisher> ordering = this.publisherPrecedenceOrdering();
         return ordering.onResultOf(Sourceds.toPublisher());
+    }
+    
+    public Optional<Ordering<Sourced>> getSourcedContentHierarchyOrdering() {
+        if (!contentHierarchyPrecedence.isPresent()) {
+            return Optional.absent();
+        }
+        Ordering<Publisher> ordering = orderingIncludingMissingPublishers(this.contentHierarchyPrecedence.get());
+        return Optional.of(ordering.onResultOf(Sourceds.toPublisher()));
     }
     
     private static final ApplicationSources dflts = createDefaults();
@@ -225,6 +252,7 @@ public class ApplicationSources {
         return builder()
                 .withPrecedence(this.isPrecedenceEnabled())
                 .withReadableSources(this.getReads())
+                .withContentHierarchyPrecedence(this.contentHierarchyPrecedence().orNull())
                 .withWritableSources(this.getWrites());
     }
 
@@ -234,6 +262,7 @@ public class ApplicationSources {
 
     public static class Builder {
 
+        private Optional<List<Publisher>> contentHierarchyPrecedence = Optional.absent();
         public boolean precedence = false;
         private boolean imagePrecedenceEnabled = true;
         private List<SourceReadEntry> reads = Lists.newLinkedList();
@@ -241,6 +270,15 @@ public class ApplicationSources {
 
         public Builder withPrecedence(boolean precedence) {
             this.precedence = precedence;
+            return this;
+        }
+        
+        public Builder withContentHierarchyPrecedence(List<Publisher> contentHierarchyPrecedence) {
+            if (contentHierarchyPrecedence != null) {
+                this.contentHierarchyPrecedence = Optional.of(ImmutableList.copyOf(contentHierarchyPrecedence));
+            } else {
+                this.contentHierarchyPrecedence = Optional.absent();
+            }
             return this;
         }
 
