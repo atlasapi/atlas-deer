@@ -56,7 +56,7 @@ public enum SortKey {
             if (item instanceof Episode) {
                 Episode episode = (Episode) item;
                 if (episode.getEpisodeNumber() != null) {
-                    return EPISODE.append(String.format("%010d"));
+                    return EPISODE.append(String.format("%010d", episode.getEpisodeNumber()));
                 }
             }
             return null;
