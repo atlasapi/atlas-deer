@@ -53,6 +53,7 @@ import org.atlasapi.output.annotation.ChannelsAnnotation;
 import org.atlasapi.output.annotation.ClipsAnnotation;
 import org.atlasapi.output.annotation.ContainerSummaryAnnotation;
 import org.atlasapi.output.annotation.ContentDescriptionAnnotation;
+import org.atlasapi.output.annotation.CurrentAndFutureBroadcastsAnnotation;
 import org.atlasapi.output.annotation.DescriptionAnnotation;
 import org.atlasapi.output.annotation.EndpointInfoAnnotation;
 import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
@@ -164,6 +165,7 @@ import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CLIPS;
 import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
+import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.DESCRIPTION;
 import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
 import static org.atlasapi.annotation.Annotation.EXTENDED_ID;
@@ -647,6 +649,7 @@ public class QueryWebModule {
                 )
                 .register(BROADCASTS, new BroadcastsAnnotation(idCodec(), channelResolver, channelGroupResolver), commonImplied)
                 .register(UPCOMING_BROADCASTS, new UpcomingBroadcastsAnnotation(idCodec(), channelResolver, channelGroupResolver), commonImplied)
+                .register(CURRENT_AND_FUTURE_BROADCASTS, new CurrentAndFutureBroadcastsAnnotation(idCodec(), channelResolver, channelGroupResolver), commonImplied)
                 .register(FIRST_BROADCASTS, new FirstBroadcastAnnotation(idCodec(), channelResolver, channelGroupResolver), commonImplied)
                 .register(NEXT_BROADCASTS,
                         new NextBroadcastAnnotation(new SystemClock(), idCodec(), channelResolver, channelGroupResolver),
