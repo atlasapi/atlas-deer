@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -35,6 +36,9 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         }
         Ordering<Sourced> equivsOrdering = applicationEquivalentsOrdering(sources);
         ImmutableList<T> sortedEquivalents = equivsOrdering.immutableSortedCopy(equivalents);
+        if(sortedEquivalents.isEmpty()) {
+            return ImmutableList.of();
+        }
         if (trivialMerge(sortedEquivalents)) {
             return ImmutableList.of(
                     strategy.merge(Iterables.getFirst(sortedEquivalents, null),
@@ -60,7 +64,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
 
 
     private boolean trivialMerge(ImmutableList<?> sortedEquivalents) {
-        return sortedEquivalents.isEmpty() || sortedEquivalents.size() == 1;
+        return  sortedEquivalents.size() == 1;
     }
 
     private Ordering<Sourced> applicationEquivalentsOrdering(ApplicationSources sources) {

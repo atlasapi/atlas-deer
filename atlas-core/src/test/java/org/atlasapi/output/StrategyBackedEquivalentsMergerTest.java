@@ -77,11 +77,11 @@ public class StrategyBackedEquivalentsMergerTest {
     @Test
     public void testDoesntMergeForSingletonEquivalenceSet() {
         Content brand = new Brand(Id.valueOf(1), Publisher.BBC);
-        List<Content> merged = merger.merge(Optional.of(brand.getId()), ImmutableSet.of(brand), 
+        when(strategy.merge(brand, ImmutableList.of(), mergingSources)).thenReturn(brand);
+        List<Content> merged = merger.merge(Optional.of(brand.getId()), ImmutableSet.of(brand),
                 mergingSources);
         
         assertThat(merged.size(), is(1));
-        veryifyNoMerge(mergingSources);
     }
 
     private void veryifyNoMerge(ApplicationSources sources) {

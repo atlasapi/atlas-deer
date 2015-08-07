@@ -34,6 +34,7 @@ public class ProtobufContentMarshallerTest {
         content.setPublisher(Publisher.BBC);
         content.setTitle("title");
         content.setActivelyPublished(false);
+        content.setGenericDescription(true);
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
         
@@ -42,17 +43,28 @@ public class ProtobufContentMarshallerTest {
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);
         
-        verify(mutation, times(5)).putColumn(col.capture(), val.capture());
+        verify(mutation, times(6)).putColumn(col.capture(), val.capture());
         
-        assertThat(col.getAllValues().size(), is(5));
-        assertThat(col.getAllValues(), hasItems("IDENTIFICATION", "DESCRIPTION","SOURCE","TYPE", "ACTIVELY_PUBLISHED"));
+        assertThat(col.getAllValues().size(), is(6));
+        assertThat(
+                col.getAllValues(),
+                hasItems(
+                        "IDENTIFICATION",
+                        "DESCRIPTION",
+                        "SOURCE",
+                        "TYPE",
+                        "ACTIVELY_PUBLISHED",
+                        "GENERIC_DESCRIPTION"
+                )
+        );
 
         ImmutableList<Column<String>> columns = ImmutableList.of(
                 column(val.getAllValues().get(0)),
                 column(val.getAllValues().get(1)),
                 column(val.getAllValues().get(2)),
                 column(val.getAllValues().get(3)),
-                column(val.getAllValues().get(4))
+                column(val.getAllValues().get(4)),
+                column(val.getAllValues().get(5))
         );
         ColumnList<String> cols = mock(ColumnList.class);
         when(cols.iterator())
