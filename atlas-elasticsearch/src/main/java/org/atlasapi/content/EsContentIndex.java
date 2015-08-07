@@ -494,12 +494,13 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
 
         if (queryParams.isPresent()) {
-            if (queryParams.get().getOrdering().isPresent()) {
-                addSortOrder(queryParams, reqBuilder);
-            }
-
             if (queryParams.get().getFuzzyQueryParams().isPresent()) {
                 queryBuilder = addTitleQuery(queryParams, queryBuilder);
+                reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
+            }
+
+            if (queryParams.get().getOrdering().isPresent()) {
+                addSortOrder(queryParams, reqBuilder);
             }
 
 // removing temporarily since this is currently broken
@@ -522,9 +523,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             if (queryParams.get().shouldFilterUnavailableContainers()) {
                 queryBuilder = addContainerAvailabilityFilter(queryBuilder);
             }
+        } else {
+            reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
         }
-
-        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         log.debug(queryBuilder.toString());
 
@@ -589,19 +590,20 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private void addSortOrder(Optional<IndexQueryParams> queryParams, SearchRequestBuilder reqBuilder) {
         QueryOrdering order = queryParams.get().getOrdering().get();
-        reqBuilder.addSort(
-                SortBuilders
-                        .fieldSort(translateOrderField(order.getPath()))
-                        .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
-        );
+        if ("relevance".equalsIgnoreCase(order.getPath())) {
+            reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
+        } else {
+            reqBuilder.addSort(
+                    SortBuilders
+                            .fieldSort(translateOrderField(order.getPath()))
+                            .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
+            );
+        }
     }
 
     private String translateOrderField(String orderField) {
         if ("title".equalsIgnoreCase(orderField)) {
             return "flattenedTitle";
-        }
-        if ("relevance".equalsIgnoreCase(orderField)) {
-            return "_score";
         }
         return orderField;
     }
