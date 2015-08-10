@@ -83,8 +83,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             return updated;
             
         } catch(OversizeTransitiveSetException otse) {
-            log().info(String.format("Oversize set: %s + %s: %s", 
-                subject, newAdjacents, otse.getMessage()));
+            log().info(String.format("Oversize set: %s + %s: %s",
+                    subject, newAdjacents, otse.getMessage()));
             return Optional.absent();
         } catch(InterruptedException e) {
             log().error(String.format("%s: %s", subject, newAdjacents), e);
@@ -92,6 +92,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         } catch (StoreException e) {
             Throwables.propagateIfPossible(e, WriteException.class);
             throw new WriteException(e);
+        } catch (CorruptEquivalenceGraphIndexException e) {
+            cleanGraphAndIndex(e.getSubjectId());
+            return updateEquivalences(subject, assertedAdjacents, sources);
         } finally {
             synchronized (lock()) {
                 lock().unlock(subjectAndAdjacents);
@@ -103,6 +106,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
         
     }
+
+    protected abstract void cleanGraphAndIndex(Id subjectId);
 
     private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated)  {
         try {
@@ -143,14 +148,13 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject, 
-            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws StoreException {
+            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws StoreException, CorruptEquivalenceGraphIndexException {
         
         EquivalenceGraph subjGraph = existingGraph(subject).or(EquivalenceGraph.valueOf(subject));
         Adjacents subAdjs = subjGraph.getAdjacents(subject);
         
         if(subAdjs == null) {
-            log().warn("adjacents of {} not in graph {}", subject, subjGraph.getId());
-            subAdjs = Adjacents.valueOf(subject);
+            throw new CorruptEquivalenceGraphIndexException(subject.getId());
         }
         
         if(!changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
@@ -159,7 +163,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
         
         Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs = resolveRefs(assertedAdjacents);
-        
+
         Map<Id, Adjacents> updatedAdjacents = updateAdjacencies(subject,
                 subjGraph.getAdjacencyList().values(), assertedAdjacentGraphs, sources);
         
@@ -320,5 +324,17 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
         
     }
-    
+
+    private static class CorruptEquivalenceGraphIndexException extends Exception {
+
+        private final Id subjectId;
+
+        public CorruptEquivalenceGraphIndexException(Id subjectId) {
+            this.subjectId = checkNotNull(subjectId);
+        }
+
+        public Id getSubjectId() {
+            return subjectId;
+        }
+    }
 }

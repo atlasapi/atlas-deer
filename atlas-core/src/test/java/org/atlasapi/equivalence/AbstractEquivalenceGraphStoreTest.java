@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
@@ -116,7 +117,12 @@ public class AbstractEquivalenceGraphStoreTest {
         protected Logger log() {
             return log;
         }
-        
+
+        @Override
+        protected void cleanGraphAndIndex(Id subjectId) {
+            throw new NotImplementedException();
+        }
+
         @Override
         protected GroupLock<Id> lock() {
             return lock;

@@ -1,14 +1,19 @@
 package org.atlasapi.equivalence;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
 import org.atlasapi.util.GroupLock;
@@ -57,6 +62,8 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
 
+    private final Set<Id> cleaned = ImmutableSet.of();
+
     public CassandraEquivalenceGraphStore(MessageSender<EquivalenceGraphUpdateMessage> messageSender, Session session, ConsistencyLevel read, ConsistencyLevel write) {
         super(messageSender);
         this.session = session;
@@ -64,7 +71,33 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         this.write = write;
     }
 
-    
+    @Override
+    protected void cleanGraphAndIndex(Id subjectId) {
+        log.warn("Cleaning graph and index for subject {}", subjectId);
+        if (cleaned.contains(subjectId)) {
+            throw new RuntimeException("Subject {} has already been cleaned once, preventing infinite recursion!");
+        }
+        cleaned.add(subjectId);
+        try {
+            Long graphId = Futures.get(resolveToGraphIds(ImmutableList.of(subjectId)), IOException.class)
+                    .get(subjectId);
+            /* Remove index entry */
+            log.warn("Cleaning graph index for subject {}", subjectId);
+            session.execute(
+                    delete().all().from(EQUIVALENCE_GRAPH_INDEX_TABLE)
+                            .where(eq(RESOURCE_ID_KEY, subjectId.longValue()))
+            );
+            /* Remove graph entry */
+            log.warn("Deleting graph {} for subject {}", graphId, subjectId);
+            session.execute(
+                    delete().all().from(EQUIVALENCE_GRAPHS_TABLE)
+                            .where(eq(GRAPH_ID_KEY, graphId))
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private final Function<ResultSet, Map<Long, EquivalenceGraph>> toGraph
         = new Function<ResultSet, Map<Long, EquivalenceGraph>>() {
             @Override
