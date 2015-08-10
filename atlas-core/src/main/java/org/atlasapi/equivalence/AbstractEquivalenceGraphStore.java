@@ -10,6 +10,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -52,7 +54,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
     
     private static final int maxSetSize = 150;
-    
+    private static final Pattern MISSING_ID_FROM_MAP = Pattern.compile("Key '([0-9]*)' not present in map");
+
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
     
     public AbstractEquivalenceGraphStore(MessageSender<EquivalenceGraphUpdateMessage> messageSender) {
@@ -176,7 +179,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     private EquivalenceGraphUpdate computeUpdate(ResourceRef subject,
-            Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs, Map<Id, Adjacents> updatedAdjacents) {
+            Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs, Map<Id, Adjacents> updatedAdjacents) throws CorruptEquivalenceGraphIndexException {
         Map<Id, EquivalenceGraph> updatedGraphs = computeUpdatedGraphs(updatedAdjacents);
         EquivalenceGraph updatedGraph = graphFor(subject, updatedGraphs);
         return new EquivalenceGraphUpdate(updatedGraph,
@@ -195,7 +198,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         throw new IllegalStateException("Couldn't find updated graph for " + subject);
     }
 
-    private Map<Id, EquivalenceGraph> computeUpdatedGraphs(Map<Id, Adjacents> updatedAdjacents) {
+    private Map<Id, EquivalenceGraph> computeUpdatedGraphs(Map<Id, Adjacents> updatedAdjacents) throws CorruptEquivalenceGraphIndexException {
         Function<Identifiable, Adjacents> toAdjs = 
                 Functions.compose(Functions.forMap(updatedAdjacents), Identifiables.toId());
         Set<Id> seen = Sets.newHashSetWithExpectedSize(updatedAdjacents.size());
@@ -211,7 +214,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return updated;
     }
 
-    private Set<Adjacents> transitiveSet(Adjacents adj, Function<Identifiable, Adjacents> toAdjs) {
+    private Set<Adjacents> transitiveSet(Adjacents adj, Function<Identifiable, Adjacents> toAdjs) throws CorruptEquivalenceGraphIndexException {
         Set<Adjacents> set = Sets.newHashSet();
         Predicate<Adjacents> notSeen = Predicates.not(Predicates.in(set));
         
@@ -220,7 +223,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         while(!work.isEmpty()) {
             Adjacents curr = work.poll();
             set.add(curr);
-            work.addAll(Collections2.filter(Collections2.transform(curr.getAdjacent(), toAdjs),notSeen));
+            try {
+                work.addAll(Collections2.filter(Collections2.transform(curr.getAdjacent(), toAdjs),notSeen));
+            } catch (IllegalArgumentException iae) {
+                Matcher matcher = MISSING_ID_FROM_MAP.matcher(iae.getMessage());
+                if (matcher.find()) {
+                    throw new CorruptEquivalenceGraphIndexException(Id.valueOf(matcher.group(1)));
+                }
+                throw iae;
+            }
         }
         return set;
     }
