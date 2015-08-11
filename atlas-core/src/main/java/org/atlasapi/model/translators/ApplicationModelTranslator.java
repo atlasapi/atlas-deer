@@ -59,6 +59,7 @@ public class ApplicationModelTranslator implements Function<org.atlasapi.applica
         return ApplicationSources.builder()
                 .withPrecedence(input.precedenceEnabled())
                 .withReadableSources(reads)
+                .withImagePrecedenceEnabled(input.imagePrecedenceEnabled())
                 .withWritableSources(input.writableSources().asList())
                 .withContentHierarchyPrecedence(input.contentHierarchyPrecedence().orNull())
                 .build()
