@@ -10,6 +10,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.ContentCategory;
 import org.atlasapi.persistence.content.listing.ContentLister;
 import org.atlasapi.persistence.content.listing.ContentListingCriteria;
+import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.source.Sources;
 
 import com.google.common.collect.FluentIterable;
@@ -37,6 +38,21 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
 
     @Override
     public FluentIterable<Content> list(Iterable<Publisher> sources) {
+        return list(sources, ContentListingProgress.START);
+    }
+    
+    @Override
+    public FluentIterable<Content> list() {
+        return list(Sources.all().asList());
+    }
+
+    @Override
+    public FluentIterable<Content> list(ContentListingProgress progress) {
+        return list(Publisher.all(), progress);
+    }
+
+    @Override
+    public FluentIterable<Content> list(Iterable<Publisher> sources, ContentListingProgress progress) {
         return new FluentIterable<Content>() {
             @Override
             public Iterator<Content> iterator() {
@@ -44,6 +60,7 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
                         contentLister.listContent(
                                 ContentListingCriteria.defaultCriteria()
                                         .forPublishers(ImmutableList.copyOf(sources))
+                                        .startingAt(progress)
                                         .forContent(
                                                 ContentCategory.CONTAINER,
                                                 ContentCategory.PROGRAMME_GROUP,
@@ -52,30 +69,21 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
                                         )
                                         .build()
                         ),
-                        new Function<org.atlasapi.media.entity.Content, Content>() {
-                            @Override
-                            public Content apply(org.atlasapi.media.entity.Content input) {
-                                try {
-                                    return transformer.apply(input);
-                                } catch (Exception e) {
-                                    log.warn(
-                                            "Exception while bootstrapping content with ID {}, '{}'",
-                                            input.getId(),
-                                            e.getMessage(),
-                                            e
-                                    );
-                                    return null;
-                                }
+                        input -> {
+                            try {
+                                return transformer.apply(input);
+                            } catch (Exception e) {
+                                log.warn(
+                                        "Exception while bootstrapping content with ID {}, '{}'",
+                                        input.getId(),
+                                        e.getMessage(),
+                                        e
+                                );
+                                return null;
                             }
                         }
                 );
             }
         };
     }
-    
-    @Override
-    public FluentIterable<Content> list() {
-        return list(Sources.all().asList());
-    }
-
 }
