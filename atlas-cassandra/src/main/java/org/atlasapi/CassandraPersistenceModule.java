@@ -19,7 +19,7 @@ import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
-import org.atlasapi.content.CassandraContentStore;
+import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
@@ -51,8 +51,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private final AstyanaxContext<Keyspace> context;
     private final MetricRegistry metrics;
-    private final CassandraContentStore contentStore;
-    private final CassandraContentStore nullMsgSendingContentStore;
+    private final AstyanaxCassandraContentStore contentStore;
+    private final AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private final CassandraTopicStore topicStore;
     private final CassandraScheduleStore scheduleStore;
     private final CassandraSegmentStore segmentStore;
@@ -74,12 +74,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.context = context;
         this.metrics = metrics;
         ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
-        this.contentStore = CassandraContentStore.builder(context, "content",
+        this.contentStore = AstyanaxCassandraContentStore.builder(context, "content",
                 hasher, sender(contentChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
-        this.nullMsgSendingContentStore = CassandraContentStore.builder(context, "content",
+        this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(context, "content",
                 hasher, nullMessageSender(ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
@@ -179,11 +179,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     @Override
-    public CassandraContentStore contentStore() {
+    public AstyanaxCassandraContentStore contentStore() {
         return contentStore;
     }
 
-    public CassandraContentStore nullMessageSendingContentStore() {
+    public AstyanaxCassandraContentStore nullMessageSendingContentStore() {
         return nullMsgSendingContentStore;
     }
 
