@@ -252,6 +252,7 @@ public class ApplicationSources {
         return builder()
                 .withPrecedence(this.isPrecedenceEnabled())
                 .withReadableSources(this.getReads())
+                .withImagePrecedenceEnabled(this.imagePrecedenceEnabled)
                 .withContentHierarchyPrecedence(this.contentHierarchyPrecedence().orNull())
                 .withWritableSources(this.getWrites());
     }
