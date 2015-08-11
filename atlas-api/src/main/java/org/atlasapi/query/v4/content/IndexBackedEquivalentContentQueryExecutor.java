@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.content;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -49,6 +50,11 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         try {
             return Futures.get(executeQuery(query), 1, TimeUnit.MINUTES, QueryExecutionException.class);
         } catch (UncheckedExecutionException | UncheckedQueryExecutionException ee) {
+            for (Throwable throwable : Throwables.getCausalChain(ee)) {
+                if (throwable instanceof NotFoundException) {
+                    throw (NotFoundException) throwable;
+                }
+            }
             Throwables.propagateIfInstanceOf(Throwables.getRootCause(ee), QueryExecutionException.class);
             throw Throwables.propagate(ee);
         }
