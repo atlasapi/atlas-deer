@@ -22,7 +22,7 @@ import com.netflix.astyanax.serializers.AsciiSerializer;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
-import org.atlasapi.content.CassandraContentStore;
+import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.Item;
@@ -82,7 +82,7 @@ public class CassandraScheduleStoreIT {
     
     private final Clock clock = new TimeMachine();
     
-    private CassandraContentStore contentStore;
+    private AstyanaxCassandraContentStore contentStore;
     private CassandraScheduleStore store;
     
     private final Publisher source = Publisher.METABROADCAST;
@@ -112,7 +112,7 @@ public class CassandraScheduleStoreIT {
     public void setUp() {
         channel.setCanonicalUri("channel");
         channel.setId(1234L);
-        contentStore = CassandraContentStore
+        contentStore = AstyanaxCassandraContentStore
                 .builder(context, CONTENT_CF_NAME, hasher, contentUpdateSender, new SequenceGenerator())
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)

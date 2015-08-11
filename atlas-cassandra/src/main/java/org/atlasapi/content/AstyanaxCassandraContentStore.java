@@ -8,11 +8,8 @@ import static org.atlasapi.content.ContentColumn.TYPE;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-
+import com.google.common.base.Optional;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
@@ -26,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Collections2;
@@ -57,7 +53,7 @@ import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
 
-public final class CassandraContentStore extends AbstractContentStore {
+public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     
     protected final Logger log = LoggerFactory.getLogger(getClass());
 	
@@ -102,14 +98,13 @@ public final class CassandraContentStore extends AbstractContentStore {
             return this;
         }
 
-        public CassandraContentStore build() {
-            return new CassandraContentStore(context, name, readCl, writeCl,
+        public AstyanaxCassandraContentStore build() {
+            return new AstyanaxCassandraContentStore(context, name, readCl, writeCl,
                 hasher, idGenerator, sender, clock);
         }
 
     }
 
-    private static final Set<ContentColumn> REQUIRED_CONTENT_COLUMNS = ImmutableSet.of(TYPE, SOURCE, IDENTIFICATION);
 
     private final Keyspace keyspace;
     private final ConsistencyLevel readConsistency;
@@ -117,7 +112,7 @@ public final class CassandraContentStore extends AbstractContentStore {
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Content> aliasIndex;
 
-    private final ContentMarshaller marshaller = new ProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
+    private final ContentMarshaller<ColumnListMutation<String>,ColumnList<String>> marshaller = new AstyanaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
     private final Function<Row<Long, String>, Content> rowToContent =
             input -> {
                 if (!input.getColumns().isEmpty()) {
@@ -128,7 +123,7 @@ public final class CassandraContentStore extends AbstractContentStore {
             };
 
     private void verifyRequiredColumns(Long id, ColumnList<String> columns) {
-        for (ContentColumn requiredColumn : REQUIRED_CONTENT_COLUMNS) {
+        for (ContentColumn requiredColumn : ProtobufContentMarshaller.REQUIRED_CONTENT_COLUMNS) {
             if(columns.getColumnByName(requiredColumn.toString()) == null) {
                 throw new CorruptContentException(
                         String.format(
@@ -145,7 +140,7 @@ public final class CassandraContentStore extends AbstractContentStore {
     private final Function<Rows<Long, String>, Resolved<Content>> toResolvedContent =
             rows -> Resolved.valueOf(FluentIterable.from(rows).transform(rowToContent).filter(Predicates.notNull()));
 
-    public CassandraContentStore(AstyanaxContext<Keyspace> context,
+    public AstyanaxCassandraContentStore(AstyanaxContext<Keyspace> context,
         String cfName, ConsistencyLevel readConsistency, ConsistencyLevel writeConsistency, 
         ContentHasher hasher, IdGenerator idGenerator, MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
         super(hasher, idGenerator, sender, clock);
@@ -186,11 +181,11 @@ public final class CassandraContentStore extends AbstractContentStore {
             // TODO: move timeout to config
             Rows<Long,String> resolved = resolveLongs(ids).get(10, TimeUnit.SECONDS);
             Iterable<Content> contents = Iterables.transform(resolved, rowToContent);
-            ImmutableMap.Builder<Alias, Optional<Content>> aliasMap = ImmutableMap.builder();
+            ImmutableMap.Builder<Alias, com.google.common.base.Optional<Content>> aliasMap = ImmutableMap.builder();
             for (Content content : contents) {
                 for (Alias alias : content.getAliases()) {
                     if (uniqueAliases.contains(alias)) {
-                        aliasMap.put(alias, Optional.of(content));
+                        aliasMap.put(alias, com.google.common.base.Optional.of(content));
                     }
                 }
             }
@@ -206,7 +201,7 @@ public final class CassandraContentStore extends AbstractContentStore {
             long id = content.getId().longValue();
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
-            marshaller.marshallInto(batch.withRow(mainCf, id), content);
+            marshaller.marshallInto(content.getId(), batch.withRow(mainCf, id), content);
             batch.mergeShallow(aliasIndex.mutateAliases(content, previous));
             batch.execute();
             log.trace("Written content id " + id);
@@ -216,26 +211,24 @@ public final class CassandraContentStore extends AbstractContentStore {
     }
     
     @Override
-    protected @Nullable
-    Content resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases) {
-        Content previous = null;
+    protected Optional<Content> resolvePrevious(Optional<Id> id, Publisher source, Set<Alias> aliases) {
         try {
-            if (id != null) {
-                previous = resolve(id.longValue(), null);
+            if (id.isPresent()) {
+                return Optional.fromNullable(resolve(id.get().longValue(), null));
             } else {
                     Set<Long> ids = aliasIndex.readAliases(source, aliases);
                     Long aliasId = Iterables.getFirst(ids, null);
                     if (aliasId != null) {
-                        previous = resolve(aliasId, null);
+                        return Optional.fromNullable(resolve(aliasId, null));
                     }
+                return Optional.absent();
             }
-
         } catch (ConnectionException e) {
             throw Throwables.propagate(e);
         } catch (CorruptContentException e) {
             log.error("Previously written content is corrupt", e);
+            return Optional.absent();
         }
-        return previous;
     }
 
     private Content resolve(long longId, Set<ContentColumn> colNames) {
@@ -317,7 +310,7 @@ public final class CassandraContentStore extends AbstractContentStore {
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
             ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-            marshaller.marshallInto(mutation, container);
+            marshaller.marshallInto(primary.getId(), mutation, container);
             batch.execute();
         } catch (Exception e) {
             throw Throwables.propagate(e);
@@ -362,10 +355,10 @@ public final class CassandraContentStore extends AbstractContentStore {
             }
             ContainerRef containerRef = item.getContainerRef();
             ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingBroadcasts = ImmutableMap.of(
-                    item.toRef(), getUpcomingBroadcastRefs(item)
+                    item.toRef(), item.getUpcomingBroadcastRefs()
             );
             ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
-                    item.toRef(), getAvailableLocations(item)
+                    item.toRef(), item.getAvailableLocations()
             );
 
             MutationBatch batch = keyspace.prepareMutationBatch();
@@ -382,7 +375,7 @@ public final class CassandraContentStore extends AbstractContentStore {
                 }
 
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(mutation, container);
+                marshaller.marshallInto(containerRef.getId(), mutation, container);
             }
 
             if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
@@ -395,7 +388,7 @@ public final class CassandraContentStore extends AbstractContentStore {
                 container.setAvailableContent(availableLocations);
                 container.setItemSummaries(ImmutableList.of(episode.toSummary()));
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(mutation, container);
+                marshaller.marshallInto(episode.getSeriesRef().getId(), mutation, container);
             }
             batch.execute();
 
@@ -423,25 +416,4 @@ public final class CassandraContentStore extends AbstractContentStore {
         removeAvailableContent(containerRef, itemRef, batch);
         removeUpcomingContent(containerRef, itemRef, batch);
     }
-
-    private Iterable<BroadcastRef> getUpcomingBroadcastRefs(Item item) {
-        return item.getBroadcasts()
-                .stream()
-                .filter(Broadcast.IS_UPCOMING)
-                .map(Broadcast.TO_REF)
-                .collect(Collectors.toSet());
-
-    }
-
-    private Iterable<LocationSummary> getAvailableLocations(Item item) {
-        return item.getManifestedAs()
-                .stream()
-                .flatMap(e -> e.getAvailableAt().stream())
-                .filter(Location::isAvailable)
-                .map(Location::toSummary)
-                .collect(Collectors.toSet());
-    }
-
-
-
 }

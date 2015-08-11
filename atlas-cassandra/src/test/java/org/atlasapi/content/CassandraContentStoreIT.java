@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.MutationBatch;
@@ -65,29 +66,24 @@ import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
 
-@RunWith(MockitoJUnitRunner.class)
-public class CassandraContentStoreIT {
+public abstract class CassandraContentStoreIT {
 
-    private static final AstyanaxContext<Keyspace> context = 
+    protected static final AstyanaxContext<Keyspace> context =
         CassandraHelper.testCassandraContext();
     
-    @Mock private ContentHasher hasher;
-    @Mock private IdGenerator idGenerator;
-    @Mock private MessageSender<ResourceUpdatedMessage> sender;
-    @Mock private Clock clock;
+    @Mock protected ContentHasher hasher;
+    @Mock protected IdGenerator idGenerator;
+    @Mock protected MessageSender<ResourceUpdatedMessage> sender;
+    @Mock protected Clock clock;
 
-    private CassandraContentStore store;
+    private ContentStore store;
 
-    private static final String CONTENT_TABLE = "content";
+    protected static final String CONTENT_TABLE = "content";
 
+    protected abstract ContentStore provideContentStore();
     @Before
     public void before() {
-        store = CassandraContentStore
-                .builder(context, CONTENT_TABLE, hasher, sender, idGenerator)
-                .withReadConsistency(ConsistencyLevel.CL_ONE)
-                .withWriteConsistency(ConsistencyLevel.CL_ONE)
-                .withClock(clock)
-                .build();
+        store = provideContentStore();
     }
     
     static Logger root = Logger.getRootLogger();
@@ -399,9 +395,7 @@ public class CassandraContentStoreIT {
 
             WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
             assertThat(brandWriteResult.getResource().getId().longValue(), is(1234L));
-            
             store.writeContent(episode);
-
         } finally {
             //generate for brand but not episode
             verify(idGenerator, times(1)).generateRaw();
@@ -415,7 +409,7 @@ public class CassandraContentStoreIT {
         when(idGenerator.generateRaw())
             .thenReturn(1234L)
             .thenReturn(1235L);
-        
+
         Brand brand = create(new Brand());
         
         store.writeContent(brand);
@@ -1163,7 +1157,11 @@ public class CassandraContentStoreIT {
         mutation.putColumn("AVAILABLE:1238", contentBuilder.build().toByteArray());
         batch.execute();
 
-        resolve(1234L);
+        try {
+            resolve(1234L);
+        } catch (ExecutionException e) {
+            throw Throwables.propagate(e.getCause());
+        }
     }
 
     @Test
