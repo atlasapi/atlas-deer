@@ -76,8 +76,8 @@ public class BootstrapModule {
     }
 
     @Bean
-    IndividualContentBootstrapController contentBootstrapController() {
-        return new IndividualContentBootstrapController(legacy.legacyContentResolver(), 
+    ContentBootstrapController contentBootstrapController() {
+        return new ContentBootstrapController(legacy.legacyContentResolver(),
                 legacy.legacyContentLister(),
                 persistence.contentStore(), search.contentIndex(), persistence, explicitEquivalenceMigrator(), NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS);
     }

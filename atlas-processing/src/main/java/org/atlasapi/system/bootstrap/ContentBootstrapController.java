@@ -50,7 +50,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
 
 @Controller
-public class IndividualContentBootstrapController {
+public class ContentBootstrapController {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ContentResolver read;
@@ -63,7 +63,7 @@ public class IndividualContentBootstrapController {
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private final Integer maxSourceBootstrapThreads;
 
-    public IndividualContentBootstrapController(
+    public ContentBootstrapController(
             ContentResolver read,
             ResourceLister<Content> contentLister,
             ContentWriter write,
@@ -87,25 +87,25 @@ public class IndividualContentBootstrapController {
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         executorService.execute(() ->
-            {
-                AtomicInteger atomicInteger = new AtomicInteger();
-                ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
-                for (Content c : contentLister.list(ImmutableList.of(fromKey.requireValue()))) {
-                    bootstrapExecutorService.submit(
-                            () -> {
-                                log.info(
-                                        "Content type: {}, id: {}, activelyPublished: {}, count: {}",
-                                        ContentType.fromContent(c).get(),
-                                        c.getId(),
-                                        c.isActivelyPublished(),
-                                        atomicInteger.incrementAndGet()
-                                );
-                                c.accept(visitor);
+                {
+                    AtomicInteger atomicInteger = new AtomicInteger();
+                    ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
+                    for (Content c : contentLister.list(ImmutableList.of(fromKey.requireValue()))) {
+                        bootstrapExecutorService.submit(
+                                () -> {
+                                    log.info(
+                                            "Content type: {}, id: {}, activelyPublished: {}, count: {}",
+                                            ContentType.fromContent(c).get(),
+                                            c.getId(),
+                                            c.isActivelyPublished(),
+                                            atomicInteger.incrementAndGet()
+                                    );
+                                    c.accept(visitor);
 
-                            }
-                    );
+                                }
+                        );
+                    }
                 }
-            }
         );
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }

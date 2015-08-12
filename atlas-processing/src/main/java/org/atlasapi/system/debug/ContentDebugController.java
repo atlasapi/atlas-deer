@@ -1,31 +1,36 @@
 package org.atlasapi.system.debug;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.metabroadcast.common.http.HttpStatusCode.BAD_REQUEST;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.servlet.http.HttpServletResponse;
-
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
 import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.content.Brand;
+import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.Series;
+import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
@@ -47,19 +52,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class ContentDebugController {
@@ -156,7 +157,7 @@ public class ContentDebugController {
         OptionalMap<Id, EquivalenceGraph> equivalenceGraph = Futures.get(
                 persistence.getContentEquivalenceGraphStore().resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
         );
-        if(equivalenceGraph.get(decodedId).isPresent()) {
+        if (equivalenceGraph.get(decodedId).isPresent()) {
             gson.toJson(equivalenceGraph.get(decodedId).get(), response.getWriter());
         } else {
             gson.toJson(
@@ -221,7 +222,9 @@ public class ContentDebugController {
                     equivalenceMigrator.migrateEquivalence(content);
             persistence.getEquivalentContentStore().updateContent(content.toRef());
             respString.append("\nEquivalent content store updated using content ref");
-
+            if (content instanceof Container) {
+                migrateSubItems((Container) content);
+            }
             response.setStatus(200);
             response.getWriter().write(respString.toString());
             response.flushBuffer();
@@ -230,6 +233,30 @@ public class ContentDebugController {
         }
     }
 
+    private void migrateSubItems(Container container) throws WriteException {
+        log.info("Migrating sub items of {}", container.getId());
+        if (container instanceof Brand) {
+            Brand brand = (Brand) container;
+            for (SeriesRef seriesRef : brand.getSeriesRefs()) {
+                log.info("Migrating series {} of brand {}", seriesRef.getId(), container.getId());
+                Series series = (Series) resolveLegacyContent(seriesRef.getId().longValue());
+                migrateSubItems(series);
+            }
+        }
+        for (ItemRef itemRef : container.getItemRefs()) {
+            log.info("Migrating item {} of container {}", itemRef.getId(), container.getId());
+            migrateItem(itemRef);
+        }
+    }
+
+    private void migrateItem(ItemRef itemRef) throws WriteException {
+        Content content = resolveLegacyContent(itemRef.getId().longValue());
+        WriteResult<Content, Content> writeResult = persistence.contentStore().writeContent(content);
+        Optional<EquivalenceGraphUpdate> graphUpdate =
+                equivalenceMigrator.migrateEquivalence(content);
+        equivalenceMigrator.migrateEquivalence(content);
+        persistence.getEquivalentContentStore().updateContent(content.toRef());
+    }
 
     @RequestMapping("/system/debug/schedule")
     public void debugEquivalentSchedule(
@@ -254,7 +281,7 @@ public class ContentDebugController {
                 date = dateParser.parseLocalDate(day);
             } catch (IllegalArgumentException iae) {
                 response.setStatus(400);
-                response.getWriter().write("Failed to parse "+day+", expected yyyy-MM-dd");
+                response.getWriter().write("Failed to parse " + day + ", expected yyyy-MM-dd");
                 return;
             }
 
