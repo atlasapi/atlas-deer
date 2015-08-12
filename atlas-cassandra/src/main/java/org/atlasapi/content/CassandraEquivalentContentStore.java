@@ -268,7 +268,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         updateIndexRows(graphsAndContent);
         deleteStaleSets(update.getDeleted());
         deleteStaleRows(update.getUpdated(), update.getCreated());
-        log.info("updateEquivalences() took {}ms", Duration.between(start, Instant.now()).toMillis());
     }
 
     private void deleteStaleRows(EquivalenceGraph updated, ImmutableSet<EquivalenceGraph> created) {

@@ -113,10 +113,11 @@ public class ContentBootstrapController {
                     bootstrapExecutorService.submit(
                             () -> {
                                 log.info(
-                                        "Content type: {}, id: {}, activelyPublished: {}, count: {}",
+                                        "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
                                         ContentType.fromContent(c).get(),
                                         c.getId(),
                                         c.isActivelyPublished(),
+                                        c.getCanonicalUri(),
                                         atomicInteger.incrementAndGet()
                                 );
                                 c.accept(visitor);
