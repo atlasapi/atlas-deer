@@ -189,12 +189,6 @@ public class ContentBootstrapController {
 
             private WriteResult<? extends Content, Content> write(Content content) {
                 try {
-                    log.info(
-                            "Content type: {}, id: {}, activelyPublished: {}",
-                            ContentType.fromContent(content).get(),
-                            content.getId(),
-                            content.isActivelyPublished()
-                    );
                     content.setReadHash(null);
                     Instant start = Instant.now();
                     WriteResult<Content, Content> writeResult = write.writeContent(content);
@@ -210,15 +204,6 @@ public class ContentBootstrapController {
                         persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
                     }
                     Instant end = Instant.now();
-                    log.info(
-                            "Update for {} write: {}ms, index: {}ms, equivalnce migration: {}ms, equivalent content update {}ms, total: {}ms",
-                            content.getId(),
-                            Duration.between(start, cassandraReadEnd).toMillis(),
-                            Duration.between(cassandraReadEnd, indexingEnd).toMillis(),
-                            Duration.between(indexingEnd, equivalenceUpdateEnd).toMillis(),
-                            Duration.between(equivalenceUpdateEnd, equivalenceContentUpdateEnd).toMillis(),
-                            Duration.between(start, end).toMillis()
-                    );
                     return writeResult;
                 } catch (Exception e) {
                     log.error(String.format("Bootstrapping: %s %s", content.getId(), content), e);
