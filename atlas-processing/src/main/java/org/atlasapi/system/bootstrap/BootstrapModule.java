@@ -22,6 +22,8 @@ import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
+import org.atlasapi.system.legacy.MongoProgressStore;
+import org.atlasapi.system.legacy.ProgressStore;
 import org.atlasapi.topic.Topic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -79,9 +81,20 @@ public class BootstrapModule {
     ContentBootstrapController contentBootstrapController() {
         return new ContentBootstrapController(legacy.legacyContentResolver(),
                 legacy.legacyContentLister(),
-                persistence.contentStore(), search.contentIndex(), persistence, explicitEquivalenceMigrator(), NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS);
+                persistence.contentStore(),
+                search.contentIndex(),
+                persistence,
+                explicitEquivalenceMigrator(),
+                NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
+                progressStore()
+        );
     }
-    
+
+    @Bean
+    public ProgressStore progressStore() {
+        return new MongoProgressStore(persistence.databasedWriteMongo());
+    }
+
     public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
         return new DirectAndExplicitEquivalenceMigrator(
                 legacy.legacyContentResolver(),

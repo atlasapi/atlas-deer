@@ -64,8 +64,6 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
 
-    private final Set<Id> cleaned = Sets.newHashSet();
-
     public CassandraEquivalenceGraphStore(MessageSender<EquivalenceGraphUpdateMessage> messageSender, Session session, ConsistencyLevel read, ConsistencyLevel write) {
         super(messageSender);
         this.session = session;
@@ -76,10 +74,6 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     @Override
     protected void cleanGraphAndIndex(Id subjectId) {
         log.warn("Cleaning graph and index for subject {}", subjectId);
-        if (cleaned.contains(subjectId)) {
-            throw new RuntimeException("Subject {} has already been cleaned once, preventing infinite recursion!");
-        }
-        cleaned.add(subjectId);
         try {
             Long graphId = Futures.get(resolveToGraphIds(ImmutableList.of(subjectId)), IOException.class)
                     .get(subjectId);

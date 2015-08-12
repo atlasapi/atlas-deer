@@ -1,5 +1,6 @@
 package org.atlasapi.application.users;
 
+import com.codahale.metrics.MetricRegistry;
 import org.atlasapi.application.LegacyApplicationStore;
 import org.atlasapi.application.users.v3.UserTranslator;
 import org.atlasapi.entity.Id;

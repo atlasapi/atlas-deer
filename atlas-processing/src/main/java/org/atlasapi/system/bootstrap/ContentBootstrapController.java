@@ -1,17 +1,12 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.servlet.http.HttpServletResponse;
-
+import com.google.common.base.Optional;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.base.Maybe;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
@@ -30,9 +25,9 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.persistence.content.listing.ContentLister;
-import org.atlasapi.persistence.content.listing.ContentListingCriteria;
+import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.legacy.ProgressStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -41,13 +36,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.base.Maybe;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class ContentBootstrapController {
@@ -62,6 +59,7 @@ public class ContentBootstrapController {
     private final AtlasPersistenceModule persistence;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private final Integer maxSourceBootstrapThreads;
+    private final ProgressStore progressStore;
 
     public ContentBootstrapController(
             ContentResolver read,
@@ -70,7 +68,8 @@ public class ContentBootstrapController {
             ContentIndex contentIndex,
             AtlasPersistenceModule persistence,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
-            Integer maxSourceBootstrapThreads
+            Integer maxSourceBootstrapThreads,
+            ProgressStore progressStore
     ) {
         this.maxSourceBootstrapThreads = maxSourceBootstrapThreads;
         this.persistence = checkNotNull(persistence);
@@ -79,37 +78,57 @@ public class ContentBootstrapController {
         this.write = checkNotNull(write);
         this.contentLister = checkNotNull(contentLister);
         this.contentIndex = checkNotNull(contentIndex);
+        this.progressStore = checkNotNull(progressStore);
     }
     
     @RequestMapping(value="/system/bootstrap/source", method=RequestMethod.POST) 
-    public void bootstrapSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
+    public void bootstrapSource(
+            @RequestParam("source") final String sourceString,
+            @RequestParam("resumeFrom") Integer id,
+            HttpServletResponse resp
+    ) {
         ContentVisitorAdapter<String> visitor = visitor();
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
-        executorService.execute(() ->
-                {
-                    AtomicInteger atomicInteger = new AtomicInteger();
-                    ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
-                    for (Content c : contentLister.list(ImmutableList.of(fromKey.requireValue()))) {
-                        bootstrapExecutorService.submit(
-                                () -> {
-                                    log.info(
-                                            "Content type: {}, id: {}, activelyPublished: {}, count: {}",
-                                            ContentType.fromContent(c).get(),
-                                            c.getId(),
-                                            c.isActivelyPublished(),
-                                            atomicInteger.incrementAndGet()
-                                    );
-                                    c.accept(visitor);
-
-                                }
-                        );
-                    }
-                }
-        );
+        java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
+        executorService.execute(bootstrappingRunnable(visitor, fromKey.requireValue(), progress));
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
- 
+
+    private Runnable bootstrappingRunnable(ContentVisitorAdapter<String> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress)
+    {
+        FluentIterable<Content> contentIterator;
+        if (progress.isPresent()) {
+            log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
+            contentIterator = contentLister.list(ImmutableList.of(source), progress.get());
+        } else {
+            log.info("Starting bootstrap of {} the start, no existing progress found", source.toString());
+            contentIterator = contentLister.list(ImmutableList.of(source));
+        }
+        return () ->
+            {
+                AtomicInteger atomicInteger = new AtomicInteger();
+                ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
+                for (Content c : contentIterator) {
+                    bootstrapExecutorService.submit(
+                            () -> {
+                                log.info(
+                                        "Content type: {}, id: {}, activelyPublished: {}, count: {}",
+                                        ContentType.fromContent(c).get(),
+                                        c.getId(),
+                                        c.isActivelyPublished(),
+                                        atomicInteger.incrementAndGet()
+                                );
+                                c.accept(visitor);
+                                progressStore.storeProgress(source.toString(), progressFrom(c, source));
+                            }
+                    );
+                }
+                /* Finished */
+                progressStore.storeProgress(source.toString(), ContentListingProgress.START);
+            };
+    }
+
     @RequestMapping(value="/system/bootstrap/content", method=RequestMethod.POST)
     public void bootstrapContent(@RequestParam("id") final String id, final HttpServletResponse resp) throws IOException {
         log.info("Bootstrapping: {}", id);
@@ -211,5 +230,9 @@ public class ContentBootstrapController {
             }
             
         };
+    }
+
+    public ContentListingProgress progressFrom(Content content, Publisher pub) {
+        return new ContentListingProgress(null, pub, content.getCanonicalUri());
     }
 }
