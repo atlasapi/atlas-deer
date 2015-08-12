@@ -82,11 +82,7 @@ public class ContentBootstrapController {
     }
     
     @RequestMapping(value="/system/bootstrap/source", method=RequestMethod.POST) 
-    public void bootstrapSource(
-            @RequestParam("source") final String sourceString,
-            @RequestParam("resumeFrom") Integer id,
-            HttpServletResponse resp
-    ) {
+    public void bootstrapSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
         ContentVisitorAdapter<String> visitor = visitor();
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
