@@ -80,8 +80,8 @@ public class ContentBootstrapController {
         this.contentIndex = checkNotNull(contentIndex);
         this.progressStore = checkNotNull(progressStore);
     }
-    
-    @RequestMapping(value="/system/bootstrap/source", method=RequestMethod.POST) 
+
+    @RequestMapping(value = "/system/bootstrap/source", method = RequestMethod.POST)
     public void bootstrapSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
         ContentVisitorAdapter<String> visitor = visitor();
         log.info("Bootstrapping source: {}", sourceString);
@@ -91,8 +91,7 @@ public class ContentBootstrapController {
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 
-    private Runnable bootstrappingRunnable(ContentVisitorAdapter<String> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress)
-    {
+    private Runnable bootstrappingRunnable(ContentVisitorAdapter<String> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress) {
         FluentIterable<Content> contentIterator;
         if (progress.isPresent()) {
             log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
@@ -102,34 +101,34 @@ public class ContentBootstrapController {
             contentIterator = contentLister.list(ImmutableList.of(source));
         }
         return () ->
-            {
-                AtomicInteger atomicInteger = new AtomicInteger();
-                ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
-                for (Content c : contentIterator) {
-                    bootstrapExecutorService.submit(
-                            () -> {
-                                log.info(
-                                        "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
-                                        ContentType.fromContent(c).get(),
-                                        c.getId(),
-                                        c.isActivelyPublished(),
-                                        c.getCanonicalUri(),
-                                        atomicInteger.incrementAndGet()
-                                );
-                                c.accept(visitor);
-                                progressStore.storeProgress(source.toString(), progressFrom(c, source));
-                            }
-                    );
-                }
+        {
+            AtomicInteger atomicInteger = new AtomicInteger();
+            ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
+            for (Content c : contentIterator) {
+                bootstrapExecutorService.submit(
+                        () -> {
+                            log.info(
+                                    "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
+                                    ContentType.fromContent(c).get(),
+                                    c.getId(),
+                                    c.isActivelyPublished(),
+                                    c.getCanonicalUri(),
+                                    atomicInteger.incrementAndGet()
+                            );
+                            c.accept(visitor);
+                            progressStore.storeProgress(source.toString(), progressFrom(c, source));
+                        }
+                );
+            }
                 /* Finished */
-                progressStore.storeProgress(source.toString(), ContentListingProgress.START);
-            };
+            progressStore.storeProgress(source.toString(), ContentListingProgress.START);
+        };
     }
 
-    @RequestMapping(value="/system/bootstrap/content", method=RequestMethod.POST)
+    @RequestMapping(value = "/system/bootstrap/content", method = RequestMethod.POST)
     public void bootstrapContent(@RequestParam("id") final String id, final HttpServletResponse resp) throws IOException {
         log.info("Bootstrapping: {}", id);
-        Identified identified = Iterables.getOnlyElement(resolve(ImmutableList.of(Id.valueOf(id))),null);
+        Identified identified = Iterables.getOnlyElement(resolve(ImmutableList.of(Id.valueOf(id))), null);
         log.info("Bootstrapping: {} {}", id, identified);
         if (!(identified instanceof Content)) {
             resp.sendError(500, "Resolved not content");
@@ -138,7 +137,7 @@ public class ContentBootstrapController {
         Content content = (Content) identified;
 
         resp.setStatus(HttpStatus.OK.value());
-        
+
         String result = content.accept(visitor());
         resp.getWriter().println(result);
         resp.getWriter().flush();
@@ -152,10 +151,10 @@ public class ContentBootstrapController {
             throw new RuntimeException();
         }
     }
-    
+
     private ContentVisitorAdapter<String> visitor() {
         return new ContentVisitorAdapter<String>() {
-            
+
             @Override
             public String visit(Brand brand) {
                 WriteResult<?, Content> brandWrite = write(brand);
@@ -163,7 +162,7 @@ public class ContentBootstrapController {
                 int childs = resolveAndWrite(Iterables.transform(brand.getItemRefs(), Identifiables.toId()));
                 return String.format("%s s:%s c:%s", brandWrite, series, childs);
             }
-            
+
             @Override
             public String visit(Series series) {
                 WriteResult<?, Content> seriesWrite = write(series);
@@ -181,7 +180,7 @@ public class ContentBootstrapController {
                 }
                 return i;
             }
-            
+
             @Override
             protected String visitItem(Item item) {
                 return write(item).toString();
@@ -192,7 +191,7 @@ public class ContentBootstrapController {
                     content.setReadHash(null);
                     Instant start = Instant.now();
                     WriteResult<Content, Content> writeResult = write.writeContent(content);
-                    Instant cassandraReadEnd = Instant.now();
+                    Instant cassandraWriteEnd = Instant.now();
                     contentIndex.index(content);
                     Instant indexingEnd = Instant.now();
                     Optional<EquivalenceGraphUpdate> graphUpdate =
@@ -204,13 +203,23 @@ public class ContentBootstrapController {
                         persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
                     }
                     Instant end = Instant.now();
+
+                    log.info(
+                            "Update for {} write: {}ms, index: {}ms, equivalnce migration: {}ms, equivalent content update {}ms, total: {}ms",
+                            content.getId(),
+                            Duration.between(start, cassandraWriteEnd).toMillis(),
+                            Duration.between(cassandraWriteEnd, indexingEnd).toMillis(),
+                            Duration.between(indexingEnd, equivalenceUpdateEnd).toMillis(),
+                            Duration.between(equivalenceUpdateEnd, equivalenceContentUpdateEnd).toMillis(),
+                            Duration.between(start, end).toMillis()
+                    );
                     return writeResult;
                 } catch (Exception e) {
                     log.error(String.format("Bootstrapping: %s %s", content.getId(), content), e);
                     return null;
                 }
             }
-            
+
         };
     }
 
