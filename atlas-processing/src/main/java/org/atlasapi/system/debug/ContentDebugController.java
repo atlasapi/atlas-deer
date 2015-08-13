@@ -221,6 +221,9 @@ public class ContentDebugController {
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     equivalenceMigrator.migrateEquivalence(content);
             persistence.getEquivalentContentStore().updateContent(content.toRef());
+            if (graphUpdate.isPresent()) {
+                persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
+            }
             respString.append("\nEquivalent content store updated using content ref");
             if (content instanceof Container) {
                 migrateSubItems((Container) content);
@@ -240,22 +243,25 @@ public class ContentDebugController {
             for (SeriesRef seriesRef : brand.getSeriesRefs()) {
                 log.info("Migrating series {} of brand {}", seriesRef.getId(), container.getId());
                 Series series = (Series) resolveLegacyContent(seriesRef.getId().longValue());
+                migrateContent(series.getId());
                 migrateSubItems(series);
             }
         }
         for (ItemRef itemRef : container.getItemRefs()) {
             log.info("Migrating item {} of container {}", itemRef.getId(), container.getId());
-            migrateItem(itemRef);
+            migrateContent(itemRef.getId());
         }
     }
 
-    private void migrateItem(ItemRef itemRef) throws WriteException {
-        Content content = resolveLegacyContent(itemRef.getId().longValue());
+    private void migrateContent(Id id) throws WriteException {
+        Content content = resolveLegacyContent(id.longValue());
         WriteResult<Content, Content> writeResult = persistence.contentStore().writeContent(content);
         Optional<EquivalenceGraphUpdate> graphUpdate =
                 equivalenceMigrator.migrateEquivalence(content);
-        equivalenceMigrator.migrateEquivalence(content);
         persistence.getEquivalentContentStore().updateContent(content.toRef());
+        if (graphUpdate.isPresent()) {
+            persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
+        }
     }
 
     @RequestMapping("/system/debug/schedule")
