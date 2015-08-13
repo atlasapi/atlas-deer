@@ -141,12 +141,12 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Iterable<Id> transitiveIdsToLock(Set<Id> adjacentsIds) throws StoreException {
         return Iterables.concat(Iterables.transform(get(resolveIds(adjacentsIds)).values(),
-            new Function<Optional<EquivalenceGraph>, Set<Id>>() {
-                @Override
-                public Set<Id> apply(Optional<EquivalenceGraph> input) {
-                    return input.isPresent() ? input.get().getAdjacencyList().keySet() : ImmutableSet.<Id>of();
+                new Function<Optional<EquivalenceGraph>, Set<Id>>() {
+                    @Override
+                    public Set<Id> apply(Optional<EquivalenceGraph> input) {
+                        return input.isPresent() ? input.get().getAdjacencyList().keySet() : ImmutableSet.<Id>of();
+                    }
                 }
-            }
         ));
     }
 
@@ -239,14 +239,18 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private Map<Id, Adjacents> updateAdjacencies(ResourceRef subject,
             Iterable<Adjacents> subjAdjacencies, Map<ResourceRef, EquivalenceGraph> adjacentGraphs,
             Set<Publisher> sources) throws StoreException {
-        ImmutableMap.Builder<Id, Adjacents> updated = ImmutableMap.builder();
+        Map<Id, Adjacents> updated = Maps.newHashMap();
 
         ImmutableSet<Adjacents> allAdjacents = currentTransitiveAdjacents(adjacentGraphs)
                 .addAll(subjAdjacencies).build();
         for (Adjacents adj : allAdjacents) {
-            updated.put(adj.getId(), updateAdjacents(adj, subject, adjacentGraphs.keySet(), sources));
+            if (updated.containsKey(adj.getId())) {
+                updated.put(adj.getId(), updateAdjacents(updated.get(adj.getId()), subject, adjacentGraphs.keySet(), sources));
+            } else {
+                updated.put(adj.getId(), updateAdjacents(adj, subject, adjacentGraphs.keySet(), sources));
+            }
         }
-        return updated.build();
+        return ImmutableMap.copyOf(updated);
     }
 
     private Adjacents updateAdjacents(Adjacents adj, ResourceRef subject, 
