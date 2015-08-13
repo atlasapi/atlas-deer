@@ -523,9 +523,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             if (queryParams.get().shouldFilterUnavailableContainers()) {
                 queryBuilder = addContainerAvailabilityFilter(queryBuilder);
             }
-        } else {
-            reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
         }
+
+        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         log.debug(queryBuilder.toString());
 
