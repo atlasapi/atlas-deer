@@ -50,7 +50,7 @@ public class LegacyPersistenceModule {
         KnownTypeContentResolver contentResolver = new MongoContentResolver(mongoDb, legacyEquivalenceStore());
         return new LegacyContentResolver(legacyEquivalenceStore(), contentResolver, legacySegmentMigrator(), persistence.channelStore());
     }
-    
+
     @Bean @Qualifier("legacy")
     public ContentListerResourceListerAdapter legacyContentLister() {
         DatabasedMongo mongoDb = persistence.databasedReadMongo();
@@ -67,7 +67,7 @@ public class LegacyPersistenceModule {
                 )
         );
     }
-    
+
     @Bean @Qualifier("legacy")
     public TopicResolver legacyTopicResolver() {
         return new LegacyTopicResolver(legacyTopicStore(), legacyTopicStore());

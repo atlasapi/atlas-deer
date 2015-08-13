@@ -158,27 +158,13 @@ public class ContentBootstrapController {
             @Override
             public String visit(Brand brand) {
                 WriteResult<?, Content> brandWrite = write(brand);
-                int series = resolveAndWrite(Iterables.transform(brand.getSeriesRefs(), Identifiables.toId()));
-                int childs = resolveAndWrite(Iterables.transform(brand.getItemRefs(), Identifiables.toId()));
-                return String.format("%s s:%s c:%s", brandWrite, series, childs);
+                return String.format("%s", brandWrite);
             }
 
             @Override
             public String visit(Series series) {
                 WriteResult<?, Content> seriesWrite = write(series);
-                int childs = resolveAndWrite(Iterables.transform(series.getItemRefs(), Identifiables.toId()));
-                return String.format("%s c:%s", seriesWrite, childs);
-            }
-
-            private int resolveAndWrite(Iterable<Id> ids) {
-                FluentIterable<Content> resolved = resolve(ids);
-                int i = 0;
-                for (Content content : Iterables.filter(resolved, Content.class)) {
-                    if (write(content) != null) {
-                        i++;
-                    }
-                }
-                return i;
+                return String.format("%s", seriesWrite);
             }
 
             @Override
