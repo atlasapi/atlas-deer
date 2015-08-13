@@ -17,6 +17,7 @@ import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
+import org.atlasapi.content.EpisodeRef;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
@@ -258,12 +259,15 @@ public class OutputContentMergerTest {
                         ImmutableList.of(new Certificate("PG", Countries.GB))
                 )
         );
-
+        two.setItemRefs(ImmutableList.of(
+                new EpisodeRef(Id.valueOf(10l), Publisher.METABROADCAST, "11", DateTime.now())
+        ));
         two.setItemSummaries(
                 itemSummaries
         );
 
         ApplicationSources sources = sourcesWithPrecedence(true, Publisher.BBC_KIWI,Publisher.METABROADCAST,Publisher.BBC_MUSIC);
+
 
         Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
 
