@@ -43,23 +43,9 @@ public class HealthController {
         out.close();
     }
 
-    @RequestMapping("/system/cassandra/metrics")
+    @RequestMapping("/system/cassandra")
     public void showCassandraMetrics(HttpServletResponse response) throws IOException {
-        gson.toJson(cassandra.getCluster().getMetrics(), response.getWriter());
-        response.setStatus(200);
-        response.flushBuffer();
-    }
-
-    @RequestMapping("/system/cassandra/metadata")
-    public void showCassandraMetadata(HttpServletResponse response) throws IOException {
-        gson.toJson(cassandra.getCluster().getMetadata(), response.getWriter());
-        response.setStatus(200);
-        response.flushBuffer();
-    }
-
-    @RequestMapping("/system/cassandra/config")
-    public void showCassandraConfig(HttpServletResponse response) throws IOException {
-        gson.toJson(cassandra.getCluster().getConfiguration(), response.getWriter());
+        gson.toJson(cassandra.getCluster().getMetrics().getRegistry(), response.getWriter());
         response.setStatus(200);
         response.flushBuffer();
     }
