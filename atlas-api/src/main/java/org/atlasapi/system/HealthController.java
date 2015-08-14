@@ -3,6 +3,7 @@ package org.atlasapi.system;
 import com.datastax.driver.core.Session;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -45,7 +46,8 @@ public class HealthController {
 
     @RequestMapping("/system/cassandra")
     public void showCassandraMetrics(HttpServletResponse response) throws IOException {
-        gson.toJson(cassandra.getCluster().getMetrics().getRegistry(), response.getWriter());
+        JsonElement json = gson.toJsonTree(cassandra.getCluster().getMetrics().getRegistry().getMetrics());
+        response.getWriter().write(gson.toJson(json));
         response.setStatus(200);
         response.flushBuffer();
     }
