@@ -265,7 +265,7 @@ public class ApplicationSources {
 
         private Optional<List<Publisher>> contentHierarchyPrecedence = Optional.absent();
         public boolean precedence = false;
-        private boolean imagePrecedenceEnabled = true;
+        private Boolean imagePrecedenceEnabled = true;
         private List<SourceReadEntry> reads = Lists.newLinkedList();
         private List<Publisher> writes = Lists.newLinkedList();
 
@@ -293,7 +293,7 @@ public class ApplicationSources {
             return this;
         }
         
-        public Builder withImagePrecedenceEnabled(boolean imagePrecedenceEnabled) {
+        public Builder withImagePrecedenceEnabled(Boolean imagePrecedenceEnabled) {
             this.imagePrecedenceEnabled = imagePrecedenceEnabled;
             return this;
         }
