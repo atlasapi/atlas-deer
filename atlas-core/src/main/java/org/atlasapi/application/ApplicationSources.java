@@ -96,7 +96,7 @@ public class ApplicationSources {
     }
     
     public Optional<List<Publisher>> contentHierarchyPrecedence() {
-        return contentHierarchyPrecedence;
+        return contentHierarchyPrecedence == null ? Optional.absent() : contentHierarchyPrecedence;
     }
     
     private ImmutableList<Publisher> peoplePrecedence() {
