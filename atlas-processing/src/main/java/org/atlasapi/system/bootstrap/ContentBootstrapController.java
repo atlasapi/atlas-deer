@@ -106,7 +106,7 @@ public class ContentBootstrapController {
         {
             AtomicInteger atomicInteger = new AtomicInteger();
             ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                    10, 50, 500, TimeUnit.MILLISECONDS, Queues.newLinkedBlockingQueue(100),
+                    10, maxSourceBootstrapThreads, 500, TimeUnit.MILLISECONDS, Queues.newLinkedBlockingQueue(maxSourceBootstrapThreads),
                     new ThreadPoolExecutor.CallerRunsPolicy()
             );
             for (Content c : contentIterator) {
