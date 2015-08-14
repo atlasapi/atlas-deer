@@ -48,7 +48,7 @@ public class ProcessingHealthModule extends HealthModule {
     }
 
     public @Bean org.atlasapi.system.HealthController threadController() {
-        return new org.atlasapi.system.HealthController();
+        return new org.atlasapi.system.HealthController(persistenceModule.persistenceModule().getSession());
     }
 
     public GraphiteReporter graphiteReporterFor(MetricRegistry metrics) {

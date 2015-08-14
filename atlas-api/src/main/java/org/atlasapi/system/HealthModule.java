@@ -33,7 +33,7 @@ public class HealthModule {
     }
 
     public @Bean org.atlasapi.system.HealthController threadController() {
-        return new org.atlasapi.system.HealthController();
+        return new org.atlasapi.system.HealthController(null);
     }
 
     public @Bean HealthProbe metricsProbe() {
