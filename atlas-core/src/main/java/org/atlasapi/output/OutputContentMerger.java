@@ -561,20 +561,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         chosen.setAvailableContent(availableContent);
-
-
-        if (chosen instanceof Brand) {
-            Iterable<Brand> contentHierarchySourceOrderedBrands = Iterables.filter(contentHierarchySourceOrderedContainers, Brand.class);
-            Brand chosenBrand = (Brand) chosen;
-            chosenBrand.setSeriesRefs(
-                    first(
-                            contentHierarchySourceOrderedBrands,
-                            input -> input.getSeriesRefs().isEmpty() ? null : input.getSeriesRefs(),
-                            ImmutableList.of()
-
-                    ));
-        }
-
     }
 
     private final static class TagPublisherSetter implements Function<Tag, Tag> {
