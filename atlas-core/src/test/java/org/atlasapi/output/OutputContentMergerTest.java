@@ -23,6 +23,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
+import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -417,13 +418,16 @@ public class OutputContentMergerTest {
         Brand bbcBrand = brand(1, "http://bbc.co.uk/brand", Publisher.BBC);
         List<ItemRef> bbcEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(3), Publisher.BBC, "1", DateTime.now()));
         bbcBrand.setItemRefs(bbcEpisodes);
+        bbcBrand.setSeriesRefs(ImmutableList.of(new SeriesRef(Id.valueOf(3), Publisher.BBC, "", 1, DateTime.now())));
         
         Brand paBrand = brand(2, "http://pressassociation.com/brand", Publisher.PA);
         List<ItemRef> paEpisodes = ImmutableList.of(new ItemRef(Id.valueOf(4), Publisher.PA, "1", DateTime.now()));
         paBrand.setItemRefs(paEpisodes);
+        paBrand.setSeriesRefs(ImmutableList.of(new SeriesRef(Id.valueOf(2), Publisher.PA, "", 2, DateTime.now())));
         
         Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
         assertThat(merged.getItemRefs(), is(equalTo(paEpisodes)));
+        assertThat(merged.getSeriesRefs(), is(equalTo(paBrand.getSeriesRefs())));
     }
     
     @Test
