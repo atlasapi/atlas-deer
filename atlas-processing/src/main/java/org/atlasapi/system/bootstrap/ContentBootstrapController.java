@@ -7,8 +7,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.metabroadcast.common.base.Maybe;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Brand;
@@ -22,7 +20,6 @@ import org.atlasapi.content.Identified;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
@@ -45,7 +42,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -110,7 +106,8 @@ public class ContentBootstrapController {
         {
             AtomicInteger atomicInteger = new AtomicInteger();
             ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                    10, 50, 500, TimeUnit.MILLISECONDS, Queues.newLinkedBlockingQueue(100)
+                    10, 50, 500, TimeUnit.MILLISECONDS, Queues.newLinkedBlockingQueue(100),
+                    new ThreadPoolExecutor.CallerRunsPolicy()
             );
             for (Content c : contentIterator) {
                 executor.submit(
