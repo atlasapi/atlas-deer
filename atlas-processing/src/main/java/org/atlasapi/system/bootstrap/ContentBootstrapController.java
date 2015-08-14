@@ -4,8 +4,11 @@ import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.metabroadcast.common.base.Maybe;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Brand;
@@ -42,6 +45,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -52,9 +58,9 @@ public class ContentBootstrapController {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ContentResolver read;
 
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final ContentWriter write;
     private final ResourceLister<Content> contentLister;
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final ContentIndex contentIndex;
     private final AtlasPersistenceModule persistence;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
@@ -103,9 +109,11 @@ public class ContentBootstrapController {
         return () ->
         {
             AtomicInteger atomicInteger = new AtomicInteger();
-            ExecutorService bootstrapExecutorService = Executors.newFixedThreadPool(maxSourceBootstrapThreads);
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                    10, 50, 500, TimeUnit.MILLISECONDS, Queues.newLinkedBlockingQueue(100)
+            );
             for (Content c : contentIterator) {
-                bootstrapExecutorService.submit(
+                executor.submit(
                         () -> {
                             log.info(
                                     "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
