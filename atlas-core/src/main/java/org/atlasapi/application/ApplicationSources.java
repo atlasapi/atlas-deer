@@ -61,7 +61,8 @@ public class ApplicationSources {
         this.precedence = builder.precedence;
         this.reads = ImmutableList.copyOf(builder.reads);
         this.writes = ImmutableList.copyOf(builder.writes);
-        this.contentHierarchyPrecedence = builder.contentHierarchyPrecedence;
+        this.contentHierarchyPrecedence = builder.contentHierarchyPrecedence == null 
+                                            ? Optional.absent() : builder.contentHierarchyPrecedence;
         this.imagePrecedenceEnabled = builder.imagePrecedenceEnabled;
         this.enabledReadSources = ImmutableSet.copyOf(
                                     Iterables.transform(
