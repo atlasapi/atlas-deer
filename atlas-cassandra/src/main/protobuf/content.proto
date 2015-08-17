@@ -29,6 +29,9 @@ enum Column {
     ITEM_SUMMARIES = 18;
     ACTIVELY_PUBLISHED = 19;
     GENERIC_DESCRIPTION=20;
+    CONTAINER_SUMMARY=21;
+    CONTAINER_REF=22;
+    SERIES_REF=23;
 }
 
 extend google.protobuf.FieldOptions {
@@ -42,8 +45,8 @@ message Content {
     optional common.DateTime first_seen = 51 [(column)=IDENT];
     optional common.DateTime last_updated = 52 [(column)=IDENT];
     optional string uri = 53 [(column)=IDENT];
-    optional common.Reference container_ref = 8 [(column)=IDENT];
-    optional common.Reference series_ref = 9 [(column)=IDENT];
+    optional common.Reference container_ref = 8 [(column)=CONTAINER_REF];
+    optional common.Reference series_ref = 9 [(column)=SERIES_REF];
     optional bool schedule_only = 42 [(column)=IDENT];
 
     optional string source = 47 [(column)=SOURCE];
@@ -83,7 +86,7 @@ message Content {
     optional string isrc = 35 [(column)=DESC];
     optional int64 duration = 36 [(column)=DESC];
     repeated string genres = 39 [(column)=DESC];
-    optional Summary container_summary = 43 [(column)=DESC];
+    optional Summary container_summary = 43 [(column)=CONTAINER_SUMMARY];
     optional string website_url = 44 [(column)=DESC];
     optional double priority = 61 [(column)=DESC];
 

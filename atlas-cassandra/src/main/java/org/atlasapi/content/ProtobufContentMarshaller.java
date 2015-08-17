@@ -3,6 +3,8 @@ package org.atlasapi.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.ACTIVELY_PUBLISHED;
+import static org.atlasapi.serialization.protobuf.ContentProtos.Column.CONTAINER_REF;
+import static org.atlasapi.serialization.protobuf.ContentProtos.Column.CONTAINER_SUMMARY;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.GENERIC_DESCRIPTION;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.AVAILABLE_CONTENT;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.BROADCASTS;
@@ -19,6 +21,7 @@ import static org.atlasapi.serialization.protobuf.ContentProtos.Column.LOCATIONS
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.PEOPLE;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.SECONDARY;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.SEGMENTS;
+import static org.atlasapi.serialization.protobuf.ContentProtos.Column.SERIES_REF;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.SOURCE;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.TOPICS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.TYPE;
@@ -98,6 +101,9 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
                     .put(ITEM_SUMMARIES, ContentColumn.ITEM_SUMMARIES)
                     .put(ACTIVELY_PUBLISHED, ContentColumn.ACTIVELY_PUBLISHED)
                     .put(GENERIC_DESCRIPTION, ContentColumn.GENERIC_DESCRIPTION)
+                    .put(CONTAINER_SUMMARY, ContentColumn.CONTAINER_SUMMARY)
+                    .put(CONTAINER_REF, ContentColumn.CONTAINER_REF)
+                    .put(SERIES_REF, ContentColumn.SERIES_REF)
                     .build());
 
     @Override
