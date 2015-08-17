@@ -178,7 +178,6 @@ public class DatataxCassandraScheduleStore extends AbstractScheduleStore {
                         .and(eq(DAY_COLUMN, date));
                 select.setConsistencyLevel(readCl);
                 selects.add(select);
-                System.out.println(select);
             }
         }
 

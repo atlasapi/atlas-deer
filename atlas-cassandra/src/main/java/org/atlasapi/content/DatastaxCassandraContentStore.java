@@ -219,6 +219,49 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
     }
 
     @Override
+    protected void doWriteBroadcast(
+            ItemRef itemRef,
+            Optional<ContainerRef> containerRef,
+            Optional<SeriesRef> seriesRef,
+            Broadcast broadcast
+    ) {
+        Item item = new Item();
+        item.setId(itemRef.getId());
+        item.setThisOrChildLastUpdated(itemRef.getUpdated());
+        item.addBroadcast(broadcast);
+        item.setPublisher(itemRef.getSource());
+        BatchStatement batch = new BatchStatement();
+        batch.setConsistencyLevel(writeConsistency);
+        marshaller.marshallInto(item.getId(), batch, item);
+
+        if(!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs().iterator().hasNext()) {
+            session.execute(batch);
+            return;
+        }
+        ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingBroadcasts = ImmutableMap.of(
+                itemRef, item.getUpcomingBroadcastRefs()
+        );
+        if (containerRef.isPresent()) {
+            Id containerId = containerRef.get().getId();
+            Container container = new Brand();
+            container.setThisOrChildLastUpdated(itemRef.getUpdated());
+            container.setUpcomingContent(upcomingBroadcasts);
+            marshaller.marshallInto(containerId, batch, container);
+        }
+
+        if (seriesRef.isPresent()) {
+            Id containerId = seriesRef.get().getId();
+            Container container = new Series();
+            container.setItemRefs(ImmutableList.of(itemRef));
+            container.setThisOrChildLastUpdated(itemRef.getUpdated());
+            container.setUpcomingContent(upcomingBroadcasts);
+            marshaller.marshallInto(containerId, batch, container);
+        }
+
+        session.execute(batch);
+    }
+
+    @Override
     public OptionalMap<Alias, Content> resolveAliases(Iterable<Alias> aliases, Publisher source) {
         try {
             Set<Alias> uniqueAliases = ImmutableSet.copyOf(aliases);
