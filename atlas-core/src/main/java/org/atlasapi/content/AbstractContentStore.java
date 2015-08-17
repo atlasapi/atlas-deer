@@ -5,10 +5,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-import javax.swing.text.html.Option;
 
 import com.google.common.base.Optional;
 import org.atlasapi.entity.Alias;
@@ -285,6 +281,26 @@ public abstract class AbstractContentStore implements ContentStore {
         }
     }
 
+    @Override
+    public void writeBroadcast(
+            ItemRef itemRef,
+            Optional<ContainerRef> containerRef,
+            Optional<SeriesRef> seriesRef,
+            Broadcast broadcast
+    ) {
+        doWriteBroadcast(itemRef, containerRef, seriesRef, broadcast);
+        ResourceUpdatedMessage message = new ResourceUpdatedMessage(
+                UUID.randomUUID().toString(),
+                Timestamp.of(itemRef.getUpdated()),
+                itemRef
+        );
+        try {
+            sender.sendMessage(message);
+        } catch (Exception e) {
+            log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
+        }
+    }
+
     private <C extends Content> void sendResourceUpdatedMessage(WriteResult<C, Content> result) {
         ResourceUpdatedMessage message = createEntityUpdatedMessage(result);
         try {
@@ -348,4 +364,7 @@ public abstract class AbstractContentStore implements ContentStore {
     protected abstract void writeItemRefs(
             Item item
     );
+
+    protected abstract void doWriteBroadcast(ItemRef itemRef, Optional<ContainerRef> containerRef,
+                                             Optional<SeriesRef> seriesRef,Broadcast broadcast);
 }

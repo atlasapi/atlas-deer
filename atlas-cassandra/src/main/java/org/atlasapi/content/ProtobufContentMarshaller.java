@@ -55,6 +55,7 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
     private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING_BROADCASTS";
     private static final String AVAILABLE_CONTENT_PREFIX = "AVAILABLE";
     private static final String ITEM_SUMMARY_PREFIX = "ITEM_SUMMARY";
+    private static final String BROADCAST_PREFIX = "BROADCAST";
     private final Serializer<Content, ContentProtos.Content> serializer;
 
     protected ProtobufContentMarshaller(Serializer<Content, ContentProtos.Content> serialiser) {
@@ -120,6 +121,10 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
 
             if (ContentProtos.Column.ITEM_SUMMARIES.equals(col.getKey())) {
                 handleItemSummariesColumn(mutation, id, proto, Iterables.getOnlyElement(col.getValue()));
+                continue;
+            }
+            if (ContentProtos.Column.BROADCASTS.equals(col.getKey())) {
+                handleBroadcastColumn(mutation, id, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
             Builder builder = null;
@@ -232,10 +237,41 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
         }
     }
 
+    private void handleBroadcastColumn(
+            M mutation,
+            Id id,
+            ContentProtos.Content msg,
+            FieldDescriptor fd
+    ) {
+        int broadcastCount = msg.getRepeatedFieldCount(fd);
+        for (int i = 0; i < broadcastCount; i++) {
+            ContentProtos.Broadcast uc = (ContentProtos.Broadcast) msg.getRepeatedField(fd, i);
+            ContentProtos.Content col = ContentProtos.Content.newBuilder()
+                    .addRepeatedField(fd, uc)
+                    .build();
+            addColumnToBatch(
+                    mutation,
+                    id,
+                    buildBroadcastKey(uc.getSourceId()),
+                    col.toByteArray()
+            );
+
+        }
+    }
+
+
     public static String buildItemSummaryKey(Long id) {
         return String.format(
                 "%s:%s",
                 ITEM_SUMMARY_PREFIX,
+                id
+        );
+    }
+
+    public static String buildBroadcastKey(String id) {
+        return String.format(
+                "%s:%s",
+                BROADCAST_PREFIX,
                 id
         );
     }

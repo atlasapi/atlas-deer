@@ -9,6 +9,7 @@ import static org.atlasapi.content.ContentColumn.TYPE;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.datastax.driver.core.BatchStatement;
 import com.google.common.base.Optional;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
@@ -393,6 +394,52 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             batch.execute();
 
         } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    @Override
+    protected void doWriteBroadcast(ItemRef itemRef, Optional<ContainerRef> containerRef, Optional<SeriesRef> seriesRef, Broadcast broadcast) {
+        Item item = new Item();
+        item.setId(itemRef.getId());
+        item.setThisOrChildLastUpdated(itemRef.getUpdated());
+        item.setPublisher(itemRef.getSource());
+        item.addBroadcast(broadcast);
+        MutationBatch batch = keyspace.prepareMutationBatch();
+        batch.setConsistencyLevel(writeConsistency);
+        ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
+        marshaller.marshallInto(item.getId(), itemMutation, item);
+
+        try {
+            if (!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs().iterator().hasNext()) {
+                batch.execute();
+                return;
+            }
+            ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingBroadcasts = ImmutableMap.of(
+                    itemRef, item.getUpcomingBroadcastRefs()
+            );
+            if (containerRef.isPresent()) {
+                Id containerId = containerRef.get().getId();
+                Container container = new Brand();
+                container.setThisOrChildLastUpdated(itemRef.getUpdated());
+                container.setUpcomingContent(upcomingBroadcasts);
+                ColumnListMutation<String> containerMutation = batch.withRow(mainCf, containerRef.get().getId().longValue());
+                marshaller.marshallInto(containerId, containerMutation, container);
+            }
+
+            if (seriesRef.isPresent()) {
+                Id containerId = seriesRef.get().getId();
+                Container container = new Series();
+                container.setItemRefs(ImmutableList.of(itemRef));
+                container.setThisOrChildLastUpdated(itemRef.getUpdated());
+                container.setUpcomingContent(upcomingBroadcasts);
+                ColumnListMutation<String> seriesMutation = batch.withRow(mainCf, seriesRef.get().getId().longValue());
+                marshaller.marshallInto(containerId, seriesMutation, container);
+            }
+
+
+            batch.execute();
+        } catch (ConnectionException e) {
             throw Throwables.propagate(e);
         }
     }
