@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.metabroadcast.common.properties.Configurer;
@@ -18,6 +19,7 @@ import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.SchedulerModule;
 import org.atlasapi.content.Content;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
@@ -40,7 +42,7 @@ import com.metabroadcast.common.time.SystemClock;
 
 @Configuration
 @Import({AtlasPersistenceModule.class, BootstrapWorkersModule.class, LegacyPersistenceModule.class,
-    SchedulerModule.class})
+    SchedulerModule.class, ProcessingHealthModule.class})
 public class BootstrapModule {
 
     //we only need 2 here, on to run the bootstrap and one to be able to return quickly when it's running
@@ -53,6 +55,7 @@ public class BootstrapModule {
     @Autowired private BootstrapWorkersModule workers;
     @Autowired private SchedulerModule scheduler;
     @Autowired private ElasticSearchContentIndexModule search;
+    @Autowired private MetricRegistry metrics;
 
     @Bean
     BootstrapController bootstrapController() {
@@ -87,7 +90,8 @@ public class BootstrapModule {
                 persistence,
                 explicitEquivalenceMigrator(),
                 NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
-                progressStore()
+                progressStore(),
+                metrics
         );
     }
 

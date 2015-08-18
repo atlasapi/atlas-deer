@@ -1,10 +1,13 @@
 package org.atlasapi.system.bootstrap;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Queues;
+import com.google.common.hash.BloomFilter;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
@@ -62,6 +65,7 @@ public class ContentBootstrapController {
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private final Integer maxSourceBootstrapThreads;
     private final ProgressStore progressStore;
+    private final Timer timer;
 
     public ContentBootstrapController(
             ContentResolver read,
@@ -71,8 +75,8 @@ public class ContentBootstrapController {
             AtlasPersistenceModule persistence,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             Integer maxSourceBootstrapThreads,
-            ProgressStore progressStore
-    ) {
+            ProgressStore progressStore,
+            MetricRegistry metrics) {
         this.maxSourceBootstrapThreads = maxSourceBootstrapThreads;
         this.persistence = checkNotNull(persistence);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
@@ -81,6 +85,7 @@ public class ContentBootstrapController {
         this.contentLister = checkNotNull(contentLister);
         this.contentIndex = checkNotNull(contentIndex);
         this.progressStore = checkNotNull(progressStore);
+        this.timer = metrics.timer(getClass().getSimpleName());
     }
 
     @RequestMapping(value = "/system/bootstrap/source", method = RequestMethod.POST)
@@ -112,20 +117,25 @@ public class ContentBootstrapController {
             for (Content c : contentIterator) {
                 executor.submit(
                         () -> {
+                            Timer.Context time = timer.time();
+                            int count = atomicInteger.incrementAndGet();
                             log.info(
                                     "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
                                     ContentType.fromContent(c).get(),
                                     c.getId(),
                                     c.isActivelyPublished(),
                                     c.getCanonicalUri(),
-                                    atomicInteger.incrementAndGet()
+                                    count
                             );
                             c.accept(visitor);
-                            progressStore.storeProgress(source.toString(), progressFrom(c, source));
+                            if (count % 1000 == 0) {
+                                progressStore.storeProgress(source.toString(), progressFrom(c, source));
+                            }
+                            time.stop();
                         }
                 );
             }
-                /* Finished */
+            /* Finished */
             progressStore.storeProgress(source.toString(), ContentListingProgress.START);
         };
     }
