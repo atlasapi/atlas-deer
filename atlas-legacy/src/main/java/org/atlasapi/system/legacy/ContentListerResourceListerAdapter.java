@@ -25,11 +25,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ContentListerResourceListerAdapter implements ResourceLister<Content> {
 
     private static final Logger log = LoggerFactory.getLogger(ContentListerResourceListerAdapter.class);
-    private final ContentLister contentLister;
+    private final LegacyMongoContentLister contentLister;
     private final LegacyContentTransformer transformer;
 
     public ContentListerResourceListerAdapter(
-            ContentLister contentLister,
+            LegacyMongoContentLister contentLister,
             LegacyContentTransformer transformer
     ) {
         this.contentLister = checkNotNull(contentLister);

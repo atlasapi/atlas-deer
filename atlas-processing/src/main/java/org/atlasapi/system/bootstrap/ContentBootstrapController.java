@@ -45,6 +45,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -115,7 +116,7 @@ public class ContentBootstrapController {
                     maxSourceBootstrapThreads,
                     500,
                     TimeUnit.MILLISECONDS,
-                    Queues.newLinkedBlockingQueue(maxSourceBootstrapThreads),
+                    Queues.newLinkedBlockingQueue(maxSourceBootstrapThreads * 3),
                     new ThreadPoolExecutor.CallerRunsPolicy()
             );
             for (Content c : contentIterator) {
@@ -132,7 +133,7 @@ public class ContentBootstrapController {
                                     count
                             );
                             c.accept(visitor);
-                            if (count % 1000 == 0) {
+                            if (count % 10000 == 0) {
                                 progressStore.storeProgress(source.toString(), progressFrom(c, source));
                             }
                             time.stop();
