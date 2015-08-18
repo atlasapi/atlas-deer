@@ -52,6 +52,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final AstyanaxContext<Keyspace> context;
     private final MetricRegistry metrics;
     private final CassandraContentStore contentStore;
+    private final CassandraContentStore nullMsgSendingContentStore;
     private final CassandraTopicStore topicStore;
     private final CassandraScheduleStore scheduleStore;
     private final CassandraSegmentStore segmentStore;
@@ -74,6 +75,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
         this.contentStore = CassandraContentStore.builder(context, "content",
                 hasher, sender(contentChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
+                .withReadConsistency(readConsistency)
+                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .build();
+        this.nullMsgSendingContentStore = CassandraContentStore.builder(context, "content",
+                hasher, nullMessageSender(), idGeneratorBuilder.generator("content"))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
@@ -169,6 +175,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     @Override
     public CassandraContentStore contentStore() {
         return contentStore;
+    }
+
+    public CassandraContentStore nullMessageSendingContentStore() {
+        return nullMsgSendingContentStore;
     }
 
     @Override

@@ -85,7 +85,7 @@ public class BootstrapModule {
         return new ContentBootstrapController(
                 legacy.legacyContentResolver(),
                 legacy.legacyContentLister(),
-                persistence.contentStore(),
+                persistence.nullMessageSendingContentStore(),
                 search.contentIndex(),
                 persistence,
                 explicitEquivalenceMigrator(),

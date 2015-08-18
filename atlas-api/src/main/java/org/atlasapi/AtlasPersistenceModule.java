@@ -146,6 +146,10 @@ public class AtlasPersistenceModule {
     public ContentStore contentStore() {
         return persistenceModule().contentStore();
     }
+
+    public ContentStore nullMessageSendingContentStore() {
+        return persistenceModule().nullMessageSendingContentStore();
+    }
     
     @Bean
     public TopicStore topicStore() {
