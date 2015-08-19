@@ -4,6 +4,7 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.Batch;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.netflix.astyanax.AstyanaxContext;
@@ -21,6 +22,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.hamcrest.Matchers.is;
@@ -30,7 +32,7 @@ public class DatastaxProtobufContentMarshallerTest {
 
     private final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
     private final String keyspace = "atlas_testing";
-    private final ContentMarshaller<BatchStatement, Iterable<Row>> marshaller = new DatastaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver())));
+    private final ContentMarshaller<Batch, Iterable<Row>> marshaller = new DatastaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver())));
     private final AstyanaxContext<Keyspace> context
             = new ConfiguredAstyanaxContext("Atlas", keyspace, seeds, 9160, 5, 60).get();
     private final DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
@@ -69,7 +71,7 @@ public class DatastaxProtobufContentMarshallerTest {
         content.setFirstSeen(DateTime.now(DateTimeZone.UTC).minusHours(1));
         content.setLastUpdated(DateTime.now(DateTimeZone.UTC));
 
-        BatchStatement batch = new BatchStatement();
+        Batch batch = batch();
         marshaller.marshallInto(content.getId(), batch, content);
 
         session.execute(batch);
