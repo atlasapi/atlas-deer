@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.ContentColumn.DESCRIPTION;
 import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
@@ -10,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.querybuilder.Batch;
 import com.google.common.base.Optional;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
@@ -444,6 +446,25 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         }
     }
 
+    @Override
+    protected void writeContainerSummary(ContainerSummary summary, Iterable<ItemRef> items) {
+        MutationBatch batch = keyspace.prepareMutationBatch();
+        batch.setConsistencyLevel(writeConsistency);
+        for (ItemRef itemRef : items) {
+            Item item = itemFromRef(itemRef);
+            item.setContainerSummary(summary);
+            ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
+            marshaller.marshallInto(itemRef.getId(), itemMutation, item);
+        }
+
+        try {
+            batch.execute();
+        } catch (ConnectionException e) {
+            Throwables.propagate(e);
+        }
+
+    }
+
     private void removeItemRefsFromContainers(Item item) throws ConnectionException {
         MutationBatch batch = keyspace.prepareMutationBatch();
         batch.setConsistencyLevel(writeConsistency);
@@ -463,4 +484,19 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         removeAvailableContent(containerRef, itemRef, batch);
         removeUpcomingContent(containerRef, itemRef, batch);
     }
+
+    private Item itemFromRef(ItemRef itemRef){
+        Item item;
+        if(itemRef instanceof EpisodeRef) {
+            item = new Episode();
+        } else{
+            item = new Item();
+        }
+        item.setId(itemRef.getId());
+        item.setThisOrChildLastUpdated(itemRef.getUpdated());
+        item.setPublisher(itemRef.getSource());
+        return item;
+    }
+
+
 }

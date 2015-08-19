@@ -1,7 +1,7 @@
 package org.atlasapi.content;
 
-import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.querybuilder.Batch;
 import com.google.common.collect.ImmutableSet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Serializer;
@@ -13,7 +13,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 
-public class DatastaxProtobufContentMarshaller extends ProtobufContentMarshaller<BatchStatement, Iterable<Row>> {
+public class DatastaxProtobufContentMarshaller extends ProtobufContentMarshaller<Batch, Iterable<Row>> {
 
     private static final String TABLE = "content";
     private static final String PRIMARY_KEY_COLUMN = "key";
@@ -25,7 +25,7 @@ public class DatastaxProtobufContentMarshaller extends ProtobufContentMarshaller
     }
 
     @Override
-    protected void addColumnToBatch(BatchStatement mutation, Id id, String column, byte[] value) {
+    protected void addColumnToBatch(Batch mutation, Id id, String column, byte[] value) {
         mutation.add(
                 update(TABLE)
                         .where(eq(PRIMARY_KEY_COLUMN, id.longValue()))
