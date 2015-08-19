@@ -59,6 +59,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final DatastaxCassandraService dataStaxService;
 
     private CassandraEquivalenceGraphStore contentEquivalenceGraphStore;
+    private CassandraEquivalenceGraphStore nullMessageSendingEquivGraphStore;
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
 
     private MessageSenderFactory messageSenderFactory;
@@ -79,7 +80,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
         this.nullMsgSendingContentStore = CassandraContentStore.builder(context, "content",
-                hasher, nullMessageSender(), idGeneratorBuilder.generator("content"))
+                hasher, nullMessageSender(ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
@@ -98,7 +99,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withAliasIndex(AliasIndex.<Segment>create(context.getClient(), "segments_aliases"))
                 .withCassandraSession(getSession())
                 .withIdGenerator(idGeneratorBuilder.generator("segment"))
-                .withMessageSender(nullMessageSender())
+                .withMessageSender(nullMessageSender(ResourceUpdatedMessage.class))
                 .withEquivalence(segmentEquivalence())
                 .build();
 
@@ -118,10 +119,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         };
     }
 
-    private MessageSender<ResourceUpdatedMessage> nullMessageSender() {
-        return new MessageSender<ResourceUpdatedMessage>() {
+    private <T extends Message> MessageSender<T> nullMessageSender(Class<T> msgType) {
+        return new MessageSender<T>() {
             @Override
-            public void sendMessage(ResourceUpdatedMessage resourceUpdatedMessage) throws MessagingException {
+            public void sendMessage(T resourceUpdatedMessage) throws MessagingException {
                 return;
             }
 
@@ -140,6 +141,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
         this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class), session, read, write);
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(contentEquivalenceGraphStore, contentStore, session, read, write, new SystemClock());
+        this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(nullMessageSender(EquivalenceGraphUpdateMessage.class), session, read, write);
+    }
+
+    public EquivalenceGraphStore nullMessageSendingGraphStore() {
+        return nullMessageSendingEquivGraphStore;
     }
 
     private <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {

@@ -104,7 +104,7 @@ public class BootstrapModule {
         return new DirectAndExplicitEquivalenceMigrator(
                 legacy.legacyContentResolver(),
                 legacy.legacyEquivalenceStore(),
-                persistence.getContentEquivalenceGraphStore()
+                persistence.nullMessageSendingGraphStore()
         );
     }
 

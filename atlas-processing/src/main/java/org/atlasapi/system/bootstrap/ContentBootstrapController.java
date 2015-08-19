@@ -116,7 +116,7 @@ public class ContentBootstrapController {
                     maxSourceBootstrapThreads,
                     500,
                     TimeUnit.MILLISECONDS,
-                    Queues.newLinkedBlockingQueue(maxSourceBootstrapThreads * 3),
+                    Queues.newLinkedBlockingQueue(maxSourceBootstrapThreads),
                     new ThreadPoolExecutor.CallerRunsPolicy()
             );
             for (Content c : contentIterator) {
@@ -200,23 +200,18 @@ public class ContentBootstrapController {
                     Instant cassandraWriteEnd = Instant.now();
                     contentIndex.index(content);
                     Instant indexingEnd = Instant.now();
-                    Optional<EquivalenceGraphUpdate> graphUpdate =
-                            equivalenceMigrator.migrateEquivalence(content);
-                    Instant equivalenceUpdateEnd = Instant.now();
+                    equivalenceMigrator.migrateEquivalence(content);
+                    Instant graphUpdateEnd = Instant.now();
                     persistence.getEquivalentContentStore().updateContent(content.toRef());
-                    Instant equivalenceContentUpdateEnd = Instant.now();
-                    if (graphUpdate.isPresent()) {
-                        persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
-                    }
                     Instant end = Instant.now();
 
                     log.info(
-                            "Update for {} write: {}ms, index: {}ms, equivalnce migration: {}ms, equivalent content update {}ms, total: {}ms",
+                            "Update for {} write: {}ms, index: {}ms, equiv graph update: {}ms, equiv content update {}ms, total: {}ms",
                             content.getId(),
                             Duration.between(start, cassandraWriteEnd).toMillis(),
                             Duration.between(cassandraWriteEnd, indexingEnd).toMillis(),
-                            Duration.between(indexingEnd, equivalenceUpdateEnd).toMillis(),
-                            Duration.between(equivalenceUpdateEnd, equivalenceContentUpdateEnd).toMillis(),
+                            Duration.between(indexingEnd, graphUpdateEnd).toMillis(),
+                            Duration.between(graphUpdateEnd, end).toMillis(),
                             Duration.between(start, end).toMillis()
                     );
                     return writeResult;

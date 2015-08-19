@@ -150,6 +150,10 @@ public class AtlasPersistenceModule {
     public ContentStore nullMessageSendingContentStore() {
         return persistenceModule().nullMessageSendingContentStore();
     }
+
+    public EquivalenceGraphStore nullMessageSendingGraphStore() {
+        return persistenceModule().nullMessageSendingGraphStore();
+    }
     
     @Bean
     public TopicStore topicStore() {
@@ -210,7 +214,10 @@ public class AtlasPersistenceModule {
     public Mongo mongo(String mongoHost, Integer mongoPort) {
         Mongo mongo = new MongoClient(
                 mongoHosts(mongoHost, mongoPort),
-                MongoClientOptions.builder().connectTimeout(10000).build()
+                MongoClientOptions.builder()
+                        .connectionsPerHost(1000)
+                        .connectTimeout(10000)
+                        .build()
         );
         if (processingConfig == null || !processingConfig.toBoolean()) {
             mongo.setReadPreference(ReadPreference.secondaryPreferred());
