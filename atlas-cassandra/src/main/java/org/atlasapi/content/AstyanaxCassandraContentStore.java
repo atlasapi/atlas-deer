@@ -320,26 +320,26 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         }
     }
 
-    private void removeContentRef(ContainerRef containerRef, ContentRef contentRef, MutationBatch batch) throws ConnectionException {
+    private void removeContentRef(ContainerRef containerRef, ContentRef contentRef, MutationBatch batch)  {
         Long rowId = containerRef.getId().longValue();
         String columnId = contentRef.getId().toString();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(columnId);
     }
 
-    private void removeItemSummaries(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+    private void removeItemSummaries(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch)  {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(ProtobufContentMarshaller.buildItemSummaryKey(itemRef.getId().longValue()));
     }
 
-    private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+    private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch)  {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId().longValue()));
     }
 
-    private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+    private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef, MutationBatch batch) {
         Long rowId = brancontainerRefRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId().longValue()));
@@ -465,6 +465,18 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     }
 
+    @Override
+    protected void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef) {
+        MutationBatch batch = keyspace.prepareMutationBatch();
+        batch.setConsistencyLevel(writeConsistency);
+        removeAllReferencesToItem(containerRef, itemRef, batch);
+        try {
+            batch.execute();
+        } catch (ConnectionException e) {
+            Throwables.propagate(e);
+        }
+    }
+
     private void removeItemRefsFromContainers(Item item) throws ConnectionException {
         MutationBatch batch = keyspace.prepareMutationBatch();
         batch.setConsistencyLevel(writeConsistency);
@@ -478,7 +490,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         batch.execute();
     }
 
-    private void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
+    private void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) {
         removeContentRef(containerRef, itemRef, batch);
         removeItemSummaries(containerRef, itemRef, batch);
         removeAvailableContent(containerRef, itemRef, batch);
