@@ -39,9 +39,4 @@ public class SegmentRef extends ResourceRef {
         }
         return false;
     }
-    
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
 }

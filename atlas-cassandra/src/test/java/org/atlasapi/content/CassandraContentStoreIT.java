@@ -22,6 +22,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
+import com.metabroadcast.common.queue.MessagingException;
 import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.MutationBatch;
 import com.netflix.astyanax.model.ColumnFamily;
@@ -427,7 +428,13 @@ public abstract class CassandraContentStoreIT {
         Item resolvedItem = (Item) resolve(1235L);
         
         assertThat(resolvedItem.getContainerRef().getId().longValue(), is(1234L));
-        
+        ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
+        verify(sender, times(3)).sendMessage(captor.capture());
+
+        assertThat(captor.getAllValues().get(0).getUpdatedResource().getId().longValue(), is(1234L));
+        assertThat(captor.getAllValues().get(1).getUpdatedResource().getId().longValue(), is(1235L));
+        assertThat(captor.getAllValues().get(2).getUpdatedResource().getId().longValue(), is(1234L));
+
     }
     
     @Test
@@ -721,7 +728,7 @@ public abstract class CassandraContentStoreIT {
 
 
     @Test
-    public void testWriteUpcomingContentForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+    public void testWriteUpcomingContentForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException, MessagingException {
         DateTime now = new DateTime(DateTimeZones.UTC);
 
         Brand brand = create(new Brand());
@@ -786,6 +793,11 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedEpisode1.getSeriesRef().getId().longValue(), is(1235L));
         assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
         assertThat(resolvedEpisode1.getBroadcasts(), is(broadcasts));
+
+        ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
+        verify(sender, times(5)).sendMessage(captor.capture());
+        assertThat(captor.getAllValues().get(3).getUpdatedResource().getId().longValue(), is(1234L));
+        assertThat(captor.getAllValues().get(4).getUpdatedResource().getId().longValue(), is(1235L));
 
     }
 
@@ -912,7 +924,7 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
-    public void testWriteAvailableContentForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+    public void testWriteAvailableContentForBrands() throws WriteException, InterruptedException, ExecutionException, TimeoutException, MessagingException {
         DateTime now = new DateTime(DateTimeZones.UTC);
 
         Brand brand = create(new Brand());
@@ -995,6 +1007,12 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedEpisode1.getContainerRef().getId().longValue(), is(1234L));
         assertThat(resolvedEpisode1.getSeriesRef().getId().longValue(), is(1235L));
         assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
+
+        ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
+        verify(sender, times(5)).sendMessage(captor.capture());
+
+        assertThat(captor.getAllValues().get(3).getUpdatedResource().getId().longValue(), is(1234L));
+        assertThat(captor.getAllValues().get(4).getUpdatedResource().getId().longValue(), is(1235L));
 
     }
 
@@ -1167,7 +1185,7 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
-    public void testWriteContentSummaryOnBrandForItem() throws WriteException, InterruptedException, ExecutionException, TimeoutException {
+    public void testWriteContentSummaryOnBrandForItem() throws WriteException, InterruptedException, ExecutionException, TimeoutException, MessagingException {
         DateTime now = new DateTime(DateTimeZones.UTC);
 
         Brand brand = create(new Brand());
@@ -1193,6 +1211,9 @@ public abstract class CassandraContentStoreIT {
         assertThat(storedSummary.getTitle(), is(item.getTitle()));
         assertThat(storedSummary.getImage().get(), is(item.getImage()));
         assertThat(storedSummary.getDescription().get(), is(item.getDescription()));
+
+        ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
+        verify(sender, times(3)).sendMessage(captor.capture());
 
 
     }
@@ -1226,6 +1247,8 @@ public abstract class CassandraContentStoreIT {
         assertThat(storedSummary.getImage().get(), is(episode.getImage()));
         assertThat(storedSummary.getDescription().get(), is(episode.getDescription()));
         assertThat(storedSummary.getEpisodeNumber().get(), is(episode.getEpisodeNumber()));
+
+        //TODO send resource updated message
 
     }
     @Test
@@ -1308,6 +1331,9 @@ public abstract class CassandraContentStoreIT {
 
         resolvedBrand = (Brand) resolve(1234L);
         assertThat(resolvedBrand.getSeriesRefs(), is(ImmutableList.of(series2.toRef())));
+
+        ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
+        verify(sender, times(4)).sendMessage(captor.capture());
     }
 
 
@@ -1647,12 +1673,15 @@ public abstract class CassandraContentStoreIT {
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
 
-        verify(sender, times(5)).sendMessage(captor.capture());
+        verify(sender, times(7)).sendMessage(captor.capture());
 
         List<ResourceUpdatedMessage> messagesSent = captor.getAllValues();
 
-        assertThat(messagesSent.size(), is(5));
-        assertThat(messagesSent.get(3).getUpdatedResource().getId().longValue(), is(1237L));
+        assertThat(messagesSent.size(), is(7));
+
+        assertThat(messagesSent.get(3).getUpdatedResource().getId().longValue(), is(1234L));
+        assertThat(messagesSent.get(4).getUpdatedResource().getId().longValue(), is(1235L));
+        assertThat(messagesSent.get(6).getUpdatedResource().getId().longValue(), is(1237L));
 
         Episode newResolvedEpisode = (Episode) resolve(1237L);
         assertThat(newResolvedEpisode.getContainerSummary().getTitle(), is("NewBrand"));
@@ -1813,7 +1842,7 @@ public abstract class CassandraContentStoreIT {
 
         Brand resolvedBrand = (Brand)resolve(1234L);
 
-        EpisodeSummary storedSummary = (EpisodeSummary)Iterables.getOnlyElement(resolvedBrand.getItemSummaries());
+        ItemSummary storedSummary = Iterables.getOnlyElement(resolvedBrand.getItemSummaries());
 
         assertThat(storedSummary.getItemRef().getId(), is(item.getId()));
 
@@ -1821,7 +1850,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedBrand.getUpcomingContent(), is(expectedUpcomingContent));
         assertThat(resolvedBrand.getAvailableContent().get(item.toRef()), containsInAnyOrder(location.toSummary()));
 
-        item.setContainer(null);
+        item.setContainerRef(null);
         when(hasher.hash(argThat(isA(Content.class)))).thenReturn("hash").thenReturn("anotherHash");
 
         store.writeContent(item);
