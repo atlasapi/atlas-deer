@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.queue.MessagingException;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
@@ -209,7 +210,7 @@ public abstract class AbstractContentStore implements ContentStore {
             }
             Item previousItem = (Item)previous;
             if(previousItem.getContainerRef() != null) {
-                if (!previousItem.getContainerRef().getId().equals(item.getContainerRef().getId())) {
+                if (!previousItem.getContainerRef().equals(item.getContainerRef())) {
                     removeAllReferencesToItem(previousItem.getContainerRef(), item.toRef());
                 }
             }
@@ -292,7 +293,7 @@ public abstract class AbstractContentStore implements ContentStore {
         try {
             WriteResult<C, Content> result = (WriteResult<C, Content>) content.accept(writingVisitor);
             if (result.written()) {
-                sendResourceUpdatedMessage(result);
+                sendResourceUpdatedMessages(result);
             }
             return result;
         } catch (RuntimeWriteException rwe) {
@@ -320,20 +321,61 @@ public abstract class AbstractContentStore implements ContentStore {
         }
     }
 
-    private <C extends Content> void sendResourceUpdatedMessage(WriteResult<C, Content> result) {
-        ResourceUpdatedMessage message = createEntityUpdatedMessage(result);
-        try {
-            sender.sendMessage(message);
-        } catch (Exception e) {
-            log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
+    private <C extends Content> void sendResourceUpdatedMessages(WriteResult<C, Content> result) {
+        Iterable<ResourceUpdatedMessage> messages = createEntityUpdatedMessages(result);
+        for (ResourceUpdatedMessage message : messages) {
+            try {
+                sender.sendMessage(message);
+            } catch (Exception e) {
+                log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
+            }
         }
     }
 
-    private <C extends Content> ResourceUpdatedMessage createEntityUpdatedMessage(WriteResult<C, Content> result) {
-        return new ResourceUpdatedMessage(
-                UUID.randomUUID().toString(),
-                Timestamp.of(result.getWriteTime().getMillis()),
-                result.getResource().toRef());
+    private <C extends Content> Iterable<ResourceUpdatedMessage> createEntityUpdatedMessages(WriteResult<C, Content> result) {
+        C writtenResource = result.getResource();
+        ImmutableList.Builder<ResourceUpdatedMessage> messages = ImmutableList.builder();
+        messages.add(
+                new ResourceUpdatedMessage(
+                        UUID.randomUUID().toString(),
+                        Timestamp.of(result.getWriteTime().getMillis()),
+                        writtenResource.toRef()
+                )
+        );
+
+        if (writtenResource instanceof Container) {
+            for (ItemRef itemRef : ((Container)writtenResource).getItemRefs()) {
+                    messages.add(
+                            new ResourceUpdatedMessage(
+                                    UUID.randomUUID().toString(),
+                                    Timestamp.of(DateTime.now(DateTimeZone.UTC)),
+                                    itemRef
+                            )
+                    );
+            }
+        }
+
+        if (writtenResource instanceof Item && ((Item)writtenResource).getContainerRef() != null) {
+            messages.add(
+                    new ResourceUpdatedMessage(
+                            UUID.randomUUID().toString(),
+                            Timestamp.of(result.getWriteTime().getMillis()),
+                            ((Item)writtenResource).getContainerRef()
+                    )
+            );
+        }
+
+        if (writtenResource instanceof Episode && ((Episode)writtenResource).getSeriesRef() != null) {
+            messages.add(
+                    new ResourceUpdatedMessage(
+                            UUID.randomUUID().toString(),
+                            Timestamp.of(result.getWriteTime().getMillis()),
+                            ((Episode) writtenResource).getSeriesRef()
+                    )
+            );
+        }
+
+        return messages.build();
     }
 
     private Optional<Content> getPreviousContent(Content c) {
@@ -342,23 +384,6 @@ public abstract class AbstractContentStore implements ContentStore {
 
     private void handleContainer(Container container) {
         writeContainerSummary(container.toSummary(), container.getItemRefs());
-        for (ItemRef itemRef : container.getItemRefs()) {
-            try {
-                sender.sendMessage(
-                        new ResourceUpdatedMessage(
-                                UUID.randomUUID().toString(),
-                                Timestamp.of(DateTime.now(DateTimeZone.UTC)),
-                                itemRef
-                        )
-                );
-            } catch (MessagingException e) {
-                log.error(
-                        "Failed to send message for containerSummary update for container {}, item {}",
-                        container.getId(),
-                        itemRef.getId()
-                );
-            }
-        }
     }
 
     protected abstract Optional<Content> resolvePrevious(Optional<Id> id, Publisher source, Set<Alias> aliases);
