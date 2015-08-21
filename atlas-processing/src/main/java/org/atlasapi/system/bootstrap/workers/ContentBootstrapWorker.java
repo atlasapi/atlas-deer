@@ -43,7 +43,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
-        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("IndexingContentReadWriteWorker")) : null);
+        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("ContentBootstrapWorker")) : null);
     }
 
     @Override
