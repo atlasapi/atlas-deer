@@ -36,17 +36,17 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     @Override
     public void process(ResourceUpdatedMessage message) {
         try {
-            if (messagesTimer != null) {
-                Id contentId = message.getUpdatedResource().getId();
-                Resolved<Content> content = Futures.get(
-                        contentResolver.resolveIds(ImmutableList.of(contentId)),
-                        ExecutionException.class
-                );
-                WriteResult<Content, Content> result = writer.writeContent(content.getResources().first().get());
-                log.debug("Bootstrapped content {}", result.toString());
-            }
+            Timer.Context time = messagesTimer.time();
+            Id contentId = message.getUpdatedResource().getId();
+            Resolved<Content> content = Futures.get(
+                    contentResolver.resolveIds(ImmutableList.of(contentId)),
+                    ExecutionException.class
+            );
+            WriteResult<Content, Content> result = writer.writeContent(content.getResources().first().get());
+            log.debug("Bootstrapped content {}", result.toString());
+            time.stop();
         } catch (Exception e) {
-            log.error("Failed to bootstrap content {}", message.getUpdatedResource());
+            log.error("Failed to bootstrap content {} - {}", message.getUpdatedResource(), e.toString());
         }
     }
 }

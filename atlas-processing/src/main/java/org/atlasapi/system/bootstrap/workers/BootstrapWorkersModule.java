@@ -7,6 +7,8 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.content.ContentResolver;
@@ -136,7 +138,6 @@ public class BootstrapWorkersModule {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
     }
-
 
      public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
         return new DirectAndExplicitEquivalenceMigrator(

@@ -182,7 +182,6 @@ public class WorkersModule {
                 .build();
     }
 
-
     @PostConstruct
     public void start() throws TimeoutException {
         consumerManager = new ServiceManager(ImmutableList.of(
@@ -201,5 +200,4 @@ public class WorkersModule {
     public void stop() throws TimeoutException {
         consumerManager.stopAsync().awaitStopped(1, TimeUnit.MINUTES);
     }
-
 }
