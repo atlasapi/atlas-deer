@@ -6,10 +6,8 @@ import javax.annotation.Nullable;
 
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
-import org.atlasapi.content.IndexException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
@@ -26,24 +24,22 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.queue.Worker;
 
-public class IndexingContentReadWriteWorker implements Worker<ResourceUpdatedMessage> {
+public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
     private static final int maxAttempts = 3;
 
 
 
-    private final Logger log = LoggerFactory.getLogger(IndexingContentReadWriteWorker.class);
+    private final Logger log = LoggerFactory.getLogger(ContentBootstrapWorker.class);
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     @Nullable
     private final Timer messagesTimer;
-    private final ContentIndex index;
 
-    public IndexingContentReadWriteWorker(ContentResolver contentResolver, ContentWriter writer,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, ContentIndex index, @Nullable MetricRegistry metricsRegistry) {
-        this.index = checkNotNull(index);
+    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer,
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, @Nullable MetricRegistry metricsRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
@@ -54,18 +50,18 @@ public class IndexingContentReadWriteWorker implements Worker<ResourceUpdatedMes
     public void process(ResourceUpdatedMessage message) {
         if (messagesTimer != null) {
             Timer.Context timer = messagesTimer.time();
-            readAndWriteThenIndex(message.getUpdatedResource().getId());
+            readAndWrite(message.getUpdatedResource().getId());
             timer.stop();
         } else {
-            readAndWriteThenIndex(message.getUpdatedResource().getId());
+            readAndWrite(message.getUpdatedResource().getId());
         }
     }
 
-    private void readAndWriteThenIndex(Id id) {
-        readAndWriteThenIndex(id, 0);
+    private void readAndWrite(Id id) {
+        readAndWrite(id, 0);
     }
 
-    private void readAndWriteThenIndex(final Id id, final int attempt) {
+    private void readAndWrite(final Id id, final int attempt) {
         if (attempt >= maxAttempts) {
             throw new RuntimeException(String.format("Failed to write %s in %s attempts", id, maxAttempts));
         }
@@ -81,19 +77,15 @@ public class IndexingContentReadWriteWorker implements Worker<ResourceUpdatedMes
                         log.trace("writing content " + content);
                         writer.writeContent(content);
                         equivalenceMigrator.migrateEquivalence(content);
-                        index.index(content);
                         log.trace("Finished writing content " + content);
                     } catch (MissingResourceException mre) {
                         log.warn("missing {} for {}, re-attempting", mre.getMissingId(), content);
-                        readAndWriteThenIndex(mre.getMissingId());
-                        readAndWriteThenIndex(id, attempt + 1);
+                        readAndWrite(mre.getMissingId());
+                        readAndWrite(id, attempt + 1);
                         log.error(Throwables.getStackTraceAsString(mre));
                     } catch (WriteException we) {
                         log.error("failed to write " + id + "-" + content, we);
                         log.error(Throwables.getStackTraceAsString(we));
-                    } catch (IndexException ie) {
-                        log.error("Failed to index {} - {}", content.getId(), ie.getMessage());
-                        log.error(Throwables.getStackTraceAsString(ie));
                     }
                 }
             }

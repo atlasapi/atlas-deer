@@ -72,13 +72,12 @@ public class BootstrapWorkersModule {
 
     @Bean
     @Lazy(true)
-    KafkaConsumer contentReadWriter() {
+    KafkaConsumer contentBootstrapWorker() {
         ContentResolver legacyResolver = legacy.legacyContentResolver();
-        IndexingContentReadWriteWorker worker = new IndexingContentReadWriteWorker(
+        ContentBootstrapWorker worker = new ContentBootstrapWorker(
                 legacyResolver,
                 persistence.contentStore(),
                 explicitEquivalenceMigrator(),
-                search.contentIndex(),
                 health.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
@@ -121,14 +120,14 @@ public class BootstrapWorkersModule {
 
     @PostConstruct
     public void start() throws TimeoutException {
-        contentReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
 
     @PreDestroy
     public void stop() throws TimeoutException {
-        contentReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        contentBootstrapWorker().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
         scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
         topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
     }

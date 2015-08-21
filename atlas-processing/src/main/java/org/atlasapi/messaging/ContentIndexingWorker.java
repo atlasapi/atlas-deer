@@ -46,7 +46,7 @@ public class ContentIndexingWorker implements Worker<ResourceUpdatedMessage> {
             if (messageTimer != null) {
                 time = messageTimer.time();
             }
-            Resolved<Content> results = Futures.get(resolveContent(message), 1, TimeUnit.MINUTES, TimeoutException.class);
+            Resolved<Content> results = Futures.get(resolveContent(message), 30, TimeUnit.SECONDS, TimeoutException.class);
             Optional<Content> content = results.getResources().first();
             if (content.isPresent()) {
                 Content source = content.get();
