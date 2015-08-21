@@ -2,6 +2,7 @@ package org.atlasapi.system.bootstrap.workers;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.queue.Worker;
@@ -46,7 +47,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             log.debug("Bootstrapped content {}", result.toString());
             time.stop();
         } catch (Exception e) {
-            log.error("Failed to bootstrap content {} - {}", message.getUpdatedResource(), e.toString());
+            log.error("Failed to bootstrap content {} - {} {}", message.getUpdatedResource(), e, Throwables.getStackTraceAsString(e));
         }
     }
 }
