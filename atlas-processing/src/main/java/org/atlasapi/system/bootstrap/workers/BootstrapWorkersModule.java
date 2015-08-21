@@ -77,7 +77,6 @@ public class BootstrapWorkersModule {
         ContentBootstrapWorker worker = new ContentBootstrapWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                explicitEquivalenceMigrator(),
                 health.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =

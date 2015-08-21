@@ -191,7 +191,8 @@ public class WorkersModule {
                 equivalentScheduleStoreGraphUpdateListener(),
                 equivalentContentStoreGraphUpdateListener(),
                 equivalentContentStoreContentUpdateListener(),
-                topicIndexerMessageListener()
+                topicIndexerMessageListener(),
+                contentIndexingMessageListener()
         ));
         consumerManager.startAsync().awaitHealthy(1, TimeUnit.MINUTES);
     }

@@ -1,99 +1,52 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import javax.annotation.Nullable;
-
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.queue.Worker;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.queue.Worker;
+import java.util.concurrent.ExecutionException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
-
-    private static final int maxAttempts = 3;
-
-
 
     private final Logger log = LoggerFactory.getLogger(ContentBootstrapWorker.class);
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
-    private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
-    @Nullable
     private final Timer messagesTimer;
 
-    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, @Nullable MetricRegistry metricsRegistry) {
+    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer, MetricRegistry metricsRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
-        this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("ContentBootstrapWorker")) : null);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) {
-        if (messagesTimer != null) {
-            Timer.Context timer = messagesTimer.time();
-            readAndWrite(message.getUpdatedResource().getId());
-            timer.stop();
-        } else {
-            readAndWrite(message.getUpdatedResource().getId());
-        }
-    }
-
-    private void readAndWrite(Id id) {
-        readAndWrite(id, 0);
-    }
-
-    private void readAndWrite(final Id id, final int attempt) {
-        if (attempt >= maxAttempts) {
-            throw new RuntimeException(String.format("Failed to write %s in %s attempts", id, maxAttempts));
-        }
-        ImmutableList<Id> ids = ImmutableList.of(id);
-        log.trace("Attempt to read and write {}", id.toString());
-        ListenableFuture<Resolved<Content>> resolved = contentResolver.resolveIds(ids);
-        Futures.addCallback(resolved, new FutureCallback<Resolved<Content>>() {
-
-            @Override
-            public void onSuccess(Resolved<Content> result) {
-                for (Content content : result.getResources()) {
-                    try {
-                        log.trace("writing content " + content);
-                        writer.writeContent(content);
-                        equivalenceMigrator.migrateEquivalence(content);
-                        log.trace("Finished writing content " + content);
-                    } catch (MissingResourceException mre) {
-                        log.warn("missing {} for {}, re-attempting", mre.getMissingId(), content);
-                        readAndWrite(mre.getMissingId());
-                        readAndWrite(id, attempt + 1);
-                        log.error(Throwables.getStackTraceAsString(mre));
-                    } catch (WriteException we) {
-                        log.error("failed to write " + id + "-" + content, we);
-                        log.error(Throwables.getStackTraceAsString(we));
-                    }
-                }
+        try {
+            if (messagesTimer != null) {
+                Id contentId = message.getUpdatedResource().getId();
+                Resolved<Content> content = Futures.get(
+                        contentResolver.resolveIds(ImmutableList.of(contentId)),
+                        ExecutionException.class
+                );
+                WriteResult<Content, Content> result = writer.writeContent(content.getResources().first().get());
+                log.debug("Bootstrapped content {}", result.toString());
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                log.error("Failed to resolve id" + id);
-            }
-        });
+        } catch (Exception e) {
+            log.error("Failed to bootstrap content {}", message.getUpdatedResource());
+        }
     }
 }
