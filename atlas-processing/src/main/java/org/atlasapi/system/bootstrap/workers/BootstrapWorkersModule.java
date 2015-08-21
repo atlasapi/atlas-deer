@@ -111,7 +111,7 @@ public class BootstrapWorkersModule {
                 persistence.channelResolver(), ignoredScheduleSources);
         MessageSerializer<ScheduleUpdateMessage> serializer
                 = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
-        return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrap")
+        return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrapV2")
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(consumers)
                 .withMaxConsumers(maxConsumers)
