@@ -362,6 +362,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         if (bulk.numberOfActions() > 0) {
             BulkResponse response = timeoutGet(esClient.client().bulk(bulk));
             if (response.hasFailures()) {
+                log.error(response.buildFailureMessage());
                 throw new EsPersistenceException("Failed to index children for container: " + getDocId(parent));
             }
         }
