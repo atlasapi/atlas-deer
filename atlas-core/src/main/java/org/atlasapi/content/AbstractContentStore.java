@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.metabroadcast.common.queue.MessagingException;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -67,7 +66,7 @@ public abstract class AbstractContentStore implements ContentStore {
             }
 
             updateTimes(brand);
-            handleContainer(brand);
+            handleContainer(brand, Optional.absent());
             write(brand, NO_PREVIOUS);
 
             return WriteResult.<Brand, Content>written(brand).build();
@@ -88,8 +87,11 @@ public abstract class AbstractContentStore implements ContentStore {
                     Brand prev = (Brand) container;
                     brand.setSeriesRefs(prev.getSeriesRefs());
                 }
+                handleContainer(brand, Optional.of(container));
             }
-            handleContainer(brand);
+            else {
+                handleContainer(brand, Optional.absent());
+            }
             return WriteResult.<Brand, Content>result(brand, written)
                     .withPrevious(previous)
                     .build();
@@ -105,7 +107,7 @@ public abstract class AbstractContentStore implements ContentStore {
             }
             updateTimes(series);
             writeRefAndSummarizePrimary(series);
-            handleContainer(series);
+            handleContainer(series, Optional.absent());
             write(series, NO_PREVIOUS);
             return WriteResult.<Series, Content>written(series).build();
         }
@@ -120,8 +122,10 @@ public abstract class AbstractContentStore implements ContentStore {
             }
             if (previous instanceof Container) {
                 series.setItemRefs(((Container) previous).getItemRefs());
+                handleContainer(series, Optional.of(previous));
+            } else {
+                handleContainer(series, Optional.absent());
             }
-            handleContainer(series);
             return WriteResult.<Series, Content>result(series, written)
                     .withPrevious(previous)
                     .build();
@@ -343,7 +347,7 @@ public abstract class AbstractContentStore implements ContentStore {
                 )
         );
 
-        if (writtenResource instanceof Container) {
+        if (writtenResource instanceof Container && containerSummaryChanged((Container)writtenResource, result.getPrevious())) {
             for (ItemRef itemRef : ((Container)writtenResource).getItemRefs()) {
                     messages.add(
                             new ResourceUpdatedMessage(
@@ -378,12 +382,18 @@ public abstract class AbstractContentStore implements ContentStore {
         return messages.build();
     }
 
+    private boolean containerSummaryChanged(Container container, Optional<Content> previous) {
+        return !previous.isPresent() || (previous.get() instanceof Container && !((Container)previous.get()).toSummary().equals(container.toSummary())) ;
+    }
+
     private Optional<Content> getPreviousContent(Content c) {
         return resolvePrevious(Optional.fromNullable(c.getId()), c.getSource(), c.getAliases());
     }
 
-    private void handleContainer(Container container) {
-        writeContainerSummary(container.toSummary(), container.getItemRefs());
+    private void handleContainer(Container container, Optional<Content> previous) {
+        if(containerSummaryChanged(container, previous)) {
+            writeContainerSummary(container.toSummary(), container.getItemRefs());
+        }
     }
 
     protected abstract Optional<Content> resolvePrevious(Optional<Id> id, Publisher source, Set<Alias> aliases);
