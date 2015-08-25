@@ -1,12 +1,16 @@
 package org.atlasapi.content;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
 
 public class Priority {
 
     private Iterable<String> reasons;
     private Double priority;
+
+
+    public Priority () {
+        
+    }
 
     public Priority(Double priority, Iterable<String> reasons) {
         this.reasons = reasons;
