@@ -58,7 +58,9 @@ public class ItemSummarySerializer {
         ContentProtos.ItemSummary.Builder builder = ContentProtos.ItemSummary.newBuilder();
 
         builder.setItemRef(itemRefBuilder);
-        builder.setTitle(itemSummary.getTitle());
+        if (itemSummary.getTitle() != null) {
+            builder.setTitle(itemSummary.getTitle());
+        }
         builder.setType(CLASS_TO_TYPE.get(itemSummary.getClass()));
         if(itemSummary.getDescription().isPresent()) {
             builder.setDescription(itemSummary.getDescription().get());
