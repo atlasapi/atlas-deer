@@ -133,7 +133,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             builder.addRelatedLink(relatedLinkSerializer.serialize(relatedLink));
         }
         if (content.getPriority() != null) {
-            builder.setPriority(content.getPriority());
+            ContentProtos.Priority.Builder priorityBuilder = ContentProtos.Priority.newBuilder();
+            Priority priority = content.getPriority();
+            if (priority.getPriority() != null) {
+                priorityBuilder.addAllReasons(priority.getReasons());
+            }
+            if (priority.getPriority() != null) {
+                priorityBuilder.setScore(priority.getPriority());
+            }
+            builder.setPriorities(priorityBuilder.build());
         }
         builder.setActivelyPublished(content.isActivelyPublished());
         return builder;

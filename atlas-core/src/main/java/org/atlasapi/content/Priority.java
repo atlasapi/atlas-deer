@@ -5,11 +5,11 @@ import com.google.common.collect.ImmutableList;
 
 public class Priority {
 
-    private ImmutableList<String> reasons;
+    private Iterable<String> reasons;
     private Double priority;
 
     public Priority(Double priority, Iterable<String> reasons) {
-        this.reasons = ImmutableList.copyOf(reasons);
+        this.reasons = reasons;
         this.priority = priority;
     }
 
@@ -17,7 +17,7 @@ public class Priority {
         return priority;
     }
 
-    public ImmutableList<String> getReasons() {
+    public Iterable<String> getReasons() {
         return reasons;
     }
 
@@ -25,7 +25,7 @@ public class Priority {
         this.priority = priority;
     }
 
-    public void setReasons(ImmutableList<String> reasons) {
+    public void setReasons(Iterable<String> reasons) {
         this.reasons = reasons;
     }
 

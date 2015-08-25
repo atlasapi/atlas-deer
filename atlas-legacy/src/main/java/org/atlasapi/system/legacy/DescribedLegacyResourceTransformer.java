@@ -1,11 +1,6 @@
 package org.atlasapi.system.legacy;
 
-import java.util.Set;
-
-import org.atlasapi.content.Image;
 import org.atlasapi.content.MediaType;
-import org.atlasapi.content.Priority;
-import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.content.Synopses;
 import org.atlasapi.entity.Alias;
@@ -16,12 +11,6 @@ import org.atlasapi.media.entity.Topic;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 
 public abstract class DescribedLegacyResourceTransformer<F extends Described, T extends org.atlasapi.content.Described>
@@ -66,6 +55,9 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
     }
 
     private org.atlasapi.content.Priority transformPriority(org.atlasapi.media.entity.Priority legacy) {
+        if (legacy == null) {
+            return null;
+        }
         return new org.atlasapi.content.Priority(legacy.getScore(), legacy.getReasons());
     }
 

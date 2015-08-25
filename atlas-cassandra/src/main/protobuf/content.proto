@@ -86,6 +86,7 @@ message Content {
     optional Summary container_summary = 43 [(column)=DESC];
     optional string website_url = 44 [(column)=DESC];
     optional double priority = 61 [(column)=DESC];
+    optional Priority priorities = 66 [(column) = DESC];
 
     repeated Content clips = 24 [(column)=CLIPS];
     repeated KeyPhrase key_phrases = 25 [(column)=KEYPHRASES];
@@ -110,6 +111,11 @@ message Restriction {
     optional string restriction_message = 3;
     optional string authority = 4;
     optional string rating = 5;
+}
+
+message Priority {
+    optional double score = 1;
+    repeated string reasons = 2;
 }
 
 message Summary {
