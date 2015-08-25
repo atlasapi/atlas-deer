@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.atlasapi.content.Image;
 import org.atlasapi.content.MediaType;
+import org.atlasapi.content.Priority;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.content.Synopses;
@@ -60,8 +61,12 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         }
         described.setThumbnail(input.getThumbnail());
         described.setTitle(input.getTitle());
-        described.setPriority(input.getPriority());
+        described.setPriority(transformPriority(input.getPriority()));
         return described;
+    }
+
+    private org.atlasapi.content.Priority transformPriority(org.atlasapi.media.entity.Priority legacy) {
+        return new org.atlasapi.content.Priority(legacy.getScore(), legacy.getReasons());
     }
 
     protected <I extends org.atlasapi.content.Identified> void setIdentifiedFields(I i, Identified input) {
