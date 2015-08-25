@@ -50,4 +50,4 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             log.error("Failed to bootstrap content {} - {} {}", message.getUpdatedResource(), e, Throwables.getStackTraceAsString(e));
         }
     }
-}
+}x

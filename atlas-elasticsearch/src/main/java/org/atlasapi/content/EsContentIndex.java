@@ -504,10 +504,10 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 addSortOrder(queryParams, reqBuilder);
             }
 
-// removing temporarily since this is currently broken
-//            if (queryParams.get().getRegionId().isPresent()) {
-//                queryBuilder = addRegionFilter(queryParams, queryBuilder);
-//            }
+ //removing temporarily since this is currently broken
+   //         if (queryParams.get().getRegionId().isPresent()) {
+     //           queryBuilder = addRegionFilter(queryParams, queryBuilder);
+       //     }
 
             if (queryParams.get().getBroadcastWeighting().isPresent()) {
                 queryBuilder = BroadcastQueryBuilder.build(

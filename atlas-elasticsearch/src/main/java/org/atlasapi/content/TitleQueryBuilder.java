@@ -20,7 +20,7 @@ import com.google.common.collect.Iterables;
 public class TitleQueryBuilder {
 
     private static final Joiner JOINER = Joiner.on("");
-    private static final int USE_PREFIX_SEARCH_UP_TO = 2;
+    private static final int USE_PREFIX_SEARCH_UP_TO = 4;
     private static final Map<String, String> EXPANSIONS = ImmutableMap.<String, String>builder().put("dr", "doctor").put("rd", "road").build();
 
     public static QueryBuilder build(String title, float boost) {
