@@ -509,12 +509,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
      //           queryBuilder = addRegionFilter(queryParams, queryBuilder);
        //     }
 
-            if (queryParams.get().getBroadcastWeighting().isPresent()) {
-                queryBuilder = BroadcastQueryBuilder.build(
-                        queryBuilder,
-                        queryParams.get().getBroadcastWeighting().get()
-                );
-            }
             if (queryParams.get().getTopicFilterIds().isPresent()) {
                 queryBuilder = applyTopicIdFilters(
                         queryParams.get().getTopicFilterIds().get(),
@@ -524,6 +518,18 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             if (queryParams.get().shouldFilterUnavailableContainers()) {
                 queryBuilder = addContainerAvailabilityFilter(queryBuilder);
             }
+        }
+
+        if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
+            queryBuilder = BroadcastQueryBuilder.build(
+                    queryBuilder,
+                    queryParams.get().getBroadcastWeighting().get()
+            );
+        } else {
+            queryBuilder = BroadcastQueryBuilder.build(
+                    queryBuilder,
+                    5f
+            );
         }
 
         reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
