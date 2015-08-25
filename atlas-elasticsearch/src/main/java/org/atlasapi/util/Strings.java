@@ -20,10 +20,10 @@ public class Strings {
         try {
             TokenStream tokens;
             if (filterStopWords) {
-                tokens = new StandardAnalyzer(Version.LUCENE_42)
+                tokens = new StandardAnalyzer(Version.LATEST)
                     .tokenStream("", new StringReader(value));
             } else {
-                tokens = new StandardAnalyzer(Version.LUCENE_42, CharArraySet.EMPTY_SET)
+                tokens = new StandardAnalyzer(Version.LATEST, CharArraySet.EMPTY_SET)
                     .tokenStream("", new StringReader(value));
             }
             tokens.reset();
