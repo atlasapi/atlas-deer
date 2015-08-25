@@ -60,11 +60,11 @@ public class TitleQueryBuilder {
             BoolQueryBuilder queryForThisTerm = new BoolQueryBuilder();
             queryForThisTerm.minimumNumberShouldMatch(1);
 
-            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(20);
+            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(50);
             queryForThisTerm.should(prefix);
 
             QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token)
-                    .fuzziness(Fuzziness.fromSimilarity(0.65f))
+                    .fuzziness(Fuzziness.fromSimilarity(0.33f))
                     .prefixLength(USE_PREFIX_SEARCH_UP_TO);
             queryForThisTerm.should(fuzzy);
 
@@ -113,7 +113,8 @@ public class TitleQueryBuilder {
 
     private static QueryBuilder fuzzyWithoutSpaces(String value) {
         return new FuzzyQueryBuilder(EsContent.PARENT_FLATTENED_TITLE, value)
-                .fuzziness(Fuzziness.fromSimilarity(0.8f))
-                .prefixLength(USE_PREFIX_SEARCH_UP_TO);
+                .fuzziness(Fuzziness.fromSimilarity(0.44f))
+                .prefixLength(USE_PREFIX_SEARCH_UP_TO)
+                .boost(10f);
     }
 }
