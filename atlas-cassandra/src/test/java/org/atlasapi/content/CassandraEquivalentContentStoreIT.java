@@ -1,9 +1,12 @@
 package org.atlasapi.content;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Throwables;
 import junit.framework.TestSuite;
 
+import org.apache.commons.io.IOUtils;
 import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.util.TestCassandraPersistenceModule;
@@ -30,8 +33,14 @@ public class CassandraEquivalentContentStoreIT {
                  session.execute("CREATE TABLE atlas_testing.equivalence_graph_index (resource_id bigint, graph_id bigint, PRIMARY KEY (resource_id));");
                  session.execute("CREATE TABLE atlas_testing.equivalence_graph (graph_id bigint, graph blob, PRIMARY KEY (graph_id));");
                  session.execute("CREATE TABLE atlas_testing.equivalent_content_index (key bigint, value bigint, PRIMARY KEY (key));");
-                 session.execute("CREATE TABLE atlas_testing.equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
-                 CassandraHelper.createColumnFamily(context, "content", LongSerializer.get(), StringSerializer.get());
+//                 session.execute("CREATE TABLE atlas_testing.equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
+//                 session.execute("CREATE TABLE atlas_testing.equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
+                try {
+                    session.execute(IOUtils.toString(CassandraEquivalentContentStoreIT.class.getResourceAsStream("/atlas_equivalent_content_v2.schema")));
+                } catch (IOException e) {
+                    Throwables.propagate(e);
+                }
+                CassandraHelper.createColumnFamily(context, "content", LongSerializer.get(), StringSerializer.get());
                  CassandraHelper.createColumnFamily(context, "content_aliases", StringSerializer.get(), StringSerializer.get(), LongSerializer.get());
             }
              

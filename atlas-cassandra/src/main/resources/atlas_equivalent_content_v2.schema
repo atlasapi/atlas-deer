@@ -1,0 +1,10 @@
+CREATE TABLE equivalent_content_v2 (
+	set_id bigint,
+	source text,
+	content_id bigint,
+	content blob,  
+	PRIMARY KEY (set_id, source, content_id)
+) WITH  caching='KEYS_ONLY' AND
+	comment='Version2 of EquivalentContentStore' AND
+	compaction={'class': 'LeveledCompactionStrategy'} AND
+	compression={'sstable_compression': 'SnappyCompressor'};
