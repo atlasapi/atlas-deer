@@ -201,7 +201,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .specialization(container.getSpecialization() != null ?
                     container.getSpecialization().name() :
                     null)
-            .priority(container.getPriority().getPriority())
+            .priority(container.getPriority() != null ? container.getPriority().getPriority() : null)
             .locations(makeESLocations(container))
             .topics(makeESTopics(container));
         if (!container.getItemRefs().isEmpty()) {
