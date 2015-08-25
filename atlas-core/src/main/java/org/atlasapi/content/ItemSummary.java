@@ -39,7 +39,7 @@ public class ItemSummary {
 
     public ItemSummary(ItemRef itemRef, String title, @Nullable String description, @Nullable String image, @Nullable Integer releaseYear, @Nullable Iterable<Certificate> certs) {
         this.itemRef = checkNotNull(itemRef);
-        this.title = checkNotNull(title);
+        this.title = title;
         this.description = Optional.ofNullable(description);
         this.image = Optional.ofNullable(image);
         this.releaseYear = Optional.ofNullable(releaseYear);
