@@ -620,7 +620,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         FuzzyQueryParams searchParams = queryParams.get().getFuzzyQueryParams().get();
         queryBuilder = QueryBuilders.boolQuery()
                 .must(queryBuilder)
-                .must(TitleQueryBuilder.build(searchParams.getSearchTerm(), searchParams.getBoost().orElse(0F)));
+                .must(TitleQueryBuilder.build(searchParams.getSearchTerm(), searchParams.getBoost().orElse(5F)));
         return queryBuilder;
     }
 
