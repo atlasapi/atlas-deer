@@ -10,6 +10,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.util.FutureSettingActionListener;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.facet.FacetBuilders;
@@ -30,9 +31,9 @@ public class EsPopularTopicIndex implements PopularTopicIndex {
     private static final String TOPIC_FACET_NAME = EsContent.TOPICS;
     private static final String TOPIC_ID_FIELD = EsContent.TOPICS + "." + EsTopicMapping.TOPIC_ID;
     
-    private final Node index;
+    private final Client index;
 
-    public EsPopularTopicIndex(Node index) {
+    public EsPopularTopicIndex(Client index) {
         this.index = checkNotNull(index);
     }
     
@@ -59,8 +60,7 @@ public class EsPopularTopicIndex implements PopularTopicIndex {
     }
 
     private SearchRequestBuilder prepareQuery(Interval interval, Selection selection) {
-        return index.client()
-            .prepareSearch(EsSchema.CONTENT_INDEX)
+        return index.prepareSearch(EsSchema.CONTENT_INDEX)
             .setQuery(QueryBuilders.nestedQuery(EsContent.BROADCASTS, 
                 QueryBuilders.rangeQuery(EsBroadcast.TRANSMISSION_TIME)
                     .from(interval.getStart())

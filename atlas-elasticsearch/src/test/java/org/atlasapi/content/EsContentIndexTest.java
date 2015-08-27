@@ -24,6 +24,7 @@ import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
@@ -42,7 +43,7 @@ import com.metabroadcast.common.query.Selection;
 
 public class EsContentIndexTest {
 
-    private static final Node esClient = ElasticSearchHelper.testNode();
+    private static final Client esClient = ElasticSearchHelper.testNode().client();
 
     private EsContentIndex index;
 

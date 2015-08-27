@@ -18,6 +18,7 @@ import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.node.Node;
@@ -41,14 +42,14 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
 
     private final Logger log = LoggerFactory.getLogger(EsTopicIndex.class);
     
-    private final Node esClient;
+    private final Client esClient;
     private final String indexName;
     private final long timeOutDuration;
     private final TimeUnit timeOutUnit;
     
     private final EsQueryBuilder builder = new EsQueryBuilder();
 
-    public EsTopicIndex(Node esClient, String indexName, long timeOutDuration, TimeUnit timeOutUnit) {
+    public EsTopicIndex(Client esClient, String indexName, long timeOutDuration, TimeUnit timeOutUnit) {
         this.esClient = checkNotNull(esClient);
         this.indexName = checkNotNull(indexName);
         this.timeOutDuration = timeOutDuration;
@@ -57,7 +58,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
 
     @Override
     protected void startUp() throws Exception {
-        IndicesAdminClient indices = esClient.client().admin().indices();
+        IndicesAdminClient indices = esClient.admin().indices();
         IndicesExistsResponse exists = get(indices.exists(
             Requests.indicesExistsRequest(indexName)
         ));
@@ -86,7 +87,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
             .type(EsTopic.TYPE_NAME)
             .id(topic.getId().toString())
             .source(toEsTopic(topic).toMap());
-        esClient.client().index(request).actionGet(timeOutDuration, timeOutUnit);
+        esClient.index(request).actionGet(timeOutDuration, timeOutUnit);
         log.debug("indexed {}", topic);
     }
     
@@ -104,7 +105,7 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
     public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query, 
         Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
-        esClient.client()  
+        esClient
             .prepareSearch(indexName)
             .setTypes(EsTopic.TYPE_NAME)
             .setQuery(builder.buildQuery(query))

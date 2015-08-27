@@ -41,6 +41,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.index.query.BoolFilterBuilder;
@@ -75,7 +76,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private static final int DEFAULT_LIMIT = 50;
 
-    private final Node esClient;
+    private final Client esClient;
     private final String index;
     private final long requestTimeout;
     private final ChannelGroupResolver channelGroupResolver;
@@ -86,7 +87,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
     private final EsSortQueryBuilder sortBuilder = new EsSortQueryBuilder();
 
-    public EsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver, ChannelGroupResolver channelGroupResolver) {
+    public EsContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver, ChannelGroupResolver channelGroupResolver) {
         this.esClient = checkNotNull(esClient);
         this.requestTimeout = requestTimeout;
         this.index = checkNotNull(indexName);
@@ -107,13 +108,13 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     }
     private boolean createIndex(String name) {
-        ActionFuture<IndicesExistsResponse> exists = esClient.client().admin().indices().exists(
+        ActionFuture<IndicesExistsResponse> exists = esClient.admin().indices().exists(
             Requests.indicesExistsRequest(name)
         );
         if (!timeoutGet(exists).isExists()) {
             try {
                 log.info("Creating index {}", name);
-                timeoutGet(esClient.client().admin().indices().create(Requests.createIndexRequest(
+                timeoutGet(esClient.admin().indices().create(Requests.createIndexRequest(
                         name)));
             } catch (IndexAlreadyExistsException iaee) {
                 log.info("Already exists: {}", name);
@@ -143,7 +144,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private void doMappingRequest(PutMappingRequest req) {
         try {
-            timeoutGet(esClient.client().admin().indices().putMapping(req));
+            timeoutGet(esClient.admin().indices().putMapping(req));
         } catch (MergeMappingException mme) {
             log.info("Merge Mapping Exception: {}/{}", req.indices(), req.type());
         }
@@ -294,7 +295,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .type(EsContent.TOP_LEVEL_CONTAINER)
             .id(getDocId(container))
             .source(indexed.toMap());
-        timeoutGet(esClient.client().index(request));
+        timeoutGet(esClient.index(request));
         log.debug("indexed {}", container);
     }
 
@@ -360,7 +361,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             }
         }
         if (bulk.numberOfActions() > 0) {
-            BulkResponse response = timeoutGet(esClient.client().bulk(bulk));
+            BulkResponse response = timeoutGet(esClient.bulk(bulk));
             if (response.hasFailures()) {
                 log.error(response.buildFailureMessage());
                 throw new EsPersistenceException("Failed to index children for container: " + getDocId(parent));
@@ -382,7 +383,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private Map<String, Object> trySearchParent(ContainerRef parent) {
         GetRequest request = Requests.getRequest(index).id(getDocId(parent));
-        GetResponse response = timeoutGet(esClient.client().get(request));
+        GetResponse response = timeoutGet(esClient.get(request));
         if (response.isExists()) {
             return response.getSource();
         } else {
@@ -395,7 +396,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             GetRequest request = Requests.getRequest(index)
                     .parent(getDocId(parent))
                     .id(getDocId(child));
-            GetResponse response = timeoutGet(esClient.client().get(request));
+            GetResponse response = timeoutGet(esClient.get(request));
             if (response.isExists()) {
                 return response.getSource();
             } else {
@@ -455,7 +456,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private void deleteFromIndexIfExists(Long id, String mappingType) {
         try {
-            boolean exists = new ExistsRequestBuilder(esClient.client())
+            boolean exists = new ExistsRequestBuilder(esClient)
                     .setTypes(mappingType)
                     .setQuery(QueryBuilders.termQuery(EsContent.ID, id.toString()))
                     .execute()
@@ -463,7 +464,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                     .exists();
 
             if (exists) {
-                esClient.client().delete(new DeleteRequest(index, mappingType, id.toString())).get();
+                esClient.delete(new DeleteRequest(index, mappingType, id.toString())).get();
             }
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to delete content {} due to {}", id, e.toString());
@@ -486,7 +487,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
 
 
-        SearchRequestBuilder reqBuilder = esClient.client()
+        SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
                 .addField(EsContent.ID)
@@ -673,7 +674,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             }
 
             requests.add(mainIndexRequest);
-            BulkResponse resp = timeoutGet(esClient.client().bulk(requests));
+            BulkResponse resp = timeoutGet(esClient.bulk(requests));
             log.debug("indexed {} ({}ms)", item, resp.getTookInMillis());
         } catch (Exception e) {
             throw new RuntimeIndexException("Error indexing " + item, e);

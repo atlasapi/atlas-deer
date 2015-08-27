@@ -3,6 +3,7 @@ package org.atlasapi;
 import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Splitter;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EsContentIndex;
@@ -10,7 +11,11 @@ import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.InstrumentedEsContentIndex;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.slf4j.Logger;
@@ -30,10 +35,13 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     private final EsContentTitleSearcher contentSearcher;
 
     public ElasticSearchContentIndexModule(String seeds, String clusterName, String indexName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
-        Node client = NodeBuilder.nodeBuilder().client(true).
-                clusterName(clusterName).
-                settings(ImmutableSettings.settingsBuilder().put("discovery.zen.ping.unicast.hosts", seeds)).
-                build().start();
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("client.transport.sniff", true)
+                .build();
+        TransportClient client = new TransportClient(settings);
+        for (String host : Splitter.on(",").splitToList(seeds)) {
+            client.addTransportAddress(new InetSocketTransportAddress(host, 9300));
+        }
         this.contentIndex = new InstrumentedEsContentIndex(client, indexName, requestTimeout, resolver, metrics, channelGroupResolver);
         this.popularTopicsIndex = new EsPopularTopicIndex(client);
         this.topicIndex = new EsTopicIndex(client, EsSchema.TOPICS_INDEX, 60, TimeUnit.SECONDS);

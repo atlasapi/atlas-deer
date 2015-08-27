@@ -55,14 +55,14 @@ public final class EsContentIndexingTest {
 
     @Before
     public void setup() throws TimeoutException {
-        ElasticSearchHelper.refresh(esClient);
-        contentIndexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
+        ElasticSearchHelper.refresh(esClient.client());
+        contentIndexer = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
         contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     
     @After
     public void teardown() throws Exception {
-        ElasticSearchHelper.clearIndices(esClient);
+        ElasticSearchHelper.clearIndices(esClient.client());
     }
 
     @Test
@@ -75,7 +75,7 @@ public final class EsContentIndexingTest {
         
         contentIndexer.index(item);
         
-        refresh(esClient);
+        refresh(esClient.client());
 
         ListenableActionFuture<SearchResponse> result1 = esClient.client()
             .prepareSearch(EsSchema.CONTENT_INDEX)
@@ -132,7 +132,7 @@ public final class EsContentIndexingTest {
         contentIndexer.index(item2);
         contentIndexer.index(item3);
         
-        refresh(esClient);
+        refresh(esClient.client());
         
         ListenableActionFuture<SearchResponse> futureResult = esClient.client()
             .prepareSearch(EsSchema.CONTENT_INDEX)
