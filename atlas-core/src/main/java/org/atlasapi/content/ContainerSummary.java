@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Objects;
 import org.atlasapi.meta.annotations.FieldName;
 
 public class ContainerSummary {
@@ -36,21 +35,5 @@ public class ContainerSummary {
     @FieldName("series_number")
     public Integer getSeriesNumber() {
         return seriesNumber;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ContainerSummary)) return false;
-        ContainerSummary that = (ContainerSummary) o;
-        return Objects.equal(type, that.type) &&
-                Objects.equal(title, that.title) &&
-                Objects.equal(description, that.description) &&
-                Objects.equal(seriesNumber, that.seriesNumber);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(type, title, description, seriesNumber);
     }
 }

@@ -48,7 +48,7 @@ public class DatastaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {
     @Override
     protected ScheduleStore provideScheduleStore() {
 
-        return new DatastaxCassandraScheduleStore(
+        return new DatataxCassandraScheduleStore(
                 SCHEDULE_CF_NAME,
                 contentStore,
                 scheduleUpdateSender,

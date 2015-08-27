@@ -6,7 +6,6 @@ import com.datastax.driver.core.Session;
 import com.google.common.base.Equivalence;
 import com.google.common.base.Objects;
 import com.google.common.util.concurrent.AbstractIdleService;
-import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.properties.Configurer;
@@ -19,8 +18,6 @@ import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
-import org.atlasapi.content.AstyanaxCassandraContentStore;
-import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
@@ -33,7 +30,7 @@ import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
 import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
-import org.atlasapi.schedule.DatastaxCassandraScheduleStore;
+import org.atlasapi.schedule.DatataxCassandraScheduleStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ItemAndBroadcastSerializer;
 import org.atlasapi.schedule.ScheduleStore;
@@ -42,8 +39,6 @@ import org.atlasapi.segment.CassandraSegmentStore;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.CassandraTopicStore;
 import org.atlasapi.topic.Topic;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
@@ -73,9 +68,9 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private CassandraEquivalenceGraphStore nullMessageSendingEquivGraphStore;
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
-    private DatastaxCassandraScheduleStore v2ScheduleStore;
-    private AstyanaxCassandraContentStore contentStore;
-    private AstyanaxCassandraContentStore nullMsgSendingContentStore;
+    private DatataxCassandraScheduleStore v2ScheduleStore;
+    private DatastaxCassandraContentStore contentStore;
+    private DatastaxCassandraContentStore nullMsgSendingContentStore;
 
     private MessageSenderFactory messageSenderFactory;
 
@@ -122,25 +117,36 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     @Override
     protected void startUp() throws Exception {
+        dataStaxService.awaitRunning();
         Session session = dataStaxService.getSession(keyspace);
         com.datastax.driver.core.ConsistencyLevel read = getReadConsistencyLevel();
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
-        ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
-        this.contentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                hasher, sender(contentChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
-                .withReadConsistency(readConsistency)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-        this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                hasher, nullMessageSender(ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
-                .withReadConsistency(readConsistency)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
+        this.contentStore = new DatastaxCassandraContentStore(
+                hasher,
+                idGeneratorBuilder.generator("content"),
+                sender(contentChanges, ResourceUpdatedMessage.class),
+                new SystemClock(),
+                session,
+                getWriteConsistencyLevel(),
+                getReadConsistencyLevel(),
+                AliasIndex.create(context.getClient(), "content_aliases")
+        );
+        this.nullMsgSendingContentStore = new DatastaxCassandraContentStore(
+                hasher,
+                idGeneratorBuilder.generator("content"),
+                nullMessageSender(ResourceUpdatedMessage.class),
+                new SystemClock(),
+                session,
+                getWriteConsistencyLevel(),
+                getReadConsistencyLevel(),
+                AliasIndex.create(context.getClient(), "content_aliases")
+        );
+
 
         this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class), session, read, write);
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(contentEquivalenceGraphStore, contentStore, session, read, write, new SystemClock());
         this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(nullMessageSender(EquivalenceGraphUpdateMessage.class), session, read, write);
-        this.v2ScheduleStore = new DatastaxCassandraScheduleStore(
+        this.v2ScheduleStore = new DatataxCassandraScheduleStore(
                 "schedule_v2",
                 contentStore,
                 sender(scheduleChanges, ScheduleUpdateMessage.class),
@@ -151,6 +157,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(contentStore))),
                 cassandraTimeoutSeconds
         );
+        ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
         this.topicStore = CassandraTopicStore.builder(context, "topics",
                 topicEquivalence(), sender(topicChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator("topic"))
                 .withReadConsistency(readConsistency)
@@ -206,11 +213,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     @Override
-    public AstyanaxCassandraContentStore contentStore() {
+    public DatastaxCassandraContentStore contentStore() {
         return contentStore;
     }
 
-    public AstyanaxCassandraContentStore nullMessageSendingContentStore() {
+    public DatastaxCassandraContentStore nullMessageSendingContentStore() {
         return nullMsgSendingContentStore;
     }
 

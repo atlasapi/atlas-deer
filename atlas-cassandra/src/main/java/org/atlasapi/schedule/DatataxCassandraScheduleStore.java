@@ -51,7 +51,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
+public class DatataxCassandraScheduleStore extends AbstractScheduleStore {
 
     private static final String SOURCE_COLUMN = "source";
     private static final String CHANNEL_COLUMN = "channel";
@@ -69,7 +69,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
 
     private final ItemAndBroadcastSerializer serializer;
 
-    public DatastaxCassandraScheduleStore(
+    public DatataxCassandraScheduleStore(
             String table,
             ContentStore contentStore,
             MessageSender<ScheduleUpdateMessage> sender,
