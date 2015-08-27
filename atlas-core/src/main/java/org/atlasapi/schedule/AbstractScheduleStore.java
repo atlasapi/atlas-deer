@@ -9,16 +9,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Optional;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
-import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
@@ -100,7 +96,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
                 interval
         );
         for (ItemAndBroadcast staleEntry : update.getStaleEntries()) {
-            updateStaleItemInContentStore(staleEntry);
+            updateItemInContentStore(staleEntry);
         }
         doWrite(source, removeAdditionalBroadcasts(update.getUpdatedBlocks()));
         sendUpdateMessage(source, content, update, channel, interval);
@@ -220,26 +216,14 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
      */
     protected abstract void doWrite(Publisher source, List<ChannelSchedule> blocks) throws WriteException;
     
-    private void updateStaleItemInContentStore(ItemAndBroadcast entry) throws WriteException {
+    private void updateItemInContentStore(ItemAndBroadcast entry) throws WriteException {
         Id id = entry.getItem().getId();
         ListenableFuture<Resolved<Content>> resolve = contentStore.resolveIds(ImmutableList.of(id));
         Resolved<Content> resolved2 = Futures.get(resolve,
                 10, TimeUnit.SECONDS, WriteException.class);
         Item resolved = (Item) Iterables.getOnlyElement(resolved2.getResources());
-
-        Broadcast broadcast = entry.getBroadcast();
-        broadcast.setIsActivelyPublished(false);
-        SeriesRef seriesRef = null;
-        if(resolve instanceof Episode && ((Episode) resolved).getSeriesRef() != null) {
-            seriesRef = ((Episode) resolved).getSeriesRef();
-        }
-
-        contentStore.writeBroadcast(
-                resolved.toRef(),
-                Optional.fromNullable(resolved.getContainerRef()),
-                Optional.fromNullable(seriesRef),
-                broadcast
-        );
+        resolved = updateBroadcast(entry.getBroadcast().getSourceId(), resolved);
+        contentStore.writeContent(resolved);
     }
 
     private Item updateBroadcast(String broadcastId, Item resolved) {
