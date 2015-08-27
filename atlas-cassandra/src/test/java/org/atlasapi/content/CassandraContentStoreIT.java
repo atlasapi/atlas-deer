@@ -13,7 +13,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -46,7 +45,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -432,41 +430,41 @@ public abstract class CassandraContentStoreIT {
     
     @Test
     public void testWritingFullContentHierarchy() throws Exception {
-
+        
         DateTime now = new DateTime(DateTimeZones.UTC);
-
+        
         Brand brand = create(new Brand());
 
         when(clock.now()).thenReturn(now);
         when(idGenerator.generateRaw()).thenReturn(1234L);
         WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
-
+        
         Series series1 = create(new Series());
         series1.setBrand(brandWriteResult.getResource());
-
+        
         when(clock.now()).thenReturn(now.plusHours(1));
         when(idGenerator.generateRaw()).thenReturn(1235L);
         WriteResult<Series, Content> series1WriteResult = store.writeContent(series1);
 
         Series series2 = create(new Series());
         series2.setBrand(brandWriteResult.getResource());
-
+        
         when(clock.now()).thenReturn(now.plusHours(1));
         when(idGenerator.generateRaw()).thenReturn(1236L);
         WriteResult<Series, Content> series2WriteResult = store.writeContent(series2);
-
+        
         Episode episode1 = create(new Episode());
         episode1.setContainer(brandWriteResult.getResource());
         episode1.setSeries(series1WriteResult.getResource());
-
+        
         when(clock.now()).thenReturn(now.plusHours(2));
         when(idGenerator.generateRaw()).thenReturn(1237L);
         store.writeContent(episode1);
-
+        
         Episode episode2 = create(new Episode());
         episode2.setContainer(brandWriteResult.getResource());
         episode2.setSeries(series2WriteResult.getResource());
-
+        
         when(clock.now()).thenReturn(now.plusHours(2));
         when(idGenerator.generateRaw()).thenReturn(1238L);
         store.writeContent(episode2);
@@ -474,11 +472,11 @@ public abstract class CassandraContentStoreIT {
         Episode episode3 = create(new Episode());
         episode3.setContainer(brandWriteResult.getResource());
         episode3.setSeries(series1WriteResult.getResource());
-
+        
         when(clock.now()).thenReturn(now.plusHours(3));
         when(idGenerator.generateRaw()).thenReturn(1239L);
         store.writeContent(episode3);
-
+        
         Brand resolvedBrand = (Brand) resolve(1234L);
         assertThat(resolvedBrand.getFirstSeen(), is(now));
         assertThat(resolvedBrand.getLastUpdated(), is(now));
@@ -515,7 +513,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedEpisode2.getContainerRef().getId().longValue(), is(1234L));
         assertThat(resolvedEpisode2.getSeriesRef().getId().longValue(), is(1236L));
         assertThat(resolvedEpisode2.getContainerSummary().getTitle(), is("Brand"));
-
+        
         Episode resolvedEpisode3 = (Episode) resolve(1239L);
         assertThat(resolvedEpisode3.getFirstSeen(), is(now.plusHours(3)));
         assertThat(resolvedEpisode3.getLastUpdated(), is(now.plusHours(3)));
@@ -1565,6 +1563,8 @@ public abstract class CassandraContentStoreIT {
         ).withId("sourceID:1");
 
 
+        /*--------------------*/
+
         Brand brand = create(new Brand());
 
         when(clock.now()).thenReturn(now);
@@ -1596,66 +1596,6 @@ public abstract class CassandraContentStoreIT {
 
         Series resolvedSeries1 = (Series) resolve(1235L);
         assertThat(resolvedSeries1.getUpcomingContent(), is(expectedUpcomingContent));
-
-    }
-
-    @Test
-    public void testUpdatingContainerUpdatesContainerSummaryInChildItemAndSendsResourceUpdatedMessage() throws Exception {
-
-        DateTime now = new DateTime(DateTimeZones.UTC);
-
-        Brand brand = create(new Brand());
-
-
-        when(clock.now()).thenReturn(now);
-        when(idGenerator.generateRaw()).thenReturn(1234L);
-        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
-
-        Series series1 = create(new Series());
-        series1.setBrand(brandWriteResult.getResource());
-
-        when(clock.now()).thenReturn(now.plusHours(1));
-        when(idGenerator.generateRaw()).thenReturn(1235L);
-        WriteResult<Series, Content> series1WriteResult = store.writeContent(series1);
-
-        Episode episode = create(new Episode());
-        episode.setContainer(brandWriteResult.getResource());
-        episode.setSeries(series1WriteResult.getResource());
-
-        when(clock.now()).thenReturn(now.plusHours(2));
-        when(idGenerator.generateRaw()).thenReturn(1237L);
-        store.writeContent(episode);
-
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
-
-
-        Episode resolvedEpisode = (Episode) resolve(1237L);
-        assertThat(resolvedEpisode.getFirstSeen(), is(now.plusHours(2)));
-        assertThat(resolvedEpisode.getLastUpdated(), is(now.plusHours(2)));
-        assertThat(resolvedEpisode.getThisOrChildLastUpdated(), is(now.plusHours(2)));
-        assertThat(resolvedEpisode.getContainerRef().getId().longValue(), is(1234L));
-        assertThat(resolvedEpisode.getSeriesRef().getId().longValue(), is(1235L));
-        assertThat(resolvedEpisode.getContainerSummary().getTitle(), is("Brand"));
-
-        brand.setTitle("NewBrand");
-        store.writeContent(brand);
-
-        Brand resolvedBrand = (Brand) resolve(1234L);
-        assertThat(resolvedBrand.getTitle(), is("NewBrand"));
-
-        ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
-
-        verify(sender, times(5)).sendMessage(captor.capture());
-
-        List<ResourceUpdatedMessage> messagesSent = captor.getAllValues();
-
-        assertThat(messagesSent.size(), is(5));
-        assertThat(messagesSent.get(3).getUpdatedResource().getId().longValue(), is(1237L));
-
-        Episode newResolvedEpisode = (Episode) resolve(1237L);
-        assertThat(newResolvedEpisode.getContainerSummary().getTitle(), is("NewBrand"));
 
     }
 

@@ -27,6 +27,7 @@ import static org.atlasapi.serialization.protobuf.ContentProtos.Column.TOPICS;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.TYPE;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.UPCOMING_CONTENT;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -37,6 +38,7 @@ import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
 
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.EnumBiMap;
 import com.google.common.collect.ImmutableList;

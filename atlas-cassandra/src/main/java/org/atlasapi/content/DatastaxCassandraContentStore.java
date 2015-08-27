@@ -1,20 +1,18 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 import static org.atlasapi.content.ContentColumn.DESCRIPTION;
 import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
 import static org.atlasapi.content.ContentColumn.SOURCE;
 import static org.atlasapi.content.ContentColumn.TYPE;
 
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.querybuilder.Batch;
 import com.datastax.driver.core.querybuilder.Select;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -61,7 +59,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
     private final Session session;
     private final ConsistencyLevel writeConsistency;
     private final ConsistencyLevel readConsistency;
-    private final ContentMarshaller<Batch, Iterable<Row>> marshaller = new DatastaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
+    private final ContentMarshaller<BatchStatement, Iterable<Row>> marshaller = new DatastaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
 
 
     public DatastaxCassandraContentStore(
@@ -113,7 +111,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
     @Override
     protected void doWriteContent(Content content, Content previous) {
         try {
-            Batch batch = batch();
+            BatchStatement batch = new BatchStatement();
             batch.setConsistencyLevel(writeConsistency);
             marshaller.marshallInto(content.getId(), batch, content);
             aliasIndex.mutateAliasesAndExecute(content, previous);
@@ -152,7 +150,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
     protected void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef, Boolean activelyPublished) {
         try {
             if(!activelyPublished) {
-                Batch batch = batch();
+                BatchStatement batch = new BatchStatement();
                 batch.setConsistencyLevel(writeConsistency);
                 batch.add(removeContentRef(primary, seriesRef));
                 session.execute(batch);
@@ -162,7 +160,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
             container.setSeriesRefs(ImmutableList.of(seriesRef));
             container.setThisOrChildLastUpdated(seriesRef.getUpdated());
 
-            Batch batch = batch();
+            BatchStatement batch = new BatchStatement();
             batch.setConsistencyLevel(writeConsistency);
             marshaller.marshallInto(primary.getId(), batch, container);
             session.execute(batch);
@@ -187,7 +185,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                     item.toRef(), item.getAvailableLocations()
             );
 
-            Batch batch = batch();
+            BatchStatement batch = new BatchStatement();
             batch.setConsistencyLevel(writeConsistency);
             if (containerRef != null) {
                 Id containerId = containerRef.getId();
@@ -232,7 +230,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         item.setThisOrChildLastUpdated(itemRef.getUpdated());
         item.addBroadcast(broadcast);
         item.setPublisher(itemRef.getSource());
-        Batch batch = batch();
+        BatchStatement batch = new BatchStatement();
         batch.setConsistencyLevel(writeConsistency);
         marshaller.marshallInto(item.getId(), batch, item);
 
@@ -261,21 +259,6 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         }
 
         session.execute(batch);
-    }
-
-    @Override
-    protected void writeContainerSummary(ContainerSummary summary, Iterable<ItemRef> items) {
-        Batch batch = batch();
-        batch.setConsistencyLevel(writeConsistency);
-        for (ItemRef itemRef : items) {
-            Item item = itemFromRef(itemRef);
-            item.setContainerSummary(summary);
-            marshaller.marshallInto(itemRef.getId(), batch, item);
-
-        }
-
-        session.execute(batch);
-
     }
 
     @Override
@@ -368,25 +351,20 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
     }
 
     private void removeItemRefsFromContainers(Item item) throws ConnectionException {
-        Batch batch = batch();
+        BatchStatement batch = new BatchStatement();
         batch.setConsistencyLevel(writeConsistency);
         if (item.getContainerRef() != null) {
-            for (RegularStatement statement : removeAllReferencesToItem(item.getContainerRef(), item.toRef())) {
-                batch.add(statement);
-            }
-
+            batch.addAll(removeAllReferencesToItem(item.getContainerRef(), item.toRef()));
         }
         if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
             Episode episode = (Episode) item;
-            for (RegularStatement statement : removeAllReferencesToItem(episode.getSeriesRef(), episode.toRef())) {
-                batch.add(statement);
-            }
+            batch.addAll(removeAllReferencesToItem(episode.getSeriesRef(), episode.toRef()));
         }
         session.execute(batch);
     }
 
-    private Iterable<RegularStatement> removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef) throws ConnectionException {
-        return ImmutableSet.<RegularStatement>builder()
+    private Iterable<Statement> removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef) throws ConnectionException {
+        return ImmutableSet.<Statement>builder()
                 .add(removeContentRef(containerRef, itemRef))
                 .add(removeItemSummaries(containerRef, itemRef))
                 .add(removeAvailableContent(containerRef, itemRef))
@@ -395,7 +373,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
 
     }
 
-    private RegularStatement removeContentRef(ContainerRef containerRef, ContentRef contentRef) throws ConnectionException {
+    private Statement removeContentRef(ContainerRef containerRef, ContentRef contentRef) throws ConnectionException {
         Long rowId = containerRef.getId().longValue();
         String columnId = contentRef.getId().toString();
         return delete().all()
@@ -404,7 +382,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                 .and(eq(CLUSTERING_KEY_COLUMN, columnId));
     }
 
-    private RegularStatement removeItemSummaries(ContainerRef containerRef, ItemRef itemRef) throws ConnectionException {
+    private Statement removeItemSummaries(ContainerRef containerRef, ItemRef itemRef) throws ConnectionException {
         Long rowId = containerRef.getId().longValue();
         String columnId = ProtobufContentMarshaller.buildItemSummaryKey(itemRef.getId().longValue());
         return delete().all()
@@ -413,7 +391,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                 .and(eq(CLUSTERING_KEY_COLUMN, columnId));
     }
 
-    private RegularStatement removeAvailableContent(ContainerRef containerRef, ItemRef itemRef) throws ConnectionException {
+    private Statement removeAvailableContent(ContainerRef containerRef, ItemRef itemRef) throws ConnectionException {
         Long rowId = containerRef.getId().longValue();
         String columnId = ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId().longValue());
         return delete().all()
@@ -422,25 +400,12 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                 .and(eq(CLUSTERING_KEY_COLUMN, columnId));
     }
 
-    private RegularStatement removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef) throws ConnectionException {
+    private Statement removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef) throws ConnectionException {
         Long rowId = brancontainerRefRef.getId().longValue();
         String columnId = ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId().longValue());
         return delete().all()
                 .from(CONTENT_TABLE)
                 .where(eq(PRIMARY_KEY_COLUMN, rowId))
                 .and(eq(CLUSTERING_KEY_COLUMN, columnId));
-    }
-
-    private Item itemFromRef(ItemRef itemRef){
-        Item item;
-        if(itemRef instanceof EpisodeRef) {
-            item = new Episode();
-        } else{
-            item = new Item();
-        }
-        item.setId(itemRef.getId());
-        item.setThisOrChildLastUpdated(itemRef.getUpdated());
-        item.setPublisher(itemRef.getSource());
-        return item;
     }
 }
