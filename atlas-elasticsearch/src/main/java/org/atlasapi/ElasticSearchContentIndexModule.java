@@ -37,6 +37,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     public ElasticSearchContentIndexModule(String seeds, String clusterName, String indexName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
         Settings settings = ImmutableSettings.settingsBuilder()
                 .put("client.transport.sniff", true)
+                .put("cluster.name", clusterName)
                 .build();
         TransportClient client = new TransportClient(settings);
         for (String host : Splitter.on(",").splitToList(seeds)) {
