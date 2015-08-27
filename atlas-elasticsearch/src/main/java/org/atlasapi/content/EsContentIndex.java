@@ -204,11 +204,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .priority(container.getPriority() != null ? container.getPriority().getPriority() : null)
             .locations(makeESLocations(container))
             .topics(makeESTopics(container));
+        indexed.hasChildren(Boolean.FALSE);
         if (!container.getItemRefs().isEmpty()) {
             indexed.hasChildren(Boolean.TRUE);
-            indexChildrenData(container);
-        } else {
-            indexed.hasChildren(Boolean.FALSE);
         }
         return indexed;
     }
@@ -340,31 +338,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             child.parentTitle(title != null ? title.toString() : null);
             Object flatTitle = indexedContainer.get(EsContent.FLATTENED_TITLE);
             child.parentFlattenedTitle(flatTitle != null ? flatTitle.toString() : null);
-        }
-    }
-
-    private void indexChildrenData(Container parent) {
-        BulkRequest bulk = Requests.bulkRequest();
-        for (ItemRef child : parent.getItemRefs()) {
-            Map<String, Object> indexedChild = trySearchChild(parent, child);
-            if (indexedChild != null) {
-                if (parent.getTitle() != null) {
-                    indexedChild.put(EsContent.PARENT_TITLE, parent.getTitle());
-                    indexedChild.put(EsContent.PARENT_FLATTENED_TITLE, Strings.flatten(parent.getTitle()));
-                    bulk.add(Requests.indexRequest(index).
-                            type(EsContent.CHILD_ITEM).
-                            parent(getDocId(parent)).
-                            id(getDocId(child)).
-                            source(indexedChild));
-                }
-            }
-        }
-        if (bulk.numberOfActions() > 0) {
-            BulkResponse response = timeoutGet(esClient.client().bulk(bulk));
-            if (response.hasFailures()) {
-                log.error(response.buildFailureMessage());
-                throw new EsPersistenceException("Failed to index children for container: " + getDocId(parent));
-            }
         }
     }
 
