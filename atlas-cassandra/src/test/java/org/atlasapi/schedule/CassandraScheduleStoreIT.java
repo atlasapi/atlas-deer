@@ -14,11 +14,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableSet;
+import com.netflix.astyanax.serializers.AsciiSerializer;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -33,6 +33,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.media.entity.ScheduleEntry;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -61,34 +62,43 @@ import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.model.ConsistencyLevel;
+import com.netflix.astyanax.serializers.LongSerializer;
+import com.netflix.astyanax.serializers.StringSerializer;
 
-public abstract class CassandraScheduleStoreIT {
+@RunWith(MockitoJUnitRunner.class)
+public class CassandraScheduleStoreIT {
 
-    protected static final String CONTENT_CF_NAME = "content";
-    protected static final String CONTENT_ALIASES_CF_NAME = "content_aliases";
+    private static final String SCHEDULE_CF_NAME = "schedule";
+    private static final String CONTENT_CF_NAME = "content";
+    private static final String CONTENT_ALIASES_CF_NAME = "content_aliases";
 
-    protected static final AstyanaxContext<Keyspace> context =
+    private static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();
 
     //hasher is mock till we have a non-Mongo based one.
-    @Mock protected ContentHasher hasher;
-    @Mock protected MessageSender<ResourceUpdatedMessage> contentUpdateSender;
-    @Mock protected MessageSender<ScheduleUpdateMessage> scheduleUpdateSender;
+    @Mock private ContentHasher hasher;
+    @Mock private MessageSender<ResourceUpdatedMessage> contentUpdateSender; 
+    @Mock private MessageSender<ScheduleUpdateMessage> scheduleUpdateSender; 
     
-    protected final Clock clock = new TimeMachine();
+    private final Clock clock = new TimeMachine();
     
-    protected AstyanaxCassandraContentStore contentStore;
-    private ScheduleStore store;
-
-    protected abstract ScheduleStore provideScheduleStore();
-    protected abstract String provideScheduleCfName();
-
+    private AstyanaxCassandraContentStore contentStore;
+    private CassandraScheduleStore store;
+    
     private final Publisher source = Publisher.METABROADCAST;
     private final Channel channel = Channel.builder(Publisher.BBC).build();
 
-    public static void setup() throws ConnectionException, IOException {
+    @BeforeClass
+    public static void setup() throws ConnectionException {
         context.start();
         tearDown();
+        CassandraHelper.createKeyspace(context);
+        CassandraHelper.createColumnFamily(context,
+                SCHEDULE_CF_NAME,
+                StringSerializer.get(),
+                StringSerializer.get());
+        CassandraHelper.createColumnFamily(context, CONTENT_CF_NAME, LongSerializer.get(), StringSerializer.get());
+        CassandraHelper.createColumnFamily(context, CONTENT_ALIASES_CF_NAME, StringSerializer.get(), StringSerializer.get(), LongSerializer.get());
     }
 
     @AfterClass
@@ -108,12 +118,17 @@ public abstract class CassandraScheduleStoreIT {
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)
                 .build();
-        store = provideScheduleStore();
+        store = CassandraScheduleStore
+                .builder(context, SCHEDULE_CF_NAME, contentStore, scheduleUpdateSender)
+                .withReadConsistency(ConsistencyLevel.CL_ONE)
+                .withWriteConsistency(ConsistencyLevel.CL_ONE)
+                .withClock(clock)
+                .build();
     }
 
     @After
     public void clearCf() throws ConnectionException {
-        context.getClient().truncateColumnFamily(provideScheduleCfName());
+        context.getClient().truncateColumnFamily(SCHEDULE_CF_NAME);
         context.getClient().truncateColumnFamily(CONTENT_CF_NAME);
         context.getClient().truncateColumnFamily(CONTENT_ALIASES_CF_NAME);
     }

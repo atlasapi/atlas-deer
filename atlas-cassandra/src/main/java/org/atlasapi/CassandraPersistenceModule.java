@@ -7,6 +7,7 @@ import com.google.common.base.Equivalence;
 import com.google.common.base.Objects;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.persistence.cassandra.CassandraDataStaxClient;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.properties.Parameter;
@@ -27,7 +28,7 @@ import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
-import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
+import org.atlasapi.schedule.CassandraScheduleStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
 import org.atlasapi.segment.CassandraSegmentStore;
@@ -53,7 +54,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final AstyanaxCassandraContentStore contentStore;
     private final AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private final CassandraTopicStore topicStore;
-    private final AstyanaxCassandraScheduleStore scheduleStore;
+    private final CassandraScheduleStore scheduleStore;
     private final CassandraSegmentStore segmentStore;
     private final DatastaxCassandraService dataStaxService;
 
@@ -88,7 +89,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
-        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule", contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class))
+        this.scheduleStore = CassandraScheduleStore.builder(context, "schedule", contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
@@ -192,7 +193,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     @Override
-    public AstyanaxCassandraScheduleStore scheduleStore() {
+    public CassandraScheduleStore scheduleStore() {
         return this.scheduleStore;
     }
 
