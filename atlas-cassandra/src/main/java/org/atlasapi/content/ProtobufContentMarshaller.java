@@ -1,7 +1,6 @@
 package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.ACTIVELY_PUBLISHED;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.GENERIC_DESCRIPTION;
 import static org.atlasapi.serialization.protobuf.ContentProtos.Column.AVAILABLE_CONTENT;
@@ -27,9 +26,9 @@ import static org.atlasapi.serialization.protobuf.ContentProtos.Column.UPCOMING_
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 
-import org.atlasapi.entity.Id;
+import com.google.protobuf.Descriptors;
+import com.netflix.astyanax.model.Column;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.serialization.protobuf.ContentProtos;
@@ -47,79 +46,87 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.netflix.astyanax.ColumnListMutation;
+import com.netflix.astyanax.model.ColumnList;
 
-public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshaller<M, U> {
-
-    public static final Set<ContentColumn> REQUIRED_CONTENT_COLUMNS = ImmutableSet.of(ContentColumn.TYPE, ContentColumn.SOURCE, IDENTIFICATION);
-
+public class ProtobufContentMarshaller implements ContentMarshaller {
     private static final String UPCOMING_CONTENT_PREFIX = "UPCOMING_BROADCASTS";
     private static final String AVAILABLE_CONTENT_PREFIX = "AVAILABLE";
     private static final String ITEM_SUMMARY_PREFIX = "ITEM_SUMMARY";
     private final Serializer<Content, ContentProtos.Content> serializer;
 
-    protected ProtobufContentMarshaller(Serializer<Content, ContentProtos.Content> serialiser) {
+    public ProtobufContentMarshaller(Serializer<Content, ContentProtos.Content> serialiser) {
         this.serializer = checkNotNull(serialiser);
     }
 
     private final ListMultimap<ContentProtos.Column, FieldDescriptor> schema =
         Multimaps.index(
                 ContentProtos.Content.getDescriptor().getFields(),
-                fd -> {
-                    return fd.getOptions().getExtension(ContentProtos.column);
+                new Function<FieldDescriptor, ContentProtos.Column>() {
+                    @Override
+                    public ContentProtos.Column apply(FieldDescriptor fd) {
+                        return fd.getOptions().getExtension(ContentProtos.column);
+                    }
                 }
         );
     private final List<Entry<ContentProtos.Column, List<FieldDescriptor>>> schemaList =
         ImmutableList.copyOf(
-            Maps.transformValues(schema.asMap(),
-                    input -> (List<FieldDescriptor>) input)
+            Maps.transformValues(schema.asMap(), 
+                new Function<Collection<FieldDescriptor>, List<FieldDescriptor>>(){
+        
+                @Override
+                public List<FieldDescriptor> apply(Collection<FieldDescriptor> input) {
+                    return (List<FieldDescriptor>) input;
+                }
+            })
         .entrySet());
     
     private final EnumBiMap<ContentProtos.Column, ContentColumn> columnLookup = EnumBiMap.create(
-            ImmutableMap.<ContentProtos.Column, ContentColumn>builder()
-                    .put(TYPE, ContentColumn.TYPE)
-                    .put(SOURCE, ContentColumn.SOURCE)
-                    .put(IDENT, ContentColumn.IDENTIFICATION)
-                    .put(DESC, ContentColumn.DESCRIPTION)
-                    .put(BROADCASTS, ContentColumn.BROADCASTS)
-                    .put(LOCATIONS, ContentColumn.LOCATIONS)
-                    .put(CHILDREN, ContentColumn.CHILDREN)
-                    .put(CHILD_UPDATED, ContentColumn.CHILD_UPDATED)
-                    .put(SECONDARY, ContentColumn.SECONDARY)
-                    .put(PEOPLE, ContentColumn.PEOPLE)
-                    .put(CLIPS, ContentColumn.CLIPS)
-                    .put(KEYPHRASES, ContentColumn.KEYPHRASES)
-                    .put(LINKS, ContentColumn.LINKS)
-                    .put(TOPICS, ContentColumn.TOPICS)
-                    .put(GROUPS, ContentColumn.GROUPS)
-                    .put(SEGMENTS, ContentColumn.SEGMENTS)
-                    .put(UPCOMING_CONTENT, ContentColumn.UPCOMING_CONTENT)
-                    .put(AVAILABLE_CONTENT, ContentColumn.AVAILABLE_CONTENT)
-                    .put(ITEM_SUMMARIES, ContentColumn.ITEM_SUMMARIES)
-                    .put(ACTIVELY_PUBLISHED, ContentColumn.ACTIVELY_PUBLISHED)
-                    .put(GENERIC_DESCRIPTION, ContentColumn.GENERIC_DESCRIPTION)
-                    .build());
+        ImmutableMap.<ContentProtos.Column, ContentColumn> builder()
+            .put(TYPE, ContentColumn.TYPE)
+            .put(SOURCE, ContentColumn.SOURCE)
+            .put(IDENT, ContentColumn.IDENTIFICATION)
+            .put(DESC, ContentColumn.DESCRIPTION)
+            .put(BROADCASTS, ContentColumn.BROADCASTS)
+            .put(LOCATIONS, ContentColumn.LOCATIONS)
+            .put(CHILDREN, ContentColumn.CHILDREN)
+            .put(CHILD_UPDATED, ContentColumn.CHILD_UPDATED)
+            .put(SECONDARY, ContentColumn.SECONDARY)
+            .put(PEOPLE, ContentColumn.PEOPLE)
+            .put(CLIPS, ContentColumn.CLIPS)
+            .put(KEYPHRASES, ContentColumn.KEYPHRASES)
+            .put(LINKS, ContentColumn.LINKS)
+            .put(TOPICS, ContentColumn.TOPICS)
+            .put(GROUPS, ContentColumn.GROUPS)
+            .put(SEGMENTS, ContentColumn.SEGMENTS)
+            .put(UPCOMING_CONTENT, ContentColumn.UPCOMING_CONTENT)
+            .put(AVAILABLE_CONTENT, ContentColumn.AVAILABLE_CONTENT)
+            .put(ITEM_SUMMARIES, ContentColumn.ITEM_SUMMARIES)
+            .put(ACTIVELY_PUBLISHED, ContentColumn.ACTIVELY_PUBLISHED)
+            .put(GENERIC_DESCRIPTION, ContentColumn.GENERIC_DESCRIPTION)
+        .build());
 
     @Override
-    public void marshallInto(Id id, M mutation, Content content) {
+    public void marshallInto(ColumnListMutation<String> mutation, Content content) {
         ContentProtos.Content proto = serializer.serialize(content);
         for (int i = 0; i < schemaList.size(); i++) {
             Entry<ContentProtos.Column, List<FieldDescriptor>> col = schemaList.get(i);
             if (isChildRefColumn(col.getKey())) {
-                handleChildRefColumn(mutation, id, proto, Iterables.getOnlyElement(col.getValue()));
+                handleChildRefColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
             if (isUpcomingContentColumn(col.getKey())) {
-                handleUpcomingContentColumn(mutation, id, proto, Iterables.getOnlyElement(col.getValue()));
+                handleUpcomingContentColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
 
             if (ContentProtos.Column.AVAILABLE_CONTENT.equals(col.getKey())) {
-                handleAvailableContentColumn(mutation, id, proto, Iterables.getOnlyElement(col.getValue()));
+                handleAvailableContentColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
 
             if (ContentProtos.Column.ITEM_SUMMARIES.equals(col.getKey())) {
-                handleItemSummariesColumn(mutation, id, proto, Iterables.getOnlyElement(col.getValue()));
+                handleItemSummariesColumn(mutation, proto, Iterables.getOnlyElement(col.getValue()));
                 continue;
             }
             Builder builder = null;
@@ -138,12 +145,7 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
                 }
             }
             if (builder != null) {
-                addColumnToBatch(
-                        mutation,
-                        id,
-                        String.valueOf(columnLookup.get(col.getKey())),
-                        builder.build().toByteArray()
-                );
+                mutation.putColumn(String.valueOf(columnLookup.get(col.getKey())), builder.build().toByteArray());
             }
         }
     }
@@ -152,80 +154,57 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
         return ContentProtos.Column.UPCOMING_CONTENT.equals(key);
     }
 
-    private void handleChildRefColumn(
-            M mutation,
-            Id id,
-            ContentProtos.Content msg,
-            FieldDescriptor fd
-    ) {
+    private void handleChildRefColumn(ColumnListMutation<String> mutation,
+                                      ContentProtos.Content msg,
+                                      FieldDescriptor fd) {
         if (msg.getRepeatedFieldCount(fd) == 1) {
             Reference cr = (Reference) msg.getRepeatedField(fd, 0);
             ContentProtos.Content col = ContentProtos.Content.newBuilder()
                 .addRepeatedField(fd, cr)
                 .build();
-            addColumnToBatch(
-                    mutation,
-                    id,
-                    String.valueOf(cr.getId()),
-                    col.toByteArray()
-            );
+            mutation.putColumn(String.valueOf(cr.getId()), col.toByteArray());
         }
     }
 
-    private void handleUpcomingContentColumn(
-            M mutation,
-            Id id,
-            ContentProtos.Content msg,
-            FieldDescriptor fd
-    ) {
+    private void handleUpcomingContentColumn(ColumnListMutation<String> mutation,
+                                      ContentProtos.Content msg,
+                                      FieldDescriptor fd) {
         if (msg.getRepeatedFieldCount(fd) == 1) {
             ContentProtos.ItemAndBroadcastRef uc = (ContentProtos.ItemAndBroadcastRef) msg.getRepeatedField(fd, 0);
             ContentProtos.Content col = ContentProtos.Content.newBuilder()
                     .addRepeatedField(fd, uc)
                     .build();
-            addColumnToBatch(
-                    mutation,
-                    id,
+            mutation.putColumn(
                     buildUpcomingContentKey(uc.getItem().getId()),
                     col.toByteArray()
             );
         }
     }
 
-    private void handleAvailableContentColumn(
-            M mutation,
-            Id id,
-            ContentProtos.Content msg,
-            FieldDescriptor fd
-    ) {
+    private void handleAvailableContentColumn(ColumnListMutation<String> mutation,
+                                             ContentProtos.Content msg,
+                                             FieldDescriptor fd) {
         if (msg.getRepeatedFieldCount(fd) == 1) {
             ContentProtos.ItemAndLocationSummary uc = (ContentProtos.ItemAndLocationSummary) msg.getRepeatedField(fd, 0);
             ContentProtos.Content col = ContentProtos.Content.newBuilder()
                     .addRepeatedField(fd, uc)
                     .build();
-            addColumnToBatch(
-                    mutation,
-                    id,
+            mutation.putColumn(
                     buildAvailableContentKey(uc.getItem().getId()),
                     col.toByteArray()
             );
         }
     }
 
-    private void handleItemSummariesColumn(
-            M mutation,
-            Id id,
-            ContentProtos.Content msg,
-            FieldDescriptor fd
-    ) {
+    private void handleItemSummariesColumn(ColumnListMutation<String> mutation,
+                                           ContentProtos.Content msg,
+                                           FieldDescriptor fd) {
         if (msg.getRepeatedFieldCount(fd) == 1) {
             ContentProtos.ItemSummary uc = (ContentProtos.ItemSummary) msg.getRepeatedField(fd, 0);
             ContentProtos.Content col = ContentProtos.Content.newBuilder()
                     .addRepeatedField(fd, uc)
                     .build();
-            addColumnToBatch(
-                    mutation,
-                    id,
+            mutation.putColumn(
                     buildItemSummaryKey(uc.getItemRef().getId()),
                     col.toByteArray()
             );
@@ -265,20 +244,16 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
     }
 
     @Override
-    public Content unmarshallCols(U columns) {
+    public Content unmarshallCols(ColumnList<String> columns) {
         ContentProtos.Content.Builder builder = ContentProtos.Content.newBuilder();
-        for (byte[] column : toByteArrayValues(columns)) {
+        for (Column<String> column : columns) {
             try {
-                builder.mergeFrom(column);
+                builder.mergeFrom(column.getByteArrayValue());
             } catch (InvalidProtocolBufferException e) {
                 throw Throwables.propagate(e);
             }
         }
         return serializer.deserialize(builder.build());
     }
-
-    protected abstract void addColumnToBatch(M mutation, Id id, String column, byte[] value);
-
-    protected abstract Iterable<byte[]> toByteArrayValues(U columns);
     
 }

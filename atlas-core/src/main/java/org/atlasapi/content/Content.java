@@ -15,7 +15,6 @@ package org.atlasapi.content;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
 import org.atlasapi.entity.Aliased;
@@ -237,14 +236,5 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     public Content copyWithEquivalentTo(Iterable<EquivalenceRef> refs) {
         super.copyWithEquivalentTo(refs);
         return this;
-    }
-
-    public Iterable<LocationSummary> getAvailableLocations() {
-        return manifestedAs
-                .stream()
-                .flatMap(e -> e.getAvailableAt().stream())
-                .filter(Location::isAvailable)
-                .map(Location::toSummary)
-                .collect(Collectors.toSet());
     }
 }

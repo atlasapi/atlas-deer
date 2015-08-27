@@ -8,9 +8,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
-import javax.swing.text.html.Option;
 
-import com.google.common.base.Optional;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -58,13 +56,13 @@ public abstract class AbstractContentStore implements ContentStore {
         
         @Override
         public WriteResult<Brand,Content> visit(Brand brand) {
-            Optional<Content> previous = getPreviousContent(brand);
+            Content previous = getPreviousContent(brand);
 
             brand.setItemRefs(ImmutableSet.<ItemRef>of());
             brand.setSeriesRefs(ImmutableSet.<SeriesRef>of());
             
-            if (previous.isPresent()) {
-                return writeBrandWithPrevious(brand, previous.get());
+            if (previous != null) {
+                return writeBrandWithPrevious(brand, previous);
             }
 
             updateTimes(brand);
@@ -96,11 +94,11 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Series,Content> visit(Series series) {
-            Optional<Content> previous = getPreviousContent(series);
+            Content previous = getPreviousContent(series);
             
             series.setItemRefs(ImmutableSet.<ItemRef>of());
-            if (previous.isPresent()) {
-                return writeSeriesWithPrevious(series, previous.get());
+            if (previous != null) {
+                return writeSeriesWithPrevious(series, previous);
             }
             updateTimes(series);
             writeRefAndSummarizePrimary(series);
@@ -140,9 +138,9 @@ public abstract class AbstractContentStore implements ContentStore {
             if (item.getContainerRef() != null) {
                 item.setContainerSummary(getSummary(item.getContainerRef()));
             }
-            Optional<Content> previous = getPreviousContent(item);
-            if (previous.isPresent()) {
-                return writeItemWithPrevious(item, previous.get());
+            Content previous = getPreviousContent(item);
+            if (previous != null) {
+                return writeItemWithPrevious(item, previous);
             }
             updateTimes(item);
             writeItemRefs(item);
@@ -174,10 +172,10 @@ public abstract class AbstractContentStore implements ContentStore {
                 getSummary(episode.getSeriesRef());
             }
 
-            Optional<Content> previous = getPreviousContent(episode);
+            Content previous = getPreviousContent(episode);
             
-            if (previous.isPresent()) {
-                return writeEpisodeWithExising(episode, previous.get());
+            if (previous != null) {
+                return writeEpisodeWithExising(episode, previous);
             }
             updateTimes(episode);
             writeItemRefs(episode);
@@ -201,9 +199,9 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Film,Content> visit(Film film) {
-            Optional<Content> previous = getPreviousContent(film);
-            if (previous.isPresent()) {
-                return writeFilmWithPrevious(film, previous.get());
+            Content previous = getPreviousContent(film);
+            if (previous != null) {
+                return writeFilmWithPrevious(film, previous);
             }
             updateTimes(film);
             write(film, NO_PREVIOUS);
@@ -224,10 +222,10 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Song,Content> visit(Song song) {
-            Optional<Content> previous = getPreviousContent(song);
+            Content previous = getPreviousContent(song);
             
-            if (previous.isPresent()) {
-                return writeSongWithPrevious(song, previous.get());
+            if (previous != null) {
+                return writeSongWithPrevious(song, previous);
             }
             
             updateTimes(song);
@@ -301,11 +299,11 @@ public abstract class AbstractContentStore implements ContentStore {
                 result.getResource().toRef());
     }
 
-    private Optional<Content> getPreviousContent(Content c) {
-        return resolvePrevious(Optional.fromNullable(c.getId()), c.getSource(), c.getAliases());
+    private Content getPreviousContent(Content c) {
+        return resolvePrevious(c.getId(), c.getSource(),  c.getAliases());
     }
 
-    protected abstract Optional<Content> resolvePrevious(Optional<Id> id, Publisher source, Set<Alias> aliases);
+    protected abstract @Nullable Content resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases);
 
     private void write(Content content, Content previous) {
         ensureId(content);
