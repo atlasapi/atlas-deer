@@ -156,7 +156,6 @@ public abstract class AbstractContentStore implements ContentStore {
         private WriteResult<Item, Content> writeItemWithPrevious(Item item, Content previous) {
             boolean written = false;
             if (hashChanged(item, previous)) {
-                updateWithPreviousItem(item, previous);
                 updateWithPevious(item, previous);
                 writeItemRefs(item);
                 write(item, previous);
@@ -191,7 +190,6 @@ public abstract class AbstractContentStore implements ContentStore {
         private WriteResult<Episode, Content> writeEpisodeWithExising(Episode episode, Content previous) {
             boolean written = false;
             if (hashChanged(episode, previous)) {
-                updateWithPreviousItem(episode, previous);
                 updateWithPevious(episode, previous);
                 writeItemRefs(episode);
                 write(episode, previous);
@@ -203,17 +201,6 @@ public abstract class AbstractContentStore implements ContentStore {
         }
 
 
-        private void updateWithPreviousItem(Item item, Content previous) {
-            if(!(previous instanceof Item)) {
-                return;
-            }
-            Item previousItem = (Item)previous;
-            if(previousItem.getContainerRef() != null) {
-                if (!previousItem.getContainerRef().getId().equals(item.getContainerRef().getId())) {
-                    removeAllReferencesToItem(previousItem.getContainerRef(), item.toRef());
-                }
-            }
-        }
         @Override
         public WriteResult<Film, Content> visit(Film film) {
             Optional<Content> previous = getPreviousContent(film);
@@ -417,6 +404,4 @@ public abstract class AbstractContentStore implements ContentStore {
     );
 
     protected abstract void writeContainerSummary(ContainerSummary summary, Iterable<ItemRef> items);
-
-    protected abstract void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef);
 }
