@@ -53,6 +53,7 @@ import org.atlasapi.persistence.service.CachingServiceResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
+import org.atlasapi.schedule.ScheduleWriter;
 import org.atlasapi.segment.SegmentStore;
 import org.atlasapi.system.HealthModule;
 import org.atlasapi.system.legacy.LegacyChannelGroupResolver;
@@ -335,5 +336,9 @@ public class AtlasPersistenceModule {
 
     public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
         return new MongoSegmentResolver(databasedReadMongo(), new SubstitutionTableNumberCodec());
+    }
+
+    public ScheduleWriter v2ScheduleStore() {
+        return persistenceModule().v2ScheduleStore();
     }
 }
