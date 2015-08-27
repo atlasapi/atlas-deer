@@ -28,14 +28,6 @@ public abstract class ResourceRef implements Identifiable, Sourced {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ResourceRef)) return false;
-        ResourceRef that = (ResourceRef) o;
-        return Objects.equal(id, that.id);
-    }
-
-    @Override
     public int hashCode() {
         return id.hashCode();
     }
