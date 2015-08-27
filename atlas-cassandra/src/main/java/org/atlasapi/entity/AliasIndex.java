@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.google.common.base.Throwables;
 import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.base.Function;
@@ -78,6 +79,14 @@ public final class AliasIndex<A extends Identifiable & Sourced & Aliased> {
             }
         }
         return batch;
+    }
+
+    public void mutateAliasesAndExecute(A resource, @Nullable A previous) {
+        try {
+            mutateAliases(resource, previous).execute();
+        } catch (ConnectionException e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     private Set<Alias> newAliases(A resource, A previous) {

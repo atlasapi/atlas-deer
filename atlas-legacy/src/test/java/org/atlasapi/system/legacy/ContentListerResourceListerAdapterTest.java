@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 public class ContentListerResourceListerAdapterTest {
 
     @Mock
-    private ContentLister contentLister;
+    private LegacyMongoContentLister contentLister;
 
     @Mock
     private LegacyContentTransformer transformer;
