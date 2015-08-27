@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.ContentColumn.DESCRIPTION;
 import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
@@ -9,10 +8,11 @@ import static org.atlasapi.content.ContentColumn.TYPE;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.querybuilder.Batch;
-import com.google.common.base.Optional;
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Collections2;
@@ -56,7 +57,7 @@ import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
 
-public final class AstyanaxCassandraContentStore extends AbstractContentStore {
+public final class CassandraContentStore extends AbstractContentStore {
     
     protected final Logger log = LoggerFactory.getLogger(getClass());
 	
@@ -101,13 +102,14 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             return this;
         }
 
-        public AstyanaxCassandraContentStore build() {
-            return new AstyanaxCassandraContentStore(context, name, readCl, writeCl,
+        public CassandraContentStore build() {
+            return new CassandraContentStore(context, name, readCl, writeCl,
                 hasher, idGenerator, sender, clock);
         }
 
     }
 
+    private static final Set<ContentColumn> REQUIRED_CONTENT_COLUMNS = ImmutableSet.of(TYPE, SOURCE, IDENTIFICATION);
 
     private final Keyspace keyspace;
     private final ConsistencyLevel readConsistency;
@@ -115,7 +117,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Content> aliasIndex;
 
-    private final ContentMarshaller<ColumnListMutation<String>,ColumnList<String>> marshaller = new AstyanaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
+    private final ContentMarshaller marshaller = new ProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
     private final Function<Row<Long, String>, Content> rowToContent =
             input -> {
                 if (!input.getColumns().isEmpty()) {
@@ -126,7 +128,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             };
 
     private void verifyRequiredColumns(Long id, ColumnList<String> columns) {
-        for (ContentColumn requiredColumn : ProtobufContentMarshaller.REQUIRED_CONTENT_COLUMNS) {
+        for (ContentColumn requiredColumn : REQUIRED_CONTENT_COLUMNS) {
             if(columns.getColumnByName(requiredColumn.toString()) == null) {
                 throw new CorruptContentException(
                         String.format(
@@ -143,7 +145,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     private final Function<Rows<Long, String>, Resolved<Content>> toResolvedContent =
             rows -> Resolved.valueOf(FluentIterable.from(rows).transform(rowToContent).filter(Predicates.notNull()));
 
-    public AstyanaxCassandraContentStore(AstyanaxContext<Keyspace> context,
+    public CassandraContentStore(AstyanaxContext<Keyspace> context,
         String cfName, ConsistencyLevel readConsistency, ConsistencyLevel writeConsistency, 
         ContentHasher hasher, IdGenerator idGenerator, MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
         super(hasher, idGenerator, sender, clock);
@@ -184,11 +186,11 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             // TODO: move timeout to config
             Rows<Long,String> resolved = resolveLongs(ids).get(10, TimeUnit.SECONDS);
             Iterable<Content> contents = Iterables.transform(resolved, rowToContent);
-            ImmutableMap.Builder<Alias, com.google.common.base.Optional<Content>> aliasMap = ImmutableMap.builder();
+            ImmutableMap.Builder<Alias, Optional<Content>> aliasMap = ImmutableMap.builder();
             for (Content content : contents) {
                 for (Alias alias : content.getAliases()) {
                     if (uniqueAliases.contains(alias)) {
-                        aliasMap.put(alias, com.google.common.base.Optional.of(content));
+                        aliasMap.put(alias, Optional.of(content));
                     }
                 }
             }
@@ -204,7 +206,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             long id = content.getId().longValue();
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
-            marshaller.marshallInto(content.getId(), batch.withRow(mainCf, id), content);
+            marshaller.marshallInto(batch.withRow(mainCf, id), content);
             batch.mergeShallow(aliasIndex.mutateAliases(content, previous));
             batch.execute();
             log.trace("Written content id " + id);
@@ -214,24 +216,26 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     }
     
     @Override
-    protected Optional<Content> resolvePrevious(Optional<Id> id, Publisher source, Set<Alias> aliases) {
+    protected @Nullable
+    Content resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases) {
+        Content previous = null;
         try {
-            if (id.isPresent()) {
-                return Optional.fromNullable(resolve(id.get().longValue(), null));
+            if (id != null) {
+                previous = resolve(id.longValue(), null);
             } else {
                     Set<Long> ids = aliasIndex.readAliases(source, aliases);
                     Long aliasId = Iterables.getFirst(ids, null);
                     if (aliasId != null) {
-                        return Optional.fromNullable(resolve(aliasId, null));
+                        previous = resolve(aliasId, null);
                     }
-                return Optional.absent();
             }
+
         } catch (ConnectionException e) {
             throw Throwables.propagate(e);
         } catch (CorruptContentException e) {
             log.error("Previously written content is corrupt", e);
-            return Optional.absent();
         }
+        return previous;
     }
 
     private Content resolve(long longId, Set<ContentColumn> colNames) {
@@ -313,33 +317,33 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
             ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-            marshaller.marshallInto(primary.getId(), mutation, container);
+            marshaller.marshallInto(mutation, container);
             batch.execute();
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
     }
 
-    private void removeContentRef(ContainerRef containerRef, ContentRef contentRef, MutationBatch batch)  {
+    private void removeContentRef(ContainerRef containerRef, ContentRef contentRef, MutationBatch batch) throws ConnectionException {
         Long rowId = containerRef.getId().longValue();
         String columnId = contentRef.getId().toString();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(columnId);
     }
 
-    private void removeItemSummaries(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch)  {
+    private void removeItemSummaries(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(ProtobufContentMarshaller.buildItemSummaryKey(itemRef.getId().longValue()));
     }
 
-    private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch)  {
+    private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId().longValue()));
     }
 
-    private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef, MutationBatch batch) {
+    private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
         Long rowId = brancontainerRefRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId().longValue()));
@@ -358,10 +362,10 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             }
             ContainerRef containerRef = item.getContainerRef();
             ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingBroadcasts = ImmutableMap.of(
-                    item.toRef(), item.getUpcomingBroadcastRefs()
+                    item.toRef(), getUpcomingBroadcastRefs(item)
             );
             ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
-                    item.toRef(), item.getAvailableLocations()
+                    item.toRef(), getAvailableLocations(item)
             );
 
             MutationBatch batch = keyspace.prepareMutationBatch();
@@ -378,7 +382,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 }
 
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(containerRef.getId(), mutation, container);
+                marshaller.marshallInto(mutation, container);
             }
 
             if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
@@ -391,89 +395,12 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 container.setAvailableContent(availableLocations);
                 container.setItemSummaries(ImmutableList.of(episode.toSummary()));
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(episode.getSeriesRef().getId(), mutation, container);
+                marshaller.marshallInto(mutation, container);
             }
             batch.execute();
 
         } catch (Exception e) {
             throw Throwables.propagate(e);
-        }
-    }
-
-    @Override
-    protected void doWriteBroadcast(ItemRef itemRef, Optional<ContainerRef> containerRef, Optional<SeriesRef> seriesRef, Broadcast broadcast) {
-        Item item = new Item();
-        item.setId(itemRef.getId());
-        item.setThisOrChildLastUpdated(itemRef.getUpdated());
-        item.setPublisher(itemRef.getSource());
-        item.addBroadcast(broadcast);
-        MutationBatch batch = keyspace.prepareMutationBatch();
-        batch.setConsistencyLevel(writeConsistency);
-        ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
-        marshaller.marshallInto(item.getId(), itemMutation, item);
-
-        try {
-            if (!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs().iterator().hasNext()) {
-                batch.execute();
-                return;
-            }
-            ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingBroadcasts = ImmutableMap.of(
-                    itemRef, item.getUpcomingBroadcastRefs()
-            );
-            if (containerRef.isPresent()) {
-                Id containerId = containerRef.get().getId();
-                Container container = new Brand();
-                container.setThisOrChildLastUpdated(itemRef.getUpdated());
-                container.setUpcomingContent(upcomingBroadcasts);
-                ColumnListMutation<String> containerMutation = batch.withRow(mainCf, containerRef.get().getId().longValue());
-                marshaller.marshallInto(containerId, containerMutation, container);
-            }
-
-            if (seriesRef.isPresent()) {
-                Id containerId = seriesRef.get().getId();
-                Container container = new Series();
-                container.setItemRefs(ImmutableList.of(itemRef));
-                container.setThisOrChildLastUpdated(itemRef.getUpdated());
-                container.setUpcomingContent(upcomingBroadcasts);
-                ColumnListMutation<String> seriesMutation = batch.withRow(mainCf, seriesRef.get().getId().longValue());
-                marshaller.marshallInto(containerId, seriesMutation, container);
-            }
-
-
-            batch.execute();
-        } catch (ConnectionException e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
-    @Override
-    protected void writeContainerSummary(ContainerSummary summary, Iterable<ItemRef> items) {
-        MutationBatch batch = keyspace.prepareMutationBatch();
-        batch.setConsistencyLevel(writeConsistency);
-        for (ItemRef itemRef : items) {
-            Item item = itemFromRef(itemRef);
-            item.setContainerSummary(summary);
-            ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
-            marshaller.marshallInto(itemRef.getId(), itemMutation, item);
-        }
-
-        try {
-            batch.execute();
-        } catch (ConnectionException e) {
-            Throwables.propagate(e);
-        }
-
-    }
-
-    @Override
-    protected void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef) {
-        MutationBatch batch = keyspace.prepareMutationBatch();
-        batch.setConsistencyLevel(writeConsistency);
-        removeAllReferencesToItem(containerRef, itemRef, batch);
-        try {
-            batch.execute();
-        } catch (ConnectionException e) {
-            Throwables.propagate(e);
         }
     }
 
@@ -490,25 +417,31 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         batch.execute();
     }
 
-    private void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) {
+    private void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) throws ConnectionException {
         removeContentRef(containerRef, itemRef, batch);
         removeItemSummaries(containerRef, itemRef, batch);
         removeAvailableContent(containerRef, itemRef, batch);
         removeUpcomingContent(containerRef, itemRef, batch);
     }
 
-    private Item itemFromRef(ItemRef itemRef){
-        Item item;
-        if(itemRef instanceof EpisodeRef) {
-            item = new Episode();
-        } else{
-            item = new Item();
-        }
-        item.setId(itemRef.getId());
-        item.setThisOrChildLastUpdated(itemRef.getUpdated());
-        item.setPublisher(itemRef.getSource());
-        return item;
+    private Iterable<BroadcastRef> getUpcomingBroadcastRefs(Item item) {
+        return item.getBroadcasts()
+                .stream()
+                .filter(Broadcast.IS_UPCOMING)
+                .map(Broadcast.TO_REF)
+                .collect(Collectors.toSet());
+
     }
+
+    private Iterable<LocationSummary> getAvailableLocations(Item item) {
+        return item.getManifestedAs()
+                .stream()
+                .flatMap(e -> e.getAvailableAt().stream())
+                .filter(Location::isAvailable)
+                .map(Location::toSummary)
+                .collect(Collectors.toSet());
+    }
+
 
 
 }

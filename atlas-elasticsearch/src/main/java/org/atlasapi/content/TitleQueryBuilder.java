@@ -20,8 +20,15 @@ import com.google.common.collect.Iterables;
 public class TitleQueryBuilder {
 
     private static final Joiner JOINER = Joiner.on("");
-    private static final int USE_PREFIX_SEARCH_UP_TO = 4;
+    private static final int USE_PREFIX_SEARCH_UP_TO = 2;
     private static final Map<String, String> EXPANSIONS = ImmutableMap.<String, String>builder().put("dr", "doctor").put("rd", "road").build();
+    private static final Function<String, String> TOKEN_EXPANDER = token -> {
+        String expanded = EXPANSIONS.get(token);
+        if (expanded != null) {
+            return expanded;
+        }
+        return token;
+    };
 
     public static QueryBuilder build(String title, float boost) {
         List<String> tokens = Strings.tokenize(title, true);
@@ -55,32 +62,35 @@ public class TitleQueryBuilder {
     }
 
     private static QueryBuilder fuzzyTermSearch(String value, List<String> tokens) {
-        BoolQueryBuilder queryForTerms = new BoolQueryBuilder();
-        for (String token : tokens) {
-            BoolQueryBuilder queryForThisTerm = new BoolQueryBuilder();
-            queryForThisTerm.minimumNumberShouldMatch(1);
-
-            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(50);
-            queryForThisTerm.should(prefix);
-
-            QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token)
-                    .fuzziness(Fuzziness.fromSimilarity(0.33f))
-                    .prefixLength(USE_PREFIX_SEARCH_UP_TO);
-            queryForThisTerm.should(fuzzy);
-
-            queryForTerms.must(queryForThisTerm);
-        }
+        /* Temporarily commented out to test tweaks around title searching and determining whether this is a
+                sensible and neccesary thing to do.
+         */
+//        BoolQueryBuilder queryForTerms = new BoolQueryBuilder();
+//        for (String token : tokens) {
+//            BoolQueryBuilder queryForThisTerm = new BoolQueryBuilder();
+//            queryForThisTerm.minimumNumberShouldMatch(1);
+//
+//            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(50);
+//            queryForThisTerm.should(prefix);
+//
+//            QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token)
+//                    .fuzziness(Fuzziness.AUTO)
+//                    .prefixLength(USE_PREFIX_SEARCH_UP_TO);
+//            queryForThisTerm.should(fuzzy);
+//
+//            queryForTerms.must(queryForThisTerm);
+//        }
 
         BoolQueryBuilder either = new BoolQueryBuilder();
         either.minimumNumberShouldMatch(1);
         
-        either.should(queryForTerms);
-        either.should(fuzzyWithoutSpaces(value));
+        //either.should(queryForTerms);
+        //either.should(fuzzyWithoutSpaces(value));
 
         QueryBuilder prefix = QueryBuilders.functionScoreQuery(prefixSearch(value)).boost(50);
         either.should(prefix);
         
-        QueryBuilder exact = QueryBuilders.functionScoreQuery(exactMatch(value, tokens)).boost(100);
+        QueryBuilder exact = QueryBuilders.functionScoreQuery(exactMatch(value, tokens)).boost(200);
         either.should(exact);
 
         return either;
@@ -91,17 +101,7 @@ public class TitleQueryBuilder {
         exactMatch.minimumNumberShouldMatch(1);
         exactMatch.should(new TermQueryBuilder(EsContent.PARENT_FLATTENED_TITLE, value));
 
-        Iterable<String> transformed = Iterables.transform(tokens, new Function<String, String>() {
-
-            @Override
-            public String apply(String token) {
-                String expanded = EXPANSIONS.get(token);
-                if (expanded != null) {
-                    return expanded;
-                }
-                return token;
-            }
-        });
+        Iterable<String> transformed = Iterables.transform(tokens, TOKEN_EXPANDER);
 
         String flattenedAndExpanded = JOINER.join(transformed);
 
@@ -113,8 +113,8 @@ public class TitleQueryBuilder {
 
     private static QueryBuilder fuzzyWithoutSpaces(String value) {
         return new FuzzyQueryBuilder(EsContent.PARENT_FLATTENED_TITLE, value)
-                .fuzziness(Fuzziness.fromSimilarity(0.44f))
+                .fuzziness(Fuzziness.AUTO)
                 .prefixLength(USE_PREFIX_SEARCH_UP_TO)
-                .boost(10f);
+                .boost(20);
     }
 }

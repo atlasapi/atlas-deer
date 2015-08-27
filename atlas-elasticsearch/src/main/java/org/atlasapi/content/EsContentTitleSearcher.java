@@ -38,11 +38,7 @@ public class EsContentTitleSearcher implements ContentTitleSearcher {
 
     private final Client index;
 
-    public EsContentTitleSearcher(Node index) {
-        this.index = index.client();
-    }
-
-    protected EsContentTitleSearcher(Client index) {
+    public EsContentTitleSearcher(Client index) {
         this.index = index;
     }
 

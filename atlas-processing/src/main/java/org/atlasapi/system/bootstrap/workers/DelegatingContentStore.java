@@ -1,14 +1,9 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import com.google.common.base.Optional;
-import org.atlasapi.content.Broadcast;
-import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ContentWriter;
-import org.atlasapi.content.ItemRef;
-import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -44,20 +39,5 @@ public final class DelegatingContentStore implements ContentStore {
     public <C extends Content> WriteResult<C, Content> writeContent(C content)
             throws WriteException {
         return writer.writeContent(content);
-    }
-
-    @Override
-    public void writeBroadcast(
-            ItemRef item,
-            Optional<ContainerRef> containerRef,
-            Optional<SeriesRef> seriesRef,
-            Broadcast broadcast
-    ) {
-        writer.writeBroadcast(
-                item,
-                containerRef,
-                seriesRef,
-                broadcast
-        );
     }
 }

@@ -7,6 +7,7 @@ import com.metabroadcast.common.query.Selection;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.media.entity.Publisher;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.node.Node;
 
 import java.util.Optional;
@@ -20,7 +21,7 @@ public class InstrumentedEsContentIndex extends EsContentIndex {
     private final Timer contentIndexTimer;
     private final Timer queryTimer;
 
-    public InstrumentedEsContentIndex(Node esClient, String indexName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
+    public InstrumentedEsContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver, MetricRegistry metrics, ChannelGroupResolver channelGroupResolver) {
         super(esClient, indexName, requestTimeout, resolver, channelGroupResolver);
         this.metrics = checkNotNull(metrics);
         this.contentGroupIndexTimer = metrics.timer("EsContentIndex.index(ContentGroup)");

@@ -94,8 +94,8 @@ public class EsQueryBuilderTest {
 
     @After
     public void tearDown() throws Exception {
-        ElasticSearchHelper.clearIndices(esClient);
-        ElasticSearchHelper.refresh(esClient);
+        ElasticSearchHelper.clearIndices(esClient.client());
+        ElasticSearchHelper.refresh(esClient.client());
     }
 
     @Before
@@ -106,7 +106,7 @@ public class EsQueryBuilderTest {
 
         index(esClient, INDEX, TYPE, "one", Resources.toString(Resources.getResource("es-query-builder-object.json"), Charsets.UTF_8)).actionGet();
 
-        ElasticSearchHelper.refresh(esClient);
+        ElasticSearchHelper.refresh(esClient.client());
     }
 
     @Test

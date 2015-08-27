@@ -62,13 +62,13 @@ public class EsTopicIndexTest {
     
     @Before
     public void setup() throws Exception {
-        index = new EsTopicIndex(esClient, indexName, 60, TimeUnit.SECONDS);
+        index = new EsTopicIndex(esClient.client(), indexName, 60, TimeUnit.SECONDS);
         index.startAsync().awaitRunning();
     }
     
     @After
     public void tearDown() throws Exception {
-        ElasticSearchHelper.clearIndices(esClient);
+        ElasticSearchHelper.clearIndices(esClient.client());
     }
     
     @Test
@@ -77,7 +77,7 @@ public class EsTopicIndexTest {
         
         index.index(topic);
         
-        refresh(esClient);
+        refresh(esClient.client());
         
         GetResponse got = esClient.client().get(
             Requests.getRequest(indexName).id("1234")
@@ -99,7 +99,7 @@ public class EsTopicIndexTest {
         Topic topic = topic(1234, Publisher.DBPEDIA, "title", "description", new Alias("an", "Alias"));
         
         index.index(topic);
-        refresh(esClient);
+        refresh(esClient.client());
         
         AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
             Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
@@ -113,7 +113,7 @@ public class EsTopicIndexTest {
         Topic topic = topic(1234, Publisher.DBPEDIA, "title", "description", new Alias("an", "Alias"));
         
         index.index(topic);
-        refresh(esClient);
+        refresh(esClient.client());
         
         AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
             Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId())),
@@ -128,7 +128,7 @@ public class EsTopicIndexTest {
         Topic topic = topic(1234, Publisher.METABROADCAST, "title", "description", new Alias("an", "Alias"));
         
         index.index(topic);
-        refresh(esClient);
+        refresh(esClient.client());
         
         AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
             Attributes.ID.createQuery(Operators.EQUALS, ImmutableList.of(topic.getId()))
@@ -144,7 +144,7 @@ public class EsTopicIndexTest {
         
         index.index(topic2);
         index.index(topic1);
-        refresh(esClient);
+        refresh(esClient.client());
         
         AttributeQuerySet query = new AttributeQuerySet(ImmutableList.of(
             Attributes.ALIASES_VALUE.createQuery(Operators.EQUALS, ImmutableList.of("Alias"))

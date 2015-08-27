@@ -42,7 +42,7 @@ public class EsContentTitleSearcherTest {
 
     @After
     public void after() throws Exception {
-        ElasticSearchHelper.clearIndices(esClient);
+        ElasticSearchHelper.clearIndices(esClient.client());
         esClient.close();
     }
     
@@ -85,10 +85,10 @@ public class EsContentTitleSearcherTest {
         item2.setContainerRef(brand1.toRef());
         item3.setContainerRef(brand2.toRef());
 
-        EsContentIndex contentIndex = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
+        EsContentIndex contentIndex = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
         contentIndex.startAsync().awaitRunning();
 
-        EsContentTitleSearcher contentSearcher = new EsContentTitleSearcher(esClient);
+        EsContentTitleSearcher contentSearcher = new EsContentTitleSearcher(esClient.client());
 
         contentIndex.index(brand1);
         contentIndex.index(brand2);
@@ -97,7 +97,7 @@ public class EsContentTitleSearcherTest {
         contentIndex.index(item3);
         contentIndex.index(item4);
 
-        refresh(esClient);
+        refresh(esClient.client());
 
         SearchQuery query = SearchQuery.builder("title")
             .withSelection(Selection.offsetBy(0))

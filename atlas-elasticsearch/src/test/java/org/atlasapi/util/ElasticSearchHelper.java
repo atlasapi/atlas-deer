@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.node.Node;
@@ -22,7 +23,7 @@ public class ElasticSearchHelper {
             .build().start();
     }
     
-    public static void clearIndices(Node esClient) {
+    public static void clearIndices(Client esClient) {
         IndicesStatusRequest req = Requests.indicesStatusRequest((String[]) null);
         IndicesStatusResponse statuses = indicesAdmin(esClient).status(req).actionGet();
         for (String index : statuses.getIndices().keySet()) {
@@ -30,11 +31,11 @@ public class ElasticSearchHelper {
         }
     }
 
-    private static IndicesAdminClient indicesAdmin(Node esClient) {
-        return esClient.client().admin().indices();
+    private static IndicesAdminClient indicesAdmin(Client esClient) {
+        return esClient.admin().indices();
     }
     
-    public static void refresh(Node esClient) {
+    public static void refresh(Client esClient) {
         Map<String, IndexStatus> indices = indicesAdmin(esClient)
             .status(Requests.indicesStatusRequest((String[]) null))
             .actionGet()

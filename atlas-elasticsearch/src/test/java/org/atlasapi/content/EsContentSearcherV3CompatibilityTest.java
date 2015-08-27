@@ -48,7 +48,7 @@ public class EsContentSearcherV3CompatibilityTest {
     
     private static final Node esClient = ElasticSearchHelper.testNode();
     private EsContentIndex indexer;
-    private EsContentTitleSearcher searcher = new EsContentTitleSearcher(esClient);
+    private EsContentTitleSearcher searcher = new EsContentTitleSearcher(esClient.client());
     
     @BeforeClass
     public static void before() {
@@ -65,10 +65,10 @@ public class EsContentSearcherV3CompatibilityTest {
     
     @Before
     public void setUp() throws Exception {
-        ElasticSearchHelper.refresh(esClient);
-        indexer = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
+        ElasticSearchHelper.refresh(esClient.client());
+        indexer = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
         indexer.startAsync().awaitRunning(10, TimeUnit.SECONDS);
-        refresh(esClient);
+        refresh(esClient.client());
     }
 
     private void indexAndWait(Content... contents) throws Exception {
@@ -82,7 +82,7 @@ public class EsContentSearcherV3CompatibilityTest {
                 indexed++;
             }
         }
-        refresh(esClient);
+        refresh(esClient.client());
         if (count() < indexed) {
             Assert.fail("Fewer than " + indexed + " content indexed");
         }
@@ -96,7 +96,7 @@ public class EsContentSearcherV3CompatibilityTest {
 
     @After
     public void tearDown() throws Exception {
-        ElasticSearchHelper.clearIndices(esClient);
+        ElasticSearchHelper.clearIndices(esClient.client());
     }
 
     @Test
@@ -217,7 +217,7 @@ public class EsContentSearcherV3CompatibilityTest {
         theApprentice2.setTitle("Completely Different2");
         
         indexer.index(theApprentice2);
-        refresh(esClient);
+        refresh(esClient.client());
 
         checkNot(searcher.search(title("aprentice")).get(), theApprentice);
         check(searcher.search(title("Completely Different2")).get(), theApprentice);
@@ -238,7 +238,7 @@ public class EsContentSearcherV3CompatibilityTest {
         Item.copyTo(theApprenticeItem, theApprenticeItem2);
         theApprenticeItem2.setSpecialization(Specialization.RADIO);
         indexer.index(theApprenticeItem2);
-        refresh(esClient);
+        refresh(esClient.client());
         
         checkNot(searcher.search(specializedTitle("aprentice", Specialization.TV)).get(), theApprentice);
         check(searcher.search(specializedTitle("aprentice", Specialization.RADIO)).get(), theApprentice);
@@ -275,7 +275,7 @@ public class EsContentSearcherV3CompatibilityTest {
         eastBrand.setItemRefs(Arrays.asList(eastItem.toRef()));
         indexer.index(eastBrand);
         indexer.index(eastItem);
-        refresh(esClient);
+        refresh(esClient.client());
         
         check(searcher.search(new SearchQuery("east", Selection.ALL, ImmutableSet.of(Publisher.ARCHIVE_ORG), 1.0f, 0.0f, 0.0f)).get(), eastBrand);
     }

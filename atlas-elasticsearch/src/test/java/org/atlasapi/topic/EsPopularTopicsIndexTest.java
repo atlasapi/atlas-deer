@@ -40,7 +40,7 @@ public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
     private final EsContentIndex index = new EsContentIndex(
-            esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class)
+            esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class)
     );
 
     @BeforeClass
@@ -58,7 +58,7 @@ public class EsPopularTopicsIndexTest {
 
     @After
     public void after() throws Exception {
-        ElasticSearchHelper.clearIndices(esClient);
+        ElasticSearchHelper.clearIndices(esClient.client());
         esClient.close();
     }
 
@@ -97,14 +97,14 @@ public class EsPopularTopicsIndexTest {
         index.index(item3);
         index.index(item4);
         index.index(item5);
-        refresh(esClient);
+        refresh(esClient.client());
 
         TopicResolver resolver = mock(TopicResolver.class);
         when(resolver.resolveIds(argThat(hasItems(Id.valueOf(1),Id.valueOf(2)))))
             .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(new Topic(Id.valueOf(
                     1)), new Topic(Id.valueOf(2))))));
 
-        PopularTopicIndex searcher = new EsPopularTopicIndex(esClient);
+        PopularTopicIndex searcher = new EsPopularTopicIndex(esClient.client());
 
         Interval interval = new Interval(new DateTime().minusHours(1), new DateTime().plusHours(1));
 

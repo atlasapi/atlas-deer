@@ -99,6 +99,52 @@ public class ContentBootstrapController {
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 
+    @RequestMapping(value = "/system/count/nonGenerics", method = RequestMethod.POST)
+    public void countContent(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
+        log.info("Bootstrapping source: {}", sourceString);
+        Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
+        java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
+        executorService.execute(contentCountingRunnable(fromKey.requireValue(), progress));
+        resp.setStatus(HttpStatus.ACCEPTED.value());
+    }
+
+    private Runnable contentCountingRunnable(Publisher source, java.util.Optional<ContentListingProgress> progress) {
+        FluentIterable<Content> contentIterator;
+        if (progress.isPresent()) {
+            log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
+            contentIterator = contentLister.list(ImmutableList.of(source), progress.get());
+        } else {
+            log.info("Starting bootstrap of {} the start, no existing progress found", source.toString());
+            contentIterator = contentLister.list(ImmutableList.of(source));
+        }
+        return () -> {
+            AtomicInteger genericCount = new AtomicInteger();
+            AtomicInteger progressCount = new AtomicInteger();
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                    maxSourceBootstrapThreads,
+                    maxSourceBootstrapThreads,
+                    500,
+                    TimeUnit.MILLISECONDS,
+                    Queues.newLinkedBlockingQueue(maxSourceBootstrapThreads),
+                    new ThreadPoolExecutor.CallerRunsPolicy()
+            );
+            for (Content content : contentIterator) {
+                executor.execute(() -> {
+                    if (content.isGenericDescription() != null && content.isGenericDescription()) {
+                        if (genericCount.incrementAndGet() % 1000 == 0) {
+                            log.info("Found {} PA items with generic descriptions", Integer.valueOf(genericCount.get()));
+                        }
+                    }
+                    if (progressCount.incrementAndGet() % 1000 == 0) {
+                        log.info("Processed {} PA items", Integer.valueOf(progressCount.get()));
+                        progressStore.storeProgress(source.toString(), progressFrom(content, source));
+                    }
+                });
+            }
+            log.info("Found a total of {} PA items with generic descriptions", Integer.valueOf(genericCount.get()));
+        };
+    }
+
     private Runnable bootstrappingRunnable(ContentVisitorAdapter<String> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress) {
         FluentIterable<Content> contentIterator;
         if (progress.isPresent()) {
