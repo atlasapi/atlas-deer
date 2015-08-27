@@ -178,11 +178,6 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         return persistenceModule.equivalentScheduleStore();
     }
 
-    @Override
-    public ScheduleStore v2ScheduleStore() {
-        return persistenceModule.v2ScheduleStore();
-    }
-
     public Session getCassandraSession() {
         return cassandraService.getSession(keyspace);
     }

@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;

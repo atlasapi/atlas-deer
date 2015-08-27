@@ -106,20 +106,6 @@ public class BootstrapWorkersModule {
 
     @Bean
     @Lazy(true)
-    KafkaConsumer scheduleV2ReadWriter() {
-        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(scheduleV2BootstrapTaskFactory(),
-                persistence.channelResolver(), ignoredScheduleSources);
-        MessageSerializer<ScheduleUpdateMessage> serializer
-                = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
-        return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrap")
-                .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(consumers)
-                .withMaxConsumers(maxConsumers)
-                .build();
-    }
-
-    @Bean
-    @Lazy(true)
     KafkaConsumer topicReadWriter() {
         TopicResolver legacyResolver = legacy.legacyTopicResolver();
         TopicStore writer = persistence.topicStore();
@@ -137,7 +123,6 @@ public class BootstrapWorkersModule {
     public void start() throws TimeoutException {
         contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
-        scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
 
@@ -145,19 +130,12 @@ public class BootstrapWorkersModule {
     public void stop() throws TimeoutException {
         contentBootstrapWorker().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
         scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
-        scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
     }
 
     @Bean
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
-                new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
-    }
-
-    @Bean
-    public ChannelIntervalScheduleBootstrapTaskFactory scheduleV2BootstrapTaskFactory() {
-        return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.v2ScheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
     }
 
