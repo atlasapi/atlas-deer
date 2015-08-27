@@ -43,6 +43,7 @@ public class DatastaxProtobufContentMarshallerTest {
         cassandraService.startAsync().awaitRunning();
         context.start();
         session = cassandraService.getCluster().connect();
+        tearDown();
         session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
         session = cassandraService.getCluster().connect("atlas_testing");
 
@@ -52,7 +53,7 @@ public class DatastaxProtobufContentMarshallerTest {
 
     @After
     public void tearDown()  {
-        session.execute("DROP KEYSPACE " + keyspace);
+        session.execute("DROP KEYSPACE IF EXISTS " + keyspace);
     }
 
 
