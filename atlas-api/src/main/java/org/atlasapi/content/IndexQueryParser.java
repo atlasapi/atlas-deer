@@ -34,8 +34,17 @@ public class IndexQueryParser {
                 broadcastWeightingFrom(query),
                 titleWeightingFrom(query),
                 topicIdsFrom(query),
-                containerAvailabilityFilterFrom(query)
+                containerAvailabilityFilterFrom(query),
+                brandIdFrom(query)
         );
+    }
+
+    private Optional<Id> brandIdFrom(Query<?> query) {
+        String brandId = query.getContext().getRequest().getParameter("episode.brand.id");
+        if (!Strings.isNullOrEmpty(brandId)) {
+            return Optional.of(Id.valueOf(codec.decode(brandId)));
+        }
+        return Optional.empty();
     }
 
     private Boolean containerAvailabilityFilterFrom(Query<?> query) {

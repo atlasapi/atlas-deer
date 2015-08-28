@@ -45,11 +45,16 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.mapper.MergeMappingException;
 import org.elasticsearch.index.query.BoolFilterBuilder;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.FilteredQueryBuilder;
+import org.elasticsearch.index.query.HasParentFilterBuilder;
 import org.elasticsearch.index.query.NestedFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -341,7 +346,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             child.parentFlattenedTitle(flatTitle != null ? flatTitle.toString() : null);
         }
     }
-    
+
     private String getDocId(ItemRef child) {
         return String.valueOf(child.getId());
     }
@@ -360,22 +365,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         if (response.isExists()) {
             return response.getSource();
         } else {
-            return null;
-        }
-    }
-
-    private Map<String, Object> trySearchChild(Container parent, ItemRef child) {
-        try {
-            GetRequest request = Requests.getRequest(index)
-                    .parent(getDocId(parent))
-                    .id(getDocId(child));
-            GetResponse response = timeoutGet(esClient.get(request));
-            if (response.isExists()) {
-                return response.getSource();
-            } else {
-                return null;
-            }
-        } catch (NoShardAvailableActionException ex) {
             return null;
         }
     }
@@ -474,6 +463,10 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
             }
 
+            if (queryParams.get().getBrandId().isPresent()) {
+                queryBuilder = addBrandIdFilter(reqBuilder, queryBuilder, queryParams.get().getBrandId().get());
+            }
+
             if (queryParams.get().getOrdering().isPresent()) {
                 addSortOrder(queryParams, reqBuilder);
             }
@@ -522,6 +515,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 return Id.valueOf(id);
             }), input.getHits().getTotalHits());
         });
+    }
+
+    private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id) {
+        reqBuilder.setTypes(EsContent.CHILD_ITEM);
+        HasParentFilterBuilder hasParentFilter = new HasParentFilterBuilder(
+                EsContent.TOP_LEVEL_CONTAINER,
+                new TermFilterBuilder(EsContent.ID, id.longValue())
+        );
+        return new FilteredQueryBuilder(queryBuilder, hasParentFilter);
     }
 
     private QueryBuilder addContainerAvailabilityFilter(QueryBuilder queryBuilder) {

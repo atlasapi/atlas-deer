@@ -78,7 +78,8 @@ public class QueryContextParser implements ParameterNameProvider {
                     "sub_items.ordering",
                     "sub_items_summaries.limit",
                     "sub_items_summaries.offset",
-                    "sub_items_summaries.ordering"
+                    "sub_items_summaries.ordering",
+                    "episode.brand.id"
             )
         )));
     }

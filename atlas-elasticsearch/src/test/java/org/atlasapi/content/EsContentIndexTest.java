@@ -1,16 +1,11 @@
 package org.atlasapi.content;
 
-import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-
-import java.util.Currency;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.currency.Price;
+import com.metabroadcast.common.query.Selection;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -19,27 +14,30 @@ import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.node.Node;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.currency.Price;
-import com.metabroadcast.common.query.Selection;
+import java.io.IOException;
+import java.util.Currency;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class EsContentIndexTest {
 
@@ -91,6 +89,49 @@ public class EsContentIndexTest {
                 Exception.class
         );
         assertThat(result.getIds().first().get(), is(Id.valueOf(10l)));
+    }
+
+    @Test
+    public void testBrandFilterWithTopicFilterForEpisode() throws Exception {
+        Brand brand = new Brand(Id.valueOf(10l), Publisher.METABROADCAST);
+        brand.setTitle("Test Brand");
+
+        Episode episode = new Episode(Id.valueOf(20l), Publisher.METABROADCAST);
+        episode.setTitle("Test episode");
+        episode.setContainerRef(brand.toRef());
+        episode.setTags(
+                ImmutableList.of(
+                        new Tag(Id.valueOf(25l), 0.0f, false, Tag.Relationship.ABOUT)
+                )
+        );
+        indexAndRefresh(brand, episode);
+
+        ListenableFuture<IndexQueryResult> future = index.query(
+                new AttributeQuerySet(
+                        ImmutableSet.of(
+                                new IdAttributeQuery(
+                                        Attributes.TOPIC_ID,
+                                        Operators.EQUALS,
+                                        ImmutableList.of(Id.valueOf(25l))
+                                )
+                        )
+                ),
+                ImmutableList.of(Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<List<List<InclusionExclusionId>>>empty(),
+                                false,
+                                Optional.of(Id.valueOf(10l)))
+                )
+        );
+        IndexQueryResult result = Futures.get(future, IOException.class);
+        assertThat(result.getIds().size(), is(1));
     }
 
     @Test
