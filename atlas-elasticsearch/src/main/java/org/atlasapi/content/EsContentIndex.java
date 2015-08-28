@@ -465,6 +465,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
             if (queryParams.get().getBrandId().isPresent()) {
                 queryBuilder = addBrandIdFilter(reqBuilder, queryBuilder, queryParams.get().getBrandId().get());
+                reqBuilder.setQueryCache(true);
             }
 
             if (queryParams.get().getOrdering().isPresent()) {
