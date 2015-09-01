@@ -94,36 +94,23 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         }
     }
 
-    private final Function<ResultSet, Map<Long, EquivalenceGraph>> toGraph
-        = new Function<ResultSet, Map<Long, EquivalenceGraph>>() {
-            @Override
-            public Map<Long, EquivalenceGraph> apply(ResultSet rows) {
-                ImmutableMap.Builder<Long, EquivalenceGraph> idGraph = ImmutableMap.builder();
-                for (Row row : rows) {
-                    Long graphId = row.getLong(GRAPH_ID_KEY);
-                    idGraph.put(graphId, serializer.deserialize(row.getBytes(GRAPH_KEY)));
-                }
-                return idGraph.build();
+    private final Function<ResultSet, Map<Long, EquivalenceGraph>> toGraph = rows -> {
+            ImmutableMap.Builder<Long, EquivalenceGraph> idGraph = ImmutableMap.builder();
+            for (Row row : rows) {
+                Long graphId = row.getLong(GRAPH_ID_KEY);
+                idGraph.put(graphId, serializer.deserialize(row.getBytes(GRAPH_KEY)));
             }
-
+            return idGraph.build();
         };
 
     private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs
-        = new AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>>() {
-            @Override
-            public ListenableFuture<OptionalMap<Id, EquivalenceGraph>> apply(Map<Id, Long> idIndex) {
-                ResultSetFuture graphRows = resultOf(queryForGraphRows(idIndex));
-                return Futures.transform(Futures.transform(graphRows, toGraph), toIdGraphIndex(idIndex));
-            }
+        = idIndex -> {
+            ResultSetFuture graphRows = resultOf(queryForGraphRows(idIndex));
+            return Futures.transform(Futures.transform(graphRows, toGraph), toIdGraphIndex(idIndex));
         };
 
     private Function<Map<Long, EquivalenceGraph>, OptionalMap<Id, EquivalenceGraph>> toIdGraphIndex(final Map<Id, Long> idIndex) {
-        return new Function<Map<Long, EquivalenceGraph>, OptionalMap<Id, EquivalenceGraph>>() {
-            @Override
-            public OptionalMap<Id, EquivalenceGraph> apply(Map<Long, EquivalenceGraph> rowGraphIndex){
-                return ImmutableOptionalMap.fromMap(Maps.transformValues(idIndex, Functions.forMap(rowGraphIndex, null)));
-            }
-        };
+        return rowGraphIndex -> ImmutableOptionalMap.fromMap(Maps.transformValues(idIndex, Functions.forMap(rowGraphIndex, null)));
     }
     
     private Statement queryForGraphRows(final Map<Id, Long> idIndex) {
@@ -134,17 +121,14 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     }
 
     private final Function<ResultSet, Map<Id, Long>> toGraphIdIndex
-        = new Function<ResultSet, Map<Id, Long>>() {
-            @Override
-            public ImmutableMap<Id, Long> apply(ResultSet rows) {
-                ImmutableMap.Builder<Id, Long> idIndex = ImmutableMap.builder();
-                for (Row row : rows) {
-                    Id resourceId = Id.valueOf(row.getLong(RESOURCE_ID_KEY));
-                    long graphId = row.getLong(GRAPH_ID_KEY);
-                    idIndex.put(resourceId, graphId);
-                }
-                return idIndex.build();
+        = rows -> {
+            ImmutableMap.Builder<Id, Long> idIndex = ImmutableMap.builder();
+            for (Row row : rows) {
+                Id resourceId = Id.valueOf(row.getLong(RESOURCE_ID_KEY));
+                long graphId = row.getLong(GRAPH_ID_KEY);
+                idIndex.put(resourceId, graphId);
             }
+            return idIndex.build();
         };
         
     @Override

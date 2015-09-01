@@ -62,23 +62,14 @@ public class ProtobufContentMarshaller implements ContentMarshaller {
     private final ListMultimap<ContentProtos.Column, FieldDescriptor> schema =
         Multimaps.index(
                 ContentProtos.Content.getDescriptor().getFields(),
-                new Function<FieldDescriptor, ContentProtos.Column>() {
-                    @Override
-                    public ContentProtos.Column apply(FieldDescriptor fd) {
-                        return fd.getOptions().getExtension(ContentProtos.column);
-                    }
+                fd -> {
+                    return fd.getOptions().getExtension(ContentProtos.column);
                 }
         );
     private final List<Entry<ContentProtos.Column, List<FieldDescriptor>>> schemaList =
         ImmutableList.copyOf(
-            Maps.transformValues(schema.asMap(), 
-                new Function<Collection<FieldDescriptor>, List<FieldDescriptor>>(){
-        
-                @Override
-                public List<FieldDescriptor> apply(Collection<FieldDescriptor> input) {
-                    return (List<FieldDescriptor>) input;
-                }
-            })
+            Maps.transformValues(schema.asMap(),
+                    input -> (List<FieldDescriptor>) input)
         .entrySet());
     
     private final EnumBiMap<ContentProtos.Column, ContentColumn> columnLookup = EnumBiMap.create(
