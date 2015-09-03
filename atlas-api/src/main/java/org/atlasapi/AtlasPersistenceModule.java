@@ -226,7 +226,6 @@ public class AtlasPersistenceModule {
         return mongo;
     }
 
-    @Bean
     public IdGeneratorBuilder idGeneratorBuilder() {
         return new IdGeneratorBuilder() {
 

@@ -64,6 +64,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private final AstyanaxContext<Keyspace> context;
     private final MetricRegistry metrics;
+    private final IdGenerator contentIdGenerator;
 
     private CassandraTopicStore topicStore;
     private AstyanaxCassandraScheduleStore scheduleStore;
@@ -85,6 +86,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher hasher, Iterable<String> cassNodes, MetricRegistry metrics) {
         this.hasher = hasher;
         this.idGeneratorBuilder = idGeneratorBuilder;
+        this.contentIdGenerator = idGeneratorBuilder.generator("content");
         this.messageSenderFactory = messageSenderFactory;
         this.dataStaxService = datastaxCassandraService;
         this.keyspace = keyspace;
@@ -127,12 +129,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
         ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
         this.contentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                hasher, sender(contentChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
+                hasher, sender(contentChanges, ResourceUpdatedMessage.class), contentIdGenerator)
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
         this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                hasher, nullMessageSender(ResourceUpdatedMessage.class), idGeneratorBuilder.generator("content"))
+                hasher, nullMessageSender(ResourceUpdatedMessage.class), contentIdGenerator)
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
