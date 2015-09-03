@@ -84,7 +84,8 @@ public class QueryContextParser implements ParameterNameProvider {
                                         "sub_items_summaries.ordering",
                                         "episode.brand.id",
                                         "brand.id",
-                                        "include"
+                                        "include",
+                                        "actionableFilterParameters"
                                 )
                         )
                 )
