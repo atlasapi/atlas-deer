@@ -21,9 +21,9 @@ import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.model.Column;
 import com.netflix.astyanax.model.ColumnList;
 
-public class ProtobufContentMarshallerTest {
+public class AstyanaxProtobufContentMarshallerTest {
 
-    private final ContentMarshaller marshaller = new ProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver())));
+    private final ContentMarshaller marshaller = new AstyanaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver())));
 
     @Test
     @SuppressWarnings("unchecked")
@@ -38,7 +38,7 @@ public class ProtobufContentMarshallerTest {
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
         
-        marshaller.marshallInto(mutation, content);
+        marshaller.marshallInto(content.getId(), mutation, content);
         
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);
