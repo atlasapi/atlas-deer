@@ -1,8 +1,12 @@
 package org.atlasapi.content;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -34,9 +38,28 @@ public class IndexQueryParser {
                 broadcastWeightingFrom(query),
                 titleWeightingFrom(query),
                 topicIdsFrom(query),
-                containerAvailabilityFilterFrom(query),
-                brandIdFrom(query)
+                availabilityFilterFrom(query),
+                brandIdFrom(query),
+                actionableFilterParamsFrom(query)
         );
+    }
+
+    @VisibleForTesting
+    public Optional<Map<String, String>> actionableFilterParamsFrom(Query<?> query) {
+        String[] params = (String[]) query.getContext().getRequest().getParameterMap().get("actionableFilterParameters");
+        if (params == null || params.length == 0) {
+            return Optional.empty();
+        }
+        String filters = params[0];
+        List<String> splitFilters = Splitter.on(",").splitToList(filters);
+
+        Splitter commaSplitter = Splitter.on(":");
+        ImmutableMap.Builder<String, String> result = ImmutableMap.builder();
+        for (String filter : splitFilters) {
+            List<String> keyAndValue = commaSplitter.splitToList(filter);
+            result.put(keyAndValue.get(0), keyAndValue.get(1));
+        }
+        return Optional.of(result.build());
     }
 
     private Optional<Id> brandIdFrom(Query<?> query) {
@@ -47,8 +70,8 @@ public class IndexQueryParser {
         return Optional.empty();
     }
 
-    private Boolean containerAvailabilityFilterFrom(Query<?> query) {
-        String param = query.getContext().getRequest().getParameter("brand.series.availability");
+    private Boolean availabilityFilterFrom(Query<?> query) {
+        String param = query.getContext().getRequest().getParameter("available");
         if (!Strings.isNullOrEmpty(param)) {
             return true;
         }

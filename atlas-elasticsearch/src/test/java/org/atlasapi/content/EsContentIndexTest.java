@@ -1,6 +1,8 @@
 package org.atlasapi.content;
 
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -14,13 +16,17 @@ import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
+import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -35,7 +41,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -127,11 +135,80 @@ public class EsContentIndexTest {
                                 Optional.<Float>empty(),
                                 Optional.<List<List<InclusionExclusionId>>>empty(),
                                 false,
-                                Optional.of(Id.valueOf(10l)))
+                                Optional.of(Id.valueOf(10l)),
+                                Optional.empty())
                 )
         );
         IndexQueryResult result = Futures.get(future, IOException.class);
         assertThat(result.getIds().size(), is(1));
+    }
+
+    @Test
+    public void testActionableContentFilters() throws IndexException, IOException {
+        Brand broadcastBrand = new Brand(Id.valueOf(10l), Publisher.METABROADCAST);
+        broadcastBrand.setTitle("Broadcast brand");
+        Item broadcastItem = new Item(Id.valueOf(1l), Publisher.METABROADCAST);
+        broadcastItem.setContainerRef(broadcastBrand.toRef());
+        broadcastItem.setBroadcasts(ImmutableSet.of(
+                new Broadcast(Id.valueOf(1l), DateTime.now(), DateTime.now().plusHours(1))
+        ));
+
+        Brand vodBrand = new Brand(Id.valueOf(20l), Publisher.METABROADCAST);
+        vodBrand.setTitle("Vod brand");
+        Item vodItem = new Item(Id.valueOf(2l), Publisher.METABROADCAST);
+        vodItem.setContainerRef(vodBrand.toRef());
+
+        Policy pol = new Policy();
+        pol.setAvailabilityStart(DateTime.now().minusDays(1));
+        pol.setAvailabilityEnd(DateTime.now().plusDays(30));
+
+        Location loc = new Location();
+        loc.setPolicy(pol);
+
+        Encoding encoding = new Encoding();
+        encoding.setAvailableAt(ImmutableSet.of(loc));
+
+        vodItem.setManifestedAs(ImmutableSet.of(encoding));
+
+        Brand notAvailableBrand = new Brand(Id.valueOf(30l), Publisher.METABROADCAST);
+
+        indexAndRefresh(vodBrand, vodItem, broadcastBrand, broadcastItem, notAvailableBrand);
+
+        ListenableFuture<IndexQueryResult> resultFuture = index.query(
+                new AttributeQuerySet(
+                        ImmutableSet.of(
+                                new EnumAttributeQuery<>(
+                                        Attributes.CONTENT_TYPE,
+                                        Operators.EQUALS,
+                                        ImmutableList.of(ContentType.BRAND)
+                                )
+                        )
+                ),
+                ImmutableList.of(Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(
+                                        ImmutableMap.of(
+                                                "location.available", "true",
+                                                "broadcast.time.gt", DateTime.now().minusHours(2).toString()
+                                                )
+                                )
+                        )
+                )
+        );
+        IndexQueryResult result = Futures.get(resultFuture, IOException.class);
+        FluentIterable<Id> ids = result.getIds();
+        assertThat(ids, containsInAnyOrder(Id.valueOf(10), Id.valueOf(20)));
+        assertThat(ids, not(containsInAnyOrder(Id.valueOf(30))));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
@@ -49,10 +50,12 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.FilteredQueryBuilder;
+import org.elasticsearch.index.query.HasChildQueryBuilder;
 import org.elasticsearch.index.query.HasParentFilterBuilder;
 import org.elasticsearch.index.query.NestedFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
@@ -483,8 +486,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                         queryBuilder
                 );
             }
-            if (queryParams.get().shouldFilterUnavailableContainers()) {
-                queryBuilder = addContainerAvailabilityFilter(queryBuilder);
+            if(queryParams.get().getActionableFilterParams().isPresent()) {
+                queryBuilder = applyActionableFilters(queryBuilder, queryParams.get().getActionableFilterParams().get());
             }
         }
 
@@ -518,6 +521,44 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         });
     }
 
+    private QueryBuilder applyActionableFilters(QueryBuilder queryBuilder, Map<String, String> actionableParams) {
+        return QueryBuilders.boolQuery()
+                .must(queryBuilder)
+                .must(actionableDisjunctionFrom(actionableParams));
+    }
+
+    @VisibleForTesting
+    public QueryBuilder actionableDisjunctionFrom(Map<String, String> actionableParams) {
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        if (actionableParams.get("location.available") != null) {
+            query.should(getAvailabilityFilter());
+        }
+        DateTime broadcastTimeGreaterThan = actionableParams.get("broadcast.time.gt") != null ?
+                DateTime.parse(actionableParams.get("broadcast.time.gt")) : null;
+        DateTime broadcastTimeLessThan = actionableParams.get("broadcast.time.lt") != null ?
+                DateTime.parse(actionableParams.get("broadcast.time.lt")) : null;
+        if (broadcastTimeGreaterThan != null || broadcastTimeLessThan != null) {
+            query.should(broadcastRangeFilterFrom(broadcastTimeGreaterThan, broadcastTimeLessThan));
+        }
+        query.minimumNumberShouldMatch(1);
+        return query;
+    }
+
+    private QueryBuilder broadcastRangeFilterFrom(DateTime broadcastTimeGreaterThan, DateTime broadcastTimeLessThan) {
+        BoolQueryBuilder parentChildDisjunction = QueryBuilders.boolQuery();
+        RangeQueryBuilder parentQuery = QueryBuilders.rangeQuery("transmissionTimeInMillis");
+        if (broadcastTimeGreaterThan != null) {
+            parentQuery.gte(broadcastTimeGreaterThan.getMillis());
+        }
+        if (broadcastTimeLessThan != null) {
+            parentQuery.lte(broadcastTimeLessThan.getMillis());
+        }
+        parentChildDisjunction.should(parentQuery);
+        parentChildDisjunction.should(QueryBuilders.hasChildQuery(EsContent.CHILD_ITEM, parentQuery));
+        parentChildDisjunction.minimumNumberShouldMatch(1);
+        return parentChildDisjunction;
+    }
+
     private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id) {
         reqBuilder.setTypes(EsContent.CHILD_ITEM);
         HasParentFilterBuilder hasParentFilter = new HasParentFilterBuilder(
@@ -527,19 +568,32 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         return new FilteredQueryBuilder(queryBuilder, hasParentFilter);
     }
 
-    private QueryBuilder addContainerAvailabilityFilter(QueryBuilder queryBuilder) {
-        return QueryBuilders.hasChildQuery(
-                EsContent.CHILD_ITEM,
-                QueryBuilders.nestedQuery(
-                        EsContent.LOCATIONS,
-                        QueryBuilders.boolQuery()
-                                .must(QueryBuilders.rangeQuery("availabilityTime")
-                                        .gte(DateTime.now().toString()))
-                                .must(QueryBuilders.rangeQuery("availabilityEndTime")
-                                        .lte(DateTime.now().toString()))
-                                .must(queryBuilder)
+    private QueryBuilder getAvailabilityFilter() {
+        return QueryBuilders.boolQuery()
+                .should(
+                        QueryBuilders.hasChildQuery(
+                                EsContent.CHILD_ITEM,
+                                QueryBuilders.nestedQuery(
+                                        EsContent.LOCATIONS,
+                                        QueryBuilders.boolQuery()
+                                                .must(QueryBuilders.rangeQuery("availabilityTime")
+                                                        .lte(DateTime.now().toString()))
+                                                .must(QueryBuilders.rangeQuery("availabilityEndTime")
+                                                        .gte(DateTime.now().toString()))
+                                )
+                        )
                 )
-        );
+                .should(
+                        QueryBuilders.nestedQuery(
+                                EsContent.LOCATIONS,
+                                QueryBuilders.boolQuery()
+                                        .must(QueryBuilders.rangeQuery("availabilityTime")
+                                                .lte(DateTime.now().toString()))
+                                        .must(QueryBuilders.rangeQuery("availabilityEndTime")
+                                                .gte(DateTime.now().toString()))
+                        )
+                )
+                .minimumNumberShouldMatch(1);
     }
 
     public QueryBuilder applyTopicIdFilters(List<List<InclusionExclusionId>> topicIdSets, QueryBuilder queryBuilder) {
@@ -615,9 +669,9 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
         ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(region.<ChannelNumbering>getChannels());
         ImmutableList<Long> channelsIdsForRegion = channels.stream()
-                        .map(c -> c.getChannel().getId())
+                .map(c -> c.getChannel().getId())
                         .map(Id::longValue)
-                        .collect(ImmutableCollectors.toList());
+                .collect(ImmutableCollectors.toList());
 
         return QueryBuilders.filteredQuery(
                 queryBuilder,
@@ -630,7 +684,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private void indexItem(Item item) {
         try {
             EsContent esContent = toEsContent(item);
-
             BulkRequest requests = Requests.bulkRequest();
             IndexRequest mainIndexRequest;
             ContainerRef container = item.getContainerRef();
