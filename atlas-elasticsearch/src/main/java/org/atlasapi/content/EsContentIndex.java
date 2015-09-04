@@ -160,7 +160,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     private EsContent toEsContent(Item item) {
-        return new EsContent()
+        EsContent esContent = new EsContent()
                 .id(item.getId().longValue())
                 .type(ContentType.fromContent(item).get())
                 .source(item.getSource() != null ? item.getSource().key() : null)
@@ -184,7 +184,26 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .broadcasts(makeESBroadcasts(item))
                 .broadcastStartTimeInMillis(itemToBroadcastStartTimes(item))
                 .locations(makeESLocations(item))
-                .topics(makeESTopics(item));
+                .topics(makeESTopics(item))
+                .sortKey(item.getSortKey());
+
+        if (item.getContainerRef() != null) {
+            Id containerId = item.getContainerRef().getId();
+            if (ContentType.BRAND.equals(item.getContainerRef().getContentType())) {
+                esContent.brandId(containerId);
+            }
+            if (ContentType.SERIES.equals(item.getContainerRef().getContentType())) {
+                esContent.seriesId(containerId);
+            }
+        }
+
+        if (item instanceof Episode) {
+            Episode episode = (Episode) item;
+            esContent.episodeNumber(episode.getEpisodeNumber());
+            esContent.seriesNumber(episode.getSeriesNumber());
+        }
+        
+        return esContent;
     }
 
     private Iterable<Long> itemToBroadcastStartTimes(Item item) {
@@ -212,10 +231,21 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                     null)
             .priority(container.getPriority() != null ? container.getPriority().getPriority() : null)
             .locations(makeESLocations(container))
-            .topics(makeESTopics(container));
+            .topics(makeESTopics(container))
+            .sortKey(container.getSortKey());
+
         indexed.hasChildren(Boolean.FALSE);
         if (!container.getItemRefs().isEmpty()) {
             indexed.hasChildren(Boolean.TRUE);
+        }
+
+        if (container instanceof Series) {
+            Series series = (Series) container;
+            indexed.seriesNumber(series.getSeriesNumber());
+            if (series.getBrandRef() != null) {
+                indexed.brandId(series.getBrandRef().getId());
+            }
+
         }
         return indexed;
     }
