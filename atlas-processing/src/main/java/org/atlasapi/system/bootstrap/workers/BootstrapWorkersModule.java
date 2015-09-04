@@ -138,12 +138,4 @@ public class BootstrapWorkersModule {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
     }
-
-     public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
-        return new DirectAndExplicitEquivalenceMigrator(
-                legacy.legacyContentResolver(),
-                legacy.legacyEquivalenceStore(),
-                persistence.getContentEquivalenceGraphStore()
-        );
-    }
 }

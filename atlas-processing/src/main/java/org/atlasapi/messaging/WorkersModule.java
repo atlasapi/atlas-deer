@@ -13,6 +13,7 @@ import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -145,7 +146,11 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceAssertionMessage> contentEquivalenceUpdater() {
-        return new ContentEquivalenceUpdatingWorker(persistence.getContentEquivalenceGraphStore(), health.metrics());
+        return new ContentEquivalenceUpdatingWorker(
+                persistence.getContentEquivalenceGraphStore(),
+                health.metrics(),
+                explicitEquivalenceMigrator()
+        );
     }
 
     @Bean
@@ -199,5 +204,13 @@ public class WorkersModule {
     @PreDestroy
     public void stop() throws TimeoutException {
         consumerManager.stopAsync().awaitStopped(1, TimeUnit.MINUTES);
+    }
+
+    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
+                persistence.legacyContentResolver(),
+                persistence.legacyEquivalenceStore(),
+                persistence.getContentEquivalenceGraphStore()
+        );
     }
 }

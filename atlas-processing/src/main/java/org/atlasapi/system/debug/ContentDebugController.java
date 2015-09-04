@@ -219,7 +219,7 @@ public class ContentDebugController {
             }
             respString.append("\nMigrated content into C* content store");
             Optional<EquivalenceGraphUpdate> graphUpdate =
-                    equivalenceMigrator.migrateEquivalence(content);
+                    equivalenceMigrator.migrateEquivalence(content.toRef());
             persistence.getEquivalentContentStore().updateContent(content.toRef());
             if (graphUpdate.isPresent()) {
                 persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
@@ -257,7 +257,7 @@ public class ContentDebugController {
         Content content = resolveLegacyContent(id.longValue());
         WriteResult<Content, Content> writeResult = persistence.contentStore().writeContent(content);
         Optional<EquivalenceGraphUpdate> graphUpdate =
-                equivalenceMigrator.migrateEquivalence(content);
+                equivalenceMigrator.migrateEquivalence(content.toRef());
         persistence.getEquivalentContentStore().updateContent(content.toRef());
         if (graphUpdate.isPresent()) {
             persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());

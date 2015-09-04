@@ -39,7 +39,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final Set<Publisher> ignoredSources;
 
     public ScheduleReadWriteWorker(SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory, 
-            ChannelResolver channelResolver, Iterable<Publisher> ignoredSources) {
+            ChannelResolver channelResolver, Iterable<Publisher> ignoredSources ) {
         this.channelResolver = checkNotNull(channelResolver);
         this.taskFactory = checkNotNull(taskFactory);
         this.ignoredSources = ImmutableSet.copyOf(ignoredSources);

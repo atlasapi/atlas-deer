@@ -60,23 +60,22 @@ public class DirectAndExplicitEquivalenceMigrator {
         this.graphStore = checkNotNull(graphStore);
     }
 
-    public Optional<EquivalenceGraphUpdate> migrateEquivalence(Content content) {
+    public Optional<EquivalenceGraphUpdate> migrateEquivalence(ResourceRef ref) {
         try {
-            LookupEntry legacyLookupEntry = resolveLegacyEquivalents(content);
+            Id contentId = ref.getId();
+            LookupEntry legacyLookupEntry = resolveLegacyEquivalents(contentId);
             Set<LookupRef> legacyEquivRefs = Sets.union(legacyLookupEntry.explicitEquivalents(), legacyLookupEntry.directEquivalents());
             if (!legacyEquivRefs.isEmpty()) {
                 log.trace("Resolved {} legacy explicit equiv refs for {}",
-                        legacyEquivRefs.size(), content.getId());
+                        legacyEquivRefs.size(), contentId);
                 Set<ResourceRef> equivRefs = resolveLegacyContent(legacyEquivRefs);
                 log.trace("Dereferenced {} of {} explicit equivalents for {}",
-                        equivRefs.size(), legacyEquivRefs.size(), content.getId());
-                Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(
-                        content,
-                        equivRefs);
-                log.trace("Updated graph store for {}? {}", content.getId(), graphUpdate.isPresent());
+                        equivRefs.size(), legacyEquivRefs.size(), contentId);
+                Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(ref, equivRefs);
+                log.trace("Updated graph store for {}? {}", contentId, graphUpdate.isPresent());
                 return graphUpdate;
             } else {
-                log.warn("Content {} has no explicit equivalents", content.getId());
+                log.warn("Content {} has no explicit equivalents", contentId);
                 return Optional.absent();
             }
         } catch (WriteException | ExecutionException e) {
@@ -94,15 +93,13 @@ public class DirectAndExplicitEquivalenceMigrator {
         return contentResolved.getResources().transform(TO_RESOURCE_REF).toSet();
     }
 
-    private Optional<EquivalenceGraphUpdate> updateGraphStore(Content content, Set<ResourceRef> refs)
+    private Optional<EquivalenceGraphUpdate> updateGraphStore(ResourceRef ref, Set<ResourceRef> refs)
             throws WriteException {
         ImmutableSet<Publisher> sources = FluentIterable.from(refs).transform(TO_SOURCE).toSet();
-        return graphStore.updateEquivalences(content.toRef(), refs, sources);
+        return graphStore.updateEquivalences(ref, refs, sources);
     }
 
-    private LookupEntry resolveLegacyEquivalents(Content content) {
-        long id = content.getId().longValue();
-        return Iterables.getOnlyElement(legacyEquivalenceStore.entriesForIds(ImmutableList.of(id)));
+    private LookupEntry resolveLegacyEquivalents(Id id) {
+        return Iterables.getOnlyElement(legacyEquivalenceStore.entriesForIds(ImmutableList.of(id.longValue())));
     }
-
 }

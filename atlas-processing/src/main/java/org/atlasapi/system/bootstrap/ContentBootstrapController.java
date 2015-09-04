@@ -246,7 +246,7 @@ public class ContentBootstrapController {
                     Instant cassandraWriteEnd = Instant.now();
                     contentIndex.index(content);
                     Instant indexingEnd = Instant.now();
-                    equivalenceMigrator.migrateEquivalence(content);
+                    equivalenceMigrator.migrateEquivalence(content.toRef());
                     Instant graphUpdateEnd = Instant.now();
                     persistence.getEquivalentContentStore().updateContent(content.toRef());
                     Instant end = Instant.now();

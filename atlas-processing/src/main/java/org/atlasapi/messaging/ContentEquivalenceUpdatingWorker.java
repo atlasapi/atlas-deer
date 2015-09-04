@@ -12,6 +12,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.metabroadcast.common.queue.Worker;
+import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,11 +21,12 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     private final Logger log = LoggerFactory.getLogger(ContentEquivalenceUpdatingWorker.class);
 
     private final EquivalenceGraphStore graphStore;
+    private final DirectAndExplicitEquivalenceMigrator equivMigrator;
     @Nullable private final Timer messageTimer;
     @Nullable private final Meter meter;
 
-    public ContentEquivalenceUpdatingWorker(EquivalenceGraphStore graphStore, @Nullable
-    MetricRegistry metrics) {
+    public ContentEquivalenceUpdatingWorker(EquivalenceGraphStore graphStore, @Nullable MetricRegistry metrics,
+            DirectAndExplicitEquivalenceMigrator equivMigrator) {
         this.graphStore = checkNotNull(graphStore);
         this.messageTimer = (metrics != null ?
                              checkNotNull(metrics.timer("ContentEquivalenceUpdatingWorker")) :
@@ -32,6 +34,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.meter = (metrics != null ?
                 checkNotNull(metrics.meter("ContentEquivalenceUpdatingWorker.errorRate")) :
                 null);
+        this.equivMigrator = checkNotNull(equivMigrator);
     }
 
     @Override
@@ -41,10 +44,12 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                 Timer.Context timer = messageTimer.time();
                 graphStore.updateEquivalences(message.getSubject(), message.getAssertedAdjacents(),
                         message.getPublishers());
+                equivMigrator.migrateEquivalence(message.getSubject());
                 timer.stop();
             } else {
                 graphStore.updateEquivalences(message.getSubject(), message.getAssertedAdjacents(),
                         message.getPublishers());
+                equivMigrator.migrateEquivalence(message.getSubject());
             }
             log.debug("Successfully processed message {}", message.toString());
         } catch (WriteException e) {
