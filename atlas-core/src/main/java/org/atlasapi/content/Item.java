@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -238,5 +239,13 @@ public class Item extends Content {
         }
         
     };
-    
+
+    public Iterable<BroadcastRef> getUpcomingBroadcastRefs() {
+        return broadcasts
+                .stream()
+                .filter(Broadcast.IS_UPCOMING)
+                .map(Broadcast.TO_REF)
+                .collect(Collectors.toSet());
+
+    }
 }

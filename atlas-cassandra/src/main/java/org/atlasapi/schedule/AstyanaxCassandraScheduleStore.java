@@ -68,7 +68,7 @@ import com.netflix.astyanax.serializers.StringSerializer;
  * stale schedule entries remain in their rows but are not read.
  * 
  */
-public class CassandraScheduleStore extends AbstractScheduleStore {
+public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
 
     private static final String UPDATED_COL = "updated";
     private static final String IDS_COL = "ids";
@@ -110,8 +110,8 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
             return this;
         }
         
-        public CassandraScheduleStore build() {
-            return new CassandraScheduleStore(context, name, contentStore, messageSender, clock, readCl, writeCl);
+        public AstyanaxCassandraScheduleStore build() {
+            return new AstyanaxCassandraScheduleStore(context, name, contentStore, messageSender, clock, readCl, writeCl);
         }
         
     }
@@ -132,9 +132,9 @@ public class CassandraScheduleStore extends AbstractScheduleStore {
             }, ItemAndBroadcast.toBroadcast());
 
 
-    private CassandraScheduleStore(AstyanaxContext<Keyspace> context, String name, 
-            ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender, Clock clock, 
-            ConsistencyLevel readCl, ConsistencyLevel writeCl) {
+    private AstyanaxCassandraScheduleStore(AstyanaxContext<Keyspace> context, String name,
+                                           ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender, Clock clock,
+                                           ConsistencyLevel readCl, ConsistencyLevel writeCl) {
         super(contentStore, messageSender);
         this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(contentStore)));
         this.keyspace = context.getClient();

@@ -1,12 +1,12 @@
 package org.atlasapi.content;
 
-import com.netflix.astyanax.ColumnListMutation;
-import com.netflix.astyanax.model.ColumnList;
 
-public interface ContentMarshaller {
+import org.atlasapi.entity.Id;
 
-    void marshallInto(ColumnListMutation<String> mutation, Content content);
+public interface ContentMarshaller<M,U> {
 
-    Content unmarshallCols(ColumnList<String> columns);
+    void marshallInto(Id id, M columnBatch, Content content);
+
+    Content unmarshallCols(U columns);
 
 }
