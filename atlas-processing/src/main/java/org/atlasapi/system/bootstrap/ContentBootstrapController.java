@@ -2,17 +2,16 @@ package org.atlasapi.system.bootstrap;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Queues;
-import com.google.common.hash.BloomFilter;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.Brand;
+import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
@@ -20,13 +19,13 @@ import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.content.Identified;
+import org.atlasapi.content.IndexException;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
@@ -45,7 +44,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -272,5 +270,87 @@ public class ContentBootstrapController {
 
     public ContentListingProgress progressFrom(Content content, Publisher pub) {
         return new ContentListingProgress(null, pub, content.getCanonicalUri());
+    }
+
+
+    public ContentVisitorAdapter<Class<Void>> contentIndexingVisitor() {
+        return new ContentVisitorAdapter<Class<Void>>() {
+            @Override
+            protected Class<Void> visitItem(Item item) {
+                try {
+                    contentIndex.index(item);
+                } catch (IndexException e) {
+                    log.warn("Failed to index content {} - {}", item.getId(), e.toString());
+                }
+                return Void.TYPE;
+            }
+
+            @Override
+            protected Class<Void> visitContainer(Container container) {
+                try {
+                    contentIndex.index(container);
+                } catch (IndexException e) {
+                    log.warn("Failed to index content {} - {}", container.getId(), e.toString());
+                }
+                return Void.TYPE;
+            }
+        };
+    }
+
+    private Runnable indexingRunnable(ContentVisitorAdapter<Class<Void>> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress) {
+        FluentIterable<Content> contentIterator;
+        if (progress.isPresent()) {
+            log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
+            contentIterator = contentLister.list(ImmutableList.of(source), progress.get());
+        } else {
+            log.info("Starting bootstrap of {} the start, no existing progress found", source.toString());
+            contentIterator = contentLister.list(ImmutableList.of(source));
+        }
+        return () ->
+        {
+            AtomicInteger atomicInteger = new AtomicInteger();
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                    maxSourceBootstrapThreads,
+                    maxSourceBootstrapThreads,
+                    500,
+                    TimeUnit.MILLISECONDS,
+                    Queues.newLinkedBlockingQueue(maxSourceBootstrapThreads),
+                    new ThreadPoolExecutor.CallerRunsPolicy()
+            );
+            for (Content c : contentIterator) {
+                executor.submit(
+                        () -> {
+                            Timer.Context time = timer.time();
+                            int count = atomicInteger.incrementAndGet();
+                            log.info(
+                                    "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
+                                    ContentType.fromContent(c).get(),
+                                    c.getId(),
+                                    c.isActivelyPublished(),
+                                    c.getCanonicalUri(),
+                                    count
+                            );
+                            c.accept(visitor);
+                            if (count % 10000 == 0) {
+                                progressStore.storeProgress(source.toString(), progressFrom(c, source));
+                            }
+                            time.stop();
+                        }
+                );
+            }
+            /* Finished */
+            progressStore.storeProgress(source.toString(), ContentListingProgress.START);
+        };
+    }
+
+
+    @RequestMapping(value = "/system/index/source", method = RequestMethod.POST)
+    public void indexSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
+        ContentVisitorAdapter<Class<Void>> visitor = contentIndexingVisitor();
+        log.info("Bootstrapping source: {}", sourceString);
+        Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
+        java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
+        executorService.execute(indexingRunnable(visitor, fromKey.requireValue(), progress));
+        resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 }
