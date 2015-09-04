@@ -560,7 +560,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private QueryBuilder addSeriesIdFilter(QueryBuilder queryBuilder, Id id) {
         return QueryBuilders.boolQuery()
                 .must(queryBuilder)
-                .should(QueryBuilders.termQuery(EsContent.SERIES, id.longValue()));
+                .must(QueryBuilders.termQuery(EsContent.SERIES, id.longValue()));
     }
 
     private QueryBuilder applyActionableFilters(QueryBuilder queryBuilder, Map<String, String> actionableParams) {
