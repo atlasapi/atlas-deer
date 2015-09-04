@@ -38,6 +38,11 @@ public class EsContent extends EsObject {
     public static final String CONTENT_GROUPS = "contentGroups";
     public static final String PARENT = "_parent";
     public static final String PRIORITY = "priority";
+    public static final String SERIES_NUMBER = "seriesNumber";
+    public static final String EPISODE_NUMBER = "episodeNumber";
+    public static final String BRAND = "brand";
+    public static final String SERIES = "series";
+    public static final String SORT_KEY = "sortKey";
 
     public static final XContentBuilder getTopLevelMapping(String type) throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
@@ -73,61 +78,81 @@ public class EsContent extends EsObject {
 
     private static XContentBuilder addCommonProperties(XContentBuilder obj) throws IOException {
         return addScheduleOnlyProperties(obj
-            .startObject(EsContent.TYPE)
-                .field("type").value("string")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(ALIASES)
-                .field("type").value("nested")
-                .rawField("properties", EsAlias.getMapping().bytes())
-            .endObject()
-            .startObject(EsContent.TITLE)
-                .field("type").value("string")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsContent.FLATTENED_TITLE)
-                .field("type").value("string")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsContent.SOURCE)
-                .field("type").value("string")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsContent.SPECIALIZATION)
-                .field("type").value("string")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsContent.TOPICS)
-                .field("type").value("nested")
-                .rawField("properties", EsTopicMapping.getMapping().bytes())
-            .endObject()
-            .startObject(EsContent.LOCATIONS)
-                .field("type").value("nested")
-            .endObject()
-            .startObject(EsContent.GENRE)
-                .field("type").value("string")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsContent.PRICE)
-                .field("type").value("nested")
-                .rawField("properties", EsPriceMapping.getMapping().bytes())
-            .endObject()
-            .startObject(EsContent.AGE)
-                .field("type").value("integer")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsContent.CONTENT_GROUPS)
-                .field("type").value("long")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsContent.PRIORITY)
-                .field("type").value("double")
-                .field("index").value("not_analyzed")
-            .endObject()
-            .startObject(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS)
-                .field("type").value("long")
-                .field("index").value("not_analyzed")
-            .endObject()
+                        .startObject(EsContent.TYPE)
+                        .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(ALIASES)
+                        .field("type").value("nested")
+                        .rawField("properties", EsAlias.getMapping().bytes())
+                        .endObject()
+                        .startObject(EsContent.TITLE)
+                        .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsContent.FLATTENED_TITLE)
+                        .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsContent.SOURCE)
+                        .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsContent.SPECIALIZATION)
+                        .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsContent.TOPICS)
+                        .field("type").value("nested")
+                        .rawField("properties", EsTopicMapping.getMapping().bytes())
+                        .endObject()
+                        .startObject(EsContent.LOCATIONS)
+                        .field("type").value("nested")
+                        .endObject()
+                        .startObject(EsContent.GENRE)
+                        .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsContent.PRICE)
+                        .field("type").value("nested")
+                        .rawField("properties", EsPriceMapping.getMapping().bytes())
+                        .endObject()
+                        .startObject(EsContent.AGE)
+                        .field("type").value("integer")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsContent.CONTENT_GROUPS)
+                        .field("type").value("long")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsContent.PRIORITY)
+                        .field("type").value("double")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS)
+                        .field("type").value("long")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(SERIES_NUMBER)
+                        .field("type").value("integer")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(EPISODE_NUMBER)
+                        .field("type").value("integer")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(BRAND)
+                        .field("type").value("long")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(SERIES)
+                        .field("type").value("long")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(SORT_KEY)
+                        .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
         );
     }
 
@@ -242,4 +267,28 @@ public class EsContent extends EsObject {
         return this;
     }
 
+    public EsContent brandId(Id id) {
+        properties.put(BRAND, id.longValue());
+        return this;
+    }
+
+    public EsContent seriesId(Id id) {
+        properties.put(SERIES, id.longValue());
+        return this;
+    }
+
+    public EsContent seriesNumber(Integer seriesNumber) {
+        properties.put(SERIES_NUMBER, seriesNumber);
+        return this;
+    }
+
+    public EsContent episodeNumber(Integer episodeNumber) {
+        properties.put(EPISODE_NUMBER, episodeNumber);
+        return this;
+    }
+
+    public EsContent sortKey(String sortKey) {
+        properties.put(SORT_KEY, sortKey);
+        return this;
+    }
 }
