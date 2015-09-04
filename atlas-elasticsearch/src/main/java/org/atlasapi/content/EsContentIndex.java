@@ -205,7 +205,6 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 esContent.seriesId(episode.getSeriesRef().getId());
             }
         }
-
         return esContent;
     }
 
