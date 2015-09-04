@@ -503,6 +503,10 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 reqBuilder.setQueryCache(true);
             }
 
+            if (queryParams.get().getSeriesId().isPresent()) {
+                queryBuilder = addSeriesIdFilter(queryBuilder, queryParams.get().getSeriesId().get());
+            }
+
             if (queryParams.get().getOrdering().isPresent()) {
                 addSortOrder(queryParams, reqBuilder);
             }
@@ -551,6 +555,12 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 return Id.valueOf(id);
             }), input.getHits().getTotalHits());
         });
+    }
+
+    private QueryBuilder addSeriesIdFilter(QueryBuilder queryBuilder, Id id) {
+        return QueryBuilders.boolQuery()
+                .must(queryBuilder)
+                .should(QueryBuilders.termQuery(EsContent.SERIES, id.longValue()));
     }
 
     private QueryBuilder applyActionableFilters(QueryBuilder queryBuilder, Map<String, String> actionableParams) {

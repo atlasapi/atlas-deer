@@ -136,7 +136,9 @@ public class EsContentIndexTest {
                                 Optional.<List<List<InclusionExclusionId>>>empty(),
                                 false,
                                 Optional.of(Id.valueOf(10l)),
-                                Optional.empty())
+                                Optional.empty(),
+                                Optional.empty()
+                        )
                 )
         );
         IndexQueryResult result = Futures.get(future, IOException.class);
@@ -201,7 +203,8 @@ public class EsContentIndexTest {
                                                 "location.available", "true",
                                                 "broadcast.time.gt", DateTime.now().minusHours(2).toString()
                                                 )
-                                )
+                                ),
+                                Optional.empty()
                         )
                 )
         );

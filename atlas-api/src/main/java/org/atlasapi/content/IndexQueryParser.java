@@ -40,8 +40,17 @@ public class IndexQueryParser {
                 topicIdsFrom(query),
                 availabilityFilterFrom(query),
                 brandIdFrom(query),
-                actionableFilterParamsFrom(query)
+                actionableFilterParamsFrom(query),
+                seriesIdFrom(query)
         );
+    }
+
+    private Optional<Id> seriesIdFrom(Query<?> query) {
+        String seriesId = query.getContext().getRequest().getParameter("series.id");
+        if (!Strings.isNullOrEmpty(seriesId)) {
+            return Optional.of(Id.valueOf(codec.decode(seriesId)));
+        }
+        return Optional.empty();
     }
 
     @VisibleForTesting
@@ -63,7 +72,11 @@ public class IndexQueryParser {
     }
 
     private Optional<Id> brandIdFrom(Query<?> query) {
-        String brandId = query.getContext().getRequest().getParameter("episode.brand.id");
+        String episodeBrandId = query.getContext().getRequest().getParameter("episode.brand.id");
+        if (!Strings.isNullOrEmpty(episodeBrandId)) {
+            return Optional.of(Id.valueOf(codec.decode(episodeBrandId)));
+        }
+        String brandId = query.getContext().getRequest().getParameter("brand.id");
         if (!Strings.isNullOrEmpty(brandId)) {
             return Optional.of(Id.valueOf(codec.decode(brandId)));
         }

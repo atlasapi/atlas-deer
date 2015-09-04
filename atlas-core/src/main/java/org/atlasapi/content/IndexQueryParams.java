@@ -19,10 +19,11 @@ public class IndexQueryParams {
     private final Boolean availabilityFilter;
     private final Optional<Id> brandId;
     private final Optional<Map<String, String>> actionableFilterParams;
+    private final Optional<Id> seriesId;
 
     public IndexQueryParams(Optional<FuzzyQueryParams> fuzzyQueryParams, Optional<QueryOrdering> ordering,
             Optional<Id> regionId, Optional<Float> broadcastWeighting, Optional<Float> titleWeighting, Optional<List<List<InclusionExclusionId>>> topicFilterIds,
-            Boolean containerAvailability, Optional<Id> brandId, Optional<Map<String, String>> actionableFilterParams) {
+            Boolean containerAvailability, Optional<Id> brandId, Optional<Map<String, String>> actionableFilterParams, Optional<Id> seriesId) {
         this.fuzzyQueryParams = checkNotNull(fuzzyQueryParams);
         this.ordering = checkNotNull(ordering);
         this.regionId = checkNotNull(regionId);
@@ -32,6 +33,7 @@ public class IndexQueryParams {
         this.availabilityFilter = containerAvailability;
         this.brandId = checkNotNull(brandId);
         this.actionableFilterParams = checkNotNull(actionableFilterParams);
+        this.seriesId = checkNotNull(seriesId);
     }
 
     public Optional<Id> getBrandId() {
@@ -68,5 +70,9 @@ public class IndexQueryParams {
 
     public Optional<Map<String, String>> getActionableFilterParams() {
         return actionableFilterParams;
+    }
+
+    public Optional<Id> getSeriesId() {
+        return seriesId;
     }
 }
