@@ -36,7 +36,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     private static final Function<? super ResultSet, ? extends ImmutableSet<Long>> RESULT_TO_IDS = rows -> {
         ImmutableSet.Builder<Long> builder = ImmutableSet.builder();
         for (Row row : rows) {
-            builder.add(row.getLong(VALUE_KEY));
+            builder.add(row.getLong(KEY_KEY));
         }
         return builder.build();
     };
