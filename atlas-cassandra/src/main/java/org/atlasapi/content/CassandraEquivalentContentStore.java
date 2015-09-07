@@ -64,7 +64,7 @@ import com.google.protobuf.ByteString;
 
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
-    private static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
+    public static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
     private static final String EQUIVALENT_CONTENT_TABLE = "equivalent_content";
     
     private static final String SET_ID_KEY = "set_id";

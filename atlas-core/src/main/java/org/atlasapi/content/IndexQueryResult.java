@@ -7,10 +7,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexQueryResult {
 
-    private final FluentIterable<Id> ids;
+    private final Iterable<Id> ids;
     private final Long count;
 
-    public IndexQueryResult(FluentIterable<Id> ids, Long totalResultCount) {
+    public IndexQueryResult(Iterable<Id> ids, Long totalResultCount) {
         this.ids = checkNotNull(ids);
         this.count = checkNotNull(totalResultCount);
     }
@@ -20,6 +20,6 @@ public class IndexQueryResult {
     }
 
     public FluentIterable<Id> getIds() {
-        return ids;
+        return FluentIterable.from(ids);
     }
 }

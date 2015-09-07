@@ -26,6 +26,7 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
+import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentIndex;
@@ -65,6 +66,7 @@ import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
+import org.atlasapi.util.SecondaryIndex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -196,7 +198,18 @@ public class AtlasPersistenceModule {
     public ElasticSearchContentIndexModule esContentIndexModule() {
         ElasticSearchContentIndexModule module =
                 new ElasticSearchContentIndexModule(
-                        esSeeds, esCluster, esIndex, Long.parseLong(esRequestTimeout), persistenceModule().contentStore(), health.metrics(), channelGroupResolver()
+                        esSeeds,
+                        esCluster,
+                        esIndex,
+                        Long.parseLong(esRequestTimeout),
+                        persistenceModule().contentStore(),
+                        health.metrics(),
+                        channelGroupResolver(),
+                        new SecondaryIndex(
+                                persistenceModule().getSession(),
+                                CassandraEquivalentContentStore.EQUIVALENT_CONTENT_INDEX,
+                                persistenceModule().getReadConsistencyLevel()
+                        )
                 );
         module.init();
         return module;
@@ -238,8 +251,8 @@ public class AtlasPersistenceModule {
 
     @Bean
     @Primary
-    public EsContentIndex contentIndex() {
-        return esContentIndexModule().contentIndex();
+    public ContentIndex contentIndex() {
+        return esContentIndexModule().equivContentIndex();
     }
 
     @Bean
