@@ -2,9 +2,9 @@ package org.atlasapi.content;
 
 import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
 
-import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.ProtoBufUtils;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.segment.SegmentEvent;
@@ -16,6 +16,7 @@ import org.atlasapi.serialization.protobuf.ContentProtos.Synopsis;
 import org.atlasapi.source.Sources;
 import org.joda.time.Duration;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;

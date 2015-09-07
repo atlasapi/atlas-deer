@@ -3,6 +3,8 @@ package org.atlasapi.content;
 import java.util.Map;
 import java.util.Set;
 
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 

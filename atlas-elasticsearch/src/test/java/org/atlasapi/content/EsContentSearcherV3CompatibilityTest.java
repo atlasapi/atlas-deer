@@ -20,6 +20,8 @@ import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;

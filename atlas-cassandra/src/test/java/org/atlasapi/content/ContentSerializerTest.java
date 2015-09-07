@@ -4,9 +4,9 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-import com.google.common.collect.ImmutableMap;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -21,6 +21,7 @@ import org.joda.time.LocalDate;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.time.DateTimeZones;

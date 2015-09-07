@@ -1,21 +1,21 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
+
 import org.atlasapi.content.Image;
 import org.atlasapi.content.RelatedLink;
-
-import com.google.common.collect.Iterables;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.media.entity.Identified;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 
-public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.content.Identified> implements
+public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.entity.Identified> implements
 		LegacyResourceTransformer<F, T> {
 
 	protected final Logger log = LoggerFactory.getLogger(getClass());

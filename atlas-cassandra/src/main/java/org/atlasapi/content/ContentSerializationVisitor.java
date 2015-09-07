@@ -1,27 +1,23 @@
 package org.atlasapi.content;
 
-import java.io.IOException;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.ProtoBufUtils;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
+import org.atlasapi.util.ImmutableCollectors;
 
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.intl.Countries;
-import org.atlasapi.util.ImmutableCollectors;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     

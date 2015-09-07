@@ -9,7 +9,7 @@ import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentTitleSearcher;
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResolver;

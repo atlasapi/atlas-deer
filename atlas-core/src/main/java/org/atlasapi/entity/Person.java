@@ -1,12 +1,12 @@
-package org.atlasapi.content;
+package org.atlasapi.entity;
 
 import java.util.Set;
 
+import org.atlasapi.content.ContentGroup;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import com.metabroadcast.common.url.UrlEncoding;
 
@@ -126,11 +126,4 @@ public class Person extends ContentGroup {
 	    copy.setQuotes(quotes);
 	    return copy;
 	}
-	
-	public final static Function<Person, Person> COPY = new Function<Person, Person>() {
-        @Override
-        public Person apply(Person input) {
-            return (Person) input.copy();
-        }
-    };
 }

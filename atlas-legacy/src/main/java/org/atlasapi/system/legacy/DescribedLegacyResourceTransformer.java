@@ -61,7 +61,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         return new org.atlasapi.content.Priority(legacy.getScore(), legacy.getReasons());
     }
 
-    protected <I extends org.atlasapi.content.Identified> void setIdentifiedFields(I i, Identified input) {
+    protected <I extends org.atlasapi.entity.Identified> void setIdentifiedFields(I i, Identified input) {
         i.setAliases(transformAliases(input));
         i.setCanonicalUri(input.getCanonicalUri());
         i.setCurie(input.getCurie());

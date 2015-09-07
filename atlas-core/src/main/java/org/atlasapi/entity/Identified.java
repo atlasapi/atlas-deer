@@ -1,4 +1,4 @@
-package org.atlasapi.content;
+package org.atlasapi.entity;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -7,12 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.Aliased;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identifiable;
-import org.atlasapi.entity.Identifiables;
-import org.atlasapi.entity.Sourced;
+import org.atlasapi.content.Content;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.meta.annotations.FieldName;
@@ -30,9 +25,6 @@ import com.google.common.primitives.Ints;
 
 /**
  * Base type for descriptions of resources.
- *
- * @author Robert Chatley
- * @author Lee Denison
  */
 public class Identified implements Identifiable, Aliased {
 

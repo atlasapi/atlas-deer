@@ -18,6 +18,7 @@ import java.util.Set;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
@@ -27,8 +28,6 @@ import org.joda.time.DateTime;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.metabroadcast.common.text.MoreStrings;
 
 public abstract class Described extends Identified implements Sourced {
 

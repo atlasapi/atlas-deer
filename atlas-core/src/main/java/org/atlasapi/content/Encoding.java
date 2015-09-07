@@ -18,6 +18,7 @@ package org.atlasapi.content;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.atlasapi.entity.Identified;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.Duration;
 

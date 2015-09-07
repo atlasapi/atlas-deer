@@ -3,7 +3,7 @@ package org.atlasapi.search;
 import java.util.List;
 
 import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 
 public interface SearchResolver {
 

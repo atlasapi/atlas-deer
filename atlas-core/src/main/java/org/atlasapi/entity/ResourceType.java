@@ -4,7 +4,6 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.Identified;
 import org.atlasapi.content.Player;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.Topic;
