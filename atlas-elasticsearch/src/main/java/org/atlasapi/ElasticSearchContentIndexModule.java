@@ -50,7 +50,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             client.addTransportAddress(new InetSocketTransportAddress(host, 9300));
         }
 
-        unequivIndex = new EsContentIndex(client, indexName, requestTimeout, resolver, channelGroupResolver);
+        unequivIndex = new EsContentIndex(client, indexName, requestTimeout, resolver, channelGroupResolver, equivalentContentIndex);
 
         PseudoEquivalentEsContentIndex equivalentEsIndex =
                 new PseudoEquivalentEsContentIndex(unequivIndex, equivalentContentIndex);

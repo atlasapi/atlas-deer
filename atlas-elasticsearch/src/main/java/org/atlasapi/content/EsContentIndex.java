@@ -5,6 +5,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
@@ -21,16 +22,15 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.EsTopic;
-import org.atlasapi.util.EsPersistenceException;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.EsSortQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
 import org.atlasapi.util.ImmutableCollectors;
+import org.atlasapi.util.SecondaryIndex;
 import org.atlasapi.util.Strings;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.NoShardAvailableActionException;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -50,16 +50,13 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.FilteredQueryBuilder;
-import org.elasticsearch.index.query.HasChildQueryBuilder;
 import org.elasticsearch.index.query.HasParentFilterBuilder;
 import org.elasticsearch.index.query.NestedFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
-import org.elasticsearch.node.Node;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
@@ -95,12 +92,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
     private final EsSortQueryBuilder sortBuilder = new EsSortQueryBuilder();
 
-    public EsContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver, ChannelGroupResolver channelGroupResolver) {
+    private final SecondaryIndex equivIdIndex;
+
+    public EsContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver, ChannelGroupResolver channelGroupResolver, SecondaryIndex secondaryIndex) {
         this.esClient = checkNotNull(esClient);
         this.requestTimeout = requestTimeout;
         this.index = checkNotNull(indexName);
         this.resolver = checkNotNull(resolver);
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
+        this.equivIdIndex = checkNotNull(secondaryIndex);
     }
 
     @Override
@@ -558,9 +558,14 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     private QueryBuilder addSeriesIdFilter(QueryBuilder queryBuilder, Id id) {
-        return QueryBuilders.boolQuery()
-                .must(queryBuilder)
-                .must(QueryBuilders.termQuery(EsContent.SERIES, id.longValue()));
+        try {
+            ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
+            return QueryBuilders.boolQuery()
+                    .must(queryBuilder)
+                    .must(QueryBuilders.termsQuery(EsContent.SERIES, ids));
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     private QueryBuilder applyActionableFilters(QueryBuilder queryBuilder, Map<String, String> actionableParams) {
@@ -601,13 +606,18 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         return parentChildDisjunction;
     }
 
-    private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id) {
-        reqBuilder.setTypes(EsContent.CHILD_ITEM);
-        HasParentFilterBuilder hasParentFilter = new HasParentFilterBuilder(
-                EsContent.TOP_LEVEL_CONTAINER,
-                new TermFilterBuilder(EsContent.ID, id.longValue())
-        );
-        return new FilteredQueryBuilder(queryBuilder, hasParentFilter);
+    private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id)  {
+        try {
+            ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
+            reqBuilder.setTypes(EsContent.CHILD_ITEM);
+            HasParentFilterBuilder hasParentFilter = new HasParentFilterBuilder(
+                    EsContent.TOP_LEVEL_CONTAINER,
+                    new TermsFilterBuilder(EsContent.ID, ids)
+            );
+            return new FilteredQueryBuilder(queryBuilder, hasParentFilter);
+        } catch (IOException ioe) {
+            throw Throwables.propagate(ioe);
+        }
     }
 
     private QueryBuilder getAvailabilityFilter() {

@@ -1,5 +1,6 @@
 package org.atlasapi.util;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
@@ -16,10 +17,14 @@ import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.atlasapi.entity.Id;
+
+import javax.annotation.Nullable;
 
 /**
  * An SecondaryIndex is a surjective mapping from a set of keys to values,
@@ -30,6 +35,13 @@ public class SecondaryIndex {
 
     private static final String KEY_KEY = "key";
     private static final String VALUE_KEY = "value";
+    public static final Function<ResultSet, ImmutableSet<Long>> RESULT_TO_IDS = (ResultSet rows) -> {
+        ImmutableSet.Builder<Long> builder = ImmutableSet.builder();
+        for (Row row : rows) {
+            builder.add(row.getLong(VALUE_KEY));
+        }
+        return builder.build();
+    };
 
     private final Session session;
     private final String indexTable;
@@ -75,11 +87,18 @@ public class SecondaryIndex {
         return Futures.transform(session.executeAsync(queryFor(keys, level)), toMap);
     }
 
+    public ListenableFuture<ImmutableSet<Long>> reverseLookup(Id id) {
+        Statement statement = select(KEY_KEY, VALUE_KEY)
+                .from(indexTable)
+                .where(eq(VALUE_KEY, id.longValue()))
+                .setConsistencyLevel(readConsistency);
+        return Futures.transform(session.executeAsync(statement), RESULT_TO_IDS);
+    }
+
     private Statement queryFor(Iterable<Long> keys, ConsistencyLevel level) {
         return select(KEY_KEY, VALUE_KEY)
                 .from(indexTable)
                 .where(in(KEY_KEY, Iterables.toArray(keys, Object.class)))
                 .setConsistencyLevel(level);
     }
-
 }
