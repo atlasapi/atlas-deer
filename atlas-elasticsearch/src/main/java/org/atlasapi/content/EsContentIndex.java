@@ -609,12 +609,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id)  {
         try {
             ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
-            reqBuilder.setTypes(EsContent.CHILD_ITEM);
-            HasParentFilterBuilder hasParentFilter = new HasParentFilterBuilder(
-                    EsContent.TOP_LEVEL_CONTAINER,
-                    new TermsFilterBuilder(EsContent.ID, ids)
-            );
-            return new FilteredQueryBuilder(queryBuilder, hasParentFilter);
+            TermsFilterBuilder brandIdFilter = new TermsFilterBuilder(EsContent.BRAND, ids);
+            return new FilteredQueryBuilder(queryBuilder, brandIdFilter);
         } catch (IOException ioe) {
             throw Throwables.propagate(ioe);
         }
