@@ -43,7 +43,7 @@ public class PseudoEquivalentEsContentIndexTest {
                 new NoOpSecondaryIndex()
         );
         delegate.startAsync().awaitRunning();
-        contentIndex = new PseudoEquivalentEsContentIndex(delegate, equivIndex);
+        contentIndex = new PseudoEquivalentEsContentIndex(delegate);
     }
 
     @Test

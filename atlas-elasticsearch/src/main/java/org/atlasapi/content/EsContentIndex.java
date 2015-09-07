@@ -83,6 +83,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
         return Id.valueOf(id);
     };
+    public static final Function<SearchHit, Id> SEARCH_HIT_ID_FUNCTION = hit -> Id.valueOf(hit.field(EsContent.ID).<Number>value().longValue());
+    public static final Function<SearchHit, Id> HIT_TO_ID = SEARCH_HIT_ID_FUNCTION;
 
     private final Logger log = LoggerFactory.getLogger(EsContentIndex.class);
 
@@ -511,6 +513,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
                 .addField(EsContent.CANONICAL_ID)
+                .addField(EsContent.ID)
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
@@ -574,6 +577,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
          */
         return Futures.transform(response, (SearchResponse input) -> {
             return new IndexQueryResult(
+                    FluentIterable.from(input.getHits()).transform(HIT_TO_ID),
                     FluentIterable.from(input.getHits()).transform(HIT_TO_CANONICAL_ID),
                     input.getHits().getTotalHits()
             );
