@@ -34,13 +34,13 @@ public class PseudoEquivalentContentIndexTest {
     private Client esNode = ElasticSearchHelper.testNode().client();
     @Before
     public void setUp() {
-        UnequivalentElasticsearchContentIndex delegate = new UnequivalentElasticsearchContentIndex(
+        EsUnequivalentContentIndex delegate = new EsUnequivalentContentIndex(
                 esNode,
                 EsSchema.CONTENT_INDEX,
-                60000,
                 new NoOpContentResolver(),
                 mock(ChannelGroupResolver.class),
-                new NoOpSecondaryIndex()
+                new NoOpSecondaryIndex(),
+                60000
         );
         delegate.startAsync().awaitRunning();
         contentIndex = new PseudoEquivalentContentIndex(delegate);

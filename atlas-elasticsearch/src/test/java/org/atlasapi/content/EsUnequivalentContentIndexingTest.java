@@ -36,10 +36,10 @@ import org.junit.Test;
 
 import com.metabroadcast.common.time.DateTimeZones;
 
-public final class UnequivalentElasticsearchContentIndexingTest {
+public final class EsUnequivalentContentIndexingTest {
     
     private static final Node esClient = ElasticSearchHelper.testNode();
-    private UnequivalentElasticsearchContentIndex contentIndexer;
+    private EsUnequivalentContentIndex contentIndexer;
 
     @BeforeClass
     public static void before() throws Exception {
@@ -57,7 +57,7 @@ public final class UnequivalentElasticsearchContentIndexingTest {
     @Before
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient.client());
-        contentIndexer = new UnequivalentElasticsearchContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
+        contentIndexer = new EsUnequivalentContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60);
         contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     

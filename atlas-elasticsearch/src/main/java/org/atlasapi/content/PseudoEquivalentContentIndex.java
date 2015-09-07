@@ -18,9 +18,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PseudoEquivalentContentIndex implements ContentIndex {
 
-    private final UnequivalentElasticsearchContentIndex delegate;
+    private final EsUnequivalentContentIndex delegate;
 
-    public PseudoEquivalentContentIndex(UnequivalentElasticsearchContentIndex delegate) {
+    public PseudoEquivalentContentIndex(EsUnequivalentContentIndex delegate) {
         this.delegate = checkNotNull(delegate);
     }
 

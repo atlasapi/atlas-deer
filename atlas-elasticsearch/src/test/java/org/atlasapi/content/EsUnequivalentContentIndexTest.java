@@ -46,11 +46,11 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class UnequivalentElasticsearchContentIndexTest {
+public class EsUnequivalentContentIndexTest {
 
     private static final Client esClient = ElasticSearchHelper.testNode().client();
 
-    private UnequivalentElasticsearchContentIndex index;
+    private EsUnequivalentContentIndex index;
 
     @BeforeClass
     public static void before() throws Exception {
@@ -67,7 +67,7 @@ public class UnequivalentElasticsearchContentIndexTest {
 
     @Before
     public void setup() {
-        index = new UnequivalentElasticsearchContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
+        index = new EsUnequivalentContentIndex(esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60);
         index.startAsync().awaitRunning();
     }
 

@@ -14,7 +14,7 @@ import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.Broadcast;
-import org.atlasapi.content.UnequivalentElasticsearchContentIndex;
+import org.atlasapi.content.EsUnequivalentContentIndex;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
@@ -40,8 +40,8 @@ import com.metabroadcast.common.query.Selection;
 public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
-    private final UnequivalentElasticsearchContentIndex index = new UnequivalentElasticsearchContentIndex(
-            esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex()
+    private final EsUnequivalentContentIndex index = new EsUnequivalentContentIndex(
+            esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60
     );
 
     @BeforeClass
