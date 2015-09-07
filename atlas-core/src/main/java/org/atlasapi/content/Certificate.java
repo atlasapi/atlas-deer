@@ -11,12 +11,24 @@ public class Certificate {
 
     //TODO make some static final instantiations?
     
-    private final Country country;
-    private final String classification;
+    private Country country;
+    private String classification;
+
+    public Certificate() {
+
+    }
 
     public Certificate(String classification, Country country) {
         this.classification = checkNotNull(classification);
         this.country = checkNotNull(country);
+    }
+
+    public void setClassification(String classification) {
+        this.classification = classification;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
     }
 
     @FieldName("country")
