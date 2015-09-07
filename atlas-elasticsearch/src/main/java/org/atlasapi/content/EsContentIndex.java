@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
@@ -57,6 +58,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
@@ -76,6 +78,11 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EsContentIndex extends AbstractIdleService implements ContentIndex {
+
+    private static final Function<SearchHit, Id> HIT_TO_CANONICAL_ID = hit -> {
+        Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
+        return Id.valueOf(id);
+    };
 
     private final Logger log = LoggerFactory.getLogger(EsContentIndex.class);
 
@@ -499,12 +506,11 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
-
-
+        
         SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
-                .addField(EsContent.ID)
+                .addField(EsContent.CANONICAL_ID)
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
@@ -567,10 +573,10 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
          * then we have more: return for use with response.
          */
         return Futures.transform(response, (SearchResponse input) -> {
-            return new IndexQueryResult(FluentIterable.from(input.getHits()).transform(hit -> {
-                Long id = hit.field(EsContent.ID).<Number>value().longValue();
-                return Id.valueOf(id);
-            }), input.getHits().getTotalHits());
+            return new IndexQueryResult(
+                    FluentIterable.from(input.getHits()).transform(HIT_TO_CANONICAL_ID),
+                    input.getHits().getTotalHits()
+            );
         });
     }
 
