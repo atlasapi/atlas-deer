@@ -18,7 +18,6 @@ import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
-import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
@@ -26,7 +25,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.atlasapi.util.NoOpSecondaryIndex;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -48,11 +46,11 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class EsContentIndexTest {
+public class UnequivalentElasticsearchContentIndexTest {
 
     private static final Client esClient = ElasticSearchHelper.testNode().client();
 
-    private EsContentIndex index;
+    private UnequivalentElasticsearchContentIndex index;
 
     @BeforeClass
     public static void before() throws Exception {
@@ -69,7 +67,7 @@ public class EsContentIndexTest {
 
     @Before
     public void setup() {
-        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
+        index = new UnequivalentElasticsearchContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
         index.startAsync().awaitRunning();
     }
 

@@ -16,11 +16,11 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class PseudoEquivalentEsContentIndex implements ContentIndex {
+public class PseudoEquivalentContentIndex implements ContentIndex {
 
-    private final EsContentIndex delegate;
+    private final UnequivalentElasticsearchContentIndex delegate;
 
-    public PseudoEquivalentEsContentIndex(EsContentIndex delegate) {
+    public PseudoEquivalentContentIndex(UnequivalentElasticsearchContentIndex delegate) {
         this.delegate = checkNotNull(delegate);
     }
 

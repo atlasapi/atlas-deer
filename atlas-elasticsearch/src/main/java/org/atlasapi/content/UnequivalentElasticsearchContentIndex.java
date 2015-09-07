@@ -7,6 +7,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
@@ -51,12 +52,11 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.FilteredQueryBuilder;
-import org.elasticsearch.index.query.HasParentFilterBuilder;
 import org.elasticsearch.index.query.NestedFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -77,7 +77,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EsContentIndex extends AbstractIdleService implements ContentIndex {
+public class UnequivalentElasticsearchContentIndex extends AbstractIdleService implements ContentIndex {
 
     private static final Function<SearchHit, Id> HIT_TO_CANONICAL_ID = hit -> {
         Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
@@ -86,7 +86,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     public static final Function<SearchHit, Id> SEARCH_HIT_ID_FUNCTION = hit -> Id.valueOf(hit.field(EsContent.ID).<Number>value().longValue());
     public static final Function<SearchHit, Id> HIT_TO_ID = SEARCH_HIT_ID_FUNCTION;
 
-    private final Logger log = LoggerFactory.getLogger(EsContentIndex.class);
+    private final Logger log = LoggerFactory.getLogger(UnequivalentElasticsearchContentIndex.class);
 
     private static final int DEFAULT_LIMIT = 50;
 
@@ -103,7 +103,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     private final SecondaryIndex equivIdIndex;
 
-    public EsContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver,
+    public UnequivalentElasticsearchContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver,
             ChannelGroupResolver channelGroupResolver, SecondaryIndex equivIdIndex) {
         this.esClient = checkNotNull(esClient);
         this.requestTimeout = requestTimeout;
@@ -585,9 +585,14 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     private QueryBuilder addSeriesIdFilter(QueryBuilder queryBuilder, Id id) {
-        return QueryBuilders.boolQuery()
-                .must(queryBuilder)
-                .must(QueryBuilders.termQuery(EsContent.SERIES, id.longValue()));
+        try {
+            ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
+            return QueryBuilders.boolQuery()
+                    .must(queryBuilder)
+                    .must(QueryBuilders.termsQuery(EsContent.SERIES, ids));
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     private QueryBuilder applyActionableFilters(QueryBuilder queryBuilder, Map<String, String> actionableParams) {
@@ -628,13 +633,14 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         return parentChildDisjunction;
     }
 
-    private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id) {
-        reqBuilder.setTypes(EsContent.CHILD_ITEM);
-        HasParentFilterBuilder hasParentFilter = new HasParentFilterBuilder(
-                EsContent.TOP_LEVEL_CONTAINER,
-                new TermFilterBuilder(EsContent.ID, id.longValue())
-        );
-        return new FilteredQueryBuilder(queryBuilder, hasParentFilter);
+    private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id)  {
+        try {
+            ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
+            TermsFilterBuilder brandIdFilter = new TermsFilterBuilder(EsContent.BRAND, ids);
+            return new FilteredQueryBuilder(queryBuilder, brandIdFilter);
+        } catch (IOException ioe) {
+            throw Throwables.propagate(ioe);
+        }
     }
 
     private QueryBuilder getAvailabilityFilter() {

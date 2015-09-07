@@ -1,25 +1,31 @@
 package org.atlasapi.util;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.atlasapi.entity.Id;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * An SecondaryIndex is a surjective mapping from a set of keys to values,
@@ -30,6 +36,13 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
 
     private static final String KEY_KEY = "key";
     private static final String VALUE_KEY = "value";
+    private static final Function<? super ResultSet, ? extends ImmutableSet<Long>> RESULT_TO_IDS = rows -> {
+        ImmutableSet.Builder<Long> builder = ImmutableSet.builder();
+        for (Row row : rows) {
+            builder.add(row.getLong(KEY_KEY));
+        }
+        return builder.build();
+    };
 
     private final Session session;
     private final String indexTable;
@@ -86,4 +99,22 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
                 .setConsistencyLevel(level);
     }
 
+    @Override
+    public ListenableFuture<ImmutableSet<Long>> reverseLookup(Id id) {
+        try {
+            ImmutableMap<Long, Long> idToCanonical =
+                    Futures.get(lookup(ImmutableList.of(id.longValue())), IOException.class);
+
+            Long canonical = idToCanonical.get(id.longValue());
+
+            Statement canonicalToSecondaries = select(KEY_KEY, VALUE_KEY)
+                    .from(indexTable)
+                    .where(eq(VALUE_KEY, canonical))
+                    .setConsistencyLevel(readConsistency);
+
+            return Futures.transform(session.executeAsync(canonicalToSecondaries), RESULT_TO_IDS);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
 }

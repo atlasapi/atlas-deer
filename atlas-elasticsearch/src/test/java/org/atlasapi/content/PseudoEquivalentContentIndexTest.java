@@ -27,14 +27,14 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PseudoEquivalentEsContentIndexTest {
+public class PseudoEquivalentContentIndexTest {
 
     private SecondaryIndex equivIndex = mock(CassandraSecondaryIndex.class);
     private ContentIndex contentIndex;
     private Client esNode = ElasticSearchHelper.testNode().client();
     @Before
     public void setUp() {
-        EsContentIndex delegate = new EsContentIndex(
+        UnequivalentElasticsearchContentIndex delegate = new UnequivalentElasticsearchContentIndex(
                 esNode,
                 EsSchema.CONTENT_INDEX,
                 60000,
@@ -43,7 +43,7 @@ public class PseudoEquivalentEsContentIndexTest {
                 new NoOpSecondaryIndex()
         );
         delegate.startAsync().awaitRunning();
-        contentIndex = new PseudoEquivalentEsContentIndex(delegate);
+        contentIndex = new PseudoEquivalentContentIndex(delegate);
     }
 
     @Test

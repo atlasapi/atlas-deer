@@ -1,12 +1,10 @@
 package org.atlasapi;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.health.HealthProbe;
-import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
@@ -24,8 +22,6 @@ import com.netflix.astyanax.Keyspace;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.CassandraEquivalentContentStore;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
@@ -133,12 +129,7 @@ public class AtlasPersistenceModule {
                 context,
                 cassandraService,
                 cassandraKeyspace,
-                idGeneratorBuilder(), new ContentHasher() {
-                    @Override
-                    public String hash(Content content) {
-                        return UUID.randomUUID().toString();
-                    }
-                },
+                idGeneratorBuilder(), content -> UUID.randomUUID().toString(),
                 seeds,
                 health.metrics()
         );
@@ -239,13 +230,7 @@ public class AtlasPersistenceModule {
     }
 
     public IdGeneratorBuilder idGeneratorBuilder() {
-        return new IdGeneratorBuilder() {
-
-            @Override
-            public IdGenerator generator(String sequenceIdentifier) {
-                return new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
-            }
-        };
+        return sequenceIdentifier -> new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
     }
 
     @Bean
@@ -289,17 +274,14 @@ public class AtlasPersistenceModule {
 
     private List<ServerAddress> mongoHosts(String mongoHost, final Integer mongoPort) {
         Splitter splitter = Splitter.on(",").omitEmptyStrings().trimResults();
-        return ImmutableList.copyOf(Iterables.filter(Iterables.transform(splitter.split(mongoHost), 
-            new Function<String, ServerAddress>() {
-                @Override
-                public ServerAddress apply(String input) {
+        return ImmutableList.copyOf(Iterables.filter(Iterables.transform(splitter.split(mongoHost),
+                input -> {
                     try {
                         return new ServerAddress(input, mongoPort);
                     } catch (UnknownHostException e) {
                         return null;
                     }
                 }
-            }
         ), Predicates.notNull()));
     }
     

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Content;
@@ -87,7 +88,7 @@ public class TopicContentQueryExecutorTest {
         FluentIterable<Id> returning = FluentIterable.from(ImmutableSet.of(content.getId()));
         when(contentIndex.query(emptyAttributeQuerySet, context.getApplicationSources().getEnabledReadSources(), Selection.all(),
                 Optional.empty()))
-            .thenReturn(Futures.immediateFuture(new IndexQueryResult(returning, 0l)));
+            .thenReturn(Futures.immediateFuture(new IndexQueryResult(returning, ImmutableList.of(), 0l)));
         when(equivalentsResolver.resolveIds(argThat(hasItems(content.getId())), argThat(is(context.getApplicationSources())), argThat(is(context.getAnnotations().all()))))
             .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(Id.valueOf(1235), ImmutableSet.of(content)).build()));
         

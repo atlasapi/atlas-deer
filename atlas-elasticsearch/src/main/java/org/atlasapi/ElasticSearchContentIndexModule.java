@@ -7,20 +7,17 @@ import com.google.common.base.Splitter;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
-import org.atlasapi.content.EsContentIndex;
+import org.atlasapi.content.UnequivalentElasticsearchContentIndex;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.InstrumentedEsContentIndex;
-import org.atlasapi.content.PseudoEquivalentEsContentIndex;
+import org.atlasapi.content.PseudoEquivalentContentIndex;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.util.SecondaryIndex;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +29,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
 
     private final Logger log = LoggerFactory.getLogger(ElasticSearchContentIndexModule.class);
 
-    private final EsContentIndex unequivIndex;
+    private final UnequivalentElasticsearchContentIndex unequivIndex;
     private final ContentIndex equivIndex;
     private final EsTopicIndex topicIndex;
     private final EsPopularTopicIndex popularTopicsIndex;
@@ -50,9 +47,9 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             client.addTransportAddress(new InetSocketTransportAddress(host, 9300));
         }
 
-        unequivIndex = new EsContentIndex(client, indexName, requestTimeout, resolver, channelGroupResolver, equivalentContentIndex);
+        unequivIndex = new UnequivalentElasticsearchContentIndex(client, indexName, requestTimeout, resolver, channelGroupResolver, equivalentContentIndex);
 
-        PseudoEquivalentEsContentIndex equivalentEsIndex = new PseudoEquivalentEsContentIndex(unequivIndex);
+        PseudoEquivalentContentIndex equivalentEsIndex = new PseudoEquivalentContentIndex(unequivIndex);
 
         this.equivIndex = new InstrumentedEsContentIndex(equivalentEsIndex, metrics);
         this.popularTopicsIndex = new EsPopularTopicIndex(client);

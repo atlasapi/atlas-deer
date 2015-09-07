@@ -68,9 +68,12 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 
     private ListenableFuture<IndexQueryResult> getResults(Query<Topic> query)
             throws QueryExecutionException {
-        return query.isListQuery() ? queryIndex(query)
-                                   : Futures.immediateFuture(
-                                           new IndexQueryResult(FluentIterable.from(ImmutableList.of(query.getOnlyId())), 1L));
+        if (query.isListQuery()) {
+            return queryIndex(query);
+        }
+        FluentIterable<Id> ids = FluentIterable.from(ImmutableList.of(query.getOnlyId()));
+        IndexQueryResult result = new IndexQueryResult(ids, ImmutableList.of(), 1L);
+        return Futures.immediateFuture(result);
     }
 
     private ListenableFuture<IndexQueryResult> queryIndex(Query<Topic> query)

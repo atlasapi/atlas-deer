@@ -86,7 +86,7 @@ public class EsContentTitleSearcherTest {
         item2.setContainerRef(brand1.toRef());
         item3.setContainerRef(brand2.toRef());
 
-        EsContentIndex contentIndex = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
+        UnequivalentElasticsearchContentIndex contentIndex = new UnequivalentElasticsearchContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
         contentIndex.startAsync().awaitRunning();
 
         EsContentTitleSearcher contentSearcher = new EsContentTitleSearcher(esClient.client());
