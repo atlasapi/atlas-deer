@@ -11,6 +11,7 @@ import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpSecondaryIndex;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.client.Client;
 import org.junit.Before;
@@ -37,7 +38,8 @@ public class PseudoEquivalentEsContentIndexTest {
                 EsSchema.CONTENT_INDEX,
                 60000,
                 new NoOpContentResolver(),
-                mock(ChannelGroupResolver.class)
+                mock(ChannelGroupResolver.class),
+                new NoOpSecondaryIndex()
         );
         delegate.startAsync().awaitRunning();
         contentIndex = new PseudoEquivalentEsContentIndex(delegate, equivIndex);

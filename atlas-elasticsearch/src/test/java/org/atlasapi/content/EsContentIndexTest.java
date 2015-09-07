@@ -24,6 +24,7 @@ import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpSecondaryIndex;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.joda.time.DateTime;
@@ -68,7 +69,7 @@ public class EsContentIndexTest {
 
     @Before
     public void setup() {
-        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
+        index = new EsContentIndex(esClient, EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
         index.startAsync().awaitRunning();
     }
 

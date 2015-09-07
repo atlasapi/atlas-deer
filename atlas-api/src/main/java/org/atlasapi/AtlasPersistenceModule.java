@@ -66,6 +66,7 @@ import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
+import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.SecondaryIndex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -205,7 +206,7 @@ public class AtlasPersistenceModule {
                         persistenceModule().contentStore(),
                         health.metrics(),
                         channelGroupResolver(),
-                        new SecondaryIndex(
+                        new CassandraSecondaryIndex(
                                 persistenceModule().getSession(),
                                 CassandraEquivalentContentStore.EQUIVALENT_CONTENT_INDEX,
                                 persistenceModule().getReadConsistencyLevel()

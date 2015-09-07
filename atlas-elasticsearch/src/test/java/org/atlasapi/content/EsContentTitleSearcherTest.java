@@ -17,6 +17,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpSecondaryIndex;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -85,7 +86,7 @@ public class EsContentTitleSearcherTest {
         item2.setContainerRef(brand1.toRef());
         item3.setContainerRef(brand2.toRef());
 
-        EsContentIndex contentIndex = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
+        EsContentIndex contentIndex = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
         contentIndex.startAsync().awaitRunning();
 
         EsContentTitleSearcher contentSearcher = new EsContentTitleSearcher(esClient.client());
