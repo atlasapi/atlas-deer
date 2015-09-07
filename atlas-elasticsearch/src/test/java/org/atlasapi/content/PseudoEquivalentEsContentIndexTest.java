@@ -10,7 +10,9 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpSecondaryIndex;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.client.Client;
 import org.junit.Before;
@@ -27,7 +29,7 @@ import static org.mockito.Mockito.when;
 
 public class PseudoEquivalentEsContentIndexTest {
 
-    private SecondaryIndex equivIndex = mock(SecondaryIndex.class);
+    private SecondaryIndex equivIndex = mock(CassandraSecondaryIndex.class);
     private ContentIndex contentIndex;
     private Client esNode = ElasticSearchHelper.testNode().client();
     @Before
@@ -37,7 +39,8 @@ public class PseudoEquivalentEsContentIndexTest {
                 EsSchema.CONTENT_INDEX,
                 60000,
                 new NoOpContentResolver(),
-                mock(ChannelGroupResolver.class)
+                mock(ChannelGroupResolver.class),
+                new NoOpSecondaryIndex()
         );
         delegate.startAsync().awaitRunning();
         contentIndex = new PseudoEquivalentEsContentIndex(delegate, equivIndex);

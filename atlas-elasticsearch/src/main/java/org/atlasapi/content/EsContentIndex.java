@@ -5,6 +5,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
@@ -21,16 +22,15 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.EsTopic;
-import org.atlasapi.util.EsPersistenceException;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.EsSortQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
 import org.atlasapi.util.ImmutableCollectors;
+import org.atlasapi.util.SecondaryIndex;
 import org.atlasapi.util.Strings;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.NoShardAvailableActionException;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -50,16 +50,13 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.FilteredQueryBuilder;
-import org.elasticsearch.index.query.HasChildQueryBuilder;
 import org.elasticsearch.index.query.HasParentFilterBuilder;
 import org.elasticsearch.index.query.NestedFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermFilterBuilder;
-import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
-import org.elasticsearch.node.Node;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
@@ -95,12 +92,16 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
     private final EsSortQueryBuilder sortBuilder = new EsSortQueryBuilder();
 
-    public EsContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver, ChannelGroupResolver channelGroupResolver) {
+    private final SecondaryIndex equivIdIndex;
+
+    public EsContentIndex(Client esClient, String indexName, long requestTimeout, ContentResolver resolver,
+            ChannelGroupResolver channelGroupResolver, SecondaryIndex equivIdIndex) {
         this.esClient = checkNotNull(esClient);
         this.requestTimeout = requestTimeout;
         this.index = checkNotNull(indexName);
         this.resolver = checkNotNull(resolver);
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
+        this.equivIdIndex = checkNotNull(equivIdIndex);
     }
 
     @Override
@@ -115,6 +116,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     protected void shutDown() throws Exception {
 
     }
+
     private boolean createIndex(String name) {
         ActionFuture<IndicesExistsResponse> exists = esClient.admin().indices().exists(
             Requests.indicesExistsRequest(name)
@@ -159,7 +161,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
 
     }
 
-    private EsContent toEsContent(Item item) {
+    private EsContent toEsContent(Item item) throws IndexException {
         EsContent esContent = new EsContent()
                 .id(item.getId().longValue())
                 .type(ContentType.fromContent(item).get())
@@ -185,7 +187,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .broadcastStartTimeInMillis(itemToBroadcastStartTimes(item))
                 .locations(makeESLocations(item))
                 .topics(makeESTopics(item))
-                .sortKey(item.getSortKey());
+                .sortKey(item.getSortKey())
+                .canonicalId(toCanonicalId(item.getId()));
 
         if (item.getContainerRef() != null) {
             Id containerId = item.getContainerRef().getId();
@@ -208,6 +211,15 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         return esContent;
     }
 
+    private Id toCanonicalId(Id id) throws IndexException {
+        try {
+            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of(id.longValue()));
+            return Id.valueOf(Futures.get(result, IOException.class).get(id.longValue()));
+        } catch (IOException e) {
+            throw new IndexException(e);
+        }
+    }
+
     private Iterable<Long> itemToBroadcastStartTimes(Item item) {
         return item.getBroadcasts().stream()
                 .filter(b -> b.getTransmissionTime() != null)
@@ -215,7 +227,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
                 .collect(ImmutableCollectors.toList());
     }
 
-    private EsContent toEsContainer(Container container) {
+    private EsContent toEsContainer(Container container) throws IndexException {
         EsContent indexed = new EsContent()
             .id(container.getId().longValue())
             .type(ContentType.fromContent(container).get())
@@ -234,7 +246,8 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
             .priority(container.getPriority() != null ? container.getPriority().getPriority() : null)
             .locations(makeESLocations(container))
             .topics(makeESTopics(container))
-            .sortKey(container.getSortKey());
+            .sortKey(container.getSortKey())
+            .canonicalId(toCanonicalId(container.getId()));
 
         indexed.hasChildren(Boolean.FALSE);
         if (!container.getItemRefs().isEmpty()) {
@@ -328,13 +341,17 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
     }
 
     private void indexContainer(Container container) {
-        EsContent indexed = toEsContainer(container);
-        IndexRequest request = Requests.indexRequest(index)
-            .type(EsContent.TOP_LEVEL_CONTAINER)
-            .id(getDocId(container))
-            .source(indexed.toMap());
-        timeoutGet(esClient.index(request));
-        log.debug("indexed {}", container);
+        try {
+            EsContent indexed = toEsContainer(container);
+            IndexRequest request = Requests.indexRequest(index)
+                    .type(EsContent.TOP_LEVEL_CONTAINER)
+                    .id(getDocId(container))
+                    .source(indexed.toMap());
+            timeoutGet(esClient.index(request));
+            log.debug("indexed {}", container);
+        } catch (Exception e) {
+            throw new RuntimeIndexException("Error indexing " + container, e);
+        }
     }
 
 

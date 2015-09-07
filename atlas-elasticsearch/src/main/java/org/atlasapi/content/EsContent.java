@@ -43,6 +43,7 @@ public class EsContent extends EsObject {
     public static final String BRAND = "brand";
     public static final String SERIES = "series";
     public static final String SORT_KEY = "sortKey";
+    public static final String CANONICAL_ID = "canonicalId";
 
     public static final XContentBuilder getTopLevelMapping(String type) throws IOException {
         return addCommonProperties(XContentFactory.jsonBuilder()
@@ -151,6 +152,10 @@ public class EsContent extends EsObject {
                         .endObject()
                         .startObject(SORT_KEY)
                         .field("type").value("string")
+                        .field("index").value("not_analyzed")
+                        .endObject()
+                        .startObject(CANONICAL_ID)
+                        .field("type").value("long")
                         .field("index").value("not_analyzed")
                         .endObject()
         );
@@ -289,6 +294,16 @@ public class EsContent extends EsObject {
 
     public EsContent sortKey(String sortKey) {
         properties.put(SORT_KEY, sortKey);
+        return this;
+    }
+
+    public EsContent canonicalId(Id id) {
+        properties.put(CANONICAL_ID, id.longValue());
+        return this;
+    }
+
+    public EsContent canonicalId(Long id) {
+        properties.put(CANONICAL_ID, id.longValue());
         return this;
     }
 }

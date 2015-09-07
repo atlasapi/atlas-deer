@@ -24,6 +24,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpSecondaryIndex;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
@@ -66,7 +67,7 @@ public class EsContentSearcherV3CompatibilityTest {
     @Before
     public void setUp() throws Exception {
         ElasticSearchHelper.refresh(esClient.client());
-        indexer = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
+        indexer = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex());
         indexer.startAsync().awaitRunning(10, TimeUnit.SECONDS);
         refresh(esClient.client());
     }

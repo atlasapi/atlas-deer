@@ -10,7 +10,6 @@ import java.util.List;
 
 public class NoOpSecondaryIndex implements SecondaryIndex {
 
-
     @Override
     public Statement insertStatement(Long key, Long value) {
         throw new UnsupportedOperationException();
