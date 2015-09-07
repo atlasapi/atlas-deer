@@ -506,7 +506,7 @@ public class EsContentIndex extends AbstractIdleService implements ContentIndex 
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
-        
+
         SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)

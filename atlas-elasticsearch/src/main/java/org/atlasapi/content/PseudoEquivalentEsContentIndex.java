@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -12,7 +11,6 @@ import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ImmutableCollectors;
-import org.atlasapi.util.SecondaryIndex;
 
 import java.util.Optional;
 
@@ -21,11 +19,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class PseudoEquivalentEsContentIndex implements ContentIndex {
 
     private final EsContentIndex delegate;
-    private final SecondaryIndex equivalenceIndex;
 
-    public PseudoEquivalentEsContentIndex(EsContentIndex delegate, SecondaryIndex equivalenceIndex) {
+    public PseudoEquivalentEsContentIndex(EsContentIndex delegate) {
         this.delegate = checkNotNull(delegate);
-        this.equivalenceIndex = checkNotNull(equivalenceIndex);
     }
 
     @Override
@@ -43,12 +39,8 @@ public class PseudoEquivalentEsContentIndex implements ContentIndex {
 
             FluentIterable<Id> ids = result.getIds();
 
-            ImmutableMap<Long, Long> equivIndexResults =
-                    Futures.get(equivalenceIndex.lookup(ids.transform(Id::longValue)), Exception.class);
-
             ImmutableList<Id> equivalentResult = ImmutableList.copyOf(ids).stream()
                     .map(Id::longValue)
-                    .map(equivIndexResults::get)
                     .distinct()
                     .filter(id -> id != null)
                     .limit(selection.limitOrDefaultValue(100))
