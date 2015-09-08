@@ -137,7 +137,11 @@ public class EsContentTranslator {
     private Id toCanonicalId(Id id) throws IndexException {
         try {
             ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of(id.longValue()));
-            return Id.valueOf(Futures.get(result, IOException.class).get(id.longValue()));
+            ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
+            if (idToCanonical.containsKey(Long.valueOf(id.longValue()))) {
+                return Id.valueOf(Long.valueOf(idToCanonical.get(id.longValue())));
+            }
+            return null;
         } catch (IOException e) {
             throw new IndexException(e);
         }
@@ -176,6 +180,7 @@ public class EsContentTranslator {
     }
 
     public EsContent toEsContainer(Container container) throws IndexException {
+        Id canonicalId = toCanonicalId(container.getId());
         EsContent indexed = new EsContent()
                 .id(container.getId().longValue())
                 .type(ContentType.fromContent(container).get())
@@ -194,8 +199,10 @@ public class EsContentTranslator {
                 .priority(container.getPriority() != null ? container.getPriority().getPriority() : null)
                 .locations(makeESLocations(container))
                 .topics(makeESTopics(container))
-                .sortKey(container.getSortKey())
-                .canonicalId(toCanonicalId(container.getId()));
+                .sortKey(container.getSortKey());
+        if (canonicalId != null) {
+            indexed.canonicalId(canonicalId.longValue());
+        }
 
         indexed.hasChildren(Boolean.FALSE);
         if (!container.getItemRefs().isEmpty()) {
@@ -243,6 +250,7 @@ public class EsContentTranslator {
     }
 
     public EsContent toEsContent(Item item) throws IndexException {
+        Id canonical = toCanonicalId(item.getId());
         EsContent esContent = new EsContent()
                 .id(item.getId().longValue())
                 .type(ContentType.fromContent(item).get())
@@ -268,8 +276,9 @@ public class EsContentTranslator {
                 .broadcastStartTimeInMillis(itemToBroadcastStartTimes(item))
                 .locations(makeESLocations(item))
                 .topics(makeESTopics(item))
-                .sortKey(item.getSortKey())
-                .canonicalId(toCanonicalId(item.getId()));
+                .sortKey(item.getSortKey());
+        if (canonical != null)
+                esContent.canonicalId(canonical.longValue());
 
         if (item.getContainerRef() != null) {
             Id containerId = item.getContainerRef().getId();
