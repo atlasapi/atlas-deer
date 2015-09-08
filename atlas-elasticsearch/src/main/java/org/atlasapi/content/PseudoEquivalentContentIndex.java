@@ -37,7 +37,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     Exception.class
             );
 
-            FluentIterable<Id> ids = result.getIds();
+            FluentIterable<Id> ids = result.getCanonicalIds();
 
             ImmutableList<Id> equivalentResult = ImmutableList.copyOf(ids).stream()
                     .map(Id::longValue)
