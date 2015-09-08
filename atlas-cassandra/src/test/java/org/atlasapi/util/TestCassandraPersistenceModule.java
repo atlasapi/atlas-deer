@@ -99,7 +99,7 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         tearDown();
         Session session = cassandraService.getCluster().connect();
         session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
-        createTables(cassandraService.getCluster().connect("atlas_testing"), context);
+        createTables(session, context);
         
         CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(messageSenderFactory, context, cassandraService,
                 keyspace, idGeneratorBuilder(), hasher, seeds, new MetricRegistry());
