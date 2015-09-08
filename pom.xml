@@ -231,7 +231,7 @@
       <dependency>
         <groupId>javax.servlet</groupId>
         <artifactId>javax.servlet-api</artifactId>
-        <version>3.0.1</version>
+        <version>3.1.0</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
@@ -349,7 +349,7 @@
     <common.version>1.0-SNAPSHOT</common.version>
     <metrics.version>3.0.1</metrics.version>
     <amq.version>5.9.0</amq.version>
-    <spring.version>3.0.5.RELEASE</spring.version>
+    <spring.version>4.2.1.RELEASE</spring.version>
     <datastax.version>2.1.7.1</datastax.version>
     <jackson.version>2.3.0</jackson.version>
   </properties>
