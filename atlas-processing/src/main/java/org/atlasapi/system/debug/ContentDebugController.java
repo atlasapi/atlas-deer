@@ -23,6 +23,7 @@ import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.Series;
@@ -83,6 +84,7 @@ public class ContentDebugController {
     private final AtlasPersistenceModule persistence;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private final ContentIndex index;
+    private final EsContentTranslator esContentTranslator;
 
     public ContentDebugController(
             LegacyPersistenceModule legacyPersistence,
@@ -90,14 +92,15 @@ public class ContentDebugController {
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             ChannelResolver channelResolver,
             EquivalentScheduleStore scheduleStore,
-            ContentIndex index
-    ) {
+            ContentIndex index,
+            EsContentTranslator esContentTranslator) {
         this.legacyPersistence = checkNotNull(legacyPersistence);
         this.persistence = checkNotNull(persistence);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.channelResolver = checkNotNull(channelResolver);
         this.scheduleStore = checkNotNull(scheduleStore);
         this.index = checkNotNull(index);
+        this.esContentTranslator = checkNotNull(esContentTranslator);
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -177,7 +180,12 @@ public class ContentDebugController {
             Resolved<Content> resolved =
                     Futures.get(persistence.contentStore().resolveIds(ImmutableList.of(decodedId)), IOException.class);
             index.index(resolved.getResources().first().get());
-            response.getWriter().write("Successfully indexed content");
+            Content content = resolved.getResources().first().get();
+            if (content instanceof Container) {
+                gson.toJson(esContentTranslator.toEsContainer((Container) content), response.getWriter());
+            } else {
+                gson.toJson(esContentTranslator.toEsContent((Item) content), response.getWriter());
+            }
         } catch (Exception e) {
             Throwables.propagate(e);
         }

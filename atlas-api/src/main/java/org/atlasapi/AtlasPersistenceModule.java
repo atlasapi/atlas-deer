@@ -26,6 +26,7 @@ import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
+import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
@@ -239,6 +240,11 @@ public class AtlasPersistenceModule {
         return esContentIndexModule().equivContentIndex();
     }
 
+    @Bean
+    @Primary
+    public EsContentTranslator esContentTranslator() {
+        return esContentIndexModule().translator();
+    }
     @Bean
     @Primary
     public EsTopicIndex topicIndex() {

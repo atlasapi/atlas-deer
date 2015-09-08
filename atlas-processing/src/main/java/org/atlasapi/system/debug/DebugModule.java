@@ -25,7 +25,8 @@ public class DebugModule {
                 explicitEquivalenceMigrator(),
                 persistenceModule.channelResolver(),
                 persistenceModule.getEquivalentScheduleStore(),
-                persistenceModule.contentIndex()
+                persistenceModule.contentIndex(),
+                persistenceModule.esContentTranslator()
         );
     }
 

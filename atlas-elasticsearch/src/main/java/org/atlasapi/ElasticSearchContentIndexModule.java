@@ -34,6 +34,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     private final EsTopicIndex topicIndex;
     private final EsPopularTopicIndex popularTopicsIndex;
     private final EsContentTitleSearcher contentSearcher;
+    private final EsContentTranslator translator;
 
     public ElasticSearchContentIndexModule(
             String seeds,
@@ -57,6 +58,13 @@ public class ElasticSearchContentIndexModule implements IndexModule {
                 channelGroupResolver,
                 equivContentIndex,
                 requestTimeout.intValue()
+        );
+        this.translator = new EsContentTranslator(
+                indexName,
+                esClient,
+                equivContentIndex,
+                requestTimeout.longValue(),
+                resolver
         );
 
         PseudoEquivalentContentIndex equivalentEsIndex =
@@ -110,5 +118,9 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     
     public EsContentTitleSearcher contentTitleSearcher() {
         return contentSearcher;
+    }
+
+    public EsContentTranslator translator() {
+        return translator;
     }
 }
