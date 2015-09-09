@@ -124,7 +124,10 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilderFactory.buildQuery(query);
-        BoolFilterBuilder filterBuilder = FilterBuilders.boolFilter();
+
+        /* matchAllFilter as a bool filter with less than 1 clause is invalid */
+        BoolFilterBuilder filterBuilder = FilterBuilders.boolFilter()
+                .must(FilterBuilders.matchAllFilter());
 
         SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
