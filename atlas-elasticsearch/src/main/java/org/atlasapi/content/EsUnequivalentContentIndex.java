@@ -71,7 +71,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
     private final String index;
     private final ChannelGroupResolver channelGroupResolver;
 
-    private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
+    private final EsQueryBuilder queryBuilderFactory = new EsQueryBuilder();
 
     private final SecondaryIndex equivIdIndex;
     private final EsUnequivalentContentIndexer indexer;
@@ -123,12 +123,13 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
-        QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
+        QueryBuilder queryBuilder = this.queryBuilderFactory.buildQuery(query);
         BoolFilterBuilder filterBuilder = FilterBuilders.boolFilter();
 
         SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
                 .addSort(SortBuilders.scoreSort().order(SortOrder.DESC))
+                .addSort(EsContent.ID, SortOrder.ASC)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
                 .addField(EsContent.CANONICAL_ID)
                 .addField(EsContent.ID)
@@ -164,7 +165,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
             /* Temporarily disabled due to not working correctly
             if (queryParams.get().getRegionId().isPresent()) {
-                queryBuilder = addRegionFilter(queryParams, queryBuilder);
+                queryBuilderFactory = addRegionFilter(queryParams, queryBuilderFactory);
             }
             */
 
@@ -178,8 +179,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         } else {
             queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
         }
-
-        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         log.debug(queryBuilder.toString());
         reqBuilder.setQuery(QueryBuilders.filteredQuery(queryBuilder, filterBuilder));
@@ -212,10 +211,10 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         if (actionableParams.get("location.available") != null) {
             orFilterBuilder.add(getAvailabilityFilter());
         }
-        DateTime broadcastTimeGreaterThan = actionableParams.get("broadcast.time.gt") != null ?
-                DateTime.parse(actionableParams.get("broadcast.time.gt")) : null;
-        DateTime broadcastTimeLessThan = actionableParams.get("broadcast.time.lt") != null ?
-                DateTime.parse(actionableParams.get("broadcast.time.lt")) : null;
+        DateTime broadcastTimeGreaterThan = actionableParams.get("broadcast.time.gt") == null ? null
+                : DateTime.parse(actionableParams.get("broadcast.time.gt"));
+        DateTime broadcastTimeLessThan = actionableParams.get("broadcast.time.lt") == null ? null
+                : DateTime.parse(actionableParams.get("broadcast.time.lt"));
         if (broadcastTimeGreaterThan != null || broadcastTimeLessThan != null) {
             orFilterBuilder.add(
                     broadcastRangeFilterFrom(broadcastTimeGreaterThan, broadcastTimeLessThan)
