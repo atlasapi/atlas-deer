@@ -222,12 +222,12 @@ public class EsContent extends EsObject {
         return this;
     }
 
-    public EsContent broadcasts(Collection<EsBroadcast> broadcasts) {
+    public EsContent broadcasts(Iterable<EsBroadcast> broadcasts) {
         properties.put(BROADCASTS, Iterables.transform(broadcasts, TO_MAP));
         return this;
     }
 
-    public EsContent locations(Collection<EsLocation> locations) {
+    public EsContent locations(Iterable<EsLocation> locations) {
         properties.put(LOCATIONS, Iterables.transform(locations, TO_MAP));
         return this;
     }

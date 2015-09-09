@@ -56,6 +56,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class EsUnequivalentContentIndex extends AbstractIdleService implements ContentIndex {
 
     private static final Function<SearchHit, Id> HIT_TO_CANONICAL_ID = hit -> {
+        if (hit == null || hit.field(EsContent.CANONICAL_ID) == null) {
+            return null;
+        }
         Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
         return Id.valueOf(id);
     };

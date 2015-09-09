@@ -10,8 +10,7 @@ import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.EsUnequivalentContentIndex;
-import org.atlasapi.content.EsUnequivalentContentIndexer;
-import org.atlasapi.content.InstrumentedEsContentIndex;
+import org.atlasapi.content.InstrumentedContentIndex;
 import org.atlasapi.content.PseudoEquivalentContentIndex;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
@@ -70,7 +69,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         PseudoEquivalentContentIndex equivalentEsIndex =
                 new PseudoEquivalentContentIndex(unequivIndex);
 
-        this.equivContentIndex = new InstrumentedEsContentIndex(equivalentEsIndex, metrics);
+        this.equivContentIndex = new InstrumentedContentIndex(equivalentEsIndex, metrics);
         this.popularTopicsIndex = new EsPopularTopicIndex(esClient);
         this.topicIndex = new EsTopicIndex(esClient, EsSchema.TOPICS_INDEX, 60, TimeUnit.SECONDS);
         this.contentSearcher = new EsContentTitleSearcher(esClient);

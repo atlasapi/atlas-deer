@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.entity.Id;
 import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -56,7 +57,7 @@ public class EsUnequivalentContentIndexer {
         try {
             content.accept(getIndexingVisitor());
         } catch (RuntimeIndexException e) {
-            throw new IndexException(e.getMessage(), e.getCause());
+            throw new IndexException(e);
         }
     }
 
@@ -80,9 +81,13 @@ public class EsUnequivalentContentIndexer {
     private void removeContent(Content content) {
         Long id = content.getId().longValue();
         log.debug("Content {} is not actively published, removing from index", id);
-        deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
-        deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
-        deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
+        if (content instanceof Item) {
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
+        }
+        if (content instanceof Container) {
+            deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
+        }
     }
 
     private void deleteFromIndexIfExists(Long id, String mappingType) {
@@ -97,7 +102,7 @@ public class EsUnequivalentContentIndexer {
                 esClient.delete(new DeleteRequest(indexName, mappingType, id.toString())).get();
             }
         } catch (Exception e) {
-            log.error("Failed to delete content {} due to {}", id, e.toString());
+            log.error("Failed to delete content {} due to {}", id, e);
         }
     }
 
@@ -121,6 +126,9 @@ public class EsUnequivalentContentIndexer {
             BulkRequest requests = Requests.bulkRequest();
             IndexRequest mainIndexRequest;
             ContainerRef container = item.getContainerRef();
+            if (item instanceof Episode) {
+                contentTranslator.denormalizeEpisodeOntoSeries(item);
+            }
             if (container != null) {
                 contentTranslator.setParentFields(esContent, container);
                 mainIndexRequest = Requests.indexRequest(indexName)
@@ -142,6 +150,8 @@ public class EsUnequivalentContentIndexer {
             throw new RuntimeIndexException("Error indexing " + item, e);
         }
     }
+
+
 
     private String getDocId(Content content) {
         return String.valueOf(content.getId());

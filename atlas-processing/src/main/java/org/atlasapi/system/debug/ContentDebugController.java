@@ -1,5 +1,6 @@
 package org.atlasapi.system.debug;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -11,6 +12,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -23,6 +25,7 @@ import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.EsContent;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
@@ -41,6 +44,8 @@ import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
+import org.atlasapi.util.EsObject;
+import org.elasticsearch.common.xcontent.XContentBuilderString;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
@@ -57,6 +62,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -75,6 +81,7 @@ public class ContentDebugController {
     private final Gson gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
             (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
             .create();
+    private final ObjectMapper jackson = new ObjectMapper();
 
     private static final Function<Content, ResourceRef> TO_RESOURCE_REF = input -> input.toRef();
     private static final Function<ResourceRef, Publisher> TO_SOURCE = input -> input.getSource();
@@ -182,9 +189,13 @@ public class ContentDebugController {
             index.index(resolved.getResources().first().get());
             Content content = resolved.getResources().first().get();
             if (content instanceof Container) {
-                gson.toJson(esContentTranslator.toEsContainer((Container) content), response.getWriter());
+                EsContent esContainer = esContentTranslator.toEsContainer((Container) content);
+                Map<String, Object> map = EsObject.TO_MAP.apply(esContainer);
+                jackson.writeValue(response.getWriter(), map);
             } else {
-                gson.toJson(esContentTranslator.toEsContent((Item) content), response.getWriter());
+                EsContent esContent = esContentTranslator.toEsContent((Item) content);
+                Map<String, Object> map = EsObject.TO_MAP.apply(esContent);
+                jackson.writeValue(response.getWriter(), map);
             }
         } catch (Exception e) {
             Throwables.propagate(e);

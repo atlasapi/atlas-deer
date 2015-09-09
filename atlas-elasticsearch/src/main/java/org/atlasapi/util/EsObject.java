@@ -24,7 +24,7 @@ public class EsObject {
         return properties;
     }
 
-    private static class FromEsObjectToMap implements Function<EsObject, Map<String, Object>> {
+    public static class FromEsObjectToMap implements Function<EsObject, Map<String, Object>> {
 
         @Override
         public Map<String, Object> apply(EsObject input) {

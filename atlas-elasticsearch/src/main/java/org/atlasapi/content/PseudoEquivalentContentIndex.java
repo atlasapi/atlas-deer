@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -37,7 +38,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     Exception.class
             );
 
-            FluentIterable<Id> ids = result.getCanonicalIds();
+            FluentIterable<Id> ids = result.getCanonicalIds().filter(Predicates.notNull());
 
             ImmutableList<Id> equivalentResult = ImmutableList.copyOf(ids).stream()
                     .map(Id::longValue)

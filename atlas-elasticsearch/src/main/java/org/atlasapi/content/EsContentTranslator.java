@@ -1,10 +1,14 @@
 package org.atlasapi.content;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.time.DateTimeZones;
@@ -12,25 +16,29 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.util.ElasticsearchUtils;
+import org.atlasapi.util.EsObject;
 import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.joda.time.DateTime;
+import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -98,9 +106,14 @@ public class EsContentTranslator {
     }
 
     private EsLocation toEsLocation(Policy policy) {
-        return new EsLocation()
-                .availabilityTime(toUtc(policy.getAvailabilityStart()).toDate())
-                .availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
+        EsLocation location = new EsLocation();
+        if (policy.getAvailabilityStart() != null) {
+            location.availabilityTime(toUtc(policy.getAvailabilityStart()).toDate());
+        }
+        if (policy.getAvailabilityEnd() != null) {
+            location.availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
+        }
+        return location;
     }
 
     private Collection<EsLocation> makeESLocations(Content content) {
@@ -136,7 +149,7 @@ public class EsContentTranslator {
 
     private Id toCanonicalId(Id id) throws IndexException {
         try {
-            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of(id.longValue()));
+            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(Lists.newArrayList(id.longValue()));
             ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
             if (idToCanonical.containsKey(Long.valueOf(id.longValue()))) {
                 return Id.valueOf(Long.valueOf(idToCanonical.get(id.longValue())));
@@ -180,6 +193,7 @@ public class EsContentTranslator {
     }
 
     public EsContent toEsContainer(Container container) throws IndexException {
+        Optional<Map<String, Object>> maybeExisting = getContainer(container.toRef());
         Id canonicalId = toCanonicalId(container.getId());
         EsContent indexed = new EsContent()
                 .id(container.getId().longValue())
@@ -196,10 +210,16 @@ public class EsContentTranslator {
                 .specialization(container.getSpecialization() != null ?
                         container.getSpecialization().name() :
                         null)
-                .priority(container.getPriority() != null ? container.getPriority().getPriority() : null)
-                .locations(makeESLocations(container))
-                .topics(makeESTopics(container))
-                .sortKey(container.getSortKey());
+                .priority(container.getPriority() != null ? container.getPriority().getPriority() : null);
+
+        if (maybeExisting.isPresent()) {
+            setExistingData(container, indexed, maybeExisting.get());
+        } else {
+            indexed.locations(makeESLocations(container));
+        }
+
+        indexed.topics(makeESTopics(container));
+        indexed.sortKey(container.getSortKey());
         if (canonicalId != null) {
             indexed.canonicalId(canonicalId.longValue());
         }
@@ -221,6 +241,20 @@ public class EsContentTranslator {
         return indexed;
     }
 
+    private void setExistingData(Container container, EsContent indexed, Map<String, Object> existing) {
+        List<Map<String, Object>> locations = dedupeAndMergeLocations(
+                container, (List) existing.get(EsContent.LOCATIONS)
+        );
+        indexed.locations(Iterables.transform(locations, EsLocation::fromMap));
+        if (existing.get(EsContent.BROADCASTS) != null) {
+            List<Map<String, Object>> broadcasts = (List) existing.get(EsContent.BROADCASTS);
+            indexed.broadcasts(Iterables.transform(broadcasts, EsBroadcast::fromMap));
+        }
+        if (existing.get(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS) != null) {
+            indexed.broadcastStartTimeInMillis((List) existing.get(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS));
+        }
+    }
+
     private String getDocId(Content content) {
         return String.valueOf(content.getId());
     }
@@ -230,7 +264,7 @@ public class EsContentTranslator {
     }
 
     public void setParentFields(EsContent child, ContainerRef parent) {
-        Optional<Map<String, Object>> maybeParent = getParent(parent);
+        Optional<Map<String, Object>> maybeParent = getContainer(parent);
         if (maybeParent.isPresent()) {
             Map<String, Object> parentContainerData = maybeParent.get();
             Object title = parentContainerData.get(EsContent.TITLE);
@@ -240,7 +274,196 @@ public class EsContentTranslator {
         }
     }
 
-    private Optional<Map<String, Object>> getParent(ContainerRef parent) {
+    public void denormalizeEpisodeOntoSeries(Item content) {
+        if (content instanceof Episode) {
+            Episode episode = (Episode) content;
+            if (episode.getSeriesRef() != null) {
+                SeriesRef seriesRef = episode.getSeriesRef();
+                Optional<Map<String, Object>> maybeParent = getContainer(seriesRef);
+                if (maybeParent.isPresent()) {
+                    Map<String, Object> series = maybeParent.get();
+                    series.put(
+                            EsContent.BROADCASTS,
+                            dedupeAndMergeBroadcasts(episode, (List) series.get(EsContent.BROADCASTS))
+                    );
+                    series.put(
+                            EsContent.LOCATIONS,
+                            dedupeAndMergeLocations(episode, (List) series.get(EsContent.LOCATIONS))
+                    );
+                    series.put(
+                            EsBroadcast.TRANSMISSION_TIME_IN_MILLIS,
+                            dedupeAndMergeTransmissionTime(episode, (List) series.get(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS))
+                    );
+                    reindexParent(seriesRef, series);
+                }
+            }
+        }
+    }
+
+    private Object dedupeAndMergeTransmissionTime(Item episode, List<Integer> list) {
+        ImmutableList<Long> millis = episode.getBroadcasts().stream()
+                .map(b -> b.getTransmissionTime().getMillis())
+                .collect(ImmutableCollectors.toList());
+
+        if (list == null || list.isEmpty()) {
+            return millis;
+        }
+
+        return ImmutableList.builder()
+                .addAll(millis)
+                .addAll(list)
+                .build()
+                .stream()
+                .distinct()
+                .collect(ImmutableCollectors.toList());
+    }
+
+    private List<Map<String, Object>> dedupeAndMergeLocations(Content episode, List<Map<String, Object>> existingLocations) {
+        ImmutableSet<Policy> policies = episode.getManifestedAs().stream()
+                .filter(encoding -> encoding != null)
+                .flatMap(encoding -> encoding.getAvailableAt().stream())
+                .filter(location -> location != null)
+                .map(Location::getPolicy)
+                .filter(policy -> policy != null)
+                .collect(ImmutableCollectors.toSet());
+
+        Predicate<Policy> filter = createLocationNotPresentFilter(
+                fromEsLocations(
+                        existingLocations != null ? existingLocations : ImmutableList.of()
+                )
+        );
+
+        ImmutableList<Map<String, Object>> newPolicies = policies.stream()
+                .filter(filter::apply)
+                .map(this::toEsLocation)
+                .map(EsObject::toMap)
+                .collect(ImmutableCollectors.toList());
+
+        return (List) ImmutableList.builder().addAll(existingLocations).addAll(newPolicies).build();
+    }
+
+    private ImmutableList<Policy> fromEsLocations(List<Map<String, Object>> existingLocations) {
+        ImmutableList.Builder<Policy> builder = ImmutableList.builder();
+        for (Map<String, Object> location : existingLocations) {
+            builder.add(fromEsLocation(location));
+        }
+        return builder.build();
+    }
+
+    private Policy fromEsLocation(Map<String, Object> location) {
+        String start = (String) location.get(EsLocation.AVAILABILITY_TIME);
+        String end = (String) location.get(EsLocation.AVAILABILITY_END_TIME);
+        DateTime startDt = null;
+        DateTime endDt = null;
+        if (!Strings.isNullOrEmpty(start)) {
+            startDt = DateTime.parse(start);
+        }
+        if (!Strings.isNullOrEmpty(end)) {
+            endDt = DateTime.parse(end);
+        }
+        Policy pol = new Policy();
+        if (endDt != null) {
+            pol.setAvailabilityStart(startDt);
+        }
+        if (startDt != null) {
+            pol.setAvailabilityEnd(endDt);
+        }
+        return pol;
+    }
+
+    private Predicate<Policy> createLocationNotPresentFilter(List<Policy> existingPolicies) {
+        return policy -> {
+            Interval newInterval =
+                    new Interval(policy.getAvailabilityStart(), policy.getAvailabilityEnd());
+
+            for (Policy existingPolicy : existingPolicies) {
+                Interval existingInterval = new Interval(
+                        existingPolicy.getAvailabilityStart(), existingPolicy.getAvailabilityEnd()
+                );
+                if (existingInterval.isEqual(newInterval)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+    }
+
+    private void reindexParent(SeriesRef seriesRef, Map<String, Object> series) {
+        IndexRequest req = Requests.indexRequest(indexName)
+                .type(EsContent.TOP_LEVEL_CONTAINER)
+                .id(getDocId(seriesRef))
+                .source(series);
+        try {
+            esClient.index(req).get();
+        } catch (Exception e) {
+            log.error("Failed to update Series {} with Episode data", seriesRef.getId(), e);
+        }
+    }
+
+    private ImmutableList<Object> dedupeAndMergeBroadcasts(Item item, List<Map<String, Object>> indexedBroadcasts) {
+        List<Broadcast> parentIndexedBroadcasts = fromEsBroadcasts(
+                indexedBroadcasts != null ? indexedBroadcasts : ImmutableList.of()
+        );
+
+        Predicate<Broadcast> broadcastNotPresentFilter =
+                createBroadcastNotPresentFilter(parentIndexedBroadcasts);
+
+        ImmutableList<Map<String, Object>> newBroadcasts = item.getBroadcasts().stream()
+                .filter(broadcastNotPresentFilter::apply)
+                .map(this::toEsBroadcast)
+                .map(EsObject::toMap)
+                .collect(ImmutableCollectors.toList());
+
+        ImmutableList.Builder<Object> merged = ImmutableList.builder().addAll(newBroadcasts);
+        if (indexedBroadcasts != null) {
+            merged.addAll(indexedBroadcasts);
+        }
+        return merged.build();
+    }
+
+    private Predicate<Broadcast> createBroadcastNotPresentFilter(Iterable<Broadcast> existingBroadcasts) {
+        return broadcast -> {
+            if (broadcast == null || broadcast.getTransmissionInterval() == null) {
+                return false;
+            }
+            for (Broadcast existingBroadcast : existingBroadcasts) {
+                if (existingBroadcast.getTransmissionInterval()
+                        .isEqual(broadcast.getTransmissionInterval())) {
+                    return false;
+                }
+            }
+            return true;
+        };
+    }
+
+    private List<Broadcast> fromEsBroadcasts(List<Map<String, Object>> broadcasts) {
+        ImmutableList.Builder<Broadcast> builder = ImmutableList.builder();
+        for (Map<String, Object> broadcast : broadcasts) {
+            builder.add(toBroadcast(broadcast));
+        }
+        return builder.build();
+    }
+
+    private Broadcast toBroadcast(Map<String, Object> broadcast) {
+        String start = (String) broadcast.get(EsBroadcast.TRANSMISSION_TIME);
+        String end = (String) broadcast.get(EsBroadcast.TRANSMISSION_END_TIME);
+        DateTime startDt = null;
+        DateTime endDt = null;
+        if (!Strings.isNullOrEmpty(start)) {
+            startDt = DateTime.parse(start);
+        }
+        if (!Strings.isNullOrEmpty(end)) {
+            endDt = DateTime.parse(end);
+        }
+        return new Broadcast(
+                Id.valueOf((Integer) broadcast.get(EsBroadcast.CHANNEL)),
+                startDt,
+                endDt,
+                true
+        );
+    }
+
+    private Optional<Map<String, Object>> getContainer(ContainerRef parent) {
         GetRequest request = Requests.getRequest(indexName).id(getDocId(parent));
         GetResponse response = ElasticsearchUtils.getWithTimeout(esClient.get(request), requestTimeout);
         if (response.isExists()) {

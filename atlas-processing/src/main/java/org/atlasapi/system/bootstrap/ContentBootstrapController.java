@@ -280,7 +280,7 @@ public class ContentBootstrapController {
                 try {
                     contentIndex.index(item);
                 } catch (IndexException e) {
-                    log.warn("Failed to index content {} - {}", item.getId(), e.toString());
+                    log.error("Failed to index content", e);
                 }
                 return Void.TYPE;
             }
@@ -290,7 +290,7 @@ public class ContentBootstrapController {
                 try {
                     contentIndex.index(container);
                 } catch (IndexException e) {
-                    log.warn("Failed to index content {} - {}", container.getId(), e.toString());
+                    log.error("Failed to index content", e);
                 }
                 return Void.TYPE;
             }

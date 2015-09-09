@@ -14,13 +14,13 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class InstrumentedEsContentIndex implements ContentIndex {
+public class InstrumentedContentIndex implements ContentIndex {
 
     private final ContentIndex delegate;
     private final Timer contentIndexTimer;
     private final Timer queryTimer;
 
-    public InstrumentedEsContentIndex(ContentIndex delegate, MetricRegistry metrics) {
+    public InstrumentedContentIndex(ContentIndex delegate, MetricRegistry metrics) {
         this.delegate = checkNotNull(delegate);
         this.contentIndexTimer = metrics.timer("EsContentIndex.index");
         this.queryTimer = metrics.timer("EsContentIndex.query");
