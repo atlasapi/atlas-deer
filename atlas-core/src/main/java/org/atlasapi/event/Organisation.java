@@ -1,7 +1,7 @@
 package org.atlasapi.event;
 
-import org.atlasapi.media.entity.ContentGroup;
-import org.atlasapi.media.entity.Person;
+import org.atlasapi.content.ContentGroup;
+import org.atlasapi.entity.Person;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;

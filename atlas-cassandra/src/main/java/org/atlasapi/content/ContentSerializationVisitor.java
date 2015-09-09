@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.ProtoBufUtils;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
@@ -50,7 +50,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                 .setType(ided.getClass().getSimpleName().toLowerCase());
         }
         if (ided.getLastUpdated() != null) {
-            builder.setLastUpdated(ProtoBufUtils.serializeDateTime(ided.getLastUpdated()));
+            builder.setLastUpdated(new DateTimeSerializer().serialize(ided.getLastUpdated()));
         }
         if (ided.getCanonicalUri() != null) {
             builder.setUri(ided.getCanonicalUri());
@@ -72,13 +72,13 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private Builder visitDescribed(Described content) {
         Builder builder = visitIdentified(content);
         if (content.getThisOrChildLastUpdated() != null) {
-            builder.setChildLastUpdated(ProtoBufUtils.serializeDateTime(content.getThisOrChildLastUpdated()));
+            builder.setChildLastUpdated(new DateTimeSerializer().serialize(content.getThisOrChildLastUpdated()));
         }
         if (content.getSource() != null) {
             builder.setSource(content.getSource().key());
         }
         if (content.getFirstSeen() != null) {
-            builder.setFirstSeen(ProtoBufUtils.serializeDateTime(content.getFirstSeen()));
+            builder.setFirstSeen(new DateTimeSerializer().serialize(content.getFirstSeen()));
         }
         if (content.getMediaType() != null && !MediaType.VIDEO.equals(content.getMediaType())) {
             builder.setMediaType(content.getMediaType().toKey());

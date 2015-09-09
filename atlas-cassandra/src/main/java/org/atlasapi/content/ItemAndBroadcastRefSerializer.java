@@ -1,17 +1,16 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
+import java.util.Map;
+
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.joda.time.Interval;
 
-import java.util.Map;
-
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 public class ItemAndBroadcastRefSerializer {
 
@@ -30,8 +29,12 @@ public class ItemAndBroadcastRefSerializer {
             CommonProtos.BroadcastRef.Builder broadcastRefBuilder = CommonProtos.BroadcastRef.newBuilder();
             broadcastRefBuilder.setSourceId(broadcastRef.getSourceId());
             broadcastRefBuilder.setChannelId(id);
-            broadcastRefBuilder.setTransmissionTime(serializeDateTime(broadcastRef.getTransmissionInterval().getStart()));
-            broadcastRefBuilder.setTransmissionEndTime(serializeDateTime(broadcastRef.getTransmissionInterval().getEnd()));
+            broadcastRefBuilder.setTransmissionTime(new DateTimeSerializer().serialize(broadcastRef.getTransmissionInterval()
+                    .getStart()));
+            broadcastRefBuilder.setTransmissionEndTime(new DateTimeSerializer().serialize(
+                    broadcastRef
+                            .getTransmissionInterval()
+                            .getEnd()));
 
             builder.addBroadcast(broadcastRefBuilder);
         }
@@ -57,8 +60,8 @@ public class ItemAndBroadcastRefSerializer {
                                 broadcastProto.getSourceId(),
                                 Id.valueOf(broadcastProto.getChannelId().getId()),
                                 new Interval(
-                                        deserializeDateTime(broadcastProto.getTransmissionTime()),
-                                        deserializeDateTime(broadcastProto.getTransmissionEndTime())
+                                        new DateTimeSerializer().deserialize(broadcastProto.getTransmissionTime()),
+                                        new DateTimeSerializer().deserialize(broadcastProto.getTransmissionEndTime())
                                 )
                         )
                 );

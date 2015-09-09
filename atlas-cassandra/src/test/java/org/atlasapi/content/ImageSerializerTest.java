@@ -23,9 +23,18 @@ public class ImageSerializerTest {
     
     @Test
     public void testImageSerializationAndDeserialization() {
+        Image image = getImage();
+
+        Image deserialized = serializer.deserialize(serializer.serialize(image));
+
+        checkImage(deserialized, image);
+    }
+
+    public Image getImage() {
         Builder builder = Image.builder("http://example.org/");
         builder.withAspectRatio(AspectRatio.FOUR_BY_THREE);
-        builder.withAvailabilityEnd(new DateTime(2014, DateTimeConstants.JANUARY, 1, 0, 0, 0, 0).withZone(DateTimeZone.UTC));
+        builder.withAvailabilityEnd(new DateTime(2014, DateTimeConstants.JANUARY, 1, 0, 0, 0, 0).withZone(
+                DateTimeZone.UTC));
         builder.withAvailabilityStart(new DateTime(2013, DateTimeConstants.JANUARY, 1, 0, 0, 0, 0).withZone(DateTimeZone.UTC));
         builder.withColor(Color.BLACK_AND_WHITE);
         builder.withHasTitleArt(false);
@@ -34,16 +43,17 @@ public class ImageSerializerTest {
         builder.withTheme(Theme.DARK_OPAQUE);
         builder.withType(Type.ADDITIONAL);
         builder.withWidth(6);
-        
-        Image image = builder.build();
-        Image deserialized = serializer.deserialize(serializer.serialize(image));
-        
-        assertThat(deserialized.getAspectRatio(), is(equalTo(image.getAspectRatio())));
-        assertThat(deserialized.getAvailabilityStart(), is(equalTo(image.getAvailabilityStart())));
-        assertThat(deserialized.getAvailabilityEnd(), is(equalTo(image.getAvailabilityEnd())));
-        assertThat(deserialized.getColor(), is(equalTo(image.getColor())));
-        assertThat(deserialized.hasTitleArt(), is(equalTo(image.hasTitleArt())));
-        assertThat(deserialized.getHeight(), is(equalTo(image.getHeight())));
-        assertThat(deserialized.getMimeType(), is(equalTo(image.getMimeType())));
+
+        return builder.build();
+    }
+
+    public void checkImage(Image actual, Image expected) {
+        assertThat(actual.getAspectRatio(), is(equalTo(expected.getAspectRatio())));
+        assertThat(actual.getAvailabilityStart(), is(equalTo(expected.getAvailabilityStart())));
+        assertThat(actual.getAvailabilityEnd(), is(equalTo(expected.getAvailabilityEnd())));
+        assertThat(actual.getColor(), is(equalTo(expected.getColor())));
+        assertThat(actual.hasTitleArt(), is(equalTo(expected.hasTitleArt())));
+        assertThat(actual.getHeight(), is(equalTo(expected.getHeight())));
+        assertThat(actual.getMimeType(), is(equalTo(expected.getMimeType())));
     }
 }

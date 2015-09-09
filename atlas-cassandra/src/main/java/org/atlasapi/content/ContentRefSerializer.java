@@ -1,8 +1,7 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableSet;
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ProtoBufUtils;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
@@ -11,6 +10,7 @@ import org.atlasapi.source.Sources;
 import org.atlasapi.util.ImmutableCollectors;
 import org.joda.time.DateTime;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Ints;
 
 
@@ -64,7 +64,7 @@ public class ContentRefSerializer {
                 Builder builder = serializeRef(contentRef);
                 ItemRef itemRef = (ItemRef) contentRef;
                 builder.setSort(itemRef.getSortKey());
-                builder.setUpdated(ProtoBufUtils.serializeDateTime(itemRef.getUpdated()));
+                builder.setUpdated(new DateTimeSerializer().serialize(itemRef.getUpdated()));
                 return builder;
             }
 
@@ -79,7 +79,7 @@ public class ContentRefSerializer {
                     builder.setPosition(seriesRef.getSeriesNumber());
                 }
                 if (seriesRef.getUpdated() != null) {
-                    builder.setUpdated(ProtoBufUtils.serializeDateTime(seriesRef.getUpdated()));
+                    builder.setUpdated(new DateTimeSerializer().serialize(seriesRef.getUpdated()));
                 }
                 if (seriesRef.getCertificates() != null) {
                     ImmutableSet<CommonProtos.Certificate> certs = seriesRef.getCertificates().stream()
@@ -101,7 +101,7 @@ public class ContentRefSerializer {
         final Publisher possibleSrc = Sources.fromPossibleKey(ref.getSource()).orNull();
         final Publisher src = possibleSrc != null ? possibleSrc : deflt; 
         final String sortKey = ref.getSort();
-        final DateTime updated = ProtoBufUtils.deserializeDateTime(ref.getUpdated());
+        final DateTime updated = new DateTimeSerializer().deserialize(ref.getUpdated());
         final int position = Ints.saturatedCast(ref.getPosition());
         ContentType type = ContentType.fromKey(ref.getType()).get();
         

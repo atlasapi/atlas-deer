@@ -15,13 +15,15 @@ message LocaleString {
 
 message Identification {
     optional int64 id = 1;
-    optional string source = 2;
-    optional string type = 3;
+    optional string source = 2 [deprecated=true];
+    optional string type = 3 [deprecated=true];
     repeated Alias aliases = 4;
     repeated Reference equivs = 5;
-    optional DateTime first_seen = 6;
+    optional DateTime first_seen = 6 [deprecated=true];
     optional DateTime last_updated = 7;
     optional string uri = 9;
+    optional string curie = 10;
+    optional DateTime equivalenceUpdate = 11;
 }
 
 message BroadcastRef {
@@ -57,4 +59,92 @@ message Alias {
 message Certificate {
     optional string country = 1;
     optional string classification = 2;
+}
+
+message Described {
+    optional LocaleString title = 1;
+    optional LocaleString shortDescription = 2;
+    optional LocaleString mediumDescription = 3;
+    optional LocaleString longDescription = 4;
+    optional Synopses synopses = 5;
+    optional LocaleString description = 6;
+    optional string mediaType = 7;
+    optional string specialization = 8;
+    repeated string genre = 9;
+    optional string source = 10;
+    optional string image = 11;
+    repeated Image images = 12;
+    optional string thumbnail = 13;
+    optional DateTime firstSeen = 14;
+    optional DateTime lastFetched = 15;
+    optional DateTime thisOrChildLastUpdated = 16;
+    optional bool scheduleOnly = 17;
+    optional bool activelyPublished = 18;
+    optional string presentationChannel = 19;
+    optional Priority priority = 20;
+    repeated RelatedLink relatedLink = 21;
+
+    required Identification identified = 100;
+}
+
+message ContentGroup {
+    optional string type = 1;
+    repeated Reference content = 2;
+
+    required Described described = 100;
+}
+
+message Person {
+    optional string givenName = 1;
+    optional string familyName = 2;
+    optional string gender = 3;
+    optional DateTime birthDate = 4;
+    optional string birthPlace = 5;
+    repeated string quote = 6;
+
+    required ContentGroup contentGroup = 100;
+}
+
+message Organisation {
+    repeated Person member = 1;
+
+    required ContentGroup contentGroup = 100;
+}
+
+message Synopses {
+    optional LocaleString shortDescription = 1;
+    optional LocaleString mediumDescription = 2;
+    optional LocaleString longDescription = 3;
+}
+
+message Priority {
+    repeated string reason = 1;
+    optional double priority = 2;
+}
+
+message Image {
+    optional string uri = 1;
+    optional int32 height = 2;
+    optional int32 width = 3;
+    optional string type = 4;
+    optional string caption = 5 [deprecated = false];
+    optional string copyright = 6 [deprecated = false];
+    optional DateTime availability_start = 7;
+    optional DateTime availability_end = 8;
+    optional bool has_title_art = 9;
+    optional string aspect_ratio = 10;
+    optional string color = 11;
+    optional string theme = 12;
+    optional string mime_type = 13;
+}
+
+message RelatedLink {
+    optional string type = 1;
+    optional string url = 2;
+    optional string sourceId = 3;
+    optional string shortName = 4;
+    optional string title = 5;
+    optional string description = 6;
+    optional string image = 7;
+    optional string thumbnail = 8;
 }

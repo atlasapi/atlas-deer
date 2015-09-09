@@ -1,11 +1,12 @@
 package org.atlasapi.topic;
 
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.DescribedSerializer;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.serialization.protobuf.TopicProtos;
-import org.atlasapi.serialization.protobuf.TopicProtos.Topic.Builder;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.Topic.Type;
+import org.atlasapi.util.ImmutableCollectors;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -15,64 +16,91 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
 
     @Override
     public byte[] serialize(Topic topic) {
-        Builder msg = TopicProtos.Topic.newBuilder()
-            .setId(topic.getId().longValue())
-            .setSource(topic.getSource().key());
-        if (topic.getType() != null) {
-            msg.setType(topic.getType().key());
-        }
-        for (Alias alias : topic.getAliases()) {
-            msg.addAliasesBuilder()
-                .setNamespace(alias.getNamespace())
-                .setValue(alias.getValue());
-        }
-        if (topic.getTitle() != null) {
-            msg.addTitleBuilder().setValue(topic.getTitle());
-        }
-        if (topic.getDescription() != null) {
-            msg.addDescriptionBuilder().setValue(topic.getDescription());
-        }
-        if (topic.getImage() != null) {
-            msg.addImage(topic.getImage());
-        }
-        if (topic.getThumbnail() != null) {
-            msg.addThumbnail(topic.getThumbnail());
-        }
-        return msg.build().toByteArray();
+        return serializeToBuilder(topic).build().toByteArray();
     }
 
     @Override
     public Topic deserialize(byte[] bytes) {
         try {
-            TopicProtos.Topic msg;
-            msg = TopicProtos.Topic.parseFrom(bytes);
-            Topic topic = new Topic(msg.getId());
-            topic.setPublisher(Sources.fromPossibleKey(msg.getSource()).get());
-            if (msg.hasType()) {
-                topic.setType(Type.fromKey(msg.getType()));
-            }
-            ImmutableList.Builder<Alias> aliases = ImmutableList.builder();
-            for (int i = 0; i < msg.getAliasesCount(); i++) {
-                aliases.add(new Alias(msg.getAliases(i).getNamespace(), msg.getAliases(i).getValue()));
-            }
-            topic.setAliases(aliases.build());
-            if (msg.getTitleCount() > 0) {
-                topic.setTitle(msg.getTitle(0).getValue());
-            }
-            if (msg.getDescriptionCount() > 0) {
-                topic.setDescription(msg.getDescription(0).getValue());
-            }
-            if (msg.getImageCount() > 0) {
-                topic.setImage(msg.getImage(0));
-            }
-            if (msg.getThumbnailCount() > 0) {
-                topic.setThumbnail(msg.getThumbnail(0));
-            }
-            topic.setMediaType(null);
-            return topic;
+            TopicProtos.Topic msg = TopicProtos.Topic.parseFrom(bytes);
+            return deserialize(msg);
         } catch (InvalidProtocolBufferException e) {
             throw Throwables.propagate(e);
         }
     }
 
+    public TopicProtos.Topic.Builder serializeToBuilder(Topic src) {
+        TopicProtos.Topic.Builder builder = TopicProtos.Topic.newBuilder();
+
+        builder.setDescribed(new DescribedSerializer<Topic>().serialize(src));
+
+        if(src.getSource() != null) {
+            builder.setSource(src.getSource().key());
+        }
+        if(src.getType() != null) {
+            builder.setType(src.getType().key());
+        }
+        if(src.getNamespace() != null) {
+            builder.setNamespace(src.getNamespace());
+        }
+        if(src.getValue() != null) {
+            builder.setValue(src.getValue());
+        }
+
+        return builder;
+    }
+
+    public Topic deserialize(TopicProtos.Topic msg) {
+        Topic topic = new Topic();
+
+        if (msg.hasDescribed()) {
+            new DescribedSerializer<Topic>().deserialize(msg.getDescribed(), topic);
+        }
+
+        if(msg.hasType()) {
+            topic.setType(Type.fromKey(msg.getType()));
+        }
+        if(msg.hasNamespace()) {
+            topic.setNamespace(msg.getNamespace());
+        }
+        if(msg.hasValue()) {
+            topic.setValue(msg.getValue());
+        }
+        if(msg.hasSource()) {
+            topic.setPublisher(Sources.fromPossibleKey(msg.getSource()).get());
+        }
+
+        deserializeDeprecatedFields(msg, topic);
+
+        return topic;
+    }
+
+    // This method must check the existing value in each field before modifying it so that
+    // if a field is serialized in two places the non deprecated version will take precedence
+    private void deserializeDeprecatedFields(TopicProtos.Topic msg, Topic topic) {
+        if (msg.hasId() && topic.getId() == null) {
+            topic.setId(msg.getId());
+        }
+        if (topic.getAliases().isEmpty()) {
+            ImmutableList<Alias> aliases = msg.getAliasesList().stream()
+                    .map(alias -> new Alias(alias.getNamespace(), alias.getValue()))
+                    .collect(ImmutableCollectors.toList());
+            topic.setAliases(aliases);
+        }
+        if (msg.getTitleCount() > 0 && topic.getTitle() == null) {
+            topic.setTitle(msg.getTitle(0).getValue());
+        }
+        if (msg.getDescriptionCount() > 0 && topic.getDescription() == null) {
+            topic.setDescription(msg.getDescription(0).getValue());
+        }
+        if (msg.getImageCount() > 0 && topic.getImage() == null) {
+            topic.setImage(msg.getImage(0));
+        }
+        if (msg.getThumbnailCount() > 0 && topic.getThumbnail() == null) {
+            topic.setThumbnail(msg.getThumbnail(0));
+        }
+        if (topic.getMediaType() == null) {
+            topic.setMediaType(null);
+        }
+    }
 }

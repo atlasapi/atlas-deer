@@ -1,11 +1,9 @@
 package org.atlasapi.content;
 
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.entity.ProtoBufUtils;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
@@ -54,7 +52,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             identified.setCanonicalUri(msg.getUri());
         }
         if (msg.hasLastUpdated()) {
-            identified.setLastUpdated(deserializeDateTime(msg.getLastUpdated()));
+            identified.setLastUpdated(new DateTimeSerializer().deserialize(msg.getLastUpdated()));
         }
 
         Builder<Alias> aliases = ImmutableSet.builder();
@@ -77,10 +75,10 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         described = visitIdentified(described);
         described.setPublisher(Sources.fromPossibleKey(msg.getSource()).get());
         if (msg.hasFirstSeen()) {
-            described.setFirstSeen(ProtoBufUtils.deserializeDateTime(msg.getFirstSeen()));
+            described.setFirstSeen(new DateTimeSerializer().deserialize(msg.getFirstSeen()));
         }
         if (msg.hasChildLastUpdated()) {
-            described.setThisOrChildLastUpdated(ProtoBufUtils.deserializeDateTime(msg.getChildLastUpdated()));
+            described.setThisOrChildLastUpdated(new DateTimeSerializer().deserialize(msg.getChildLastUpdated()));
         }
         if (msg.hasMediaType()) {
             described.setMediaType(MediaType.fromKey(msg.getMediaType()).get());
@@ -111,7 +109,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         
         ImmutableSet.Builder<Image> images = ImmutableSet.builder();
-        for (ContentProtos.Image image : msg.getImagesList()) {
+        for (CommonProtos.Image image : msg.getImagesList()) {
             images.add(imageSerializer.deserialize(image));
         }
         described.setImages(images.build());

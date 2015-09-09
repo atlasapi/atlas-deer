@@ -1,0 +1,61 @@
+package org.atlasapi.entity;
+
+import org.atlasapi.content.ContentGroupSerializer;
+import org.atlasapi.serialization.protobuf.CommonProtos;
+
+public class PersonSerializer implements Serializer<Person, CommonProtos.Person> {
+
+    @Override
+    public CommonProtos.Person serialize(Person person) {
+        CommonProtos.Person.Builder builder = CommonProtos.Person.newBuilder();
+
+        builder.setContentGroup(new ContentGroupSerializer<Person>().serialize(person));
+
+        if (person.getGivenName() != null) {
+            builder.setGivenName(person.getGivenName());
+        }
+        if (person.getFamilyName() != null) {
+            builder.setFamilyName(person.getFamilyName());
+        }
+        if (person.getGender() != null) {
+            builder.setGender(person.getGender());
+        }
+        if (person.getBirthDate() != null) {
+            builder.setBirthDate(new DateTimeSerializer().serialize(person.getBirthDate()));
+        }
+        if (person.getBirthPlace() != null) {
+            builder.setBirthPlace(person.getBirthPlace());
+        }
+        if (person.getQuotes() != null) {
+            builder.addAllQuote(person.getQuotes());
+        }
+
+        return builder.build();
+    }
+
+    @Override
+    public Person deserialize(CommonProtos.Person msg) {
+        Person person = new Person();
+
+        new ContentGroupSerializer<Person>().deserialize(msg.getContentGroup(), person);
+
+        if (msg.hasGivenName()) {
+            person.setGivenName(msg.getGivenName());
+        }
+        if (msg.hasFamilyName()) {
+            person.setFamilyName(msg.getFamilyName());
+        }
+        if (msg.hasGender()) {
+            person.setGender(msg.getGender());
+        }
+        if (msg.hasBirthDate()) {
+            person.setBirthDate(new DateTimeSerializer().deserialize(msg.getBirthDate()));
+        }
+        if(msg.hasBirthPlace()) {
+            person.setBirthPlace(msg.getBirthPlace());
+        }
+        person.setQuotes(msg.getQuoteList());
+
+        return person;
+    }
+}

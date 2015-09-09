@@ -4,7 +4,7 @@ import static org.atlasapi.serialization.protobuf.SegmentProtos.Segment.Builder;
 
 import org.atlasapi.content.RelatedLinkSerializer;
 import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.ProtoBufUtils;
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
@@ -69,16 +69,16 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
             builder.setLongDescription(src.getLongDescription());
         }
         if (src.getFirstSeen() != null) {
-            builder.setFirstSeen(ProtoBufUtils.serializeDateTime(src.getFirstSeen()));
+            builder.setFirstSeen(new DateTimeSerializer().serialize(src.getFirstSeen()));
         }
         if (src.getLastFetched() != null) {
-            builder.setLastFetched(ProtoBufUtils.serializeDateTime(src.getLastFetched()));
+            builder.setLastFetched(new DateTimeSerializer().serialize(src.getLastFetched()));
         }
         if (src.getThisOrChildLastUpdated() != null) {
-            builder.setThisOrChildLastUpdated(ProtoBufUtils.serializeDateTime(src.getThisOrChildLastUpdated()));
+            builder.setThisOrChildLastUpdated(new DateTimeSerializer().serialize(src.getThisOrChildLastUpdated()));
         }
         if (src.getLastUpdated() != null) {
-            builder.setLastUpdated(ProtoBufUtils.serializeDateTime(src.getLastUpdated()));
+            builder.setLastUpdated(new DateTimeSerializer().serialize(src.getLastUpdated()));
         }
         return builder.build().toByteArray();
     }
@@ -98,19 +98,19 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
                 segment.setType(SegmentType.fromString(proto.getType()).requireValue());
             }
             if (proto.hasLastFetched()) {
-                segment.setLastFetched(ProtoBufUtils.deserializeDateTime(proto.getLastFetched()));
+                segment.setLastFetched(new DateTimeSerializer().deserialize(proto.getLastFetched()));
             }
             if (proto.hasLastUpdated()) {
-                segment.setLastUpdated(ProtoBufUtils.deserializeDateTime(proto.getLastUpdated()));
+                segment.setLastUpdated(new DateTimeSerializer().deserialize(proto.getLastUpdated()));
             }
             if (proto.hasFirstSeen()) {
-                segment.setFirstSeen(ProtoBufUtils.deserializeDateTime(proto.getFirstSeen()));
+                segment.setFirstSeen(new DateTimeSerializer().deserialize(proto.getFirstSeen()));
             }
             if (proto.hasDuration()) {
                 segment.setDuration(Duration.standardSeconds(proto.getDuration()));
             }
             if (proto.hasThisOrChildLastUpdated()) {
-                segment.setThisOrChildLastUpdated(ProtoBufUtils.deserializeDateTime(proto.getThisOrChildLastUpdated()));
+                segment.setThisOrChildLastUpdated(new DateTimeSerializer().deserialize(proto.getThisOrChildLastUpdated()));
             }
             if (proto.getLinksList() != null && !proto.getLinksList().isEmpty()) {
                 segment.setRelatedLinks(Iterables.transform(proto.getLinksList(), relatedLinkSerializer.FROM_PROTO));

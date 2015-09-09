@@ -12,7 +12,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.metabroadcast.common.base.Maybe;
 
 public class CrewMember extends Identified {
@@ -53,7 +52,7 @@ public class CrewMember extends Identified {
         private final String key;
         private final String title;
         
-        private Role(String key, String title) {
+        Role(String key, String title) {
             this.key = key;
             this.title = title;
         }
@@ -84,7 +83,7 @@ public class CrewMember extends Identified {
 		private static Map<String,Maybe<Role>> roleKeyMap = initRoleKeyMap();
 
         private static Map<String, Maybe<Role>> initRoleKeyMap() {
-            Builder<String, Maybe<Role>> builder = ImmutableMap.builder();
+            ImmutableMap.Builder<String, Maybe<Role>> builder = ImmutableMap.builder();
             for (Role role : Role.values()) {
                 builder.put(role.key(), Maybe.just(role));
             }

@@ -1,10 +1,13 @@
 package org.atlasapi.generation.generated.model;
 
 import java.util.Set;
-import com.google.common.collect.ImmutableSet;
-import org.atlasapi.generation.model.ModelClassInfo;
+
+import org.atlasapi.content.Image;
 import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
+import org.atlasapi.generation.model.ModelClassInfo;
+
+import com.google.common.collect.ImmutableSet;
 
 
 public class ImageInfo implements ModelClassInfo {
@@ -229,7 +232,7 @@ public class ImageInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.content.Image.class;
+        return Image.class;
     }
 
 }

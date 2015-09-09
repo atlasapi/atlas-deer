@@ -1,6 +1,6 @@
 package org.atlasapi.content;
 
-import org.atlasapi.entity.ProtoBufUtils;
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 
 import com.metabroadcast.common.intl.Countries;
@@ -10,7 +10,8 @@ public class ReleaseDateSerializer {
 
     public ContentProtos.ReleaseDate serialize(ReleaseDate releaseDate) {
         ContentProtos.ReleaseDate.Builder date = ContentProtos.ReleaseDate.newBuilder();
-        date.setDate(ProtoBufUtils.serializeDateTime(releaseDate.date().toDateTimeAtStartOfDay(DateTimeZones.UTC)));
+        date.setDate(new DateTimeSerializer().serialize(releaseDate.date()
+                .toDateTimeAtStartOfDay(DateTimeZones.UTC)));
         date.setCountry(releaseDate.country().code());
         date.setType(releaseDate.type().toString());
         return date.build();
@@ -18,7 +19,7 @@ public class ReleaseDateSerializer {
 
     public ReleaseDate deserialize(ContentProtos.ReleaseDate date) {
         return new ReleaseDate(
-            ProtoBufUtils.deserializeDateTime(date.getDate()).toLocalDate(),
+            new DateTimeSerializer().deserialize(date.getDate()).toLocalDate(),
             Countries.fromCode(date.getCountry()),
             ReleaseDate.ReleaseType.valueOf(date.getType()));
     }

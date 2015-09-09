@@ -1,9 +1,7 @@
 package org.atlasapi.content;
 
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.serialization.protobuf.CommonProtos;
-
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
 
 public class LocationSummarySerializer {
 
@@ -19,13 +17,13 @@ public class LocationSummarySerializer {
         }
         if (location.getAvailabilityStart().isPresent()) {
             builder.setAvailabilityStart(
-                    serializeDateTime(location.getAvailabilityStart().get())
+                    new DateTimeSerializer().serialize(location.getAvailabilityStart().get())
             );
         }
 
         if (location.getAvailabilityEnd().isPresent()) {
             builder.setAvailabilityEnd(
-                    serializeDateTime(location.getAvailabilityEnd().get())
+                    new DateTimeSerializer().serialize(location.getAvailabilityEnd().get())
             );
         }
         return builder;
@@ -35,8 +33,10 @@ public class LocationSummarySerializer {
         return new LocationSummary(
                 msg.hasAvailable() ? msg.getAvailable() : null,
                 msg.hasUri() ? msg.getUri(): null,
-                msg.hasAvailabilityStart() ? deserializeDateTime(msg.getAvailabilityStart()) : null,
-                msg.hasAvailabilityEnd() ? deserializeDateTime(msg.getAvailabilityEnd()) : null
+                msg.hasAvailabilityStart() ?
+                new DateTimeSerializer().deserialize(msg.getAvailabilityStart()) : null,
+                msg.hasAvailabilityEnd() ?
+                new DateTimeSerializer().deserialize(msg.getAvailabilityEnd()) : null
         );
     }
 
