@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -149,7 +150,7 @@ public class EsContentTranslator {
 
     private Id toCanonicalId(Id id) throws IndexException {
         try {
-            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(Lists.newArrayList(id.longValue()));
+            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of((id.longValue())));
             ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
             if (idToCanonical.containsKey(Long.valueOf(id.longValue()))) {
                 return Id.valueOf(Long.valueOf(idToCanonical.get(id.longValue())));
@@ -373,14 +374,9 @@ public class EsContentTranslator {
 
     private Predicate<Policy> createLocationNotPresentFilter(List<Policy> existingPolicies) {
         return policy -> {
-            Interval newInterval =
-                    new Interval(policy.getAvailabilityStart(), policy.getAvailabilityEnd());
-
             for (Policy existingPolicy : existingPolicies) {
-                Interval existingInterval = new Interval(
-                        existingPolicy.getAvailabilityStart(), existingPolicy.getAvailabilityEnd()
-                );
-                if (existingInterval.isEqual(newInterval)) {
+                if (Objects.equals(policy.getAvailabilityStart(), existingPolicy.getAvailabilityStart()) &&
+                        Objects.equals(policy.getAvailabilityEnd(), existingPolicy.getAvailabilityEnd())) {
                     return false;
                 }
             }
@@ -500,8 +496,9 @@ public class EsContentTranslator {
                 .locations(makeESLocations(item))
                 .topics(makeESTopics(item))
                 .sortKey(item.getSortKey());
-        if (canonical != null)
-                esContent.canonicalId(canonical.longValue());
+        if (canonical != null) {
+            esContent.canonicalId(canonical.longValue());
+        }
 
         if (item.getContainerRef() != null) {
             Id containerId = item.getContainerRef().getId();

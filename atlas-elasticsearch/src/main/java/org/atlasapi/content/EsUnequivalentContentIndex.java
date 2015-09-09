@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
@@ -29,16 +28,15 @@ import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.FilteredQueryBuilder;
 import org.elasticsearch.index.query.NestedFilterBuilder;
+import org.elasticsearch.index.query.OrFilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.index.query.TermsFilterBuilder;
+import org.elasticsearch.index.query.RangeFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -73,8 +71,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
     private final String index;
     private final ChannelGroupResolver channelGroupResolver;
 
-    private final ContentResolver resolver;
-
     private final EsQueryBuilder queryBuilder = new EsQueryBuilder();
 
     private final SecondaryIndex equivIdIndex;
@@ -84,7 +80,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             ChannelGroupResolver channelGroupResolver, SecondaryIndex equivIdIndex, Integer requestTimeout) {
         this.esClient = checkNotNull(esClient);
         this.index = checkNotNull(indexName);
-        this.resolver = checkNotNull(resolver);
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.equivIdIndex = checkNotNull(equivIdIndex);
         EsContentTranslator translator = new EsContentTranslator(
@@ -129,9 +124,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilder.buildQuery(query);
+        BoolFilterBuilder filterBuilder = FilterBuilders.boolFilter();
 
         SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
+                .addSort(SortBuilders.scoreSort().order(SortOrder.DESC))
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
                 .addField(EsContent.CANONICAL_ID)
                 .addField(EsContent.ID)
@@ -140,38 +137,37 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
 
         if (queryParams.isPresent()) {
+
             if (queryParams.get().getFuzzyQueryParams().isPresent()) {
                 queryBuilder = addTitleQuery(queryParams, queryBuilder);
-                reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
             }
 
             if (queryParams.get().getBrandId().isPresent()) {
-                queryBuilder = addBrandIdFilter(reqBuilder, queryBuilder, queryParams.get().getBrandId().get());
-                reqBuilder.setQueryCache(true);
+                filterBuilder.must(getBrandIdFilter(queryParams.get().getBrandId().get()));
             }
 
             if (queryParams.get().getSeriesId().isPresent()) {
-                queryBuilder = addSeriesIdFilter(queryBuilder, queryParams.get().getSeriesId().get());
+                filterBuilder.must(getSeriesIdFilter(queryParams.get().getSeriesId().get()));
             }
 
             if (queryParams.get().getOrdering().isPresent()) {
                 addSortOrder(queryParams, reqBuilder);
             }
 
- //removing temporarily since this is currently broken
-   //         if (queryParams.get().getRegionId().isPresent()) {
-     //           queryBuilder = addRegionFilter(queryParams, queryBuilder);
-       //     }
-
             if (queryParams.get().getTopicFilterIds().isPresent()) {
-                queryBuilder = applyTopicIdFilters(
-                        queryParams.get().getTopicFilterIds().get(),
-                        queryBuilder
-                );
+                filterBuilder.must(getTopicIdFilters(queryParams.get().getTopicFilterIds().get()));
             }
-            if(queryParams.get().getActionableFilterParams().isPresent()) {
-                queryBuilder = applyActionableFilters(queryBuilder, queryParams.get().getActionableFilterParams().get());
+
+            if (queryParams.get().getActionableFilterParams().isPresent()) {
+                filterBuilder.must(getActionableFilter(queryParams.get().getActionableFilterParams().get()));
             }
+
+            /* Temporarily disabled due to not working correctly
+            if (queryParams.get().getRegionId().isPresent()) {
+                queryBuilder = addRegionFilter(queryParams, queryBuilder);
+            }
+            */
+
         }
 
         if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
@@ -180,16 +176,13 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                     queryParams.get().getBroadcastWeighting().get()
             );
         } else {
-            queryBuilder = BroadcastQueryBuilder.build(
-                    queryBuilder,
-                    5f
-            );
+            queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
         }
 
         reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         log.debug(queryBuilder.toString());
-        reqBuilder.setQuery(queryBuilder);
+        reqBuilder.setQuery(QueryBuilders.filteredQuery(queryBuilder, filterBuilder));
         reqBuilder.execute(FutureSettingActionListener.setting(response));
 
         /* TODO
@@ -205,105 +198,82 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         });
     }
 
-    private QueryBuilder addSeriesIdFilter(QueryBuilder queryBuilder, Id id) {
+    private FilterBuilder getSeriesIdFilter(Id id) {
         try {
             ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
-            return QueryBuilders.boolQuery()
-                    .must(queryBuilder)
-                    .must(QueryBuilders.termsQuery(EsContent.SERIES, ids));
+            return FilterBuilders.termsFilter(EsContent.SERIES, ids);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
     }
 
-    private QueryBuilder applyActionableFilters(QueryBuilder queryBuilder, Map<String, String> actionableParams) {
-        return QueryBuilders.boolQuery()
-                .must(queryBuilder)
-                .must(actionableDisjunctionFrom(actionableParams));
-    }
-
-    @VisibleForTesting
-    public QueryBuilder actionableDisjunctionFrom(Map<String, String> actionableParams) {
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
+    private FilterBuilder getActionableFilter(Map<String, String> actionableParams) {
+        OrFilterBuilder orFilterBuilder = FilterBuilders.orFilter();
         if (actionableParams.get("location.available") != null) {
-            query.should(getAvailabilityFilter());
+            orFilterBuilder.add(getAvailabilityFilter());
         }
         DateTime broadcastTimeGreaterThan = actionableParams.get("broadcast.time.gt") != null ?
                 DateTime.parse(actionableParams.get("broadcast.time.gt")) : null;
         DateTime broadcastTimeLessThan = actionableParams.get("broadcast.time.lt") != null ?
                 DateTime.parse(actionableParams.get("broadcast.time.lt")) : null;
         if (broadcastTimeGreaterThan != null || broadcastTimeLessThan != null) {
-            query.should(broadcastRangeFilterFrom(broadcastTimeGreaterThan, broadcastTimeLessThan));
+            orFilterBuilder.add(
+                    broadcastRangeFilterFrom(broadcastTimeGreaterThan, broadcastTimeLessThan)
+            );
         }
-        query.minimumNumberShouldMatch(1);
-        return query;
+        return orFilterBuilder;
     }
 
-    private QueryBuilder broadcastRangeFilterFrom(DateTime broadcastTimeGreaterThan, DateTime broadcastTimeLessThan) {
-        BoolQueryBuilder parentChildDisjunction = QueryBuilders.boolQuery();
-        RangeQueryBuilder parentQuery = QueryBuilders.rangeQuery("transmissionTimeInMillis");
+    private FilterBuilder broadcastRangeFilterFrom(DateTime broadcastTimeGreaterThan, DateTime broadcastTimeLessThan) {
+        RangeFilterBuilder parentFilter = FilterBuilders.rangeFilter("transmissionTimeInMillis");
         if (broadcastTimeGreaterThan != null) {
-            parentQuery.gte(broadcastTimeGreaterThan.getMillis());
+            parentFilter.gte(broadcastTimeGreaterThan.getMillis());
         }
         if (broadcastTimeLessThan != null) {
-            parentQuery.lte(broadcastTimeLessThan.getMillis());
+            parentFilter.lte(broadcastTimeLessThan.getMillis());
         }
-        parentChildDisjunction.should(parentQuery);
-        parentChildDisjunction.should(QueryBuilders.hasChildQuery(EsContent.CHILD_ITEM, parentQuery));
-        parentChildDisjunction.minimumNumberShouldMatch(1);
-        return parentChildDisjunction;
+        return FilterBuilders.orFilter(
+                parentFilter,
+                FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter)
+        );
     }
 
-    private QueryBuilder addBrandIdFilter(SearchRequestBuilder reqBuilder, QueryBuilder queryBuilder, Id id)  {
+    private FilterBuilder getBrandIdFilter(Id id) {
         try {
             ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
-            TermsFilterBuilder brandIdFilter = new TermsFilterBuilder(EsContent.BRAND, ids);
-            return new FilteredQueryBuilder(queryBuilder, brandIdFilter);
+            return FilterBuilders.termsFilter(EsContent.BRAND, ids);
         } catch (IOException ioe) {
             throw Throwables.propagate(ioe);
         }
     }
 
-    private QueryBuilder getAvailabilityFilter() {
-        return QueryBuilders.boolQuery()
-                .should(
-                        QueryBuilders.hasChildQuery(
-                                EsContent.CHILD_ITEM,
-                                QueryBuilders.nestedQuery(
-                                        EsContent.LOCATIONS,
-                                        QueryBuilders.boolQuery()
-                                                .must(QueryBuilders.rangeQuery("availabilityTime")
-                                                        .lte(DateTime.now().toString()))
-                                                .must(QueryBuilders.rangeQuery("availabilityEndTime")
-                                                        .gte(DateTime.now().toString()))
-                                )
-                        )
-                )
-                .should(
-                        QueryBuilders.nestedQuery(
-                                EsContent.LOCATIONS,
-                                QueryBuilders.boolQuery()
-                                        .must(QueryBuilders.rangeQuery("availabilityTime")
-                                                .lte(DateTime.now().toString()))
-                                        .must(QueryBuilders.rangeQuery("availabilityEndTime")
-                                                .gte(DateTime.now().toString()))
-                        )
-                )
-                .minimumNumberShouldMatch(1);
+    private FilterBuilder getAvailabilityFilter() {
+        NestedFilterBuilder rangeFilter = FilterBuilders.nestedFilter(
+                EsContent.LOCATIONS,
+                FilterBuilders.andFilter(
+                        FilterBuilders.rangeFilter(EsLocation.AVAILABILITY_TIME)
+                                .lte(DateTime.now().toString()),
+                        FilterBuilders.rangeFilter(EsLocation.AVAILABILITY_END_TIME)
+                                .gte(DateTime.now().toString()))
+        );
+        return FilterBuilders.orFilter(
+                rangeFilter,
+                FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter)
+        );
     }
 
-    public QueryBuilder applyTopicIdFilters(List<List<InclusionExclusionId>> topicIdSets, QueryBuilder queryBuilder) {
-        ImmutableList.Builder<FilterBuilder> topicIdQueries = ImmutableList.builder();
+    public FilterBuilder getTopicIdFilters(List<List<InclusionExclusionId>> topicIdSets) {
+        ImmutableList.Builder<FilterBuilder> topicIdFilters = ImmutableList.builder();
         for (List<InclusionExclusionId> idSet : topicIdSets) {
             BoolFilterBuilder filterForThisSet = FilterBuilders.boolFilter();
             for (InclusionExclusionId id : idSet) {
                 addFilterForTopicId(filterForThisSet, id);
             }
-            topicIdQueries.add(filterForThisSet);
+            topicIdFilters.add(filterForThisSet);
         }
-        BoolFilterBuilder topicIdBoolFilter = FilterBuilders.boolFilter();
-        topicIdQueries.build().forEach(topicIdBoolFilter::should);
-        return QueryBuilders.filteredQuery(queryBuilder, topicIdBoolFilter);
+        AndFilterBuilder andFilterBuilder = FilterBuilders.andFilter();
+        topicIdFilters.build().forEach(andFilterBuilder::add);
+        return andFilterBuilder;    
     }
 
     private void addFilterForTopicId(BoolFilterBuilder filterBuilder, InclusionExclusionId id) {
@@ -351,7 +321,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
     }
 
     @SuppressWarnings("unchecked")
-    private QueryBuilder addRegionFilter(Optional<IndexQueryParams> queryParams, QueryBuilder queryBuilder) {
+    private FilterBuilder addRegionFilter(Optional<IndexQueryParams> queryParams) {
         Id regionId = queryParams.get().getRegionId().get();
         ChannelGroup region;
         try {
@@ -366,14 +336,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(region.<ChannelNumbering>getChannels());
         ImmutableList<Long> channelsIdsForRegion = channels.stream()
                 .map(c -> c.getChannel().getId())
-                        .map(Id::longValue)
+                .map(Id::longValue)
                 .collect(ImmutableCollectors.toList());
 
-        return QueryBuilders.filteredQuery(
-                queryBuilder,
-                FilterBuilders.termsFilter(
-                        EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion
-                )
+        return FilterBuilders.termsFilter(
+                EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion
         );
     }
 }
