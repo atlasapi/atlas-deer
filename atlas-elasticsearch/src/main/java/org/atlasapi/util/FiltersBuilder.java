@@ -56,9 +56,9 @@ public class FiltersBuilder {
             }
             topicIdFilters.add(filterForThisSet);
         }
-        AndFilterBuilder andFilterBuilder = FilterBuilders.andFilter();
-        topicIdFilters.build().forEach(andFilterBuilder::add);
-        return andFilterBuilder;
+        OrFilterBuilder orFilter = FilterBuilders.orFilter();
+        topicIdFilters.build().forEach(orFilter::add);
+        return orFilter;
     }
 
     private static void addFilterForTopicId(BoolFilterBuilder filterBuilder, InclusionExclusionId id) {
