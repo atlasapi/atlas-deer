@@ -44,13 +44,15 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     .map(Id::longValue)
                     .distinct()
                     .filter(id -> id != null)
-                    .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
-                    .limit(selection.limitOrDefaultValue(100))
                     .map(Id::valueOf)
                     .collect(ImmutableCollectors.toList());
 
+            ImmutableList<Id> orderedAndSkipped = equivalentResult.stream()
+                    .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
+                    .limit(selection.limitOrDefaultValue(100))
+                    .collect(ImmutableCollectors.toList());
             return Futures.immediateFuture(
-                    new IndexQueryResult(equivalentResult, equivalentResult, Long.valueOf(equivalentResult.size()))
+                    new IndexQueryResult(orderedAndSkipped, orderedAndSkipped, Long.valueOf(equivalentResult.size()))
             );
         } catch (Exception e) {
             throw Throwables.propagate(e);
