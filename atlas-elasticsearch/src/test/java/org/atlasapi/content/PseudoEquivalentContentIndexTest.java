@@ -12,7 +12,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
-import org.atlasapi.util.NoOpSecondaryIndex;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.client.Client;
 import org.junit.Before;
@@ -22,10 +21,8 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +31,7 @@ public class PseudoEquivalentContentIndexTest {
     private SecondaryIndex equivIndex = mock(CassandraSecondaryIndex.class);
     private ContentIndex contentIndex;
     private Client esNode = ElasticSearchHelper.testNode().client();
+
     @Before
     public void setUp() {
         EsUnequivalentContentIndex delegate = new EsUnequivalentContentIndex(
@@ -41,7 +39,7 @@ public class PseudoEquivalentContentIndexTest {
                 EsSchema.CONTENT_INDEX,
                 new NoOpContentResolver(),
                 mock(ChannelGroupResolver.class),
-                new NoOpSecondaryIndex(),
+                equivIndex,
                 60000
         );
         delegate.startAsync().awaitRunning();
@@ -54,15 +52,20 @@ public class PseudoEquivalentContentIndexTest {
         Item item2 = new Item(Id.valueOf(2l), Publisher.METABROADCAST);
         Item item3 = new Item(Id.valueOf(3l), Publisher.METABROADCAST);
 
-        when(equivIndex.lookup(any())).thenReturn(
-                Futures.immediateFuture(
-                        ImmutableMap.of(
-                                1l, 2l,
-                                2l, 2l,
-                                3l, 3l
-                        )
+        when(equivIndex.lookup(anyList()))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 2l)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(2l, 2l)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(3l, 3l)))
+                .thenReturn(
+                        Futures.immediateFuture(
+                            ImmutableMap.of(
+                                    1l, 2l,
+                                    2l, 2l,
+                                    3l, 3l
+                            )
                 )
         );
+
 
         indexAndRefresh(item1, item2, item3);
 

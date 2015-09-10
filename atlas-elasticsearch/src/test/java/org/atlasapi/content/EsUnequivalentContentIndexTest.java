@@ -22,6 +22,7 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.atlasapi.util.NoOpSecondaryIndex;
 import org.elasticsearch.client.Client;
@@ -44,12 +45,15 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class EsUnequivalentContentIndexTest {
 
     private static final Client esClient = ElasticSearchHelper.testNode().client();
-
+    private final CassandraSecondaryIndex equivIdIndex = mock(CassandraSecondaryIndex.class);
     private EsUnequivalentContentIndex index;
 
     @BeforeClass
@@ -67,7 +71,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Before
     public void setup() {
-        index = new EsUnequivalentContentIndex(esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60);
+        index = new EsUnequivalentContentIndex(esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), equivIdIndex, 60);
         index.startAsync().awaitRunning();
     }
 
@@ -79,6 +83,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testGenreQuery() throws Exception {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)));
         Item item = complexItem().withId(10l).build();
         item.setGenres(ImmutableSet.of("horror", "action"));
         indexAndRefresh(item);
@@ -100,6 +105,13 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testBrandFilterWithTopicFilterForEpisode() throws Exception {
+        when(equivIdIndex.lookup(anyList()))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l, 20l, 20l)));
+        when(equivIdIndex.reverseLookup(Id.valueOf(10l)))
+                .thenReturn(Futures.immediateFuture(ImmutableSet.of(10l)));
+        when(equivIdIndex.reverseLookup(Id.valueOf(20l)))
+                .thenReturn(Futures.immediateFuture(ImmutableSet.of(20l)));
+
         Brand brand = new Brand(Id.valueOf(10l), Publisher.METABROADCAST);
         brand.setTitle("Test Brand");
 
@@ -146,6 +158,18 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testActionableContentFilters() throws IndexException, IOException {
+        when(equivIdIndex.lookup(any()))
+                .thenReturn(
+                        Futures.immediateFuture(
+                                ImmutableMap.of(
+                                        10l, 10l,
+                                        20l, 20l,
+                                        1l, 1l,
+                                        2l, 2l,
+                                        30l, 30l
+                                )
+                        )
+                );
         Brand broadcastBrand = new Brand(Id.valueOf(10l), Publisher.METABROADCAST);
         broadcastBrand.setTitle("Broadcast brand");
         Item broadcastItem = new Item(Id.valueOf(1l), Publisher.METABROADCAST);
@@ -240,6 +264,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTitlePrefixQuery() throws Exception {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l, 30l, 30l)));
         Item item1 = complexItem().withTitle("test!").withId(30l).build();
         Item item2 = complexItem().withTitle("not!").withId(20l).build();
 
@@ -262,6 +287,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTitlePrefixQueryWithNonLetterCharacter() throws Exception {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l, 30l, 30l)));
         Item item1 = complexItem().withTitle("1test").withId(30l).build();
         Item item2 = complexItem().withTitle("not!").withId(20l).build();
 
@@ -283,6 +309,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testSourceQuery() throws Exception {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 1l)));
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
@@ -314,6 +341,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTopicQuery() throws Exception {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 1l)));
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
@@ -380,6 +408,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTopicWeightingQuery() throws Exception {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 1l)));
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
