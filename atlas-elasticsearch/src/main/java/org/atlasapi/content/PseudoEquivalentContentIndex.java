@@ -44,6 +44,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     .map(Id::longValue)
                     .distinct()
                     .filter(id -> id != null)
+                    .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
                     .limit(selection.limitOrDefaultValue(100))
                     .map(Id::valueOf)
                     .collect(ImmutableCollectors.toList());
