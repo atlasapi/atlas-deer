@@ -155,12 +155,12 @@ public class EsContentTranslator {
             if (idToCanonical.containsKey(Long.valueOf(id.longValue()))) {
                 return Id.valueOf(Long.valueOf(idToCanonical.get(id.longValue())));
             }
+            log.warn("Found no canonical ID for {} using {}", id, id);
             return null;
         } catch (IOException e) {
             throw new IndexException(e);
         }
     }
-
 
     private Integer ageRestrictionFromContainer(Container container) {
         // TODO fix this, number of item refs in containers is too high to resolve without C* timeouts
