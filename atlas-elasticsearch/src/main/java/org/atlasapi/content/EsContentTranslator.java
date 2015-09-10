@@ -103,6 +103,9 @@ public class EsContentTranslator {
     }
 
     private DateTime toUtc(DateTime transmissionTime) {
+        if (transmissionTime == null) {
+            return null;
+        }
         return transmissionTime.toDateTime(DateTimeZones.UTC);
     }
 
@@ -156,7 +159,7 @@ public class EsContentTranslator {
                 return Id.valueOf(Long.valueOf(idToCanonical.get(id.longValue())));
             }
             log.warn("Found no canonical ID for {} using {}", id, id);
-            return null;
+            return id;
         } catch (IOException e) {
             throw new IndexException(e);
         }
