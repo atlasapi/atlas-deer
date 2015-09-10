@@ -49,7 +49,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     .collect(ImmutableCollectors.toList());
 
             return Futures.immediateFuture(
-                    new IndexQueryResult(equivalentResult, equivalentResult, result.getTotalCount())
+                    new IndexQueryResult(equivalentResult, equivalentResult, Long.valueOf(equivalentResult.size()))
             );
         } catch (Exception e) {
             throw Throwables.propagate(e);
