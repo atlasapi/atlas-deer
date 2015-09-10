@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import com.google.common.collect.ImmutableList;
 import org.atlasapi.annotation.Annotation;
@@ -47,6 +46,7 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Optional;
+import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -151,7 +151,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             public ListenableFuture<Optional<ResolvedEquivalents<Content>>> apply(Map<Long, Long> index)
                     throws Exception {
                 return Futures.transform(
-                        resultOf(selectSetsQuery(index.values()),readConsistency),
+                        resultOf(selectSetsQuery(index.values()), readConsistency),
                         toEquivalentsSets(index, selectedSources)
                 );
             }
@@ -246,7 +246,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             && equivalenceGraph.getEquivalenceSet().contains(content.getId());
     }
 
-    private ResultSetFuture resultOf(Statement query, ConsistencyLevel readConsistency) {
+    private ListenableFuture<ResultSet> resultOf(Statement query, ConsistencyLevel readConsistency) {
         return session.executeAsync(query.setConsistencyLevel(readConsistency));
     }
     
