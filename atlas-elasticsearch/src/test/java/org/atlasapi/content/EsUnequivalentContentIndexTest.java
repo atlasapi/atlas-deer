@@ -458,6 +458,7 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testUnindexingOfContentThatIsNoLongerPublished()
             throws IndexException, ExecutionException, InterruptedException {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l)));
         Item item = complexItem().withId(20l).build();
         item.setPublisher(Publisher.METABROADCAST);
         item.setActivelyPublished(true);
