@@ -150,7 +150,7 @@ public class EsContentTranslator {
 
     private Id toCanonicalId(Id id) throws IndexException {
         try {
-            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of((id.longValue())));
+            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of(id.longValue()));
             ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
             if (idToCanonical.containsKey(Long.valueOf(id.longValue()))) {
                 return Id.valueOf(Long.valueOf(idToCanonical.get(id.longValue())));
@@ -357,10 +357,10 @@ public class EsContentTranslator {
         DateTime startDt = null;
         DateTime endDt = null;
         if (!Strings.isNullOrEmpty(start)) {
-            startDt = DateTime.parse(start);
+            startDt = toUtc(DateTime.parse(start));
         }
         if (!Strings.isNullOrEmpty(end)) {
-            endDt = DateTime.parse(end);
+            endDt = toUtc(DateTime.parse(end));
         }
         Policy pol = new Policy();
         if (endDt != null) {
@@ -375,8 +375,8 @@ public class EsContentTranslator {
     private Predicate<Policy> createLocationNotPresentFilter(List<Policy> existingPolicies) {
         return policy -> {
             for (Policy existingPolicy : existingPolicies) {
-                if (Objects.equals(policy.getAvailabilityStart(), existingPolicy.getAvailabilityStart()) &&
-                        Objects.equals(policy.getAvailabilityEnd(), existingPolicy.getAvailabilityEnd())) {
+                if (Objects.equals(toUtc(policy.getAvailabilityStart()), toUtc(existingPolicy.getAvailabilityStart())) &&
+                        Objects.equals(toUtc(policy.getAvailabilityEnd()), toUtc(existingPolicy.getAvailabilityEnd()))) {
                     return false;
                 }
             }
