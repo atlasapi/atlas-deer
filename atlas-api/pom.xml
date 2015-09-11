@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.atlasapi</groupId>
     <artifactId>atlas</artifactId>
-    <version>7.0.293-SNAPSHOT</version>
+    <version>7.0.301-SNAPSHOT</version>
   </parent>
   <artifactId>atlas-api</artifactId>
   <packaging>war</packaging>
@@ -171,6 +171,10 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>

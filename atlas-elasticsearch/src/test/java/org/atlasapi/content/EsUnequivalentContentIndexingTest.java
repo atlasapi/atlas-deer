@@ -1,13 +1,19 @@
 package org.atlasapi.content;
 
 import static org.atlasapi.util.ElasticSearchHelper.refresh;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.isNotNull;
+import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -17,7 +23,10 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
+import org.atlasapi.util.NoOpSecondaryIndex;
 import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
@@ -35,10 +44,10 @@ import org.junit.Test;
 
 import com.metabroadcast.common.time.DateTimeZones;
 
-public final class EsContentIndexingTest {
+public final class EsUnequivalentContentIndexingTest {
     
     private static final Node esClient = ElasticSearchHelper.testNode();
-    private EsContentIndex contentIndexer;
+    private EsUnequivalentContentIndex contentIndexer;
 
     @BeforeClass
     public static void before() throws Exception {
@@ -56,7 +65,7 @@ public final class EsContentIndexingTest {
     @Before
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient.client());
-        contentIndexer = new EsContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class));
+        contentIndexer = new EsUnequivalentContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 6000);
         contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     
@@ -156,5 +165,91 @@ public final class EsContentIndexingTest {
         assertEquals(2, terms.get(0).getCount());
         assertEquals("2", terms.get(1).getTerm().string());
         assertEquals(1, terms.get(1).getCount());
+    }
+
+    @Test
+    public void testIndexsEpisodeDataOntoSeries() throws Exception {
+        DateTime now = DateTime.now();
+        DateTime nowPlusOneDay = DateTime.now().plusDays(1);
+        Series series = new Series(Id.valueOf(1l), Publisher.METABROADCAST);
+
+        Episode episodeOne = new Episode(Id.valueOf(2l), Publisher.METABROADCAST);
+        episodeOne.setSeries(series);
+
+        Encoding encodingOne = new Encoding();
+        Location locationOne = new Location();
+        Policy policyOne = new Policy();
+        policyOne.setAvailabilityStart(now);
+        policyOne.setAvailabilityEnd(nowPlusOneDay);
+        locationOne.setPolicy(policyOne);
+        encodingOne.setAvailableAt(ImmutableSet.of(locationOne));
+
+        episodeOne.setBroadcasts(ImmutableSet.of(new Broadcast(Id.valueOf(100l), now, nowPlusOneDay)));
+        episodeOne.setManifestedAs(ImmutableSet.of(encodingOne));
+
+        indexAndRefresh(series, episodeOne);
+
+        GetResponse resp = esClient.client().get(new GetRequest("content", "container", "1")).get();
+        Map<String, Object> src = resp.getSource();
+        assertThat(((List) src.get(EsContent.BROADCASTS)).size(), is(1));
+        assertThat(((List) src.get(EsContent.LOCATIONS)).size(), is(1));
+
+        Episode episodeTwo = new Episode(Id.valueOf(2l), Publisher.METABROADCAST);
+        episodeTwo.setSeries(series);
+
+        Encoding encodingTwo = new Encoding();
+
+        Location locationTwo = new Location();
+        Location locationThree = new Location();
+        Location locationFour = new Location();
+
+        Policy policyTwo = new Policy();
+        policyTwo.setAvailabilityStart(now);
+        policyTwo.setAvailabilityEnd(nowPlusOneDay);
+
+        Policy policyThree = new Policy();
+        policyThree.setAvailabilityStart(now.plusMinutes(20));
+        policyThree.setAvailabilityEnd(nowPlusOneDay);
+
+        Policy policyFour = new Policy();
+        policyFour.setAvailabilityStart(now.minusMinutes(20));
+        policyFour.setAvailabilityEnd(nowPlusOneDay.plusDays(1));
+
+
+        locationTwo.setPolicy(policyTwo);
+        locationThree.setPolicy(policyThree);
+        locationFour.setPolicy(policyFour);
+
+        encodingTwo.setAvailableAt(ImmutableSet.of(locationTwo, locationThree, locationFour));
+
+        episodeTwo.setBroadcasts(
+                ImmutableSet.of(
+                        new Broadcast(Id.valueOf(100l), now.minusDays(1), nowPlusOneDay),
+                        new Broadcast(Id.valueOf(100l), now, nowPlusOneDay),
+                        new Broadcast(Id.valueOf(100l), now.plusMinutes(20), nowPlusOneDay)
+                )
+        );
+
+        episodeTwo.setManifestedAs(ImmutableSet.of(encodingTwo));
+
+        indexAndRefresh(episodeTwo);
+
+        GetResponse respTwo = esClient.client().get(new GetRequest("content", "container", "1")).get();
+        Map<String, Object> srcTwo = respTwo.getSource();
+        assertThat(((List)srcTwo.get(EsContent.BROADCASTS)).size(), is(3));
+        assertThat(((List)srcTwo.get(EsContent.LOCATIONS)).size(), is(3));
+
+        indexAndRefresh(series);
+        GetResponse respThree = esClient.client().get(new GetRequest("content", "container", "1")).get();
+        Map<String, Object> srcThree = respThree.getSource();
+        assertThat(((List) srcThree.get(EsContent.BROADCASTS)).size(), is(3));
+        assertThat(((List) srcThree.get(EsContent.LOCATIONS)).size(), is(3));
+    }
+
+    private void indexAndRefresh(Content... contents) throws IndexException {
+        for (Content content : contents) {
+            contentIndexer.index(content);
+        }
+        ElasticSearchHelper.refresh(esClient.client());
     }
 }

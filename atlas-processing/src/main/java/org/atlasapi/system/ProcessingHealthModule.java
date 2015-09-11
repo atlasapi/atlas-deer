@@ -100,7 +100,7 @@ public class ProcessingHealthModule extends HealthModule {
 
     @PostConstruct
     public void addProbes() {
-        healthController.addProbes(probes);
+        healthController.addProbes(ImmutableList.of(metricsProbe()));
     }
 
     private void registerMetrics(String prefix, MetricSet metrics, MetricRegistry registry) {

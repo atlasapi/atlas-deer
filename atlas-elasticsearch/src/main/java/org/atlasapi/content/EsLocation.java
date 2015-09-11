@@ -1,8 +1,10 @@
 package org.atlasapi.content;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.atlasapi.util.EsObject;
+import org.joda.time.DateTime;
 
 /**
  */
@@ -21,5 +23,15 @@ public class EsLocation extends EsObject {
         properties.put(AVAILABILITY_END_TIME, availabilityEndTime);
         return this;
     }
-    
+
+    public static EsLocation fromMap(Map<String, Object> map) {
+        EsLocation esLocation = new EsLocation();
+        if (map.get(AVAILABILITY_TIME) != null) {
+            esLocation.availabilityTime(DateTime.parse((String) map.get(AVAILABILITY_TIME)).toDate());
+        }
+        if (map.get(AVAILABILITY_END_TIME) != null) {
+            esLocation.availabilityEndTime(DateTime.parse((String) map.get(AVAILABILITY_END_TIME)).toDate());
+        }
+        return esLocation;
+    }
 }

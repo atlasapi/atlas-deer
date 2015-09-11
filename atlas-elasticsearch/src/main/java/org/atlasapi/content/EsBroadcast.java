@@ -1,8 +1,10 @@
 package org.atlasapi.content;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.atlasapi.util.EsObject;
+import org.joda.time.DateTime;
 
 public class EsBroadcast extends EsObject {
     
@@ -36,5 +38,15 @@ public class EsBroadcast extends EsObject {
     public EsBroadcast repeat(Boolean repeat) {
         properties.put(REPEAT, repeat);
         return this;
+    }
+
+    public static EsBroadcast fromMap(Map<String, Object> map) {
+        EsBroadcast broadcast = new EsBroadcast();
+        broadcast.id((String) map.get(ID));
+        broadcast.channel(((Integer) map.get(CHANNEL)).longValue());
+        broadcast.transmissionTime(DateTime.parse((String) map.get(TRANSMISSION_TIME)).toDate());
+        broadcast.transmissionEndTime(DateTime.parse((String) map.get(TRANSMISSION_END_TIME)).toDate());
+        broadcast.repeat((Boolean) map.get(REPEAT));
+        return broadcast;
     }
 }

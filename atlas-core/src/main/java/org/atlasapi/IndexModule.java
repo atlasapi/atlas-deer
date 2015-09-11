@@ -6,7 +6,7 @@ import org.atlasapi.topic.PopularTopicIndex;
 
 public interface IndexModule {
 
-    ContentIndex contentIndex();
+    ContentIndex equivContentIndex();
 
     PopularTopicIndex topicSearcher();
     

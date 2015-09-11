@@ -6,13 +6,33 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.metabroadcast.common.health.HealthProbe;
+import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.ReadPreference;
+import com.mongodb.ServerAddress;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.CassandraEquivalentContentStore;
+import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.EsContentTitleSearcher;
+import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.event.EventStore;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
@@ -49,6 +69,7 @@ import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
+import org.atlasapi.util.CassandraSecondaryIndex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -201,7 +222,18 @@ public class AtlasPersistenceModule {
     public ElasticSearchContentIndexModule esContentIndexModule() {
         ElasticSearchContentIndexModule module =
                 new ElasticSearchContentIndexModule(
-                        esSeeds, esCluster, esIndex, Long.parseLong(esRequestTimeout), persistenceModule().contentStore(), health.metrics(), channelGroupResolver()
+                        esSeeds,
+                        esCluster,
+                        esIndex,
+                        Long.parseLong(esRequestTimeout),
+                        persistenceModule().contentStore(),
+                        health.metrics(),
+                        channelGroupResolver(),
+                        new CassandraSecondaryIndex(
+                                persistenceModule().getSession(),
+                                CassandraEquivalentContentStore.EQUIVALENT_CONTENT_INDEX,
+                                persistenceModule().getReadConsistencyLevel()
+                        )
                 );
         module.init();
         return module;
@@ -232,21 +264,20 @@ public class AtlasPersistenceModule {
     }
 
     public IdGeneratorBuilder idGeneratorBuilder() {
-        return new IdGeneratorBuilder() {
-
-            @Override
-            public IdGenerator generator(String sequenceIdentifier) {
-                return new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
-            }
-        };
+        return sequenceIdentifier -> new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
     }
 
     @Bean
     @Primary
-    public EsContentIndex contentIndex() {
-        return esContentIndexModule().contentIndex();
+    public ContentIndex contentIndex() {
+        return esContentIndexModule().equivContentIndex();
     }
 
+    @Bean
+    @Primary
+    public EsContentTranslator esContentTranslator() {
+        return esContentIndexModule().translator();
+    }
     @Bean
     @Primary
     public EsTopicIndex topicIndex() {
@@ -282,17 +313,14 @@ public class AtlasPersistenceModule {
 
     private List<ServerAddress> mongoHosts(String mongoHost, final Integer mongoPort) {
         Splitter splitter = Splitter.on(",").omitEmptyStrings().trimResults();
-        return ImmutableList.copyOf(Iterables.filter(Iterables.transform(splitter.split(mongoHost), 
-            new Function<String, ServerAddress>() {
-                @Override
-                public ServerAddress apply(String input) {
+        return ImmutableList.copyOf(Iterables.filter(Iterables.transform(splitter.split(mongoHost),
+                input -> {
                     try {
                         return new ServerAddress(input, mongoPort);
                     } catch (UnknownHostException e) {
                         return null;
                     }
                 }
-            }
         ), Predicates.notNull()));
     }
     

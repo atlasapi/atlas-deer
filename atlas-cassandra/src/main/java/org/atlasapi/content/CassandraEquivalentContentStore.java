@@ -12,7 +12,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +33,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +64,7 @@ import com.google.protobuf.ByteString;
 
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
-    private static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
+    public static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
     private static final String EQUIVALENT_CONTENT_TABLE = "equivalent_content";
     
     private static final String SET_ID_KEY = "set_id";
@@ -97,7 +97,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         this.session = session;
         this.readConsistency = read;
         this.writeConsistency = write;
-        this.index = new SecondaryIndex(session, EQUIVALENT_CONTENT_INDEX, read);
+        this.index = new CassandraSecondaryIndex(session, EQUIVALENT_CONTENT_INDEX, read);
     }
 
 

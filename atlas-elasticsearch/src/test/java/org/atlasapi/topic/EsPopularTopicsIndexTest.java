@@ -14,7 +14,7 @@ import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.Broadcast;
-import org.atlasapi.content.EsContentIndex;
+import org.atlasapi.content.EsUnequivalentContentIndex;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
@@ -22,6 +22,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.atlasapi.content.NoOpContentResolver;
+import org.atlasapi.util.NoOpSecondaryIndex;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -39,8 +40,8 @@ import com.metabroadcast.common.query.Selection;
 public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
-    private final EsContentIndex index = new EsContentIndex(
-            esClient.client(), EsSchema.CONTENT_INDEX, 60000, new NoOpContentResolver(), mock(ChannelGroupResolver.class)
+    private final EsUnequivalentContentIndex index = new EsUnequivalentContentIndex(
+            esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60
     );
 
     @BeforeClass

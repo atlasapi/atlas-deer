@@ -84,8 +84,9 @@ public class IndexQueryParser {
     }
 
     private Boolean availabilityFilterFrom(Query<?> query) {
-        String param = query.getContext().getRequest().getParameter("available");
-        if (!Strings.isNullOrEmpty(param)) {
+        String available = query.getContext().getRequest().getParameter("available");
+        String brandSeriesAvailable = query.getContext().getRequest().getParameter("brand.series.available");
+        if (!Strings.isNullOrEmpty(available) || !Strings.isNullOrEmpty(brandSeriesAvailable)) {
             return true;
         }
         return false;

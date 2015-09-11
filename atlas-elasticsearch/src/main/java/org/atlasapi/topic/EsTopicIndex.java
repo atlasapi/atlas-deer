@@ -6,6 +6,7 @@ import static org.atlasapi.topic.EsTopic.SOURCE;
 
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -116,22 +117,16 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
             .addSort(EsTopic.ID, SortOrder.ASC)
             .execute(FutureSettingActionListener.setting(response));
         
-        return Futures.transform(response, new Function<SearchResponse, IndexQueryResult>() {
-            @Override
-            public IndexQueryResult apply(SearchResponse input) {
-                /*
-                 * TODO: if 
-                 *  selection.offset + selection.limit < totalHits
-                 * then we have more: return for use with response. 
-                 */
-                return new IndexQueryResult(FluentIterable.from(input.getHits()).transform(new Function<SearchHit, Id>() {
-                    @Override
-                    public Id apply(SearchHit hit) {
-                        Long id = hit.field(ID).<Number>value().longValue();
-                        return Id.valueOf(id);
-                    }
-                }), input.getHits().getTotalHits());
-            }
+        return Futures.transform(response, (SearchResponse input) -> {
+            /*
+             * TODO: if
+             *  selection.offset + selection.limit < totalHits
+             * then we have more: return for use with response.
+             */
+            return new IndexQueryResult(FluentIterable.from(input.getHits()).transform(hit -> {
+                Long id = hit.field(ID).<Number>value().longValue();
+                return Id.valueOf(id);
+            }), ImmutableList.of(), input.getHits().getTotalHits());
         });
     }
 

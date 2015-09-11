@@ -20,6 +20,8 @@ public class ResponseWriterFactory {
             throws IOException, UnsupportedFormatException, NotAcceptableException {
         ResponseWriter writerFromExtension = writerFromExtension(request, response);
         response.addHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Cache-Control", "600");
+        response.setHeader("Vary", "Origin");
         
         if (writerFromExtension != null) {
             return writerFromExtension;

@@ -86,7 +86,7 @@ public class BootstrapModule {
                 legacy.legacyContentResolver(),
                 legacy.legacyContentLister(),
                 persistence.nullMessageSendingContentStore(),
-                search.contentIndex(),
+                search.equivContentIndex(),
                 persistence,
                 explicitEquivalenceMigrator(),
                 NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
