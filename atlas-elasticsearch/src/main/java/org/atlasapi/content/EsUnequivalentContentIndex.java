@@ -22,6 +22,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.FilteredQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -188,8 +189,9 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
         }
 
-        log.debug(queryBuilder.toString());
-        reqBuilder.setQuery(QueryBuilders.filteredQuery(queryBuilder, filterBuilder));
+        FilteredQueryBuilder finalQuery = QueryBuilders.filteredQuery(queryBuilder, filterBuilder);
+        log.debug(finalQuery.toString());
+        reqBuilder.setQuery(finalQuery);
         reqBuilder.execute(FutureSettingActionListener.setting(response));
 
         /* TODO
