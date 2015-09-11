@@ -1,36 +1,20 @@
 package org.atlasapi;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicates;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.health.HealthProbe;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.ids.IdGeneratorBuilder;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.properties.Parameter;
-import com.mongodb.Mongo;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.ReadPreference;
-import com.mongodb.ServerAddress;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.UUID;
+
+import javax.annotation.PostConstruct;
+
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.CassandraEquivalentContentStore;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentIndex;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.event.EventStore;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
 import org.atlasapi.media.channel.ChannelGroupStore;
@@ -71,10 +55,27 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 
-import javax.annotation.PostConstruct;
-import java.net.UnknownHostException;
-import java.util.List;
-import java.util.UUID;
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.metabroadcast.common.health.HealthProbe;
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.ids.IdGeneratorBuilder;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.properties.Parameter;
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.ReadPreference;
+import com.mongodb.ServerAddress;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
 
 @Configuration
 @Import({KafkaMessagingModule.class})
@@ -132,12 +133,9 @@ public class AtlasPersistenceModule {
                 context,
                 cassandraService,
                 cassandraKeyspace,
-                idGeneratorBuilder(), new ContentHasher() {
-                    @Override
-                    public String hash(Content content) {
-                        return UUID.randomUUID().toString();
-                    }
-                },
+                idGeneratorBuilder(),
+                content -> UUID.randomUUID().toString(),
+                event -> UUID.randomUUID().toString(),
                 seeds,
                 health.metrics()
         );
@@ -167,7 +165,14 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
-    public SegmentStore segmentStore() { return persistenceModule().segmentStore(); }
+    public SegmentStore segmentStore() {
+        return persistenceModule().segmentStore();
+    }
+
+    @Bean
+    public EventStore eventStore() {
+        return persistenceModule().eventStore();
+    }
 
     @Bean
     public EquivalenceGraphStore getContentEquivalenceGraphStore() {

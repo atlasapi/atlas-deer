@@ -1,11 +1,30 @@
 package org.atlasapi.content;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.ContentColumn.DESCRIPTION;
 import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
 import static org.atlasapi.content.ContentColumn.SOURCE;
 import static org.atlasapi.content.ContentColumn.TYPE;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.AliasIndex;
+import org.atlasapi.entity.CassandraPersistenceException;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.ResourceUpdatedMessage;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.RegularStatement;
@@ -29,32 +48,12 @@ import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
-import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.AliasIndex;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.messaging.ResourceUpdatedMessage;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatastaxCassandraContentStore extends AbstractContentStore {
 
     private static final String CONTENT_TABLE = "content";
     private static final String PRIMARY_KEY_COLUMN = "key";
     private static final String CLUSTERING_KEY_COLUMN = "column1";
-
 
     private final AliasIndex<Content> aliasIndex;
     private final Session session;
@@ -425,7 +424,8 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
 
     private RegularStatement removeAvailableContent(ContainerRef containerRef, ItemRef itemRef)  {
         Long rowId = containerRef.getId().longValue();
-        String columnId = ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId().longValue());
+        String columnId = ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId()
+                .longValue());
         return delete().all()
                 .from(CONTENT_TABLE)
                 .where(eq(PRIMARY_KEY_COLUMN, rowId))
@@ -434,7 +434,8 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
 
     private RegularStatement removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef) {
         Long rowId = brancontainerRefRef.getId().longValue();
-        String columnId = ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId().longValue());
+        String columnId = ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId()
+                .longValue());
         return delete().all()
                 .from(CONTENT_TABLE)
                 .where(eq(PRIMARY_KEY_COLUMN, rowId))

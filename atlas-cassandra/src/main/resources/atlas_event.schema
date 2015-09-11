@@ -1,0 +1,8 @@
+CREATE TABLE event (
+  event_id bigint PRIMARY KEY,
+  data blob
+) WITH
+  caching='KEYS_ONLY' AND
+  comment='event store' AND
+  compaction={'class': 'LeveledCompactionStrategy'} AND
+  compression={'sstable_compression': 'SnappyCompressor'};

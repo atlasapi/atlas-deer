@@ -18,7 +18,7 @@ public class EventTest {
                 .build();
 
         assertThat(event.getId(), is(Id.valueOf(0L)));
-        assertThat(event.title(), is("title"));
+        assertThat(event.getTitle(), is("title"));
         assertThat(event.getSource(), is(Publisher.BBC));
     }
 }

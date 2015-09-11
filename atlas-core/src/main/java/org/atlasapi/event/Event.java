@@ -12,7 +12,6 @@ import org.joda.time.DateTime;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
 public class Event extends Identified implements Sourced {
 
@@ -26,7 +25,7 @@ public class Event extends Identified implements Sourced {
     private final ImmutableList<Topic> eventGroups;
     private final ImmutableList<ItemRef> content;
 
-    private Event(Builder<?> builder) {
+    private Event(Builder<?, ?> builder) {
         super(builder);
         this.title = checkNotNull(builder.title);
         this.source = checkNotNull(builder.source);
@@ -39,7 +38,7 @@ public class Event extends Identified implements Sourced {
         this.content = ImmutableList.copyOf(builder.content);
     }
 
-    public String title() {
+    public String getTitle() {
         return title;
     }
 
@@ -48,31 +47,31 @@ public class Event extends Identified implements Sourced {
         return source;
     }
 
-    public Topic venue() {
+    public Topic getVenue() {
         return venue;
     }
 
-    public DateTime startTime() {
+    public DateTime getStartTime() {
         return startTime;
     }
 
-    public DateTime endTime() {
+    public DateTime getEndTime() {
         return endTime;
     }
 
-    public ImmutableList<Person> participants() {
+    public ImmutableList<Person> getParticipants() {
         return participants;
     }
 
-    public ImmutableList<Organisation> organisations() {
+    public ImmutableList<Organisation> getOrganisations() {
         return organisations;
     }
 
-    public ImmutableList<Topic> eventGroups() {
+    public ImmutableList<Topic> getEventGroups() {
         return eventGroups;
     }
 
-    public ImmutableList<ItemRef> content() {
+    public ImmutableList<ItemRef> getContent() {
         return content;
     }
 
@@ -109,29 +108,12 @@ public class Event extends Identified implements Sourced {
         return getId() != null ? getId().hashCode() : getCanonicalUri().hashCode();
     }
 
-    public Event copy() {
-        Event event = Event.builder()
-                .withTitle(title)
-                .withSource(source)
-                .withVenue(venue != null ? venue.copy() : null)
-                .withStartTime(startTime)
-                .withEndTime(endTime)
-                .withParticipants(Iterables.transform(participants, Person::copy))
-                .withOrganisations(Iterables.transform(organisations, Organisation::copy))
-                .withEventGroups(Iterables.transform(eventGroups, Topic::copy))
-                .withContent(Iterables.transform(content, ItemRef::copy))
-                .build();
-
-        Identified.copyTo(this, event);
-
-        return event;
-    }
-
-    public static Builder<?> builder() {
+    public static EventBuilder builder() {
         return new EventBuilder();
     }
 
-    protected abstract static class Builder<T extends Builder<T>> extends Identified.Builder<T> {
+    public abstract static class Builder<T extends Event, B extends Builder<T, B>>
+            extends Identified.Builder<T, B> {
 
         private String title;
         private Publisher source;
@@ -143,59 +125,62 @@ public class Event extends Identified implements Sourced {
         private ImmutableList<Topic> eventGroups = ImmutableList.of();
         private ImmutableList<ItemRef> content = ImmutableList.of();
 
-        private Builder() {}
+        protected Builder() {}
 
-        public T withTitle(String title) {
+        public B withTitle(String title) {
             this.title = title;
             return self();
         }
 
-        public T withSource(Publisher publisher) {
+        public B withSource(Publisher publisher) {
             this.source = publisher;
             return self();
         }
 
-        public T withVenue(Topic venue) {
+        public B withVenue(Topic venue) {
             this.venue = venue;
             return self();
         }
 
-        public T withStartTime(DateTime startTime) {
+        public B withStartTime(DateTime startTime) {
             this.startTime = startTime;
             return self();
         }
 
-        public T withEndTime(DateTime endTime) {
+        public B withEndTime(DateTime endTime) {
             this.endTime = endTime;
             return self();
         }
 
-        public T withParticipants(Iterable<Person> participants) {
+        public B withParticipants(Iterable<Person> participants) {
             this.participants = ImmutableList.copyOf(participants);
             return self();
         }
 
-        public T withOrganisations(Iterable<Organisation> organisations) {
+        public B withOrganisations(Iterable<Organisation> organisations) {
             this.organisations = ImmutableList.copyOf(organisations);
             return self();
         }
 
-        public T withEventGroups(Iterable<Topic> eventGroups) {
+        public B withEventGroups(Iterable<Topic> eventGroups) {
             this.eventGroups = ImmutableList.copyOf(eventGroups);
             return self();
         }
 
-        public T withContent(Iterable<ItemRef> content) {
+        public B withContent(Iterable<ItemRef> content) {
             this.content = ImmutableList.copyOf(content);
             return self();
         }
-
-        public Event build() {
-            return new Event(self());
-        }
     }
 
-    private static class EventBuilder extends Builder<EventBuilder> {
+    public static class EventBuilder extends Builder<Event, EventBuilder> {
+
+        private EventBuilder() {}
+
+        @Override
+        public Event build() {
+            return new Event(this);
+        }
 
         @Override
         protected EventBuilder self() {

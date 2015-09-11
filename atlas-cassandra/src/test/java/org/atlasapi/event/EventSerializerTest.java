@@ -30,7 +30,7 @@ public class EventSerializerTest {
 
     @Test
     public void testSerialization() throws Exception {
-        Event.Builder<?> builder = Event.builder();
+        Event.Builder<?, ?> builder = Event.builder();
 
         setIdentifiedFields(builder);
         setEventFields(builder);
@@ -44,7 +44,7 @@ public class EventSerializerTest {
         checkEvent(expected, actual);
     }
 
-    private void setIdentifiedFields(Event.Builder<?> builder) {
+    private void setIdentifiedFields(Event.Builder<?, ?> builder) {
         builder.withId(Id.valueOf(0L))
                 .withCanonicalUri("url")
                 .withCurie("curie")
@@ -55,7 +55,7 @@ public class EventSerializerTest {
                 .withEquivalenceUpdate(DateTime.now().withZone(DateTimeZone.UTC));
     }
 
-    private void setEventFields(Event.Builder<?> builder) {
+    private void setEventFields(Event.Builder<?, ?> builder) {
         builder.withTitle("title")
                 .withSource(Publisher.BBC)
                 .withVenue(new Topic(Id.valueOf(12L)))
@@ -79,16 +79,16 @@ public class EventSerializerTest {
     }
 
     private void checkEvent(Event expected, Event actual) {
-        assertThat(actual.title(), is(expected.title()));
+        assertThat(actual.getTitle(), is(expected.getTitle()));
         assertThat(actual.getSource(), is(expected.getSource()));
-        assertThat(actual.venue(), is(expected.venue()));
-        assertThat(actual.startTime(), is(expected.startTime()));
-        assertThat(actual.endTime(), is(expected.endTime()));
-        assertThat(actual.participants().size(), is(expected.participants().size()));
-        assertThat(actual.participants().get(0).getCanonicalUri(),
-                is(expected.participants().get(0).getCanonicalUri()));
-        assertThat(actual.organisations().size(), is(expected.organisations().size()));
-        assertThat(actual.eventGroups(), is(expected.eventGroups()));
-        assertThat(actual.content(), is(expected.content()));
+        assertThat(actual.getVenue(), is(expected.getVenue()));
+        assertThat(actual.getStartTime(), is(expected.getStartTime()));
+        assertThat(actual.getEndTime(), is(expected.getEndTime()));
+        assertThat(actual.getParticipants().size(), is(expected.getParticipants().size()));
+        assertThat(actual.getParticipants().get(0).getCanonicalUri(),
+                is(expected.getParticipants().get(0).getCanonicalUri()));
+        assertThat(actual.getOrganisations().size(), is(expected.getOrganisations().size()));
+        assertThat(actual.getEventGroups(), is(expected.getEventGroups()));
+        assertThat(actual.getContent(), is(expected.getContent()));
     }
 }

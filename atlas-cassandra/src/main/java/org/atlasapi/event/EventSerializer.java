@@ -23,38 +23,38 @@ public class EventSerializer implements Serializer<Event, byte[]> {
 
         builder.setIdentified(new IdentifiedSerializer<Event>().serialize(event));
 
-        if(event.title() != null) {
-            builder.setTitle(builder.getTitleBuilder().setValue(event.title()).build());
+        if(event.getTitle() != null) {
+            builder.setTitle(builder.getTitleBuilder().setValue(event.getTitle()).build());
         }
         if(event.getSource() != null) {
             builder.setSource(event.getSource().key());
         }
-        if(event.venue() != null) {
-            builder.setVenue(new TopicSerializer().serializeToBuilder(event.venue()));
+        if(event.getVenue() != null) {
+            builder.setVenue(new TopicSerializer().serializeToBuilder(event.getVenue()));
         }
-        if(event.startTime() != null) {
-            builder.setStartTime(new DateTimeSerializer().serialize(event.startTime()));
+        if(event.getStartTime() != null) {
+            builder.setStartTime(new DateTimeSerializer().serialize(event.getStartTime()));
         }
-        if(event.endTime() != null) {
-            builder.setEndTime(new DateTimeSerializer().serialize(event.endTime()));
+        if(event.getEndTime() != null) {
+            builder.setEndTime(new DateTimeSerializer().serialize(event.getEndTime()));
         }
-        if (event.participants() != null) {
-            builder.addAllParticipant(event.participants().stream()
+        if (event.getParticipants() != null) {
+            builder.addAllParticipant(event.getParticipants().stream()
                     .map(participant -> new PersonSerializer().serialize(participant))
                     .collect(Collectors.toList()));
         }
-        if (event.organisations() != null) {
-            builder.addAllOrganisation(event.organisations().stream()
+        if (event.getOrganisations() != null) {
+            builder.addAllOrganisation(event.getOrganisations().stream()
                     .map(organisation -> new OrganisationSerializer().serialize(organisation))
                     .collect(Collectors.toList()));
         }
-        if (event.eventGroups() != null) {
-            builder.addAllEventGroup(event.eventGroups().stream()
+        if (event.getEventGroups() != null) {
+            builder.addAllEventGroup(event.getEventGroups().stream()
                     .map(eventGroup -> new TopicSerializer().serializeToBuilder(eventGroup).build())
                     .collect(Collectors.toList()));
         }
-        if (event.content() != null) {
-            builder.addAllContent(event.content().stream()
+        if (event.getContent() != null) {
+            builder.addAllContent(event.getContent().stream()
                     .map(content -> new ContentRefSerializer(null).serialize(content).build())
                     .collect(Collectors.toList()));
         }
@@ -75,7 +75,7 @@ public class EventSerializer implements Serializer<Event, byte[]> {
             throws com.google.protobuf.InvalidProtocolBufferException {
         EventProtos.Event msg = EventProtos.Event.parseFrom(dest);
 
-        Event.Builder<?> builder = Event.builder();
+        Event.Builder<?, ?> builder = Event.builder();
 
         new IdentifiedSerializer<Event>().deserialize(msg.getIdentified(), builder);
 

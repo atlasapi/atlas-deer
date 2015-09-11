@@ -59,7 +59,7 @@ public class Identified implements Identifiable, Aliased {
 	    this.id = id;
     }
 
-    protected Identified(Builder builder) {
+    protected Identified(Builder<?, ?> builder) {
         this.id = builder.id;
         this.canonicalUri = builder.canonicalUri;
         this.aliases = ImmutableSet.copyOf(builder.aliases);
@@ -235,13 +235,13 @@ public class Identified implements Identifiable, Aliased {
 	
 	public static void copyTo(Identified from, Identified to) {
 	    to.id = from.id;
-	    to.aliases = ImmutableSet.copyOf(from.aliases);
-	    to.aliasUrls = Sets.newHashSet(from.aliasUrls);
-	    to.canonicalUri = from.canonicalUri;
-	    to.curie = from.curie;
+		to.canonicalUri = from.canonicalUri;
+		to.curie = from.curie;
+		to.aliasUrls = Sets.newHashSet(from.aliasUrls);
+		to.aliases = ImmutableSet.copyOf(from.aliases);
 	    to.equivalentTo = Sets.newHashSet(from.equivalentTo);
 	    to.lastUpdated = from.lastUpdated;
-	    to.id = from.id;
+		to.equivalenceUpdate = from.equivalenceUpdate;
 	}
 	
 	public static <T extends Identified> List<T> sort(List<T> content,
@@ -275,14 +275,15 @@ public class Identified implements Identifiable, Aliased {
         return toSort;
     }
 
-    public static Builder<?> builder() {
+    public static Builder<?, ?> builder() {
         return new IdentifiedBuilder();
     }
 
-    protected abstract static class Builder<T extends Builder<T>> {
+    public abstract static class Builder<T extends Identified, B extends Builder<T, B>> {
         private Id id;
         private String canonicalUri;
         private String curie;
+	    private @Deprecated ImmutableSet<String> aliasUrls = ImmutableSet.of();
         private ImmutableSet<Alias> aliases = ImmutableSet.of();
         private ImmutableSet<EquivalenceRef> equivalentTo = ImmutableSet.of();
         private DateTime lastUpdated;
@@ -290,51 +291,66 @@ public class Identified implements Identifiable, Aliased {
 
         protected Builder() {}
 
-        public T withId(Id id) {
+        public B withId(Id id) {
             this.id = id;
             return self();
         }
 
-        public T withCanonicalUri(String canonicalUri) {
+        public B withCanonicalUri(String canonicalUri) {
             this.canonicalUri = canonicalUri;
             return self();
         }
 
-        public T withCurie(String curie) {
+        public B withCurie(String curie) {
             this.curie = curie;
             return self();
         }
 
-        public T withAliases(Iterable<Alias> aliases) {
+	    /**
+	     * @deprecated Use {@link org.atlasapi.entity.Identified.Builder#withAliases(Iterable)}
+	     * instead
+	     */
+	    @Deprecated
+	    public B withAliasUrls(Iterable<String> aliasUrls) {
+		    this.aliasUrls = ImmutableSet.copyOf(aliasUrls);
+		    return self();
+	    }
+
+        public B withAliases(Iterable<Alias> aliases) {
             this.aliases = ImmutableSet.copyOf(aliases);
             return self();
         }
 
-        public T withEquivalentTo(Iterable<EquivalenceRef> equivalentTo) {
+        public B withEquivalentTo(Iterable<EquivalenceRef> equivalentTo) {
             this.equivalentTo = ImmutableSet.copyOf(equivalentTo);
             return self();
         }
 
-        public T withLastUpdated(DateTime lastUpdated) {
+        public B withLastUpdated(DateTime lastUpdated) {
             this.lastUpdated = lastUpdated;
             return self();
         }
 
-        public T withEquivalenceUpdate(DateTime equivalenceUpdate) {
+        public B withEquivalenceUpdate(DateTime equivalenceUpdate) {
             this.equivalenceUpdate = equivalenceUpdate;
             return self();
         }
 
-        public Identified build() {
-            return new Identified(self());
-        }
+        public abstract T build();
 
-        protected abstract T self();
+        protected abstract B self();
     }
 
-    private static class IdentifiedBuilder extends Builder<IdentifiedBuilder> {
+    public static class IdentifiedBuilder extends Builder<Identified, IdentifiedBuilder> {
 
-        @Override
+	    private IdentifiedBuilder() {}
+
+	    @Override
+	    public Identified build() {
+		    return new Identified(this);
+	    }
+
+	    @Override
         protected IdentifiedBuilder self() {
             return this;
         }

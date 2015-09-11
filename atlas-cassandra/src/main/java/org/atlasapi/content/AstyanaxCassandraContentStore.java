@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.content.ContentColumn.DESCRIPTION;
 import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
@@ -10,11 +9,9 @@ import static org.atlasapi.content.ContentColumn.TYPE;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.querybuilder.Batch;
-import com.google.common.base.Optional;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
+import org.atlasapi.entity.CassandraPersistenceException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -26,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Collections2;
