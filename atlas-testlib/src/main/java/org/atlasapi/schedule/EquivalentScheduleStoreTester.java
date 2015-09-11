@@ -3,6 +3,7 @@ package org.atlasapi.schedule;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -13,6 +14,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
@@ -578,6 +580,166 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         assertThat(items.size(), is(2));
         assertThat(Iterables.getOnlyElement(items.get(item.getId()).getBroadcasts()), is(broadcast1));
         assertThat(Iterables.getOnlyElement(items.get(equiv.getId()).getBroadcasts()), is(broadcast4));
+    }
+
+
+    public void testUpdatingContentUpdatesContent() throws Exception {
+        Channel channel1 = Channel.builder(Publisher.BBC).build();
+        channel1.setId(1L);
+
+        DateTime now = DateTime.now();
+        DateTime nowPlus1h = now.plusHours(1);
+        DateTime nowPlus2h = now.plusHours(2);
+        DateTime nowMinus25h = now.minusHours(25);
+        DateTime nowMinus26h = now.minusHours(26);
+
+        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+        item1.setTitle("Item1 title");
+
+        Item item2 = new Item(Id.valueOf(2), Publisher.BBC_KIWI);
+        item2.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+        item2.setTitle("Item2 title");
+
+        Broadcast broadcast1 = new Broadcast(channel1, now, nowPlus1h).withId("11");
+        Broadcast broadcast2 = new Broadcast(channel1, nowPlus1h, nowPlus2h).withId("12");
+
+        item1.addBroadcast(broadcast1);
+
+        item2.addBroadcast(broadcast2);
+
+        getSubjectGenerator().getContentStore().writeContent(item1);
+        getSubjectGenerator().getContentStore().writeContent(item2);
+
+        ScheduleRef scheduleRef1 = ScheduleRef
+                .forChannel(channel1.getId(), new Interval(now, nowPlus2h))
+                .addEntry(item1.getId(), broadcast1.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(
+                new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef1, ImmutableSet.<BroadcastRef>of())
+        );
+
+        ScheduleRef scheduleRef2 = ScheduleRef
+                .forChannel(channel1.getId(), new Interval(nowMinus26h, nowMinus25h))
+                .addEntry(item2.getId(), broadcast2.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(
+                new ScheduleUpdate(Publisher.BBC_KIWI, scheduleRef2, ImmutableSet.<BroadcastRef>of())
+        );
+
+        EquivalentChannelSchedule currentMbSched = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1),
+                        new Interval(now, nowPlus2h),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
+                )
+        ).channelSchedules().get(0);
+
+        assertThat(currentMbSched.getEntries().size(), is(1));
+        assertThat(currentMbSched.getEntries().get(0).getItems().getResources(), is(ImmutableSet.of(item1)));
+
+        EquivalentChannelSchedule currentBbcSched = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1),
+                        new Interval(now, nowPlus2h),
+                        Publisher.BBC_KIWI,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
+                )
+        ).channelSchedules().get(0);
+
+        assertThat(currentBbcSched.getEntries().size(), is(1));
+        assertThat(currentBbcSched.getEntries().get(0).getItems().getResources(), is(ImmutableSet.of(item2)));
+
+
+        EquivalenceGraphUpdate equivUpdate = getSubjectGenerator().getEquivalenceGraphStore()
+                .updateEquivalences(
+                        item1.toRef(),
+                        ImmutableSet.<ResourceRef>of(item2.toRef()), ImmutableSet.of(Publisher.METABROADCAST)
+                ).get();
+        EquivalenceGraphUpdate equivUpdate2 = getSubjectGenerator().getEquivalenceGraphStore()
+                .updateEquivalences(
+                        item2.toRef(),
+                        ImmutableSet.<ResourceRef>of(item1.toRef()), ImmutableSet.of(Publisher.METABROADCAST)
+                ).get();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateEquivalences(equivUpdate);
+        getSubjectGenerator().getEquivalentScheduleStore().updateEquivalences(equivUpdate2);
+
+        currentMbSched = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1),
+                        new Interval(now, nowPlus2h),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
+                )
+        ).channelSchedules().get(0);
+
+        assertThat(currentMbSched.getEntries().size(), is(1));
+        assertThat(currentMbSched.getEntries().get(0).getItems().getResources(), is(ImmutableSet.of(item1, item2)));
+
+        currentBbcSched = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1),
+                        new Interval(now, nowPlus2h),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
+                )
+        ).channelSchedules().get(0);
+
+        assertThat(currentBbcSched.getEntries().size(), is(1));
+        assertThat(currentBbcSched.getEntries().get(0).getItems().getResources(), is(ImmutableSet.of(item1, item2)));
+
+        item1.setTitle("New Item 1 title");
+
+        getSubjectGenerator().getContentStore().writeContent(item1);
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateContent(ImmutableSet.of(item1, item2));
+
+        currentMbSched = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1),
+                        new Interval(now, nowPlus2h),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
+                )
+        ).channelSchedules().get(0);
+
+        assertThat(currentMbSched.getEntries().size(), is(1));
+        assertThat(
+                Iterables.getOnlyElement(
+                        Iterables.filter(
+                                currentMbSched.getEntries().get(0).getItems().getResources(),
+                                i -> i.getId().equals(item1.getId())
+                        )
+                ).getTitle(),
+                is(item1.getTitle())
+        );
+
+        currentBbcSched = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1),
+                        new Interval(now, nowPlus2h),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
+                )
+        ).channelSchedules().get(0);
+
+        assertThat(currentBbcSched.getEntries().size(), is(1));
+        assertThat(
+                Iterables.getOnlyElement(
+                        Iterables.filter(
+                                currentBbcSched.getEntries().get(0).getItems().getResources(),
+                                i -> i.getId().equals(item1.getId())
+                        )
+                ).getTitle(),
+                is(item1.getTitle())
+        );
+
+
+
     }
     
     private <T> T get(ListenableFuture<T> future) throws Exception {
