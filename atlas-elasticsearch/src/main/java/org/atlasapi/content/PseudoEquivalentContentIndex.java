@@ -29,7 +29,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
     public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query, Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> searchParam) {
         try {
 
-            Selection selectionForDelegate = Selection.ALL;
+            Selection selectionForDelegate = Selection.limitedTo(Integer.MAX_VALUE);
 
             IndexQueryResult result = Futures.get(
                     delegate.query(query, publishers, selectionForDelegate, searchParam),
