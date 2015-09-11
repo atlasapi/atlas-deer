@@ -135,6 +135,14 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
             if (queryParams.get().getFuzzyQueryParams().isPresent()) {
                 queryBuilder = addTitleQuery(queryParams, queryBuilder);
+                if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
+                    queryBuilder = BroadcastQueryBuilder.build(
+                            queryBuilder,
+                            queryParams.get().getBroadcastWeighting().get()
+                    );
+                } else {
+                    queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
+                }
             }
 
             if (queryParams.get().getBrandId().isPresent()) {
@@ -178,15 +186,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             }
             */
 
-        }
-
-        if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
-            queryBuilder = BroadcastQueryBuilder.build(
-                    queryBuilder,
-                    queryParams.get().getBroadcastWeighting().get()
-            );
-        } else {
-            queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
         }
 
         log.debug(queryBuilder.toString());
