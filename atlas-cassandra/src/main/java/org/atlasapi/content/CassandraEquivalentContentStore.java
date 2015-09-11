@@ -62,6 +62,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 
+import javax.annotation.Nullable;
+
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
     public static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
@@ -185,12 +187,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             if (!row.isNull(GRAPH_KEY)) {
                 graphs.put(setId, graphSerializer.deserialize(row.getBytes(GRAPH_KEY)));
                 Content content = deserialize(row);
-                if (content instanceof Item) {
-                    Item item = (Item) content;
-                    for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
-                        segmentEvent.setPublisher(item.getSource());
-                    }
-                }
+
                 EquivalenceGraph graphForContent = graphs.get(setId);
                 if (contentSelected(content, graphForContent, selectedSources)) {
                     sets.put(setId, content);
@@ -232,7 +229,14 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             }
             ByteString bytes = ByteString.copyFrom(row.getBytes(DATA_KEY));
             ContentProtos.Content buffer = ContentProtos.Content.parseFrom(bytes);
-            return contentSerializer.deserialize(buffer);
+            Content content = contentSerializer.deserialize(buffer);
+            if (content instanceof Item) {
+                Item item = (Item) content;
+                for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
+                    segmentEvent.setPublisher(item.getSource());
+                }
+            }
+            return content;
         } catch (IOException e) {
             throw new RuntimeException(setId +":"+row.getLong(CONTENT_ID_KEY), e);
         }
@@ -385,4 +389,22 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         session.executeAsync(statement);
     }
 
+    @Override
+    public ListenableFuture<Set<Content>> resolveEquivalentSet(Long equivalentSetId) {
+        return Futures.transform(
+                session.executeAsync(
+                        select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY)
+                        .from(EQUIVALENT_CONTENT_TABLE)
+                        .where(eq(SET_ID_KEY, equivalentSetId)).setConsistencyLevel(readConsistency)
+                ),
+                (ResultSet resultSet) -> {
+                    ImmutableSet.Builder<Content> content = ImmutableSet.builder();
+                    for (Row row : resultSet) {
+                        content.add(deserialize(row));
+                    }
+                    return content.build();
+                }
+
+        );
+    }
 }
