@@ -78,10 +78,10 @@ public class EsContentSearcherV3CompatibilityTest {
         int indexed = 0;
         for (Content c : contents) {
             if (c instanceof Container) {
-                indexer.index((Container)c);
+                indexer.index(c);
                 indexed++;
             } else if (c instanceof Item){
-                indexer.index((Item)c);
+                indexer.index(c);
                 indexed++;
             }
         }

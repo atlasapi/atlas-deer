@@ -1,5 +1,21 @@
 package org.atlasapi.content;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
+import org.atlasapi.ConfiguredAstyanaxContext;
+import org.atlasapi.entity.CassandraHelper;
+import org.atlasapi.entity.Id;
+import org.atlasapi.media.entity.Publisher;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -11,21 +27,6 @@ import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
-import org.atlasapi.ConfiguredAstyanaxContext;
-import org.atlasapi.entity.CassandraHelper;
-import org.atlasapi.entity.Id;
-import org.atlasapi.media.entity.Publisher;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
 
 public class DatastaxProtobufContentMarshallerTest {
 

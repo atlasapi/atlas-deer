@@ -1,9 +1,10 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.FluentIterable;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import org.atlasapi.entity.Id;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.collect.FluentIterable;
 
 public class IndexQueryResult {
 

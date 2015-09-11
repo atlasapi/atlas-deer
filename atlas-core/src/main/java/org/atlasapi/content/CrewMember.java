@@ -198,15 +198,17 @@ public class CrewMember extends Identified {
         
         private final String key;
         private final String title;
+        private final String  tvaCode;
+        private final String tvaUriPrefix;
         
-        private Role(String key, String title) {
+        Role(String key, String title) {
             this.key = key;
             this.title = title;
             this.tvaCode = null;
             this.tvaUriPrefix = null;
         }
 
-        private Role(String key, String title, String tvaCode, String tvaUriPrefix) {
+        Role(String key, String title, String tvaCode, String tvaUriPrefix) {
             this.key = key;
             this.title = title;
             this.tvaCode = tvaCode;

@@ -1,7 +1,8 @@
 package org.atlasapi.content;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.entity.Id;
 import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -14,8 +15,6 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EsUnequivalentContentIndexer {
 
