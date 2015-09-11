@@ -29,7 +29,9 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
     public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query, Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> searchParam) {
         try {
 
-            Selection selectionForDelegate = Selection.limitedTo(Integer.MAX_VALUE);
+            Selection selectionForDelegate = Selection.limitedTo(
+                    selection.limitOrDefaultValue(100) * Iterables.size(publishers)
+            );
 
             IndexQueryResult result = Futures.get(
                     delegate.query(query, publishers, selectionForDelegate, searchParam),
@@ -43,15 +45,12 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     .distinct()
                     .filter(id -> id != null)
                     .map(Id::valueOf)
-                    .collect(ImmutableCollectors.toList());
-
-            ImmutableList<Id> limitedAndSkipped = equivalentResult.stream()
                     .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
                     .limit(selection.limitOrDefaultValue(100))
                     .collect(ImmutableCollectors.toList());
 
             return Futures.immediateFuture(
-                    new IndexQueryResult(limitedAndSkipped, limitedAndSkipped, Long.valueOf(equivalentResult.size()))
+                    new IndexQueryResult(equivalentResult, equivalentResult, result.getTotalCount())
             );
 
         } catch (Exception e) {
