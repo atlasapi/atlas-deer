@@ -79,14 +79,9 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
                 (ResultSet input) -> {
                     return Resolved.valueOf(
                             StreamSupport.stream(input.spliterator(), false)
-                                    .collect(Collectors.groupingBy(
-                                            row -> row.getLong(PRIMARY_KEY_COLUMN)
-                                    ))
-                                    .values()
-                                    .stream()
-                                    .filter(rows -> !rows.isEmpty())
-                                    .map(rows -> marshaller.unmarshall(rows.get(0)))
-                                    .collect(Collectors.toList()));
+                                    .map(marshaller::unmarshall)
+                                    .collect(Collectors.toList())
+                    );
                 }
         );
     }
