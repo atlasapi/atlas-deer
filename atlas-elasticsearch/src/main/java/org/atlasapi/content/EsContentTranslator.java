@@ -224,9 +224,7 @@ public class EsContentTranslator {
 
         indexed.topics(makeESTopics(container));
         indexed.sortKey(container.getSortKey());
-        if (canonicalId != null) {
-            indexed.canonicalId(canonicalId.longValue());
-        }
+        indexed.canonicalId(canonicalId.longValue());
 
         indexed.hasChildren(Boolean.FALSE);
         if (!container.getItemRefs().isEmpty()) {
@@ -498,10 +496,8 @@ public class EsContentTranslator {
                 .broadcastStartTimeInMillis(itemToBroadcastStartTimes(item))
                 .locations(makeESLocations(item))
                 .topics(makeESTopics(item))
-                .sortKey(item.getSortKey());
-        if (canonical != null) {
-            esContent.canonicalId(canonical.longValue());
-        }
+                .sortKey(item.getSortKey())
+                .canonicalId(canonical.longValue());
 
         if (item.getContainerRef() != null) {
             Id containerId = item.getContainerRef().getId();
