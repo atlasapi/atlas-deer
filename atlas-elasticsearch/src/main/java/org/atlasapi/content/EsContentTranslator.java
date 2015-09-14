@@ -155,8 +155,8 @@ public class EsContentTranslator {
         try {
             ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of(id.longValue()));
             ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
-            if (idToCanonical.containsKey(Long.valueOf(id.longValue()))) {
-                return Id.valueOf(Long.valueOf(idToCanonical.get(id.longValue())));
+            if (idToCanonical.get(Long.valueOf(id.longValue())) != null) {
+                return Id.valueOf(idToCanonical.get(id.longValue()));
             }
             log.warn("Found no canonical ID for {} using {}", id, id);
             return id;
