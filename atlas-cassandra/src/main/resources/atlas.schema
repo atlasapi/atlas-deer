@@ -205,4 +205,4 @@ CREATE TABLE segments_aliases (
     compaction={'class': 'SizeTieredCompactionStrategy'} AND
     compression={'sstable_compression': 'SnappyCompressor'};
 
-create index inverse_equivalent_content_index on atlas_deer_stage.equivalent_content_index(value);
+create index inverse_equivalent_content_index on equivalent_content_index(value);
