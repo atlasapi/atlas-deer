@@ -190,10 +190,9 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         }
 
         FilteredQueryBuilder finalQuery = QueryBuilders.filteredQuery(queryBuilder, filterBuilder);
-        log.debug(finalQuery.toString());
         reqBuilder.setQuery(finalQuery);
+        log.debug(reqBuilder.internalBuilder().toString());
         reqBuilder.execute(FutureSettingActionListener.setting(response));
-
         /* TODO
          * if selection.offset + selection.limit < totalHits
          * then we have more: return for use with response.
