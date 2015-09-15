@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableList;
+import com.metabroadcast.common.queue.MessageSender;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -30,6 +31,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.system.legacy.LegacyContentResolver;
@@ -41,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
@@ -61,8 +62,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
-
-import javax.annotation.Nullable;
 
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
@@ -89,11 +88,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             ContentResolver contentResolver,
             LegacyContentResolver legacyContentResolver,
             EquivalenceGraphStore graphStore,
+            MessageSender<EquivalentContentUpdatedMessage> equivalentContentUpdatedMessageSender,
             Session session,
             ConsistencyLevel read,
             ConsistencyLevel write
     ) {
-        super(contentResolver, graphStore);
+        super(contentResolver, graphStore, equivalentContentUpdatedMessageSender);
         this.legacyContentResolver = checkNotNull(legacyContentResolver);
         this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(contentResolver));
         this.session = session;

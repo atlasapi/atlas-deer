@@ -1,5 +1,7 @@
 package org.atlasapi.messaging;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
@@ -19,13 +21,17 @@ public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<Equiv
 
     private final EquivalentContentStore contentStore;
     private final EquivalentScheduleWriter scheduleWriter;
+    private final Timer messageTimer;
+
 
     public EquivalentScheduleStoreContentUpdateWorker(
             EquivalentContentStore contentStore,
-            EquivalentScheduleWriter scheduleWriter
+            EquivalentScheduleWriter scheduleWriter,
+            MetricRegistry metrics
     ) {
         this.contentStore = checkNotNull(contentStore);
         this.scheduleWriter = checkNotNull(scheduleWriter);
+        this.messageTimer = checkNotNull(metrics.timer("EquivalentScheduleStoreContentUpdateWorker"));
     }
 
     @Override
@@ -35,6 +41,7 @@ public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<Equiv
                 RecoverableException.class
         );
         try {
+            Timer.Context timer = messageTimer.time();
             scheduleWriter.updateContent(
                     content.stream()
                             .flatMap(c -> {
@@ -46,6 +53,7 @@ public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<Equiv
                             })
                             .collect(ImmutableCollectors.toSet())
             );
+            timer.stop();
         } catch (WriteException e) {
             throw new RecoverableException(e);
         }

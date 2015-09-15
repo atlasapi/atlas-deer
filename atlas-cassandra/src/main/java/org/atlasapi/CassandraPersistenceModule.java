@@ -25,6 +25,7 @@ import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.DatastaxCassandraContentStore;
+import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -81,9 +82,16 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private MessageSenderFactory messageSenderFactory;
 
 
-    public CassandraPersistenceModule(MessageSenderFactory messageSenderFactory,
-            AstyanaxContext<Keyspace> context, DatastaxCassandraService datastaxCassandraService,
-            String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher hasher, Iterable<String> cassNodes, MetricRegistry metrics) {
+    public CassandraPersistenceModule(
+            MessageSenderFactory messageSenderFactory,
+            AstyanaxContext<Keyspace> context,
+            DatastaxCassandraService datastaxCassandraService,
+            String keyspace,
+            IdGeneratorBuilder idGeneratorBuilder,
+            ContentHasher hasher,
+            Iterable<String> cassNodes,
+            MetricRegistry metrics
+    ) {
         this.hasher = hasher;
         this.idGeneratorBuilder = idGeneratorBuilder;
         this.contentIdGenerator = idGeneratorBuilder.generator("content");
@@ -177,7 +185,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return nullMessageSendingEquivGraphStore;
     }
 
-    private <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
+    public  <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
         return new MessageSender<M>() {
 
             private final MessageSender<M> delegate =

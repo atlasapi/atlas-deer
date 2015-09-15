@@ -35,6 +35,7 @@ public class WorkersModule {
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private String contentEquivalenceGraphChanges = Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
+    private String equivalentContentChanges = Configurer.get("messaging.destination.equivalent.content.changes").get();
 
     private Integer defaultTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.default").toInt();
     private Integer maxTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.max").toInt();
@@ -118,10 +119,31 @@ public class WorkersModule {
 
     @Bean
     @Lazy(true)
+    public Worker<EquivalentContentUpdatedMessage> equivalentScheduletStoreContentUpdateWorker() {
+        return new EquivalentScheduleStoreContentUpdateWorker(
+                persistence.getEquivalentContentStore(),
+                persistence.getEquivalentScheduleStore(),
+                health.metrics()
+        );
+    }
+
+    @Bean
+    @Lazy(true)
     public KafkaConsumer equivalentScheduleStoreGraphUpdateListener() {
         return messaging.messageConsumerFactory().createConsumer(equivalentScheduletStoreGraphUpdateWorker(),
                 serializer(EquivalenceGraphUpdateMessage.class),
                 contentEquivalenceGraphChanges, "EquivalentScheduleStoreGraphs")
+                .withDefaultConsumers(equivDefaultConsumers)
+                .withMaxConsumers(equivMaxConsumers)
+                .build();
+    }
+
+    @Bean
+    @Lazy(true)
+    public KafkaConsumer equivalentScheduleStoreContentListener() {
+        return messaging.messageConsumerFactory().createConsumer(equivalentScheduletStoreContentUpdateWorker(),
+                serializer(EquivalentContentUpdatedMessage.class),
+                equivalentContentChanges, "EquivalentScheduleStoreContent")
                 .withDefaultConsumers(equivDefaultConsumers)
                 .withMaxConsumers(equivMaxConsumers)
                 .build();
@@ -195,6 +217,7 @@ public class WorkersModule {
                 equivalentScheduleStoreGraphUpdateListener(),
                 equivalentContentStoreGraphUpdateListener(),
                 equivalentContentStoreContentUpdateListener(),
+                equivalentScheduleStoreContentListener(),
                 topicIndexerMessageListener(),
                 contentIndexingMessageListener()
         ));
