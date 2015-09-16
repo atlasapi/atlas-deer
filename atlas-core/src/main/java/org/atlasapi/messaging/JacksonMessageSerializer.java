@@ -53,6 +53,7 @@ public class JacksonMessageSerializer<M extends Message> implements MessageSeria
             super.setupModule(context);
             context.setMixInAnnotations(ResourceUpdatedMessage.class, ResourceUpdatedMessageConfiguration.class);
             context.setMixInAnnotations(EquivalenceGraphUpdateMessage.class, EquivalenceGraphUpdateMessageConfiguration.class);
+            context.setMixInAnnotations(EquivalentContentUpdatedMessage.class, EquivalentContentUpdatedMessageConfiguration.class);
             context.setMixInAnnotations(EquivalenceGraph.class, EquivalenceGraphConfiguration.class);
             context.setMixInAnnotations(EquivalenceGraph.Adjacents.class, AdjacentsConfiguration.class);
             context.setMixInAnnotations(EquivalenceGraphUpdate.class, EquivalenceGraphUpdateConfiguration.class);
