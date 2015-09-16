@@ -7,11 +7,11 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.content.ContentResolver;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -49,6 +49,7 @@ public class BootstrapWorkersModule {
     private Integer maxConsumers = Configurer.get("messaging.bootstrap.consumers.max").toInt();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
+    private String eventChanges = Configurer.get("messaging.destination.event.changes").get();
     private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
     private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
 
@@ -133,12 +134,29 @@ public class BootstrapWorkersModule {
                 .build();
     }
 
+    @Bean
+    @Lazy(true)
+    KafkaConsumer eventReadWriter() {
+        EventResolver legacyResolver = legacy.legacyEventResolver();
+        EventWriter writer = persistence.eventStore();
+        EventReadWriteWorker worker = new EventReadWriteWorker(legacyResolver, writer);
+        MessageSerializer<ResourceUpdatedMessage> serializer =
+                new EntityUpdatedLegacyMessageSerializer();
+        return bootstrapQueueFactory()
+                .createConsumer(worker, serializer, eventChanges, "EventBootstrap")
+                .withConsumerSystem(consumerSystem)
+                .withDefaultConsumers(consumers)
+                .withMaxConsumers(maxConsumers)
+                .build();
+    }
+
     @PostConstruct
     public void start() throws TimeoutException {
         contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        eventReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
 
     @PreDestroy
@@ -147,6 +165,7 @@ public class BootstrapWorkersModule {
         scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
         scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        eventReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
     }
 
     @Bean

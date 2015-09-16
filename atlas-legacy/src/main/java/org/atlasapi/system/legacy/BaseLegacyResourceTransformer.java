@@ -1,10 +1,13 @@
 package org.atlasapi.system.legacy;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.content.Image;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Id;
+import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Identified;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +114,18 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
 		));
 	}
 
-
-
-
+	protected void addIdentified(Identified source, org.atlasapi.entity.Identified target) {
+		target.setId(Id.valueOf(source.getId()));
+		target.setCanonicalUri(source.getCanonicalUri());
+		target.setCurie(source.getCurie());
+		target.setAliasUrls(source.getAliasUrls());
+		target.setAliases(source.getAliases().stream()
+				.map(alias -> new Alias(alias.getNamespace(), alias.getValue()))
+				.collect(Collectors.toList()));
+		target.setEquivalentTo(source.getEquivalentTo().stream()
+				.map(ref -> new EquivalenceRef(Id.valueOf(ref.id()), ref.publisher()))
+				.collect(Collectors.toSet()));
+		target.setLastUpdated(source.getLastUpdated());
+		target.setEquivalenceUpdate(source.getEquivalenceUpdate());
+	}
 }
