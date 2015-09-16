@@ -15,7 +15,8 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.event.EventStore;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
 import org.atlasapi.media.channel.ChannelGroupStore;
@@ -170,7 +171,12 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
-    public EventStore eventStore() {
+    public EventWriter eventWriter() {
+        return persistenceModule().eventStore();
+    }
+
+    @Bean
+    public EventResolver eventResolver() {
         return persistenceModule().eventStore();
     }
 

@@ -138,7 +138,7 @@ public class BootstrapWorkersModule {
     @Lazy(true)
     KafkaConsumer eventReadWriter() {
         EventResolver legacyResolver = legacy.legacyEventResolver();
-        EventWriter writer = persistence.eventStore();
+        EventWriter writer = persistence.eventWriter();
         EventReadWriteWorker worker = new EventReadWriteWorker(legacyResolver, writer);
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();

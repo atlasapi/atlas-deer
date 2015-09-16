@@ -30,6 +30,11 @@ public class DebugModule {
         );
     }
 
+    @Bean
+    public EventDebugController eventDebugController() {
+        return new EventDebugController(legacyPersistenceModule, persistenceModule);
+    }
+
     public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
         return new DirectAndExplicitEquivalenceMigrator(
                 legacyPersistenceModule.legacyContentResolver(),
