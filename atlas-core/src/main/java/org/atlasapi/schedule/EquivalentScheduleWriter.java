@@ -1,7 +1,10 @@
 package org.atlasapi.schedule;
 
+import org.atlasapi.content.Content;
+import org.atlasapi.content.Item;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.joda.time.DateTime;
 
 /**
  * Maintains an equivalent schedule that can be resolved through an
@@ -32,5 +35,13 @@ public interface EquivalentScheduleWriter {
      *             - if there is an error during updating the schedule.
      */
     void updateEquivalences(EquivalenceGraphUpdate update) throws WriteException;
+
+
+    /**
+     * Updates content in equivalent schedule store.
+     * @param content  - content in the equivalent set
+     * @throws WriteException
+     */
+    void updateContent(Iterable<Item> content) throws WriteException;
 
 }

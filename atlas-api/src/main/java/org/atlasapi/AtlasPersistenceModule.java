@@ -35,6 +35,7 @@ import org.atlasapi.media.channel.ChannelStore;
 import org.atlasapi.media.channel.MongoChannelGroupStore;
 import org.atlasapi.media.channel.MongoChannelStore;
 import org.atlasapi.media.segment.MongoSegmentResolver;
+import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
@@ -100,6 +101,8 @@ public class AtlasPersistenceModule {
     private final String esIndex = Configurer.get("elasticsearch.index").get();
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
+
+    private String equivalentContentChanges = Configurer.get("messaging.destination.equivalent.content.changes").get();
 
     @Autowired MessagingModule messaging;
     @Autowired HealthModule health;
@@ -173,6 +176,7 @@ public class AtlasPersistenceModule {
                 persistenceModule().contentStore(),
                 legacyContentResolver(),
                 persistenceModule().contentEquivalenceGraphStore(),
+                persistenceModule().sender(equivalentContentChanges, EquivalentContentUpdatedMessage.class),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel()
