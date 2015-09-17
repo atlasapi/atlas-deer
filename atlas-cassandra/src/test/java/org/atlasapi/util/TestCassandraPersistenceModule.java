@@ -160,6 +160,7 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
                 contentStore(),
                 new NoOpLegacyContentResolver(),
                 persistenceModule.contentEquivalenceGraphStore(),
+                messageSenderFactory.makeMessageSender("EquivContentUpdates", null),
                 cassandraService.getCluster().connect(keyspace),
                 ConsistencyLevel.ONE,
                 ConsistencyLevel.ONE
@@ -190,5 +191,4 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
 
     }
 }
-
 

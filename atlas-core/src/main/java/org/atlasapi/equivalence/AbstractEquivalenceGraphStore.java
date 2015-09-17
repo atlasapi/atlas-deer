@@ -47,9 +47,11 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphStore {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalenceGraphStore.class);
     private static final int TIMEOUT = 1;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
     
@@ -71,12 +73,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
         Set<Id> transitiveSetsIds = null;
         try {
+            LOG.debug("Thread {} is trying to enter synchronized block to lock graph IDs", Thread.currentThread().getName());
             synchronized (lock()) {
+                LOG.debug("Thread {} has entered synchronized block to lock graph IDs", Thread.currentThread().getName());
                 while((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
                     lock().unlock(subjectAndAdjacents);
                     lock().wait();
                 }
             }
+            LOG.debug("Thread {} has left synchronized block, having locked graph IDs", Thread.currentThread().getName());
 
             Optional<EquivalenceGraphUpdate> updated
                 = updateGraphs(subject, ImmutableSet.<ResourceRef>copyOf(assertedAdjacents), sources);

@@ -177,7 +177,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                     for (Broadcast bcast : Iterables.filter(item.getBroadcasts(),Broadcast.ACTIVELY_PUBLISHED)) {
                         Item copy = item.copy();
                         copy.setBroadcasts(ImmutableSet.of(bcast));
-                        updateEquivalentContent(src, bcast, graph, equivItems(copy, bcast, 
+                        updateEquivalentContent(src, bcast, graph, equivItems(copy, bcast,
                                 graphContent.getResources().filter(Item.class)));
                     }
                 }

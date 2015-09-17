@@ -1,9 +1,12 @@
 package org.atlasapi.messaging;
 
+import com.google.common.base.Objects;
 import org.atlasapi.entity.ResourceRef;
 
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.time.Timestamp;
+
+import java.time.format.DateTimeFormatter;
 
 
 /**
@@ -21,5 +24,13 @@ public class ResourceUpdatedMessage extends AbstractMessage {
     public ResourceRef getUpdatedResource() {
         return updatedResource;
     }
-    
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("updatedResource", updatedResource)
+                .add("timestamp", getTimestamp().toDateTimeUTC().toString())
+                .add("id", getMessageId())
+                .toString();
+    }
 }

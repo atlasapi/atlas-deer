@@ -1,9 +1,12 @@
 package org.atlasapi.content;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.EquivalentsResolver;
+
+import java.util.Set;
 
 /**
  * Store of equivalence sets of resources. 
@@ -26,5 +29,13 @@ public interface EquivalentContentStore extends EquivalentsResolver<Content> {
      * @throws WriteException - if the update fails.
      */
     void updateContent(ResourceRef ref) throws WriteException;
+
+
+    /**
+     * Resolves whole equivalejnt set
+     * @param equivalentSetId
+     * @return
+     */
+    ListenableFuture<Set<Content>> resolveEquivalentSet(Long equivalentSetId);
     
 }

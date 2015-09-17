@@ -124,8 +124,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
         SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
-                .addSort(SortBuilders.scoreSort().order(SortOrder.DESC))
-                .addSort(EsContent.ID, SortOrder.ASC)
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
                 .addField(EsContent.CANONICAL_ID)
                 .addField(EsContent.ID)
@@ -189,12 +187,14 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             */
 
         }
+        
+        reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
+        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         FilteredQueryBuilder finalQuery = QueryBuilders.filteredQuery(queryBuilder, filterBuilder);
-        log.debug(finalQuery.toString());
         reqBuilder.setQuery(finalQuery);
+        log.debug(reqBuilder.internalBuilder().toString());
         reqBuilder.execute(FutureSettingActionListener.setting(response));
-
         /* TODO
          * if selection.offset + selection.limit < totalHits
          * then we have more: return for use with response.

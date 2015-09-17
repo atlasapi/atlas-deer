@@ -3,6 +3,8 @@ package org.atlasapi.messaging;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import com.metabroadcast.common.queue.MessageDeserializationException;
+import com.metabroadcast.common.queue.MessageSerializationException;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
@@ -119,6 +121,27 @@ public class JacksonMessageSerializerTest {
         assertThat(deserialized.getAssertedAdjacents(), is(msg.getAssertedAdjacents()));
         assertThat(deserialized.getPublishers(), is(msg.getPublishers()));
         
+    }
+
+    @Test
+    public void testDeserializationOfEquivalentContentUpdatedMessage() throws MessageSerializationException, MessageDeserializationException {
+        EquivalentContentUpdatedMessage msg = new EquivalentContentUpdatedMessage(
+                "1",
+                Timestamp.of(42),
+                2L
+        );
+
+        JacksonMessageSerializer<EquivalentContentUpdatedMessage> serializer
+                = JacksonMessageSerializer.forType(EquivalentContentUpdatedMessage.class);
+
+        byte[] serialized = serializer.serialize(msg);
+
+        EquivalentContentUpdatedMessage deserialized = serializer.deserialize(serialized);
+
+        assertThat(deserialized.getMessageId(), is(msg.getMessageId()));
+        assertThat(deserialized.getTimestamp(), is(msg.getTimestamp()));
+        assertThat(deserialized.getEquivalentSetId(), is(msg.getEquivalentSetId()));
+
     }
 
 }

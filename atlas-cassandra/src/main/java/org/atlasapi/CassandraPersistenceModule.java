@@ -49,7 +49,6 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
 
-
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
     private static final int CQL_PORT = 9042;
@@ -87,10 +86,16 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private MessageSenderFactory messageSenderFactory;
 
 
-    public CassandraPersistenceModule(MessageSenderFactory messageSenderFactory,
-            AstyanaxContext<Keyspace> context, DatastaxCassandraService datastaxCassandraService,
-            String keyspace, IdGeneratorBuilder idGeneratorBuilder, ContentHasher contentHasher,
-            EventHasher eventHasher, Iterable<String> cassNodes, MetricRegistry metrics) {
+    public CassandraPersistenceModule(
+            MessageSenderFactory messageSenderFactory,
+            AstyanaxContext<Keyspace> context, 
+            DatastaxCassandraService datastaxCassandraService,
+            String keyspace, 
+            IdGeneratorBuilder idGeneratorBuilder, 
+            ContentHasher contentHasher,
+            EventHasher eventHasher, 
+            Iterable<String> cassNodes, 
+            MetricRegistry metrics) {
         this.contentHasher = contentHasher;
         this.eventHasher = checkNotNull(eventHasher);
         this.idGeneratorBuilder = idGeneratorBuilder;
@@ -168,12 +173,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
-        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context,
-                "schedule",
-                contentStore,
-                sender(
-                        scheduleChanges,
-                        ScheduleUpdateMessage.class))
+        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule", 
+                contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
@@ -194,7 +195,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return nullMessageSendingEquivGraphStore;
     }
 
-    private <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
+    public  <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
         return new MessageSender<M>() {
 
             private final MessageSender<M> delegate =
@@ -293,8 +294,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     public EquivalentScheduleStore equivalentScheduleStore() {
         return this.equivalentScheduleStore;
     }
-
-
+    
     private EventStore getEventStore(Session session) {
         EventPersistenceStore eventPersistenceStore = DatastaxCassandraEventStore.builder()
                 .withAliasIndex(AliasIndex.create(context.getClient(), "event_aliases"))

@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.annotation.Annotation;
@@ -239,6 +240,31 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         assertThat(set, hasSize(1));
         assertThat(set, hasItems(content1));
         assertThat(Iterables.getOnlyElement(((Item) set.asList().get(0)).getSegmentEvents()).getSource(), is(Publisher.METABROADCAST));
+    }
+
+
+    public void testResolvesFullEquivalentSet() throws Exception {
+        Item content1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        content1.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
+        content1.setTitle("Two");
+        content1.setSegmentEvents(ImmutableList.of(new SegmentEvent()));
+
+        Content content2 = new Item(Id.valueOf(2), Publisher.BBC);
+        content2.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
+        content2.setTitle("Three");
+
+        getSubjectGenerator().getContentStore().writeContent(content1);
+        getSubjectGenerator().getContentStore().writeContent(content2);
+
+        Optional<EquivalenceGraphUpdate> update
+                = getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(content1.toRef(), ImmutableSet.<ResourceRef>of(content2.toRef()),
+                ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC));
+
+        getSubjectGenerator().getEquivalentContentStore().updateEquivalences(update.get());
+
+        Set<Content> content = get(getSubjectGenerator().getEquivalentContentStore().resolveEquivalentSet(1L));
+
+        assertThat(content, is(ImmutableSet.of(content1, content2)));
     }
     
 }

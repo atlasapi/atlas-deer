@@ -20,6 +20,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.common.queue.MessageSender;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -29,6 +31,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.system.legacy.LegacyContentResolver;
@@ -40,12 +43,11 @@ import org.slf4j.LoggerFactory;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -87,11 +89,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             ContentResolver contentResolver,
             LegacyContentResolver legacyContentResolver,
             EquivalenceGraphStore graphStore,
+            MessageSender<EquivalentContentUpdatedMessage> equivalentContentUpdatedMessageSender,
             Session session,
             ConsistencyLevel read,
             ConsistencyLevel write
     ) {
-        super(contentResolver, graphStore);
+        super(contentResolver, graphStore, equivalentContentUpdatedMessageSender);
         this.legacyContentResolver = checkNotNull(legacyContentResolver);
         this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(contentResolver));
         this.session = session;
@@ -150,8 +153,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             @Override
             public ListenableFuture<Optional<ResolvedEquivalents<Content>>> apply(Map<Long, Long> index)
                     throws Exception {
-                return Futures.transform(resultOf(selectSetsQuery(index.values()),readConsistency), 
-                        toEquivalentsSets(index, selectedSources));
+                return Futures.transform(
+                        resultOf(selectSetsQuery(index.values()), readConsistency),
+                        toEquivalentsSets(index, selectedSources)
+                );
             }
         };
     }
@@ -183,12 +188,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             if (!row.isNull(GRAPH_KEY)) {
                 graphs.put(setId, graphSerializer.deserialize(row.getBytes(GRAPH_KEY)));
                 Content content = deserialize(row);
-                if (content instanceof Item) {
-                    Item item = (Item) content;
-                    for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
-                        segmentEvent.setPublisher(item.getSource());
-                    }
-                }
+
                 EquivalenceGraph graphForContent = graphs.get(setId);
                 if (contentSelected(content, graphForContent, selectedSources)) {
                     sets.put(setId, content);
@@ -230,7 +230,14 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             }
             ByteString bytes = ByteString.copyFrom(row.getBytes(DATA_KEY));
             ContentProtos.Content buffer = ContentProtos.Content.parseFrom(bytes);
-            return contentSerializer.deserialize(buffer);
+            Content content = contentSerializer.deserialize(buffer);
+            if (content instanceof Item) {
+                Item item = (Item) content;
+                for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
+                    segmentEvent.setPublisher(item.getSource());
+                }
+            }
+            return content;
         } catch (IOException e) {
             throw new RuntimeException(setId +":"+row.getLong(CONTENT_ID_KEY), e);
         }
@@ -244,7 +251,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             && equivalenceGraph.getEquivalenceSet().contains(content.getId());
     }
 
-    private ResultSetFuture resultOf(Statement query, ConsistencyLevel readConsistency) {
+    private ListenableFuture<ResultSet> resultOf(Statement query, ConsistencyLevel readConsistency) {
         return session.executeAsync(query.setConsistencyLevel(readConsistency));
     }
     
@@ -383,4 +390,22 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         session.executeAsync(statement);
     }
 
+    @Override
+    public ListenableFuture<Set<Content>> resolveEquivalentSet(Long equivalentSetId) {
+        return Futures.transform(
+                session.executeAsync(
+                        select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY)
+                        .from(EQUIVALENT_CONTENT_TABLE)
+                        .where(eq(SET_ID_KEY, equivalentSetId)).setConsistencyLevel(readConsistency)
+                ),
+                (ResultSet resultSet) -> {
+                    ImmutableSet.Builder<Content> content = ImmutableSet.builder();
+                    for (Row row : resultSet) {
+                        content.add(deserialize(row));
+                    }
+                    return content.build();
+                }
+
+        );
+    }
 }

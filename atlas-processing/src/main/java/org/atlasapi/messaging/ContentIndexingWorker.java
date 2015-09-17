@@ -41,6 +41,7 @@ public class ContentIndexingWorker implements Worker<ResourceUpdatedMessage> {
 
     @Override
     public void process(final ResourceUpdatedMessage message) throws RecoverableException {
+        log.debug("Processing message {}", message.toString());
         try {
             Timer.Context time = null;
             if (messageTimer != null) {

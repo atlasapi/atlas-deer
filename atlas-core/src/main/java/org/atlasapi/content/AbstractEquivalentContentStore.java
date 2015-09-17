@@ -3,15 +3,22 @@ package org.atlasapi.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.util.GroupLock;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +41,17 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     private final ContentResolver contentResolver;
 
     private final EquivalenceGraphStore graphStore;
+    private final MessageSender<EquivalentContentUpdatedMessage> equivalentContentUpdatedMessageSender;
     private static final GroupLock<Id> lock = GroupLock.natural();
 
-    public AbstractEquivalentContentStore(ContentResolver contentResolver, EquivalenceGraphStore graphStore) {
+    public AbstractEquivalentContentStore(
+            ContentResolver contentResolver,
+            EquivalenceGraphStore graphStore,
+            MessageSender<EquivalentContentUpdatedMessage> equivalentContentUpdatedMessageSender
+    ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.graphStore = checkNotNull(graphStore);
+        this.equivalentContentUpdatedMessageSender = checkNotNull(equivalentContentUpdatedMessageSender);
     }
 
     @Override
@@ -112,11 +125,18 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
             if (possibleGraph.isPresent()) {
                 updateInSet(possibleGraph.get(), content);
+                equivalentContentUpdatedMessageSender.sendMessage(
+                        new EquivalentContentUpdatedMessage(
+                                UUID.randomUUID().toString(),
+                                Timestamp.of(DateTime.now(DateTimeZone.UTC)),
+                                possibleGraph.get().getId().longValue()
+                        )
+                );
             } else {
                 EquivalenceGraph graph = EquivalenceGraph.valueOf(ref);
                 updateEquivalences(ImmutableSetMultimap.of(graph, content), EquivalenceGraphUpdate.builder(graph).build());
             }
-        } catch (InterruptedException e) {
+        } catch (MessagingException | InterruptedException e) {
             throw new WriteException("Updating " + ref.getId(), e);
         } finally {
             lock.unlock(ref.getId());
