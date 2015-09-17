@@ -28,7 +28,7 @@ public class AstyanaxProtobufContentMarshallerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testMarshallsAndUnmarshallsContent() {
+    public void testMarshallsAndUnmarshallsContentWithoutNullifyingEmptyRepeatedFields() {
 
         Content content = new Episode();
         content.setId(Id.valueOf(1234));
@@ -39,13 +39,69 @@ public class AstyanaxProtobufContentMarshallerTest {
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
         
-        marshaller.marshallInto(content.getId(), mutation, content, true);
+        marshaller.marshallInto(content.getId(), mutation, content, false);
         
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);
         
-        verify(mutation, times(14)).putColumn(col.capture(), val.capture());
+        verify(mutation, times(6)).putColumn(col.capture(), val.capture());
         
+        assertThat(col.getAllValues().size(), is(6));
+        assertThat(
+                col.getAllValues(),
+                hasItems(
+                        "IDENTIFICATION",
+                        "DESCRIPTION",
+                        "SOURCE",
+                        "TYPE",
+                        "ACTIVELY_PUBLISHED",
+                        "GENERIC_DESCRIPTION"
+                )
+        );
+
+        ImmutableList<Column<String>> columns = ImmutableList.of(
+                column(val.getAllValues().get(0)),
+                column(val.getAllValues().get(1)),
+                column(val.getAllValues().get(2)),
+                column(val.getAllValues().get(3)),
+                column(val.getAllValues().get(4)),
+                column(val.getAllValues().get(5))
+        );
+        ColumnList<String> cols = mock(ColumnList.class);
+        when(cols.iterator())
+                .thenReturn(
+                    columns.iterator()
+                );
+
+
+        Content unmarshalled = marshaller.unmarshallCols(cols);
+
+        assertThat(unmarshalled.getId(), is(content.getId()));
+        assertThat(unmarshalled.getTitle(), is(content.getTitle()));
+        assertThat(unmarshalled.isActivelyPublished(), is(false));
+
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMarshallsAndUnmarshallsContent() {
+
+        Content content = new Episode();
+        content.setId(Id.valueOf(1234));
+        content.setPublisher(Publisher.BBC);
+        content.setTitle("title");
+        content.setActivelyPublished(false);
+        content.setGenericDescription(true);
+
+        ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
+
+        marshaller.marshallInto(content.getId(), mutation, content, true);
+
+        ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);
+
+        verify(mutation, times(14)).putColumn(col.capture(), val.capture());
+
         assertThat(col.getAllValues().size(), is(14));
         assertThat(
                 col.getAllValues(),
@@ -78,7 +134,7 @@ public class AstyanaxProtobufContentMarshallerTest {
         ColumnList<String> cols = mock(ColumnList.class);
         when(cols.iterator())
                 .thenReturn(
-                    columns.iterator()
+                        columns.iterator()
                 );
 
 
