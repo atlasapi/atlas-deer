@@ -1,7 +1,6 @@
 package org.atlasapi.equivalence;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 
@@ -25,6 +24,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.GroupLock;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -47,7 +47,6 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
-import org.slf4j.LoggerFactory;
 
 public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphStore {
 
@@ -84,7 +83,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             LOG.debug("Thread {} has left synchronized block, having locked graph IDs", Thread.currentThread().getName());
 
             Optional<EquivalenceGraphUpdate> updated
-                = updateGraphs(subject, ImmutableSet.<ResourceRef>copyOf(assertedAdjacents), sources);
+                = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
             if (updated.isPresent()) {
                 sendUpdateMessage(subject, updated);
             }

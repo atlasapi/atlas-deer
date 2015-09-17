@@ -6,9 +6,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
@@ -33,6 +30,9 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.Timestamp;
 
 public abstract class AbstractEquivalentContentStore implements EquivalentContentStore {
 

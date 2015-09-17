@@ -3,7 +3,6 @@ package org.atlasapi.schedule;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -14,7 +13,6 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
@@ -88,8 +86,8 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
-        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.<BroadcastRef>of(
-            broadcast1.toRef()
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.of(
+                broadcast1.toRef()
         )));
         
         EquivalentSchedule resolved

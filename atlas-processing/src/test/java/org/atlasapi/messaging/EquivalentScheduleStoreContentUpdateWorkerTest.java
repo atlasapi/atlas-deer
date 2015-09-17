@@ -1,10 +1,11 @@
 package org.atlasapi.messaging;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.time.Timestamp;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.UUID;
+
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.Item;
@@ -15,15 +16,14 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.time.Timestamp;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EquivalentScheduleStoreContentUpdateWorkerTest {

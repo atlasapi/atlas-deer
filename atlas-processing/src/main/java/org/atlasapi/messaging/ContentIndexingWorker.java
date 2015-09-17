@@ -1,11 +1,12 @@
 package org.atlasapi.messaging;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.metabroadcast.common.queue.RecoverableException;
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
@@ -14,15 +15,14 @@ import org.atlasapi.entity.util.Resolved;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
-
-import javax.annotation.Nullable;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentIndexingWorker implements Worker<ResourceUpdatedMessage> {
 

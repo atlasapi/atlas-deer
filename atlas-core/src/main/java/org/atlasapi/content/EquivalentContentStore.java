@@ -1,12 +1,13 @@
 package org.atlasapi.content;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.Set;
+
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.EquivalentsResolver;
 
-import java.util.Set;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * Store of equivalence sets of resources. 

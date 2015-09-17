@@ -3,8 +3,6 @@ package org.atlasapi.messaging;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-import com.metabroadcast.common.queue.MessageDeserializationException;
-import com.metabroadcast.common.queue.MessageSerializationException;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
@@ -16,6 +14,8 @@ import org.joda.time.DateTime;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.queue.MessageDeserializationException;
+import com.metabroadcast.common.queue.MessageSerializationException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
 

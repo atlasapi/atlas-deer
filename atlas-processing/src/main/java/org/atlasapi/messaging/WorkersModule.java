@@ -1,13 +1,11 @@
 package org.atlasapi.messaging;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.ServiceManager;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageConsumerBuilder;
-import com.metabroadcast.common.queue.MessageSerializer;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.queue.kafka.KafkaConsumer;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
@@ -20,10 +18,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ServiceManager;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.Message;
+import com.metabroadcast.common.queue.MessageConsumerBuilder;
+import com.metabroadcast.common.queue.MessageSerializer;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 @Configuration
 @Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, ProcessingHealthModule.class})
