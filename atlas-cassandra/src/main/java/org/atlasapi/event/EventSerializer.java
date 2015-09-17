@@ -17,11 +17,27 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 public class EventSerializer implements Serializer<Event, byte[]> {
 
+    private final IdentifiedSerializer<Event> eventIdentifiedSerializer;
+    private final TopicSerializer topicSerializer;
+    private final DateTimeSerializer dateTimeSerializer;
+    private final PersonSerializer personSerializer;
+    private final OrganisationSerializer organisationSerializer;
+    private final ContentRefSerializer contentRefSerializer;
+
+    public EventSerializer() {
+        eventIdentifiedSerializer = new IdentifiedSerializer<>();
+        topicSerializer = new TopicSerializer();
+        dateTimeSerializer = new DateTimeSerializer();
+        personSerializer = new PersonSerializer();
+        organisationSerializer = new OrganisationSerializer();
+        contentRefSerializer = new ContentRefSerializer(null);
+    }
+
     @Override
     public byte[] serialize(Event event) {
         EventProtos.Event.Builder builder = EventProtos.Event.newBuilder();
 
-        builder.setIdentified(new IdentifiedSerializer<Event>().serialize(event));
+        builder.setIdentified(eventIdentifiedSerializer.serialize(event));
 
         if(event.getTitle() != null) {
             builder.setTitle(builder.getTitleBuilder().setValue(event.getTitle()).build());
@@ -30,32 +46,32 @@ public class EventSerializer implements Serializer<Event, byte[]> {
             builder.setSource(event.getSource().key());
         }
         if(event.getVenue() != null) {
-            builder.setVenue(new TopicSerializer().serializeToBuilder(event.getVenue()));
+            builder.setVenue(topicSerializer.serializeToBuilder(event.getVenue()));
         }
         if(event.getStartTime() != null) {
-            builder.setStartTime(new DateTimeSerializer().serialize(event.getStartTime()));
+            builder.setStartTime(dateTimeSerializer.serialize(event.getStartTime()));
         }
         if(event.getEndTime() != null) {
-            builder.setEndTime(new DateTimeSerializer().serialize(event.getEndTime()));
+            builder.setEndTime(dateTimeSerializer.serialize(event.getEndTime()));
         }
         if (event.getParticipants() != null) {
             builder.addAllParticipant(event.getParticipants().stream()
-                    .map(participant -> new PersonSerializer().serialize(participant))
+                    .map(personSerializer::serialize)
                     .collect(Collectors.toList()));
         }
         if (event.getOrganisations() != null) {
             builder.addAllOrganisation(event.getOrganisations().stream()
-                    .map(organisation -> new OrganisationSerializer().serialize(organisation))
+                    .map(organisationSerializer::serialize)
                     .collect(Collectors.toList()));
         }
         if (event.getEventGroups() != null) {
             builder.addAllEventGroup(event.getEventGroups().stream()
-                    .map(eventGroup -> new TopicSerializer().serializeToBuilder(eventGroup).build())
+                    .map(eventGroup -> topicSerializer.serializeToBuilder(eventGroup).build())
                     .collect(Collectors.toList()));
         }
         if (event.getContent() != null) {
             builder.addAllContent(event.getContent().stream()
-                    .map(content -> new ContentRefSerializer(null).serialize(content).build())
+                    .map(content -> contentRefSerializer.serialize(content).build())
                     .collect(Collectors.toList()));
         }
 
@@ -77,7 +93,7 @@ public class EventSerializer implements Serializer<Event, byte[]> {
 
         Event.Builder<?, ?> builder = Event.builder();
 
-        new IdentifiedSerializer<Event>().deserialize(msg.getIdentified(), builder);
+        eventIdentifiedSerializer.deserialize(msg.getIdentified(), builder);
 
         if (msg.hasTitle()) {
             builder.withTitle(msg.getTitle().getValue());
@@ -86,25 +102,25 @@ public class EventSerializer implements Serializer<Event, byte[]> {
             builder.withSource(Sources.fromPossibleKey(msg.getSource()).get());
         }
         if (msg.hasVenue()) {
-            builder.withVenue(new TopicSerializer().deserialize(msg.getVenue()));
+            builder.withVenue(topicSerializer.deserialize(msg.getVenue()));
         }
         if (msg.hasStartTime()) {
-            builder.withStartTime(new DateTimeSerializer().deserialize(msg.getStartTime()));
+            builder.withStartTime(dateTimeSerializer.deserialize(msg.getStartTime()));
         }
         if (msg.hasEndTime()) {
-            builder.withEndTime(new DateTimeSerializer().deserialize(msg.getEndTime()));
+            builder.withEndTime(dateTimeSerializer.deserialize(msg.getEndTime()));
         }
         builder.withParticipants(msg.getParticipantList().stream()
-                .map(participant -> new PersonSerializer().deserialize(participant))
+                .map(personSerializer::deserialize)
                 .collect(Collectors.toList()));
         builder.withOrganisations(msg.getOrganisationList().stream()
-                .map(organisation -> new OrganisationSerializer().deserialize(organisation))
+                .map(organisationSerializer::deserialize)
                 .collect(Collectors.toList()));
         builder.withEventGroups(msg.getEventGroupList().stream()
-                .map(group -> new TopicSerializer().deserialize(group))
+                .map(group -> topicSerializer.deserialize(group))
                 .collect(Collectors.toList()));
         builder.withContent(msg.getContentList().stream()
-                .map(content -> (ItemRef) new ContentRefSerializer(null).deserialize(content))
+                .map(content -> (ItemRef) contentRefSerializer.deserialize(content))
                 .collect(Collectors.toList()));
 
         return builder.build();

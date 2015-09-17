@@ -8,14 +8,22 @@ import org.atlasapi.serialization.protobuf.CommonProtos;
 
 public class OrganisationSerializer {
 
+    private final ContentGroupSerializer<Organisation> organisationContentGroupSerializer;
+    private final PersonSerializer personSerializer;
+
+    public OrganisationSerializer() {
+        organisationContentGroupSerializer = new ContentGroupSerializer<>();
+        personSerializer = new PersonSerializer();
+    }
+
     public CommonProtos.Organisation serialize(Organisation organisation) {
         CommonProtos.Organisation.Builder builder = CommonProtos.Organisation.newBuilder();
 
-        builder.setContentGroup(new ContentGroupSerializer<Organisation>().serialize(organisation));
+        builder.setContentGroup(organisationContentGroupSerializer.serialize(organisation));
 
         if (organisation.members() != null) {
             builder.addAllMember(organisation.members().stream()
-                    .map(member -> new PersonSerializer().serialize(member))
+                    .map(personSerializer::serialize)
                     .collect(Collectors.toList()));
         }
 
@@ -25,10 +33,10 @@ public class OrganisationSerializer {
     public Organisation deserialize(CommonProtos.Organisation msg) {
         Organisation organisation = new Organisation();
 
-        new ContentGroupSerializer<Organisation>().deserialize(msg.getContentGroup(), organisation);
+        organisationContentGroupSerializer.deserialize(msg.getContentGroup(), organisation);
 
         organisation.setMembers(msg.getMemberList().stream()
-                .map(member -> new PersonSerializer().deserialize(member))
+                .map(personSerializer::deserialize)
                 .collect(Collectors.toList()));
 
         return organisation;

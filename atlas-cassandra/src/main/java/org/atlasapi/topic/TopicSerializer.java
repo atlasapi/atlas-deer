@@ -14,6 +14,12 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 public class TopicSerializer implements Serializer<Topic, byte[]> {
 
+    private final DescribedSerializer<Topic> describedSerializer;
+
+    public TopicSerializer() {
+        describedSerializer = new DescribedSerializer<>();
+    }
+
     @Override
     public byte[] serialize(Topic topic) {
         return serializeToBuilder(topic).build().toByteArray();
@@ -32,7 +38,7 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
     public TopicProtos.Topic.Builder serializeToBuilder(Topic src) {
         TopicProtos.Topic.Builder builder = TopicProtos.Topic.newBuilder();
 
-        builder.setDescribed(new DescribedSerializer<Topic>().serialize(src));
+        builder.setDescribed(describedSerializer.serialize(src));
 
         if(src.getSource() != null) {
             builder.setSource(src.getSource().key());
@@ -54,7 +60,7 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
         Topic topic = new Topic();
 
         if (msg.hasDescribed()) {
-            new DescribedSerializer<Topic>().deserialize(msg.getDescribed(), topic);
+            describedSerializer.deserialize(msg.getDescribed(), topic);
         }
 
         if(msg.hasType()) {
