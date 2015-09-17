@@ -13,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.queue.MessagingException;
 import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.MutationBatch;
@@ -1862,6 +1864,39 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedBrand.getUpcomingContent().isEmpty(), is(true));
         assertThat(resolvedBrand.getAvailableContent().isEmpty(), is(true));
 
+    }
+
+    @Test
+    public void testLocationsAreRemovedFromItem() throws WriteException, IOException {
+        Item item = new Item(Id.valueOf(10l), Publisher.METABROADCAST);
+        item.setThisOrChildLastUpdated(DateTime.now());
+        item.setLastUpdated(DateTime.now());
+
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        when(clock.now()).thenReturn(now);
+
+        Policy policy = new Policy();
+        Encoding encoding = new Encoding();
+        Location location = new Location();
+
+        location.setPolicy(policy);
+        encoding.setAvailableAt(ImmutableSet.of(location));
+        item.setManifestedAs(ImmutableSet.of(encoding));
+
+        when(hasher.hash(argThat(isA(Content.class))))
+                .thenReturn("different")
+                .thenReturn("differentAgain");
+        WriteResult<Item, Content> result = store.writeContent(item);
+
+
+        encoding.setAvailableAt(ImmutableSet.of());
+
+        WriteResult<Item, Content> secondResult = store.writeContent(item);
+
+        Resolved<Content> finalResult =
+                Futures.get(store.resolveIds(ImmutableList.of(Id.valueOf(10l))), IOException.class);
+
+        assertThat(finalResult.getResources().first().get().getManifestedAs().isEmpty(), is(true));
     }
 
 

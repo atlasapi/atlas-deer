@@ -105,7 +105,7 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
                     .build());
 
     @Override
-    public void marshallInto(Id id, M mutation, Content content) {
+    public void marshallInto(Id id, M mutation, Content content, Boolean setEmptyRepeatedFieldsToNull) {
         ContentProtos.Content proto = serializer.serialize(content);
         for (int i = 0; i < schemaList.size(); i++) {
             Entry<ContentProtos.Column, List<FieldDescriptor>> col = schemaList.get(i);
@@ -135,6 +135,9 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
             for (int j = 0; j < col.getValue().size(); j++) {
                 FieldDescriptor fd = col.getValue().get(j);
                 if (fd.isRepeated()) {
+                    if (setEmptyRepeatedFieldsToNull) {
+                        builder = getBuilder(builder);
+                    }
                     if (proto.getRepeatedFieldCount(fd) > 0) {
                         builder = getBuilder(builder);
                         for (int k = 0; k < proto.getRepeatedFieldCount(fd); k++) {
