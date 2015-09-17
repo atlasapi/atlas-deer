@@ -135,12 +135,15 @@ public abstract class ProtobufContentMarshaller<M, U> implements ContentMarshall
             for (int j = 0; j < col.getValue().size(); j++) {
                 FieldDescriptor fd = col.getValue().get(j);
                 if (fd.isRepeated()) {
+                    builder = getBuilder(builder);
                     if (proto.getRepeatedFieldCount(fd) > 0) {
-                        builder = getBuilder(builder);
                         for (int k = 0; k < proto.getRepeatedFieldCount(fd); k++) {
                             builder.addRepeatedField(fd, proto.getRepeatedField(fd, k));
                         }
                     }
+//                    } else {
+//                        builder.setRepeatedField(fd, 0, null);
+//                    }
                 } else if (proto.hasField(fd)) {
                     builder = getBuilder(builder);
                     builder.setField(fd, proto.getField(fd));
