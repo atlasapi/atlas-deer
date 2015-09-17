@@ -72,7 +72,7 @@ public class DatastaxProtobufContentMarshallerTest {
         content.setLastUpdated(DateTime.now(DateTimeZone.UTC));
 
         Batch batch = batch();
-        marshaller.marshallInto(content.getId(), batch, content);
+        marshaller.marshallInto(content.getId(), batch, content, true);
 
         session.execute(batch);
 

@@ -39,7 +39,7 @@ public class AstyanaxProtobufContentMarshallerTest {
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
         
-        marshaller.marshallInto(content.getId(), mutation, content);
+        marshaller.marshallInto(content.getId(), mutation, content, true);
         
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);
@@ -112,7 +112,7 @@ public class AstyanaxProtobufContentMarshallerTest {
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
 
-        marshaller.marshallInto(content.getId(), mutation, content);
+        marshaller.marshallInto(content.getId(), mutation, content, true);
 
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);

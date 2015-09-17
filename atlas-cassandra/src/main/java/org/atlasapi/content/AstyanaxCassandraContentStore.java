@@ -204,7 +204,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             long id = content.getId().longValue();
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
-            marshaller.marshallInto(content.getId(), batch.withRow(mainCf, id), content);
+            marshaller.marshallInto(content.getId(), batch.withRow(mainCf, id), content, true);
             batch.mergeShallow(aliasIndex.mutateAliases(content, previous));
             batch.execute();
             log.trace("Written content id " + id);
@@ -313,7 +313,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
             ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-            marshaller.marshallInto(primary.getId(), mutation, container);
+            marshaller.marshallInto(primary.getId(), mutation, container, false);
             batch.execute();
         } catch (Exception e) {
             throw Throwables.propagate(e);
@@ -378,7 +378,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 }
 
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(containerRef.getId(), mutation, container);
+                marshaller.marshallInto(containerRef.getId(), mutation, container, false);
             }
 
             if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
@@ -391,7 +391,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 container.setAvailableContent(availableLocations);
                 container.setItemSummaries(ImmutableList.of(episode.toSummary()));
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(episode.getSeriesRef().getId(), mutation, container);
+                marshaller.marshallInto(episode.getSeriesRef().getId(), mutation, container, false);
             }
             batch.execute();
 
@@ -410,7 +410,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         MutationBatch batch = keyspace.prepareMutationBatch();
         batch.setConsistencyLevel(writeConsistency);
         ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
-        marshaller.marshallInto(item.getId(), itemMutation, item);
+        marshaller.marshallInto(item.getId(), itemMutation, item, false);
 
         try {
             if (!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs().iterator().hasNext()) {
@@ -426,7 +426,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 container.setThisOrChildLastUpdated(itemRef.getUpdated());
                 container.setUpcomingContent(upcomingBroadcasts);
                 ColumnListMutation<String> containerMutation = batch.withRow(mainCf, containerRef.get().getId().longValue());
-                marshaller.marshallInto(containerId, containerMutation, container);
+                marshaller.marshallInto(containerId, containerMutation, container, false);
             }
 
             if (seriesRef.isPresent()) {
@@ -436,7 +436,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 container.setThisOrChildLastUpdated(itemRef.getUpdated());
                 container.setUpcomingContent(upcomingBroadcasts);
                 ColumnListMutation<String> seriesMutation = batch.withRow(mainCf, seriesRef.get().getId().longValue());
-                marshaller.marshallInto(containerId, seriesMutation, container);
+                marshaller.marshallInto(containerId, seriesMutation, container, false);
             }
 
 
@@ -454,7 +454,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             Item item = itemFromRef(itemRef);
             item.setContainerSummary(summary);
             ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
-            marshaller.marshallInto(itemRef.getId(), itemMutation, item);
+            marshaller.marshallInto(itemRef.getId(), itemMutation, item, false);
         }
 
         try {
