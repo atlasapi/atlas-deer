@@ -1889,8 +1889,7 @@ public abstract class CassandraContentStoreIT {
         WriteResult<Item, Content> result = store.writeContent(item);
 
 
-        encoding.setAvailableAt(ImmutableSet.of());
-
+        item.setManifestedAs(ImmutableSet.of());
         WriteResult<Item, Content> secondResult = store.writeContent(item);
 
         Resolved<Content> finalResult =

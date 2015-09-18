@@ -391,8 +391,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    protected synchronized void updateEquivalentContent(Publisher publisher, Broadcast bcast,
-            EquivalenceGraph graph, ImmutableSet<Item> content) throws WriteException {
+    protected synchronized void updateEquivalentContent(
+            Publisher publisher,
+            Broadcast bcast,
+            EquivalenceGraph graph,
+            ImmutableSet<Item> content
+    ) throws WriteException {
         DateTime now = clock.now();
 
         Date bcastStart = bcast.getTransmissionTime().toDate();
@@ -406,9 +410,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     bcast.getSourceId(), bcastStart, bcastBytes, graphBytes, content.size(), contentBytes)
                     .and(set(EQUIV_UPDATE.name(), now.toDate())));
         }
-        
-        session.execute(batch(Iterables.toArray(stmts.build(), RegularStatement.class))
-                .setConsistencyLevel(write));
+        for (RegularStatement statement : stmts.build()) {
+            session.execute(statement.setConsistencyLevel(write));
+        }
     }
 
     private Assignments updateStatement(Publisher publisher, Id channelId, Date day, String bcastId,
