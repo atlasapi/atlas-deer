@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.queue.MessageSender;
@@ -36,6 +37,7 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.util.CassandraSecondaryIndex;
+import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,18 +155,18 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             public ListenableFuture<Optional<ResolvedEquivalents<Content>>> apply(Map<Long, Long> index)
                     throws Exception {
                 return Futures.transform(
-                        resultOf(selectSetsQuery(index.values()), readConsistency),
+                        resultOf(selectSetsQueries(index.values()), readConsistency),
                         toEquivalentsSets(index, selectedSources)
                 );
             }
         };
     }
 
-    private Function<ResultSet, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
+    private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Map<Long, Long> index, final Set<Publisher> selectedSources) {
-        return new Function<ResultSet, Optional<ResolvedEquivalents<Content>>>() {
+        return new Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>>() {
             @Override
-            public Optional<ResolvedEquivalents<Content>> apply(ResultSet setsRows) {
+            public Optional<ResolvedEquivalents<Content>> apply(Iterable<ResultSet> setsRows) {
                 Multimap<Long, Content> sets = deserialize(index, setsRows, selectedSources);
                 if (sets == null) {
                     return Optional.absent();
@@ -179,10 +181,13 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         };
     }
 
-    private Multimap<Long, Content> deserialize(Map<Long, Long> index, ResultSet setsRows, Set<Publisher> selectedSources) {
+    private Multimap<Long, Content> deserialize(Map<Long, Long> index, Iterable<ResultSet> setsRows, Set<Publisher> selectedSources) {
         ImmutableSetMultimap.Builder<Long, Content> sets = ImmutableSetMultimap.builder();
         Map<Long, EquivalenceGraph> graphs = Maps.newHashMap();
-        for (Row row : setsRows) {
+        ImmutableList<Row> allRows = StreamSupport.stream(setsRows.spliterator(), false)
+                .flatMap(rs -> rs.all().stream())
+                .collect(ImmutableCollectors.toList());
+        for (Row row : allRows) {
             long setId = row.getLong(SET_ID_KEY);
             if (!row.isNull(GRAPH_KEY)) {
                 graphs.put(setId, graphSerializer.deserialize(row.getBytes(GRAPH_KEY)));
@@ -250,16 +255,28 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             && equivalenceGraph.getEquivalenceSet().contains(content.getId());
     }
 
-    private ListenableFuture<ResultSet> resultOf(Statement query, ConsistencyLevel readConsistency) {
-        return session.executeAsync(query.setConsistencyLevel(readConsistency));
+    private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries, ConsistencyLevel readConsistency) {
+        ImmutableList.Builder<ListenableFuture<ResultSet>> resultSets = ImmutableList.builder();
+        for (Statement query : queries) {
+            resultSets.add(session.executeAsync(query.setConsistencyLevel(readConsistency)));
+        }
+
+
+        return Futures.allAsList(resultSets.build());
     }
     
-    private Statement selectSetsQuery(Iterable<Long> keys) {
-        return select().all()
-                .from(EQUIVALENT_CONTENT_TABLE)
-                .where(in(SET_ID_KEY, ImmutableSet.copyOf(keys).toArray()))
-                .orderBy(asc(CONTENT_ID_KEY))
-                .setFetchSize(Integer.MAX_VALUE);
+    private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
+        ImmutableList.Builder<Statement> statements = ImmutableList.builder();
+        for (Long key : keys) {
+            statements.add(
+                    select().all()
+                    .from(EQUIVALENT_CONTENT_TABLE)
+                    .where(eq(SET_ID_KEY, key))
+                    .orderBy(asc(CONTENT_ID_KEY))
+                    .setFetchSize(Integer.MAX_VALUE)
+            );
+        }
+        return statements.build();
     }
     
     @Override
