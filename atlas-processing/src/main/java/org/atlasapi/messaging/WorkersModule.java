@@ -217,7 +217,7 @@ public class WorkersModule {
                 equivalentScheduleStoreGraphUpdateListener(),
                 equivalentContentStoreGraphUpdateListener(),
                 equivalentContentStoreContentUpdateListener(),
-                equivalentScheduleStoreContentListener(),
+//                equivalentScheduleStoreContentListener(),
                 topicIndexerMessageListener(),
                 contentIndexingMessageListener()
         ));

@@ -137,7 +137,7 @@ public class BootstrapWorkersModule {
     public void start() throws TimeoutException {
         contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
-        scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+//        scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
 
@@ -145,7 +145,7 @@ public class BootstrapWorkersModule {
     public void stop() throws TimeoutException {
         contentBootstrapWorker().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
         scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
-        scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
+//        scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
         topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
     }
 
