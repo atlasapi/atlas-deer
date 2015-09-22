@@ -137,7 +137,14 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         } else if (readConsistency != ConsistencyLevel.QUORUM) {
                             resolveWithConsistency(result, ids, selectedSources, ConsistencyLevel.QUORUM);
                         } else {
-                            result.setException(new IllegalStateException("Failed to resolve " + ids));
+                            result.set(ResolvedEquivalents.<Content>empty());
+                            log.warn("Failed to resolve one of {}", ids);
+                            /* Temporary fix to avoid server errors on multi-ID responses where a subset of IDs is not present
+                                in the equivalated content store.
+                                TODO log into a separate logger the missing IDs.
+                                TODO make sure data is updating in the equivalent content store correctly
+                                result.setException(new IllegalStateException("Failed to resolve " + ids));
+                            */
                         }
                     }
         
@@ -150,34 +157,27 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Set<Publisher> selectedSources, final ConsistencyLevel readConsistency) {
-        return new AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>>() {
-            @Override
-            public ListenableFuture<Optional<ResolvedEquivalents<Content>>> apply(Map<Long, Long> index)
-                    throws Exception {
-                return Futures.transform(
-                        resultOf(selectSetsQueries(index.values()), readConsistency),
-                        toEquivalentsSets(index, selectedSources)
-                );
-            }
+        return index1 -> {
+            return Futures.transform(
+                    resultOf(selectSetsQueries(index1.values()), readConsistency),
+                    toEquivalentsSets(index1, selectedSources)
+            );
         };
     }
 
     private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Map<Long, Long> index, final Set<Publisher> selectedSources) {
-        return new Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>>() {
-            @Override
-            public Optional<ResolvedEquivalents<Content>> apply(Iterable<ResultSet> setsRows) {
-                Multimap<Long, Content> sets = deserialize(index, setsRows, selectedSources);
-                if (sets == null) {
-                    return Optional.absent();
-                }
-                ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
-                for (Entry<Long, Long> id : index.entrySet()) {
-                    Collection<Content> setForId = sets.get(id.getValue());
-                    results.putEquivalents(Id.valueOf(id.getKey()), setForId);
-                }
-                return Optional.of(results.build());
+        return setsRows -> {
+            Multimap<Long, Content> sets = deserialize(index, setsRows, selectedSources);
+            if (sets == null) {
+                return Optional.absent();
             }
+            ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
+            for (Entry<Long, Long> id : index.entrySet()) {
+                Collection<Content> setForId = sets.get(id.getValue());
+                results.putEquivalents(Id.valueOf(id.getKey()), setForId);
+            }
+            return Optional.of(results.build());
         };
     }
 
