@@ -741,6 +741,69 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
 
     }
+
+    public void testUpdatingWithContentWithIncorrectBroadcastsDoesnBlowUp() throws Exception {
+        Channel channel1 = Channel.builder(Publisher.BBC).build();
+        channel1.setId(1L);
+
+        DateTime now = DateTime.now();
+        DateTime nowPlus1h = now.plusHours(1);
+        DateTime nowPlus2h = now.plusHours(2);
+        DateTime nowMinus25h = now.minusHours(25);
+        DateTime nowMinus26h = now.minusHours(26);
+
+        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+        item1.setTitle("Item1 title");
+
+        Item item2 = new Item(Id.valueOf(2), Publisher.BBC_KIWI);
+        item2.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+        item2.setTitle("Item2 title");
+
+        Broadcast broadcast1 = new Broadcast(channel1, now, nowPlus1h).withId("11");
+        Broadcast broadcast11 = new Broadcast(channel1, now, nowPlus1h).withId("111");
+        Broadcast broadcast2 = new Broadcast(channel1, nowPlus1h, nowPlus2h).withId("12");
+
+        item1.addBroadcast(broadcast1);
+        item1.addBroadcast(broadcast11);
+
+        item2.addBroadcast(broadcast2);
+
+        getSubjectGenerator().getContentStore().writeContent(item1);
+        getSubjectGenerator().getContentStore().writeContent(item2);
+
+        ScheduleRef scheduleRef1 = ScheduleRef
+                .forChannel(channel1.getId(), new Interval(now, nowPlus2h))
+                .addEntry(item1.getId(), broadcast1.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(
+                new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef1, ImmutableSet.<BroadcastRef>of())
+        );
+
+        ScheduleRef scheduleRef2 = ScheduleRef
+                .forChannel(channel1.getId(), new Interval(nowMinus26h, nowMinus25h))
+                .addEntry(item2.getId(), broadcast2.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(
+                new ScheduleUpdate(Publisher.BBC_KIWI, scheduleRef2, ImmutableSet.<BroadcastRef>of())
+        );
+        getSubjectGenerator().getEquivalentScheduleStore().updateContent(ImmutableSet.of(item1, item2));
+
+        EquivalentChannelSchedule currentMbSched = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel1),
+                        new Interval(now, nowPlus2h),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
+                )
+        ).channelSchedules().get(0);
+
+        assertThat(currentMbSched.getEntries().size(), is(1));
+        assertThat(currentMbSched.getEntries().get(0).getItems().getResources(), is(ImmutableSet.of(item1, item2)));
+
+    }
     
     private <T> T get(ListenableFuture<T> future) throws Exception {
         return Futures.get(future, 10, TimeUnit.SECONDS, Exception.class);

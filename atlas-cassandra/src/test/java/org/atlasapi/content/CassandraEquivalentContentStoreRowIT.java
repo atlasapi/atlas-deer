@@ -98,12 +98,12 @@ public class CassandraEquivalentContentStoreRowIT {
         Content c5 = createAndWriteItem(Id.valueOf(51), Publisher.METABROADCAST);
         Content c6 = createAndWriteItem(Id.valueOf(61), Publisher.METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1.toRef());
-        persistenceModule.equivalentContentStore().updateContent(c2.toRef());
-        persistenceModule.equivalentContentStore().updateContent(c3.toRef());
-        persistenceModule.equivalentContentStore().updateContent(c4.toRef());
-        persistenceModule.equivalentContentStore().updateContent(c5.toRef());
-        persistenceModule.equivalentContentStore().updateContent(c6.toRef());
+        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c2);
+        persistenceModule.equivalentContentStore().updateContent(c3);
+        persistenceModule.equivalentContentStore().updateContent(c4);
+        persistenceModule.equivalentContentStore().updateContent(c5);
+        persistenceModule.equivalentContentStore().updateContent(c6);
         
         makeEquivalent(c2, c4);
         makeEquivalent(c3, c5);
@@ -150,8 +150,8 @@ public class CassandraEquivalentContentStoreRowIT {
         Content c1 = createAndWriteItem(Id.valueOf(1), Publisher.METABROADCAST);
         Content c2 = createAndWriteItem(Id.valueOf(2), Publisher.METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1.toRef());
-        persistenceModule.equivalentContentStore().updateContent(c2.toRef());
+        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c2);
 
         makeEquivalent(c1, c2);
         makeEquivalent(c2, c1);
