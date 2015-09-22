@@ -156,6 +156,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ScheduleBroadcastFilter broadcastFilter = ScheduleBroadcastFilter.valueOf(interval);
             ImmutableSetMultimap.Builder<Id, EquivalentScheduleEntry> channelEntries = ImmutableSetMultimap.builder();
             for (Row row : Iterables.concat(input)) {
+                if(row.isNull(BROADCAST.name())) {
+                    log.warn(
+                            "null broadcast for day: {}, channel: {}, source {}, broadcast {}",
+                            DAY.valueFrom(row),
+                            CHANNEL.valueFrom(row),
+                            SOURCE.valueFrom(row),
+                            BROADCAST_ID.valueFrom(row)
+
+                    );
+                    continue;
+                }
                 deserializeRow(channelEntries, row, broadcastFilter);
             }
             return channelEntries.build();
