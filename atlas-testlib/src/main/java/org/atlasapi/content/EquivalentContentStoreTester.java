@@ -36,7 +36,7 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         WriteResult<Content, Content> result = getSubjectGenerator().getContentStore().writeContent(content);
         assertTrue("Failed to write " + content, result.written());
         
-        getSubjectGenerator().getEquivalentContentStore().updateContent(content.toRef());
+        getSubjectGenerator().getEquivalentContentStore().updateContent(content);
         
         ResolvedEquivalents<Content> resolved
             = get(getSubjectGenerator().getEquivalentContentStore().resolveIds(ImmutableList.of(content.getId()), ImmutableSet.of(Publisher.METABROADCAST), Annotation.all()));
@@ -100,7 +100,7 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         WriteResult<Content, Content> result = getSubjectGenerator().getContentStore().writeContent(content1);
         assertTrue("Failed to write " + content1, result.written());
         
-        getSubjectGenerator().getEquivalentContentStore().updateContent(content1.toRef());
+        getSubjectGenerator().getEquivalentContentStore().updateContent(content1);
         
         ResolvedEquivalents<Content> resolved
             = get(getSubjectGenerator().getEquivalentContentStore().resolveIds(ImmutableList.of(content1.getId()), ImmutableSet.of(Publisher.METABROADCAST), Annotation.all()));
@@ -143,7 +143,7 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         WriteResult<Content, Content> result = getSubjectGenerator().getContentStore().writeContent(content);
         assertTrue("Failed to write " + content, result.written());
         
-        getSubjectGenerator().getEquivalentContentStore().updateContent(content.toRef());
+        getSubjectGenerator().getEquivalentContentStore().updateContent(content);
         
         ResolvedEquivalents<Content> resolved
             = get(getSubjectGenerator().getEquivalentContentStore().resolveIds(ImmutableList.of(Id.valueOf(2)), ImmutableSet.of(Publisher.METABROADCAST), Annotation.all()));
@@ -158,7 +158,7 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         WriteResult<Content, Content> result = getSubjectGenerator().getContentStore().writeContent(content);
         assertTrue("Failed to write " + content, result.written());
         
-        getSubjectGenerator().getEquivalentContentStore().updateContent(content.toRef());
+        getSubjectGenerator().getEquivalentContentStore().updateContent(content);
         
         ResolvedEquivalents<Content> resolved
             = get(getSubjectGenerator().getEquivalentContentStore().resolveIds(ImmutableList.of(Id.valueOf(1)), ImmutableSet.of(Publisher.BBC), Annotation.all()));
@@ -200,7 +200,7 @@ public final class EquivalentContentStoreTester extends AbstractTester<Equivalen
         WriteResult<Content, Content> result = getSubjectGenerator().getContentStore().writeContent(content);
         assertTrue("Failed to write " + content, result.written());
         
-        getSubjectGenerator().getEquivalentContentStore().updateContent(content.toRef());
+        getSubjectGenerator().getEquivalentContentStore().updateContent(content);
         
         ResolvedEquivalents<Content> resolved
             = get(getSubjectGenerator().getEquivalentContentStore().resolveIds(ImmutableList.of(content.getId(), Id.valueOf(4)), Publisher.all(), Annotation.all()));

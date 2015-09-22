@@ -108,20 +108,13 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     }
 
     @Override
-    public final void updateContent(ResourceRef ref) throws WriteException {
+    public final void updateContent(Content content) throws WriteException {
         try {
-            lock.lock(ref.getId());
-            ImmutableList<Id> ids = ImmutableList.of(ref.getId());
-            OptionalMap<Id, Content> resolvedContent = resolveIds(ids);
-
-            Optional<Content> possibleContent = resolvedContent.get(ref.getId());
-            if (!possibleContent.isPresent()) {
-                throw new WriteException("update failed. content not found for id " + ref.getId());
-            }
-            Content content = possibleContent.get();
+            lock.lock(content.getId());
+            ImmutableList<Id> ids = ImmutableList.of(content.getId());
 
             ListenableFuture<OptionalMap<Id, EquivalenceGraph>> graphs = graphStore.resolveIds(ids);
-            Optional<EquivalenceGraph> possibleGraph = get(graphs).get(ref.getId());
+            Optional<EquivalenceGraph> possibleGraph = get(graphs).get(content.getId());
 
             if (possibleGraph.isPresent()) {
                 updateInSet(possibleGraph.get(), content);
@@ -133,13 +126,13 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                         )
                 );
             } else {
-                EquivalenceGraph graph = EquivalenceGraph.valueOf(ref);
+                EquivalenceGraph graph = EquivalenceGraph.valueOf(content.toRef());
                 updateEquivalences(ImmutableSetMultimap.of(graph, content), EquivalenceGraphUpdate.builder(graph).build());
             }
         } catch (MessagingException | InterruptedException e) {
-            throw new WriteException("Updating " + ref.getId(), e);
+            throw new WriteException("Updating " + content.getId(), e);
         } finally {
-            lock.unlock(ref.getId());
+            lock.unlock(content.getId());
         }
     }
 
