@@ -137,14 +137,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         } else if (readConsistency != ConsistencyLevel.QUORUM) {
                             resolveWithConsistency(result, ids, selectedSources, ConsistencyLevel.QUORUM);
                         } else {
-                            result.set(ResolvedEquivalents.<Content>empty());
-                            log.warn("Failed to resolve one of {}", ids);
-                            /* Temporary fix to avoid server errors on multi-ID responses where a subset of IDs is not present
-                                in the equivalated content store.
-                                TODO log into a separate logger the missing IDs.
-                                TODO make sure data is updating in the equivalent content store correctly
-                                result.setException(new IllegalStateException("Failed to resolve " + ids));
-                            */
+                            result.setException(new IllegalStateException("Failed to resolve " + ids));
                         }
                     }
         
@@ -157,12 +150,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Set<Publisher> selectedSources, final ConsistencyLevel readConsistency) {
-        return index1 -> {
-            return Futures.transform(
-                    resultOf(selectSetsQueries(index1.values()), readConsistency),
-                    toEquivalentsSets(index1, selectedSources)
-            );
-        };
+        return index1 -> Futures.transform(
+                resultOf(selectSetsQueries(index1.values()), readConsistency),
+                toEquivalentsSets(index1, selectedSources)
+        );
     }
 
     private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
@@ -207,8 +198,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             EquivalenceGraph requestedGraph = graphs.get(requests.getValue());
             if (requestedGraph == null
                 || !requestedGraph.getEquivalenceSet().contains(Id.valueOf(requests.getKey()))) {
+                log.warn("Equivalent graph {} failed integrity check", requestedGraph == null ? "null" : requestedGraph.getId());
                 //stale read of index, pointing a graph that doesn't exist.
-                return false;
+                return true;
             }
         }
         return true;
