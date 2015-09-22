@@ -177,14 +177,9 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 );
             }
 
-            /* Temporarily disabled due to not working correctly
             if (queryParams.get().getRegionId().isPresent()) {
-                filterBuilder.must(
-                        FiltersBuilder.addRegionFilter(queryParams, channelGroupResolver);
-                )
+                filterBuilder.must(FiltersBuilder.addRegionFilter(queryParams, channelGroupResolver));
             }
-            */
-
         }
         
         reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));

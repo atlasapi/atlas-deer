@@ -159,8 +159,9 @@ public class FiltersBuilder {
                 .map(Id::longValue)
                 .collect(ImmutableCollectors.toList());
 
-        return FilterBuilders.termsFilter(
-                EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion
+        return FilterBuilders.nestedFilter(
+                EsContent.BROADCASTS,
+                FilterBuilders.termsFilter(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion)
         );
     }
 }
