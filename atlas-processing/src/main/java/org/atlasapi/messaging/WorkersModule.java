@@ -14,6 +14,7 @@ import org.atlasapi.schedule.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.bootstrap.workers.LegacyRetryingContentResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -97,7 +98,15 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> equivalentContentStoreContentUpdateWorker() {
-        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
+        return new EquivalentContentStoreContentUpdateWorker(
+                persistence.getEquivalentContentStore(),
+                new LegacyRetryingContentResolver(
+                        persistence.contentStore(),
+                        persistence.legacyContentResolver(),
+                        persistence.nullMessageSendingContentStore()
+                ),
+                health.metrics()
+        );
     }
 
     @Bean
