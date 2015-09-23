@@ -62,7 +62,30 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
+        log.info(
+                "Processing equivalent schedule update for {} {} {} stale broadcasts:{} ",
+                update.getSource(),
+                update.getSchedule().getChannel().longValue(),
+                update.getSchedule().getInterval(),
+                updateLog(update.getStaleBroadcasts())
+        );
         writeSchedule(update, contentFor(update.getSchedule()));
+    }
+
+    private String updateLog(ImmutableSet<BroadcastRef> staleBroadcasts) {
+        StringBuilder update = new StringBuilder();
+        for (BroadcastRef broadcastRef : staleBroadcasts) {
+            update.append(
+                    String.format(
+                            " %s -> (%s -> %s)",
+                            broadcastRef.getSourceId(),
+                            broadcastRef.getTransmissionInterval().getStart(),
+                            broadcastRef.getTransmissionInterval().getEnd()
+                    )
+            );
+        }
+
+        return update.toString();
     }
 
     protected abstract void writeSchedule(ScheduleUpdate update, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
