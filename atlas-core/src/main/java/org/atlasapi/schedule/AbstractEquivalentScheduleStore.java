@@ -72,7 +72,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         writeSchedule(update, contentFor(update.getSchedule()));
     }
 
-    private String updateLog(ImmutableSet<BroadcastRef> staleBroadcasts) {
+    private String updateLog(Set<BroadcastRef> staleBroadcasts) {
         StringBuilder update = new StringBuilder();
         for (BroadcastRef broadcastRef : staleBroadcasts) {
             update.append(
