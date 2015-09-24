@@ -8,6 +8,8 @@ import org.atlasapi.media.entity.Publisher;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 
+import java.util.Set;
+
 public final class ScheduleUpdate {
     
     public static final class Builder {
@@ -46,7 +48,7 @@ public final class ScheduleUpdate {
         return schedule;
     }
 
-    public ImmutableSet<BroadcastRef> getStaleBroadcasts() {
+    public Set<BroadcastRef> getStaleBroadcasts() {
         return staleBroadcasts;
     }
 
