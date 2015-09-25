@@ -1,6 +1,7 @@
 package org.atlasapi.messaging;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.Message;
@@ -50,6 +51,7 @@ public class WorkersModule {
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
 
+    private Boolean equivalentScheduleStoreContentUpdatesEnabled  = Configurer.get("equiv.schedule.content.updates.enabled").toBoolean();
     @Autowired
     private KafkaMessagingModule messaging;
     @Autowired
@@ -220,16 +222,21 @@ public class WorkersModule {
 
     @PostConstruct
     public void start() throws TimeoutException {
-        consumerManager = new ServiceManager(ImmutableList.of(
-                equivUpdateListener(),
-                equivalentScheduleStoreScheduleUpdateListener(),
-                equivalentScheduleStoreGraphUpdateListener(),
-                equivalentContentStoreGraphUpdateListener(),
-                equivalentContentStoreContentUpdateListener(),
-//                equivalentScheduleStoreContentListener(),
-                topicIndexerMessageListener(),
-                contentIndexingMessageListener()
-        ));
+        ImmutableList.Builder<Service> services = ImmutableList.builder();
+        services
+                .add(equivUpdateListener())
+                .add(equivalentScheduleStoreScheduleUpdateListener())
+                .add(equivalentScheduleStoreGraphUpdateListener())
+                .add(equivalentContentStoreGraphUpdateListener())
+                .add(equivalentContentStoreContentUpdateListener())
+                .add(topicIndexerMessageListener())
+                .add(contentIndexingMessageListener());
+
+        if(equivalentScheduleStoreContentUpdatesEnabled) {
+            services.add(equivalentScheduleStoreContentListener());
+
+        }
+        consumerManager = new ServiceManager(services.build());
         consumerManager.startAsync().awaitHealthy(1, TimeUnit.MINUTES);
     }
 

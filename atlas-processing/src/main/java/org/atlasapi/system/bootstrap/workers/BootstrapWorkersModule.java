@@ -51,6 +51,7 @@ public class BootstrapWorkersModule {
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
     private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
+    private Boolean v2ScheduleEnabled = Configurer.get("schedule.v2.enabled").toBoolean();
 
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private Set<Publisher> ignoredScheduleSources
@@ -137,7 +138,9 @@ public class BootstrapWorkersModule {
     public void start() throws TimeoutException {
         contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
-//        scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        if(v2ScheduleEnabled) {
+            scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        }
         topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
 
@@ -145,7 +148,9 @@ public class BootstrapWorkersModule {
     public void stop() throws TimeoutException {
         contentBootstrapWorker().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
         scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
-//        scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
+        if(v2ScheduleEnabled) {
+            scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
+        }
         topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
     }
 
