@@ -3,6 +3,7 @@ package org.atlasapi.schedule;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.TimeUnit;
 
@@ -809,14 +810,39 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
 
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
-        DateTime start = new DateTime(2014, 3, 21, 0, 0, 0, 0, DateTimeZones.UTC);
-        DateTime end = new DateTime(2014, 3, 22, 0, 0, 0, 0, DateTimeZones.UTC);
-        DateTime midday = new DateTime(2014, 3, 21, 16, 12, 0, 0, DateTimeZones.UTC);
-        DateTime fourPm = new DateTime(2014, 3, 21, 16, 16, 0, 0, DateTimeZones.UTC);
+        DateTime beforeStart = new DateTime(2014, 3, 21, 0, 0, 0, 0, DateTimeZones.UTC);
+        DateTime start = new DateTime(2014, 3, 21, 1, 0, 0, 0, DateTimeZones.UTC);
+        DateTime midday = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
+        DateTime fourPm = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
+        DateTime end = new DateTime(2014, 3, 21, 23, 0, 0, 0, DateTimeZones.UTC);
+        DateTime afterEnd = new DateTime(2014, 3,22, 23, 30, 0, 0, DateTimeZones.UTC);
         Interval interval = new Interval(
                 start,
                 end
         );
+
+        Item beforeItem = new Item(Id.valueOf(5), Publisher.METABROADCAST);
+        Broadcast beforeBroadcast1 = new Broadcast(channel, beforeStart, start).withId("sid5");
+        beforeItem.addBroadcast(beforeBroadcast1);
+
+        Item afterItem = new Item(Id.valueOf(6), Publisher.METABROADCAST);
+        Broadcast afterBroadcast = new Broadcast(channel, end, afterEnd).withId("sid6");
+        afterItem.addBroadcast(afterBroadcast);
+
+        getSubjectGenerator().getContentStore().writeContent(beforeItem);
+        getSubjectGenerator().getContentStore().writeContent(afterItem);
+
+
+        ScheduleRef scheduleRefBefore = ScheduleRef.forChannel(channel.getId(), new Interval(beforeStart, start))
+                .addEntry(beforeItem.getId(), beforeBroadcast1.toRef())
+                .build();
+
+        ScheduleRef scheduleRefAfter = ScheduleRef.forChannel(channel.getId(), new Interval(end, afterEnd))
+                .addEntry(afterItem.getId(), afterBroadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRefBefore, ImmutableSet.<BroadcastRef>of()));
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRefAfter, ImmutableSet.<BroadcastRef>of()));
 
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         Broadcast broadcast1 = new Broadcast(channel, start, midday).withId("sid1");
@@ -890,6 +916,32 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
                 schedule.getEntries().get(1).getBroadcast().getTransmissionEndTime(),
                 is(end)
         );
+
+        EquivalentChannelSchedule beforeSchedule
+                = Iterables.getOnlyElement(
+                get(
+                        getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                                ImmutableList.of(channel),
+                                new Interval(beforeStart, start.minusSeconds(1)),
+                                Publisher.METABROADCAST,
+                                ImmutableSet.of(Publisher.METABROADCAST))).channelSchedules()
+        );
+
+        assertThat(beforeSchedule.getEntries().size(), is(1));
+
+
+        EquivalentChannelSchedule afterSchedule
+                = Iterables.getOnlyElement(
+                get(
+                        getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                                ImmutableList.of(channel),
+                                new Interval(end.plusSeconds(1), afterEnd),
+                                Publisher.METABROADCAST,
+                                ImmutableSet.of(Publisher.METABROADCAST))).channelSchedules()
+        );
+
+        assertThat(afterSchedule.getEntries().size(), is(1));
+
     }
     
     private <T> T get(ListenableFuture<T> future) throws Exception {

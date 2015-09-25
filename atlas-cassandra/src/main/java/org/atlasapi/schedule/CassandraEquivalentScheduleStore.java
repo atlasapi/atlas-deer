@@ -495,19 +495,18 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 );
                 continue;
             }
-            Broadcast broadcast = null;
             try {
-                broadcast = broadcastSerializer.deserialize(
+                Broadcast broadcast  = broadcastSerializer.deserialize(
                         ContentProtos.Broadcast.parseFrom(
                                 ByteString.copyFrom(BROADCAST.valueFrom(row)
                                 )
                         )
                 );
+                if (broadcast.getTransmissionInterval().overlaps(interval)) {
+                    broadcasts.add(broadcast.toRef());
+                }
             } catch (InvalidProtocolBufferException e) {
                 Throwables.propagate(e);
-            }
-            if (broadcast.getTransmissionInterval().overlaps(interval) || broadcast.getTransmissionInterval().abuts(interval)) {
-                broadcasts.add(broadcast.toRef());
             }
         }
         return broadcasts.build();
