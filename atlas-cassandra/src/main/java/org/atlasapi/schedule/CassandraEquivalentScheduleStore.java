@@ -316,25 +316,24 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             throws WriteException {
         DateTime now = clock.now();
 
-        Set<BroadcastRef> updateBroadcast = update.getSchedule().getScheduleEntries()
+        Set<String> updateBroadcastIds = update.getSchedule().getScheduleEntries()
                 .stream()
-                .map(ScheduleRef.Entry::getBroadcast)
+                .map(scheduleRef -> scheduleRef.getBroadcast().getSourceId())
                 .collect(ImmutableCollectors.toSet());
-        Set<BroadcastRef> currentBroadcasts = resolveBroadcasts(
+
+        Set<BroadcastRef> staleBroadcasts = resolveBroadcasts(
                 update.getSource(),
                 update.getSchedule().getChannel(),
                 update.getSchedule().getInterval()
-        );
+        ).stream()
+                .filter(broadcastRef -> !updateBroadcastIds.contains(broadcastRef.getSourceId()))
+                .collect(ImmutableCollectors.toSet());
 
-        //Theoretically all the stale broadcast should come from the ScheduleUpdate
-        //unfortunately that's not always the case
-        Set<BroadcastRef> staleBroadcasts = Sets.difference(currentBroadcasts, updateBroadcast);
-
-        List<RegularStatement> updates = updateStatements(update.getSource(), update.getSchedule(), content, now);
         List<RegularStatement> deletes = deleteStatements(
                 update.getSource(),
                 Sets.union(staleBroadcasts, update.getStaleBroadcasts())
         );
+        List<RegularStatement> updates = updateStatements(update.getSource(), update.getSchedule(), content, now);
         if (updates.isEmpty() && deletes.isEmpty()) {
             return;
         }
