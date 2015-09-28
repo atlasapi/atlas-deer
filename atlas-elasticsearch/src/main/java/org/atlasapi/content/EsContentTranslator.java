@@ -1,17 +1,17 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.time.DateTimeZones;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
@@ -22,27 +22,22 @@ import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.joda.time.DateTime;
-import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.time.DateTimeZones;
 
 public class EsContentTranslator {
 
@@ -69,7 +64,7 @@ public class EsContentTranslator {
     }
 
     private Collection<EsBroadcast> makeESBroadcasts(Item item) {
-        Collection<EsBroadcast> esBroadcasts = new LinkedList<EsBroadcast>();
+        Collection<EsBroadcast> esBroadcasts = new LinkedList<>();
         for (Broadcast broadcast : item.getBroadcasts()) {
             if (broadcast.isActivelyPublished()) {
                 esBroadcasts.add(toEsBroadcast(broadcast));
@@ -353,23 +348,17 @@ public class EsContentTranslator {
     }
 
     private Policy fromEsLocation(Map<String, Object> location) {
-        String start = (String) location.get(EsLocation.AVAILABILITY_TIME);
-        String end = (String) location.get(EsLocation.AVAILABILITY_END_TIME);
-        DateTime startDt = null;
-        DateTime endDt = null;
-        if (!Strings.isNullOrEmpty(start)) {
-            startDt = toUtc(DateTime.parse(start));
-        }
-        if (!Strings.isNullOrEmpty(end)) {
-            endDt = toUtc(DateTime.parse(end));
-        }
+        Object start = location.get(EsLocation.AVAILABILITY_TIME);
+        Object end = location.get(EsLocation.AVAILABILITY_END_TIME);
+
         Policy pol = new Policy();
-        if (endDt != null) {
-            pol.setAvailabilityStart(startDt);
+        if (start != null) {
+            pol.setAvailabilityStart(new DateTime(start).toDateTime(DateTimeZones.UTC));
         }
-        if (startDt != null) {
-            pol.setAvailabilityEnd(endDt);
+        if (end != null) {
+            pol.setAvailabilityEnd(new DateTime(end).toDateTime(DateTimeZones.UTC));
         }
+
         return pol;
     }
 
@@ -442,20 +431,23 @@ public class EsContentTranslator {
     }
 
     private Broadcast toBroadcast(Map<String, Object> broadcast) {
-        String start = (String) broadcast.get(EsBroadcast.TRANSMISSION_TIME);
-        String end = (String) broadcast.get(EsBroadcast.TRANSMISSION_END_TIME);
-        DateTime startDt = null;
-        DateTime endDt = null;
-        if (!Strings.isNullOrEmpty(start)) {
-            startDt = DateTime.parse(start);
+        Object start = broadcast.get(EsBroadcast.TRANSMISSION_TIME);
+        Object end = broadcast.get(EsBroadcast.TRANSMISSION_END_TIME);
+
+        DateTime startDate = null;
+        DateTime endDate = null;
+
+        if (start != null) {
+            startDate = new DateTime(start);
         }
-        if (!Strings.isNullOrEmpty(end)) {
-            endDt = DateTime.parse(end);
+        if (end != null) {
+            endDate = new DateTime(end);
         }
+
         return new Broadcast(
                 Id.valueOf((Integer) broadcast.get(EsBroadcast.CHANNEL)),
-                startDt,
-                endDt,
+                startDate,
+                endDate,
                 true
         );
     }
