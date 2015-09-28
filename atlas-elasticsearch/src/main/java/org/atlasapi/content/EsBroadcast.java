@@ -44,8 +44,8 @@ public class EsBroadcast extends EsObject {
         EsBroadcast broadcast = new EsBroadcast();
         broadcast.id((String) map.get(ID));
         broadcast.channel(((Integer) map.get(CHANNEL)).longValue());
-        broadcast.transmissionTime(DateTime.parse((String) map.get(TRANSMISSION_TIME)).toDate());
-        broadcast.transmissionEndTime(DateTime.parse((String) map.get(TRANSMISSION_END_TIME)).toDate());
+        broadcast.transmissionTime(new DateTime(map.get(TRANSMISSION_TIME)).toDate());
+        broadcast.transmissionEndTime(new DateTime(map.get(TRANSMISSION_END_TIME)).toDate());
         broadcast.repeat((Boolean) map.get(REPEAT));
         return broadcast;
     }
