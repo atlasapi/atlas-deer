@@ -343,15 +343,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 update.getSource(),
                 Sets.union(staleBroadcasts, update.getStaleBroadcasts())
         );
-        List<RegularStatement> updates = updateStatements(update.getSource(), update.getSchedule(), content, now);
-        if (updates.isEmpty() && deletes.isEmpty()) {
-            return;
-        }
-
-
-
-
-        Statement updateBatch = batch(Iterables.toArray(Iterables.concat(updates, deletes), RegularStatement.class));
         log.info(
                 "Processing equivalent schedule update for {} {} {}: currentEntries:{}, update:{}, stale broadcasts from update: {}, stale broadcasts from store: {}",
                 update.getSource(),
@@ -362,8 +353,23 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 updateLog(update.getStaleBroadcasts()),
                 updateLog(staleBroadcasts)
         );
+        List<RegularStatement> updates = updateStatements(update.getSource(), update.getSchedule(), content, now);
+        if (updates.isEmpty() && deletes.isEmpty()) {
+            return;
+        }
+
+        Statement updateBatch = batch(Iterables.toArray(Iterables.concat(updates, deletes), RegularStatement.class));
         try {
             session.execute(updateBatch.setConsistencyLevel(write));
+            log.info(
+                    "Processed equivalent schedule update for {} {} {}, updates: {}, deletes: {}",
+                    update.getSource(),
+                    update.getSchedule().getChannel().longValue(),
+                    update.getSchedule().getInterval(),
+                    updates.size(),
+                    deletes.size()
+
+            );
         } catch(NoHostAvailableException | QueryExecutionException e) {
             throw new WriteException(e);
         }
