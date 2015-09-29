@@ -7,8 +7,6 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.content.ContentResolver;
@@ -52,10 +50,15 @@ public class BootstrapWorkersModule {
     private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
     private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
     private Boolean v2ScheduleEnabled = Configurer.get("schedule.v2.enabled").toBoolean();
-
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
+
+    private Boolean contentBootstrapEnabled = Configurer.get("messaging.enabled.content.bootstrap").toBoolean();
+    private Boolean scheduleBootstrapEnabled = Configurer.get("messaging.enabled.schedule.bootstrap").toBoolean();
+    private Boolean topicBootstrapEnabled = Configurer.get("messaging.enabled.topic.bootstrap").toBoolean();
+
     private Set<Publisher> ignoredScheduleSources
             = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT));
+
     @Autowired
     private AtlasPersistenceModule persistence;
     @Autowired
@@ -136,22 +139,34 @@ public class BootstrapWorkersModule {
 
     @PostConstruct
     public void start() throws TimeoutException {
-        contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
-        scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        if(contentBootstrapEnabled) {
+            contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        }
+        if(scheduleBootstrapEnabled) {
+            scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        }
         if(v2ScheduleEnabled) {
             scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         }
-        topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        if(topicBootstrapEnabled) {
+            topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        }
     }
 
     @PreDestroy
     public void stop() throws TimeoutException {
-        contentBootstrapWorker().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
-        scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        if(contentBootstrapEnabled) {
+            contentBootstrapWorker().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        }
+        if(scheduleBootstrapEnabled) {
+            scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        }
         if(v2ScheduleEnabled) {
             scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
         }
-        topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        if(topicBootstrapEnabled) {
+            topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        }
     }
 
     @Bean
