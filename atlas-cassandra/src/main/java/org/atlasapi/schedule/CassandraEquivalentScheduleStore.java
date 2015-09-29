@@ -70,9 +70,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.metabroadcast.common.time.Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
 
+    private static final Logger log = LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
     private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
 
     @Override
@@ -316,16 +319,23 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             throws WriteException {
         DateTime now = clock.now();
 
-        Set<String> updateBroadcastIds = update.getSchedule().getScheduleEntries()
+        ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule().getScheduleEntries()
                 .stream()
-                .map(scheduleRef -> scheduleRef.getBroadcast().getSourceId())
+                .map(scheduleRef -> scheduleRef.getBroadcast())
                 .collect(ImmutableCollectors.toSet());
 
-        Set<BroadcastRef> staleBroadcasts = resolveBroadcasts(
+        Set<String> updateBroadcastIds = updateBroadcastRefs
+                .stream()
+                .map(BroadcastRef::getSourceId)
+                .collect(ImmutableCollectors.toSet());
+
+        Set<BroadcastRef> currentBroadcastRefs = resolveBroadcasts(
                 update.getSource(),
                 update.getSchedule().getChannel(),
                 update.getSchedule().getInterval()
-        ).stream()
+        );
+
+        Set<BroadcastRef> staleBroadcasts = currentBroadcastRefs.stream()
                 .filter(broadcastRef -> !updateBroadcastIds.contains(broadcastRef.getSourceId()))
                 .collect(ImmutableCollectors.toSet());
 
@@ -338,12 +348,41 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             return;
         }
 
+
+
+
         Statement updateBatch = batch(Iterables.toArray(Iterables.concat(updates, deletes), RegularStatement.class));
+        log.info(
+                "Processing equivalent schedule update for {} {} {}: currentEntries:{}, update:{}, stale broadcasts from update: {}, stale broadcasts from store: {}",
+                update.getSource(),
+                update.getSchedule().getChannel().longValue(),
+                update.getSchedule().getInterval(),
+                updateLog(currentBroadcastRefs),
+                updateLog(updateBroadcastRefs),
+                updateLog(update.getStaleBroadcasts()),
+                updateLog(staleBroadcasts)
+        );
         try {
             session.execute(updateBatch.setConsistencyLevel(write));
         } catch(NoHostAvailableException | QueryExecutionException e) {
             throw new WriteException(e);
         }
+    }
+
+    private String updateLog(Set<BroadcastRef> staleBroadcasts) {
+        StringBuilder update = new StringBuilder();
+        for (BroadcastRef broadcastRef : staleBroadcasts) {
+            update.append(
+                    String.format(
+                            " %s -> (%s -> %s)",
+                            broadcastRef.getSourceId(),
+                            broadcastRef.getTransmissionInterval().getStart(),
+                            broadcastRef.getTransmissionInterval().getEnd()
+                    )
+            );
+        }
+
+        return update.toString();
     }
 
     private List<RegularStatement> updateStatements(Publisher source, ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)
