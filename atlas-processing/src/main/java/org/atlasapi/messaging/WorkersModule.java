@@ -1,14 +1,11 @@
 package org.atlasapi.messaging;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Service;
-import com.google.common.util.concurrent.ServiceManager;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageConsumerBuilder;
-import com.metabroadcast.common.queue.MessageSerializer;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.queue.kafka.KafkaConsumer;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
@@ -22,10 +19,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.ServiceManager;
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.Message;
+import com.metabroadcast.common.queue.MessageConsumerBuilder;
+import com.metabroadcast.common.queue.MessageSerializer;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 @Configuration
 @Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, ProcessingHealthModule.class})
@@ -52,6 +54,15 @@ public class WorkersModule {
     private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
 
     private Boolean equivalentScheduleStoreContentUpdatesEnabled  = Configurer.get("equiv.schedule.content.updates.enabled").toBoolean();
+
+    private Boolean contentIndexerEnabled = Configurer.get("messaging.enabled.content.indexer").toBoolean();
+    private Boolean equivalentContentStoreEnabled = Configurer.get("messaging.enabled.content.equivalent.store").toBoolean();
+    private Boolean equivalentContentGraphEnabled = Configurer.get("messaging.enabled.content.equivalent.graph").toBoolean();
+    private Boolean equivalentScheduleStoreEnabled = Configurer.get("messaging.enabled.schedule.equivalent.store").toBoolean();
+    private Boolean equivalentScheduleGraphEnabled = Configurer.get("messaging.enabled.schedule.equivalent.graph").toBoolean();
+    private Boolean topicIndexerEnabled = Configurer.get("messaging.enabled.topic.indexer").toBoolean();
+    private Boolean equivalenceGraphEnabled = Configurer.get("messaging.enabled.equivalence.graph").toBoolean();
+
     @Autowired
     private KafkaMessagingModule messaging;
     @Autowired
@@ -223,19 +234,33 @@ public class WorkersModule {
     @PostConstruct
     public void start() throws TimeoutException {
         ImmutableList.Builder<Service> services = ImmutableList.builder();
-        services
-                .add(equivUpdateListener())
-                .add(equivalentScheduleStoreScheduleUpdateListener())
-                .add(equivalentScheduleStoreGraphUpdateListener())
-                .add(equivalentContentStoreGraphUpdateListener())
-                .add(equivalentContentStoreContentUpdateListener())
-                .add(topicIndexerMessageListener())
-                .add(contentIndexingMessageListener());
 
         if(equivalentScheduleStoreContentUpdatesEnabled) {
             services.add(equivalentScheduleStoreContentListener());
-
         }
+
+        if(contentIndexerEnabled) {
+            services.add(contentIndexingMessageListener());
+        }
+        if(equivalentContentStoreEnabled) {
+            services.add(equivalentContentStoreContentUpdateListener());
+        }
+        if(equivalentContentGraphEnabled) {
+            services.add(equivalentContentStoreGraphUpdateListener());
+        }
+        if(equivalentScheduleStoreEnabled) {
+            services.add(equivalentScheduleStoreScheduleUpdateListener());
+        }
+        if(equivalentScheduleGraphEnabled) {
+            services.add(equivalentScheduleStoreGraphUpdateListener());
+        }
+        if(topicIndexerEnabled) {
+            services.add(topicIndexerMessageListener());
+        }
+        if(equivalenceGraphEnabled) {
+            services.add(equivUpdateListener());
+        }
+
         consumerManager = new ServiceManager(services.build());
         consumerManager.startAsync().awaitHealthy(1, TimeUnit.MINUTES);
     }
