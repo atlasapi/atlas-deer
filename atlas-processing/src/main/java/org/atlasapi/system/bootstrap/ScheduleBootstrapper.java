@@ -27,6 +27,8 @@ public class ScheduleBootstrapper {
     private final AtomicBoolean bootstrapping = new AtomicBoolean(false);
     private final AtomicInteger processed = new AtomicInteger(0);
     private final AtomicInteger failures = new AtomicInteger(0);
+    private final AtomicInteger progress = new AtomicInteger(0);
+    private final AtomicInteger total = new AtomicInteger(0);
     private final ListeningExecutorService executor;
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
 
@@ -46,6 +48,8 @@ public class ScheduleBootstrapper {
         bootstrapping.set(true);
         processed.set(0);
         failures.set(0);
+        progress.set(0);
+        total.set(Iterables.size(channels));
         Set<ListenableFuture<UpdateProgress>> futures = Sets.newHashSet();
         log.info(
                 "Bootstrapping {} channels for interval from {} to {}",
@@ -75,14 +79,31 @@ public class ScheduleBootstrapper {
         Futures.addCallback(updateFuture, new FutureCallback<UpdateProgress>() {
             @Override
             public void onSuccess(UpdateProgress result) {
-                processed.incrementAndGet();
-                log.info("Processed channel {}/{} with updates {}", channel.getId(), channel.getTitle(), result);
+                log.info(
+                        "Processed channel {}/{} with result: ({}), bootstrap progress: {}/{}, success: {}, failure: {}",
+                        channel.getId(),
+                        channel.getTitle(),
+                        result,
+                        progress.incrementAndGet(),
+                        total.get(),
+                        processed.incrementAndGet(),
+                        failures.get()
+
+                );
             }
 
             @Override
             public void onFailure(Throwable t) {
-                log.error("Error while processing schedules for channel {}/{}", channel.getId(),channel.getTitle(), t);
-                failures.incrementAndGet();
+                log.error("Error while processing schedules for channel {}/{}, bootstrap progress: {}/{}, success: {}, failure: {}\"",
+                        channel.getId(),
+                        channel.getTitle(),
+                        progress.incrementAndGet(),
+                        total.get(),
+                        processed.get(),
+                        failures.incrementAndGet(),
+                        t
+                );
+
             }
         });
         return updateFuture;
