@@ -214,6 +214,13 @@ public class WorkersModule {
         return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex(), health.metrics());
     }
 
+    @Bean
+    @Lazy(true)
+    public EquivalentContentIndexingWorker equivalentContentIndexingWorker() {
+        return new EquivalentContentIndexingWorker(
+                persistence.contentStore(), persistence.contentIndex(), health.metrics()
+        );
+    }
 
     @Bean
     @Lazy(true)
@@ -231,6 +238,22 @@ public class WorkersModule {
                 .build();
     }
 
+    @Bean
+    @Lazy(true)
+    public KafkaConsumer equivalentContentIndexingMessageListener() {
+        MessageConsumerBuilder<KafkaConsumer, EquivalentContentUpdatedMessage> consumer =
+                messaging.messageConsumerFactory().createConsumer(
+                        equivalentContentIndexingWorker(),
+                        serializer(EquivalentContentUpdatedMessage.class),
+                        equivalentContentChanges,
+                        "EquivalentContentIndexer"
+                );
+        return consumer.withMaxConsumers(maxContentIndexers)
+                .withDefaultConsumers(defaultContentIndexers)
+                .withConsumerSystem(consumerSystem)
+                .build();
+    }
+
     @PostConstruct
     public void start() throws TimeoutException {
         ImmutableList.Builder<Service> services = ImmutableList.builder();
@@ -241,6 +264,7 @@ public class WorkersModule {
 
         if(contentIndexerEnabled) {
             services.add(contentIndexingMessageListener());
+            services.add(equivalentContentIndexingMessageListener());
         }
         if(equivalentContentStoreEnabled) {
             services.add(equivalentContentStoreContentUpdateListener());
