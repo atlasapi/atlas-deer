@@ -6,11 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.Timestamp;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -33,6 +29,9 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.Timestamp;
 
 public abstract class AbstractEquivalentContentStore implements EquivalentContentStore {
 
@@ -85,12 +84,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
         return ImmutableSet.<Id>builder()
             .addAll(update.getUpdated().getEquivalenceSet())
             .addAll(Iterables.concat(Iterables.transform(update.getCreated(),
-                new Function<EquivalenceGraph, Set<Id>>() {
-                    @Override
-                    public Set<Id> apply(EquivalenceGraph input) {
-                        return input.getEquivalenceSet();
-                    }
-                }
+                    EquivalenceGraph::getEquivalenceSet
             )))
             .addAll(update.getDeleted())
             .build();
@@ -122,7 +116,8 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                         new EquivalentContentUpdatedMessage(
                                 UUID.randomUUID().toString(),
                                 Timestamp.of(DateTime.now(DateTimeZone.UTC)),
-                                possibleGraph.get().getId().longValue()
+                                possibleGraph.get().getId().longValue(),
+                                content.toRef()
                         )
                 );
             } else {
