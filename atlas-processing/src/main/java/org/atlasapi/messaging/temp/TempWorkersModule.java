@@ -65,7 +65,7 @@ public class TempWorkersModule {
     private Integer equivMaxConsumers = 1;
 
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
-    private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
+    private String equivTopic = "AtlasOwlProd" + Configurer.get("equiv.update.producer.topic").get();
 
     private Boolean equivalentScheduleStoreContentUpdatesEnabled  = Configurer.get("equiv.schedule.content.updates.enabled").toBoolean();
 
