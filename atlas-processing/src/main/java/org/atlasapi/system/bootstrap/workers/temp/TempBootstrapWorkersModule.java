@@ -49,8 +49,8 @@ public class TempBootstrapWorkersModule {
     private String zookeeper = Configurer.get("messaging.zookeeper").get();
     private String originSystem = Configurer.get("messaging.bootstrap.system").get();
 
-    private Integer consumers = 1;
-    private Integer maxConsumers = 1;
+    private Integer consumers = 25;
+    private Integer maxConsumers = 25;
 
     private String contentChanges = "AtlasOwlProd" + Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = "AtlasOwlProd" + Configurer.get("messaging.destination.topics.changes").get();

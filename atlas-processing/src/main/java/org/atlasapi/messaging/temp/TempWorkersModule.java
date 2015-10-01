@@ -55,14 +55,14 @@ public class TempWorkersModule {
     private String contentEquivalenceGraphChanges = "AtlasDeerProd" + Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
     private String equivalentContentChanges = "AtlasDeerProd" + Configurer.get("messaging.destination.equivalent.content.changes").get();
 
-    private Integer defaultTopicIndexers = 1;
-    private Integer maxTopicIndexers = 1;
+    private Integer defaultTopicIndexers = 25;
+    private Integer maxTopicIndexers = 25;
 
-    private Integer defaultContentIndexers = 1;
-    private Integer maxContentIndexers = 1;
+    private Integer defaultContentIndexers = 25;
+    private Integer maxContentIndexers = 25;
 
-    private Integer equivDefaultConsumers = 1;
-    private Integer equivMaxConsumers = 1;
+    private Integer equivDefaultConsumers = 25;
+    private Integer equivMaxConsumers = 25;
 
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private String equivTopic = "AtlasOwlProd" + Configurer.get("equiv.update.producer.topic").get();
