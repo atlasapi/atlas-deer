@@ -9,11 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.metabroadcast.common.properties.Configurer;
-
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.SchedulerModule;
@@ -23,6 +18,7 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.bootstrap.workers.temp.TempBootstrapWorkersModule;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
@@ -32,9 +28,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.scheduling.RepetitionRules;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 import com.metabroadcast.common.time.DayRangeGenerator;
@@ -42,7 +42,7 @@ import com.metabroadcast.common.time.SystemClock;
 
 @Configuration
 @Import({AtlasPersistenceModule.class, BootstrapWorkersModule.class, LegacyPersistenceModule.class,
-    SchedulerModule.class, ProcessingHealthModule.class})
+    SchedulerModule.class, ProcessingHealthModule.class, TempBootstrapWorkersModule.class})
 public class BootstrapModule {
 
     //we only need 2 here, on to run the bootstrap and one to be able to return quickly when it's running
