@@ -2,6 +2,7 @@ package org.atlasapi;
 
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.WorkersModule;
+import org.atlasapi.messaging.temp.TempWorkersModule;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.BootstrapModule;
 import org.atlasapi.system.debug.DebugModule;
@@ -19,6 +20,7 @@ import com.metabroadcast.common.webapp.properties.ContextConfigurer;
     WorkersModule.class,
     BootstrapModule.class,
     DebugModule.class,
+        TempWorkersModule.class
 })
 public class AtlasProcessingModule {
 
