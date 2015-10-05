@@ -1,14 +1,15 @@
 package org.atlasapi.util;
 
+import java.util.List;
+
+import org.atlasapi.entity.Id;
+
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Statement;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.atlasapi.entity.Id;
-
-import java.util.List;
 
 public class NoOpSecondaryIndex implements SecondaryIndex {
 

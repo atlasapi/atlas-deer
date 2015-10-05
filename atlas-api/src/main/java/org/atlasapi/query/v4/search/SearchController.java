@@ -11,7 +11,7 @@ import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.auth.ApiKeySourcesFetcher;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.ErrorResultWriter;

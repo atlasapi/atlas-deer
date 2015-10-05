@@ -1,10 +1,13 @@
 package org.atlasapi.generation.generated.model;
 
 import java.util.Set;
-import com.google.common.collect.ImmutableSet;
-import org.atlasapi.generation.model.ModelClassInfo;
+
+import org.atlasapi.content.RelatedLink;
 import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
+import org.atlasapi.generation.model.ModelClassInfo;
+
+import com.google.common.collect.ImmutableSet;
 
 
 public class RelatedLinkInfo implements ModelClassInfo {
@@ -189,7 +192,7 @@ public class RelatedLinkInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.content.RelatedLink.class;
+        return RelatedLink.class;
     }
 
 }

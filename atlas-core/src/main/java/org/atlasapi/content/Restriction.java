@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import org.atlasapi.entity.Identified;
 import org.atlasapi.meta.annotations.FieldName;
 
 

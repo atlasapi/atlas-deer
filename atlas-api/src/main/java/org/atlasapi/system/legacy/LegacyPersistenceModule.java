@@ -1,13 +1,9 @@
 package org.atlasapi.system.legacy;
 
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessageSenders;
-import com.mongodb.ReadPreference;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.NullContentResolver;
+import org.atlasapi.event.EventResolver;
 import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
@@ -20,6 +16,7 @@ import org.atlasapi.persistence.content.mongo.MongoContentGroupResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoTopicStore;
 import org.atlasapi.persistence.content.schedule.mongo.MongoScheduleStore;
+import org.atlasapi.persistence.event.MongoEventStore;
 import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.topic.TopicResolver;
@@ -28,6 +25,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenders;
+import com.mongodb.ReadPreference;
 
 @Configuration
 @Import(AtlasPersistenceModule.class)
@@ -116,6 +119,12 @@ public class LegacyPersistenceModule {
     @Bean
     public LegacyContentGroupResolver legacyContentGroupResolver() {
         return new LegacyContentGroupResolver(new MongoContentGroupResolver(persistence.databasedReadMongo()));
+    }
+
+    @Bean
+    @Qualifier("legacy")
+    public EventResolver legacyEventResolver() {
+        return new LegacyEventResolver(new MongoEventStore(persistence.databasedReadMongo()));
     }
 
     private PersistenceAuditLog persistenceAuditLog() {

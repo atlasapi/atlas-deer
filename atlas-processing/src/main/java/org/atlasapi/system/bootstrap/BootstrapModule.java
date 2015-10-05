@@ -153,6 +153,10 @@ public class BootstrapModule {
         );
     }
 
+    @Bean
+    public EventBootstrapController eventBootstrapController() {
+        return new EventBootstrapController(legacy.legacyEventResolver(), persistence.eventWriter());
+    }
 
     private ListeningExecutorService executorService(Integer concurrencyLevel, String namePrefix) {
         return MoreExecutors.listeningDecorator(

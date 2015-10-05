@@ -1,5 +1,36 @@
 package org.atlasapi.schedule;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.putAll;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.atlasapi.channel.Channel;
+import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.ItemAndBroadcast;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.media.entity.Publisher;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Interval;
+
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -20,36 +51,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
-import org.atlasapi.channel.Channel;
-import org.atlasapi.content.Broadcast;
-import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.Identified;
-import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.media.entity.Publisher;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Interval;
-
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.putAll;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
 

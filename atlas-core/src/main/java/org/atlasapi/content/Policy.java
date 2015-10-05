@@ -17,19 +17,17 @@ package org.atlasapi.content;
 import java.util.List;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.media.entity.simple.*;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Country;
 
-public class Policy extends Identified {
+public class Policy extends org.atlasapi.entity.Identified {
 
 	private DateTime availabilityStart;
 
@@ -275,7 +273,7 @@ public class Policy extends Identified {
 	
 	public Policy copy() {
 	    Policy copy = new Policy();
-	    Identified.copyTo(this, copy);
+	    org.atlasapi.entity.Identified.copyTo(this, copy);
 	    copy.availabilityEnd = availabilityEnd;
 	    copy.availabilityLength = availabilityLength;
 	    copy.availabilityStart = availabilityStart;

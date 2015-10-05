@@ -1,4 +1,4 @@
-package org.atlasapi.content;
+package org.atlasapi.entity;
 
 /**
  */

@@ -1,26 +1,26 @@
 package org.atlasapi.content;
 
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
-
 import java.util.Currency;
 
 import org.atlasapi.content.Policy.RevenueContract;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
+import org.atlasapi.util.ImmutableCollectors;
 
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Countries;
-import org.atlasapi.util.ImmutableCollectors;
 
 
 public class LocationSerializer {
 
     private final PricingSerializer pricingSerializer = new PricingSerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
     public ContentProtos.Location.Builder serialize(Location location) {
         Builder builder = ContentProtos.Location.newBuilder();
         if (location.getEmbedCode() != null) { builder.setEmbedCode(location.getEmbedCode()); }
@@ -45,19 +45,19 @@ public class LocationSerializer {
         }
         
         if (policy.getActualAvailabilityStart() != null) {
-            builder.setActualAvailabilityStart(serializeDateTime(policy.getActualAvailabilityStart()));
+            builder.setActualAvailabilityStart(dateTimeSerializer.serialize(policy.getActualAvailabilityStart()));
         }
         if (policy.getAvailabilityStart() != null) {
-            builder.setAvailabilityStart(serializeDateTime(policy.getAvailabilityStart()));
+            builder.setAvailabilityStart(dateTimeSerializer.serialize(policy.getAvailabilityStart()));
         }
         if (policy.getAvailabilityEnd() != null) {
-            builder.setAvailabilityEnd(serializeDateTime(policy.getAvailabilityEnd()));
+            builder.setAvailabilityEnd(dateTimeSerializer.serialize(policy.getAvailabilityEnd()));
         }
         if (policy.getAvailabilityLength() != null) { builder.setAvailabilityLength(policy.getAvailabilityLength()); }
         builder.addAllAvailableCountries(Countries.toCodes(policy.getAvailableCountries()));
 
         if (policy.getDrmPlayableFrom() != null) {
-            builder.setDrmPlayableFrom(serializeDateTime(policy.getDrmPlayableFrom()));
+            builder.setDrmPlayableFrom(dateTimeSerializer.serialize(policy.getDrmPlayableFrom()));
         }
         if (policy.getNetwork() != null) {
             builder.setNetwork(policy.getNetwork().key());
@@ -108,19 +108,19 @@ public class LocationSerializer {
         Policy policy = new Policy();
         
         if (msg.hasActualAvailabilityStart()) {
-            policy.setActualAvailabilityStart(deserializeDateTime(msg.getActualAvailabilityStart()));
+            policy.setActualAvailabilityStart(dateTimeSerializer.deserialize(msg.getActualAvailabilityStart()));
         }
         if (msg.hasAvailabilityStart()) {
-            policy.setAvailabilityStart(deserializeDateTime(msg.getAvailabilityStart()));
+            policy.setAvailabilityStart(dateTimeSerializer.deserialize(msg.getAvailabilityStart()));
         }
         if (msg.hasAvailabilityEnd()) {
-            policy.setAvailabilityEnd(deserializeDateTime(msg.getAvailabilityEnd()));
+            policy.setAvailabilityEnd(dateTimeSerializer.deserialize(msg.getAvailabilityEnd()));
         }
         policy.setAvailabilityLength(msg.hasAvailabilityLength() ? msg.getAvailabilityLength() : null);
         policy.setAvailableCountries(Countries.fromCodes(msg.getAvailableCountriesList()));
 
         if (msg.hasDrmPlayableFrom()) {
-            policy.setDrmPlayableFrom(deserializeDateTime(msg.getDrmPlayableFrom()));
+            policy.setDrmPlayableFrom(dateTimeSerializer.deserialize(msg.getDrmPlayableFrom()));
         }
         if (msg.hasNetwork()) {
             policy.setNetwork(Policy.Network.fromKey(msg.getNetwork()));

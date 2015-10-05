@@ -1,9 +1,7 @@
 package org.atlasapi;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.Service.State;
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
@@ -22,7 +20,10 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.Service.State;
 
 public class ElasticSearchContentIndexModule implements IndexModule {
 

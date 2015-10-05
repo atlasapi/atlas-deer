@@ -1,21 +1,24 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.atlasapi.content.Image;
 import org.atlasapi.content.RelatedLink;
-
-import com.google.common.collect.Iterables;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Id;
+import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Identified;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 
-public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.content.Identified> implements
+public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.entity.Identified> implements
 		LegacyResourceTransformer<F, T> {
 
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -111,7 +114,18 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.co
 		));
 	}
 
-
-
-
+	protected void addIdentified(Identified source, org.atlasapi.entity.Identified target) {
+		target.setId(Id.valueOf(source.getId()));
+		target.setCanonicalUri(source.getCanonicalUri());
+		target.setCurie(source.getCurie());
+		target.setAliasUrls(source.getAliasUrls());
+		target.setAliases(source.getAliases().stream()
+				.map(alias -> new Alias(alias.getNamespace(), alias.getValue()))
+				.collect(Collectors.toList()));
+		target.setEquivalentTo(source.getEquivalentTo().stream()
+				.map(ref -> new EquivalenceRef(Id.valueOf(ref.id()), ref.publisher()))
+				.collect(Collectors.toSet()));
+		target.setLastUpdated(source.getLastUpdated());
+		target.setEquivalenceUpdate(source.getEquivalenceUpdate());
+	}
 }

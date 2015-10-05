@@ -60,7 +60,7 @@ message Content {
     repeated Synopsis synopses = 3 [(column)=DESC];
     optional string image = 40 [(column)=DESC];
     optional string thumb = 41 [(column)=DESC];
-    repeated Image images = 4 [(column)=DESC];
+    repeated common.Image images = 4 [(column)=DESC];
     optional string media_type = 5 [(column)=DESC];
     optional string specialization = 6 [(column)=DESC];
     optional string sort_key = 7 [(column)=DESC];
@@ -93,7 +93,7 @@ message Content {
 
     repeated Content clips = 24 [(column)=CLIPS];
     repeated KeyPhrase key_phrases = 25 [(column)=KEYPHRASES];
-    repeated RelatedLink related_link = 26 [(column)=LINKS];
+    repeated common.RelatedLink related_link = 26 [(column)=LINKS];
     repeated TopicRef topic_refs = 27  [(column)=TOPICS];
     repeated common.Reference content_groups = 29 [(column)=GROUPS];
     repeated CrewMember crew_members = 28  [(column)=PEOPLE];
@@ -263,36 +263,9 @@ message Version {
     optional bool is_three_d = 7;
 }
 
-message Image {
-    optional string uri = 1;
-    optional int32 height = 2;
-    optional int32 width = 3;
-    optional string type = 4;
-    optional string caption = 5;
-    optional string copyright = 6;
-    optional common.DateTime availability_start = 7;
-    optional common.DateTime availability_end = 8;
-    optional bool has_title_art = 9;
-    optional string aspect_ratio = 10;
-    optional string color = 11;
-    optional string theme = 12;
-    optional string mime_type = 13;
-}
-
 message KeyPhrase {
     optional string phrase = 1;
     optional double weighting = 2;
-}
-
-message RelatedLink {
-    optional string type = 1;
-    optional string url = 2;
-    optional string sourceId = 3;
-    optional string shortName = 4;
-    optional string title = 5;
-    optional string description = 6;
-    optional string image = 7;
-    optional string thumbnail = 8;
 }
 
 message CrewMember {
@@ -302,8 +275,6 @@ message CrewMember {
     optional string role = 4;
     optional string character = 5;
 }
-
-
 
 message Subtitle {
     optional string language = 1;

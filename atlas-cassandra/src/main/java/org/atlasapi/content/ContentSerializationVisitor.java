@@ -1,27 +1,23 @@
 package org.atlasapi.content;
 
-import java.io.IOException;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
 import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.ProtoBufUtils;
-import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.DateTimeSerializer;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
+import org.atlasapi.util.ImmutableCollectors;
 
 import com.google.common.collect.Iterables;
 import com.metabroadcast.common.intl.Countries;
-import org.atlasapi.util.ImmutableCollectors;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
     
@@ -40,8 +36,8 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final ContentResolver resolver;
-
 
     public ContentSerializationVisitor(ContentResolver resolver) {
         this.resolver = checkNotNull(resolver);
@@ -54,7 +50,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                 .setType(ided.getClass().getSimpleName().toLowerCase());
         }
         if (ided.getLastUpdated() != null) {
-            builder.setLastUpdated(ProtoBufUtils.serializeDateTime(ided.getLastUpdated()));
+            builder.setLastUpdated(dateTimeSerializer.serialize(ided.getLastUpdated()));
         }
         if (ided.getCanonicalUri() != null) {
             builder.setUri(ided.getCanonicalUri());
@@ -76,13 +72,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private Builder visitDescribed(Described content) {
         Builder builder = visitIdentified(content);
         if (content.getThisOrChildLastUpdated() != null) {
-            builder.setChildLastUpdated(ProtoBufUtils.serializeDateTime(content.getThisOrChildLastUpdated()));
+            builder.setChildLastUpdated(
+                    dateTimeSerializer.serialize(content.getThisOrChildLastUpdated())
+            );
         }
         if (content.getSource() != null) {
             builder.setSource(content.getSource().key());
         }
         if (content.getFirstSeen() != null) {
-            builder.setFirstSeen(ProtoBufUtils.serializeDateTime(content.getFirstSeen()));
+            builder.setFirstSeen(dateTimeSerializer.serialize(content.getFirstSeen()));
         }
         if (content.getMediaType() != null && !MediaType.VIDEO.equals(content.getMediaType())) {
             builder.setMediaType(content.getMediaType().toKey());

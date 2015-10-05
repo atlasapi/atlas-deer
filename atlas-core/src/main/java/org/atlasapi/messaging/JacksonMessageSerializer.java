@@ -108,7 +108,7 @@ public class JacksonMessageSerializer<M extends Message> implements MessageSeria
     }
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
-    private static interface ObjectConfiguration {
+    private interface ObjectConfiguration {
     }
     
     private static ObjectMapper mapper() {

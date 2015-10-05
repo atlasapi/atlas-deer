@@ -1,11 +1,9 @@
 package org.atlasapi.content;
 
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-
-import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ProtoBufUtils;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
@@ -16,6 +14,7 @@ import org.atlasapi.serialization.protobuf.ContentProtos.Synopsis;
 import org.atlasapi.source.Sources;
 import org.joda.time.Duration;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
@@ -38,6 +37,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
 
     private ContentProtos.Content msg;
 
@@ -53,7 +53,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             identified.setCanonicalUri(msg.getUri());
         }
         if (msg.hasLastUpdated()) {
-            identified.setLastUpdated(deserializeDateTime(msg.getLastUpdated()));
+            identified.setLastUpdated(dateTimeSerializer.deserialize(msg.getLastUpdated()));
         }
 
         Builder<Alias> aliases = ImmutableSet.builder();
@@ -76,10 +76,10 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         described = visitIdentified(described);
         described.setPublisher(Sources.fromPossibleKey(msg.getSource()).get());
         if (msg.hasFirstSeen()) {
-            described.setFirstSeen(ProtoBufUtils.deserializeDateTime(msg.getFirstSeen()));
+            described.setFirstSeen(dateTimeSerializer.deserialize(msg.getFirstSeen()));
         }
         if (msg.hasChildLastUpdated()) {
-            described.setThisOrChildLastUpdated(ProtoBufUtils.deserializeDateTime(msg.getChildLastUpdated()));
+            described.setThisOrChildLastUpdated(dateTimeSerializer.deserialize(msg.getChildLastUpdated()));
         }
         if (msg.hasMediaType()) {
             described.setMediaType(MediaType.fromKey(msg.getMediaType()).get());
@@ -110,7 +110,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         
         ImmutableSet.Builder<Image> images = ImmutableSet.builder();
-        for (ContentProtos.Image image : msg.getImagesList()) {
+        for (CommonProtos.Image image : msg.getImagesList()) {
             images.add(imageSerializer.deserialize(image));
         }
         described.setImages(images.build());

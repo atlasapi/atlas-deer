@@ -1,10 +1,10 @@
 package org.atlasapi.messaging;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.Set;
+import java.util.stream.Stream;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.Item;
@@ -12,10 +12,11 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.util.ImmutableCollectors;
 
-import java.util.Set;
-import java.util.stream.Stream;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 
 public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<EquivalentContentUpdatedMessage> {
 

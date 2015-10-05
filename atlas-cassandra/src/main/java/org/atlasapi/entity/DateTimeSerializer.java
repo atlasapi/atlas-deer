@@ -8,19 +8,16 @@ import org.joda.time.DateTimeZone;
 
 import com.metabroadcast.common.time.DateTimeZones;
 
-public final class ProtoBufUtils {
-    
-    private ProtoBufUtils() {};
+public class DateTimeSerializer {
 
-    public static CommonProtos.DateTime serializeDateTime(DateTime dateTime) {
+    public CommonProtos.DateTime serialize(DateTime dateTime) {
         dateTime = checkNotNull(dateTime).toDateTime(DateTimeZones.UTC);
         return CommonProtos.DateTime.newBuilder()
-            .setMillis(dateTime.getMillis())
-            .build();
+                .setMillis(dateTime.getMillis())
+                .build();
     }
 
-    public static DateTime deserializeDateTime(CommonProtos.DateTime dateTime) {
+    public DateTime deserialize(CommonProtos.DateTime dateTime) {
         return new DateTime(dateTime.getMillis(), DateTimeZone.UTC);
     }
-
 }

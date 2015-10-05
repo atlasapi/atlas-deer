@@ -14,8 +14,9 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.attribute;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
+import java.util.List;
+import java.util.Map;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.Region;
@@ -23,17 +24,17 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Described;
-import org.atlasapi.content.Identified;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.Topic;
 import org.joda.time.DateTime;
 
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 
 public class Attributes {
 

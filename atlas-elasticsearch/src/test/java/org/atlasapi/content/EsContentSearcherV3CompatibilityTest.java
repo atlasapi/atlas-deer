@@ -20,6 +20,8 @@ import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;
@@ -76,10 +78,10 @@ public class EsContentSearcherV3CompatibilityTest {
         int indexed = 0;
         for (Content c : contents) {
             if (c instanceof Container) {
-                indexer.index((Container)c);
+                indexer.index(c);
                 indexed++;
             } else if (c instanceof Item){
-                indexer.index((Item)c);
+                indexer.index(c);
                 indexed++;
             }
         }

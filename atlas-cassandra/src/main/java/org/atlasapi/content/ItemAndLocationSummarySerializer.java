@@ -1,17 +1,13 @@
 package org.atlasapi.content;
 
+import java.util.Map;
+
+import org.atlasapi.serialization.protobuf.CommonProtos;
+import org.atlasapi.serialization.protobuf.ContentProtos;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import org.atlasapi.entity.Id;
-import org.atlasapi.serialization.protobuf.CommonProtos;
-import org.atlasapi.serialization.protobuf.ContentProtos;
-import org.joda.time.Interval;
-
-import java.util.Map;
-
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
 
 public class ItemAndLocationSummarySerializer {
 

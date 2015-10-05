@@ -3,7 +3,7 @@ package org.atlasapi.segment;
 import java.util.Comparator;
 
 import org.atlasapi.content.Description;
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
