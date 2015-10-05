@@ -19,10 +19,17 @@ import com.metabroadcast.common.base.Maybe;
 
 public class DescribedSerializer<T extends Described> {
 
+    private final IdentifiedSerializer<T> identifiedSerializer = new IdentifiedSerializer<>();
+    private final SynopsesSerializer synopsesSerializer = new SynopsesSerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+    private final PrioritySerializer prioritySerializer = new PrioritySerializer();
+    private final ImageSerializer imageSerializer = new ImageSerializer();
+    private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
+
     public CommonProtos.Described serialize(T source) {
         CommonProtos.Described.Builder builder = CommonProtos.Described.newBuilder();
 
-        builder.setIdentified(new IdentifiedSerializer<T>().serialize(source));
+        builder.setIdentified(identifiedSerializer.serialize(source));
 
         if (source.getTitle() != null) {
             builder.setTitle(builder.getTitleBuilder().setValue(source.getTitle()));
@@ -40,7 +47,7 @@ public class DescribedSerializer<T extends Described> {
                     .setValue(source.getLongDescription()));
         }
         if (source.getSynopses() != null) {
-            builder.setSynopses(new SynopsesSerializer().serialize(source.getSynopses()));
+            builder.setSynopses(synopsesSerializer.serialize(source.getSynopses()));
         }
         if (source.getDescription() != null) {
             builder.setDescription(builder.getDescriptionBuilder().setValue(source.getDescription()));
@@ -62,19 +69,19 @@ public class DescribedSerializer<T extends Described> {
         }
         if (source.getImages() != null) {
             StreamSupport.stream(source.getImages().spliterator(), false)
-                    .forEach(image -> builder.addImages(new ImageSerializer().serialize(image)));
+                    .forEach(image -> builder.addImages(imageSerializer.serialize(image)));
         }
         if (source.getThumbnail() != null) {
             builder.setThumbnail(source.getThumbnail());
         }
         if (source.getFirstSeen() != null) {
-            builder.setFirstSeen(new DateTimeSerializer().serialize(source.getFirstSeen()));
+            builder.setFirstSeen(dateTimeSerializer.serialize(source.getFirstSeen()));
         }
         if (source.getLastFetched() != null) {
-            builder.setLastFetched(new DateTimeSerializer().serialize(source.getLastFetched()));
+            builder.setLastFetched(dateTimeSerializer.serialize(source.getLastFetched()));
         }
         if (source.getThisOrChildLastUpdated() != null) {
-            builder.setThisOrChildLastUpdated(new DateTimeSerializer()
+            builder.setThisOrChildLastUpdated(dateTimeSerializer
                     .serialize(source.getThisOrChildLastUpdated()));
         }
         builder.setScheduleOnly(source.isScheduleOnly());
@@ -83,11 +90,11 @@ public class DescribedSerializer<T extends Described> {
             builder.setPresentationChannel(source.getPresentationChannel());
         }
         if (source.getPriority() != null) {
-            builder.setPriority(new PrioritySerializer().serialize(source.getPriority()));
+            builder.setPriority(prioritySerializer.serialize(source.getPriority()));
         }
         if(source.getRelatedLinks() != null) {
             StreamSupport.stream(source.getRelatedLinks().spliterator(), false)
-                    .forEach(link -> builder.addRelatedLink(new RelatedLinkSerializer()
+                    .forEach(link -> builder.addRelatedLink(relatedLinkSerializer
                             .serialize(link)));
         }
 
@@ -95,7 +102,7 @@ public class DescribedSerializer<T extends Described> {
     }
 
     public T deserialize(CommonProtos.Described serialized, T target) {
-        new IdentifiedSerializer<T>().deserialize(serialized.getIdentified(), target);
+        identifiedSerializer.deserialize(serialized.getIdentified(), target);
 
         if(serialized.hasTitle() && serialized.getTitle().hasValue()) {
             target.setTitle(serialized.getTitle().getValue());
@@ -110,7 +117,7 @@ public class DescribedSerializer<T extends Described> {
             target.setLongDescription(serialized.getLongDescription().getValue());
         }
         if(serialized.hasSynopses()) {
-            target.setSynopses(new SynopsesSerializer().deserialize(serialized.getSynopses()
+            target.setSynopses(synopsesSerializer.deserialize(serialized.getSynopses()
             ));
         }
         if(serialized.hasDescription() && serialized.getDescription().hasValue()) {
@@ -136,20 +143,20 @@ public class DescribedSerializer<T extends Described> {
             target.setImage(serialized.getImage());
         }
         target.setImages(serialized.getImagesList().stream()
-                .map(image -> new ImageSerializer().deserialize(image))
+                .map(imageSerializer::deserialize)
                 .collect(Collectors.toList()));
         if(serialized.hasThumbnail()) {
             target.setThumbnail(serialized.getThumbnail());
         }
         if(serialized.hasFirstSeen() && serialized.getFirstSeen().hasMillis()) {
-            target.setFirstSeen(new DateTimeSerializer().deserialize(serialized.getFirstSeen()));
+            target.setFirstSeen(dateTimeSerializer.deserialize(serialized.getFirstSeen()));
         }
         if(serialized.hasLastFetched() && serialized.getLastFetched().hasMillis()) {
-            target.setLastFetched(new DateTimeSerializer().deserialize(serialized.getLastFetched()));
+            target.setLastFetched(dateTimeSerializer.deserialize(serialized.getLastFetched()));
         }
         if(serialized.hasThisOrChildLastUpdated() && serialized.getThisOrChildLastUpdated().hasMillis()) {
-            target.setThisOrChildLastUpdated(new DateTimeSerializer()
-                            .deserialize(serialized.getThisOrChildLastUpdated()));
+            target.setThisOrChildLastUpdated(dateTimeSerializer
+                    .deserialize(serialized.getThisOrChildLastUpdated()));
         }
         if(serialized.hasScheduleOnly()) {
             target.setScheduleOnly(serialized.getScheduleOnly());
@@ -161,11 +168,11 @@ public class DescribedSerializer<T extends Described> {
             target.setPresentationChannel(serialized.getPresentationChannel());
         }
         if(serialized.hasPriority()) {
-            target.setPriority(new PrioritySerializer().deserialize(serialized.getPriority()
+            target.setPriority(prioritySerializer.deserialize(serialized.getPriority()
             ));
         }
         target.setRelatedLinks(serialized.getRelatedLinkList().stream()
-                .map(link -> new RelatedLinkSerializer().deserialize(link))
+                .map(relatedLinkSerializer::deserialize)
                 .collect(Collectors.toList()));
 
         return target;

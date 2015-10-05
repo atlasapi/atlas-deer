@@ -36,8 +36,8 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final ContentResolver resolver;
-
 
     public ContentSerializationVisitor(ContentResolver resolver) {
         this.resolver = checkNotNull(resolver);
@@ -50,7 +50,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                 .setType(ided.getClass().getSimpleName().toLowerCase());
         }
         if (ided.getLastUpdated() != null) {
-            builder.setLastUpdated(new DateTimeSerializer().serialize(ided.getLastUpdated()));
+            builder.setLastUpdated(dateTimeSerializer.serialize(ided.getLastUpdated()));
         }
         if (ided.getCanonicalUri() != null) {
             builder.setUri(ided.getCanonicalUri());
@@ -72,13 +72,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private Builder visitDescribed(Described content) {
         Builder builder = visitIdentified(content);
         if (content.getThisOrChildLastUpdated() != null) {
-            builder.setChildLastUpdated(new DateTimeSerializer().serialize(content.getThisOrChildLastUpdated()));
+            builder.setChildLastUpdated(
+                    dateTimeSerializer.serialize(content.getThisOrChildLastUpdated())
+            );
         }
         if (content.getSource() != null) {
             builder.setSource(content.getSource().key());
         }
         if (content.getFirstSeen() != null) {
-            builder.setFirstSeen(new DateTimeSerializer().serialize(content.getFirstSeen()));
+            builder.setFirstSeen(dateTimeSerializer.serialize(content.getFirstSeen()));
         }
         if (content.getMediaType() != null && !MediaType.VIDEO.equals(content.getMediaType())) {
             builder.setMediaType(content.getMediaType().toKey());

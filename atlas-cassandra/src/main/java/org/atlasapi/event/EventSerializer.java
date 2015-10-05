@@ -17,27 +17,18 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 public class EventSerializer implements Serializer<Event, byte[]> {
 
-    private final IdentifiedSerializer<Event> eventIdentifiedSerializer;
-    private final TopicSerializer topicSerializer;
-    private final DateTimeSerializer dateTimeSerializer;
-    private final PersonSerializer personSerializer;
-    private final OrganisationSerializer organisationSerializer;
-    private final ContentRefSerializer contentRefSerializer;
-
-    public EventSerializer() {
-        eventIdentifiedSerializer = new IdentifiedSerializer<>();
-        topicSerializer = new TopicSerializer();
-        dateTimeSerializer = new DateTimeSerializer();
-        personSerializer = new PersonSerializer();
-        organisationSerializer = new OrganisationSerializer();
-        contentRefSerializer = new ContentRefSerializer(null);
-    }
+    private final IdentifiedSerializer<Event> identifiedSerializer = new IdentifiedSerializer<>();
+    private final TopicSerializer topicSerializer = new TopicSerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+    private final PersonSerializer personSerializer = new PersonSerializer();
+    private final OrganisationSerializer organisationSerializer = new OrganisationSerializer();
+    private final ContentRefSerializer contentRefSerializer = new ContentRefSerializer(null);
 
     @Override
     public byte[] serialize(Event event) {
         EventProtos.Event.Builder builder = EventProtos.Event.newBuilder();
 
-        builder.setIdentified(eventIdentifiedSerializer.serialize(event));
+        builder.setIdentified(identifiedSerializer.serialize(event));
 
         if(event.getTitle() != null) {
             builder.setTitle(builder.getTitleBuilder().setValue(event.getTitle()).build());
@@ -93,7 +84,7 @@ public class EventSerializer implements Serializer<Event, byte[]> {
 
         Event.Builder<?, ?> builder = Event.builder();
 
-        eventIdentifiedSerializer.deserialize(msg.getIdentified(), builder);
+        identifiedSerializer.deserialize(msg.getIdentified(), builder);
 
         if (msg.hasTitle()) {
             builder.withTitle(msg.getTitle().getValue());
@@ -117,7 +108,7 @@ public class EventSerializer implements Serializer<Event, byte[]> {
                 .map(organisationSerializer::deserialize)
                 .collect(Collectors.toList()));
         builder.withEventGroups(msg.getEventGroupList().stream()
-                .map(group -> topicSerializer.deserialize(group))
+                .map(topicSerializer::deserialize)
                 .collect(Collectors.toList()));
         builder.withContent(msg.getContentList().stream()
                 .map(content -> (ItemRef) contentRefSerializer.deserialize(content))

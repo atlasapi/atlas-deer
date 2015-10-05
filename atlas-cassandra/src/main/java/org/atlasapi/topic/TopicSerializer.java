@@ -14,11 +14,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 public class TopicSerializer implements Serializer<Topic, byte[]> {
 
-    private final DescribedSerializer<Topic> describedSerializer;
-
-    public TopicSerializer() {
-        describedSerializer = new DescribedSerializer<>();
-    }
+    private final DescribedSerializer<Topic> describedSerializer = new DescribedSerializer<>();
 
     @Override
     public byte[] serialize(Topic topic) {

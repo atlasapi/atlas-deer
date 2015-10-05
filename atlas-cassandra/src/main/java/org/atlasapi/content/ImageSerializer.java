@@ -13,6 +13,8 @@ import com.metabroadcast.common.media.MimeType;
 
 public class ImageSerializer {
 
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
     public CommonProtos.Image serialize(Image image) {
         
         Builder builder = CommonProtos.Image.newBuilder();
@@ -21,10 +23,10 @@ public class ImageSerializer {
             builder.setAspectRatio(image.getAspectRatio().toString());
         }
         if (image.getAvailabilityStart() != null) {
-            builder.setAvailabilityStart(new DateTimeSerializer().serialize(image.getAvailabilityStart()));
+            builder.setAvailabilityStart(dateTimeSerializer.serialize(image.getAvailabilityStart()));
         }
         if (image.getAvailabilityEnd() != null) {
-            builder.setAvailabilityEnd(new DateTimeSerializer().serialize(image.getAvailabilityEnd()));
+            builder.setAvailabilityEnd(dateTimeSerializer.serialize(image.getAvailabilityEnd()));
         }
         if (image.getCanonicalUri() != null) {
             builder.setUri(image.getCanonicalUri());
@@ -59,10 +61,10 @@ public class ImageSerializer {
             builder.withAspectRatio(AspectRatio.valueOf(msg.getAspectRatio()));
         }
         if (msg.hasAvailabilityStart()) {
-            builder.withAvailabilityStart(new DateTimeSerializer().deserialize(msg.getAvailabilityStart()));
+            builder.withAvailabilityStart(dateTimeSerializer.deserialize(msg.getAvailabilityStart()));
         }
         if (msg.hasAvailabilityStart()) {
-            builder.withAvailabilityEnd(new DateTimeSerializer().deserialize(msg.getAvailabilityEnd()));
+            builder.withAvailabilityEnd(dateTimeSerializer.deserialize(msg.getAvailabilityEnd()));
         }
         if (msg.hasColor()) {
             builder.withColor(Color.valueOf(msg.getColor()));

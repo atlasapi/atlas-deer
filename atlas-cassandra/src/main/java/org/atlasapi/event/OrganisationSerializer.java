@@ -8,13 +8,9 @@ import org.atlasapi.serialization.protobuf.CommonProtos;
 
 public class OrganisationSerializer {
 
-    private final ContentGroupSerializer<Organisation> organisationContentGroupSerializer;
-    private final PersonSerializer personSerializer;
-
-    public OrganisationSerializer() {
-        organisationContentGroupSerializer = new ContentGroupSerializer<>();
-        personSerializer = new PersonSerializer();
-    }
+    private final ContentGroupSerializer<Organisation> organisationContentGroupSerializer =
+            new ContentGroupSerializer<>();
+    private final PersonSerializer personSerializer = new PersonSerializer();
 
     public CommonProtos.Organisation serialize(Organisation organisation) {
         CommonProtos.Organisation.Builder builder = CommonProtos.Organisation.newBuilder();

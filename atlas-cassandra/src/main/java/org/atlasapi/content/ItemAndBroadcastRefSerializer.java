@@ -14,6 +14,7 @@ import com.google.common.collect.Maps;
 
 public class ItemAndBroadcastRefSerializer {
 
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
 
     public ContentProtos.ItemAndBroadcastRef.Builder serialize(ItemRef itemRef, Iterable<BroadcastRef> broadcastRefs) {
 
@@ -29,9 +30,9 @@ public class ItemAndBroadcastRefSerializer {
             CommonProtos.BroadcastRef.Builder broadcastRefBuilder = CommonProtos.BroadcastRef.newBuilder();
             broadcastRefBuilder.setSourceId(broadcastRef.getSourceId());
             broadcastRefBuilder.setChannelId(id);
-            broadcastRefBuilder.setTransmissionTime(new DateTimeSerializer().serialize(broadcastRef.getTransmissionInterval()
+            broadcastRefBuilder.setTransmissionTime(dateTimeSerializer.serialize(broadcastRef.getTransmissionInterval()
                     .getStart()));
-            broadcastRefBuilder.setTransmissionEndTime(new DateTimeSerializer().serialize(
+            broadcastRefBuilder.setTransmissionEndTime(dateTimeSerializer.serialize(
                     broadcastRef
                             .getTransmissionInterval()
                             .getEnd()));
@@ -60,8 +61,8 @@ public class ItemAndBroadcastRefSerializer {
                                 broadcastProto.getSourceId(),
                                 Id.valueOf(broadcastProto.getChannelId().getId()),
                                 new Interval(
-                                        new DateTimeSerializer().deserialize(broadcastProto.getTransmissionTime()),
-                                        new DateTimeSerializer().deserialize(broadcastProto.getTransmissionEndTime())
+                                        dateTimeSerializer.deserialize(broadcastProto.getTransmissionTime()),
+                                        dateTimeSerializer.deserialize(broadcastProto.getTransmissionEndTime())
                                 )
                         )
                 );

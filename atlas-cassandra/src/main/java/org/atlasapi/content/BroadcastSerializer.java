@@ -13,15 +13,16 @@ public class BroadcastSerializer {
 
     private final IdentifiedSerializer<Broadcast> identifiedSerializer = new IdentifiedSerializer<>();
     private final BlackoutRestrictionSerializer blackoutRestrictionSerializer = new BlackoutRestrictionSerializer();
-    
+    private final DateTimeSerializer serializer = new DateTimeSerializer();
+
     public ContentProtos.Broadcast.Builder serialize(Broadcast broadcast) {
         Builder builder = ContentProtos.Broadcast.newBuilder();
         builder.setIdentification(identifiedSerializer.serialize(broadcast));
         builder.setChannel(CommonProtos.Reference.newBuilder().setId(broadcast.getChannelId().longValue()));
-        builder.setTransmissionTime(new DateTimeSerializer().serialize(broadcast.getTransmissionTime()));
-        builder.setTransmissionEndTime(new DateTimeSerializer().serialize(broadcast.getTransmissionEndTime()));
+        builder.setTransmissionTime(serializer.serialize(broadcast.getTransmissionTime()));
+        builder.setTransmissionEndTime(serializer.serialize(broadcast.getTransmissionEndTime()));
         if (broadcast.getScheduleDate() != null) {
-            builder.setScheduleDate(new DateTimeSerializer().serialize(broadcast.getScheduleDate()
+            builder.setScheduleDate(serializer.serialize(broadcast.getScheduleDate()
                     .toDateTimeAtStartOfDay(DateTimeZones.UTC)));
         }
         if (broadcast.getSourceId() != null) {
@@ -74,11 +75,11 @@ public class BroadcastSerializer {
 
     public Broadcast deserialize(ContentProtos.Broadcast msg) {
         Broadcast broadcast = new Broadcast(Id.valueOf(msg.getChannel().getId()),
-                new DateTimeSerializer().deserialize(msg.getTransmissionTime()),
-                new DateTimeSerializer().deserialize(msg.getTransmissionEndTime()));
+                serializer.deserialize(msg.getTransmissionTime()),
+                serializer.deserialize(msg.getTransmissionEndTime()));
         identifiedSerializer.deserialize(msg.getIdentification(), broadcast);
         if (msg.hasScheduleDate()) {
-            broadcast.setScheduleDate(new DateTimeSerializer().deserialize(msg.getScheduleDate())
+            broadcast.setScheduleDate(serializer.deserialize(msg.getScheduleDate())
                     .toLocalDate());
         }
         broadcast.withId(msg.hasSourceId() ? msg.getSourceId() : null);

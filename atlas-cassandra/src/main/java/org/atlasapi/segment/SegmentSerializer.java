@@ -20,25 +20,18 @@ import com.google.protobuf.InvalidProtocolBufferException;
 public class SegmentSerializer implements Serializer<Segment, byte[]> {
 
     public static final Function<Alias, CommonProtos.Alias> ALIAS_TO_PROTO =
-            new Function<Alias, CommonProtos.Alias>() {
-
-        @Override
-        public CommonProtos.Alias apply(Alias alias) {
-            return CommonProtos.Alias.newBuilder().setValue(alias.getValue()).setNamespace(alias.getNamespace()).build();
-        }
-    };
+            alias -> CommonProtos.Alias.newBuilder()
+                    .setValue(alias.getValue())
+                    .setNamespace(alias.getNamespace())
+                    .build();
 
     public static final Function<CommonProtos.Alias, Alias> PROTO_TO_ALIAS =
-            new Function<CommonProtos.Alias, Alias>() {
-
-                @Override
-                public Alias apply(CommonProtos.Alias alias) {
-                    return new Alias(alias.getNamespace(), alias.getValue());
-                }
-            };
+            alias -> new Alias(alias.getNamespace(), alias.getValue());
 
 
     private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
     @Override
     public byte[] serialize(Segment src) {
         Builder builder = SegmentProtos.Segment.newBuilder();
@@ -69,16 +62,16 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
             builder.setLongDescription(src.getLongDescription());
         }
         if (src.getFirstSeen() != null) {
-            builder.setFirstSeen(new DateTimeSerializer().serialize(src.getFirstSeen()));
+            builder.setFirstSeen(dateTimeSerializer.serialize(src.getFirstSeen()));
         }
         if (src.getLastFetched() != null) {
-            builder.setLastFetched(new DateTimeSerializer().serialize(src.getLastFetched()));
+            builder.setLastFetched(dateTimeSerializer.serialize(src.getLastFetched()));
         }
         if (src.getThisOrChildLastUpdated() != null) {
-            builder.setThisOrChildLastUpdated(new DateTimeSerializer().serialize(src.getThisOrChildLastUpdated()));
+            builder.setThisOrChildLastUpdated(dateTimeSerializer.serialize(src.getThisOrChildLastUpdated()));
         }
         if (src.getLastUpdated() != null) {
-            builder.setLastUpdated(new DateTimeSerializer().serialize(src.getLastUpdated()));
+            builder.setLastUpdated(dateTimeSerializer.serialize(src.getLastUpdated()));
         }
         return builder.build().toByteArray();
     }
@@ -98,19 +91,19 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
                 segment.setType(SegmentType.fromString(proto.getType()).requireValue());
             }
             if (proto.hasLastFetched()) {
-                segment.setLastFetched(new DateTimeSerializer().deserialize(proto.getLastFetched()));
+                segment.setLastFetched(dateTimeSerializer.deserialize(proto.getLastFetched()));
             }
             if (proto.hasLastUpdated()) {
-                segment.setLastUpdated(new DateTimeSerializer().deserialize(proto.getLastUpdated()));
+                segment.setLastUpdated(dateTimeSerializer.deserialize(proto.getLastUpdated()));
             }
             if (proto.hasFirstSeen()) {
-                segment.setFirstSeen(new DateTimeSerializer().deserialize(proto.getFirstSeen()));
+                segment.setFirstSeen(dateTimeSerializer.deserialize(proto.getFirstSeen()));
             }
             if (proto.hasDuration()) {
                 segment.setDuration(Duration.standardSeconds(proto.getDuration()));
             }
             if (proto.hasThisOrChildLastUpdated()) {
-                segment.setThisOrChildLastUpdated(new DateTimeSerializer().deserialize(proto.getThisOrChildLastUpdated()));
+                segment.setThisOrChildLastUpdated(dateTimeSerializer.deserialize(proto.getThisOrChildLastUpdated()));
             }
             if (proto.getLinksList() != null && !proto.getLinksList().isEmpty()) {
                 segment.setRelatedLinks(Iterables.transform(proto.getLinksList(), relatedLinkSerializer.FROM_PROTO));

@@ -19,6 +19,8 @@ import com.metabroadcast.common.intl.Countries;
 public class LocationSerializer {
 
     private final PricingSerializer pricingSerializer = new PricingSerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
     public ContentProtos.Location.Builder serialize(Location location) {
         Builder builder = ContentProtos.Location.newBuilder();
         if (location.getEmbedCode() != null) { builder.setEmbedCode(location.getEmbedCode()); }
@@ -43,19 +45,19 @@ public class LocationSerializer {
         }
         
         if (policy.getActualAvailabilityStart() != null) {
-            builder.setActualAvailabilityStart(new DateTimeSerializer().serialize(policy.getActualAvailabilityStart()));
+            builder.setActualAvailabilityStart(dateTimeSerializer.serialize(policy.getActualAvailabilityStart()));
         }
         if (policy.getAvailabilityStart() != null) {
-            builder.setAvailabilityStart(new DateTimeSerializer().serialize(policy.getAvailabilityStart()));
+            builder.setAvailabilityStart(dateTimeSerializer.serialize(policy.getAvailabilityStart()));
         }
         if (policy.getAvailabilityEnd() != null) {
-            builder.setAvailabilityEnd(new DateTimeSerializer().serialize(policy.getAvailabilityEnd()));
+            builder.setAvailabilityEnd(dateTimeSerializer.serialize(policy.getAvailabilityEnd()));
         }
         if (policy.getAvailabilityLength() != null) { builder.setAvailabilityLength(policy.getAvailabilityLength()); }
         builder.addAllAvailableCountries(Countries.toCodes(policy.getAvailableCountries()));
 
         if (policy.getDrmPlayableFrom() != null) {
-            builder.setDrmPlayableFrom(new DateTimeSerializer().serialize(policy.getDrmPlayableFrom()));
+            builder.setDrmPlayableFrom(dateTimeSerializer.serialize(policy.getDrmPlayableFrom()));
         }
         if (policy.getNetwork() != null) {
             builder.setNetwork(policy.getNetwork().key());
@@ -106,19 +108,19 @@ public class LocationSerializer {
         Policy policy = new Policy();
         
         if (msg.hasActualAvailabilityStart()) {
-            policy.setActualAvailabilityStart(new DateTimeSerializer().deserialize(msg.getActualAvailabilityStart()));
+            policy.setActualAvailabilityStart(dateTimeSerializer.deserialize(msg.getActualAvailabilityStart()));
         }
         if (msg.hasAvailabilityStart()) {
-            policy.setAvailabilityStart(new DateTimeSerializer().deserialize(msg.getAvailabilityStart()));
+            policy.setAvailabilityStart(dateTimeSerializer.deserialize(msg.getAvailabilityStart()));
         }
         if (msg.hasAvailabilityEnd()) {
-            policy.setAvailabilityEnd(new DateTimeSerializer().deserialize(msg.getAvailabilityEnd()));
+            policy.setAvailabilityEnd(dateTimeSerializer.deserialize(msg.getAvailabilityEnd()));
         }
         policy.setAvailabilityLength(msg.hasAvailabilityLength() ? msg.getAvailabilityLength() : null);
         policy.setAvailableCountries(Countries.fromCodes(msg.getAvailableCountriesList()));
 
         if (msg.hasDrmPlayableFrom()) {
-            policy.setDrmPlayableFrom(new DateTimeSerializer().deserialize(msg.getDrmPlayableFrom()));
+            policy.setDrmPlayableFrom(dateTimeSerializer.deserialize(msg.getDrmPlayableFrom()));
         }
         if (msg.hasNetwork()) {
             policy.setNetwork(Policy.Network.fromKey(msg.getNetwork()));

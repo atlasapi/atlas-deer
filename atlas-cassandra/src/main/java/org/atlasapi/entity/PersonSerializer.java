@@ -5,11 +5,14 @@ import org.atlasapi.serialization.protobuf.CommonProtos;
 
 public class PersonSerializer implements Serializer<Person, CommonProtos.Person> {
 
+    private final ContentGroupSerializer<Person> contentGroupSerializer = new ContentGroupSerializer<>();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
     @Override
     public CommonProtos.Person serialize(Person person) {
         CommonProtos.Person.Builder builder = CommonProtos.Person.newBuilder();
 
-        builder.setContentGroup(new ContentGroupSerializer<Person>().serialize(person));
+        builder.setContentGroup(contentGroupSerializer.serialize(person));
 
         if (person.getGivenName() != null) {
             builder.setGivenName(person.getGivenName());
@@ -21,7 +24,7 @@ public class PersonSerializer implements Serializer<Person, CommonProtos.Person>
             builder.setGender(person.getGender());
         }
         if (person.getBirthDate() != null) {
-            builder.setBirthDate(new DateTimeSerializer().serialize(person.getBirthDate()));
+            builder.setBirthDate(dateTimeSerializer.serialize(person.getBirthDate()));
         }
         if (person.getBirthPlace() != null) {
             builder.setBirthPlace(person.getBirthPlace());
@@ -37,7 +40,7 @@ public class PersonSerializer implements Serializer<Person, CommonProtos.Person>
     public Person deserialize(CommonProtos.Person msg) {
         Person person = new Person();
 
-        new ContentGroupSerializer<Person>().deserialize(msg.getContentGroup(), person);
+        contentGroupSerializer.deserialize(msg.getContentGroup(), person);
 
         if (msg.hasGivenName()) {
             person.setGivenName(msg.getGivenName());
@@ -49,7 +52,7 @@ public class PersonSerializer implements Serializer<Person, CommonProtos.Person>
             person.setGender(msg.getGender());
         }
         if (msg.hasBirthDate()) {
-            person.setBirthDate(new DateTimeSerializer().deserialize(msg.getBirthDate()));
+            person.setBirthDate(dateTimeSerializer.deserialize(msg.getBirthDate()));
         }
         if(msg.hasBirthPlace()) {
             person.setBirthPlace(msg.getBirthPlace());

@@ -37,6 +37,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final ItemAndBroadcastRefSerializer itemAndBroadcastRefSerializer = new ItemAndBroadcastRefSerializer();
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
 
     private ContentProtos.Content msg;
 
@@ -52,7 +53,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             identified.setCanonicalUri(msg.getUri());
         }
         if (msg.hasLastUpdated()) {
-            identified.setLastUpdated(new DateTimeSerializer().deserialize(msg.getLastUpdated()));
+            identified.setLastUpdated(dateTimeSerializer.deserialize(msg.getLastUpdated()));
         }
 
         Builder<Alias> aliases = ImmutableSet.builder();
@@ -75,10 +76,10 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         described = visitIdentified(described);
         described.setPublisher(Sources.fromPossibleKey(msg.getSource()).get());
         if (msg.hasFirstSeen()) {
-            described.setFirstSeen(new DateTimeSerializer().deserialize(msg.getFirstSeen()));
+            described.setFirstSeen(dateTimeSerializer.deserialize(msg.getFirstSeen()));
         }
         if (msg.hasChildLastUpdated()) {
-            described.setThisOrChildLastUpdated(new DateTimeSerializer().deserialize(msg.getChildLastUpdated()));
+            described.setThisOrChildLastUpdated(dateTimeSerializer.deserialize(msg.getChildLastUpdated()));
         }
         if (msg.hasMediaType()) {
             described.setMediaType(MediaType.fromKey(msg.getMediaType()).get());

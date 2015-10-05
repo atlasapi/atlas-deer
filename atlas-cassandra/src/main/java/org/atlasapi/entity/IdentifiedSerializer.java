@@ -12,6 +12,8 @@ import com.google.common.collect.ImmutableSet.Builder;
 
 public class IdentifiedSerializer<T extends Identified> {
 
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
     public CommonProtos.Identification serialize(T identified) {
         CommonProtos.Identification.Builder id = CommonProtos.Identification.newBuilder()
             .setType(identified.getClass().getSimpleName().toLowerCase());
@@ -19,7 +21,7 @@ public class IdentifiedSerializer<T extends Identified> {
             id.setId(identified.getId().longValue());
         }
         if (identified.getLastUpdated() != null) {
-            id.setLastUpdated(new DateTimeSerializer().serialize(identified.getLastUpdated()));
+            id.setLastUpdated(dateTimeSerializer.serialize(identified.getLastUpdated()));
         }
         if (identified.getCanonicalUri() != null) {
             id.setUri(identified.getCanonicalUri());
@@ -56,7 +58,7 @@ public class IdentifiedSerializer<T extends Identified> {
             identified.setCurie(msg.getCurie());
         }
         if (msg.hasLastUpdated()) {
-            DateTime lastUpdated = new DateTimeSerializer().deserialize(msg.getLastUpdated());
+            DateTime lastUpdated = dateTimeSerializer.deserialize(msg.getLastUpdated());
             identified.setLastUpdated(lastUpdated);
         }
 
@@ -74,7 +76,7 @@ public class IdentifiedSerializer<T extends Identified> {
         }
         identified.setEquivalentTo(equivRefs.build());
         if (msg.hasEquivalenceUpdate()) {
-            identified.setEquivalenceUpdate(new DateTimeSerializer().deserialize(msg.getEquivalenceUpdate()));
+            identified.setEquivalenceUpdate(dateTimeSerializer.deserialize(msg.getEquivalenceUpdate()));
         }
         return identified;
     }
@@ -90,7 +92,7 @@ public class IdentifiedSerializer<T extends Identified> {
             builder.withCurie(msg.getCurie());
         }
         if (msg.hasLastUpdated()) {
-            DateTime lastUpdated = new DateTimeSerializer().deserialize(msg.getLastUpdated());
+            DateTime lastUpdated = dateTimeSerializer.deserialize(msg.getLastUpdated());
             builder.withLastUpdated(lastUpdated);
         }
 
@@ -108,7 +110,7 @@ public class IdentifiedSerializer<T extends Identified> {
         }
         builder.withEquivalentTo(equivRefs.build());
         if (msg.hasEquivalenceUpdate()) {
-            builder.withEquivalenceUpdate(new DateTimeSerializer().deserialize(msg.getEquivalenceUpdate()));
+            builder.withEquivalenceUpdate(dateTimeSerializer.deserialize(msg.getEquivalenceUpdate()));
         }
         return builder;
     }

@@ -8,9 +8,11 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 public class ReleaseDateSerializer {
 
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
     public ContentProtos.ReleaseDate serialize(ReleaseDate releaseDate) {
         ContentProtos.ReleaseDate.Builder date = ContentProtos.ReleaseDate.newBuilder();
-        date.setDate(new DateTimeSerializer().serialize(releaseDate.date()
+        date.setDate(dateTimeSerializer.serialize(releaseDate.date()
                 .toDateTimeAtStartOfDay(DateTimeZones.UTC)));
         date.setCountry(releaseDate.country().code());
         date.setType(releaseDate.type().toString());
@@ -19,7 +21,7 @@ public class ReleaseDateSerializer {
 
     public ReleaseDate deserialize(ContentProtos.ReleaseDate date) {
         return new ReleaseDate(
-            new DateTimeSerializer().deserialize(date.getDate()).toLocalDate(),
+            dateTimeSerializer.deserialize(date.getDate()).toLocalDate(),
             Countries.fromCode(date.getCountry()),
             ReleaseDate.ReleaseType.valueOf(date.getType()));
     }

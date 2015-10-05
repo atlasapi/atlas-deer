@@ -7,18 +7,16 @@ import org.atlasapi.serialization.protobuf.CommonProtos;
 
 public class ContentGroupSerializer<T extends ContentGroup> {
 
-    private final DescribedSerializer<ContentGroup> contentGroupDescribedSerializer;
-    private final ContentRefSerializer contentRefSerializer;
+    private final DescribedSerializer<ContentGroup> describedSerializer = new DescribedSerializer<>();
+    private final ContentRefSerializer contentRefSerializer = new ContentRefSerializer(null);
 
     public ContentGroupSerializer() {
-        contentGroupDescribedSerializer = new DescribedSerializer<>();
-        contentRefSerializer = new ContentRefSerializer(null);
     }
 
     public CommonProtos.ContentGroup serialize(T contentGroup) {
         CommonProtos.ContentGroup.Builder builder = CommonProtos.ContentGroup.newBuilder();
 
-        builder.setDescribed(contentGroupDescribedSerializer.serialize(contentGroup));
+        builder.setDescribed(describedSerializer.serialize(contentGroup));
 
         if (contentGroup.getType() != null) {
             builder.setType(contentGroup.getType().toString());
@@ -33,7 +31,7 @@ public class ContentGroupSerializer<T extends ContentGroup> {
     }
 
     public T deserialize(CommonProtos.ContentGroup msg, T target) {
-        contentGroupDescribedSerializer.deserialize(msg.getDescribed(), target);
+        describedSerializer.deserialize(msg.getDescribed(), target);
 
         if(msg.hasType()) {
             target.setType(ContentGroup.Type.valueOf(msg.getType()));
