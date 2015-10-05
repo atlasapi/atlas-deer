@@ -3,6 +3,7 @@ package org.atlasapi.schedule;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -21,6 +22,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.QueryExecutionException;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Sets;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -51,8 +56,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.QueryExecutionException;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Update.Assignments;
 import com.google.common.base.Function;
@@ -67,9 +70,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.metabroadcast.common.time.Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
 
+    private static final Logger log = LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
     private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
 
     @Override
@@ -156,6 +162,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ScheduleBroadcastFilter broadcastFilter = ScheduleBroadcastFilter.valueOf(interval);
             ImmutableSetMultimap.Builder<Id, EquivalentScheduleEntry> channelEntries = ImmutableSetMultimap.builder();
             for (Row row : Iterables.concat(input)) {
+                if(row.isNull(BROADCAST.name())) {
+                    log.warn(
+                            "null broadcast for day: {}, channel: {}, source {}, broadcast {}",
+                            DAY.valueFrom(row),
+                            CHANNEL.valueFrom(row),
+                            SOURCE.valueFrom(row),
+                            BROADCAST_ID.valueFrom(row)
+
+                    );
+                    continue;
+                }
                 deserializeRow(channelEntries, row, broadcastFilter);
             }
             return channelEntries.build();
@@ -301,18 +318,77 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     protected synchronized void writeSchedule(ScheduleUpdate update, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
             throws WriteException {
         DateTime now = clock.now();
+
+        ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule().getScheduleEntries()
+                .stream()
+                .map(scheduleRef -> scheduleRef.getBroadcast())
+                .collect(ImmutableCollectors.toSet());
+
+        Set<String> updateBroadcastIds = updateBroadcastRefs
+                .stream()
+                .map(BroadcastRef::getSourceId)
+                .collect(ImmutableCollectors.toSet());
+
+        Set<BroadcastRef> currentBroadcastRefs = resolveBroadcasts(
+                update.getSource(),
+                update.getSchedule().getChannel(),
+                update.getSchedule().getInterval()
+        );
+
+        Set<BroadcastRef> staleBroadcasts = currentBroadcastRefs.stream()
+                .filter(broadcastRef -> !updateBroadcastIds.contains(broadcastRef.getSourceId()))
+                .collect(ImmutableCollectors.toSet());
+
+        List<RegularStatement> deletes = deleteStatements(
+                update.getSource(),
+                Sets.union(staleBroadcasts, update.getStaleBroadcasts())
+        );
+        log.info(
+                "Processing equivalent schedule update for {} {} {}: currentEntries:{}, update:{}, stale broadcasts from update: {}, stale broadcasts from store: {}",
+                update.getSource(),
+                update.getSchedule().getChannel().longValue(),
+                update.getSchedule().getInterval(),
+                updateLog(currentBroadcastRefs),
+                updateLog(updateBroadcastRefs),
+                updateLog(update.getStaleBroadcasts()),
+                updateLog(staleBroadcasts)
+        );
         List<RegularStatement> updates = updateStatements(update.getSource(), update.getSchedule(), content, now);
-        List<RegularStatement> deletes = deleteStatements(update.getSource(), update.getStaleBroadcasts());
         if (updates.isEmpty() && deletes.isEmpty()) {
             return;
         }
-        
+
         Statement updateBatch = batch(Iterables.toArray(Iterables.concat(updates, deletes), RegularStatement.class));
         try {
             session.execute(updateBatch.setConsistencyLevel(write));
+            log.info(
+                    "Processed equivalent schedule update for {} {} {}, updates: {}, deletes: {}",
+                    update.getSource(),
+                    update.getSchedule().getChannel().longValue(),
+                    update.getSchedule().getInterval(),
+                    updates.size(),
+                    deletes.size()
+
+            );
         } catch(NoHostAvailableException | QueryExecutionException e) {
             throw new WriteException(e);
         }
+    }
+
+    private String updateLog(Set<BroadcastRef> staleBroadcasts) {
+        StringBuilder update = new StringBuilder();
+        for (BroadcastRef broadcastRef : staleBroadcasts) {
+            update.append(
+                    String.format(
+                            " %s -> (%s -> %s)",
+                            broadcastRef.getSourceId(),
+                            broadcastRef.getTransmissionInterval().getStart(),
+                            broadcastRef.getTransmissionInterval().getEnd()
+                    )
+            );
+        }
+
+        return update.toString();
     }
 
     private List<RegularStatement> updateStatements(Publisher source, ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)
@@ -372,7 +448,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return ByteBuffer.wrap(broadcastSerializer.serialize(broadcast).build().toByteArray());
     }
 
-    private List<RegularStatement> deleteStatements(Publisher src, ImmutableSet<BroadcastRef> staleBroadcasts) {
+    private List<RegularStatement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts) {
         ImmutableList.Builder<RegularStatement> stmts = ImmutableList.builder();
         for (BroadcastRef ref : staleBroadcasts) {
             for (Date day : daysIn(ref.getTransmissionInterval())) {
@@ -391,8 +467,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    protected synchronized void updateEquivalentContent(Publisher publisher, Broadcast bcast,
-            EquivalenceGraph graph, ImmutableSet<Item> content) throws WriteException {
+    protected synchronized void updateEquivalentContent(
+            Publisher publisher,
+            Broadcast bcast,
+            EquivalenceGraph graph,
+            ImmutableSet<Item> content
+    ) throws WriteException {
         DateTime now = clock.now();
 
         Date bcastStart = bcast.getTransmissionTime().toDate();
@@ -402,13 +482,13 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         
         ImmutableList.Builder<RegularStatement> stmts = ImmutableList.builder();
         for (Date day : daysIn(bcast.getTransmissionInterval())) {
-            stmts.add(updateStatement(publisher, bcast.getChannelId(), day, 
+            stmts.add(updateStatement(publisher, bcast.getChannelId(), day,
                     bcast.getSourceId(), bcastStart, bcastBytes, graphBytes, content.size(), contentBytes)
                     .and(set(EQUIV_UPDATE.name(), now.toDate())));
         }
-        
-        session.execute(batch(Iterables.toArray(stmts.build(), RegularStatement.class))
-                .setConsistencyLevel(write));
+        for (RegularStatement statement : stmts.build()) {
+            session.execute(statement.setConsistencyLevel(write));
+        }
     }
 
     private Assignments updateStatement(Publisher publisher, Id channelId, Date day, String bcastId,
@@ -423,6 +503,57 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .and(set(GRAPH.name(), graphBytes))
                 .and(set(CONTENT_COUNT.name(), contentCount))
                 .and(set(CONTENT.name(), contentBytes));
+    }
+
+    private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId, Interval interval) throws WriteException {
+        ImmutableList.Builder<ListenableFuture<ResultSet>> broadcastFutures = ImmutableList.builder();
+        for (Date day : daysIn(interval)) {
+            broadcastFutures.add(session.executeAsync(
+                            select(BROADCAST_ID.name(), BROADCAST.name())
+                                    .from(EQUIVALENT_SCHEDULE_TABLE)
+                                    .where(eq(SOURCE.name(), publisher.key()))
+                                    .and(eq(CHANNEL.name(), channelId.longValue()))
+                                    .and(eq(DAY.name(), day))
+                    )
+            );
+        }
+        ImmutableList<Row> rows = Futures.get(
+                Futures.allAsList(
+                        broadcastFutures.build()
+                ),
+                WriteException.class
+        ).stream()
+                .flatMap(rs -> StreamSupport.stream(rs.spliterator(), false))
+                .collect(ImmutableCollectors.toList());
+
+        ImmutableSet.Builder<BroadcastRef> broadcasts = ImmutableSet.builder();
+        for (Row row : rows) {
+            if(row.isNull(BROADCAST.name())) {
+                log.warn(
+                        "null broadcast for day: {}, channel: {}, source {}, broadcast {}",
+                        DAY.valueFrom(row),
+                        CHANNEL.valueFrom(row),
+                        SOURCE.valueFrom(row),
+                        BROADCAST_ID.valueFrom(row)
+
+                );
+                continue;
+            }
+            try {
+                Broadcast broadcast  = broadcastSerializer.deserialize(
+                        ContentProtos.Broadcast.parseFrom(
+                                ByteString.copyFrom(BROADCAST.valueFrom(row)
+                                )
+                        )
+                );
+                if (broadcast.getTransmissionInterval().overlaps(interval)) {
+                    broadcasts.add(broadcast.toRef());
+                }
+            } catch (InvalidProtocolBufferException e) {
+                Throwables.propagate(e);
+            }
+        }
+        return broadcasts.build();
     }
 
 

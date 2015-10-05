@@ -72,7 +72,8 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
                 new EquivalentContentUpdatedMessage(
                         UUID.randomUUID().toString(),
                         Timestamp.of(DateTime.now()),
-                        equivalentSetId
+                        equivalentSetId,
+                        null
                 )
         );
 
@@ -98,7 +99,8 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
                 new EquivalentContentUpdatedMessage(
                         UUID.randomUUID().toString(),
                         Timestamp.of(DateTime.now()),
-                        equivalentSetId
+                        equivalentSetId,
+                        null
                 )
         );
 

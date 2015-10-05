@@ -46,7 +46,7 @@ import com.metabroadcast.common.collect.OptionalMap;
  */
 public abstract class AbstractEquivalentScheduleStore implements EquivalentScheduleStore {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentScheduleStore.class);
     
     private final EquivalenceGraphStore graphStore;
     private final ContentResolver contentStore;
@@ -62,8 +62,11 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
+
         writeSchedule(update, contentFor(update.getSchedule()));
     }
+
+
 
     protected abstract void writeSchedule(ScheduleUpdate update, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
             throws WriteException;

@@ -25,11 +25,11 @@ public interface EquivalentContentStore extends EquivalentsResolver<Content> {
     void updateEquivalences(EquivalenceGraphUpdate update) throws WriteException;
     
     /**
-     * Updates the resource referred to by the reference in its equivalence set.
-     * @param ref - reference to the resource which has changed.
+     * Update piece of content.
+     * @param content - reference to the resource which has changed.
      * @throws WriteException - if the update fails.
      */
-    void updateContent(ResourceRef ref) throws WriteException;
+    void updateContent(Content content) throws WriteException;
 
 
     /**

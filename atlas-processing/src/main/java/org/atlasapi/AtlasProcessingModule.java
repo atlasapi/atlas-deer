@@ -18,7 +18,7 @@ import com.metabroadcast.common.webapp.properties.ContextConfigurer;
     AtlasPersistenceModule.class,
     WorkersModule.class,
     BootstrapModule.class,
-    DebugModule.class,
+    DebugModule.class
 })
 public class AtlasProcessingModule {
 

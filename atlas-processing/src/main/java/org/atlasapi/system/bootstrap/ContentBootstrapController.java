@@ -248,7 +248,7 @@ public class ContentBootstrapController {
                     Instant indexingEnd = Instant.now();
                     equivalenceMigrator.migrateEquivalence(content.toRef());
                     Instant graphUpdateEnd = Instant.now();
-                    persistence.getEquivalentContentStore().updateContent(content.toRef());
+                    persistence.getEquivalentContentStore().updateContent(content);
                     Instant end = Instant.now();
 
                     log.info(

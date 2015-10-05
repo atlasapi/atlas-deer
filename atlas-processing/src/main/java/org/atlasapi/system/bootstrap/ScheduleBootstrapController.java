@@ -101,8 +101,12 @@ public class ScheduleBootstrapController {
     }
 
     @RequestMapping(value="/system/bootstrap/schedule/all",method=RequestMethod.POST)
-    public void bootstrapAllSchedules(HttpServletResponse resp, @RequestParam("source") String src,
-                                  @RequestParam("from") String from, @RequestParam("to") String to)
+    public void bootstrapAllSchedules(
+            HttpServletResponse resp,
+            @RequestParam("source") String src,
+            @RequestParam("from") String from,
+            @RequestParam("to") String to
+    )
             throws Exception {
 
         final Maybe<Publisher> source = Publisher.fromKey(src);

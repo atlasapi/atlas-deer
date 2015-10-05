@@ -7,7 +7,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -85,12 +84,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
         return ImmutableSet.<Id>builder()
             .addAll(update.getUpdated().getEquivalenceSet())
             .addAll(Iterables.concat(Iterables.transform(update.getCreated(),
-                new Function<EquivalenceGraph, Set<Id>>() {
-                    @Override
-                    public Set<Id> apply(EquivalenceGraph input) {
-                        return input.getEquivalenceSet();
-                    }
-                }
+                    EquivalenceGraph::getEquivalenceSet
             )))
             .addAll(update.getDeleted())
             .build();
@@ -108,20 +102,13 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     }
 
     @Override
-    public final void updateContent(ResourceRef ref) throws WriteException {
+    public final void updateContent(Content content) throws WriteException {
         try {
-            lock.lock(ref.getId());
-            ImmutableList<Id> ids = ImmutableList.of(ref.getId());
-            OptionalMap<Id, Content> resolvedContent = resolveIds(ids);
-
-            Optional<Content> possibleContent = resolvedContent.get(ref.getId());
-            if (!possibleContent.isPresent()) {
-                throw new WriteException("update failed. content not found for id " + ref.getId());
-            }
-            Content content = possibleContent.get();
+            lock.lock(content.getId());
+            ImmutableList<Id> ids = ImmutableList.of(content.getId());
 
             ListenableFuture<OptionalMap<Id, EquivalenceGraph>> graphs = graphStore.resolveIds(ids);
-            Optional<EquivalenceGraph> possibleGraph = get(graphs).get(ref.getId());
+            Optional<EquivalenceGraph> possibleGraph = get(graphs).get(content.getId());
 
             if (possibleGraph.isPresent()) {
                 updateInSet(possibleGraph.get(), content);
@@ -129,17 +116,18 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                         new EquivalentContentUpdatedMessage(
                                 UUID.randomUUID().toString(),
                                 Timestamp.of(DateTime.now(DateTimeZone.UTC)),
-                                possibleGraph.get().getId().longValue()
+                                possibleGraph.get().getId().longValue(),
+                                content.toRef()
                         )
                 );
             } else {
-                EquivalenceGraph graph = EquivalenceGraph.valueOf(ref);
+                EquivalenceGraph graph = EquivalenceGraph.valueOf(content.toRef());
                 updateEquivalences(ImmutableSetMultimap.of(graph, content), EquivalenceGraphUpdate.builder(graph).build());
             }
         } catch (MessagingException | InterruptedException e) {
-            throw new WriteException("Updating " + ref.getId(), e);
+            throw new WriteException("Updating " + content.getId(), e);
         } finally {
-            lock.unlock(ref.getId());
+            lock.unlock(content.getId());
         }
     }
 

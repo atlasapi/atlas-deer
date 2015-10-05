@@ -12,6 +12,7 @@ import org.atlasapi.schedule.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.bootstrap.workers.LegacyRetryingContentResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.Message;
@@ -50,6 +52,16 @@ public class WorkersModule {
 
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
+
+    private Boolean equivalentScheduleStoreContentUpdatesEnabled  = Configurer.get("equiv.schedule.content.updates.enabled").toBoolean();
+
+    private Boolean contentIndexerEnabled = Configurer.get("messaging.enabled.content.indexer").toBoolean();
+    private Boolean equivalentContentStoreEnabled = Configurer.get("messaging.enabled.content.equivalent.store").toBoolean();
+    private Boolean equivalentContentGraphEnabled = Configurer.get("messaging.enabled.content.equivalent.graph").toBoolean();
+    private Boolean equivalentScheduleStoreEnabled = Configurer.get("messaging.enabled.schedule.equivalent.store").toBoolean();
+    private Boolean equivalentScheduleGraphEnabled = Configurer.get("messaging.enabled.schedule.equivalent.graph").toBoolean();
+    private Boolean topicIndexerEnabled = Configurer.get("messaging.enabled.topic.indexer").toBoolean();
+    private Boolean equivalenceGraphEnabled = Configurer.get("messaging.enabled.equivalence.graph").toBoolean();
 
     @Autowired
     private KafkaMessagingModule messaging;
@@ -99,7 +111,15 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> equivalentContentStoreContentUpdateWorker() {
-        return new EquivalentContentStoreContentUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
+        return new EquivalentContentStoreContentUpdateWorker(
+                persistence.getEquivalentContentStore(),
+                new LegacyRetryingContentResolver(
+                        persistence.contentStore(),
+                        persistence.legacyContentResolver(),
+                        persistence.nullMessageSendingContentStore()
+                ),
+                health.metrics()
+        );
     }
 
     @Bean
@@ -194,6 +214,13 @@ public class WorkersModule {
         return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex(), health.metrics());
     }
 
+    @Bean
+    @Lazy(true)
+    public EquivalentContentIndexingWorker equivalentContentIndexingWorker() {
+        return new EquivalentContentIndexingWorker(
+                persistence.contentStore(), persistence.contentIndex(), health.metrics()
+        );
+    }
 
     @Bean
     @Lazy(true)
@@ -211,18 +238,54 @@ public class WorkersModule {
                 .build();
     }
 
+    @Bean
+    @Lazy(true)
+    public KafkaConsumer equivalentContentIndexingMessageListener() {
+        MessageConsumerBuilder<KafkaConsumer, EquivalentContentUpdatedMessage> consumer =
+                messaging.messageConsumerFactory().createConsumer(
+                        equivalentContentIndexingWorker(),
+                        serializer(EquivalentContentUpdatedMessage.class),
+                        equivalentContentChanges,
+                        "EquivalentContentIndexer"
+                );
+        return consumer.withMaxConsumers(maxContentIndexers)
+                .withDefaultConsumers(defaultContentIndexers)
+                .withConsumerSystem(consumerSystem)
+                .build();
+    }
+
     @PostConstruct
     public void start() throws TimeoutException {
-        consumerManager = new ServiceManager(ImmutableList.of(
-                equivUpdateListener(),
-                equivalentScheduleStoreScheduleUpdateListener(),
-                equivalentScheduleStoreGraphUpdateListener(),
-                equivalentContentStoreGraphUpdateListener(),
-                equivalentContentStoreContentUpdateListener(),
-                equivalentScheduleStoreContentListener(),
-                topicIndexerMessageListener(),
-                contentIndexingMessageListener()
-        ));
+        ImmutableList.Builder<Service> services = ImmutableList.builder();
+
+        if(equivalentScheduleStoreContentUpdatesEnabled) {
+            services.add(equivalentScheduleStoreContentListener());
+        }
+
+        if(contentIndexerEnabled) {
+            services.add(contentIndexingMessageListener());
+            services.add(equivalentContentIndexingMessageListener());
+        }
+        if(equivalentContentStoreEnabled) {
+            services.add(equivalentContentStoreContentUpdateListener());
+        }
+        if(equivalentContentGraphEnabled) {
+            services.add(equivalentContentStoreGraphUpdateListener());
+        }
+        if(equivalentScheduleStoreEnabled) {
+            services.add(equivalentScheduleStoreScheduleUpdateListener());
+        }
+        if(equivalentScheduleGraphEnabled) {
+            services.add(equivalentScheduleStoreGraphUpdateListener());
+        }
+        if(topicIndexerEnabled) {
+            services.add(topicIndexerMessageListener());
+        }
+        if(equivalenceGraphEnabled) {
+            services.add(equivUpdateListener());
+        }
+
+        consumerManager = new ServiceManager(services.build());
         consumerManager.startAsync().awaitHealthy(1, TimeUnit.MINUTES);
     }
 

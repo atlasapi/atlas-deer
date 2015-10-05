@@ -1,18 +1,27 @@
 package org.atlasapi.system.debug;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.Annotations;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import org.atlasapi.AtlasPersistenceModule;
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Brand;
@@ -32,6 +41,7 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.EquivalentSchedule;
 import org.atlasapi.schedule.EquivalentScheduleStore;
@@ -51,23 +61,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class ContentDebugController {
@@ -157,6 +161,19 @@ public class ContentDebugController {
         Content content = result.getResources().first().orNull();
         gson.toJson(content, response.getWriter());
     }
+    
+    /* Returns the JSON representation of a piece of content stored in the equivalent content store */
+    @RequestMapping("/system/debug/equivalentcontent/{id}")
+    public void printEquivalentContent(@PathVariable("id") String idString, final HttpServletResponse response)
+            throws Exception {
+        Id id = Id.valueOf(lowercase.decode(idString).longValue());
+        ImmutableList<Id> ids = ImmutableList.of();
+        ResolvedEquivalents<Content> result = Futures.get(
+                persistence.getEquivalentContentStore().resolveIds(ids, Publisher.all(), Annotation.all()), 1, TimeUnit.MINUTES, Exception.class
+        );
+        Content content = result.get(id).iterator().next();
+        gson.toJson(content, response.getWriter());
+    }
 
     /* Returns the JSON representation of a piece of equivalent content graph */
     @RequestMapping("/system/debug/content/{id}/graph")
@@ -239,7 +256,7 @@ public class ContentDebugController {
             respString.append("\nMigrated content into C* content store");
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     equivalenceMigrator.migrateEquivalence(content.toRef());
-            persistence.getEquivalentContentStore().updateContent(content.toRef());
+            persistence.getEquivalentContentStore().updateContent(content);
             if (graphUpdate.isPresent()) {
                 persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
             }
@@ -277,7 +294,7 @@ public class ContentDebugController {
         WriteResult<Content, Content> writeResult = persistence.contentStore().writeContent(content);
         Optional<EquivalenceGraphUpdate> graphUpdate =
                 equivalenceMigrator.migrateEquivalence(content.toRef());
-        persistence.getEquivalentContentStore().updateContent(content.toRef());
+        persistence.getEquivalentContentStore().updateContent(content);
         if (graphUpdate.isPresent()) {
             persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
         }

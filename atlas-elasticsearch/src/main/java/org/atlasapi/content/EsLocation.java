@@ -27,10 +27,10 @@ public class EsLocation extends EsObject {
     public static EsLocation fromMap(Map<String, Object> map) {
         EsLocation esLocation = new EsLocation();
         if (map.get(AVAILABILITY_TIME) != null) {
-            esLocation.availabilityTime(DateTime.parse((String) map.get(AVAILABILITY_TIME)).toDate());
+            esLocation.availabilityTime(new DateTime(map.get(AVAILABILITY_TIME)).toDate());
         }
         if (map.get(AVAILABILITY_END_TIME) != null) {
-            esLocation.availabilityEndTime(DateTime.parse((String) map.get(AVAILABILITY_END_TIME)).toDate());
+            esLocation.availabilityEndTime(new DateTime(map.get(AVAILABILITY_END_TIME)).toDate());
         }
         return esLocation;
     }

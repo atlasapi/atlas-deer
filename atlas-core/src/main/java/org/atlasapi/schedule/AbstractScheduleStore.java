@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -40,6 +41,8 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@code AbstractScheduleStore} is a base implementation of a
@@ -59,7 +62,8 @@ import com.metabroadcast.common.time.Timestamp;
  * 
  */
 public abstract class AbstractScheduleStore implements ScheduleStore {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractScheduleStore.class);
     private final ContentStore contentStore;
     private final MessageSender<ScheduleUpdateMessage> messageSender;
     private final BroadcastContiguityCheck contiguityCheck;
@@ -89,7 +93,6 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
         if (!contentChanged(writeResults)) {
             return writeResults;
         }
-        
         List<ChannelSchedule> currentBlocks = resolveCurrentScheduleBlocks(source, channel, interval);
         List<ChannelSchedule> staleBlocks = resolveStaleScheduleBlocks(source, channel, interval);
         ScheduleBlocksUpdate update = blockUpdater.updateBlocks(
@@ -99,12 +102,46 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
                 channel,
                 interval
         );
+        log.info(
+                "Processing schedule update for {} {} {}: currentEntries:{}, update:{}, stale broadcasts:{}",
+                source,
+                channel.getId().longValue(),
+                interval,
+                updateLog(currentBlocks),
+                updateLog(itemsAndBroadcasts),
+                updateLog(update.getStaleEntries())
+        );
         for (ItemAndBroadcast staleEntry : update.getStaleEntries()) {
             updateStaleItemInContentStore(staleEntry);
         }
         doWrite(source, removeAdditionalBroadcasts(update.getUpdatedBlocks()));
         sendUpdateMessage(source, content, update, channel, interval);
         return writeResults;
+    }
+
+    private String updateLog(Iterable<ItemAndBroadcast> itemsAndBroadcasts) {
+        StringBuilder update = new StringBuilder();
+        for (ItemAndBroadcast itemsAndBroadcast : itemsAndBroadcasts) {
+            update.append(
+                    String.format(
+                            " %s -> (%s -> %s)",
+                            itemsAndBroadcast.getBroadcast().getSourceId(),
+                            itemsAndBroadcast.getBroadcast().getTransmissionTime(),
+                            itemsAndBroadcast.getBroadcast().getTransmissionEndTime()
+                    )
+            );
+        }
+
+
+        return update.toString();
+    }
+
+    private String updateLog(List<ChannelSchedule> blocks) {
+        StringBuilder update = new StringBuilder();
+        for (ChannelSchedule block : blocks) {
+            update.append(updateLog(block.getEntries()));
+        }
+        return update.toString();
     }
 
     private void sendUpdateMessage(Publisher source, List<ScheduleHierarchy> content, ScheduleBlocksUpdate update, Channel channel, Interval interval) throws WriteException {

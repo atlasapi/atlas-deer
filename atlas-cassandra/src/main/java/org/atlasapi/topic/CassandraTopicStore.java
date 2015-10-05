@@ -183,7 +183,8 @@ public class CassandraTopicStore extends AbstractTopicStore {
     
     @Override
     protected void doWrite(Topic topic, @Nullable Topic previous) {
-        checkArgument(previous == null || topic.getSource().equals(previous.getSource()));
+        //Allow migration of owl content that has changed source
+        //checkArgument(previous == null || topic.getSource().equals(previous.getSource()));
         try {
             long id = topic.getId().longValue();
             MutationBatch batch = keyspace.prepareMutationBatch();

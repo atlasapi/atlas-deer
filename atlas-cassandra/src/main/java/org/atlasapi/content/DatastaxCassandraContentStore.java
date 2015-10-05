@@ -113,7 +113,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         try {
             Batch batch = batch();
             batch.setConsistencyLevel(writeConsistency);
-            marshaller.marshallInto(content.getId(), batch, content);
+            marshaller.marshallInto(content.getId(), batch, content, true);
             aliasIndex.mutateAliasesAndExecute(content, previous);
             session.execute(batch);
         } catch (Exception e) {
@@ -162,7 +162,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
 
             Batch batch = batch();
             batch.setConsistencyLevel(writeConsistency);
-            marshaller.marshallInto(primary.getId(), batch, container);
+            marshaller.marshallInto(primary.getId(), batch, container, false);
             session.execute(batch);
         } catch (Exception e) {
             throw Throwables.propagate(e);
@@ -197,7 +197,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                 if (!(item instanceof Episode) || ((Episode) item).getSeriesRef() == null) {
                     container.setItemSummaries(ImmutableList.of(item.toSummary()));
                 }
-                marshaller.marshallInto(containerId, batch, container);
+                marshaller.marshallInto(containerId, batch, container, false);
             }
 
             if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
@@ -209,7 +209,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                 container.setUpcomingContent(upcomingBroadcasts);
                 container.setAvailableContent(availableLocations);
                 container.setItemSummaries(ImmutableList.of(episode.toSummary()));
-                marshaller.marshallInto(containerId, batch, container);
+                marshaller.marshallInto(containerId, batch, container, false);
             }
             session.execute(batch);
 
@@ -232,7 +232,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         item.setPublisher(itemRef.getSource());
         Batch batch = batch();
         batch.setConsistencyLevel(writeConsistency);
-        marshaller.marshallInto(item.getId(), batch, item);
+        marshaller.marshallInto(item.getId(), batch, item, false);
 
         if(!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs().iterator().hasNext()) {
             session.execute(batch);
@@ -246,7 +246,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
             Container container = new Brand();
             container.setThisOrChildLastUpdated(itemRef.getUpdated());
             container.setUpcomingContent(upcomingBroadcasts);
-            marshaller.marshallInto(containerId, batch, container);
+            marshaller.marshallInto(containerId, batch, container, false);
         }
 
         if (seriesRef.isPresent()) {
@@ -255,7 +255,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
             container.setItemRefs(ImmutableList.of(itemRef));
             container.setThisOrChildLastUpdated(itemRef.getUpdated());
             container.setUpcomingContent(upcomingBroadcasts);
-            marshaller.marshallInto(containerId, batch, container);
+            marshaller.marshallInto(containerId, batch, container, false);
         }
 
         session.execute(batch);
@@ -268,7 +268,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         for (ItemRef itemRef : items) {
             Item item = itemFromRef(itemRef);
             item.setContainerSummary(summary);
-            marshaller.marshallInto(itemRef.getId(), batch, item);
+            marshaller.marshallInto(itemRef.getId(), batch, item, false);
 
         }
 

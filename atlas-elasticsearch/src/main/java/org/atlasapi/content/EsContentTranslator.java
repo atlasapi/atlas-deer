@@ -64,7 +64,7 @@ public class EsContentTranslator {
     }
 
     private Collection<EsBroadcast> makeESBroadcasts(Item item) {
-        Collection<EsBroadcast> esBroadcasts = new LinkedList<EsBroadcast>();
+        Collection<EsBroadcast> esBroadcasts = new LinkedList<>();
         for (Broadcast broadcast : item.getBroadcasts()) {
             if (broadcast.isActivelyPublished()) {
                 esBroadcasts.add(toEsBroadcast(broadcast));
@@ -348,23 +348,17 @@ public class EsContentTranslator {
     }
 
     private Policy fromEsLocation(Map<String, Object> location) {
-        String start = (String) location.get(EsLocation.AVAILABILITY_TIME);
-        String end = (String) location.get(EsLocation.AVAILABILITY_END_TIME);
-        DateTime startDt = null;
-        DateTime endDt = null;
-        if (!Strings.isNullOrEmpty(start)) {
-            startDt = toUtc(DateTime.parse(start));
-        }
-        if (!Strings.isNullOrEmpty(end)) {
-            endDt = toUtc(DateTime.parse(end));
-        }
+        Object start = location.get(EsLocation.AVAILABILITY_TIME);
+        Object end = location.get(EsLocation.AVAILABILITY_END_TIME);
+
         Policy pol = new Policy();
-        if (endDt != null) {
-            pol.setAvailabilityStart(startDt);
+        if (start != null) {
+            pol.setAvailabilityStart(new DateTime(start).toDateTime(DateTimeZones.UTC));
         }
-        if (startDt != null) {
-            pol.setAvailabilityEnd(endDt);
+        if (end != null) {
+            pol.setAvailabilityEnd(new DateTime(end).toDateTime(DateTimeZones.UTC));
         }
+
         return pol;
     }
 
@@ -437,20 +431,23 @@ public class EsContentTranslator {
     }
 
     private Broadcast toBroadcast(Map<String, Object> broadcast) {
-        String start = (String) broadcast.get(EsBroadcast.TRANSMISSION_TIME);
-        String end = (String) broadcast.get(EsBroadcast.TRANSMISSION_END_TIME);
-        DateTime startDt = null;
-        DateTime endDt = null;
-        if (!Strings.isNullOrEmpty(start)) {
-            startDt = DateTime.parse(start);
+        Object start = broadcast.get(EsBroadcast.TRANSMISSION_TIME);
+        Object end = broadcast.get(EsBroadcast.TRANSMISSION_END_TIME);
+
+        DateTime startDate = null;
+        DateTime endDate = null;
+
+        if (start != null) {
+            startDate = new DateTime(start);
         }
-        if (!Strings.isNullOrEmpty(end)) {
-            endDt = DateTime.parse(end);
+        if (end != null) {
+            endDate = new DateTime(end);
         }
+
         return new Broadcast(
                 Id.valueOf((Integer) broadcast.get(EsBroadcast.CHANNEL)),
-                startDt,
-                endDt,
+                startDate,
+                endDate,
                 true
         );
     }
