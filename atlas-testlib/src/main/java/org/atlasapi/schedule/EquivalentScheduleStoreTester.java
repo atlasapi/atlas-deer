@@ -3,7 +3,6 @@ package org.atlasapi.schedule;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 import java.util.concurrent.TimeUnit;
 
@@ -189,7 +188,9 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         equiv.addBroadcast(broadcast);
         equiv.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
         
-        getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(item.toRef(), ImmutableSet.<ResourceRef>of(equiv.toRef()), ImmutableSet.of(Publisher.METABROADCAST));
+        getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(item.toRef(),
+                ImmutableSet.<ResourceRef>of(equiv.toRef()),
+                ImmutableSet.of(Publisher.METABROADCAST));
         
         getSubjectGenerator().getContentStore().writeContent(item);
         getSubjectGenerator().getContentStore().writeContent(equiv);
@@ -230,7 +231,9 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         otherEquiv.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
         
         getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(item.toRef(), ImmutableSet.<ResourceRef>of(equiv.toRef()), ImmutableSet.of(Publisher.METABROADCAST));
-        getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(otherEquiv.toRef(), ImmutableSet.<ResourceRef>of(item.toRef()), ImmutableSet.of(Publisher.METABROADCAST));
+        getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(otherEquiv.toRef(),
+                ImmutableSet.<ResourceRef>of(item.toRef()),
+                ImmutableSet.of(Publisher.METABROADCAST));
         
         getSubjectGenerator().getContentStore().writeContent(item);
         getSubjectGenerator().getContentStore().writeContent(equiv);
@@ -243,7 +246,11 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.<BroadcastRef>of()));
         
         EquivalentSchedule resolved
-            = get(getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(ImmutableList.of(channel), interval, Publisher.METABROADCAST, ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)));
+            = get(getSubjectGenerator().getEquivalentScheduleStore()
+                .resolveSchedules(ImmutableList.of(channel),
+                        interval,
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)));
         
         EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
         
@@ -271,8 +278,10 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         Item otherEquiv = new Item(Id.valueOf(3), Publisher.PA);
         otherEquiv.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
         
-        getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(otherEquiv.toRef(), ImmutableSet.<ResourceRef>of(
-            item.toRef()), ImmutableSet.of(Publisher.METABROADCAST));
+        getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(otherEquiv.toRef(),
+                ImmutableSet.<ResourceRef>of(
+                        item.toRef()),
+                ImmutableSet.of(Publisher.METABROADCAST));
         
         getSubjectGenerator().getContentStore().writeContent(item);
         getSubjectGenerator().getContentStore().writeContent(equiv);
@@ -282,9 +291,15 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
         
-        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.<BroadcastRef>of()));
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(
+                Publisher.METABROADCAST,
+                scheduleRef,
+                ImmutableSet.<BroadcastRef>of()));
         
-        EquivalenceGraphUpdate equivUpdate = getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(item.toRef(), ImmutableSet.<ResourceRef>of(equiv.toRef()), ImmutableSet.of(Publisher.METABROADCAST)).get();
+        EquivalenceGraphUpdate equivUpdate = getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(
+                item.toRef(),
+                ImmutableSet.<ResourceRef>of(equiv.toRef()),
+                ImmutableSet.of(Publisher.METABROADCAST)).get();
         
         getSubjectGenerator().getEquivalentScheduleStore().updateEquivalences(equivUpdate);
         
@@ -427,8 +442,9 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.<BroadcastRef>of()));
         
         EquivalentSchedule resolved
-            = get(getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(ImmutableList.of(channel1, channel2), new Interval(one,three), 
-                    Publisher.METABROADCAST, ImmutableSet.of(Publisher.METABROADCAST)));
+            = get(getSubjectGenerator().getEquivalentScheduleStore()
+                .resolveSchedules(ImmutableList.of(channel1, channel2), new Interval(one, three),
+                        Publisher.METABROADCAST, ImmutableSet.of(Publisher.METABROADCAST)));
         
         
         assertThat(resolved.channelSchedules().size(), is(2));
@@ -567,7 +583,10 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
                 .addEntry(item.getId(), broadcast1.toRef())
                 .build();
         
-        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, scheduleRef, ImmutableSet.<BroadcastRef>of()));
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(
+                Publisher.METABROADCAST,
+                scheduleRef,
+                ImmutableSet.<BroadcastRef>of()));
         
         EquivalentSchedule resolved
             = get(getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(ImmutableList.of(channel), new Interval(one, two), Publisher.METABROADCAST, ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)));

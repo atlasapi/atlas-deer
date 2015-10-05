@@ -2,13 +2,13 @@ package org.atlasapi.schedule;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Set;
+
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-
-import java.util.Set;
 
 public final class ScheduleUpdate {
     

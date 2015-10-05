@@ -22,10 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.QueryExecutionException;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Sets;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -49,6 +45,8 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.RegularStatement;
@@ -56,22 +54,24 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.QueryExecutionException;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Update.Assignments;
 import com.google.common.base.Function;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.metabroadcast.common.time.Clock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
 
@@ -353,7 +353,10 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 updateLog(update.getStaleBroadcasts()),
                 updateLog(staleBroadcasts)
         );
-        List<RegularStatement> updates = updateStatements(update.getSource(), update.getSchedule(), content, now);
+        List<RegularStatement> updates = updateStatements(update.getSource(),
+                update.getSchedule(),
+                content,
+                now);
         if (updates.isEmpty() && deletes.isEmpty()) {
             return;
         }
