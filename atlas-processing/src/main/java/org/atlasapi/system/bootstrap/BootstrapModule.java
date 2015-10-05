@@ -18,7 +18,6 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.atlasapi.system.bootstrap.workers.temp.TempBootstrapWorkersModule;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
@@ -42,7 +41,7 @@ import com.metabroadcast.common.time.SystemClock;
 
 @Configuration
 @Import({AtlasPersistenceModule.class, BootstrapWorkersModule.class, LegacyPersistenceModule.class,
-    SchedulerModule.class, ProcessingHealthModule.class, TempBootstrapWorkersModule.class})
+    SchedulerModule.class, ProcessingHealthModule.class})
 public class BootstrapModule {
 
     //we only need 2 here, on to run the bootstrap and one to be able to return quickly when it's running
