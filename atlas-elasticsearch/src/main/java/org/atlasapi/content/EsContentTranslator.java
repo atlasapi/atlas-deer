@@ -229,7 +229,6 @@ public class EsContentTranslator {
         if (container instanceof Series) {
             Series series = (Series) container;
             indexed.seriesNumber(series.getSeriesNumber());
-            indexed.seriesId(container.getId());
             if (series.getBrandRef() != null) {
                 indexed.brandId(series.getBrandRef().getId());
             }
