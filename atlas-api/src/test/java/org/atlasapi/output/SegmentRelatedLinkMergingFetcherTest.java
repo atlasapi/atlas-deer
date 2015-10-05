@@ -6,7 +6,6 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.Iterables;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.entity.Id;
@@ -21,6 +20,7 @@ import org.mockito.Mock;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 public class SegmentRelatedLinkMergingFetcherTest {

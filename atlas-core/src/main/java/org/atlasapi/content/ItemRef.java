@@ -57,4 +57,7 @@ public class ItemRef extends ContentRef implements Comparable<ItemRef> {
               .result();
     }
 
+    public ItemRef copy() {
+        return new ItemRef(id, source, sortKey, updated);
+    }
 }

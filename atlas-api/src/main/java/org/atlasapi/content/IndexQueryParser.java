@@ -1,22 +1,21 @@
 package org.atlasapi.content;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.atlasapi.entity.Id;
+import org.atlasapi.query.common.Query;
+import org.elasticsearch.common.lang3.StringUtils;
+
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import org.atlasapi.entity.Id;
-import org.atlasapi.query.common.Query;
-import org.elasticsearch.common.lang3.StringUtils;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 
 /***
@@ -86,10 +85,7 @@ public class IndexQueryParser {
     private Boolean availabilityFilterFrom(Query<?> query) {
         String available = query.getContext().getRequest().getParameter("available");
         String brandSeriesAvailable = query.getContext().getRequest().getParameter("brand.series.available");
-        if (!Strings.isNullOrEmpty(available) || !Strings.isNullOrEmpty(brandSeriesAvailable)) {
-            return true;
-        }
-        return false;
+        return !Strings.isNullOrEmpty(available) || !Strings.isNullOrEmpty(brandSeriesAvailable);
     }
 
     private Optional<List<List<InclusionExclusionId>>> topicIdsFrom(Query<?> query) {

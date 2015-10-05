@@ -1,5 +1,34 @@
 package org.atlasapi;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import org.atlasapi.content.AstyanaxCassandraContentStore;
+import org.atlasapi.content.ContentHasher;
+import org.atlasapi.content.ContentSerializationVisitor;
+import org.atlasapi.content.ContentSerializer;
+import org.atlasapi.entity.AliasIndex;
+import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
+import org.atlasapi.event.ConcreteEventStore;
+import org.atlasapi.event.DatastaxCassandraEventStore;
+import org.atlasapi.event.EventHasher;
+import org.atlasapi.event.EventPersistenceStore;
+import org.atlasapi.event.EventStore;
+import org.atlasapi.messaging.JacksonMessageSerializer;
+import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
+import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
+import org.atlasapi.schedule.DatastaxCassandraScheduleStore;
+import org.atlasapi.schedule.EquivalentScheduleStore;
+import org.atlasapi.schedule.ItemAndBroadcastSerializer;
+import org.atlasapi.schedule.ScheduleStore;
+import org.atlasapi.schedule.ScheduleUpdateMessage;
+import org.atlasapi.segment.CassandraSegmentStore;
+import org.atlasapi.segment.Segment;
+import org.atlasapi.topic.CassandraTopicStore;
+import org.atlasapi.topic.Topic;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.datastax.driver.core.Session;
@@ -19,33 +48,6 @@ import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
-import org.atlasapi.content.AstyanaxCassandraContentStore;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentHasher;
-import org.atlasapi.content.ContentSerializationVisitor;
-import org.atlasapi.content.ContentSerializer;
-import org.atlasapi.content.DatastaxCassandraContentStore;
-import org.atlasapi.content.EquivalentContentStore;
-import org.atlasapi.entity.AliasIndex;
-import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
-import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
-import org.atlasapi.messaging.JacksonMessageSerializer;
-import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
-import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
-import org.atlasapi.schedule.DatastaxCassandraScheduleStore;
-import org.atlasapi.schedule.EquivalentScheduleStore;
-import org.atlasapi.schedule.ItemAndBroadcastSerializer;
-import org.atlasapi.schedule.ScheduleStore;
-import org.atlasapi.schedule.ScheduleUpdateMessage;
-import org.atlasapi.segment.CassandraSegmentStore;
-import org.atlasapi.segment.Segment;
-import org.atlasapi.topic.CassandraTopicStore;
-import org.atlasapi.topic.Topic;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
@@ -60,7 +62,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private final String keyspace;
 
-    private final ContentHasher hasher;
+    private final ContentHasher contentHasher;
+    private final EventHasher eventHasher;
     private final IdGeneratorBuilder idGeneratorBuilder;
 
     private final AstyanaxContext<Keyspace> context;
@@ -78,21 +81,23 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
+    private EventStore eventStore;
 
     private MessageSenderFactory messageSenderFactory;
 
 
     public CassandraPersistenceModule(
             MessageSenderFactory messageSenderFactory,
-            AstyanaxContext<Keyspace> context,
+            AstyanaxContext<Keyspace> context, 
             DatastaxCassandraService datastaxCassandraService,
-            String keyspace,
-            IdGeneratorBuilder idGeneratorBuilder,
-            ContentHasher hasher,
-            Iterable<String> cassNodes,
-            MetricRegistry metrics
-    ) {
-        this.hasher = hasher;
+            String keyspace, 
+            IdGeneratorBuilder idGeneratorBuilder, 
+            ContentHasher contentHasher,
+            EventHasher eventHasher, 
+            Iterable<String> cassNodes, 
+            MetricRegistry metrics) {
+        this.contentHasher = contentHasher;
+        this.eventHasher = checkNotNull(eventHasher);
         this.idGeneratorBuilder = idGeneratorBuilder;
         this.contentIdGenerator = idGeneratorBuilder.generator("content");
         this.messageSenderFactory = messageSenderFactory;
@@ -137,19 +142,20 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
         ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
         this.contentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                hasher, sender(contentChanges, ResourceUpdatedMessage.class), contentIdGenerator)
+                contentHasher, sender(contentChanges, ResourceUpdatedMessage.class), contentIdGenerator)
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
         this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                hasher, nullMessageSender(ResourceUpdatedMessage.class), contentIdGenerator)
+                contentHasher, nullMessageSender(ResourceUpdatedMessage.class), contentIdGenerator)
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
 
         this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class), session, read, write);
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(contentEquivalenceGraphStore, contentStore, session, read, write, new SystemClock());
-        this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(nullMessageSender(EquivalenceGraphUpdateMessage.class), session, read, write);
+        this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(nullMessageSender(
+                EquivalenceGraphUpdateMessage.class), session, read, write);
         this.v2ScheduleStore = new DatastaxCassandraScheduleStore(
                 "schedule_v2",
                 contentStore,
@@ -162,11 +168,13 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 cassandraTimeoutSeconds
         );
         this.topicStore = CassandraTopicStore.builder(context, "topics",
-                topicEquivalence(), sender(topicChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator("topic"))
+                topicEquivalence(), sender(topicChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator(
+                "topic"))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
-        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule", contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class))
+        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule", 
+                contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class))
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
@@ -179,6 +187,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withMessageSender(nullMessageSender(ResourceUpdatedMessage.class))
                 .withEquivalence(segmentEquivalence())
                 .build();
+
+        this.eventStore = getEventStore(session);
     }
 
     public EquivalenceGraphStore nullMessageSendingGraphStore() {
@@ -244,6 +254,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return this.segmentStore;
     }
 
+    @Override
+    public EventStore eventStore() {
+        return eventStore;
+    }
+
     private Equivalence<? super Topic> topicEquivalence() {
         return new Equivalence<Topic>() {
 
@@ -261,7 +276,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public Session getSession() {
         return dataStaxService.getSession(keyspace);
-    };
+    }
 
     public EquivalenceGraphStore contentEquivalenceGraphStore() {
         return this.contentEquivalenceGraphStore;
@@ -276,8 +291,24 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return  com.datastax.driver.core.ConsistencyLevel.QUORUM;
     }
 
-
     public EquivalentScheduleStore equivalentScheduleStore() {
         return this.equivalentScheduleStore;
+    }
+    
+    private EventStore getEventStore(Session session) {
+        EventPersistenceStore eventPersistenceStore = DatastaxCassandraEventStore.builder()
+                .withAliasIndex(AliasIndex.create(context.getClient(), "event_aliases"))
+                .withSession(session)
+                .withWriteConsistency(getWriteConsistencyLevel())
+                .withReadConsistency(getReadConsistencyLevel())
+                .build();
+
+        return ConcreteEventStore.builder()
+                .withClock(new SystemClock())
+                .withIdGenerator(idGeneratorBuilder.generator("event"))
+                .withEventHasher(eventHasher)
+                .withSender(nullMessageSender(ResourceUpdatedMessage.class))
+                .withPersistenceStore(eventPersistenceStore)
+                .build();
     }
 }

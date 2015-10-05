@@ -3,7 +3,7 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;

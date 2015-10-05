@@ -1,0 +1,21 @@
+import "common.proto";
+import "topic.proto";
+package atlas.event;
+
+option java_package = "org.atlasapi.serialization.protobuf";
+option java_outer_classname = "EventProtos";
+option optimize_for = SPEED;
+
+message Event {
+    optional common.LocaleString title = 1;
+    optional string source = 2;
+    optional topic.Topic venue = 3;
+    optional common.DateTime start_time = 4;
+    optional common.DateTime end_time = 5;
+    repeated common.Person participant = 6;
+    repeated common.Organisation organisation = 7;
+    repeated topic.Topic eventGroup = 8;
+    repeated common.Reference content = 9;
+
+    required common.Identification identified = 100;
+}

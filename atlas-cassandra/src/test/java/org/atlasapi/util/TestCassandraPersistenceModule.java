@@ -2,18 +2,14 @@ package org.atlasapi.util;
 
 import java.util.UUID;
 
-import com.codahale.metrics.MetricRegistry;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import org.atlasapi.CassandraPersistenceModule;
 import org.atlasapi.ConfiguredAstyanaxContext;
 import org.atlasapi.PersistenceModule;
 import org.atlasapi.content.CassandraEquivalentContentStore;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.event.EventStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.segment.SegmentStore;
@@ -22,6 +18,8 @@ import org.atlasapi.topic.TopicStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.google.common.collect.ImmutableSet;
@@ -29,6 +27,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.ids.SequenceGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.Message;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenderFactory;
@@ -62,13 +61,6 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         }
         
     };
-    private final ContentHasher hasher = new ContentHasher() {
-        
-        @Override
-        public String hash(Content content) {
-            return UUID.randomUUID().toString();
-        }
-    };
 
     private final AstyanaxContext<Keyspace> context
         = new ConfiguredAstyanaxContext("Atlas", keyspace, seeds, 9160, 5, 60).get();
@@ -101,8 +93,10 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
         createTables(session, context);
         
-        CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(messageSenderFactory, context, cassandraService,
-                keyspace, idGeneratorBuilder(), hasher, seeds, new MetricRegistry());
+        CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(
+                messageSenderFactory, context, cassandraService, keyspace, idGeneratorBuilder(),
+                content -> UUID.randomUUID().toString(), event -> UUID.randomUUID().toString(),
+                seeds, new MetricRegistry());
         persistenceModule.startAsync().awaitRunning();
         return persistenceModule;
     }
@@ -182,6 +176,11 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
     @Override
     public ScheduleStore v2ScheduleStore() {
         return persistenceModule.v2ScheduleStore();
+    }
+
+    @Override
+    public EventStore eventStore() {
+        return persistenceModule.eventStore();
     }
 
     public Session getCassandraSession() {

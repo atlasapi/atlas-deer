@@ -1,10 +1,11 @@
 package org.atlasapi.util;
 
-import com.google.common.base.Throwables;
+import java.util.concurrent.TimeUnit;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
 
-import java.util.concurrent.TimeUnit;
+import com.google.common.base.Throwables;
 
 public class ElasticsearchUtils {
 

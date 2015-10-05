@@ -13,7 +13,6 @@ import org.atlasapi.output.SegmentAndEventTuple;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 
-import com.google.common.base.Optional;
 import com.google.common.primitives.Ints;
 
 public class SegmentEventWriter implements EntityListWriter<SegmentAndEventTuple> {

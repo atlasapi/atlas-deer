@@ -1,10 +1,8 @@
 package org.atlasapi.schedule;
 
-import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
-import org.joda.time.DateTime;
 
 /**
  * Maintains an equivalent schedule that can be resolved through an

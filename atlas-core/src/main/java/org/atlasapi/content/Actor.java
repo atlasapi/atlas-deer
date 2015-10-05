@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import org.atlasapi.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 

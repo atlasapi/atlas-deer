@@ -16,7 +16,7 @@ package org.atlasapi.criteria.attribute;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;

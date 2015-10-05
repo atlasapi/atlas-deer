@@ -2,6 +2,8 @@ package org.atlasapi.content;
 
 import java.util.Map;
 
+import org.atlasapi.entity.Person;
+
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;

@@ -10,6 +10,8 @@ import javax.annotation.PreDestroy;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.content.ContentResolver;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -50,7 +52,8 @@ public class BootstrapWorkersModule {
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
-
+    private String eventChanges = Configurer.get("messaging.destination.event.changes").get();
+    
     private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
     private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
 
@@ -141,6 +144,22 @@ public class BootstrapWorkersModule {
                 .build();
     }
 
+    @Bean
+    @Lazy(true)
+    KafkaConsumer eventReadWriter() {
+        EventResolver legacyResolver = legacy.legacyEventResolver();
+        EventWriter writer = persistence.eventWriter();
+        EventReadWriteWorker worker = new EventReadWriteWorker(legacyResolver, writer);
+        MessageSerializer<ResourceUpdatedMessage> serializer =
+                new EntityUpdatedLegacyMessageSerializer();
+        return bootstrapQueueFactory()
+                .createConsumer(worker, serializer, eventChanges, "EventBootstrap")
+                .withConsumerSystem(consumerSystem)
+                .withDefaultConsumers(consumers)
+                .withMaxConsumers(maxConsumers)
+                .build();
+    }
+
     @PostConstruct
     public void start() throws TimeoutException {
         if(contentBootstrapEnabled) {
@@ -155,6 +174,7 @@ public class BootstrapWorkersModule {
         if(topicBootstrapEnabled) {
             topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
         }
+        eventReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
 
     @PreDestroy
@@ -171,6 +191,7 @@ public class BootstrapWorkersModule {
         if(topicBootstrapEnabled) {
             topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
         }
+        eventReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
     }
 
     @Bean

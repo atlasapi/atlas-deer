@@ -1,18 +1,16 @@
 package org.atlasapi.content;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.Optional;
+
+import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.media.entity.Publisher;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
-import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.media.entity.Publisher;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.node.Node;
-
-import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class InstrumentedContentIndex implements ContentIndex {
 

@@ -7,8 +7,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.collect.ImmutableMap;
-
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
@@ -26,15 +24,14 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
-import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.KeyPhrase;
 import org.atlasapi.content.LocationSummary;
-import org.atlasapi.content.Person;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.SeriesOrder;
@@ -46,6 +43,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Iterables;

@@ -1,5 +1,16 @@
 package org.atlasapi.system;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+
+import org.atlasapi.AtlasPersistenceModule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import com.codahale.metrics.Clock;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
@@ -18,15 +29,6 @@ import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 import com.netflix.astyanax.connectionpool.ConnectionPoolMonitor;
-import org.atlasapi.AtlasPersistenceModule;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import javax.annotation.PostConstruct;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class ProcessingHealthModule extends HealthModule {

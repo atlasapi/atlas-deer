@@ -1,32 +1,32 @@
 package org.atlasapi.content;
 
-import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-
 import org.atlasapi.content.Image.AspectRatio;
 import org.atlasapi.content.Image.Color;
 import org.atlasapi.content.Image.Theme;
 import org.atlasapi.content.Image.Type;
-import org.atlasapi.serialization.protobuf.ContentProtos;
-import org.atlasapi.serialization.protobuf.ContentProtos.Image.Builder;
+import org.atlasapi.entity.DateTimeSerializer;
+import org.atlasapi.serialization.protobuf.CommonProtos;
+import org.atlasapi.serialization.protobuf.CommonProtos.Image.Builder;
 
 import com.metabroadcast.common.media.MimeType;
 
 
 public class ImageSerializer {
 
-    public ContentProtos.Image serialize(Image image) {
+    private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+
+    public CommonProtos.Image serialize(Image image) {
         
-        Builder builder = ContentProtos.Image.newBuilder();
+        Builder builder = CommonProtos.Image.newBuilder();
         
         if (image.getAspectRatio() != null) {
             builder.setAspectRatio(image.getAspectRatio().toString());
         }
         if (image.getAvailabilityStart() != null) {
-            builder.setAvailabilityStart(serializeDateTime(image.getAvailabilityStart()));
+            builder.setAvailabilityStart(dateTimeSerializer.serialize(image.getAvailabilityStart()));
         }
         if (image.getAvailabilityEnd() != null) {
-            builder.setAvailabilityEnd(serializeDateTime(image.getAvailabilityEnd()));
+            builder.setAvailabilityEnd(dateTimeSerializer.serialize(image.getAvailabilityEnd()));
         }
         if (image.getCanonicalUri() != null) {
             builder.setUri(image.getCanonicalUri());
@@ -55,16 +55,16 @@ public class ImageSerializer {
         return builder.build();
     }
     
-    public Image deserialize(ContentProtos.Image msg) {
+    public Image deserialize(CommonProtos.Image msg) {
         Image.Builder builder = Image.builder(msg.getUri());
         if (msg.hasAspectRatio()) {
             builder.withAspectRatio(AspectRatio.valueOf(msg.getAspectRatio()));
         }
         if (msg.hasAvailabilityStart()) {
-            builder.withAvailabilityStart(deserializeDateTime(msg.getAvailabilityStart()));
+            builder.withAvailabilityStart(dateTimeSerializer.deserialize(msg.getAvailabilityStart()));
         }
         if (msg.hasAvailabilityStart()) {
-            builder.withAvailabilityEnd(deserializeDateTime(msg.getAvailabilityEnd()));
+            builder.withAvailabilityEnd(dateTimeSerializer.deserialize(msg.getAvailabilityEnd()));
         }
         if (msg.hasColor()) {
             builder.withColor(Color.valueOf(msg.getColor()));

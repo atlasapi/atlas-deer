@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.datastax.driver.core.querybuilder.Delete;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;

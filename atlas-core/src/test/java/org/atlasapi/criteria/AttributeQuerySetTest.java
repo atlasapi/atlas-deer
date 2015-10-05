@@ -7,7 +7,7 @@ import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.Queue;
 
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.criteria.QueryNode.IntermediateNode;
 import org.atlasapi.criteria.QueryNode.TerminalNode;
 import org.atlasapi.criteria.attribute.Attribute;

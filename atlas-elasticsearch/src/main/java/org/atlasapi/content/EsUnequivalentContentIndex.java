@@ -1,13 +1,10 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Function;
-import com.google.common.base.Objects;
-import com.google.common.collect.FluentIterable;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import com.metabroadcast.common.query.Selection;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.io.IOException;
+import java.util.Optional;
+
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -31,10 +28,14 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Function;
+import com.google.common.base.Objects;
+import com.google.common.collect.FluentIterable;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import com.metabroadcast.common.query.Selection;
 
 public class EsUnequivalentContentIndex extends AbstractIdleService implements ContentIndex {
 

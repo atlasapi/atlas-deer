@@ -1,10 +1,13 @@
 package org.atlasapi.generation.generated.model;
 
 import java.util.Set;
-import com.google.common.collect.ImmutableSet;
-import org.atlasapi.generation.model.ModelClassInfo;
+
+import org.atlasapi.entity.Person;
 import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
+import org.atlasapi.generation.model.ModelClassInfo;
+
+import com.google.common.collect.ImmutableSet;
 
 
 public class PersonInfo implements ModelClassInfo {
@@ -509,7 +512,7 @@ public class PersonInfo implements ModelClassInfo {
 
     @Override
     public Class<?> describedType() {
-        return org.atlasapi.content.Person.class;
+        return Person.class;
     }
 
 }

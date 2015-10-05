@@ -1,7 +1,7 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
+import javax.annotation.Nullable;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.content.Image;
@@ -10,7 +10,8 @@ import org.atlasapi.media.channel.ChannelNumbering;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
-import javax.annotation.Nullable;
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 
 public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.atlasapi.media.channel.Channel, Channel> {
 

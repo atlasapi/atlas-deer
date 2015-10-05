@@ -1,26 +1,27 @@
 package org.atlasapi.channel;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import org.atlasapi.content.Identified;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.Image;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.LocalDate;
 
-import javax.annotation.Nullable;
-
-import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 public class Channel extends Identified implements Sourced {
 

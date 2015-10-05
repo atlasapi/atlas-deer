@@ -1,8 +1,6 @@
 package org.atlasapi.content;
 
-import static org.atlasapi.entity.ProtoBufUtils.deserializeDateTime;
-import static org.atlasapi.entity.ProtoBufUtils.serializeDateTime;
-
+import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.IdentifiedSerializer;
 import org.atlasapi.serialization.protobuf.CommonProtos;
@@ -13,17 +11,19 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 public class BroadcastSerializer {
 
-    private final IdentifiedSerializer identifiedSerializer = new IdentifiedSerializer();
+    private final IdentifiedSerializer<Broadcast> identifiedSerializer = new IdentifiedSerializer<>();
     private final BlackoutRestrictionSerializer blackoutRestrictionSerializer = new BlackoutRestrictionSerializer();
-    
+    private final DateTimeSerializer serializer = new DateTimeSerializer();
+
     public ContentProtos.Broadcast.Builder serialize(Broadcast broadcast) {
         Builder builder = ContentProtos.Broadcast.newBuilder();
         builder.setIdentification(identifiedSerializer.serialize(broadcast));
         builder.setChannel(CommonProtos.Reference.newBuilder().setId(broadcast.getChannelId().longValue()));
-        builder.setTransmissionTime(serializeDateTime(broadcast.getTransmissionTime()));
-        builder.setTransmissionEndTime(serializeDateTime(broadcast.getTransmissionEndTime()));
+        builder.setTransmissionTime(serializer.serialize(broadcast.getTransmissionTime()));
+        builder.setTransmissionEndTime(serializer.serialize(broadcast.getTransmissionEndTime()));
         if (broadcast.getScheduleDate() != null) {
-            builder.setScheduleDate(serializeDateTime(broadcast.getScheduleDate().toDateTimeAtStartOfDay(DateTimeZones.UTC)));
+            builder.setScheduleDate(serializer.serialize(broadcast.getScheduleDate()
+                    .toDateTimeAtStartOfDay(DateTimeZones.UTC)));
         }
         if (broadcast.getSourceId() != null) {
             builder.setSourceId(broadcast.getSourceId());
@@ -75,11 +75,12 @@ public class BroadcastSerializer {
 
     public Broadcast deserialize(ContentProtos.Broadcast msg) {
         Broadcast broadcast = new Broadcast(Id.valueOf(msg.getChannel().getId()),
-            deserializeDateTime(msg.getTransmissionTime()),
-            deserializeDateTime(msg.getTransmissionEndTime()));
+                serializer.deserialize(msg.getTransmissionTime()),
+                serializer.deserialize(msg.getTransmissionEndTime()));
         identifiedSerializer.deserialize(msg.getIdentification(), broadcast);
         if (msg.hasScheduleDate()) {
-            broadcast.setScheduleDate(deserializeDateTime(msg.getScheduleDate()).toLocalDate());
+            broadcast.setScheduleDate(serializer.deserialize(msg.getScheduleDate())
+                    .toLocalDate());
         }
         broadcast.withId(msg.hasSourceId() ? msg.getSourceId() : null);
         broadcast.setIsActivelyPublished(msg.hasActivelyPublished() ? msg.getActivelyPublished() : null);

@@ -18,19 +18,24 @@ public class LegacyContentGroupTransformer extends DescribedLegacyResourceTransf
         );
 
         contentGroup.setId(legacyGroup.getId());
-        contentGroup.setType(ContentGroup.Type.valueOf(legacyGroup.getType().name()));
-
-        ImmutableList<ContentRef> refs = legacyGroup.getContents().stream()
-                .map(ref -> LegacyContentTransformer.legacyRefToRef(ref, legacyGroup.getPublisher()))
-                .filter(MorePredicates.isNotNull())
-                .collect(ImmutableCollectors.toList());
-
-        contentGroup.setContents(refs);
+        transformInto(contentGroup, legacyGroup);
 
         return contentGroup;
     }
 
     @Override protected Iterable<Alias> moreAliases(org.atlasapi.media.entity.ContentGroup input) {
         return ImmutableList.of();
+    }
+
+    public static void transformInto(ContentGroup contentGroup,
+            org.atlasapi.media.entity.ContentGroup input) {
+        contentGroup.setType(ContentGroup.Type.valueOf(input.getType().name()));
+
+        ImmutableList<ContentRef> refs = input.getContents().stream()
+                .map(ref -> LegacyContentTransformer.legacyRefToRef(ref, input.getPublisher()))
+                .filter(MorePredicates.isNotNull())
+                .collect(ImmutableCollectors.toList());
+
+        contentGroup.setContents(refs);
     }
 }

@@ -1,6 +1,6 @@
 package org.atlasapi.criteria.attribute;
 
-import org.atlasapi.content.Identified;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.BooleanAttributeQuery;
 import org.atlasapi.criteria.operator.EqualsOperator;

@@ -1,6 +1,5 @@
 package org.atlasapi.topic;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Set;
@@ -8,9 +7,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 
-import org.atlasapi.content.CassandraPersistenceException;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
+import org.atlasapi.entity.CassandraPersistenceException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;

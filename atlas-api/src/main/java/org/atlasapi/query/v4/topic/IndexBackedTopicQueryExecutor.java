@@ -4,8 +4,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Ordering;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -21,11 +19,10 @@ import org.atlasapi.topic.TopicResolver;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.query.Selection;
-
-import javax.annotation.Nullable;
 
 public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 

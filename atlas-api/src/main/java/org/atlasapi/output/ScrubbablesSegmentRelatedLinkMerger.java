@@ -21,7 +21,7 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
 
 /**
- *  This is a client-specific strategy for merging together and ordering the set of {@link org.atlasapi.content.RelatedLink}
+ *  This is a client-specific strategy for merging together and ordering the set of {@link RelatedLink}
  *  from a set of {@link org.atlasapi.segment.Segment} and {@link org.atlasapi.segment.SegmentEvent}.
  */
 public class ScrubbablesSegmentRelatedLinkMerger implements SegmentRelatedLinkMerger {

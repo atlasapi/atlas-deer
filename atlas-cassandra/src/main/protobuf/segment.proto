@@ -1,5 +1,4 @@
 import "common.proto";
-import "content.proto";
 package atlas.segment;
 
 option java_package = "org.atlasapi.serialization.protobuf";
@@ -13,7 +12,7 @@ message Segment {
     optional string type = 3;
     optional int32 duration = 4;
     repeated common.Alias aliases = 5;
-    repeated content.RelatedLink links = 6;
+    repeated common.RelatedLink links = 6;
     optional common.DateTime firstSeen = 13;
     optional common.DateTime lastFetched = 7;
     optional common.DateTime lastUpdated = 15;

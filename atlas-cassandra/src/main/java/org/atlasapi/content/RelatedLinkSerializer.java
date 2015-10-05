@@ -2,14 +2,14 @@ package org.atlasapi.content;
 
 import javax.annotation.Nullable;
 
-import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.atlasapi.serialization.protobuf.CommonProtos;
 
 import com.google.common.base.Function;
 
 public class RelatedLinkSerializer {
 
-    public ContentProtos.RelatedLink serialize(RelatedLink relatedLink) {
-        ContentProtos.RelatedLink.Builder link = ContentProtos.RelatedLink.newBuilder();
+    public CommonProtos.RelatedLink serialize(RelatedLink relatedLink) {
+        CommonProtos.RelatedLink.Builder link = CommonProtos.RelatedLink.newBuilder();
         link.setUrl(relatedLink.getUrl());
         link.setType(relatedLink.getType().toString());
         if (relatedLink.getSourceId() != null) {
@@ -33,7 +33,7 @@ public class RelatedLinkSerializer {
         return link.build();
     }
 
-    public RelatedLink deserialize(ContentProtos.RelatedLink link) {
+    public RelatedLink deserialize(CommonProtos.RelatedLink link) {
         RelatedLink.LinkType type = RelatedLink.LinkType.valueOf(link.getType());
         RelatedLink relatedLink = RelatedLink.relatedLink(type, link.getUrl())
                 .withSourceId(link.hasSourceId() ? link.getSourceId() : null)
@@ -46,20 +46,20 @@ public class RelatedLinkSerializer {
         return relatedLink;
     }
 
-    public final Function<RelatedLink, ContentProtos.RelatedLink> TO_PROTO =
-            new Function<RelatedLink, ContentProtos.RelatedLink>() {
+    public final Function<RelatedLink, CommonProtos.RelatedLink> TO_PROTO =
+            new Function<RelatedLink, CommonProtos.RelatedLink>() {
                 @Nullable
                 @Override
-                public ContentProtos.RelatedLink apply(@Nullable RelatedLink relatedLink) {
+                public CommonProtos.RelatedLink apply(@Nullable RelatedLink relatedLink) {
                     return serialize(relatedLink);
                 }
             };
 
-    public final Function<ContentProtos.RelatedLink, RelatedLink> FROM_PROTO =
-            new Function<ContentProtos.RelatedLink, RelatedLink>() {
+    public final Function<CommonProtos.RelatedLink, RelatedLink> FROM_PROTO =
+            new Function<CommonProtos.RelatedLink, RelatedLink>() {
                 @Nullable
                 @Override
-                public RelatedLink apply(@Nullable ContentProtos.RelatedLink msg) {
+                public RelatedLink apply(@Nullable CommonProtos.RelatedLink msg) {
                     return deserialize(msg);
                 }
             };

@@ -13,7 +13,8 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableList;
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Content;
@@ -46,11 +47,10 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.query.Selection;
-
-import javax.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TopicContentQueryExecutorTest {
