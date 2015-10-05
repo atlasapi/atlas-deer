@@ -17,11 +17,7 @@ import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.FilteredQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -173,13 +169,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             }
 
             if (queryParams.get().getActionableFilterParams().isPresent()) {
-                filterBuilder.must(FiltersBuilder.builderActionableFilter(
-                        queryParams.get().getActionableFilterParams().get())
+                Optional<Id> maybeRegionId = queryParams.get().getRegionId();
+                FilterBuilder actionableFilter = FiltersBuilder.buildActionableFilter(
+                        queryParams.get().getActionableFilterParams().get(), maybeRegionId, channelGroupResolver
                 );
-            }
-
-            if (queryParams.get().getRegionId().isPresent()) {
-                filterBuilder.must(FiltersBuilder.addRegionFilter(queryParams, channelGroupResolver));
+                filterBuilder.must(actionableFilter);
             }
         }
         

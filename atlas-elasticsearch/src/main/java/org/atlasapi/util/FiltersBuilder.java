@@ -12,7 +12,6 @@ import org.atlasapi.content.EsBroadcast;
 import org.atlasapi.content.EsContent;
 import org.atlasapi.content.EsLocation;
 import org.atlasapi.content.InclusionExclusionId;
-import org.atlasapi.content.IndexQueryParams;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -90,7 +89,8 @@ public class FiltersBuilder {
         );
     }
 
-    public static FilterBuilder builderActionableFilter(Map<String, String> actionableParams) {
+    public static FilterBuilder buildActionableFilter(Map<String, String> actionableParams, Optional<Id> maybeRegionId,
+                                                      ChannelGroupResolver channelGroupResolver) {
         OrFilterBuilder orFilterBuilder = FilterBuilders.orFilter();
         if (actionableParams.get("location.available") != null) {
             orFilterBuilder.add(buildAvailabilityFilter());
@@ -101,19 +101,30 @@ public class FiltersBuilder {
                 : DateTime.parse(actionableParams.get("broadcast.time.lt"));
         if (broadcastTimeGreaterThan != null || broadcastTimeLessThan != null) {
             orFilterBuilder.add(
-                    buildBroadcastRangeFilter(broadcastTimeGreaterThan, broadcastTimeLessThan)
+                    buildBroadcastRangeFilter(broadcastTimeGreaterThan, broadcastTimeLessThan, maybeRegionId, channelGroupResolver)
             );
         }
         return orFilterBuilder;
     }
 
-    public static FilterBuilder buildBroadcastRangeFilter(DateTime broadcastTimeGreaterThan, DateTime broadcastTimeLessThan) {
+    public static FilterBuilder buildBroadcastRangeFilter(DateTime broadcastTimeGreaterThan, DateTime broadcastTimeLessThan,
+                                                          Optional<Id> maybeRegionId, ChannelGroupResolver cgResolver) {
         RangeFilterBuilder parentFilter = FilterBuilders.rangeFilter("transmissionTimeInMillis");
         if (broadcastTimeGreaterThan != null) {
             parentFilter.gte(broadcastTimeGreaterThan.getMillis());
         }
         if (broadcastTimeLessThan != null) {
             parentFilter.lte(broadcastTimeLessThan.getMillis());
+        }
+        if (maybeRegionId.isPresent()) {
+            FilterBuilder regionFilter = buildRegionFilter(maybeRegionId.get(), cgResolver);
+            return FilterBuilders.orFilter(
+                    FilterBuilders.andFilter(parentFilter, regionFilter),
+                    FilterBuilders.andFilter(
+                            FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter),
+                            FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, regionFilter)
+                    )
+            );
         }
         return FilterBuilders.orFilter(
                 parentFilter,
@@ -140,8 +151,7 @@ public class FiltersBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    public static FilterBuilder addRegionFilter(Optional<IndexQueryParams> queryParams, ChannelGroupResolver channelGroupResolver) {
-        Id regionId = queryParams.get().getRegionId().get();
+    public static FilterBuilder buildRegionFilter(Id regionId, ChannelGroupResolver channelGroupResolver) {
         ChannelGroup region;
         try {
             Resolved<ChannelGroup<?>> resolved = Futures.get(
