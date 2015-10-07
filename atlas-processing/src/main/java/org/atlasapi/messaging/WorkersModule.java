@@ -210,32 +210,10 @@ public class WorkersModule {
 
     @Bean
     @Lazy(true)
-    public ContentIndexingWorker contentIndexingWorker() {
-        return new ContentIndexingWorker(persistence.contentStore(), persistence.contentIndex(), health.metrics());
-    }
-
-    @Bean
-    @Lazy(true)
     public EquivalentContentIndexingWorker equivalentContentIndexingWorker() {
         return new EquivalentContentIndexingWorker(
                 persistence.contentStore(), persistence.contentIndex(), health.metrics()
         );
-    }
-
-    @Bean
-    @Lazy(true)
-    public KafkaConsumer contentIndexingMessageListener() {
-        MessageConsumerBuilder<KafkaConsumer, ResourceUpdatedMessage> consumer =
-                messaging.messageConsumerFactory().createConsumer(
-                        contentIndexingWorker(),
-                        serializer(ResourceUpdatedMessage.class),
-                        contentChanges,
-                        "ContentIndexer"
-                );
-        return consumer.withMaxConsumers(maxContentIndexers)
-                .withDefaultConsumers(defaultContentIndexers)
-                .withConsumerSystem(consumerSystem)
-                .build();
     }
 
     @Bean
@@ -261,9 +239,7 @@ public class WorkersModule {
         if(equivalentScheduleStoreContentUpdatesEnabled) {
             services.add(equivalentScheduleStoreContentListener());
         }
-
         if(contentIndexerEnabled) {
-            services.add(contentIndexingMessageListener());
             services.add(equivalentContentIndexingMessageListener());
         }
         if(equivalentContentStoreEnabled) {
