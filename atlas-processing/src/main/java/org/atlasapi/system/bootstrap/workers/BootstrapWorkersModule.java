@@ -30,8 +30,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.ServiceManager;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.MessageSerializer;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
@@ -62,6 +65,7 @@ public class BootstrapWorkersModule {
     private Boolean contentBootstrapEnabled = Configurer.get("messaging.enabled.content.bootstrap").toBoolean();
     private Boolean scheduleBootstrapEnabled = Configurer.get("messaging.enabled.schedule.bootstrap").toBoolean();
     private Boolean topicBootstrapEnabled = Configurer.get("messaging.enabled.topic.bootstrap").toBoolean();
+    private Boolean eventBoostrapEnabled = Configurer.get("messaging.enabled.event.bootstrap").toBoolean();
 
     private Set<Publisher> ignoredScheduleSources
             = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT));
@@ -76,6 +80,8 @@ public class BootstrapWorkersModule {
     private ProcessingHealthModule health;
     @Autowired
     private ElasticSearchContentIndexModule search;
+
+    private ServiceManager consumerManager;
 
     @Bean
     @Qualifier("bootstrap")
@@ -162,36 +168,31 @@ public class BootstrapWorkersModule {
 
     @PostConstruct
     public void start() throws TimeoutException {
+        ImmutableList.Builder<Service> services = ImmutableList.builder();
+
         if(contentBootstrapEnabled) {
-            contentBootstrapWorker().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+            services.add(contentBootstrapWorker());
         }
         if(scheduleBootstrapEnabled) {
-            scheduleReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+            services.add(scheduleReadWriter());
         }
         if(v2ScheduleEnabled) {
-            scheduleV2ReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+            services.add(scheduleV2ReadWriter());
         }
         if(topicBootstrapEnabled) {
-            topicReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+            services.add(topicReadWriter());
         }
-        eventReadWriter().startAsync().awaitRunning(1, TimeUnit.MINUTES);
+        if(eventBoostrapEnabled) {
+            services.add(eventReadWriter());
+        }
+
+        consumerManager = new ServiceManager(services.build());
+        consumerManager.startAsync().awaitHealthy(1, TimeUnit.MINUTES);
     }
 
     @PreDestroy
     public void stop() throws TimeoutException {
-        if(contentBootstrapEnabled) {
-            contentBootstrapWorker().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
-        }
-        if(scheduleBootstrapEnabled) {
-            scheduleReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
-        }
-        if(v2ScheduleEnabled) {
-            scheduleV2ReadWriter().stopAsync().awaitRunning(1, TimeUnit.MINUTES);
-        }
-        if(topicBootstrapEnabled) {
-            topicReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
-        }
-        eventReadWriter().stopAsync().awaitTerminated(1, TimeUnit.MINUTES);
+        consumerManager.stopAsync().awaitStopped(1, TimeUnit.MINUTES);
     }
 
     @Bean
