@@ -39,11 +39,11 @@ public class SeriesWriter implements EntityListWriter<SeriesRef> {
         writer.writeField("series_number", entity.getSeriesNumber());
         writer.writeField("type", entity.getContentType());
 
-        Resolved<Content> resolved =
-                Futures.get(contentResolver.resolveIds(ImmutableList.of(entity.getId())), IOException.class);
-        Series series = (Series) resolved.getResources().first().get();
-
-        writer.writeList("release_years", "release_year", aggregateReleaseYears(series), ctxt);
+//        Resolved<Content> resolved =
+//                Futures.get(contentResolver.resolveIds(ImmutableList.of(entity.getId())), IOException.class);
+//        Series series = (Series) resolved.getResources().first().get();
+//
+//        writer.writeList("release_years", "release_year", aggregateReleaseYears(series), ctxt);
     }
 
     private Iterable<Integer> aggregateReleaseYears(Series series) {
