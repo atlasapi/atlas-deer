@@ -513,7 +513,9 @@ public class EsContentTranslator {
 
     private Iterable<Long> itemToBroadcastStartTimes(Item item) {
         return item.getBroadcasts().stream()
-                .filter(b -> b.getTransmissionTime() != null)
+                .filter(b -> b.getTransmissionTime() != null 
+                             && Boolean.TRUE.equals(b.isActivelyPublished())
+                       )
                 .map(b -> b.getTransmissionTime().getMillis())
                 .collect(ImmutableCollectors.toList());
     }
