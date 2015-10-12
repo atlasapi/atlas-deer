@@ -17,7 +17,17 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.EsTopic;
-import org.elasticsearch.index.query.*;
+
+import org.elasticsearch.index.query.AndFilterBuilder;
+import org.elasticsearch.index.query.BoolFilterBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.HasChildFilterBuilder;
+import org.elasticsearch.index.query.RangeFilterBuilder;
+import org.elasticsearch.index.query.TermsFilterBuilder;
+import org.elasticsearch.index.query.OrFilterBuilder;
+import org.elasticsearch.index.query.NestedFilterBuilder;
+
 import org.joda.time.DateTime;
 
 import com.google.common.base.Throwables;
@@ -25,7 +35,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
-import org.joda.time.format.DateTimeFormatter;
 
 public class FiltersBuilder {
 
