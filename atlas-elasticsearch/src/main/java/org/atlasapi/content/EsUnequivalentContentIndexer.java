@@ -5,6 +5,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.SecondaryIndex;
+import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.IndicesRequest;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -81,11 +84,11 @@ public class EsUnequivalentContentIndexer {
         Long id = content.getId().longValue();
         log.debug("Content {} is not actively published, removing from index", id);
         if (content instanceof Item) {
-            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
+            deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
         }
         if (content instanceof Container) {
-            deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
         }
     }
 
@@ -135,11 +138,13 @@ public class EsUnequivalentContentIndexer {
                         .id(getDocId(item))
                         .source(esContent.toMap())
                         .parent(getDocId(container));
+                log.debug(mainIndexRequest.source().toUtf8());
             } else {
                 mainIndexRequest = Requests.indexRequest(indexName)
                         .type(EsContent.TOP_LEVEL_ITEM)
                         .id(getDocId(item))
                         .source(esContent.hasChildren(false).toMap());
+                log.debug(mainIndexRequest.source().toUtf8());
             }
 
             requests.add(mainIndexRequest);
