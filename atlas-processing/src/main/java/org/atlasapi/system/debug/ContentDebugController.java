@@ -246,7 +246,7 @@ public class ContentDebugController {
             if (!writeResult.written()) {
                 response.getWriter()
                         .write(respString.append(
-                                "\nNo write occured when migrating content into C* store")
+                                "\nNo write occurred when migrating content into C* store")
                                 .toString());
                 response.setStatus(500);
                 return;

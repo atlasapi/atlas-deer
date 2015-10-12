@@ -104,6 +104,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     @Override
     public final void updateContent(Content content) throws WriteException {
         try {
+            log.trace("Updating content with id={}", content.getId().longValue());
             lock.lock(content.getId());
             ImmutableList<Id> ids = ImmutableList.of(content.getId());
 
