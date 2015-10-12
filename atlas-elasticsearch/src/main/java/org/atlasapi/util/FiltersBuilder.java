@@ -17,13 +17,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.EsTopic;
-import org.elasticsearch.index.query.BoolFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.NestedFilterBuilder;
-import org.elasticsearch.index.query.OrFilterBuilder;
-import org.elasticsearch.index.query.RangeFilterBuilder;
-import org.elasticsearch.index.query.TermsFilterBuilder;
+import org.elasticsearch.index.query.*;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Throwables;
@@ -31,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import org.joda.time.format.DateTimeFormatter;
 
 public class FiltersBuilder {
 
@@ -109,26 +104,35 @@ public class FiltersBuilder {
 
     public static FilterBuilder buildBroadcastRangeFilter(DateTime broadcastTimeGreaterThan, DateTime broadcastTimeLessThan,
                                                           Optional<Id> maybeRegionId, ChannelGroupResolver cgResolver) {
-        RangeFilterBuilder parentFilter = FilterBuilders.rangeFilter("transmissionTimeInMillis");
+
+        RangeFilterBuilder startTimeFilter = FilterBuilders.rangeFilter(
+                EsContent.BROADCASTS + "." + EsBroadcast.TRANSMISSION_TIME
+        );
         if (broadcastTimeGreaterThan != null) {
-            parentFilter.gte(broadcastTimeGreaterThan.getMillis());
+            startTimeFilter.gte(broadcastTimeGreaterThan.toString());
         }
+        RangeFilterBuilder endTimeFilter = FilterBuilders.rangeFilter(
+                EsContent.BROADCASTS + "." + EsBroadcast.TRANSMISSION_END_TIME
+        );
         if (broadcastTimeLessThan != null) {
-            parentFilter.lte(broadcastTimeLessThan.getMillis());
+            endTimeFilter.lte(broadcastTimeLessThan.toString());
         }
+        AndFilterBuilder rangeFilter = FilterBuilders.andFilter(startTimeFilter, endTimeFilter);
         if (maybeRegionId.isPresent()) {
             FilterBuilder regionFilter = buildRegionFilter(maybeRegionId.get(), cgResolver);
-            return FilterBuilders.orFilter(
-                    FilterBuilders.andFilter(parentFilter, regionFilter),
-                    FilterBuilders.andFilter(
-                            FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter),
-                            FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, regionFilter)
-                    )
+            NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
+                    EsContent.BROADCASTS,
+                    FilterBuilders.andFilter(rangeFilter, regionFilter)
             );
+            HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter);
+            return FilterBuilders.orFilter(parentFilter, childFilter);
         }
-        return FilterBuilders.orFilter(
-                parentFilter,
-                FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter)
+        return FilterBuilders.nestedFilter(
+                EsContent.BROADCASTS,
+                FilterBuilders.orFilter(
+                        rangeFilter,
+                        FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter)
+                )
         );
     }
 
@@ -168,9 +172,6 @@ public class FiltersBuilder {
                 .map(Id::longValue)
                 .collect(ImmutableCollectors.toList());
 
-        return FilterBuilders.nestedFilter(
-                EsContent.BROADCASTS,
-                FilterBuilders.termsFilter(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion)
-        );
+        return FilterBuilders.termsFilter(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion);
     }
 }
