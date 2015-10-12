@@ -84,11 +84,11 @@ public class EsUnequivalentContentIndexer {
         Long id = content.getId().longValue();
         log.debug("Content {} is not actively published, removing from index", id);
         if (content instanceof Item) {
-            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
+            deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
         }
         if (content instanceof Container) {
-            deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
         }
     }
 
