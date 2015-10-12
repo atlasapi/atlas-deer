@@ -62,30 +62,27 @@ public class TitleQueryBuilder {
     }
 
     private static QueryBuilder fuzzyTermSearch(String value, List<String> tokens) {
-        /* Temporarily commented out to test tweaks around title searching and determining whether this is a
-                sensible and neccesary thing to do.
-         */
-//        BoolQueryBuilder queryForTerms = new BoolQueryBuilder();
-//        for (String token : tokens) {
-//            BoolQueryBuilder queryForThisTerm = new BoolQueryBuilder();
-//            queryForThisTerm.minimumNumberShouldMatch(1);
-//
-//            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(50);
-//            queryForThisTerm.should(prefix);
-//
-//            QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token)
-//                    .fuzziness(Fuzziness.AUTO)
-//                    .prefixLength(USE_PREFIX_SEARCH_UP_TO);
-//            queryForThisTerm.should(fuzzy);
-//
-//            queryForTerms.must(queryForThisTerm);
-//        }
+        BoolQueryBuilder queryForTerms = new BoolQueryBuilder();
+        for (String token : tokens) {
+            BoolQueryBuilder queryForThisTerm = new BoolQueryBuilder();
+            queryForThisTerm.minimumNumberShouldMatch(1);
+
+            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(50);
+            queryForThisTerm.should(prefix);
+
+            QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token)
+                    .fuzziness(Fuzziness.AUTO)
+                    .prefixLength(USE_PREFIX_SEARCH_UP_TO);
+            queryForThisTerm.should(fuzzy);
+
+            queryForTerms.must(queryForThisTerm);
+        }
 
         BoolQueryBuilder either = new BoolQueryBuilder();
         either.minimumNumberShouldMatch(1);
         
-        //either.should(queryForTerms);
-        //either.should(fuzzyWithoutSpaces(value));
+        either.should(queryForTerms);
+        either.should(fuzzyWithoutSpaces(value));
 
         QueryBuilder prefix = QueryBuilders.functionScoreQuery(prefixSearch(value)).boost(50);
         either.should(prefix);
