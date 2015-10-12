@@ -46,7 +46,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.querybuilder.Update;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
@@ -341,15 +340,11 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private Statement dataRowUpdateFor(EquivalenceGraph graph, Content content) {
-        Update.Assignments statement = update(EQUIVALENT_CONTENT_TABLE)
+        return update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, graph.getId().longValue()))
                 .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
                 .with(set(DATA_KEY, serialize(content)))
                 .and(set(GRAPH_KEY, graphSerializer.serialize(graph)));
-
-        log.trace("Preparing Cassandra query: {}", statement.toString());
-
-        return statement;
     }
 
     private ByteBuffer serialize(Content content) {
