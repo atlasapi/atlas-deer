@@ -145,12 +145,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Iterable<Id> transitiveIdsToLock(Set<Id> adjacentsIds) throws StoreException {
         return Iterables.concat(Iterables.transform(get(resolveIds(adjacentsIds)).values(),
-                new Function<Optional<EquivalenceGraph>, Set<Id>>() {
-                    @Override
-                    public Set<Id> apply(Optional<EquivalenceGraph> input) {
-                        return input.isPresent() ? input.get().getAdjacencyList().keySet() : ImmutableSet.<Id>of();
-                    }
-                }
+                input -> input.isPresent()
+                         ? input.get().getAdjacencyList().keySet()
+                         : ImmutableSet.<Id>of()
         ));
     }
 
@@ -164,11 +161,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             throw new CorruptEquivalenceGraphIndexException(subject.getId());
         }
         
-        if(!changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
-            log().debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
-            return Optional.absent();
-        }
-        
         Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs = resolveRefs(assertedAdjacents);
 
         Map<Id, Adjacents> updatedAdjacents = updateAdjacencies(subject,
@@ -176,9 +168,17 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         
         EquivalenceGraphUpdate update =
                 computeUpdate(subject, assertedAdjacentGraphs, updatedAdjacents);
-        
-        store(update.getAllGraphs());
-        
+
+        if(changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
+            store(update.getAllGraphs());
+        }
+        else {
+            log().debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
+        }
+
+        // We are always returning a graph update so that a graph change message will be
+        // generated and downstream consumers (equivalent content index) will get a chance
+        // to get up to date if they happen to fall out of sync with the graph store
         return Optional.of(update);
     }
 
