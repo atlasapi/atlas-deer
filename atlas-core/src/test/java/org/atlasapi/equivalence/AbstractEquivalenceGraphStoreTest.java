@@ -549,6 +549,19 @@ public class AbstractEquivalenceGraphStoreTest {
         return new EquivalenceGraphAdjacencyListMatcher(subMatcher);
     }
 
+    private static class EquivalenceGraphAdjacencyListMatcher
+            extends FeatureMatcher<EquivalenceGraph, Map<Id, Adjacents>> {
+
+        public EquivalenceGraphAdjacencyListMatcher(Matcher<? super Map<Id, Adjacents>> subMatcher) {
+            super(subMatcher, "with adjacency list", "adjacency list");
+        }
+
+        @Override
+        protected Map<Id, Adjacents> featureValueOf(EquivalenceGraph actual) {
+            return actual.getAdjacencyList();
+        }
+    }
+
     private final class InMemoryEquivalenceGraphStore extends AbstractEquivalenceGraphStore {
 
         private final Logger log = LoggerFactory.getLogger(getClass());
@@ -605,19 +618,6 @@ public class AbstractEquivalenceGraphStoreTest {
         @Override
         protected GroupLock<Id> lock() {
             return lock;
-        }
-    }
-    
-    private static class EquivalenceGraphAdjacencyListMatcher
-            extends FeatureMatcher<EquivalenceGraph, Map<Id, Adjacents>> {
-
-        public EquivalenceGraphAdjacencyListMatcher(Matcher<? super Map<Id, Adjacents>> subMatcher) {
-            super(subMatcher, "with adjacency list", "adjacency list");
-        }
-
-        @Override
-        protected Map<Id, Adjacents> featureValueOf(EquivalenceGraph actual) {
-            return actual.getAdjacencyList();
         }
     }
 }
