@@ -14,7 +14,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -70,65 +69,6 @@ public class AbstractEquivalenceGraphStoreTest {
     private final Item c4Item = new Item(Id.valueOf(4), Publisher.C4);
     private final Item fiveItem = new Item(Id.valueOf(5), Publisher.FIVE);
     
-    private final class InMemoryEquivalenceGraphStore extends AbstractEquivalenceGraphStore {
-        
-        private final Logger log = LoggerFactory.getLogger(getClass());
-        private final ConcurrentMap<Id, EquivalenceGraph> store = Maps.newConcurrentMap();
-        private final Function<Id, EquivalenceGraph> storeFn = Functions.forMap(store, null);
-        private final GroupLock<Id> lock = GroupLock.natural();
-        
-        public InMemoryEquivalenceGraphStore() {
-            super(new MessageSender<EquivalenceGraphUpdateMessage>() {
-                @Override
-                public void sendMessage(EquivalenceGraphUpdateMessage message)  {
-                    //no-op
-                }
-
-                @Override
-                public void close() throws Exception {
-                    
-                }
-            });
-        }
-        
-        @Override
-        public ListenableFuture<OptionalMap<Id, EquivalenceGraph>> resolveIds(Iterable<Id> ids) {
-            ImmutableMap.Builder<Id, EquivalenceGraph> result = ImmutableMap.builder();
-            for (Id id : ids) {
-                EquivalenceGraph graph = storeFn.apply(id);
-                if (graph != null) {
-                    result.put(id, graph);
-                }
-            }
-            OptionalMap<Id, EquivalenceGraph> optionalMap = ImmutableOptionalMap.fromMap(result.build());
-            return Futures.immediateFuture(optionalMap);
-        }
-        
-        @Override
-        protected void doStore(ImmutableSet<EquivalenceGraph> graphs) {
-            for (EquivalenceGraph graph : graphs) {
-                for (Id id : graph.getEquivalenceSet()) {
-                    store.put(id, graph);
-                }
-            }
-        }
-        
-        @Override
-        protected Logger log() {
-            return log;
-        }
-
-        @Override
-        protected void cleanGraphAndIndex(Id subjectId) {
-            throw new NotImplementedException();
-        }
-
-        @Override
-        protected GroupLock<Id> lock() {
-            return lock;
-        }
-    }
-    
     private final InMemoryEquivalenceGraphStore store = new InMemoryEquivalenceGraphStore();
     
     @Before
@@ -151,7 +91,6 @@ public class AbstractEquivalenceGraphStoreTest {
         
         assertEfferentAdjacents(bbcItem, paItem);
         assertAfferentAdjacent(paItem, bbcItem);
-        
     }
 
     private EquivalenceGraph graphOf(Item item) {
@@ -166,7 +105,6 @@ public class AbstractEquivalenceGraphStoreTest {
         assertAfferentAdjacent(paItem, bbcItem);
         assertAfferentAdjacent(c4Item, bbcItem);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
-        
     }
 
     @Test
@@ -224,13 +162,15 @@ public class AbstractEquivalenceGraphStoreTest {
         
         makeEquivalent(bbcItem, paItem, itvItem);
         
-        assertEquals(ImmutableSet.copyOf(Lists.transform(ImmutableList.of(bbcItem, paItem, itvItem, c4Item, fiveItem), Identifiables.toId())), 
+        assertEquals(ImmutableSet.copyOf(Lists.transform(
+                        ImmutableList.of(bbcItem, paItem, itvItem, c4Item, fiveItem),
+                        Identifiables.toId()
+                )),
                 graphOf(bbcItem).getEquivalenceSet());
                         
         makeEquivalent(bbcItem, Publisher.all());
         
         assertEquals(ImmutableSet.of(bbcItem.getId()), graphOf(bbcItem).getEquivalenceSet());
-        
     }
     
     @Test
@@ -247,7 +187,6 @@ public class AbstractEquivalenceGraphStoreTest {
         possibleUpdate = makeEquivalent(bbcItem, Publisher.all());
         
         checkUpdate(possibleUpdate, bbcItem, ImmutableSet.of(graphOf(itvItem), graphOf(c4Item)), ImmutableSet.<Id>of());
-        
     }
 
     @Test
@@ -268,16 +207,6 @@ public class AbstractEquivalenceGraphStoreTest {
         possibleUpdate = makeEquivalent(paItem, Publisher.all(), fiveItem);
         
         checkUpdate(possibleUpdate, bbcItem, ImmutableSet.<EquivalenceGraph>of(), ImmutableSet.<Id>of());
-        
-    }
-
-    private void checkUpdate(Optional<EquivalenceGraphUpdate> possibleUpdate, Item updated,
-            ImmutableSet<EquivalenceGraph> created, ImmutableSet<Id> deleted) {
-        assertTrue(possibleUpdate.isPresent());
-        EquivalenceGraphUpdate update = possibleUpdate.get();
-        assertThat("updated", update.getUpdated(), is(graphOf(updated)));
-        assertThat("created", update.getCreated(), is(created));
-        assertThat("deleted", update.getDeleted(), is(deleted));
     }
     
     @Test
@@ -296,14 +225,15 @@ public class AbstractEquivalenceGraphStoreTest {
         assertEfferentAdjacents(bbcItem, paItem);
         assertAfferentAdjacent(paItem, bbcItem);
         
-        assertThat(graphOf(c4Item), adjacents(c4Item.getId(), afferents(ImmutableSet.of(c4Item.toRef()))));
-        assertThat(graphOf(c4Item), adjacents(c4Item.getId(), efferents(ImmutableSet.of(c4Item.toRef()))));
+        assertThat(graphOf(c4Item), adjacents(c4Item.getId(),
+                afferents(ImmutableSet.of(c4Item.toRef()))));
+        assertThat(graphOf(c4Item), adjacents(c4Item.getId(),
+                efferents(ImmutableSet.of(c4Item.toRef()))));
         
         assertThat(graphOf(bbcItem), adjacencyList(not(hasKey(c4Item.getId()))));
         assertThat(graphOf(paItem), adjacencyList(not(hasKey(c4Item.getId()))));
         assertThat(graphOf(c4Item), adjacencyList(not(hasKey(bbcItem.getId()))));
         assertThat(graphOf(c4Item), adjacencyList(not(hasKey(paItem.getId()))));
-        
     }
     
     @Test
@@ -350,23 +280,17 @@ public class AbstractEquivalenceGraphStoreTest {
         
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch finish= new CountDownLatch(2);
-        executor.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                start.await();
-                makeEquivalent(one, two, one, two);
-                finish.countDown();
-                return null;
-            }
+        executor.submit(() -> {
+            start.await();
+            makeEquivalent(one, two, one, two);
+            finish.countDown();
+            return null;
         });
-        executor.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                start.await();
-                makeEquivalent(four, five, four, five);
-                finish.countDown();
-                return null;
-            }
+        executor.submit(() -> {
+            start.await();
+            makeEquivalent(four, five, four, five);
+            finish.countDown();
+            return null;
         });
         
         start.countDown();
@@ -398,26 +322,7 @@ public class AbstractEquivalenceGraphStoreTest {
     
     @Test
     public void testSplittingASetInThree() throws WriteException {
-        
         makeEquivalent(paItem, itvItem);
-        
-    }
-    
-    private Optional<EquivalenceGraphUpdate> makeEquivalent(Item subj, Item...equivs) throws WriteException {
-        Iterable<Item> items = Iterables.concat(ImmutableList.of(subj), ImmutableList.copyOf(equivs));
-        ImmutableSet<Publisher> sources = FluentIterable.from(items)
-                .transform(Sourceds.toPublisher())
-                .toSet();
-        return makeEquivalent(subj, sources, equivs);
-    }
-
-    private Optional<EquivalenceGraphUpdate> makeEquivalent(Item subj, Set<Publisher> sources, Item...equivs) throws WriteException {
-        ImmutableList<Item> es = ImmutableList.copyOf(equivs);
-        return store.updateEquivalences(subj.toRef(), ImmutableSet.copyOf(Iterables.transform(es,new Function<Item,ResourceRef>(){
-            @Override
-            public ResourceRef apply(Item input) {
-                return input.toRef();
-            }})), sources);
     }
     
     @Test
@@ -458,9 +363,11 @@ public class AbstractEquivalenceGraphStoreTest {
         
         assertThat(graphOf(bbcItem).getAdjacencyList().size(), is(41));
         assertThat(graphOf(paItem).getAdjacencyList().size(), is(41));
-        assertThat(graphOf(bbcItem), adjacents(bbcItem.getId(), efferents(not(hasItem(paItem.toRef())))));
+        assertThat(graphOf(bbcItem), adjacents(bbcItem.getId(),
+                efferents(not(hasItem(paItem.toRef())))));
         assertThat(graphOf(bbcItem), adjacencyList(not(hasKey(paItem.getId()))));
-        assertThat(graphOf(paItem), adjacents(paItem.getId(), afferents(not(hasItem(bbcItem.toRef())))));
+        assertThat(graphOf(paItem), adjacents(paItem.getId(),
+                afferents(not(hasItem(bbcItem.toRef())))));
         assertThat(graphOf(paItem), adjacencyList(not(hasKey(bbcItem.getId()))));
         
     }
@@ -507,14 +414,6 @@ public class AbstractEquivalenceGraphStoreTest {
         
     }
 
-//    private void print(Item... items) {
-//        OptionalMap<Id, EquivalenceGraph> graphs = allGraphs(items[0], items);
-//        for (EquivalenceGraph g : Optional.presentInstances(graphs.values())) {
-//            System.out.println(g);
-//            System.out.println("---");
-//        }
-//    }
-
     private void assertOnlyTransitivelyEquivalent(Item left, Item right) {
         EquivalenceGraph lg = graphOf(left);
         Adjacents la = lg.getAdjacents(left.getId());
@@ -552,6 +451,20 @@ public class AbstractEquivalenceGraphStoreTest {
         }
     }
 
+    private Optional<EquivalenceGraphUpdate> makeEquivalent(Item subj, Item...equivs) throws WriteException {
+        Iterable<Item> items = Iterables.concat(ImmutableList.of(subj), ImmutableList.copyOf(equivs));
+        ImmutableSet<Publisher> sources = FluentIterable.from(items)
+                .transform(Sourceds.toPublisher())
+                .toSet();
+        return makeEquivalent(subj, sources, equivs);
+    }
+
+    private Optional<EquivalenceGraphUpdate> makeEquivalent(Item subj, Set<Publisher> sources, Item...equivs) throws WriteException {
+        ImmutableList<Item> es = ImmutableList.copyOf(equivs);
+        return store.updateEquivalences(subj.toRef(),
+                ImmutableSet.copyOf(Iterables.transform(es, Item::toRef)), sources);
+    }
+
     private <T> T get(ListenableFuture<T> resolveIds) {
         return Futures.getUnchecked(resolveIds);
     }
@@ -559,17 +472,26 @@ public class AbstractEquivalenceGraphStoreTest {
     private Set<Publisher> sources(Sourced... srcds) {
         return FluentIterable.from(ImmutableList.copyOf(srcds)).transform(Sourceds.toPublisher()).toSet();
     }
+
+    private void checkUpdate(Optional<EquivalenceGraphUpdate> possibleUpdate, Item updated,
+            ImmutableSet<EquivalenceGraph> created, ImmutableSet<Id> deleted) {
+        assertTrue(possibleUpdate.isPresent());
+        EquivalenceGraphUpdate update = possibleUpdate.get();
+        assertThat("updated", update.getUpdated(), is(graphOf(updated)));
+        assertThat("created", update.getCreated(), is(created));
+        assertThat("deleted", update.getDeleted(), is(deleted));
+    }
     
-    public static final Matcher<? super Adjacents> afferents(Matcher<? super Set<ResourceRef>> subMatcher) {
+    private static Matcher<? super Adjacents> afferents(Matcher<? super Set<ResourceRef>> subMatcher) {
         return new AdjacentsAfferentsMatcher(subMatcher);
     }
 
-    public static final Matcher<? super Adjacents> afferents(Set<? extends ResourceRef> set) {
-        Set<ResourceRef> sets = ImmutableSet.<ResourceRef>copyOf(set);
+    private static Matcher<? super Adjacents> afferents(Set<? extends ResourceRef> set) {
+        Set<ResourceRef> sets = ImmutableSet.copyOf(set);
         return afferents(equalTo(sets));
     }
     
-    public static class AdjacentsAfferentsMatcher extends FeatureMatcher<Adjacents, Set<ResourceRef>> {
+    private static class AdjacentsAfferentsMatcher extends FeatureMatcher<Adjacents, Set<ResourceRef>> {
 
         public AdjacentsAfferentsMatcher(Matcher<? super Set<ResourceRef>> subMatcher) {
             super(subMatcher, "with afferent edges", "afferents set");
@@ -579,15 +501,14 @@ public class AbstractEquivalenceGraphStoreTest {
         protected Set<ResourceRef> featureValueOf(Adjacents actual) {
             return actual.getAfferent();
         }
-        
     }
 
-    public static final Matcher<? super Adjacents> efferents(Matcher<? super Set<ResourceRef>> subMatcher) {
+    private static Matcher<? super Adjacents> efferents(Matcher<? super Set<ResourceRef>> subMatcher) {
         return new AdjacentsEfferentsMatcher(subMatcher);
     }
     
-    public static final Matcher<? super Adjacents> efferents(Set<? extends ResourceRef> set) {
-        Set<ResourceRef> sets = ImmutableSet.<ResourceRef>copyOf(set);
+    private static Matcher<? super Adjacents> efferents(Set<? extends ResourceRef> set) {
+        Set<ResourceRef> sets = ImmutableSet.copyOf(set);
         return efferents(equalTo(sets));
     }
     
@@ -601,14 +522,14 @@ public class AbstractEquivalenceGraphStoreTest {
         protected Set<ResourceRef> featureValueOf(Adjacents actual) {
             return actual.getEfferent();
         }
-        
-    };
+    }
     
-    public static final Matcher<? super EquivalenceGraph> adjacents(Id id, Matcher<? super Adjacents> subMatcher) {
+    private static Matcher<? super EquivalenceGraph> adjacents(Id id,
+            Matcher<? super Adjacents> subMatcher) {
         return new EquivalenceGraphAdjacentsMatcher(id, subMatcher);
     }
     
-    public static class EquivalenceGraphAdjacentsMatcher extends FeatureMatcher<EquivalenceGraph, Adjacents> {
+    private static class EquivalenceGraphAdjacentsMatcher extends FeatureMatcher<EquivalenceGraph, Adjacents> {
 
         private Id id;
 
@@ -621,14 +542,74 @@ public class AbstractEquivalenceGraphStoreTest {
         protected Adjacents featureValueOf(EquivalenceGraph actual) {
             return actual.getAdjacents(id);
         }
-        
     }
     
-    public static final Matcher<? super EquivalenceGraph> adjacencyList(Matcher<? super Map<Id, Adjacents>> subMatcher) {
+    public static Matcher<? super EquivalenceGraph> adjacencyList(
+            Matcher<? super Map<Id, Adjacents>> subMatcher) {
         return new EquivalenceGraphAdjacencyListMatcher(subMatcher);
     }
+
+    private final class InMemoryEquivalenceGraphStore extends AbstractEquivalenceGraphStore {
+
+        private final Logger log = LoggerFactory.getLogger(getClass());
+        private final ConcurrentMap<Id, EquivalenceGraph> store = Maps.newConcurrentMap();
+        private final Function<Id, EquivalenceGraph> storeFn = Functions.forMap(store, null);
+        private final GroupLock<Id> lock = GroupLock.natural();
+
+        public InMemoryEquivalenceGraphStore() {
+            super(new MessageSender<EquivalenceGraphUpdateMessage>() {
+                @Override
+                public void sendMessage(EquivalenceGraphUpdateMessage message)  {
+                    // no-op
+                }
+
+                @Override
+                public void close() throws Exception {
+                    // no-op
+                }
+            });
+        }
+
+        @Override
+        public ListenableFuture<OptionalMap<Id, EquivalenceGraph>> resolveIds(Iterable<Id> ids) {
+            ImmutableMap.Builder<Id, EquivalenceGraph> result = ImmutableMap.builder();
+            for (Id id : ids) {
+                EquivalenceGraph graph = storeFn.apply(id);
+                if (graph != null) {
+                    result.put(id, graph);
+                }
+            }
+            OptionalMap<Id, EquivalenceGraph> optionalMap = ImmutableOptionalMap.fromMap(result.build());
+            return Futures.immediateFuture(optionalMap);
+        }
+
+        @Override
+        protected void doStore(ImmutableSet<EquivalenceGraph> graphs) {
+            for (EquivalenceGraph graph : graphs) {
+                for (Id id : graph.getEquivalenceSet()) {
+                    store.put(id, graph);
+                }
+            }
+        }
+
+        @Override
+        protected Logger log() {
+            return log;
+        }
+
+        @Override
+        protected void cleanGraphAndIndex(Id subjectId) {
+            throw new NotImplementedException();
+        }
+
+        @Override
+        protected GroupLock<Id> lock() {
+            return lock;
+        }
+    }
     
-    public static class EquivalenceGraphAdjacencyListMatcher extends FeatureMatcher<EquivalenceGraph, Map<Id, Adjacents>> {
+    private static class EquivalenceGraphAdjacencyListMatcher
+            extends FeatureMatcher<EquivalenceGraph, Map<Id, Adjacents>> {
 
         public EquivalenceGraphAdjacencyListMatcher(Matcher<? super Map<Id, Adjacents>> subMatcher) {
             super(subMatcher, "with adjacency list", "adjacency list");
@@ -638,7 +619,5 @@ public class AbstractEquivalenceGraphStoreTest {
         protected Map<Id, Adjacents> featureValueOf(EquivalenceGraph actual) {
             return actual.getAdjacencyList();
         }
-        
     }
-
 }
