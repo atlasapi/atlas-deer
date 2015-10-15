@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
@@ -54,6 +53,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
@@ -398,7 +398,7 @@ public class AbstractEquivalenceGraphStoreTest {
     }
     
     @Test
-    public void testDoesntWriteEquivalencesWhenEquivalentsDontChange() throws WriteException {
+    public void testAlwaysReturnsEquivalenceUpdateEvenWhenEquivalencesDoNotChange() throws Exception {
         makeEquivalent(bbcItem, paItem, bbcItem, paItem);
         
         EquivalenceGraph initialBbcGraph = graphOf(bbcItem);
@@ -407,11 +407,33 @@ public class AbstractEquivalenceGraphStoreTest {
         assertEfferentAdjacents(bbcItem, paItem);
         assertAfferentAdjacent(paItem, bbcItem);
         
-        assertFalse(makeEquivalent(bbcItem, paItem).isPresent());
+        assertTrue(makeEquivalent(bbcItem, paItem).isPresent());
         
         assertTrue(initialBbcGraph == graphOf(bbcItem));
         assertTrue(initialPaGraph == graphOf(paItem));
-        
+    }
+
+    @Test
+    public void testOrphanedContentInAdjacentsIsFixed() throws Exception {
+        /*
+         * itv -> pa
+         * bbc -> pa
+         */
+        makeEquivalent(itvItem, paItem);
+        makeEquivalent(bbcItem, paItem);
+
+        // pa is orphaned, i.e. its graph can't be found
+        store.cleanGraphAndIndex(paItem.getId());
+
+        store.updateEquivalences(
+                bbcItem.toRef(),
+                Sets.newHashSet(bbcItem.toRef(), paItem.toRef()),
+                Sets.newHashSet(bbcItem.getSource(), paItem.getSource())
+        );
+
+        Optional<EquivalenceGraph> paItemEquivalenceGraph = store.resolveIds(Sets.newHashSet(
+                paItem.getId())).get().get(paItem.getId());
+        assertTrue(paItemEquivalenceGraph.isPresent());
     }
 
     private void assertOnlyTransitivelyEquivalent(Item left, Item right) {
@@ -612,7 +634,7 @@ public class AbstractEquivalenceGraphStoreTest {
 
         @Override
         protected void cleanGraphAndIndex(Id subjectId) {
-            throw new NotImplementedException();
+            store.remove(subjectId);
         }
 
         @Override
