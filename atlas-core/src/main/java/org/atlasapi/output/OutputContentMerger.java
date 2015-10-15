@@ -349,9 +349,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 matchAndMerge(chosenBroadcast, notChosenOrdered);
             }
         }
-        for (T notChosenItem : notChosen) {
-            notChosenItem.setBroadcasts(Sets.<Broadcast>newHashSet());
-        }
     }
 
     private <T extends Content> void mergeEncodings(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
