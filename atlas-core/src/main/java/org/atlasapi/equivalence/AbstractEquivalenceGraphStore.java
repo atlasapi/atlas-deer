@@ -153,15 +153,28 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject, 
             ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws StoreException, CorruptEquivalenceGraphIndexException {
-        
-        EquivalenceGraph subjGraph = existingGraph(subject).or(EquivalenceGraph.valueOf(subject));
+
+        Optional<EquivalenceGraph> optionalSubjGraph = existingGraph(subject);
+        EquivalenceGraph subjGraph = optionalSubjGraph.or(EquivalenceGraph.valueOf(subject));
         Adjacents subAdjs = subjGraph.getAdjacents(subject);
         
         if(subAdjs == null) {
             throw new CorruptEquivalenceGraphIndexException(subject.getId());
         }
-        
-        Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs = resolveRefs(assertedAdjacents);
+
+        OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraphs = existingGraphMaps(
+                assertedAdjacents);
+
+        if(optionalSubjGraph.isPresent() &&
+                checkForOrphanedContent(subjGraph, adjacentsExistingGraphs, assertedAdjacents)) {
+            LOG.warn("Found orphaned content in graph {}. Rewriting graph in store and retrying",
+                    subjGraph.getId().longValue());
+            store(ImmutableSet.of(subjGraph));
+            adjacentsExistingGraphs = existingGraphMaps(assertedAdjacents);
+        }
+
+        Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs = resolveRefs(assertedAdjacents,
+                adjacentsExistingGraphs);
 
         Map<Id, Adjacents> updatedAdjacents = updateAdjacencies(subject,
                 subjGraph.getAdjacencyList().values(), assertedAdjacentGraphs, sources);
@@ -187,8 +200,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Map<Id, EquivalenceGraph> updatedGraphs = computeUpdatedGraphs(updatedAdjacents);
         EquivalenceGraph updatedGraph = graphFor(subject, updatedGraphs);
         return new EquivalenceGraphUpdate(updatedGraph,
-            Collections2.filter(updatedGraphs.values(), Predicates.not(Predicates.equalTo(updatedGraph))), 
-            Iterables.filter(Iterables.transform(assertedAdjacentGraphs.values(), Identifiables.toId()), 
+            Collections2.filter(updatedGraphs.values(), Predicates.not(Predicates.equalTo(updatedGraph))),
+            Iterables.filter(Iterables.transform(assertedAdjacentGraphs.values(), Identifiables.toId()),
                     Predicates.not(Predicates.in(updatedGraphs.keySet())))
         );
     }
@@ -203,10 +216,10 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     private Map<Id, EquivalenceGraph> computeUpdatedGraphs(Map<Id, Adjacents> updatedAdjacents) throws CorruptEquivalenceGraphIndexException {
-        Function<Identifiable, Adjacents> toAdjs = 
+        Function<Identifiable, Adjacents> toAdjs =
                 Functions.compose(Functions.forMap(updatedAdjacents), Identifiables.toId());
         Set<Id> seen = Sets.newHashSetWithExpectedSize(updatedAdjacents.size());
-        
+
         Map<Id, EquivalenceGraph> updated = Maps.newHashMap();
         for (Adjacents adj : updatedAdjacents.values()) {
             if (!seen.contains(adj.getId())) {
@@ -221,7 +234,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private Set<Adjacents> transitiveSet(Adjacents adj, Function<Identifiable, Adjacents> toAdjs) throws CorruptEquivalenceGraphIndexException {
         Set<Adjacents> set = Sets.newHashSet();
         Predicate<Adjacents> notSeen = Predicates.not(Predicates.in(set));
-        
+
         Queue<Adjacents> work = Lists.newLinkedList();
         work.add(adj);
         while(!work.isEmpty()) {
@@ -257,7 +270,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return ImmutableMap.copyOf(updated);
     }
 
-    private Adjacents updateAdjacents(Adjacents adj, ResourceRef subject, 
+    private Adjacents updateAdjacents(Adjacents adj, ResourceRef subject,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
         Adjacents result = adj;
         if (subject.equals(adj.getRef())) {
@@ -290,16 +303,35 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return result;
     }
 
-    private Map<ResourceRef, EquivalenceGraph> resolveRefs(Set<ResourceRef> adjacents)
+    // This is checking for situations where a piece of content has been orphaned, i.e. it exists
+    // in the subject graph, but when trying to resolve its own graph that graph does not exist
+    // This is intended to fix orphaned items in the data source that were the result of an
+    // unknown bug
+    private boolean checkForOrphanedContent(EquivalenceGraph subjGraph,
+            OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraph,
+            Set<ResourceRef> assertedAdjacents) {
+        return assertedAdjacents.stream()
+                .anyMatch(adjacent -> contentIsOrphaned(subjGraph, adjacentsExistingGraph,
+                        adjacent.getId()));
+    }
+
+    private boolean contentIsOrphaned(EquivalenceGraph subjGraph,
+            OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraphs, Id assertedAdjacentId) {
+        return subjGraph.getEquivalenceSet().contains(assertedAdjacentId)
+                && !adjacentsExistingGraphs.get(assertedAdjacentId).isPresent();
+    }
+
+    private Map<ResourceRef, EquivalenceGraph> resolveRefs(Set<ResourceRef> adjacents,
+            OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraph)
             throws WriteException {
-        OptionalMap<Id, EquivalenceGraph> existing = get(resolveIds(Iterables.transform(adjacents, Identifiables.toId())));
         Map<ResourceRef, EquivalenceGraph> graphs = Maps.newHashMapWithExpectedSize(adjacents.size());
         for (ResourceRef adj : adjacents) {
-            graphs.put(adj, existing.get(adj.getId()).or(EquivalenceGraph.valueOf(adj)));
+            graphs.put(adj, adjacentsExistingGraph.get(adj.getId())
+                    .or(EquivalenceGraph.valueOf(adj)));
         }
         return graphs;
     }
-    
+
     private boolean changeInAdjacents(Adjacents subjAdjs,
             ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
         Set<ResourceRef> currentNeighbours
@@ -311,16 +343,21 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
         return change;
     }
-    
+
     private Optional<EquivalenceGraph> existingGraph(ResourceRef subject) throws StoreException {
         return get(resolveIds(ImmutableSet.of(subject.getId()))).get(subject.getId());
+    }
+
+    private OptionalMap<Id, EquivalenceGraph> existingGraphMaps(Set<ResourceRef> adjacents)
+            throws WriteException {
+        return get(resolveIds(Iterables.transform(adjacents, Identifiables.toId())));
     }
 
     private <F> F get(ListenableFuture<F> resolved) throws WriteException {
         return Futures.get(resolved, TIMEOUT, TIMEOUT_UNITS, WriteException.class);
     }
 
-    private final ImmutableSet<EquivalenceGraph> store(ImmutableSet<EquivalenceGraph> graphs) {
+    private ImmutableSet<EquivalenceGraph> store(ImmutableSet<EquivalenceGraph> graphs) {
         doStore(graphs);
         return graphs;
     }
