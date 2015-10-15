@@ -46,7 +46,7 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
         
-        executor.merge(sources, ImmutableList.of(chosenItem, notChosenItem));
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), sources);
         
         assertTrue(notChosenItem.getBroadcasts().isEmpty());
     }
@@ -71,7 +71,7 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
         
-        executor.merge(sources, ImmutableList.of(chosenItem, notChosenItem));
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), sources);
         
         assertTrue(chosenItem.getBroadcasts().size() == 1);
     }
@@ -105,7 +105,7 @@ public class BroadcastMergingTest {
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
         
-        executor.merge(sources, ImmutableList.of(chosenItem, notChosenItem));
+        executor.merge(chosenItem, ImmutableList.of(notChosenItem), sources);
         
         // ensure that the broadcast matched, 
         // and the fields on the non-chosen broadcast 
@@ -121,18 +121,33 @@ public class BroadcastMergingTest {
     
     @Test
     public void testBroadcastMergingMatchingBroadcastsWithPrecedence() {
-        Item chosenItem = new Item();
-        chosenItem.setId(1L);
-        chosenItem.setCanonicalUri("chosenItem");
-        chosenItem.setPublisher(Publisher.BBC);
-        Broadcast chosenBroadcast = new Broadcast(Id.valueOf(2), new DateTime(2012,1,1,0,0,0,UTC), new DateTime(2012,1,1,0,0,0,UTC));
-        chosenBroadcast.addAliasUrl("chosenBroadcast");
-        chosenBroadcast.addAlias(new Alias("chosenNamspace", "chosenValue"));
-        chosenBroadcast.setSubtitled(true);
-        chosenItem.addBroadcast(chosenBroadcast);
+        
+        ApplicationSources sources = ApplicationSources.defaults()
+                .copy().withPrecedence(true)
+                .withReadableSources(ImmutableList.of(
+                        new SourceReadEntry(Publisher.METABROADCAST, SourceStatus.AVAILABLE_ENABLED),
+                        new SourceReadEntry(Publisher.PA, SourceStatus.AVAILABLE_ENABLED),
+                        new SourceReadEntry(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED),
+                        new SourceReadEntry(Publisher.FACEBOOK, SourceStatus.AVAILABLE_ENABLED)
+                 ))
+                .build();
+        
+        Item chosenItemWithoutBroadcasts = new Item();
+        chosenItemWithoutBroadcasts.setId(1L);
+        chosenItemWithoutBroadcasts.setPublisher(Publisher.METABROADCAST);
+        
+        Item notChosenFirstBbcItem = new Item();
+        notChosenFirstBbcItem.setId(2L);
+        notChosenFirstBbcItem.setCanonicalUri("chosenItem");
+        notChosenFirstBbcItem.setPublisher(Publisher.PA);
+        Broadcast mostPrecedentBroadcast = new Broadcast(Id.valueOf(2), new DateTime(2012,1,1,0,0,0,UTC), new DateTime(2012,1,1,0,0,0,UTC));
+        mostPrecedentBroadcast.addAliasUrl("chosenBroadcast");
+        mostPrecedentBroadcast.addAlias(new Alias("chosenNamspace", "chosenValue"));
+        mostPrecedentBroadcast.setSubtitled(true);
+        notChosenFirstBbcItem.addBroadcast(mostPrecedentBroadcast);
 
         Item notChosenBbcItem = new Item();
-        notChosenBbcItem.setId(2L);
+        notChosenBbcItem.setId(3L);
         notChosenBbcItem.setCanonicalUri("notChosenItem");
         notChosenBbcItem.setPublisher(Publisher.BBC);
         Broadcast broadcast = new Broadcast(Id.valueOf(2), new DateTime(2012,1,1,0,0,0,UTC), new DateTime(2012,1,1,0,0,0,UTC));
@@ -144,7 +159,7 @@ public class BroadcastMergingTest {
         notChosenBbcItem.addBroadcast(broadcast);
         
         Item notChosenFbItem = new Item();
-        notChosenFbItem.setId(2L);
+        notChosenFbItem.setId(4L);
         notChosenFbItem.setCanonicalUri("notChosenItem");
         notChosenFbItem.setPublisher(Publisher.FACEBOOK);
         broadcast = new Broadcast(Id.valueOf(2), new DateTime(2012,1,1,0,0,0,UTC), new DateTime(2012,1,1,0,0,0,UTC));
@@ -156,20 +171,21 @@ public class BroadcastMergingTest {
         broadcast.setSubtitled(false);
         notChosenFbItem.addBroadcast(broadcast);
         
-        chosenItem.addEquivalentTo(notChosenBbcItem);
-        chosenItem.addEquivalentTo(notChosenFbItem);
-        notChosenBbcItem.addEquivalentTo(chosenItem);
+        chosenItemWithoutBroadcasts.addEquivalentTo(notChosenFirstBbcItem);
+        notChosenFirstBbcItem.addEquivalentTo(notChosenBbcItem);
+        notChosenFirstBbcItem.addEquivalentTo(notChosenFbItem);
+        notChosenBbcItem.addEquivalentTo(notChosenFirstBbcItem);
         notChosenBbcItem.addEquivalentTo(notChosenFbItem);
-        notChosenFbItem.addEquivalentTo(chosenItem);
+        notChosenFbItem.addEquivalentTo(notChosenFirstBbcItem);
         notChosenFbItem.addEquivalentTo(notChosenBbcItem);
 
-        executor.merge(sources, ImmutableList.of(chosenItem, notChosenBbcItem, notChosenFbItem));
+        executor.merge(chosenItemWithoutBroadcasts, ImmutableList.of(notChosenFirstBbcItem, notChosenBbcItem, notChosenFbItem), sources);
         
         // ensure that the broadcast matched, 
         // and the fields on the non-chosen broadcast 
         // are merged only when the original broadcast's fields are null
         // and that the most precedent broadcast's values are used
-        Broadcast mergedBroadcast = Iterables.getOnlyElement(chosenItem.getBroadcasts());
+        Broadcast mergedBroadcast = Iterables.getOnlyElement(chosenItemWithoutBroadcasts.getBroadcasts());
         assertTrue(mergedBroadcast.getAudioDescribed());
         assertTrue(mergedBroadcast.getHighDefinition());
         assertFalse(mergedBroadcast.getSurround());

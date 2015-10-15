@@ -95,7 +95,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         return merged;
     }
-
+    
     private <T extends Described> Id lowestId(T chosen) {
         Id lowest = chosen.getId();
         for (EquivalenceRef ref : chosen.getEquivalentTo()) {
@@ -125,7 +125,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         });
     }
-
+    
     @SuppressWarnings("unchecked")
     private <T extends Described> List<T> findSame(T brand, Iterable<T> contents) {
         List<T> same = Lists.newArrayList(brand);
@@ -311,17 +311,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private <T extends Item> void mergeVersions(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
-        // if chosen has broadcasts, merge the set of broadcasts from notChosen
-        Set<Broadcast> chosenBroadcasts = Sets.newHashSet(chosen.getBroadcasts());
+        mergeBroadcasts(sources, chosen, notChosen);
         List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
-        if (!chosenBroadcasts.isEmpty()) {
-            for (Broadcast chosenBroadcast : chosenBroadcasts) {
-                matchAndMerge(chosenBroadcast, notChosenOrdered);
-            }
-        }
-        for (T notChosenItem : notChosen) {
-            notChosenItem.setBroadcasts(Sets.<Broadcast>newHashSet());
-        }
+        
         ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
         Publisher chosenPublisher = chosen.getSource();
         for (SegmentEvent segmentEvent : chosen.getSegmentEvents()) {
@@ -338,6 +330,30 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setSegmentEvents(segmentEvents.build());
     }
 
+    private <T extends Item> void mergeBroadcasts(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
+        
+        // Take broadcasts from the most precedent source with broadcasts, and
+        // merge them with broadcasts from less precedent sources.
+        
+        Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
+        List<T> first = sources.getSourcedReadOrdering()
+                               .leastOf(Iterables.filter(all, HAS_BROADCASTS), 1);
+        
+        if (!first.isEmpty()) {
+            chosen.setBroadcasts(Iterables.getOnlyElement(first).getBroadcasts());
+        }
+                
+        Set<Broadcast> chosenBroadcasts = Sets.newHashSet(chosen.getBroadcasts());
+        List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
+        if (!chosenBroadcasts.isEmpty()) {
+            for (Broadcast chosenBroadcast : chosenBroadcasts) {
+                matchAndMerge(chosenBroadcast, notChosenOrdered);
+            }
+        }
+        for (T notChosenItem : notChosen) {
+            notChosenItem.setBroadcasts(Sets.<Broadcast>newHashSet());
+        }
+    }
 
     private <T extends Content> void mergeEncodings(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
         List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
@@ -422,6 +438,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 return false;
             }
             return isImageAvailable(content.getImage(), content.getImages());
+        }
+    };
+    
+    private static final Predicate<Item> HAS_BROADCASTS = new Predicate<Item>() {
+
+        @Override
+        public boolean apply(Item input) {
+            return !input.getBroadcasts().isEmpty();
         }
     };
 
