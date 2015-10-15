@@ -340,13 +340,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                                .leastOf(Iterables.filter(all, HAS_BROADCASTS), 1);
         
         if (!first.isEmpty()) {
-            chosen.setBroadcasts(Iterables.getOnlyElement(first).getBroadcasts());
+            chosen.setBroadcasts(Sets.newHashSet(Iterables.getOnlyElement(first).getBroadcasts()));
         }
                 
-        Set<Broadcast> chosenBroadcasts = Sets.newHashSet(chosen.getBroadcasts());
         List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
-        if (!chosenBroadcasts.isEmpty()) {
-            for (Broadcast chosenBroadcast : chosenBroadcasts) {
+        if (!chosen.getBroadcasts().isEmpty()) {
+            for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {
                 matchAndMerge(chosenBroadcast, notChosenOrdered);
             }
         }
