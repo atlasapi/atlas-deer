@@ -110,20 +110,18 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             ListenableFuture<OptionalMap<Id, EquivalenceGraph>> graphs = graphStore.resolveIds(ids);
             Optional<EquivalenceGraph> possibleGraph = get(graphs).get(content.getId());
 
+            EquivalenceGraph graph;
             if (possibleGraph.isPresent()) {
-                updateInSet(possibleGraph.get(), content);
-                equivalentContentUpdatedMessageSender.sendMessage(
-                        new EquivalentContentUpdatedMessage(
-                                UUID.randomUUID().toString(),
-                                Timestamp.of(DateTime.now(DateTimeZone.UTC)),
-                                possibleGraph.get().getId().longValue(),
-                                content.toRef()
-                        )
-                );
+                graph = possibleGraph.get();
+                updateInSet(graph, content);
+
             } else {
-                EquivalenceGraph graph = EquivalenceGraph.valueOf(content.toRef());
-                updateEquivalences(ImmutableSetMultimap.of(graph, content), EquivalenceGraphUpdate.builder(graph).build());
+                graph = EquivalenceGraph.valueOf(content.toRef());
+                updateEquivalences(ImmutableSetMultimap.of(graph, content),
+                        EquivalenceGraphUpdate.builder(graph).build());
             }
+
+            sendEquivalentContentChangedMessage(content, graph);
         } catch (MessagingException | InterruptedException e) {
             throw new WriteException("Updating " + content.getId(), e);
         } finally {
@@ -135,6 +133,18 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     protected ContentResolver getContentResolver() {
         return contentResolver;
+    }
+
+    private void sendEquivalentContentChangedMessage(Content content, EquivalenceGraph graph)
+            throws MessagingException {
+        equivalentContentUpdatedMessageSender.sendMessage(
+                new EquivalentContentUpdatedMessage(
+                        UUID.randomUUID().toString(),
+                        Timestamp.of(DateTime.now(DateTimeZone.UTC)),
+                        graph.getId().longValue(),
+                        content.toRef()
+                )
+        );
     }
 
 }
