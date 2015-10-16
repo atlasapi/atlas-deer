@@ -35,7 +35,7 @@ import com.metabroadcast.common.time.Timestamp;
 
 public abstract class AbstractEquivalentContentStore implements EquivalentContentStore {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
 
     private final ContentResolver contentResolver;
 
@@ -73,34 +73,6 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
         }
     }
 
-    private Iterable<EquivalenceGraph> graphsOf(EquivalenceGraphUpdate update) {
-        return ImmutableSet.<EquivalenceGraph>builder()
-                .add(update.getUpdated())
-                .addAll(update.getCreated())
-                .build();
-    }
-
-    private ImmutableSet<Id> idsOf(EquivalenceGraphUpdate update) {
-        return ImmutableSet.<Id>builder()
-            .addAll(update.getUpdated().getEquivalenceSet())
-            .addAll(Iterables.concat(Iterables.transform(update.getCreated(),
-                    EquivalenceGraph::getEquivalenceSet
-            )))
-            .addAll(update.getDeleted())
-            .build();
-    }
-
-    protected abstract void updateEquivalences(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent,
-            EquivalenceGraphUpdate update);
-
-    private OptionalMap<Id, Content> resolveIds(Iterable<Id> ids) throws WriteException {
-        return get(contentResolver.resolveIds(ids)).toMap();
-    }
-
-    private <T> T get(ListenableFuture<T> future) throws WriteException {
-        return Futures.get(future, 1, TimeUnit.MINUTES, WriteException.class);
-    }
-
     @Override
     public final void updateContent(Content content) throws WriteException {
         try {
@@ -110,20 +82,18 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             ListenableFuture<OptionalMap<Id, EquivalenceGraph>> graphs = graphStore.resolveIds(ids);
             Optional<EquivalenceGraph> possibleGraph = get(graphs).get(content.getId());
 
+            EquivalenceGraph graph;
             if (possibleGraph.isPresent()) {
-                updateInSet(possibleGraph.get(), content);
-                equivalentContentUpdatedMessageSender.sendMessage(
-                        new EquivalentContentUpdatedMessage(
-                                UUID.randomUUID().toString(),
-                                Timestamp.of(DateTime.now(DateTimeZone.UTC)),
-                                possibleGraph.get().getId().longValue(),
-                                content.toRef()
-                        )
-                );
+                graph = possibleGraph.get();
+                updateInSet(graph, content);
+
             } else {
-                EquivalenceGraph graph = EquivalenceGraph.valueOf(content.toRef());
-                updateEquivalences(ImmutableSetMultimap.of(graph, content), EquivalenceGraphUpdate.builder(graph).build());
+                graph = EquivalenceGraph.valueOf(content.toRef());
+                updateEquivalences(ImmutableSetMultimap.of(graph, content),
+                        EquivalenceGraphUpdate.builder(graph).build());
             }
+
+            sendEquivalentContentChangedMessage(content, graph);
         } catch (MessagingException | InterruptedException e) {
             throw new WriteException("Updating " + content.getId(), e);
         } finally {
@@ -133,8 +103,48 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     protected abstract void updateInSet(EquivalenceGraph graph, Content content);
 
+    protected abstract void updateEquivalences(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent,
+            EquivalenceGraphUpdate update);
+
     protected ContentResolver getContentResolver() {
         return contentResolver;
+    }
+
+    private Iterable<EquivalenceGraph> graphsOf(EquivalenceGraphUpdate update) {
+        return ImmutableSet.<EquivalenceGraph>builder()
+                .add(update.getUpdated())
+                .addAll(update.getCreated())
+                .build();
+    }
+
+    private ImmutableSet<Id> idsOf(EquivalenceGraphUpdate update) {
+        return ImmutableSet.<Id>builder()
+                .addAll(update.getUpdated().getEquivalenceSet())
+                .addAll(Iterables.concat(Iterables.transform(update.getCreated(),
+                        EquivalenceGraph::getEquivalenceSet
+                )))
+                .addAll(update.getDeleted())
+                .build();
+    }
+
+    private OptionalMap<Id, Content> resolveIds(Iterable<Id> ids) throws WriteException {
+        return get(contentResolver.resolveIds(ids)).toMap();
+    }
+
+    private <T> T get(ListenableFuture<T> future) throws WriteException {
+        return Futures.get(future, 1, TimeUnit.MINUTES, WriteException.class);
+    }
+
+    private void sendEquivalentContentChangedMessage(Content content, EquivalenceGraph graph)
+            throws MessagingException {
+        equivalentContentUpdatedMessageSender.sendMessage(
+                new EquivalentContentUpdatedMessage(
+                        UUID.randomUUID().toString(),
+                        Timestamp.of(DateTime.now(DateTimeZone.UTC)),
+                        graph.getId().longValue(),
+                        content.toRef()
+                )
+        );
     }
 
 }
