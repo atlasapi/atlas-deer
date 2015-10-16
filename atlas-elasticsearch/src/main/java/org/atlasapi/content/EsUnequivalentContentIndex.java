@@ -134,55 +134,16 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
         if (queryParams.isPresent()) {
 
-            if (queryParams.get().getOrdering().isPresent()) {
-                addSortOrder(queryParams, reqBuilder);
-            }
+            addOrdering(queryParams, reqBuilder);
 
-            if (queryParams.get().getFuzzyQueryParams().isPresent()) {
-                queryBuilder = addTitleQuery(queryParams, queryBuilder);
-                if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
-                    queryBuilder = BroadcastQueryBuilder.build(
-                            queryBuilder,
-                            queryParams.get().getBroadcastWeighting().get()
-                    );
-                } else {
-                    queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
-                }
-                reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
-            }
+            queryBuilder = addFuzzyQuery(queryParams, queryBuilder, reqBuilder);
 
-            if (queryParams.get().getBrandId().isPresent()) {
-                filterBuilder.must(
-                        FiltersBuilder.getBrandIdFilter(
-                                queryParams.get().getBrandId().get(),
-                                equivIdIndex
-                        )
-                );
-            }
-
-            if (queryParams.get().getSeriesId().isPresent()) {
-                filterBuilder.must(
-                        FiltersBuilder.getSeriesIdFilter(
-                                queryParams.get().getSeriesId().get(), equivIdIndex
-                        )
-                );
-            }
-
-            if (queryParams.get().getTopicFilterIds().isPresent()) {
-                filterBuilder.must(
-                        FiltersBuilder.buildTopicIdFilter(queryParams.get().getTopicFilterIds().get())
-                );
-            }
-
-            if (queryParams.get().getActionableFilterParams().isPresent()) {
-                Optional<Id> maybeRegionId = queryParams.get().getRegionId();
-                FilterBuilder actionableFilter = FiltersBuilder.buildActionableFilter(
-                        queryParams.get().getActionableFilterParams().get(), maybeRegionId, channelGroupResolver
-                );
-                filterBuilder.must(actionableFilter);
-            }
+            addBrandId(queryParams, filterBuilder);
+            addSeriesId(queryParams, filterBuilder);
+            addTopicFilter(queryParams, filterBuilder);
+            addActionableFilter(queryParams, filterBuilder);
         }
-        
+
         reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         FilteredQueryBuilder finalQuery = QueryBuilders.filteredQuery(queryBuilder, filterBuilder);
@@ -202,8 +163,77 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         });
     }
 
-    private void addSortOrder(Optional<IndexQueryParams> queryParams, SearchRequestBuilder reqBuilder) {
-        QueryOrdering order = queryParams.get().getOrdering().get();
+    private void addOrdering(Optional<IndexQueryParams> queryParams,
+            SearchRequestBuilder reqBuilder) {
+        if (queryParams.get().getOrdering().isPresent()) {
+            addSortOrder(queryParams.get().getOrdering(), reqBuilder);
+        }
+    }
+
+    private QueryBuilder addFuzzyQuery(Optional<IndexQueryParams> queryParams,
+            QueryBuilder queryBuilder, SearchRequestBuilder reqBuilder) {
+        if (queryParams.get().getFuzzyQueryParams().isPresent()) {
+            queryBuilder = addTitleQuery(queryParams, queryBuilder);
+            if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
+                queryBuilder = BroadcastQueryBuilder.build(
+                        queryBuilder,
+                        queryParams.get().getBroadcastWeighting().get()
+                );
+            } else {
+                queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
+            }
+            reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
+        }
+        return queryBuilder;
+    }
+
+    private void addBrandId(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getBrandId().isPresent()) {
+            filterBuilder.must(
+                    FiltersBuilder.getBrandIdFilter(
+                            queryParams.get().getBrandId().get(),
+                            equivIdIndex
+                    )
+            );
+        }
+    }
+
+    private void addSeriesId(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getSeriesId().isPresent()) {
+            filterBuilder.must(
+                    FiltersBuilder.getSeriesIdFilter(
+                            queryParams.get().getSeriesId().get(), equivIdIndex
+                    )
+            );
+        }
+    }
+
+    private void addTopicFilter(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getTopicFilterIds().isPresent()) {
+            filterBuilder.must(
+                    FiltersBuilder.buildTopicIdFilter(queryParams.get().getTopicFilterIds().get())
+            );
+        }
+    }
+
+    private void addActionableFilter(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getActionableFilterParams().isPresent()) {
+            Optional<Id> maybeRegionId = queryParams.get().getRegionId();
+            FilterBuilder actionableFilter = FiltersBuilder.buildActionableFilter(
+                    queryParams.get().getActionableFilterParams().get(),
+                    maybeRegionId,
+                    channelGroupResolver
+            );
+            filterBuilder.must(actionableFilter);
+        }
+    }
+
+    private void addSortOrder(Optional<QueryOrdering> ordering, SearchRequestBuilder reqBuilder) {
+        QueryOrdering order = ordering.get();
         if ("relevance".equalsIgnoreCase(order.getPath())) {
             reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
         } else {
