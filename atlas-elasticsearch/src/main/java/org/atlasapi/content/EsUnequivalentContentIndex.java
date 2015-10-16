@@ -17,7 +17,12 @@ import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.BoolFilterBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.FilteredQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -129,6 +134,10 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
         if (queryParams.isPresent()) {
 
+            if (queryParams.get().getOrdering().isPresent()) {
+                addSortOrder(queryParams, reqBuilder);
+            }
+
             if (queryParams.get().getFuzzyQueryParams().isPresent()) {
                 queryBuilder = addTitleQuery(queryParams, queryBuilder);
                 if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
@@ -139,6 +148,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 } else {
                     queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
                 }
+                reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
             }
 
             if (queryParams.get().getBrandId().isPresent()) {
@@ -158,10 +168,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 );
             }
 
-            if (queryParams.get().getOrdering().isPresent()) {
-                addSortOrder(queryParams, reqBuilder);
-            }
-
             if (queryParams.get().getTopicFilterIds().isPresent()) {
                 filterBuilder.must(
                         FiltersBuilder.buildTopicIdFilter(queryParams.get().getTopicFilterIds().get())
@@ -177,7 +183,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             }
         }
         
-        reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
         reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         FilteredQueryBuilder finalQuery = QueryBuilders.filteredQuery(queryBuilder, filterBuilder);
