@@ -30,6 +30,7 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
@@ -44,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -235,7 +237,8 @@ public class ContentBootstrapController {
 
             @Override
             protected String visitItem(Item item) {
-                return write(item).toString();
+                WriteResult<?, Content> itemWrite = write(item);
+                return String.format("%s", itemWrite);
             }
 
             private WriteResult<? extends Content, Content> write(Content content) {
@@ -246,13 +249,18 @@ public class ContentBootstrapController {
                     Instant cassandraWriteEnd = Instant.now();
                     contentIndex.index(content);
                     Instant indexingEnd = Instant.now();
-                    equivalenceMigrator.migrateEquivalence(content.toRef());
+                    Optional<EquivalenceGraphUpdate> graphUpdate = equivalenceMigrator
+                            .migrateEquivalence(content.toRef());
                     Instant graphUpdateEnd = Instant.now();
                     persistence.getEquivalentContentStore().updateContent(content);
+                    if(graphUpdate.isPresent()) {
+                        persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
+                    }
                     Instant end = Instant.now();
 
                     log.info(
-                            "Update for {} write: {}ms, index: {}ms, equiv graph update: {}ms, equiv content update {}ms, total: {}ms",
+                            "Update for {} write: {}ms, index: {}ms, equiv graph update: {}ms, "
+                                    + "equiv content update {}ms, total: {}ms",
                             content.getId(),
                             Duration.between(start, cassandraWriteEnd).toMillis(),
                             Duration.between(cassandraWriteEnd, indexingEnd).toMillis(),
