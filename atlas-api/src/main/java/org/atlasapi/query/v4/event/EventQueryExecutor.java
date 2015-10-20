@@ -8,7 +8,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
-import org.atlasapi.event.EventPersistenceResolver;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.*;
