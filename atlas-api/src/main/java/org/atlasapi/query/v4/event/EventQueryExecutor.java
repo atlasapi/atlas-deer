@@ -9,6 +9,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventPersistenceResolver;
+import org.atlasapi.event.EventResolver;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.*;
 
@@ -17,9 +18,9 @@ import java.util.concurrent.TimeUnit;
 
 public class EventQueryExecutor implements QueryExecutor<Event> {
 
-    private final EventPersistenceResolver resolver;
+    private final EventResolver resolver;
 
-    public EventQueryExecutor(EventPersistenceResolver resolver) {
+    public EventQueryExecutor(EventResolver resolver) {
         this.resolver = resolver;
     }
 

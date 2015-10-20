@@ -26,6 +26,7 @@ import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.event.Event;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
@@ -114,6 +115,9 @@ import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryResultWriter;
 import org.atlasapi.query.v4.content.ContentController;
+import org.atlasapi.query.v4.event.EventController;
+import org.atlasapi.query.v4.event.EventListWriter;
+import org.atlasapi.query.v4.event.EventQueryResultWriter;
 import org.atlasapi.query.v4.meta.LinkCreator;
 import org.atlasapi.query.v4.meta.MetaApiLinkCreator;
 import org.atlasapi.query.v4.meta.endpoint.EndpointController;
@@ -315,6 +319,12 @@ public class QueryWebModule {
                         topicListWriter(), contentListWriter()
                 )
         );
+    }
+
+    @Bean EventController eventController(){
+        return new EventController(eventQueryPaser(),
+                queryModule.eventQueryExecutor(),
+                new EventQueryResultWriter(eventListWriter(),licenseWriter,requestWriter()));
     }
 
     @Bean LinkCreator linkCreator() {
@@ -554,6 +564,25 @@ public class QueryWebModule {
         );
     }
 
+    private StandardQueryParser<Event> eventQueryPaser() {
+        QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
+                new IndexAnnotationsExtractor(topicAnnotationIndex()), selectionBuilder());
+
+        return new StandardQueryParser<Event>(Resource.EVENT,
+                new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
+                        QueryAtomParser.valueOf(Attributes.ID,
+                                AttributeCoercers.idCoercer(idCodec())),
+                        QueryAtomParser.valueOf(Attributes.SOURCE,
+                                AttributeCoercers.enumCoercer(Sources.fromKey())),
+                        QueryAtomParser.valueOf(Attributes.ALIASES_NAMESPACE,
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.ALIASES_VALUE,
+                                AttributeCoercers.stringCoercer())
+                )),
+                idCodec(), contextParser
+        );
+    }
+
     @Bean PopularTopicController popularTopicController() {
         return new PopularTopicController(topicResolver,
                 popularTopicIndex,
@@ -727,6 +756,17 @@ public class QueryWebModule {
                         new ExtendedIdentificationAnnotation(idCodec()),
                         ImmutableSet.of(ID))
                 .register(DESCRIPTION, new DescriptionAnnotation<>(), ImmutableSet.of(EXTENDED_ID))
+                .build());
+    }
+
+    @Bean
+    protected EntityListWriter<Event> eventListWriter() {
+        return new EventListWriter(AnnotationRegistry.<Event>builder()
+                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
+                .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
+                .register(EXTENDED_ID,
+                        new ExtendedIdentificationAnnotation(idCodec()),
+                        ImmutableSet.of(ID))
                 .build());
     }
 
