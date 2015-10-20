@@ -34,7 +34,7 @@ import java.io.IOException;
 @RequestMapping("/4/events")
 public class EventController {
 
-    private static Logger log = LoggerFactory.getLogger(EventController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EventController.class);
     private final QueryParser<Event> queryParser;
     private final QueryExecutor<Event> queryExecutor;
     private final QueryResultWriter<Event> queryResultWriter;
@@ -60,7 +60,7 @@ public class EventController {
             queryResultWriter.write(result,writer);
 
         } catch(Exception e) {
-            log.error("Request Exception " + request.getRequestURI(), e);
+            LOG.error("Request Exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary,writer,request,response);
 
