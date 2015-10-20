@@ -3,3 +3,5 @@
 data
 */test-output
 tasks.log
+*.iml
+.idea/
