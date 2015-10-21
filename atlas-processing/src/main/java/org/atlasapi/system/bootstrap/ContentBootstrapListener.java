@@ -105,8 +105,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     }
 
     private void migrateContent(Content content, ResultBuilder resultBuilder) {
-        resultBuilder.addMessage("Migrating content " + content.getId() + "/" +
-                content.getId().longValue());
+        resultBuilder.addMessage("Migrating content " + content.getId().longValue());
         content.setReadHash(null);
         Instant start = Instant.now();
 
@@ -392,7 +391,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
         public ResultBuilder addMessage(String message) {
             if(this.message.length() > 0) {
-                this.message.append("/n");
+                this.message.append("\n");
             }
             this.message.append(message);
             return this;
