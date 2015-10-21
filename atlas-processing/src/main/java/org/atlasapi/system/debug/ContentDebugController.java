@@ -4,7 +4,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -16,28 +15,20 @@ import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.EsContent;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.ItemRef;
-import org.atlasapi.content.Series;
-import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.EquivalentSchedule;
 import org.atlasapi.schedule.EquivalentScheduleStore;
-import org.atlasapi.segment.SegmentEvent;
+import org.atlasapi.system.bootstrap.ContentBootstrapListener;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.util.EsObject;
@@ -48,6 +39,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,7 +47,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -85,15 +76,13 @@ public class ContentDebugController {
             .create();
     private final ObjectMapper jackson = new ObjectMapper();
 
-    private static final Function<Content, ResourceRef> TO_RESOURCE_REF = input -> input.toRef();
-    private static final Function<ResourceRef, Publisher> TO_SOURCE = input -> input.getSource();
-
     private final Logger log = LoggerFactory.getLogger(ContentDebugController.class);
     private final LegacyPersistenceModule legacyPersistence;
     private final AtlasPersistenceModule persistence;
-    private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private final ContentIndex index;
     private final EsContentTranslator esContentTranslator;
+
+    private final ContentBootstrapListener contentBootstrapListener;
 
     public ContentDebugController(
             LegacyPersistenceModule legacyPersistence,
@@ -105,11 +94,18 @@ public class ContentDebugController {
             EsContentTranslator esContentTranslator) {
         this.legacyPersistence = checkNotNull(legacyPersistence);
         this.persistence = checkNotNull(persistence);
-        this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.channelResolver = checkNotNull(channelResolver);
         this.scheduleStore = checkNotNull(scheduleStore);
         this.index = checkNotNull(index);
         this.esContentTranslator = checkNotNull(esContentTranslator);
+
+        this.contentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(persistence.nullMessageSendingContentStore())
+                .withEquivalenceMigrator(equivalenceMigrator)
+                .withEquivalentContentStore(persistence.getEquivalentContentStore())
+                .withContentIndex(index)
+                .withMigrateHierarchies(legacyPersistence)
+                .build();
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -213,7 +209,7 @@ public class ContentDebugController {
                 jackson.writeValue(response.getWriter(), map);
             }
         } catch (Exception e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
     }
 
@@ -223,78 +219,21 @@ public class ContentDebugController {
         try {
             Long decodedId = lowercase.decode(id).longValue();
 
-            StringBuilder respString = new StringBuilder();
-
             Content content = resolveLegacyContent(decodedId);
-            if (content instanceof Item) {
-                Item item = (Item) content;
-                List<SegmentEvent> segmentEvents = item.getSegmentEvents();
-                if (!segmentEvents.isEmpty()) {
-                    for (SegmentEvent segmentEvent : segmentEvents) {
-                        legacyPersistence.legacySegmentMigrator()
-                                .migrateLegacySegment(segmentEvent.getSegmentRef()
-                                        .getId());
-                        log.info("Migrated segment " + segmentEvent.getSegmentRef().getId());
-                    }
-                }
+
+            ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
+
+            if(result.isSucceeded()) {
+                response.setStatus(HttpStatus.OK.value());
+            }
+            else {
+                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
 
-            respString.append("Resolved legacy content ").append(content.getId());
-            WriteResult<Content, Content> writeResult = persistence.contentStore().writeContent(
-                    content);
-
-            if (!writeResult.written()) {
-                response.getWriter()
-                        .write(respString.append(
-                                "\nNo write occurred when migrating content into C* store")
-                                .toString());
-                response.setStatus(500);
-                return;
-            }
-            respString.append("\nMigrated content into C* content store");
-            Optional<EquivalenceGraphUpdate> graphUpdate =
-                    equivalenceMigrator.migrateEquivalence(content.toRef());
-            persistence.getEquivalentContentStore().updateContent(content);
-            if (graphUpdate.isPresent()) {
-                persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
-            }
-            respString.append("\nEquivalent content store updated using content ref");
-            if (content instanceof Container) {
-                migrateSubItems((Container) content);
-            }
-            response.setStatus(200);
-            response.getWriter().write(respString.toString());
+            response.getWriter().println(result.getMessage());
             response.flushBuffer();
         } catch (Throwable t) {
             t.printStackTrace(response.getWriter());
-        }
-    }
-
-    private void migrateSubItems(Container container) throws WriteException {
-        log.info("Migrating sub items of {}", container.getId());
-        if (container instanceof Brand) {
-            Brand brand = (Brand) container;
-            for (SeriesRef seriesRef : brand.getSeriesRefs()) {
-                log.info("Migrating series {} of brand {}", seriesRef.getId(), container.getId());
-                Series series = (Series) resolveLegacyContent(seriesRef.getId().longValue());
-                migrateContent(series.getId());
-                migrateSubItems(series);
-            }
-        }
-        for (ItemRef itemRef : container.getItemRefs()) {
-            log.info("Migrating item {} of container {}", itemRef.getId(), container.getId());
-            migrateContent(itemRef.getId());
-        }
-    }
-
-    private void migrateContent(Id id) throws WriteException {
-        Content content = resolveLegacyContent(id.longValue());
-        WriteResult<Content, Content> writeResult = persistence.contentStore().writeContent(content);
-        Optional<EquivalenceGraphUpdate> graphUpdate =
-                equivalenceMigrator.migrateEquivalence(content.toRef());
-        persistence.getEquivalentContentStore().updateContent(content);
-        if (graphUpdate.isPresent()) {
-            persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
         }
     }
 
@@ -308,7 +247,6 @@ public class ContentDebugController {
     ) throws IOException {
         try {
 
-            StringBuilder respString = new StringBuilder();
             Publisher source = Publisher.fromKey(sourceKey).requireValue();
             Set<Publisher> selectedSources = Splitter.on(",")
                     .splitToList(selectedSourcesKeys)
