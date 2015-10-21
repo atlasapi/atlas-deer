@@ -3,8 +3,6 @@ package org.atlasapi.system.bootstrap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -14,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
@@ -24,13 +21,10 @@ import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.content.IndexException;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
@@ -45,7 +39,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -61,14 +54,13 @@ public class ContentBootstrapController {
     private final ContentResolver read;
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final ContentWriter write;
     private final ResourceLister<Content> contentLister;
     private final ContentIndex contentIndex;
-    private final AtlasPersistenceModule persistence;
-    private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private final Integer maxSourceBootstrapThreads;
     private final ProgressStore progressStore;
     private final Timer timer;
+
+    private final ContentBootstrapListener contentBootstrapListener;
 
     public ContentBootstrapController(
             ContentResolver read,
@@ -81,19 +73,23 @@ public class ContentBootstrapController {
             ProgressStore progressStore,
             MetricRegistry metrics) {
         this.maxSourceBootstrapThreads = maxSourceBootstrapThreads;
-        this.persistence = checkNotNull(persistence);
-        this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.read = checkNotNull(read);
-        this.write = checkNotNull(write);
         this.contentLister = checkNotNull(contentLister);
         this.contentIndex = checkNotNull(contentIndex);
         this.progressStore = checkNotNull(progressStore);
         this.timer = metrics.timer(getClass().getSimpleName());
+
+        this.contentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(write)
+                .withEquivalenceMigrator(equivalenceMigrator)
+                .withEquivalentContentStore(persistence.getEquivalentContentStore())
+                .withContentIndex(contentIndex)
+                .build();
     }
 
     @RequestMapping(value = "/system/bootstrap/source", method = RequestMethod.POST)
     public void bootstrapSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
-        ContentVisitorAdapter<String> visitor = visitor();
+        ContentVisitorAdapter<ContentBootstrapListener.Result> visitor = contentBootstrapListener;
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
@@ -147,7 +143,7 @@ public class ContentBootstrapController {
         };
     }
 
-    private Runnable bootstrappingRunnable(ContentVisitorAdapter<String> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress) {
+    private Runnable bootstrappingRunnable(ContentVisitorAdapter<?> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress) {
         FluentIterable<Content> contentIterator;
         if (progress.isPresent()) {
             log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
@@ -206,8 +202,8 @@ public class ContentBootstrapController {
 
         resp.setStatus(HttpStatus.OK.value());
 
-        String result = content.accept(visitor());
-        resp.getWriter().println(result);
+        ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
+        resp.getWriter().println(result.getMessage());
         resp.getWriter().flush();
     }
 
@@ -218,64 +214,6 @@ public class ContentBootstrapController {
         } catch (IOException e) {
             throw new RuntimeException();
         }
-    }
-
-    private ContentVisitorAdapter<String> visitor() {
-        return new ContentVisitorAdapter<String>() {
-
-            @Override
-            public String visit(Brand brand) {
-                WriteResult<?, Content> brandWrite = write(brand);
-                return String.format("%s", brandWrite);
-            }
-
-            @Override
-            public String visit(Series series) {
-                WriteResult<?, Content> seriesWrite = write(series);
-                return String.format("%s", seriesWrite);
-            }
-
-            @Override
-            protected String visitItem(Item item) {
-                WriteResult<?, Content> itemWrite = write(item);
-                return String.format("%s", itemWrite);
-            }
-
-            private WriteResult<? extends Content, Content> write(Content content) {
-                try {
-                    content.setReadHash(null);
-                    Instant start = Instant.now();
-                    WriteResult<Content, Content> writeResult = write.writeContent(content);
-                    Instant cassandraWriteEnd = Instant.now();
-                    contentIndex.index(content);
-                    Instant indexingEnd = Instant.now();
-                    Optional<EquivalenceGraphUpdate> graphUpdate = equivalenceMigrator
-                            .migrateEquivalence(content.toRef());
-                    Instant graphUpdateEnd = Instant.now();
-                    persistence.getEquivalentContentStore().updateContent(content);
-                    if(graphUpdate.isPresent()) {
-                        persistence.getEquivalentContentStore().updateEquivalences(graphUpdate.get());
-                    }
-                    Instant end = Instant.now();
-
-                    log.info(
-                            "Update for {} write: {}ms, index: {}ms, equiv graph update: {}ms, "
-                                    + "equiv content update {}ms, total: {}ms",
-                            content.getId(),
-                            Duration.between(start, cassandraWriteEnd).toMillis(),
-                            Duration.between(cassandraWriteEnd, indexingEnd).toMillis(),
-                            Duration.between(indexingEnd, graphUpdateEnd).toMillis(),
-                            Duration.between(graphUpdateEnd, end).toMillis(),
-                            Duration.between(start, end).toMillis()
-                    );
-                    return writeResult;
-                } catch (Exception e) {
-                    log.error(String.format("Bootstrapping: %s %s", content.getId(), content), e);
-                    return null;
-                }
-            }
-
-        };
     }
 
     public ContentListingProgress progressFrom(Content content, Publisher pub) {
