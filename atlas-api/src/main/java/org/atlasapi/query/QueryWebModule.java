@@ -38,52 +38,9 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
-import org.atlasapi.output.annotation.AvailableContentAnnotation;
-import org.atlasapi.output.annotation.AvailableContentDetailAnnotation;
-import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
-import org.atlasapi.output.annotation.BrandReferenceAnnotation;
-import org.atlasapi.output.annotation.BroadcastsAnnotation;
-import org.atlasapi.output.annotation.ChannelAnnotation;
-import org.atlasapi.output.annotation.ChannelGroupAnnotation;
-import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
-import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
-import org.atlasapi.output.annotation.ChannelGroupMembershipListWriter;
-import org.atlasapi.output.annotation.ChannelSummaryWriter;
-import org.atlasapi.output.annotation.ChannelVariationAnnotation;
-import org.atlasapi.output.annotation.ChannelsAnnotation;
-import org.atlasapi.output.annotation.ClipsAnnotation;
-import org.atlasapi.output.annotation.ContainerSummaryAnnotation;
-import org.atlasapi.output.annotation.ContentDescriptionAnnotation;
-import org.atlasapi.output.annotation.CurrentAndFutureBroadcastsAnnotation;
-import org.atlasapi.output.annotation.DescriptionAnnotation;
-import org.atlasapi.output.annotation.EndpointInfoAnnotation;
-import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
-import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
-import org.atlasapi.output.annotation.FirstBroadcastAnnotation;
-import org.atlasapi.output.annotation.IdentificationAnnotation;
-import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
-import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
-import org.atlasapi.output.annotation.LegacyChannelAnnotation;
-import org.atlasapi.output.annotation.LocationsAnnotation;
-import org.atlasapi.output.annotation.ModelInfoAnnotation;
-import org.atlasapi.output.annotation.NextBroadcastAnnotation;
-import org.atlasapi.output.annotation.NullWriter;
-import org.atlasapi.output.annotation.ParentChannelAnnotation;
-import org.atlasapi.output.annotation.PeopleAnnotation;
-import org.atlasapi.output.annotation.PlatformAnnontation;
-import org.atlasapi.output.annotation.RegionsAnnotation;
-import org.atlasapi.output.annotation.RelatedLinksAnnotation;
-import org.atlasapi.output.annotation.SegmentEventsAnnotation;
-import org.atlasapi.output.annotation.SeriesAnnotation;
-import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
-import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
-import org.atlasapi.output.annotation.SubItemAnnotation;
-import org.atlasapi.output.annotation.SubItemSummariesAnnotations;
+import org.atlasapi.output.annotation.*;
 import org.atlasapi.output.writers.SeriesWriter;
 import org.atlasapi.output.writers.SubItemSummaryListWriter;
-import org.atlasapi.output.annotation.TopicsAnnotation;
-import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
-import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.ItemDetailWriter;
@@ -197,6 +154,7 @@ import static org.atlasapi.annotation.Annotation.TAGS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
+import static org.atlasapi.annotation.Annotation.EVENT;
 
 @Configuration
 @Import({ QueryModule.class, LicenseModule.class })
@@ -322,7 +280,7 @@ public class QueryWebModule {
     }
 
     @Bean EventController eventController(){
-        return new EventController(eventQueryPaser(),
+        return new EventController(eventQueryParser(),
                 queryModule.eventQueryExecutor(),
                 new EventQueryResultWriter(eventListWriter(),licenseWriter,requestWriter()));
     }
@@ -564,9 +522,9 @@ public class QueryWebModule {
         );
     }
 
-    private StandardQueryParser<Event> eventQueryPaser() {
+    private StandardQueryParser<Event> eventQueryParser() {
         QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
-                new IndexAnnotationsExtractor(topicAnnotationIndex()), selectionBuilder());
+                new IndexAnnotationsExtractor(eventAnnotationIndex()), selectionBuilder());
 
         return new StandardQueryParser<Event>(Resource.EVENT,
                 new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
@@ -604,6 +562,9 @@ public class QueryWebModule {
 
     @Bean ResourceAnnotationIndex topicAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.TOPIC, Annotation.all()).build();
+    }
+    @Bean ResourceAnnotationIndex eventAnnotationIndex(){
+        return ResourceAnnotationIndex.builder(Resource.EVENT, Annotation.all()).build();
     }
 
     @Bean ResourceAnnotationIndex channelAnnotationIndex() {
@@ -767,6 +728,7 @@ public class QueryWebModule {
                 .register(EXTENDED_ID,
                         new ExtendedIdentificationAnnotation(idCodec()),
                         ImmutableSet.of(ID))
+                .register(EVENT, new EventAnnotation(topicListWriter(), new ItemRefWriter(idCodec(), "content")))
                 .build());
     }
 
