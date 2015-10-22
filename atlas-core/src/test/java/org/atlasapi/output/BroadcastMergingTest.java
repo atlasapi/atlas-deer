@@ -41,7 +41,6 @@ public class BroadcastMergingTest {
         notChosenItem.setId(2L);
         notChosenItem.setPublisher(Publisher.FACEBOOK);
         notChosenItem.setCanonicalUri("notChosenItem");
-        notChosenItem.addBroadcast(new Broadcast(Id.valueOf(2), new DateTime(2012,1,1,0,0,0,UTC), new DateTime(2012,1,1,0,0,0,UTC)));
         
         chosenItem.addEquivalentTo(notChosenItem);
         notChosenItem.addEquivalentTo(chosenItem);
