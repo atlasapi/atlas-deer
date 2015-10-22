@@ -107,6 +107,10 @@
       <artifactId>atlas-legacy</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.atlasapi.deer.client</groupId>
+      <artifactId>atlas-deer-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.atlasapi</groupId>
       <artifactId>atlas-persistence</artifactId>
       <exclusions>

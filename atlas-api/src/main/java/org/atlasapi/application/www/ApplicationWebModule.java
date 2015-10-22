@@ -4,6 +4,8 @@ import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
 
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -11,6 +13,7 @@ import org.atlasapi.application.Application;
 import org.atlasapi.application.ApplicationPersistenceModule;
 import org.atlasapi.application.ApplicationQueryExecutor;
 import org.atlasapi.application.ApplicationsController;
+import org.atlasapi.application.ContentWriterController;
 import org.atlasapi.application.SourceLicense;
 import org.atlasapi.application.SourceLicenseController;
 import org.atlasapi.application.SourceLicenseQueryExecutor;
@@ -65,15 +68,17 @@ import org.atlasapi.application.writers.SourceWithIdWriter;
 import org.atlasapi.application.writers.SourcesQueryResultWriter;
 import org.atlasapi.application.writers.UsersListWriter;
 import org.atlasapi.application.writers.UsersQueryResultWriter;
+import org.atlasapi.content.Content;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.input.GsonModelReader;
 import org.atlasapi.input.ModelReader;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.ContentMessage;
+import org.atlasapi.messaging.JacksonMessageSerializer;
+import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
-import org.atlasapi.output.License;
-import org.atlasapi.output.writers.LicenseWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
@@ -92,6 +97,7 @@ import org.atlasapi.users.videosource.VideoSourceOAuthProvidersQueryResultWriter
 import org.atlasapi.users.videosource.VideoSourceOauthProvidersListWriter;
 import org.atlasapi.users.videosource.remote.RemoteSourceUpdaterClient;
 import org.atlasapi.users.videosource.youtube.YouTubeLinkedServiceController;
+import org.atlasapi.util.ClientModelConverter;
 import org.elasticsearch.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,6 +122,8 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenderFactory;
 import com.metabroadcast.common.social.auth.facebook.AccessTokenChecker;
 import com.metabroadcast.common.social.auth.facebook.CachingAccessTokenChecker;
 import com.metabroadcast.common.social.model.UserRef.UserNamespace;
@@ -126,10 +134,14 @@ import com.metabroadcast.common.social.user.TwitterOAuth1AccessTokenChecker;
 import com.metabroadcast.common.time.SystemClock;
 import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
 
-import javax.servlet.http.HttpServletRequest;
-
 @Configuration
-@Import({AtlasPersistenceModule.class, ApplicationPersistenceModule.class, NotifierModule.class, LicenseModule.class})
+@Import({
+        AtlasPersistenceModule.class,
+        ApplicationPersistenceModule.class,
+        NotifierModule.class,
+        LicenseModule.class,
+        KafkaMessagingModule.class
+})
 public class ApplicationWebModule {
     
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -143,8 +155,10 @@ public class ApplicationWebModule {
     @Autowired AtlasPersistenceModule persistence;
     @Autowired ApplicationPersistenceModule appPersistence;
     @Autowired NotifierModule notifier;
+    @Autowired MessageSenderFactory messageSenderFactory;
     
     @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
+    @Autowired @Qualifier("contentListWriter") EntityListWriter<Content> contentListWriter;
 
     private static final String APP_NAME = "atlas";
     
@@ -161,6 +175,8 @@ public class ApplicationWebModule {
     @Value("${youtube.clientSecret}") private String youTubeClientSecret;
     
     @Value("${youtube.handling.service}") private String handlingService;
+
+    @Value("@{messaging.input.topics.content}") private String contentSubmissionTopic;
     
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(DateTime.class, datetimeDeserializer)
@@ -214,7 +230,18 @@ public class ApplicationWebModule {
                 userFetcher(),
                 appPersistence.userStore());
     }
-    
+
+    public @Bean ContentWriterController contentWriterController() {
+        MessageSender<ContentMessage> contentQueueSender = messageSenderFactory
+                .makeMessageSender(contentSubmissionTopic,
+                        JacksonMessageSerializer.forType(ContentMessage.class));
+        return new ContentWriterController(
+                gsonModelReader(),
+                new ClientModelConverter(),
+                contentQueueSender
+        );
+    }
+
     public @Bean DefaultAnnotationHandlerMapping controllerMappings() {
         DefaultAnnotationHandlerMapping controllerClassNameHandlerMapping = new DefaultAnnotationHandlerMapping();
         Object[] interceptors = { getAuthenticationInterceptor() };
