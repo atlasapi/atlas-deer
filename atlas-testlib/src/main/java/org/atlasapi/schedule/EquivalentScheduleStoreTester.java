@@ -1053,7 +1053,147 @@ public final class EquivalentScheduleStoreTester extends AbstractTester<Equivale
         );
 
     }
-    
+
+
+    public void testDoesnRemoveStaleBroadcastsFromOutsideInterval() throws Exception {
+
+        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
+        channel.setId(1L);
+
+        /*
+        The test case here is testing that when there's a broadcast that spans multiple rows gets
+        shortened to be only one row will get deleted from the correct row under certain conditions.
+        Example sequence of updates:
+        Update 1
+        item1 -> (2015-10-25T19:30:00.000Z -> 2015-10-26T10:00:00.000Z)
+        item2 -> (2015-10-26T10:00:00.000Z -> 2015-10-26T12:00:00.000Z)
+        Update 2
+        item1 -> (2015-10-25T19:30:00.000Z -> 2015-10-26T00:00:00.000Z)
+        item3 -> (2015-10-26T00:00:00.000Z -> 2015-10-26T06:00:00.000Z)
+        Update 3
+        item4 -> (2015-10-26T06:00:00.000Z -> 2015-10-26T10:00:00.000Z)
+        item2 -> (2015-10-26T10:00:00.000Z -> 2015-10-26T12:00:00.000Z)
+
+        After update2 the broadcast for item1 will be modified in the row for 2015-10-25 with updated
+        end time, but will be orphaned in the row for 2015-10-26 with incorrect times.
+        During update 3 for row for 2015-10-26, this broadcast is considered stale(it's not in the update for the interval)
+        and it's get deleted. The problem is that it is deleted from the interval of the broadcast(which includes 2015-10-25)
+        rather than interval of the update, which causes a correct broadcast from 2015-10-25 to be deleted
+        The solution for this is to only delete stale broadcasts from update intervals, not the broadcast intervals
+         */
+        DateTime item1Broadcast1Start = new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC);
+        DateTime item1Broadcast1End = new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC);
+        DateTime item1Broadcast2Start = item1Broadcast1Start;
+        DateTime item1Broadcast2End = new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC);
+
+        DateTime item2BroadcastStart = item1Broadcast1End;
+        DateTime item2BroadcastEnd = new DateTime(2015, 10, 26, 12, 0, 0, 0, DateTimeZones.UTC);
+
+        DateTime item3BroadcastStart = item1Broadcast2End;
+        DateTime item3BroadcastEnd = new DateTime(2015, 10, 26, 6, 0, 0, 0, DateTimeZones.UTC);
+
+        DateTime item4BroadcastStart = item3BroadcastEnd;
+        DateTime item4BroadcastEnd = item2BroadcastStart;
+
+        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
+        Item item3 = new Item(Id.valueOf(3), Publisher.METABROADCAST);
+        Item item4 = new Item(Id.valueOf(4), Publisher.METABROADCAST);
+
+
+
+        Broadcast item1Broadcast1 = new Broadcast(channel, item1Broadcast1Start, item1Broadcast1End).withId("bid1");
+        //it's the same broadcast that got shortened
+        Broadcast item1Broadcast2 = new Broadcast(channel, item1Broadcast2Start, item1Broadcast2End).withId("bid1");
+
+        Broadcast item2Broadcast = new Broadcast(channel, item2BroadcastStart, item2BroadcastEnd).withId("bid2");
+
+        Broadcast item3Broadcast = new Broadcast(channel, item3BroadcastStart, item3BroadcastEnd).withId("bid3");
+
+        Broadcast item4Broadcast = new Broadcast(channel, item4BroadcastStart, item4BroadcastEnd).withId("bid4");
+
+        item1.addBroadcast(item1Broadcast1);
+        getSubjectGenerator().getContentStore().writeContent(item1);
+
+        item2.addBroadcast(item2Broadcast);
+        getSubjectGenerator().getContentStore().writeContent(item2);
+
+
+        ScheduleRef update1 = ScheduleRef.forChannel(channel.getId(), new Interval(item1Broadcast1Start, item2BroadcastEnd))
+                .addEntry(item1.getId(), item1Broadcast1.toRef())
+                .addEntry(item2.getId(), item2Broadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, update1, ImmutableSet.<BroadcastRef>of()));
+
+
+        item1.setBroadcasts(ImmutableSet.of(item1Broadcast2));
+        getSubjectGenerator().getContentStore().writeContent(item1);
+
+        item3.addBroadcast(item3Broadcast);
+        getSubjectGenerator().getContentStore().writeContent(item3);
+
+        ScheduleRef update2 = ScheduleRef.forChannel(channel.getId(), new Interval(item1Broadcast2Start, item3BroadcastEnd))
+                .addEntry(item1.getId(), item1Broadcast2.toRef())
+                .addEntry(item3.getId(), item3Broadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, update2, ImmutableSet.<BroadcastRef>of()));
+
+
+        item4.addBroadcast(item4Broadcast);
+        getSubjectGenerator().getContentStore().writeContent(item4);
+
+        ScheduleRef update3 = ScheduleRef.forChannel(channel.getId(), new Interval(item4BroadcastStart, item2BroadcastEnd))
+                .addEntry(item4.getId(), item4Broadcast.toRef())
+                .addEntry(item2.getId(), item2Broadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore().updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, update3, ImmutableSet.<BroadcastRef>of()));
+
+
+        EquivalentSchedule resolved = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel),
+                        new Interval(item1Broadcast1Start, item2BroadcastEnd),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST)
+                )
+        );
+
+        EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
+
+
+        assertThat(schedule.getEntries().size(), is(4));
+        assertThat(
+                Iterables.getOnlyElement(
+                        schedule.getEntries().get(0).getItems().getResources()
+                ),
+                is(item1)
+        );
+
+        assertThat(
+                Iterables.getOnlyElement(
+                        schedule.getEntries().get(1).getItems().getResources()
+                ),
+                is(item3)
+        );
+
+        assertThat(
+                Iterables.getOnlyElement(
+                        schedule.getEntries().get(2).getItems().getResources()
+                ),
+                is(item4)
+        );
+
+        assertThat(
+                Iterables.getOnlyElement(
+                        schedule.getEntries().get(3).getItems().getResources()
+                ),
+                is(item2)
+        );
+    }
+
     private <T> T get(ListenableFuture<T> future) throws Exception {
         return Futures.get(future, 10, TimeUnit.SECONDS, Exception.class);
     }
