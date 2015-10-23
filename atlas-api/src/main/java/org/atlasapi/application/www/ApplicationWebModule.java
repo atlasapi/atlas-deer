@@ -176,7 +176,7 @@ public class ApplicationWebModule {
     
     @Value("${youtube.handling.service}") private String handlingService;
 
-    @Value("@{messaging.input.topics.content}") private String contentSubmissionTopic;
+    @Value("${messaging.destination.topics.content}") private String contentSubmissionTopic;
     
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(DateTime.class, datetimeDeserializer)
