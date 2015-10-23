@@ -522,7 +522,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ImmutableList.Builder<ListenableFuture<ResultSet>> broadcastFutures = ImmutableList.builder();
         for (Date day : daysIn(interval)) {
             broadcastFutures.add(session.executeAsync(
-                            select(BROADCAST_ID.name(), BROADCAST.name())
+                            select(CHANNEL.name(), SOURCE.name(), DAY.name(), BROADCAST_ID.name(), BROADCAST.name())
                                     .from(EQUIVALENT_SCHEDULE_TABLE)
                                     .where(eq(SOURCE.name(), publisher.key()))
                                     .and(eq(CHANNEL.name(), channelId.longValue()))
