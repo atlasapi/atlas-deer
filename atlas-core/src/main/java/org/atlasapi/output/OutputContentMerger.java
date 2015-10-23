@@ -30,6 +30,7 @@ import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
@@ -226,6 +227,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             @Override
             public Iterable<String> apply(T input) {
                 return input.getGenres();
+            }
+        }));
+        chosen.setAliases(projectFieldFromEquivalents(chosen, notChosen, new Function<T, Iterable<Alias>>() {
+
+            @Override
+            public Iterable<Alias> apply(T input) {
+                return input.getAliases();
             }
         }));
         mergeEncodings(sources, chosen, notChosen);

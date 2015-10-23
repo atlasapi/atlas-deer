@@ -24,6 +24,7 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.SeriesRef;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -105,6 +106,19 @@ public class OutputContentMergerTest {
         sources = sourcesWithPrecedence(true, Publisher.TED,Publisher.BBC);
         mergePermutations(contents, sources, three, two.getId());
 
+    }
+    
+    @Test
+    public void testMergeOfAliases() {
+        Item one = item(1l, "o", Publisher.METABROADCAST);
+        Item two = item(2l, "k", Publisher.BBC);
+        
+        one.addAlias(new Alias("a1", "v1"));
+        two.addAlias(new Alias("a2", "v2"));
+        
+        ApplicationSources sources = sourcesWithPrecedence(true, Publisher.METABROADCAST, Publisher.BBC, Publisher.PA);
+        Item merged = merger.merge(one, ImmutableList.of(two), sources);
+        assertThat(merged.getAliases().size(), is(2));
     }
 
     @Test
