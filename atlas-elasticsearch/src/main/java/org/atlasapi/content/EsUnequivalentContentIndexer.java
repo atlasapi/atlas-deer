@@ -184,16 +184,21 @@ public class EsUnequivalentContentIndexer {
             Map<String, Object> source = response.getSourceAsMap();
             if (source != null) {
                 source.put(EsContent.CANONICAL_ID, canonicalId.longValue());
-                bulkReq.add(Requests.indexRequest(indexName)
-                                .id(Integer.toString((int) response.getSourceAsMap().get(EsContent.ID)))
-                                .type(response.getType())
-                                .source(response.getSourceAsMap())
-                );
+                IndexRequest req = Requests.indexRequest(indexName)
+                        .id(Integer.toString((int) response.getSourceAsMap().get(EsContent.ID)))
+                        .type(response.getType())
+                        .source(response.getSourceAsMap());
+                if (response.getType().equalsIgnoreCase(EsContent.CHILD_ITEM)) {
+                    req.parent(String.valueOf(source.get(EsContent.BRAND)));
+                }
+                bulkReq.add(req);
             }
         }
-        BulkResponse resp = ElasticsearchUtils.getWithTimeout(esClient.bulk(bulkReq), requestTimeout);
-        if (resp.hasFailures()) {
-            throw new IndexException("Failures occurred while bulk updating canonical IDs: " + resp.buildFailureMessage());
+        if (bulkReq.numberOfActions() > 0) {
+            BulkResponse resp = ElasticsearchUtils.getWithTimeout(esClient.bulk(bulkReq), requestTimeout);
+            if (resp.hasFailures()) {
+                throw new IndexException("Failures occurred while bulk updating canonical IDs: " + resp.buildFailureMessage());
+            }
         }
     }
 
