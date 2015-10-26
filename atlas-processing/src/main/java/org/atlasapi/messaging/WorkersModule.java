@@ -263,6 +263,7 @@ public class WorkersModule {
         }
         if(contentIndexerEnabled) {
             services.add(equivalentContentIndexingMessageListener());
+            services.add(equivalentContentIndexingGraphMessageListener());
         }
         if(equivalentContentStoreEnabled) {
             services.add(equivalentContentStoreContentUpdateListener());
