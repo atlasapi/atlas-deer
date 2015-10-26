@@ -34,12 +34,14 @@ public class ClientModelConverter {
         }
 
         // TODO: immutable collector
-        item.setAliases(api
-                .getAliases()
-                .stream()
-                .map(clientAlias -> new Alias(clientAlias.getNamespace(), clientAlias.getValue()))
-                .collect(Collectors.toList())
-        );
+        if (api.getAliases() != null) {
+            item.setAliases(api
+                            .getAliases()
+                            .stream()
+                            .map(clientAlias -> new Alias(clientAlias.getNamespace(), clientAlias.getValue()))
+                            .collect(Collectors.toList())
+            );
+        }
 
         if (api.getMediaType() != null) {
             item.setMediaType(MediaType.fromKey(api.getMediaType()).get());
@@ -53,14 +55,37 @@ public class ClientModelConverter {
             item.setPublisher(Publisher.fromKey(api.getSource().getKey()).requireValue());
         }
 
-        item.setTitle(api.getTitle());
-        item.setDescription(api.getDescription());
-        item.setImage(api.getImage());
-        item.setThumbnail(api.getThumbnail());
-        item.setGenres(api.getGenres());
-        item.setPresentationChannel(api.getPresentationChannel());
-        item.setLongDescription(api.getLongDescription());
-        item.setBlackAndWhite(api.getBlackAndWhite());
+        if (api.getTitle() != null) {
+            item.setTitle(api.getTitle());
+        }
+
+        if (api.getDescription() != null) {
+            item.setDescription(api.getDescription());
+        }
+
+        if (api.getImage() != null) {
+            item.setImage(api.getImage());
+        }
+
+        if (api.getThumbnail() != null) {
+            item.setThumbnail(api.getThumbnail());
+        }
+
+        if (api.getGenres() != null) {
+            item.setGenres(api.getGenres());
+        }
+
+        if (api.getPresentationChannel() != null) {
+            item.setPresentationChannel(api.getPresentationChannel());
+        }
+
+        if (api.getLongDescription() != null) {
+            item.setLongDescription(api.getLongDescription());
+        }
+
+        if (api.getBlackAndWhite() != null) {
+            item.setBlackAndWhite(api.getBlackAndWhite());
+        }
 
         // TODO: immutable collector
         if (api.getCountriesOfOrigin() != null) {
@@ -71,8 +96,13 @@ public class ClientModelConverter {
                             .collect(Collectors.toSet()));
         }
 
-        item.setScheduleOnly(api.getScheduleOnly());
-        item.setLanguages(api.getLanguages());
+        if (api.getScheduleOnly() != null) {
+            item.setScheduleOnly(api.getScheduleOnly());
+        }
+
+        if (api.getLanguages() != null) {
+            item.setLanguages(api.getLanguages());
+        }
 
         return item;
     }
