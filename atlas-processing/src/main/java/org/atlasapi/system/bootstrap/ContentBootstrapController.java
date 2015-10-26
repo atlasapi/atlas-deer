@@ -82,7 +82,7 @@ public class ContentBootstrapController {
         this.contentBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(write)
                 .withEquivalenceMigrator(equivalenceMigrator)
-                .withEquivalentContentStore(persistence.getEquivalentContentStore())
+                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(contentIndex)
                 .build();
     }

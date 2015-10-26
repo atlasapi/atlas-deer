@@ -102,7 +102,7 @@ public class ContentDebugController {
         this.contentBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(persistence.nullMessageSendingContentStore())
                 .withEquivalenceMigrator(equivalenceMigrator)
-                .withEquivalentContentStore(persistence.getEquivalentContentStore())
+                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(index)
                 .withMigrateHierarchies(legacyPersistence)
                 .build();
