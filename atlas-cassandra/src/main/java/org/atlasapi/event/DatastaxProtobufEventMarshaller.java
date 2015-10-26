@@ -17,7 +17,7 @@ public class DatastaxProtobufEventMarshaller implements EventMarshaller<Batch, R
 
     private static final String TABLE = "event";
     private static final String PRIMARY_KEY_COLUMN = "event_id";
-    private static final String DATE_COLUMN = "data";
+    private static final String DATA_COLUMN = "data";
 
     private final Serializer<Event, byte[]> serializer;
 
@@ -40,12 +40,12 @@ public class DatastaxProtobufEventMarshaller implements EventMarshaller<Batch, R
         mutation.add(
                 update(TABLE)
                         .where(eq(PRIMARY_KEY_COLUMN, id.longValue()))
-                        .with(set(DATE_COLUMN, ByteBuffer.wrap(data)))
+                        .with(set(DATA_COLUMN, ByteBuffer.wrap(data)))
         );
     }
 
     protected byte[] toByteArrayValues(Row row) {
-        ByteBuffer buffer = row.getBytes(DATE_COLUMN);
+        ByteBuffer buffer = row.getBytes(DATA_COLUMN);
         byte[] bytes = new byte[buffer.remaining()];
         buffer.get(bytes);
 
