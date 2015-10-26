@@ -341,7 +341,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         List<RegularStatement> deletes = deleteStatements(
                 update.getSource(),
-                Sets.union(staleBroadcasts, update.getStaleBroadcasts())
+                Sets.union(staleBroadcasts, update.getStaleBroadcasts()),
+                update.getSchedule().getInterval()
         );
         log.info(
                 "Processing equivalent schedule update for {} {} {}: currentEntries:{}, update:{}, stale broadcasts from update: {}, stale broadcasts from store: {}",
@@ -451,10 +452,19 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return ByteBuffer.wrap(broadcastSerializer.serialize(broadcast).build().toByteArray());
     }
 
-    private List<RegularStatement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts) {
+    /**
+     * Delete stale broadcasts from the update interval.
+     * We need to delete the broadcasts from the update interval, rather than broadcast interval
+     * because we need to avoid incorrectly avoid broadcasts which were moved out of update interval
+     * @param src
+     * @param staleBroadcasts
+     * @param interval
+     * @return
+     */
+    private List<RegularStatement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts, Interval interval) {
         ImmutableList.Builder<RegularStatement> stmts = ImmutableList.builder();
         for (BroadcastRef ref : staleBroadcasts) {
-            for (Date day : daysIn(ref.getTransmissionInterval())) {
+            for (Date day : daysIn(interval)) {
                 stmts.add(delete(ref, src, day));
             }
         }
@@ -512,7 +522,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ImmutableList.Builder<ListenableFuture<ResultSet>> broadcastFutures = ImmutableList.builder();
         for (Date day : daysIn(interval)) {
             broadcastFutures.add(session.executeAsync(
-                            select(BROADCAST_ID.name(), BROADCAST.name())
+                            select(CHANNEL.name(), SOURCE.name(), DAY.name(), BROADCAST_ID.name(), BROADCAST.name())
                                     .from(EQUIVALENT_SCHEDULE_TABLE)
                                     .where(eq(SOURCE.name(), publisher.key()))
                                     .and(eq(CHANNEL.name(), channelId.longValue()))

@@ -39,7 +39,7 @@ public class DebugModule {
         return new DirectAndExplicitEquivalenceMigrator(
                 legacyPersistenceModule.legacyContentResolver(),
                 legacyPersistenceModule.legacyEquivalenceStore(),
-                persistenceModule.getContentEquivalenceGraphStore()
+                persistenceModule.nullMessageSendingGraphStore()
         );
     }
 }
