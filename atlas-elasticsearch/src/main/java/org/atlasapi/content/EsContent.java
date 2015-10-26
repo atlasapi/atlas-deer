@@ -297,7 +297,7 @@ public class EsContent extends EsObject {
         return this;
     }
 
-    public EsContent canonicalId(Long id) {
+    public EsContent canonicalId(long id) {
         properties.put(CANONICAL_ID, id);
         return this;
     }
