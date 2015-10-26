@@ -20,6 +20,8 @@ You will need:
   * ElasticSearch (Check the atlas-elasticsearch POM and find the current client version used, you need the same version - both major and minor must match).
   * The current version of the 2.0.x release of Cassandra (http://planetcassandra.org/cassandra/) and latest cqlsh
   * The latest version of MongoDB (http://www.mongodb.org/)
+  * Kafka -- anything past The Big Binary Incompatibility should be fine
+  * ZooKeeper -- it's only needed for Kafka so anything compatible should work
 
 * Make sure the protobuf library version specified in the atlas-cassandra/pom.xml matches the output of protoc —version
 * Start Cassandra locally on the standard port

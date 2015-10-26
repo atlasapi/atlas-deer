@@ -86,7 +86,9 @@ public class ContentController {
     public void addContent(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         try {
-            // TODO: seems like auth is done by the requestParser, should I handle that?
+            // FIXME: we need to do this because auth is handled by the requestParser, we should split those two
+            requestParser.parse(request);
+
             org.atlasapi.deer.client.model.types.Content requestContent =
                     modelReader.read(request.getReader(), org.atlasapi.deer.client.model.types.Content.class);
             Content content = converter.convert(requestContent);
@@ -98,7 +100,8 @@ public class ContentController {
             response.setStatus(HttpStatus.ACCEPTED.value());
         } catch (Exception e) {
             log.error("Request exception {}", request.getRequestURI(), e);
-            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            ErrorSummary summary = ErrorSummary.forException(e);
+            response.setStatus(summary.statusCode().code());
         }
     }
 }
