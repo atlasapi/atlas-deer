@@ -2,9 +2,15 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.entity.Id;
 import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.SecondaryIndex;
+import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -12,12 +18,18 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.exists.ExistsRequestBuilder;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class EsUnequivalentContentIndexer {
 
@@ -163,5 +175,34 @@ public class EsUnequivalentContentIndexer {
 
     private String getDocId(ContainerRef container) {
         return String.valueOf(container.getId());
+    }
+
+    public void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException {
+        ImmutableSet<GetResponse> setSources = resolveSet(setIds);
+        BulkRequest bulkReq = Requests.bulkRequest();
+        for (GetResponse response : setSources) {
+            response.getSourceAsMap().put(EsContent.CANONICAL_ID, canonicalId.longValue());
+            bulkReq.add(Requests.indexRequest(indexName)
+                            .id(Integer.toString((int) response.getSourceAsMap().get(EsContent.ID)))
+                            .type(response.getType())
+                            .source(response.getSourceAsMap())
+            );
+        }
+        BulkResponse resp = ElasticsearchUtils.getWithTimeout(esClient.bulk(bulkReq), requestTimeout);
+        if (resp.hasFailures()) {
+            throw new IndexException("Failures occurred while bulk updating canonical IDs: " + resp.buildFailureMessage());
+        }
+    }
+
+    private ImmutableSet<GetResponse> resolveSet(Iterable<Id> setIds) {
+        ImmutableSet.Builder<GetResponse> builder = ImmutableSet.builder();
+        for (Id setId : setIds) {
+            ActionFuture<GetResponse> req = esClient.get(
+                    Requests.getRequest(EsSchema.CONTENT_INDEX)
+                            .id(setId.toString())
+            );
+            builder.add(req.actionGet());
+        }
+        return builder.build();
     }
 }

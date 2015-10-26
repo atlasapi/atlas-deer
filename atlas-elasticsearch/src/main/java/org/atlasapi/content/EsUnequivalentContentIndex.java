@@ -113,6 +113,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
     }
 
     @Override
+    public void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException {
+        indexer.updateCanonicalIds(canonicalId, setIds);
+    }
+
+    @Override
     public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
             Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = SettableFuture.create();

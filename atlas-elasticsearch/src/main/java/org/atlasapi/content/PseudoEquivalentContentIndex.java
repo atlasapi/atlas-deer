@@ -68,4 +68,9 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
     public void index(Content content) throws IndexException {
         delegate.index(content);
     }
+
+    @Override
+    public void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException {
+        delegate.updateCanonicalIds(canonicalId, setIds);
+    }
 }

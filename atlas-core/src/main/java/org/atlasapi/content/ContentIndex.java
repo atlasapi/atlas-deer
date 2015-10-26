@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -14,5 +15,7 @@ public interface ContentIndex {
             Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> searchParam);
     
     void index(Content content) throws IndexException;
+
+    void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException;
 
 }

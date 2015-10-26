@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Optional;
 
 import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
 import com.codahale.metrics.MetricRegistry;
@@ -29,6 +30,11 @@ public class InstrumentedContentIndex implements ContentIndex {
         Timer.Context time = contentIndexTimer.time();
         delegate.index(content);
         time.stop();
+    }
+
+    @Override
+    public void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException {
+        delegate.updateCanonicalIds(canonicalId, setIds);
     }
 
     @Override
