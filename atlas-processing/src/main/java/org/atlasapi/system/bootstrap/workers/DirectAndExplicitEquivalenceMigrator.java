@@ -5,8 +5,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.Sets;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
@@ -24,29 +22,17 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 
 public class DirectAndExplicitEquivalenceMigrator {
 
-    private static final Function<Content, ResourceRef> TO_RESOURCE_REF = new Function<Content, ResourceRef>() {
-
-        @Override
-        public ResourceRef apply(Content input) {
-            return input.toRef();
-        }
-    };
-
-    private static final Function<ResourceRef, Publisher> TO_SOURCE = new Function<ResourceRef, Publisher>() {
-
-        @Override
-        public Publisher apply(ResourceRef input) {
-            return input.getSource();
-        }
-    };
+    private static final Function<Content, ResourceRef> TO_RESOURCE_REF = Content::toRef;
 
     private final Logger log = LoggerFactory.getLogger(DirectAndExplicitEquivalenceMigrator.class);
     private final ContentResolver legacyResolver;
@@ -95,8 +81,7 @@ public class DirectAndExplicitEquivalenceMigrator {
 
     private Optional<EquivalenceGraphUpdate> updateGraphStore(ResourceRef ref, Set<ResourceRef> refs)
             throws WriteException {
-        ImmutableSet<Publisher> sources = FluentIterable.from(refs).transform(TO_SOURCE).toSet();
-        return graphStore.updateEquivalences(ref, refs, sources);
+        return graphStore.updateEquivalences(ref, refs, Publisher.all());
     }
 
     private LookupEntry resolveLegacyEquivalents(Id id) {
