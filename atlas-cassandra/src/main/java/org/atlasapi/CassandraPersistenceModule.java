@@ -121,17 +121,13 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         };
     }
 
-    private <T extends Message> MessageSender<T> nullMessageSender(Class<T> msgType) {
+    public <T extends Message> MessageSender<T> nullMessageSender(Class<T> msgType) {
         return new MessageSender<T>() {
             @Override
-            public void sendMessage(T resourceUpdatedMessage) throws MessagingException {
-                return;
-            }
+            public void sendMessage(T resourceUpdatedMessage) throws MessagingException { }
 
             @Override
-            public void close() throws Exception {
-                return;
-            }
+            public void close() throws Exception { }
         };
     }
 
