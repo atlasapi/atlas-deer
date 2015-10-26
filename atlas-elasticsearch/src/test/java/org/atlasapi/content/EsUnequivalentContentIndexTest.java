@@ -1,9 +1,7 @@
 package org.atlasapi.content;
 
 import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
@@ -13,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +33,8 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.index.get.GetField;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -458,7 +459,7 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testUnindexingOfContentThatIsNoLongerPublished()
             throws IndexException, ExecutionException, InterruptedException {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)));
         Item item = complexItem().withId(20l).build();
         item.setPublisher(Publisher.METABROADCAST);
         item.setActivelyPublished(true);
@@ -486,5 +487,35 @@ public class EsUnequivalentContentIndexTest {
                 Optional.empty())
                 .get();
         assertThat(resultWithItemAbsent.getIds().first(), is(com.google.common.base.Optional.absent()));
+    }
+
+    @Test
+    public void testUpdatesCanonicalIdsCorrectly() throws IndexException {
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)));
+        Item item = new Item(Id.valueOf(10l), Publisher.METABROADCAST);
+        item.setTitle("Test title!");
+        indexAndRefresh(item);
+
+        Map<String, Object> resolvedFields = esClient.get(Requests.getRequest(EsSchema.CONTENT_INDEX)
+                .id("10")
+                .type(EsContent.TOP_LEVEL_ITEM))
+                .actionGet()
+                .getSource();
+
+        assertThat(resolvedFields.get(EsContent.TITLE), is(equalTo("Test title!")));
+        assertThat(resolvedFields.get(EsContent.CANONICAL_ID), is(equalTo(10)));
+
+        index.updateCanonicalIds(Id.valueOf(20l), ImmutableSet.of(Id.valueOf(10l)));
+
+        ElasticSearchHelper.refresh(esClient);
+
+        resolvedFields = esClient.get(Requests.getRequest(EsSchema.CONTENT_INDEX)
+                .id("10")
+                .type(EsContent.TOP_LEVEL_ITEM))
+                .actionGet()
+                .getSource();
+
+        assertThat(resolvedFields.get(EsContent.TITLE), is(equalTo("Test title!")));
+        assertThat(resolvedFields.get(EsContent.CANONICAL_ID), is(equalTo(20)));
     }
 }
