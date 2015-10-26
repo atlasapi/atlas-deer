@@ -238,8 +238,8 @@ public class WorkersModule {
 
     @Bean
     @Lazy(true)
-    public EquivalentContentIndexingWorker equivalentContentIndexingWorker() {
-        return new EquivalentContentIndexingWorker(
+    public EquivalentContentIndexingContentWorker equivalentContentIndexingWorker() {
+        return new EquivalentContentIndexingContentWorker(
                 persistence.contentStore(), persistence.contentIndex(), health.metrics()
         );
     }
