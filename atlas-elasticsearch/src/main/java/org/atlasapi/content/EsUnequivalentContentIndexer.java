@@ -164,4 +164,40 @@ public class EsUnequivalentContentIndexer {
     private String getDocId(ContainerRef container) {
         return String.valueOf(container.getId());
     }
+<<<<<<< Updated upstream
 }
+=======
+
+    public void updateCanonicalIds(Id canonicalId, Iterable<Id> setIds) throws IndexException {
+        ImmutableSet<GetResponse> setSources = resolveSet(setIds);
+        BulkRequest bulkReq = Requests.bulkRequest();
+        for (GetResponse response : setSources) {
+            Map<String, Object> source = response.getSourceAsMap();
+            if (source != null) {
+                source.put(EsContent.CANONICAL_ID, canonicalId.longValue());
+                bulkReq.add(Requests.indexRequest(indexName)
+                                .id(Integer.toString((int) response.getSourceAsMap().get(EsContent.ID)))
+                                .type(response.getType())
+                                .source(response.getSourceAsMap())
+                );
+            }
+        }
+        BulkResponse resp = ElasticsearchUtils.getWithTimeout(esClient.bulk(bulkReq), requestTimeout);
+        if (resp.hasFailures()) {
+            throw new IndexException("Failures occurred while bulk updating canonical IDs: " + resp.buildFailureMessage());
+        }
+    }
+
+    private ImmutableSet<GetResponse> resolveSet(Iterable<Id> setIds) {
+        ImmutableSet.Builder<GetResponse> builder = ImmutableSet.builder();
+        for (Id setId : setIds) {
+            ActionFuture<GetResponse> req = esClient.get(
+                    Requests.getRequest(EsSchema.CONTENT_INDEX)
+                            .id(setId.toString())
+            );
+            builder.add(req.actionGet());
+        }
+        return builder.build();
+    }
+}
+>>>>>>> Stashed changes
