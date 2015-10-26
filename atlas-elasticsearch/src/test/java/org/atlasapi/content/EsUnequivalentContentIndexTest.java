@@ -32,7 +32,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.index.get.GetField;
@@ -495,13 +494,28 @@ public class EsUnequivalentContentIndexTest {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)));
         Item item = new Item(Id.valueOf(10l), Publisher.METABROADCAST);
         item.setTitle("Test title!");
-        item.setContainerRef(new BrandRef(Id.valueOf(10l), Publisher.METABROADCAST));
         indexAndRefresh(item);
 
-        GetResponse getFields = esClient.get(Requests.getRequest(EsSchema.CONTENT_INDEX)
+        Map<String, Object> resolvedFields = esClient.get(Requests.getRequest(EsSchema.CONTENT_INDEX)
                 .id("10")
-                .type(EsContent.CHILD_ITEM))
-                .actionGet();
-        System.out.println();
+                .type(EsContent.TOP_LEVEL_ITEM))
+                .actionGet()
+                .getSource();
+
+        assertThat(resolvedFields.get(EsContent.TITLE), is(equalTo("Test title!")));
+        assertThat(resolvedFields.get(EsContent.CANONICAL_ID), is(equalTo(10)));
+
+        index.updateCanonicalIds(Id.valueOf(20l), ImmutableSet.of(Id.valueOf(10l)));
+
+        ElasticSearchHelper.refresh(esClient);
+
+        resolvedFields = esClient.get(Requests.getRequest(EsSchema.CONTENT_INDEX)
+                .id("10")
+                .type(EsContent.TOP_LEVEL_ITEM))
+                .actionGet()
+                .getSource();
+
+        assertThat(resolvedFields.get(EsContent.TITLE), is(equalTo("Test title!")));
+        assertThat(resolvedFields.get(EsContent.CANONICAL_ID), is(equalTo(20)));
     }
 }
