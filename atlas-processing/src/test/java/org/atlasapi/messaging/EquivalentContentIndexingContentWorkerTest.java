@@ -31,7 +31,7 @@ import com.metabroadcast.common.time.Timestamp;
 @RunWith(MockitoJUnitRunner.class)
 public class EquivalentContentIndexingContentWorkerTest {
 
-    private EquivalentContentIndexingWorker worker;
+    private EquivalentContentIndexingContentWorker worker;
 
     private @Mock ContentResolver contentResolver;
     private @Mock ContentIndex contentIndex;
@@ -45,7 +45,7 @@ public class EquivalentContentIndexingContentWorkerTest {
         when(metricRegistry.timer(anyString())).thenReturn(timer);
         when(timer.time()).thenReturn(timerContext);
 
-        worker = new EquivalentContentIndexingWorker(contentResolver, contentIndex, metricRegistry);
+        worker = new EquivalentContentIndexingContentWorker(contentResolver, contentIndex, metricRegistry);
     }
 
     @Test
