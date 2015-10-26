@@ -109,7 +109,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
                 updateLog(itemsAndBroadcasts),
                 updateLog(update.getStaleEntries())
         );
-        for (ItemAndBroadcast staleEntry : Iterables.concat(update.getStaleEntries(), update.getStaleContent())) {
+        for (ItemAndBroadcast staleEntry : update.getStaleEntries()) {
             updateStaleItemInContentStore(staleEntry);
         }
         doWrite(source, removeAdditionalBroadcasts(update.getUpdatedBlocks()));
