@@ -23,9 +23,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
-public class EquivalentContentIndexingWorker implements Worker<EquivalentContentUpdatedMessage> {
+public class EquivalentContentIndexingContentWorker implements Worker<EquivalentContentUpdatedMessage> {
 
-    private static final String METRICS_TIMER = "EquivalentContentIndexingWorker";
+    private static final String METRICS_TIMER = "EquivalentContentIndexingContentWorker";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -33,8 +33,8 @@ public class EquivalentContentIndexingWorker implements Worker<EquivalentContent
     private final ContentIndex contentIndex;
     private final Timer timer;
 
-    public EquivalentContentIndexingWorker(ContentResolver contentResolver,
-            ContentIndex contentIndex, MetricRegistry metricRegistry) {
+    public EquivalentContentIndexingContentWorker(ContentResolver contentResolver,
+                                                  ContentIndex contentIndex, MetricRegistry metricRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.contentIndex = checkNotNull(contentIndex);
         this.timer = checkNotNull(metricRegistry.timer(METRICS_TIMER));

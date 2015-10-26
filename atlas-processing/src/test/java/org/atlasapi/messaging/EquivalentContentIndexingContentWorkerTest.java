@@ -29,7 +29,7 @@ import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.time.Timestamp;
 
 @RunWith(MockitoJUnitRunner.class)
-public class EquivalentContentIndexingWorkerTest {
+public class EquivalentContentIndexingContentWorkerTest {
 
     private EquivalentContentIndexingWorker worker;
 
