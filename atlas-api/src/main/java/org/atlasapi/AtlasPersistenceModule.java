@@ -199,7 +199,19 @@ public class AtlasPersistenceModule {
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel()
         );
+    }
 
+    @Bean
+    public EquivalentContentStore nullMessageSendingEquivalentContentStore() {
+        return new CassandraEquivalentContentStore(
+                persistenceModule().contentStore(),
+                legacyContentResolver(),
+                persistenceModule().contentEquivalenceGraphStore(),
+                persistenceModule().nullMessageSender(EquivalentContentUpdatedMessage.class),
+                persistenceModule().getSession(),
+                persistenceModule().getReadConsistencyLevel(),
+                persistenceModule().getWriteConsistencyLevel()
+        );
     }
 
     @Bean
