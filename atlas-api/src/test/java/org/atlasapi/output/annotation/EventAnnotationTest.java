@@ -9,7 +9,6 @@ import org.atlasapi.entity.Person;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.Organisation;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -17,18 +16,16 @@ import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.v4.event.OrganisationListWriter;
 import org.atlasapi.query.v4.event.PersonListWriter;
-import org.atlasapi.query.v4.topic.TopicListWriter;
-
 import org.atlasapi.topic.Topic;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import static org.mockito.Matchers.*;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
