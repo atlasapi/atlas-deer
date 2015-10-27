@@ -28,8 +28,8 @@ public class EventQueryResultWriter extends QueryResultWriter<Event> {
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
-            FluentIterable<Event> topics = result.getResources();
-            writer.writeList(eventListWriter, topics, ctxt);
+            FluentIterable<Event> events = result.getResources();
+            writer.writeList(eventListWriter, events, ctxt);
         } else {
             writer.writeObject(eventListWriter, result.getOnlyResource(), ctxt);
         }
