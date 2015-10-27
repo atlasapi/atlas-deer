@@ -564,7 +564,9 @@ public class QueryWebModule {
         return ResourceAnnotationIndex.builder(Resource.TOPIC, Annotation.all()).build();
     }
     @Bean ResourceAnnotationIndex eventAnnotationIndex(){
-        return ResourceAnnotationIndex.builder(Resource.EVENT, Annotation.all()).build();
+        return ResourceAnnotationIndex.builder(Resource.EVENT, Annotation.all())
+                .attach(Annotation.TAGS, topicAnnotationIndex(), Annotation.ID)
+                .build();
     }
 
     @Bean ResourceAnnotationIndex channelAnnotationIndex() {
