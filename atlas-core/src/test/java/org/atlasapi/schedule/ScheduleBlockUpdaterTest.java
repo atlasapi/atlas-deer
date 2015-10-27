@@ -9,11 +9,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import com.google.common.collect.ImmutableSet;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.media.entity.Publisher;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,8 +101,8 @@ public class ScheduleBlockUpdaterTest {
         List<ChannelSchedule> currentSchedule = ImmutableList.of(new ChannelSchedule(channel, interval, ImmutableList.of(currentEntry)));
         
         List<ItemAndBroadcast> updateEntries = ImmutableList.of(new ItemAndBroadcast(
-            currentEntry.getItem().copy(), 
-            currentEntry.getBroadcast().copy().withId("different")
+                currentEntry.getItem().copy(),
+                currentEntry.getBroadcast().copy().withId("different")
         ));
         
         ScheduleBlocksUpdate scheduleUpdate = updater.updateBlocks(currentSchedule, ImmutableList.<ChannelSchedule>of(), updateEntries, channel, interval);
@@ -167,8 +170,8 @@ public class ScheduleBlockUpdaterTest {
         
         assertThat(scheduleUpdate.getUpdatedBlocks().get(0).getEntries().get(0), is(episodeAndBroadcast1));
         assertThat(scheduleUpdate.getUpdatedBlocks().get(0).getEntries().get(1), is(episodeAndBroadcast3));
-        
-        assertThat(scheduleUpdate.getStaleEntries(), hasItem(episodeAndBroadcast2));
+
+        assertThat(scheduleUpdate.getStaleContent(), hasItem(episodeAndBroadcast2));
     }
 
     @Test
@@ -179,7 +182,7 @@ public class ScheduleBlockUpdaterTest {
         ItemAndBroadcast iab2 = itemAndBroadcast(1, METABROADCAST, channel, "one", new Interval(5, 105, DateTimeZones.UTC));
         
         List<ChannelSchedule> currentSchedule = ImmutableList.of(
-            new ChannelSchedule(channel, interval, ImmutableList.of(iab1))
+                new ChannelSchedule(channel, interval, ImmutableList.of(iab1))
         );
         
         ScheduleBlocksUpdate updatedSchedule = updater.updateBlocks(currentSchedule, ImmutableList.<ChannelSchedule>of(), ImmutableList.of(iab2), channel, interval);
@@ -198,7 +201,7 @@ public class ScheduleBlockUpdaterTest {
         ItemAndBroadcast iab2 = itemAndBroadcast(1, METABROADCAST, channel, "two", new Interval(100, 200, DateTimeZones.UTC));
         ItemAndBroadcast iab3 = itemAndBroadcast(1, METABROADCAST, channel, "three", new Interval(200, 300, DateTimeZones.UTC));
         
-        ItemAndBroadcast iab4 = itemAndBroadcast(2, METABROADCAST, channel, "four", new Interval(100,200, DateTimeZones.UTC));
+        ItemAndBroadcast iab4 = itemAndBroadcast(2, METABROADCAST, channel, "four", new Interval(100, 200, DateTimeZones.UTC));
         
         List<ChannelSchedule> currentSchedule = ImmutableList.of(
             new ChannelSchedule(channel, interval1, ImmutableList.of(iab1, iab2, iab3))
@@ -248,7 +251,7 @@ public class ScheduleBlockUpdaterTest {
         assertThat(updatedSchedule.getUpdatedBlocks().get(1).getEntries().size(), is(1));
         assertThat(updatedSchedule.getUpdatedBlocks().get(1).getEntries().get(0), is(episode2));
         
-        assertThat(Iterables.getOnlyElement(updatedSchedule.getStaleEntries()), is(episode1));
+        assertThat(Iterables.getOnlyElement(updatedSchedule.getStaleContent()), is(episode1));
     }
 
     @Test
@@ -291,7 +294,96 @@ public class ScheduleBlockUpdaterTest {
         assertThat(updatedSchedule.getUpdatedBlocks().get(1).getEntries().size(), is(1));
         assertThat(updatedSchedule.getUpdatedBlocks().get(1).getEntries().get(0), is(episode2));
 
-        assertThat(updatedSchedule.getStaleEntries(), containsInAnyOrder(episode1, episode3, episode4));
+        assertThat(updatedSchedule.getStaleEntries(), containsInAnyOrder(episode3, episode4));
+        assertThat(updatedSchedule.getStaleContent(), containsInAnyOrder(episode1));
+    }
+
+    @Test
+    public void testDontMarkAsStaleBroadcastsWhereContentIdChanged() throws Exception {
+        Interval interval = utcInterval(0, 200);
+
+        ItemAndBroadcast episode1 = itemAndBroadcast(1, METABROADCAST, channel, "one", new Interval(0, 200, DateTimeZones.UTC));
+        ItemAndBroadcast episode2 = itemAndBroadcast(2, METABROADCAST, channel, "one", new Interval(0, 200, DateTimeZones.UTC));
+
+        List<ChannelSchedule> pastSchedule = ImmutableList.of(
+                new ChannelSchedule(channel, utcInterval(0, 200), ImmutableList.of(
+                        episode1
+                ))
+        );
+
+        List<ItemAndBroadcast> updateEntries = ImmutableList.of(episode2);
+
+        ScheduleBlocksUpdate updatedSchedule = updater.updateBlocks(pastSchedule, ImmutableList.of(), updateEntries, channel, interval);
+
+        assertThat(updatedSchedule.getUpdatedBlocks().get(0).getEntries().size(), is(1));
+        assertThat(updatedSchedule.getUpdatedBlocks().get(0).getEntries().get(0), is(episode2));
+
+        assertThat(updatedSchedule.getStaleEntries().isEmpty(), is(true));
+
+        assertThat(updatedSchedule.getStaleContent().size(), is(1));
+        assertThat(updatedSchedule.getStaleContent(), containsInAnyOrder(episode1));
+    }
+
+    @Test
+    public void testDontMarkAsStaleBroadcastsOutsideTheUpdateInterval() throws Exception {
+        DateTime episode1Start = new DateTime(2015, 10, 27, 11, 0, 0,  DateTimeZone.UTC);
+        DateTime episode1End = new DateTime(2015, 10, 27, 12, 0, 0,  DateTimeZone.UTC);
+
+        DateTime episode2Start = episode1End;
+        DateTime episode2End = new DateTime(2015, 10, 28, 0, 0, 0,  DateTimeZone.UTC);
+        DateTime episode3Start = episode2Start;
+        DateTime episode3End = new DateTime(2015, 10, 28, 12, 0, 0, DateTimeZone.UTC);
+
+        DateTime episode4Start = episode2Start;
+        DateTime episode4End = new DateTime(2015, 10, 28, 6, 0 , 0, DateTimeZone.UTC);
+
+        DateTime episode5Start = episode4Start;
+        DateTime episode5End = episode3End;
+
+        ItemAndBroadcast episode1 = itemAndBroadcast(1, METABROADCAST, channel, "one", new Interval(episode1Start, episode1End));
+        ItemAndBroadcast episode2 = itemAndBroadcast(2, METABROADCAST, channel, "two", new Interval(episode2Start, episode2End));
+        ItemAndBroadcast episode3 = itemAndBroadcast(3, METABROADCAST, channel, "three", new Interval(episode3Start, episode3End));
+        ItemAndBroadcast episode4 = itemAndBroadcast(4, METABROADCAST, channel, "four", new Interval(episode4Start, episode4End));
+        ItemAndBroadcast episode5 = itemAndBroadcast(5, METABROADCAST, channel, "five", new Interval(episode5Start, episode5End));
+
+        List<ChannelSchedule> pastSchedule = ImmutableList.of(
+                new ChannelSchedule(
+                        channel,
+                        new Interval(episode1Start, episode2End),
+                        ImmutableList.of(
+                                episode1,
+                                episode2
+                        )
+                ),
+                new ChannelSchedule(
+                        channel,
+                        new Interval(episode3Start, episode3End),
+                        ImmutableList.of(
+                                episode3
+                        )
+                )
+        );
+
+        List<ItemAndBroadcast> updateEntries = ImmutableList.of(episode2, episode4, episode5);
+
+        ScheduleBlocksUpdate updatedSchedule = updater.updateBlocks(
+                pastSchedule,
+                ImmutableList.of(),
+                updateEntries,
+                channel,
+                new Interval(episode2Start, episode5End)
+        );
+
+        assertThat(updatedSchedule.getUpdatedBlocks().get(0).getEntries().size(), is(4));
+        assertThat(updatedSchedule.getUpdatedBlocks().get(0).getEntries().get(0), is(episode1));
+        assertThat(updatedSchedule.getUpdatedBlocks().get(0).getEntries().get(1), is(episode2));
+        assertThat(updatedSchedule.getUpdatedBlocks().get(0).getEntries().get(2), is(episode4));
+        assertThat(updatedSchedule.getUpdatedBlocks().get(0).getEntries().get(3), is(episode5));
+
+        assertThat(updatedSchedule.getStaleEntries().size(), is(1));
+        assertThat(updatedSchedule.getStaleEntries() , is(ImmutableSet.of(episode3)));
+
+
     }
 
     private Interval utcInterval(int startInstant, int endInstant) {
