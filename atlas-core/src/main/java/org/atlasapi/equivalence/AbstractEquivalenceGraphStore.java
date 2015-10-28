@@ -54,7 +54,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final int TIMEOUT = 1;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
     
-    private static final int maxSetSize = 150;
     private static final Pattern MISSING_ID_FROM_MAP = Pattern.compile("Key '([0-9]*)' not present in map");
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
@@ -89,10 +88,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             }
             return updated;
             
-        } catch(OversizeTransitiveSetException otse) {
-            log().info(String.format("Oversize set: %s + %s: %s",
-                    subject, newAdjacents, otse.getMessage()));
-            return Optional.absent();
         } catch(InterruptedException e) {
             log().error(String.format("%s: %s", subject, newAdjacents), e);
             return Optional.absent();
@@ -111,24 +106,27 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 lock().notifyAll();
             }
         }
-        
     }
 
+    protected abstract void doStore(ImmutableSet<EquivalenceGraph> graphs);
+
     protected abstract void cleanGraphAndIndex(Id subjectId);
+
+    protected abstract GroupLock<Id> lock();
+
+    protected abstract Logger log();
 
     private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated)  {
         try {
             messageSender.sendMessage(new EquivalenceGraphUpdateMessage(
                 UUID.randomUUID().toString(),
-                Timestamp.of(DateTime.now(DateTimeZones.UTC)), 
+                Timestamp.of(DateTime.now(DateTimeZones.UTC)),
                 updated.get()
             ));
         } catch (MessagingException e) {
             log().warn("messaging failed for equivalence update of " + subject, e);
         }
     }
-    
-    protected abstract GroupLock<Id> lock();
 
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
         if (!lock().tryLock(adjacentsIds)) {
@@ -136,9 +134,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
-        if (allIds.size() > maxSetSize) {
-            throw new OversizeTransitiveSetException(allIds.size());
-        }
+
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         return lock().tryLock(ImmutableSet.copyOf(idsToLock)) ? allIds : null;
     }
@@ -360,25 +356,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private ImmutableSet<EquivalenceGraph> store(ImmutableSet<EquivalenceGraph> graphs) {
         doStore(graphs);
         return graphs;
-    }
-    
-    protected abstract void doStore(ImmutableSet<EquivalenceGraph> graphs);
-    
-    protected abstract Logger log();
-    
-    private static class OversizeTransitiveSetException extends RuntimeException {
-        
-        private int size;
-
-        public OversizeTransitiveSetException(int size)  {
-            this.size = size;
-        }
-
-        @Override
-        public String getMessage() {
-            return String.valueOf(size);
-        }
-        
     }
 
     private static class CorruptEquivalenceGraphIndexException extends Exception {
