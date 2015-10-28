@@ -54,7 +54,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final int TIMEOUT = 1;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
     
-    private static final int maxSetSize = 150;
     private static final Pattern MISSING_ID_FROM_MAP = Pattern.compile("Key '([0-9]*)' not present in map");
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
@@ -89,10 +88,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             }
             return updated;
             
-        } catch(OversizeTransitiveSetException otse) {
-            log().info(String.format("Oversize set: %s + %s: %s",
-                    subject, newAdjacents, otse.getMessage()));
-            return Optional.absent();
         } catch(InterruptedException e) {
             log().error(String.format("%s: %s", subject, newAdjacents), e);
             return Optional.absent();
@@ -136,9 +131,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
-        if (allIds.size() > maxSetSize) {
-            throw new OversizeTransitiveSetException(allIds.size());
-        }
+
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         return lock().tryLock(ImmutableSet.copyOf(idsToLock)) ? allIds : null;
     }
@@ -365,21 +358,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     protected abstract void doStore(ImmutableSet<EquivalenceGraph> graphs);
     
     protected abstract Logger log();
-    
-    private static class OversizeTransitiveSetException extends RuntimeException {
-        
-        private int size;
-
-        public OversizeTransitiveSetException(int size)  {
-            this.size = size;
-        }
-
-        @Override
-        public String getMessage() {
-            return String.valueOf(size);
-        }
-        
-    }
 
     private static class CorruptEquivalenceGraphIndexException extends Exception {
 
