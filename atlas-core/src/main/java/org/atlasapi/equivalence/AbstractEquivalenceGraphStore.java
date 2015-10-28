@@ -106,24 +106,27 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 lock().notifyAll();
             }
         }
-        
     }
 
+    protected abstract void doStore(ImmutableSet<EquivalenceGraph> graphs);
+
     protected abstract void cleanGraphAndIndex(Id subjectId);
+
+    protected abstract GroupLock<Id> lock();
+
+    protected abstract Logger log();
 
     private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated)  {
         try {
             messageSender.sendMessage(new EquivalenceGraphUpdateMessage(
                 UUID.randomUUID().toString(),
-                Timestamp.of(DateTime.now(DateTimeZones.UTC)), 
+                Timestamp.of(DateTime.now(DateTimeZones.UTC)),
                 updated.get()
             ));
         } catch (MessagingException e) {
             log().warn("messaging failed for equivalence update of " + subject, e);
         }
     }
-    
-    protected abstract GroupLock<Id> lock();
 
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
         if (!lock().tryLock(adjacentsIds)) {
@@ -354,10 +357,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         doStore(graphs);
         return graphs;
     }
-    
-    protected abstract void doStore(ImmutableSet<EquivalenceGraph> graphs);
-    
-    protected abstract Logger log();
 
     private static class CorruptEquivalenceGraphIndexException extends Exception {
 
