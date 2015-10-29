@@ -8,18 +8,22 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.SecondaryIndex;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.query.Selection;
@@ -32,11 +36,14 @@ public class PseudoEquivalentContentIndexTest {
     private final Optional<IndexQueryParams> indexQueryParams = Optional.<IndexQueryParams>empty();
 
     private @Mock EsUnequivalentContentIndex esUnequivalentContentIndex;
+    private @Mock SecondaryIndex equividIndex;
     private PseudoEquivalentContentIndex pseudoEquivalentContentIndex;
 
     @Before
     public void setUp() throws Exception {
-        pseudoEquivalentContentIndex = new PseudoEquivalentContentIndex(esUnequivalentContentIndex);
+        pseudoEquivalentContentIndex = new PseudoEquivalentContentIndex(
+                esUnequivalentContentIndex, equividIndex
+        );
     }
 
     @Test
@@ -46,7 +53,7 @@ public class PseudoEquivalentContentIndexTest {
                 Id.valueOf(0L), Id.valueOf(11L),
                 Id.valueOf(1L), Id.valueOf(12L)
         );
-        mockDelegate(canonicalIdToIdMultiMap, 10L);
+        setupMocks(canonicalIdToIdMultiMap, 10L);
 
         IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
                 query, publishers, Selection.ALL, indexQueryParams
@@ -68,7 +75,7 @@ public class PseudoEquivalentContentIndexTest {
                 .put(Id.valueOf(4L), Id.valueOf(15L))
                 .put(Id.valueOf(5L), Id.valueOf(16L))
                 .build();
-        mockDelegate(canonicalIdToIdMultiMap, 100L);
+        setupMocks(canonicalIdToIdMultiMap, 100L);
 
         IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
                 query, publishers, new Selection(2, 2), Optional.<IndexQueryParams>empty()
@@ -76,6 +83,64 @@ public class PseudoEquivalentContentIndexTest {
 
         assertThat(queryResult.getIds().size(), is(2));
         assertThat(queryResult.getIds(), containsInAnyOrder(Id.valueOf(2L), Id.valueOf(3L)));
+    }
+
+    @Test
+    public void testQueryReturnsResolvedCanonicalIdAndNotTheIndexCanonicalId() throws Exception {
+        Id indexCanonicalId = Id.valueOf(0L);
+        Id id = Id.valueOf(10L);
+        Id canonicalId = Id.valueOf(20L);
+
+        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
+                .put(indexCanonicalId, id)
+                .build();
+        setupMocks(canonicalIdToIdMultiMap, 1L);
+
+        mockDelegate(canonicalIdToIdMultiMap, 1L);
+        when(equividIndex.lookup(Lists.newArrayList(id.longValue())))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                        id.longValue(), canonicalId.longValue()
+                )));
+
+        IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
+                query, publishers, Selection.ALL, Optional.<IndexQueryParams>empty()
+        ).get();
+
+        assertThat(Iterables.getOnlyElement(queryResult.getIds()), is(canonicalId));
+    }
+
+    @Test
+    public void testQueryReturnsIndexCanonicalIdWhenItFailsToResolveCanonicalId() throws Exception {
+        Id indexCanonicalId = Id.valueOf(0L);
+        Id id = Id.valueOf(10L);
+
+        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
+                .put(indexCanonicalId, id)
+                .build();
+        setupMocks(canonicalIdToIdMultiMap, 1L);
+
+        mockDelegate(canonicalIdToIdMultiMap, 1L);
+        when(equividIndex.lookup(Lists.newArrayList(id.longValue())))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of()));
+
+        IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
+                query, publishers, Selection.ALL, Optional.<IndexQueryParams>empty()
+        ).get();
+
+        assertThat(Iterables.getOnlyElement(queryResult.getIds()), is(indexCanonicalId));
+
+    }
+
+    private void setupMocks(ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap, long resultCount) {
+        mockDelegate(canonicalIdToIdMultiMap, resultCount);
+
+        for (Map.Entry<Id, Id> entry : canonicalIdToIdMultiMap.entries()) {
+            when(equividIndex.lookup(Lists.newArrayList(entry.getValue().longValue())))
+                    .thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                            entry.getValue().longValue(),
+                            entry.getKey().longValue()
+                    )));
+        }
     }
 
     private void mockDelegate(ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap, long resultCount) {

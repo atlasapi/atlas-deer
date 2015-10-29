@@ -46,7 +46,7 @@ public class PseudoEquivalentContentIndexIT {
                 60000
         );
         delegate.startAsync().awaitRunning();
-        contentIndex = new PseudoEquivalentContentIndex(delegate);
+        contentIndex = new PseudoEquivalentContentIndex(delegate, equivIndex);
     }
 
     @Test
@@ -68,7 +68,6 @@ public class PseudoEquivalentContentIndexIT {
                             )
                 )
         );
-
 
         indexAndRefresh(item1, item2, item3);
 

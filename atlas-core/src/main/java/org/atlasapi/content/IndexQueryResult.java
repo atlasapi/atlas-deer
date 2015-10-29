@@ -7,6 +7,7 @@ import org.atlasapi.entity.Id;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 
 public class IndexQueryResult {
@@ -47,8 +48,8 @@ public class IndexQueryResult {
         return FluentIterable.from(ids);
     }
 
-    public FluentIterable<Id> getIds(Id canonicalId) {
-        return FluentIterable.from(canonicalIdToIdMultiMap.get(canonicalId));
+    public Set<Id> getIds(Id canonicalId) {
+        return ImmutableSet.copyOf(canonicalIdToIdMultiMap.get(canonicalId));
     }
 
     public Set<Id> getCanonicalIds() {
