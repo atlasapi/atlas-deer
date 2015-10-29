@@ -91,7 +91,10 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                 .collect(ImmutableCollectors.toList());
     }
 
-    // This is to deal with a bug where the canonical Id in the
+    // This is to deal with a bug where the canonical ID in the index is wrong
+    // To fix it we are trying to resolve the canonical ID from the secondary index
+    // using the IDs in the index canonical ID. This still returns the index canonical
+    // ID if it fails to resolve it from the secondary index
     private ImmutableList<Id> resolveCanonicalIds(Iterable<Id> indexCanonicalIds,
             IndexQueryResult queryResult) {
         return StreamSupport.stream(indexCanonicalIds.spliterator(), false)
