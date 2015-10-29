@@ -37,10 +37,8 @@ public class EventAnnotationTest {
 
     private @Mock FieldWriter fieldWriter;
     private NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private EntityListWriter<Topic> topicListWriter = new TopicListWriter(AnnotationRegistry.<Topic>builder()
-            .build());
     private EntityListWriter<ItemRef> itemRefWriter = new ItemRefWriter(idCodec, "items");
-    private final EventAnnotation eventAnnotation = new EventAnnotation(topicListWriter, itemRefWriter);
+    private final EventAnnotation eventAnnotation = new EventAnnotation(itemRefWriter);
 
     @Test
     public void eventFieldsTest() throws Exception {
@@ -75,7 +73,6 @@ public class EventAnnotationTest {
         verify(fieldWriter).writeField("title", event.getTitle());
         verify(fieldWriter).writeField("start_time", event.getStartTime().toString());
         verify(fieldWriter).writeField("end_time", event.getEndTime().toString());
-        verify(fieldWriter).writeObject(isA(TopicListWriter.class), eq("venue"), isA(Topic.class), any());
         verify(fieldWriter).writeList(isA(PersonListWriter.class), anyCollectionOf(Person.class), any());
         verify(fieldWriter).writeList(isA(OrganisationListWriter.class), anyCollectionOf(Organisation.class), any());
         verify(fieldWriter).writeList(isA(ItemRefWriter.class), anyCollectionOf(ItemRef.class), any());

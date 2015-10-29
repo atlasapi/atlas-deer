@@ -155,6 +155,7 @@ import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
 import static org.atlasapi.annotation.Annotation.EVENT;
+import static org.atlasapi.annotation.Annotation.EVENT_DETAILS;
 
 @Configuration
 @Import({ QueryModule.class, LicenseModule.class })
@@ -565,7 +566,7 @@ public class QueryWebModule {
     }
     @Bean ResourceAnnotationIndex eventAnnotationIndex(){
         return ResourceAnnotationIndex.builder(Resource.EVENT, Annotation.all())
-                .attach(Annotation.EVENT, topicAnnotationIndex(), Annotation.ID)
+                .attach(Annotation.EVENT_DETAILS, topicAnnotationIndex(), Annotation.ID)
                 .build();
     }
 
@@ -730,8 +731,20 @@ public class QueryWebModule {
                 .register(EXTENDED_ID,
                         new ExtendedIdentificationAnnotation(idCodec()),
                         ImmutableSet.of(ID))
-                .register(EVENT, new EventAnnotation(topicListWriter(), new ItemRefWriter(idCodec(), "content")))
+                .register(EVENT, new EventAnnotation(new ItemRefWriter(idCodec(), "content")))
+                .register(EVENT_DETAILS, new EventDetailsAnnotation(topicAnnotationRegistry()))
                 .build());
+    }
+
+    private AnnotationRegistry<Topic> topicAnnotationRegistry(){
+        return AnnotationRegistry.<Topic>builder()
+                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
+                .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
+                .register(EXTENDED_ID,
+                        new ExtendedIdentificationAnnotation(idCodec()),
+                        ImmutableSet.of(ID))
+                .register(DESCRIPTION, new DescriptionAnnotation<>(), ImmutableSet.of(EXTENDED_ID))
+                .build();
     }
 
     @Bean SegmentRelatedLinkMergingFetcher segmentRelatedLinkMergingFetcher() {

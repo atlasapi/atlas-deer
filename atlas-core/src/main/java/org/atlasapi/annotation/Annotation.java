@@ -63,7 +63,8 @@ public enum Annotation {
     AVAILABLE_CONTENT_DETAIL,
     AVAILABLE_CONTENT,
     SUB_ITEM_SUMMARIES,
-    EVENT
+    EVENT,
+    EVENT_DETAILS
     ;
     
     public String toKey() {
