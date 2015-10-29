@@ -1,4 +1,4 @@
-package org.atlasapi.query;
+package org.atlasapi.www;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -9,12 +9,15 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenderFactory;
 import com.metabroadcast.common.time.SystemClock;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
+import org.atlasapi.application.model.deserialize.SerializationModule;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -30,6 +33,10 @@ import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
+import org.atlasapi.input.ModelReader;
+import org.atlasapi.messaging.ContentMessage;
+import org.atlasapi.messaging.JacksonMessageSerializer;
+import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
@@ -141,6 +148,7 @@ import org.atlasapi.source.Sources;
 import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
+import org.atlasapi.util.ClientModelConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -195,14 +203,22 @@ import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
 @Configuration
-@Import({ QueryModule.class, LicenseModule.class })
-public class QueryWebModule {
+@Import({
+        QueryModule.class,
+        LicenseModule.class,
+        KafkaMessagingModule.class,
+        SerializationModule.class,
+})
+public class WebModule {
 
     private static final String CONTAINER_FIELD = "container";
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
+    private @Value("${messaging.destination.topics.content}") String contentSubmissionTopic;
 
     private @Autowired DatabasedMongo mongo;
+    private @Autowired ModelReader modelReader;
+
     private
     @Autowired
     QueryModule queryModule;
@@ -250,6 +266,8 @@ public class QueryWebModule {
     @Autowired
     ContainerSummaryResolver containerSummaryResolver;
 
+    private @Autowired MessageSenderFactory messageSenderFactory;
+
     @Autowired
     @Qualifier("licenseWriter")
     EntityWriter<Object> licenseWriter;
@@ -288,9 +306,16 @@ public class QueryWebModule {
     }
 
     @Bean ContentController contentController() {
-        return new ContentController(contentQueryParser(),
+        MessageSender<ContentMessage> contentQueueSender = messageSenderFactory.makeMessageSender(
+                contentSubmissionTopic, JacksonMessageSerializer.forType(ContentMessage.class));
+        return new ContentController(
+                contentQueryParser(),
                 queryModule.contentQueryExecutor(),
-                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter(), channelGroupResolver, idCodec()));
+                new ContentQueryResultWriter(contentListWriter(), licenseWriter, requestWriter(), channelGroupResolver, idCodec()),
+                modelReader,
+                new ClientModelConverter(),
+                contentQueueSender
+        );
     }
 
     @Bean TopicContentController topicContentController() {

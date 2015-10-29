@@ -202,6 +202,11 @@
         <version>${astyanax.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.atlasapi.deer.client</groupId>
+        <artifactId>atlas-deer-client</artifactId>
+        <version>${atlas-deer-client.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.netflix.astyanax</groupId>
         <artifactId>astyanax-thrift</artifactId>
         <version>${astyanax.version}</version>
@@ -357,6 +362,7 @@
     <spring.version>4.2.1.RELEASE</spring.version>
     <datastax.version>2.1.7.1</datastax.version>
     <jackson.version>2.3.0</jackson.version>
+    <atlas-deer-client.version>0.1.0-SNAPSHOT</atlas-deer-client.version>
   </properties>
 
   <scm>

@@ -13,6 +13,7 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.bootstrap.workers.LegacyRetryingContentResolver;
+import org.atlasapi.system.processing.ContentPersistenceWorker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,16 +31,24 @@ import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, KafkaMessagingModule.class, ProcessingHealthModule.class})
+@Import({
+    AtlasPersistenceModule.class,
+    KafkaMessagingModule.class,
+    ProcessingHealthModule.class,
+})
 public class WorkersModule {
 
     private String consumerSystem = Configurer.get("messaging.system").get();
 
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
+    private String contentSubmissions = Configurer.get("messaging.destination.topics.content").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private String contentEquivalenceGraphChanges = Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
     private String equivalentContentChanges = Configurer.get("messaging.destination.equivalent.content.changes").get();
+
+    private Integer contentConsumers = Configurer.get("messaging.content.consumers.default").toInt();
+    private Integer maxContentConsumers = Configurer.get("messaging.content.consumers.max").toInt();
 
     private Integer defaultTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.default").toInt();
     private Integer maxTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.max").toInt();
@@ -62,6 +71,7 @@ public class WorkersModule {
     private Boolean equivalentScheduleGraphEnabled = Configurer.get("messaging.enabled.schedule.equivalent.graph").toBoolean();
     private Boolean topicIndexerEnabled = Configurer.get("messaging.enabled.topic.indexer").toBoolean();
     private Boolean equivalenceGraphEnabled = Configurer.get("messaging.enabled.equivalence.graph").toBoolean();
+    private Boolean contentPersistenceEnabled = Configurer.get("messaging.enabled.content.persistence").toBoolean();
 
     @Autowired
     private KafkaMessagingModule messaging;
@@ -207,6 +217,24 @@ public class WorkersModule {
                 .withMaxConsumers(equivMaxConsumers)
                 .build();
     }
+    
+    @Bean
+    @Lazy(true)
+    public Worker<ContentMessage> contentPersistenceWorker() {
+        return new ContentPersistenceWorker(persistence.contentStore());
+    }
+
+    @Bean
+    @Lazy(true)
+    public KafkaConsumer contentUpdateListener() {
+        return messaging.messageConsumerFactory()
+                .createConsumer(contentPersistenceWorker(), JacksonMessageSerializer.forType(ContentMessage.class),
+                        contentSubmissions, "ContentPersistence")
+                .withConsumerSystem(consumerSystem)
+                .withDefaultConsumers(contentConsumers)
+                .withMaxConsumers(maxContentConsumers)
+                .build();
+    }
 
     @Bean
     @Lazy(true)
@@ -282,6 +310,9 @@ public class WorkersModule {
         }
         if(equivalenceGraphEnabled) {
             services.add(equivUpdateListener());
+        }
+        if(contentPersistenceEnabled) {
+            services.add(contentUpdateListener());
         }
 
         consumerManager = new ServiceManager(services.build());
