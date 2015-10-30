@@ -94,12 +94,38 @@ public class PseudoEquivalentContentIndexTest {
         ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
                 .put(indexCanonicalId, id)
                 .build();
-        setupMocks(canonicalIdToIdMultiMap, 1L);
 
         mockDelegate(canonicalIdToIdMultiMap, 1L);
         when(equividIndex.lookup(Lists.newArrayList(id.longValue())))
                 .thenReturn(Futures.immediateFuture(ImmutableMap.of(
                         id.longValue(), canonicalId.longValue()
+                )));
+
+        IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
+                query, publishers, Selection.ALL, Optional.<IndexQueryParams>empty()
+        ).get();
+
+        assertThat(Iterables.getOnlyElement(queryResult.getIds()), is(canonicalId));
+    }
+
+    @Test
+    public void testQueryReturnsResolvedCanonicalIdFromFirstIdInSetThatResolves() throws Exception {
+        Id indexCanonicalId = Id.valueOf(0L);
+        Id idA = Id.valueOf(10L);
+        Id idB = Id.valueOf(11L);
+        Id canonicalId = Id.valueOf(20L);
+
+        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
+                .put(indexCanonicalId, idA)
+                .put(indexCanonicalId, idB)
+                .build();
+
+        mockDelegate(canonicalIdToIdMultiMap, 2L);
+        when(equividIndex.lookup(Lists.newArrayList(idA.longValue())))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of()));
+        when(equividIndex.lookup(Lists.newArrayList(idB.longValue())))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                        idB.longValue(), canonicalId.longValue()
                 )));
 
         IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
@@ -117,7 +143,6 @@ public class PseudoEquivalentContentIndexTest {
         ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
                 .put(indexCanonicalId, id)
                 .build();
-        setupMocks(canonicalIdToIdMultiMap, 1L);
 
         mockDelegate(canonicalIdToIdMultiMap, 1L);
         when(equividIndex.lookup(Lists.newArrayList(id.longValue())))
