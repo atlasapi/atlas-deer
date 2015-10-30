@@ -1,5 +1,7 @@
 package org.atlasapi.output;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final Ordering<Episode> SERIES_ORDER = Ordering.from(new SeriesOrder());
 
+    private EquivalentSetContentHierarchyChooser hierarchyChooser;
+
+    public OutputContentMerger(EquivalentSetContentHierarchyChooser hierarchyChooser) {
+        this.hierarchyChooser = checkNotNull(hierarchyChooser);
+    }
+    
     @SuppressWarnings("unchecked")
     @Deprecated
     public <T extends Described> List<T> merge(ApplicationSources sources, List<T> contents) {
@@ -534,26 +542,17 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             );
         }
 
-        Container first = Iterables.getFirst(
-                Iterables.filter(
-                        contentHierarchySourceOrderedContainers,
-                        Predicates.and(
-                                Predicates.notNull(),
-                                (Container input) -> input.getItemRefs() != null &&
-                                        !input.getItemRefs().isEmpty()
-                        )
-                ),
-                null
-        );
+        Optional<Container> first = hierarchyChooser.chooseBestHierarchy(contentHierarchySourceOrderedContainers);
 
-        if (first != null) {
-            chosen.setItemRefs(first.getItemRefs());
+        if (first.isPresent()) {
+            Container chosenContainerForHierarchies = first.get();
+            chosen.setItemRefs(chosenContainerForHierarchies.getItemRefs());
             chosen.setItemSummaries(
-                    first.getItemSummaries() != null ? first.getItemSummaries() : ImmutableList.of()
+                    chosenContainerForHierarchies.getItemSummaries() != null ? chosenContainerForHierarchies.getItemSummaries() : ImmutableList.of()
             );
-            if (chosen instanceof Brand && first instanceof Brand) {
+            if (chosen instanceof Brand && chosenContainerForHierarchies instanceof Brand) {
                 Brand chosenBrand = (Brand) chosen;
-                Brand precedentBrand = (Brand) first;
+                Brand precedentBrand = (Brand) chosenContainerForHierarchies;
                 chosenBrand.setSeriesRefs(
                         precedentBrand.getSeriesRefs() != null ?
                                 precedentBrand.getSeriesRefs() : ImmutableList.of()
