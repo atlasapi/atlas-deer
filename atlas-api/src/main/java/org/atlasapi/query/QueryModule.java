@@ -89,7 +89,7 @@ public class QueryModule {
     }
     
     private EquivalentSetContentHierarchyChooser contentHierarchyChooser() {
-        return new FirstHierarchyContentHierarchyChooser(new MostPrecidentWithChildrenContentHierarchyChooser());
+        return new MostPrecidentWithChildrenContentHierarchyChooser();
     }
     
     @Qualifier("store")
