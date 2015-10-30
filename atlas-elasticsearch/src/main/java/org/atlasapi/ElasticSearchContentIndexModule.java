@@ -68,7 +68,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         );
 
         PseudoEquivalentContentIndex equivalentEsIndex =
-                new PseudoEquivalentContentIndex(unequivIndex);
+                new PseudoEquivalentContentIndex(unequivIndex, equivContentIndex);
 
         this.equivContentIndex = new InstrumentedContentIndex(equivalentEsIndex, metrics);
         this.popularTopicsIndex = new EsPopularTopicIndex(esClient);

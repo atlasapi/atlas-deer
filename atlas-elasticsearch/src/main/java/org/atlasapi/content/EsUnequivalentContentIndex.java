@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -13,6 +14,7 @@ import org.atlasapi.util.ElasticsearchIndexCreator;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
+import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -29,9 +31,8 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
-import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -40,20 +41,9 @@ import com.metabroadcast.common.query.Selection;
 
 public class EsUnequivalentContentIndex extends AbstractIdleService implements ContentIndex {
 
-    private static final Function<SearchHit, Id> HIT_TO_CANONICAL_ID = hit -> {
-        if (hit == null || hit.field(EsContent.CANONICAL_ID) == null) {
-            return null;
-        }
-        Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
-        return Id.valueOf(id);
-    };
-    public static final Function<SearchHit, Id> SEARCH_HIT_ID_FUNCTION = hit ->
-            Id.valueOf(hit.field(EsContent.ID).<Number>value().longValue());
-    public static final Function<SearchHit, Id> HIT_TO_ID = SEARCH_HIT_ID_FUNCTION;
+    private static final int DEFAULT_LIMIT = 50;
 
     private final Logger log = LoggerFactory.getLogger(EsUnequivalentContentIndex.class);
-
-    private static final int DEFAULT_LIMIT = 50;
 
     private final Client esClient;
     private final String index;
@@ -160,9 +150,13 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
          * then we have more: return for use with response.
          */
         return Futures.transform(response, (SearchResponse input) -> {
-            return new IndexQueryResult(
-                    FluentIterable.from(input.getHits()).transform(HIT_TO_ID),
-                    FluentIterable.from(input.getHits()).transform(HIT_TO_CANONICAL_ID),
+            ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = StreamSupport
+                    .stream(input.getHits().spliterator(), false)
+                    .filter(hit -> getCanonicalId(hit) != null)
+                    .collect(ImmutableCollectors.toMultiMap(this::getCanonicalId, this::getId));
+
+            return IndexQueryResult.withIdsAndCanonicalIds(
+                    canonicalIdToIdMultiMap,
                     input.getHits().getTotalHits()
             );
         });
@@ -264,5 +258,17 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 .must(queryBuilder)
                 .must(TitleQueryBuilder.build(searchParams.getSearchTerm(), searchParams.getBoost().orElse(5F)));
         return queryBuilder;
+    }
+
+    private Id getId(SearchHit hit) {
+        return Id.valueOf(hit.field(EsContent.ID).<Number>value().longValue());
+    }
+
+    private Id getCanonicalId(SearchHit hit) {
+        if (hit == null || hit.field(EsContent.CANONICAL_ID) == null) {
+            return null;
+        }
+        Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
+        return Id.valueOf(id);
     }
 }

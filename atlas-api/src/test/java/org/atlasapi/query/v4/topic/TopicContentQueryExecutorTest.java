@@ -47,7 +47,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.query.Selection;
@@ -88,7 +87,7 @@ public class TopicContentQueryExecutorTest {
         FluentIterable<Id> returning = FluentIterable.from(ImmutableSet.of(content.getId()));
         when(contentIndex.query(emptyAttributeQuerySet, context.getApplicationSources().getEnabledReadSources(), Selection.all(),
                 Optional.empty()))
-            .thenReturn(Futures.immediateFuture(new IndexQueryResult(returning, ImmutableList.of(), 0l)));
+            .thenReturn(Futures.immediateFuture(IndexQueryResult.withIds(returning, 0L)));
         when(equivalentsResolver.resolveIds(argThat(hasItems(content.getId())), argThat(is(context.getApplicationSources())), argThat(is(context.getAnnotations().all()))))
             .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(Id.valueOf(1235), ImmutableSet.of(content)).build()));
         
