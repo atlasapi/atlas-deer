@@ -21,7 +21,8 @@ import com.google.common.collect.Iterables;
 
 public class BroadcastMergingTest {
 
-    private final OutputContentMerger executor = new OutputContentMerger();
+    //TODO mock hierarchy chooser
+    private final OutputContentMerger executor = new OutputContentMerger(new MostPrecidentWithChildrenContentHierarchyChooser());
     private final ApplicationSources sources = ApplicationSources.defaults()
             .copy().withPrecedence(true)
             .withReadableSources(ImmutableList.of(
