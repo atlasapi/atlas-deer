@@ -373,7 +373,7 @@ public class AbstractEquivalenceGraphStoreTest {
     }
     
     @Test
-    public void testAbortsWriteWhenSetTooLarge() throws WriteException {
+    public void testCanWriteLargeSet() throws WriteException {
         
         for (Integer id : ContiguousSet.create(Range.closedOpen(3, 103), DiscreteDomain.integers())) {
             DateTime now = new DateTime(DateTimeZones.UTC);
@@ -391,10 +391,7 @@ public class AbstractEquivalenceGraphStoreTest {
         assertThat(initialBbcGraph, adjacencyList(not(hasKey(paItem.getId()))));
         assertThat(initialPaGraph, adjacencyList(not(hasKey(bbcItem.getId()))));
 
-        assertFalse(makeEquivalent(bbcItem, paItem).isPresent());
-        
-        assertTrue(graphOf(bbcItem) == initialBbcGraph);
-        assertTrue(graphOf(paItem) == initialPaGraph);
+        assertTrue(makeEquivalent(bbcItem, paItem).isPresent());
     }
     
     @Test
