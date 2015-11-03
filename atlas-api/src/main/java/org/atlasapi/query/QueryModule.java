@@ -22,6 +22,9 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
 import org.atlasapi.equivalence.DefaultMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
+import org.atlasapi.output.EquivalentSetContentHierarchyChooser;
+import org.atlasapi.output.FirstHierarchyContentHierarchyChooser;
+import org.atlasapi.output.MostPrecidentWithChildrenContentHierarchyChooser;
 import org.atlasapi.output.OutputContentMerger;
 import org.atlasapi.output.StrategyBackedEquivalentsMerger;
 import org.atlasapi.query.common.ContextualQueryExecutor;
@@ -82,7 +85,11 @@ public class QueryModule {
     }
 
     private StrategyBackedEquivalentsMerger<Content> equivalentsMerger() {
-        return new StrategyBackedEquivalentsMerger<Content>(new OutputContentMerger());
+        return new StrategyBackedEquivalentsMerger<Content>(new OutputContentMerger(contentHierarchyChooser()));
+    }
+    
+    private EquivalentSetContentHierarchyChooser contentHierarchyChooser() {
+        return new MostPrecidentWithChildrenContentHierarchyChooser();
     }
     
     @Qualifier("store")

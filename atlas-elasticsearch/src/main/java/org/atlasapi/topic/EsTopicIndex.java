@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -120,10 +119,12 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
              *  selection.offset + selection.limit < totalHits
              * then we have more: return for use with response.
              */
-            return new IndexQueryResult(FluentIterable.from(input.getHits()).transform(hit -> {
-                Long id = hit.field(ID).<Number>value().longValue();
-                return Id.valueOf(id);
-            }), ImmutableList.of(), input.getHits().getTotalHits());
+            FluentIterable<Id> ids = FluentIterable.from(input.getHits())
+                    .transform(hit -> {
+                        Long id = hit.field(ID).<Number>value().longValue();
+                        return Id.valueOf(id);
+                    });
+            return IndexQueryResult.withIds(ids, input.getHits().getTotalHits());
         });
     }
 

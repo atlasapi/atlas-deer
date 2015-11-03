@@ -48,7 +48,8 @@ import com.metabroadcast.common.intl.Countries;
 
 public class OutputContentMergerTest {
 
-    private final OutputContentMerger merger = new OutputContentMerger();
+    //TODO mock hierarchy chooser
+    private final OutputContentMerger merger = new OutputContentMerger(new MostPrecidentWithChildrenContentHierarchyChooser());
 
     @Test
     public void testSortOfCommonSourceContentIsStable() {

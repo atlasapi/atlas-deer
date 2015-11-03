@@ -43,7 +43,9 @@ class ScheduleBlockUpdater {
             staleEntries.addAll(
                     staleBroadcasts(
                             block,
-                            updatedSchedule
+                            updatedSchedule,
+                            channel,
+                            interval
                     )
             );
             staleContent.addAll(
@@ -118,9 +120,21 @@ class ScheduleBlockUpdater {
      */
     private Collection<ItemAndBroadcast> staleBroadcasts(
             ChannelSchedule currentSchedule,
-            List<ItemAndBroadcast> updateItems
+            List<ItemAndBroadcast> updateItems,
+            Channel channel,
+            Interval interval
     ) {
-        Predicate<Broadcast> blockFilter = broadcastIntervalAndChannelFilter(
+        /**
+         * Make sure that the stale commits are only inside the update interval...
+         */
+        Predicate<Broadcast> updateBlockFilter = broadcastIntervalAndChannelFilter(
+                channel,
+                interval
+        );
+        /**
+         * ...and the current schedule block
+         */
+        Predicate<Broadcast> currentBlockFilter = broadcastIntervalAndChannelFilter(
                 currentSchedule.getChannel(),
                 currentSchedule.getInterval()
         );
@@ -132,7 +146,8 @@ class ScheduleBlockUpdater {
 
         return currentSchedule.getEntries()
                         .stream()
-                        .filter(iab -> blockFilter.apply(iab.getBroadcast()))
+                        .filter(iab -> updateBlockFilter.apply(iab.getBroadcast()))
+                        .filter(iab -> currentBlockFilter.apply(iab.getBroadcast()))
                         .filter(iab -> !validBroadcastIds.contains(iab.getBroadcast().getSourceId()))
                         .collect(ImmutableCollectors.toList());
 

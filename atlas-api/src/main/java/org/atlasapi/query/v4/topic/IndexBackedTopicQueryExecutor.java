@@ -17,7 +17,6 @@ import org.atlasapi.topic.TopicIndex;
 import org.atlasapi.topic.TopicResolver;
 
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.Futures;
@@ -68,8 +67,7 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
         if (query.isListQuery()) {
             return queryIndex(query);
         }
-        FluentIterable<Id> ids = FluentIterable.from(ImmutableList.of(query.getOnlyId()));
-        IndexQueryResult result = new IndexQueryResult(ids, ImmutableList.of(), 1L);
+        IndexQueryResult result = IndexQueryResult.withSingleId(query.getOnlyId());
         return Futures.immediateFuture(result);
     }
 
