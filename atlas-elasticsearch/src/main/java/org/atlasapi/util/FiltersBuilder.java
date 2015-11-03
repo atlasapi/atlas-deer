@@ -131,7 +131,7 @@ public class FiltersBuilder {
             FilterBuilder regionFilter = buildRegionFilter(maybeRegionId.get(), cgResolver);
             NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
                     EsContent.BROADCASTS,
-                    FilterBuilders.andFilter(rangeFilter, regionFilter)
+                    rangeFilter.add(regionFilter)
             );
             HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter);
             return FilterBuilders.orFilter(parentFilter, childFilter);
