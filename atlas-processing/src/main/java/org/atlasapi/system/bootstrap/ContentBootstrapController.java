@@ -3,6 +3,7 @@ package org.atlasapi.system.bootstrap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -41,8 +42,10 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Queues;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.Maybe;
@@ -93,6 +96,27 @@ public class ContentBootstrapController {
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
         executorService.execute(bootstrappingRunnable(contentBootstrapListener, fromKey.requireValue(), progress));
+        resp.setStatus(HttpStatus.ACCEPTED.value());
+    }
+
+    @RequestMapping(value = "/system/bootstrap/all", method = RequestMethod.POST)
+    public void bootstrapAllSources(@RequestParam("exclude") String excludedSourcesString,
+            HttpServletResponse resp) {
+        Set<Publisher> excludedSources = ImmutableSet.of();
+
+        if(excludedSourcesString != null && !excludedSourcesString.trim().isEmpty()) {
+            excludedSources = ImmutableSet.copyOf(Publisher.fromCsv(excludedSourcesString));
+        }
+
+        Set<Publisher> sourcesToBootstrap = Sets.difference(Publisher.all(), excludedSources);
+        for (Publisher source : sourcesToBootstrap) {
+            java.util.Optional<ContentListingProgress> progress =
+                    progressStore.progressForTask(source.toString());
+            executorService.execute(
+                    bootstrappingRunnable(contentBootstrapListener, source, progress)
+            );
+        }
+
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 
