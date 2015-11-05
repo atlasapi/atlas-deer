@@ -12,7 +12,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,6 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraph;
-import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -55,7 +53,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FutureCallback;
@@ -71,7 +68,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private static final String EQUIVALENT_CONTENT_TABLE = "equivalent_content";
     
     private static final String SET_ID_KEY = "set_id";
-    private static final String GRAPH_KEY = "graph";
     private static final String CONTENT_ID_KEY = "content_id";
     private static final String DATA_KEY = "data";
 
@@ -83,7 +79,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private final SecondaryIndex index;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final EquivalenceGraphSerializer graphSerializer = new EquivalenceGraphSerializer();
     private final ContentSerializer contentSerializer;
     
     public CassandraEquivalentContentStore(
@@ -103,8 +98,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         this.writeConsistency = write;
         this.index = new CassandraSecondaryIndex(session, EQUIVALENT_CONTENT_INDEX, read);
     }
-
-
 
     @Override
     public ListenableFuture<ResolvedEquivalents<Content>> resolveIds(Iterable<Id> ids,
@@ -167,7 +160,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return new Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>>() {
             @Override
             public Optional<ResolvedEquivalents<Content>> apply(Iterable<ResultSet> setsRows) {
-                Multimap<Long, Content> sets = deserialize(index, setsRows, selectedSources);
+                Multimap<Long, Content> sets = deserialize(setsRows, selectedSources);
                 if (sets == null) {
                     return Optional.absent();
                 }
@@ -181,37 +174,23 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         };
     }
 
-    private Multimap<Long, Content> deserialize(Map<Long, Long> index, Iterable<ResultSet> setsRows, Set<Publisher> selectedSources) {
+    private Multimap<Long, Content> deserialize(Iterable<ResultSet> setsRows,
+            Set<Publisher> selectedSources) {
         ImmutableSetMultimap.Builder<Long, Content> sets = ImmutableSetMultimap.builder();
-        Map<Long, EquivalenceGraph> graphs = Maps.newHashMap();
         ImmutableList<Row> allRows = StreamSupport.stream(setsRows.spliterator(), false)
                 .flatMap(rs -> rs.all().stream())
                 .collect(ImmutableCollectors.toList());
+
         for (Row row : allRows) {
             long setId = row.getLong(SET_ID_KEY);
-            if (!row.isNull(GRAPH_KEY)) {
-                graphs.put(setId, graphSerializer.deserialize(row.getBytes(GRAPH_KEY)));
-                Content content = deserialize(row);
 
-                EquivalenceGraph graphForContent = graphs.get(setId);
-                if (contentSelected(content, graphForContent, selectedSources)) {
-                    sets.put(setId, content);
-                }
+            Content content = deserialize(row);
+
+            if (contentSelected(content, selectedSources)) {
+                sets.put(setId, content);
             }
         }
-        return checkIntegrity(index, graphs) ? sets.build() : null;
-    }
-
-    private boolean checkIntegrity(Map<Long, Long> index, Map<Long, EquivalenceGraph> graphs) {
-        for (Entry<Long, Long> requests : index.entrySet()) {
-            EquivalenceGraph requestedGraph = graphs.get(requests.getValue());
-            if (requestedGraph == null
-                || !requestedGraph.getEquivalenceSet().contains(Id.valueOf(requests.getKey()))) {
-                //stale read of index, pointing a graph that doesn't exist.
-                return false;
-            }
-        }
-        return true;
+        return sets.build();
     }
 
     private Content deserialize(Row row) {
@@ -247,12 +226,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
     }
 
-    //TODO more complex following of graph.
-    private boolean contentSelected(Content content, EquivalenceGraph equivalenceGraph,
-            Set<Publisher> selectedSources) {
+    private boolean contentSelected(Content content, Set<Publisher> selectedSources) {
         return content.isActivelyPublished()
-            && selectedSources.contains(content.getSource())
-            && equivalenceGraph.getEquivalenceSet().contains(content.getId());
+            && selectedSources.contains(content.getSource());
     }
 
     private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries, ConsistencyLevel readConsistency) {
@@ -286,7 +262,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             log.warn("Empty content for " + update);
             return;
         }
-        Instant start = Instant.now();
         updateDataRows(graphsAndContent);
         updateIndexRows(graphsAndContent);
         deleteStaleSets(update.getDeleted());
@@ -329,12 +304,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Content content = graphAndContent.getValue();
             updates.add(dataRowUpdateFor(graph, content));
         }
-        for (EquivalenceGraph graph : graphsAndContent.keySet()) {
-            updates.add(update(EQUIVALENT_CONTENT_TABLE)
-                    .where(eq(SET_ID_KEY, graph.getId().longValue()))
-                    .and(eq(CONTENT_ID_KEY, graph.getId().longValue()))
-                    .with(set(GRAPH_KEY, graphSerializer.serialize(graph))));
-        }
         session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
                 .setConsistencyLevel(writeConsistency));
     }
@@ -343,8 +312,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, graph.getId().longValue()))
                 .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
-                .with(set(DATA_KEY, serialize(content)))
-                .and(set(GRAPH_KEY, graphSerializer.serialize(graph)));
+                .with(set(DATA_KEY, serialize(content)));
     }
 
     private ByteBuffer serialize(Content content) {
@@ -363,7 +331,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         for (Entry<EquivalenceGraph, Content> graphAndContent : graphsAndContent.entries()) {
             EquivalenceGraph graph = graphAndContent.getKey();
             Content content = graphAndContent.getValue();
-            updates.add(index.insertStatement(content.getId().longValue(), graph.getId().longValue()));
+            updates.add(index.insertStatement(content.getId().longValue(),
+                    graph.getId().longValue()));
         }
         session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
                 .setConsistencyLevel(writeConsistency));
