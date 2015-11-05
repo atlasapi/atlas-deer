@@ -112,6 +112,42 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return result;
     }
 
+    @Override
+    public ListenableFuture<Set<Content>> resolveEquivalentSet(Long equivalentSetId) {
+        return Futures.transform(
+                session.executeAsync(
+                        select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY)
+                                .from(EQUIVALENT_CONTENT_TABLE)
+                                .where(eq(SET_ID_KEY, equivalentSetId)).setConsistencyLevel(readConsistency)
+                ),
+                (ResultSet resultSet) -> {
+                    ImmutableSet.Builder<Content> content = ImmutableSet.builder();
+                    for (Row row : resultSet) {
+                        content.add(deserialize(row));
+                    }
+                    return content.build();
+                }
+        );
+    }
+
+    @Override
+    protected void updateEquivalences(
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent, EquivalenceGraphUpdate update) {
+        if (graphsAndContent.isEmpty()) {
+            log.warn("Empty content for " + update);
+            return;
+        }
+        updateDataRows(graphsAndContent);
+        updateIndexRows(graphsAndContent);
+        deleteStaleSets(update.getDeleted());
+        deleteStaleRows(update.getUpdated(), update.getCreated());
+    }
+
+    @Override
+    protected void updateInSet(EquivalenceGraph graph, Content content) {
+        session.execute(dataRowUpdateFor(graph, content).setConsistencyLevel(writeConsistency));
+    }
+
     private void resolveWithConsistency(final SettableFuture<ResolvedEquivalents<Content>> result, 
             final Iterable<Id> ids, final Set<Publisher> selectedSources, final ConsistencyLevel readConsistency) {
         ListenableFuture<ImmutableMap<Long, Long>> setsToResolve = 
@@ -143,34 +179,25 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Set<Publisher> selectedSources, final ConsistencyLevel readConsistency) {
-        return new AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>>() {
-            @Override
-            public ListenableFuture<Optional<ResolvedEquivalents<Content>>> apply(Map<Long, Long> index)
-                    throws Exception {
-                return Futures.transform(
-                        resultOf(selectSetsQueries(index.values()), readConsistency),
-                        toEquivalentsSets(index, selectedSources)
-                );
-            }
-        };
+        return index1 -> Futures.transform(
+                resultOf(selectSetsQueries(index1.values()), readConsistency),
+                toEquivalentsSets(index1, selectedSources)
+        );
     }
 
     private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Map<Long, Long> index, final Set<Publisher> selectedSources) {
-        return new Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>>() {
-            @Override
-            public Optional<ResolvedEquivalents<Content>> apply(Iterable<ResultSet> setsRows) {
-                Multimap<Long, Content> sets = deserialize(setsRows, selectedSources);
-                if (sets == null) {
-                    return Optional.absent();
-                }
-                ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
-                for (Entry<Long, Long> id : index.entrySet()) {
-                    Collection<Content> setForId = sets.get(id.getValue());
-                    results.putEquivalents(Id.valueOf(id.getKey()), setForId);
-                }
-                return Optional.of(results.build());
+        return setsRows -> {
+            Multimap<Long, Content> sets = deserialize(setsRows, selectedSources);
+            if (sets == null) {
+                return Optional.absent();
             }
+            ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
+            for (Entry<Long, Long> id : index.entrySet()) {
+                Collection<Content> setForId = sets.get(id.getValue());
+                results.putEquivalents(Id.valueOf(id.getKey()), setForId);
+            }
+            return Optional.of(results.build());
         };
     }
 
@@ -254,19 +281,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
         return statements.build();
     }
-    
-    @Override
-    protected void updateEquivalences(
-            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent, EquivalenceGraphUpdate update) {
-        if (graphsAndContent.isEmpty()) {
-            log.warn("Empty content for " + update);
-            return;
-        }
-        updateDataRows(graphsAndContent);
-        updateIndexRows(graphsAndContent);
-        deleteStaleSets(update.getDeleted());
-        deleteStaleRows(update.getUpdated(), update.getCreated());
-    }
 
     private void deleteStaleRows(EquivalenceGraph updated, ImmutableSet<EquivalenceGraph> created) {
         if (created.isEmpty()) {
@@ -325,7 +339,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
         return buffer;
     }
-    
+
     private void updateIndexRows(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         List<Statement> updates = Lists.newArrayListWithExpectedSize(graphsAndContent.size());
         for (Entry<EquivalenceGraph, Content> graphAndContent : graphsAndContent.entries()) {
@@ -337,12 +351,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
                 .setConsistencyLevel(writeConsistency));
     }
-
-    @Override
-    protected void updateInSet(EquivalenceGraph graph, Content content) {
-        session.execute(dataRowUpdateFor(graph, content).setConsistencyLevel(writeConsistency));
-    }
-
 
     private Content resolvedContentFromNonEquivalentContentStore(Id contentId) throws IOException {
         Resolved<Content> deerContent = Futures.get(
@@ -373,24 +381,5 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
                 .with(set(DATA_KEY, serialize(content)));
         session.executeAsync(statement);
-    }
-
-    @Override
-    public ListenableFuture<Set<Content>> resolveEquivalentSet(Long equivalentSetId) {
-        return Futures.transform(
-                session.executeAsync(
-                        select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY)
-                        .from(EQUIVALENT_CONTENT_TABLE)
-                        .where(eq(SET_ID_KEY, equivalentSetId)).setConsistencyLevel(readConsistency)
-                ),
-                (ResultSet resultSet) -> {
-                    ImmutableSet.Builder<Content> content = ImmutableSet.builder();
-                    for (Row row : resultSet) {
-                        content.add(deserialize(row));
-                    }
-                    return content.build();
-                }
-
-        );
     }
 }
