@@ -7,6 +7,7 @@ import static org.junit.Assert.assertThat;
 import org.atlasapi.entity.Id;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 
@@ -88,5 +89,13 @@ public class IndexQueryResultTest {
         assertThat(result.getIds(canonicalIdA).size(), is(2));
         assertThat(result.getIds(canonicalIdA).contains(idA), is(true));
         assertThat(result.getIds(canonicalIdA).contains(idB), is(true));
+    }
+
+    @Test
+    public void testGetIdsDoesNotReturnDuplicates() throws Exception {
+        IndexQueryResult result = IndexQueryResult.withIds(ImmutableList.of(idA, idA), 2L);
+
+        assertThat(result.getIds().size(), is(1));
+        assertThat(result.getIds().contains(idA), is(true));
     }
 }
