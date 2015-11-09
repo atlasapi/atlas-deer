@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.event;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.event.Event;
 import org.atlasapi.output.AnnotationRegistry;
@@ -17,7 +18,7 @@ public class EventListWriter implements EntityListWriter<Event> {
     private final AnnotationRegistry<Event> annotationRegistry;
 
     public EventListWriter(AnnotationRegistry<Event> annotationRegistry) {
-        this.annotationRegistry = annotationRegistry;
+        this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
     @Override

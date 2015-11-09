@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.event;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.entity.Person;
 import org.atlasapi.event.Organisation;
@@ -9,11 +10,12 @@ import org.atlasapi.output.OutputContext;
 
 import java.io.IOException;
 
+
 public class OrganisationListWriter extends ContentGroupListWriter<Organisation> {
     private final EntityListWriter<Person> personListWriter;
 
     public OrganisationListWriter(EntityListWriter<Person> personListWriter) {
-        this.personListWriter = personListWriter;
+        this.personListWriter = checkNotNull(personListWriter);
     }
     @Override
     public String fieldName(Organisation entity) {

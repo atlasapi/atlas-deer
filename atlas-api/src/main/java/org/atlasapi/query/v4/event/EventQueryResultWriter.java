@@ -1,5 +1,6 @@
 package org.atlasapi.query.v4.event;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.FluentIterable;
 import org.atlasapi.event.Event;
@@ -18,7 +19,7 @@ public class EventQueryResultWriter extends QueryResultWriter<Event> {
             EntityWriter<HttpServletRequest> requestWriter
     ) {
         super(licenseWriter, requestWriter);
-        this.eventListWriter = eventListWriter;
+        this.eventListWriter = checkNotNull(eventListWriter);
     }
 
     @Override

@@ -1,6 +1,8 @@
 package org.atlasapi.query.v4.event;
 
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -20,7 +22,7 @@ public class EventQueryExecutor implements QueryExecutor<Event> {
     private final EventResolver resolver;
 
     public EventQueryExecutor(EventResolver resolver) {
-        this.resolver = resolver;
+        this.resolver = checkNotNull(resolver);
     }
 
     @Override
