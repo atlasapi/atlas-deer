@@ -25,7 +25,6 @@ import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.event.Event;
 import org.atlasapi.output.EquivalentSetContentHierarchyChooser;
 import org.atlasapi.output.MostPrecidentWithChildrenContentHierarchyChooser;
-import org.atlasapi.event.Event;
 import org.atlasapi.output.OutputContentMerger;
 import org.atlasapi.output.StrategyBackedEquivalentsMerger;
 import org.atlasapi.query.common.ContextualQueryExecutor;
