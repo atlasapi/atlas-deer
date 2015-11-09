@@ -5,11 +5,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
@@ -37,6 +39,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+    private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
     private final ContentResolver resolver;
 
     public ContentSerializationVisitor(ContentResolver resolver) {
@@ -171,6 +174,10 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         
         for (Tag tag : content.getTags()) {
             builder.addTopicRefs(tagSerializer.serialize(tag));
+        }
+
+        for (EventRef eventRef: content.getEventRefs()) {
+            builder.addEventRefs(eventRefSerializer.serialize(eventRef));
         }
 
         if (content.getYear() != null) {

@@ -106,6 +106,7 @@ message Content {
     repeated int32 releaseYears = 63 [(column)=DESC];
     optional bool activelyPublished = 64 [(column)=ACTIVELY_PUBLISHED];
     optional bool genericDescription = 65 [(column)=GENERIC_DESCRIPTION];
+    repeated EventRef event_refs = 67 [(column)=DESC];
 }
 
 message Restriction {
@@ -303,4 +304,9 @@ message ItemSummary {
     optional int32 episode_number = 6;
     optional int32 releaseYear = 7;
     repeated common.Certificate certificates = 8;
+}
+
+message EventRef {
+    required string id = 1;
+    required string source = 2;
 }
