@@ -23,6 +23,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.event.EventRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -47,6 +48,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     private Integer year = null;
     private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
     private Boolean genericDescription = Boolean.FALSE;
+    private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
 
 
     public Content(String uri, String curie, Publisher publisher) {
@@ -143,6 +145,19 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         return this;
     }
 
+    @FieldName("event_refs")
+    public Set<EventRef> getEventRefs(){
+        return eventRefs;
+    }
+
+    public void setEventRefs(Iterable<EventRef> eventsRef) {
+        this.eventRefs = ImmutableSet.copyOf(eventsRef);
+    }
+
+    public void addEventRef(EventRef eventRef) {
+        eventRefs = ImmutableSet.<EventRef>builder().add(eventRef).addAll(eventRefs).build();
+    }
+
     public Boolean isGenericDescription() {
         return genericDescription;
     }
@@ -160,6 +175,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         to.year = from.year;
         to.manifestedAs = Sets.newHashSet(from.manifestedAs);
         to.genericDescription = from.genericDescription;
+        to.eventRefs = from.eventRefs;
     }
 
     public void setReadHash(String readHash) {

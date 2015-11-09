@@ -5,6 +5,7 @@ import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
@@ -38,6 +39,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final ItemAndLocationSummarySerializer itemAndLocationSummarySerializer = new ItemAndLocationSummarySerializer();
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+    private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
 
     private ContentProtos.Content msg;
 
@@ -184,7 +186,13 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             topicRefs.add(tagSerializer.deserialize(msg.getTopicRefs(i)));
         }
         content.setTags(topicRefs.build());
-        
+
+        ImmutableSet.Builder<EventRef> eventRefs = ImmutableSet.builder();
+        for(ContentProtos.EventRef eventRef : msg.getEventRefsList()) {
+            eventRefs.add(eventRefSerializer.deserialize(eventRef));
+        }
+        content.setEventRefs(eventRefs.build());
+
         if (msg.hasYear()) {
             content.setYear(msg.getYear());
         }

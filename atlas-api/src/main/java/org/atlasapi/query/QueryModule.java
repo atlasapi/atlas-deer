@@ -22,8 +22,8 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
 import org.atlasapi.equivalence.DefaultMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
+import org.atlasapi.event.Event;
 import org.atlasapi.output.EquivalentSetContentHierarchyChooser;
-import org.atlasapi.output.FirstHierarchyContentHierarchyChooser;
 import org.atlasapi.output.MostPrecidentWithChildrenContentHierarchyChooser;
 import org.atlasapi.output.OutputContentMerger;
 import org.atlasapi.output.StrategyBackedEquivalentsMerger;
@@ -32,6 +32,7 @@ import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.v4.channel.ChannelQueryExecutor;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryExecutor;
 import org.atlasapi.query.v4.content.IndexBackedEquivalentContentQueryExecutor;
+import org.atlasapi.query.v4.event.EventQueryExecutor;
 import org.atlasapi.query.v4.schedule.EquivalentScheduleResolverBackedScheduleQueryExecutor;
 import org.atlasapi.query.v4.schedule.ScheduleQueryExecutor;
 import org.atlasapi.query.v4.search.support.ContentResolvingSearcher;
@@ -59,7 +60,11 @@ public class QueryModule {
     public ContextualQueryExecutor<Topic, Content> topicContentQueryExecutor() {
         return new TopicContentQueryExecutor(persistenceModule.topicStore(), persistenceModule.contentIndex(), mergingContentResolver());
     }
-    
+
+    @Bean
+    public QueryExecutor<Event> eventQueryExecutor() {
+        return new EventQueryExecutor(persistenceModule.eventResolver());
+    }
     @Bean
     public QueryExecutor<Content> contentQueryExecutor() {
         return new IndexBackedEquivalentContentQueryExecutor(persistenceModule.contentIndex(), 

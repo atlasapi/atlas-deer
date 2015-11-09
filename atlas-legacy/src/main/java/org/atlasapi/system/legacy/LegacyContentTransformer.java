@@ -32,6 +32,7 @@ import org.atlasapi.content.TransportType;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.event.EventRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Brand;
@@ -487,8 +488,8 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         c.setLanguages(input.getLanguages());
         c.setTags(translateTopicRefs(input.getTopicRefs()));
         c.setGenericDescription(input.getGenericDescription());
+        c.setEventRefs(translateEventRefs(input.events()));
         c.setCertificates(Iterables.transform(input.getCertificates(), new Function<Certificate, org.atlasapi.content.Certificate>() {
-
             @Override
             public org.atlasapi.content.Certificate apply(Certificate input) {
                 return new org.atlasapi.content.Certificate(input.classification(), input.country());
@@ -522,6 +523,12 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
                                 Tag.Relationship.valueOf(tr.getRelationship().name())
                         )
                 )
+                .collect(ImmutableCollectors.toList());
+    }
+
+    private Iterable<EventRef> translateEventRefs(List<org.atlasapi.media.entity.EventRef> eventRefs) {
+        return eventRefs.stream().map(eventRef ->
+                new EventRef(Id.valueOf(eventRef.id()), eventRef.getPublisher()))
                 .collect(ImmutableCollectors.toList());
     }
 

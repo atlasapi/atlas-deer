@@ -17,6 +17,7 @@ public enum Resource {
     END_USER_LICENSE("end_user_license", "end_user_licenses"),
     MODEL_INFO("model_class", "model_classes"),
     ENDPOINT_INFO("endpoint", "endpoints"),
+    EVENT("event","events"),
     ;
     
     private final String singular;
