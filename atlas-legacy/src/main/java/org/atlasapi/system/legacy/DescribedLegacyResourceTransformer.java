@@ -1,6 +1,7 @@
 package org.atlasapi.system.legacy;
 
 import org.atlasapi.content.MediaType;
+import org.atlasapi.content.PriorityScoreReasons;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.content.Synopses;
 import org.atlasapi.entity.Alias;
@@ -58,7 +59,10 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         if (legacy == null) {
             return null;
         }
-        return new org.atlasapi.content.Priority(legacy.getScore(), legacy.getReasons());
+        return new org.atlasapi.content.Priority(legacy.getScore(),
+                new PriorityScoreReasons(
+                        legacy.getReasons().getPositive(),
+                        legacy.getReasons().getNegative()));
     }
 
     protected <I extends org.atlasapi.entity.Identified> void setIdentifiedFields(I i, Identified input) {

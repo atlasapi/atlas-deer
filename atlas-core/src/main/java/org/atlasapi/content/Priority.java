@@ -4,15 +4,14 @@ import com.google.common.base.Objects;
 
 public class Priority {
 
-    private Iterable<String> reasons;
+    private PriorityScoreReasons reasons;
     private Double priority;
-
 
     public Priority () {
         
     }
 
-    public Priority(Double priority, Iterable<String> reasons) {
+    public Priority(Double priority, PriorityScoreReasons reasons) {
         this.reasons = reasons;
         this.priority = priority;
     }
@@ -21,7 +20,7 @@ public class Priority {
         return priority;
     }
 
-    public Iterable<String> getReasons() {
+    public PriorityScoreReasons getReasons() {
         return reasons;
     }
 
@@ -29,7 +28,7 @@ public class Priority {
         this.priority = priority;
     }
 
-    public void setReasons(Iterable<String> reasons) {
+    public void setReasons(PriorityScoreReasons reasons) {
         this.reasons = reasons;
     }
 
