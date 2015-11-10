@@ -9,9 +9,17 @@ public class PrioritySerializer implements Serializer<Priority, CommonProtos.Pri
     public CommonProtos.Priority serialize(Priority source) {
         CommonProtos.Priority.Builder builder = CommonProtos.Priority.newBuilder();
 
-        if(source.getReasons() != null) {
-            for (String reason : source.getReasons()) {
-                builder.addReason(reason);
+        PriorityScoreReasons scoreReasons = source.getReasons();
+        if(scoreReasons != null) {
+            if (scoreReasons.getPositive() != null) {
+                for (String reason : scoreReasons.getPositive()) {
+                    builder.addPositiveReasons(reason);
+                }
+            }
+            if (scoreReasons.getNegative() != null) {
+                for (String reason : scoreReasons.getNegative()) {
+                    builder.addNegativeReasons(reason);
+                }
             }
         }
         if(source.getPriority() != null) {
@@ -28,7 +36,10 @@ public class PrioritySerializer implements Serializer<Priority, CommonProtos.Pri
         if(serialized.hasPriority()) {
             target.setPriority(serialized.getPriority());
         }
-        target.setReasons(serialized.getReasonList());
+        target.setReasons(new PriorityScoreReasons(
+                serialized.getPositiveReasonsList(),
+                serialized.getNegativeReasonsList()
+        ));
 
         return target;
     }

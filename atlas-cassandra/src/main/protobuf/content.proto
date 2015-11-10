@@ -119,7 +119,9 @@ message Restriction {
 
 message Priority {
     optional double score = 1;
-    repeated string reasons = 2;
+    repeated string reasons = 2 [deprecated = true];
+    repeated string positive_reasons = 3;
+    repeated string negative_reasons = 4;
 }
 
 message Summary {
