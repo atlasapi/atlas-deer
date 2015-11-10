@@ -125,12 +125,18 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             described.setSpecialization(Specialization.valueOf(msg.getSpecialization().toUpperCase()));
         }
         if (msg.hasPriority()) {
-            Priority priority = new Priority(msg.getPriority(), ImmutableList.of("Legacy priority"));
+            Priority priority = new Priority(msg.getPriority(), new PriorityScoreReasons(
+                    ImmutableList.of("Legacy priority"),
+                    ImmutableList.of("Legacy priority")
+            ));
             described.setPriority(priority);
         }
         if (msg.hasPriorities()) {
             ContentProtos.Priority priorities = msg.getPriorities();
-            Priority priority = new Priority(priorities.getScore(), priorities.getReasonsList());
+            Priority priority = new Priority(priorities.getScore(), new PriorityScoreReasons(
+                    priorities.getPositiveReasonsList(),
+                    priorities.getNegativeReasonsList()
+            ));
             described.setPriority(priority);
         }
         if(msg.hasActivelyPublished()) {

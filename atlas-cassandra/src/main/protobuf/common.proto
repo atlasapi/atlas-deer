@@ -118,8 +118,9 @@ message Synopses {
 }
 
 message Priority {
-    repeated string reason = 1;
+    repeated string positive_reasons = 1;
     optional double priority = 2;
+    repeated string negative_reasons = 3;
 }
 
 message Image {

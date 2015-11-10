@@ -137,10 +137,15 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             ContentProtos.Priority.Builder priorityBuilder = ContentProtos.Priority.newBuilder();
             Priority priority = content.getPriority();
             if (priority.getPriority() != null) {
-                priorityBuilder.addAllReasons(priority.getReasons());
-            }
-            if (priority.getPriority() != null) {
                 priorityBuilder.setScore(priority.getPriority());
+                if (priority.getReasons() != null) {
+                    if (priority.getReasons().getPositive() != null) {
+                        priorityBuilder.addAllPositiveReasons(priority.getReasons().getPositive());
+                    }
+                    if (priority.getReasons().getNegative() != null) {
+                        priorityBuilder.addAllNegativeReasons(priority.getReasons().getNegative());
+                    }
+                }
             }
             builder.setPriorities(priorityBuilder.build());
         }
