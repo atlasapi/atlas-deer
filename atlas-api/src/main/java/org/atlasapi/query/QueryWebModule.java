@@ -111,6 +111,7 @@ import org.springframework.context.annotation.Import;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNEL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
@@ -781,6 +782,7 @@ public class QueryWebModule {
                         .register(VARIATIONS,
                                 new ChannelVariationAnnotation(channelResolver, channelWriter()),
                                 CHANNEL)
+                        .register(ADVERTISED_CHANNEL, new ChannelAdvertisedAnnotation(channelWriter()), CHANNEL)
                         .build());
     }
 
