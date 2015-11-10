@@ -20,7 +20,10 @@ public class PrioritySerializerTest {
 
     @Test
     public void testSerialization() throws Exception {
-        Priority expected = new Priority(0.0, Lists.newArrayList("reason"));
+        Priority expected = new Priority(0.0, new PriorityScoreReasons(
+                Lists.newArrayList("Positive reason"),
+                Lists.newArrayList("Negative reason")
+        ));
 
         CommonProtos.Priority serialized = serializer.serialize(expected);
 
@@ -28,6 +31,8 @@ public class PrioritySerializerTest {
 
         assertThat(actual.getPriority(), is(expected.getPriority()));
         assertThat(actual.getReasons(), is(expected.getReasons()));
+        assertThat(actual.getReasons().getPositive(), is(expected.getReasons().getPositive()));
+        assertThat(actual.getReasons().getNegative(), is(expected.getReasons().getNegative()));
     }
 
     @Test
@@ -38,7 +43,7 @@ public class PrioritySerializerTest {
 
         Priority actual = serializer.deserialize(serialized);
 
-        expected.setReasons(Lists.newArrayList());
+        expected.setReasons(new PriorityScoreReasons(Lists.newArrayList(), Lists.newArrayList()));
         assertThat(actual.getPriority(), is(expected.getPriority()));
         assertThat(actual.getReasons(), is(expected.getReasons()));
     }
