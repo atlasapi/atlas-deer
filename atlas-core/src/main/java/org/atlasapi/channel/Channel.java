@@ -16,6 +16,7 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
 import com.google.common.base.Function;
@@ -43,6 +44,7 @@ public class Channel extends Identified implements Sourced {
     private final ImmutableSet<ChannelRef> variations;
     private final LocalDate startDate;
     private final LocalDate endDate;
+    private final DateTime advertiseFrom;
 
     public Channel(
             String uri,
@@ -63,7 +65,8 @@ public class Channel extends Identified implements Sourced {
             ChannelRef parent,
             Set<ChannelRef> variations,
             @Nullable LocalDate startDate,
-            @Nullable LocalDate endDate
+            @Nullable LocalDate endDate,
+            DateTime advertiseFrom
     ) {
         super(uri);
         this.setAliases(aliases);
@@ -84,6 +87,7 @@ public class Channel extends Identified implements Sourced {
         this.variations = ImmutableSet.copyOf(variations);
         this.startDate = startDate;
         this.endDate = endDate;
+        this.advertiseFrom = advertiseFrom;
     }
 
 
@@ -171,6 +175,11 @@ public class Channel extends Identified implements Sourced {
         return endDate;
     }
 
+    @FieldName("advertise_from")
+    public DateTime getAdvertiseFrom() {
+        return advertiseFrom;
+    }
+
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
     }
@@ -199,9 +208,11 @@ public class Channel extends Identified implements Sourced {
         private Set<TemporalField<Image>> images = Sets.newHashSet();
         private ChannelRef parent;
         private Set<ChannelRef> variations = Sets.newHashSet();
+        private DateTime advertiseFrom;
 
         private LocalDate startDate;
         private LocalDate endDate;
+
 
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
@@ -331,6 +342,10 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withAdvertiseFrom(DateTime dateTime) {
+            this.advertiseFrom = dateTime;
+            return this;
+        }
 
         private ChannelRef buildChannelRef(Long id) {
             return new ChannelRef(Id.valueOf(id), publisher);
@@ -359,7 +374,8 @@ public class Channel extends Identified implements Sourced {
                     parent,
                     variations,
                     startDate,
-                    endDate
+                    endDate,
+                    advertiseFrom
             );
         }
     }

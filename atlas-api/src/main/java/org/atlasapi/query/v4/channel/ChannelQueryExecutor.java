@@ -1,8 +1,6 @@
 package org.atlasapi.query.v4.channel;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -14,10 +12,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.base.MoreOrderings;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.content.MediaType;
 import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.QueryNode;
-import org.atlasapi.criteria.QueryNodeVisitor;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
@@ -28,6 +23,8 @@ import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -108,6 +105,9 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
                     );
                 case Attributes.ORDER_BY_PARAM:
                     ordering = ordering(attributeQuery.getValue().get(0).toString());
+                    break;
+                case Attributes.ADVERTISED_ON:
+                    channelQueryBuilder.withAdvertisedOn(DateTime.now(DateTimeZone.UTC));
                     break;
                 default:
                     throw new IllegalArgumentException(

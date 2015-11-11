@@ -42,7 +42,8 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                                 input.getChannelNumbers(),
                                 input.getSource()
                         )
-                ).build();
+                ).withAdvertiseFrom(input.getAdvertiseFrom())
+                .build();
     }
 
     public org.atlasapi.media.channel.Channel toBasicLegacyChannel(Channel input) {
@@ -52,6 +53,7 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
                 .withHighDefinition(input.getHighDefinition())
                 .withBroadcaster(input.getBroadcaster())
                 .withSource(input.getSource())
+                .withAdvertiseFrom(input.getAdvertiseFrom())
                 .withMediaType(
                         org.atlasapi.media.entity.MediaType.valueOf(
                                 input.getMediaType().toString().toUpperCase()

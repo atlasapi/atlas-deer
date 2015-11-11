@@ -84,7 +84,6 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         format.writeList(RELATED_LINKS_WRITER, entity.getRelatedLinks(), ctxt);
         format.writeField("start_date", entity.getStartDate());
 
-
         if(hasChannelGroupSummaryAnnotation(ctxt)) {
 
             ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
