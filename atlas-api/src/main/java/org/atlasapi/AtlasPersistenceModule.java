@@ -63,6 +63,7 @@ import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.Ints;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -101,6 +102,8 @@ public class AtlasPersistenceModule {
     private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
  
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
+    private final int port = Ints.saturatedCast(Configurer.get("elasticsearch.port").toLong());
+    private final boolean ssl = Configurer.get("elasticsearch.ssl").toBoolean();
     private final String esCluster = Configurer.get("elasticsearch.cluster").get();
     private final String esIndex = Configurer.get("elasticsearch.index").get();
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
@@ -224,6 +227,8 @@ public class AtlasPersistenceModule {
         ElasticSearchContentIndexModule module =
                 new ElasticSearchContentIndexModule(
                         esSeeds,
+                        port,
+                        ssl,
                         esCluster,
                         esIndex,
                         Long.parseLong(esRequestTimeout),

@@ -38,6 +38,8 @@ public class ElasticSearchContentIndexModule implements IndexModule {
 
     public ElasticSearchContentIndexModule(
             String seeds,
+            int port,
+            boolean ssl,
             String clusterName,
             String indexName,
             Long requestTimeout,
@@ -47,9 +49,9 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             SecondaryIndex equivContentIndex
     ) {
 
-        Settings settings = createSettings(clusterName);
+        Settings settings = createSettings(clusterName, ssl);
         TransportClient esClient = new TransportClient(settings);
-        registerSeeds(esClient, seeds);
+        registerSeeds(esClient, seeds, port);
 
         unequivIndex = new EsUnequivalentContentIndex(
                 esClient,
@@ -76,16 +78,18 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         this.contentSearcher = new EsContentTitleSearcher(esClient);
     }
 
-    private Settings createSettings(String clusterName) {
+    private Settings createSettings(String clusterName, boolean ssl) {
         return ImmutableSettings.settingsBuilder()
                     .put("client.transport.sniff", true)
                     .put("cluster.name", clusterName)
+                    .put("shield.transport.ssl", ssl ? "true" : "false")
                     .build();
     }
 
-    private void registerSeeds(TransportClient client, String seeds) {
+    private void registerSeeds(TransportClient client, String seeds, int port) {
+        
         for (String host : Splitter.on(",").splitToList(seeds)) {
-            client.addTransportAddress(new InetSocketTransportAddress(host, 9300));
+            client.addTransportAddress(new InetSocketTransportAddress(host, port));
         }
     }
 
