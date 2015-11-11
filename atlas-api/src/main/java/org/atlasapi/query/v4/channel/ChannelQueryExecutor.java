@@ -28,6 +28,8 @@ import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -108,6 +110,9 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
                     );
                 case Attributes.ORDER_BY_PARAM:
                     ordering = ordering(attributeQuery.getValue().get(0).toString());
+                    break;
+                case Attributes.ADVERTISE_FROM_PARAM:
+                    channelQueryBuilder.withAdvertiseFrom(DateTime.now(DateTimeZone.UTC));
                     break;
                 default:
                     throw new IllegalArgumentException(

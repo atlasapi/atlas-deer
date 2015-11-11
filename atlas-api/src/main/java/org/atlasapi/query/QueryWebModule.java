@@ -782,7 +782,6 @@ public class QueryWebModule {
                         .register(VARIATIONS,
                                 new ChannelVariationAnnotation(channelResolver, channelWriter()),
                                 CHANNEL)
-                        .register(ADVERTISED_CHANNEL, new ChannelAdvertisedAnnotation(channelWriter()), CHANNEL)
                         .build());
     }
 
