@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.media.entity.Publisher;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ public class LegacyChannelTransformerTest {
         Set<String> genres = ImmutableSet.of("comedy", "drama");
         org.atlasapi.media.entity.MediaType mediaType = org.atlasapi.media.entity.MediaType.VIDEO;
         Set<Publisher> availableFrom = ImmutableSet.of(Publisher.AMAZON_UK, Publisher.C4);
-
+        DateTime advertiseFrom = DateTime.now();
         org.atlasapi.media.channel.Channel legacyChannel = org.atlasapi.media.channel.Channel.builder()
                 .withSource(source)
                 .withUri(uri)
@@ -47,6 +48,7 @@ public class LegacyChannelTransformerTest {
                 .withGenres(genres)
                 .withMediaType(mediaType)
                 .withAvailableFrom(availableFrom)
+                .withAdvertiseFrom(advertiseFrom)
                 .build();
         legacyChannel.setId(id);
 
@@ -62,5 +64,6 @@ public class LegacyChannelTransformerTest {
         assertThat(transformed.getGenres(), containsInAnyOrder("comedy", "drama", Channel.ADULT_GENRE));
         assertThat(transformed.getMediaType(), is(MediaType.valueOf(mediaType.toString())));
         assertThat(transformed.getAvailableFrom(), is(availableFrom));
+        assertThat(transformed.getAdvertiseFrom(), is(advertiseFrom));
     }
 }

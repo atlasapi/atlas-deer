@@ -70,7 +70,6 @@ public class ChannelWriter implements EntityListWriter<Channel>{
     @Override
     public void write(@Nonnull Channel entity, @Nonnull FieldWriter format, @Nonnull OutputContext ctxt) throws IOException {
         format.writeField("title", entity.getTitle());
-        format.writeField("advertise_from", entity.getAdvertiseFrom());
         format.writeField("id", idCode.encode(entity.getId().toBigInteger()));
         format.writeField("uri", entity.getCanonicalUri());
         format.writeList(IMAGE_WRITER, entity.getImages(), ctxt);
