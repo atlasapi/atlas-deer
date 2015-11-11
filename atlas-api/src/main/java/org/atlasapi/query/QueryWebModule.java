@@ -486,6 +486,8 @@ public class QueryWebModule {
                                 AttributeCoercers.enumCoercer(Sources.fromKey())),
                         QueryAtomParser.valueOf(Attributes.ORDER_BY_CHANNEL,
                                 AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.ADVERTISED_ON,
+                                AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(
                                 Attributes.MEDIA_TYPE,
                                 AttributeCoercers.enumCoercer(

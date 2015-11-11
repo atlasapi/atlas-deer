@@ -78,7 +78,8 @@ public class Attributes {
     public static final String AVAILABLE_FROM_PARAM = "available_from";
     public static final String MEDIA_TYPE_PARAM = "media_type";
     public static final String ORDER_BY_PARAM = "order_by";
-    public static final String ADVERTISED_ON = "advertised";
+    public static final String ADVERTISED_FROM_PARAM = "advertised";
+    public static final Attribute<String> ADVERTISED_ON = stringAttribute(ADVERTISED_FROM_PARAM, Identified.class);
     public static final Attribute<Publisher> BROADCASTER = EnumValuedAttribute.valueOf(BROADCASTER_PARAM, Publisher.class, Identified.class, true);
     public static final Attribute<Publisher> AVAILABLE_FROM = EnumValuedAttribute.valueOf(AVAILABLE_FROM_PARAM, Publisher.class, Identified.class, true);
     public static final Attribute<MediaType> MEDIA_TYPE = new EnumValuedAttribute<>(MEDIA_TYPE_PARAM, MediaType.class, Identified.class);
