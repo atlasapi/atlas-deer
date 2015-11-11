@@ -453,7 +453,9 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_TYPE,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_CHANNEL_GENRES,
-                                AttributeCoercers.stringCoercer())
+                                AttributeCoercers.stringCoercer()),
+                        QueryAtomParser.valueOf(Attributes.ADVERTISED_ON,
+                                AttributeCoercers.booleanCoercer())
                 )
         );
     }
@@ -487,7 +489,7 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.ORDER_BY_CHANNEL,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.ADVERTISED_ON,
-                                AttributeCoercers.stringCoercer()),
+                                AttributeCoercers.booleanCoercer()),
                         QueryAtomParser.valueOf(
                                 Attributes.MEDIA_TYPE,
                                 AttributeCoercers.enumCoercer(
