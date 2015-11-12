@@ -20,9 +20,14 @@ import org.atlasapi.content.ItemSummary;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.output.writers.*;
 
 import com.google.common.collect.ImmutableMap;
+import org.atlasapi.output.writers.CertificateWriter;
+import org.atlasapi.output.writers.LanguageWriter;
+import org.atlasapi.output.writers.PriorityScoreReasonsWriter;
+import org.atlasapi.output.writers.ReleaseDateWriter;
+import org.atlasapi.output.writers.RestrictionWriter;
+import org.atlasapi.output.writers.SubtitleWriter;
 import org.atlasapi.util.ImmutableCollectors;
 
 public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
