@@ -65,7 +65,7 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<C
                         this.channelResolver.resolveIds(channelGroupMemberships.keySet()),
                         (Resolved<Channel> channelResolved) -> {
                             return StreamSupport.stream(channelResolved.getResources().spliterator(), false)
-                                    .filter(channel -> channel.getAdvertiseFrom().isBeforeNow() || channel.getAdvertiseFrom().isEqualNow())
+                                    .filter(channel -> channel.getAdvertiseFrom() == null || channel.getAdvertiseFrom().isBeforeNow() || channel.getAdvertiseFrom().isEqualNow())
                                     .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
                                     .collect(Collectors.toList());
                         }
