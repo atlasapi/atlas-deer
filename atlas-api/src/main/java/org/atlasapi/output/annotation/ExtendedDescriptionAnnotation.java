@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -15,16 +14,13 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 import com.google.common.collect.ImmutableMap;
 import org.atlasapi.output.writers.CertificateWriter;
 import org.atlasapi.output.writers.LanguageWriter;
-import org.atlasapi.output.writers.PriorityScoreReasonsWriter;
 import org.atlasapi.output.writers.ReleaseDateWriter;
 import org.atlasapi.output.writers.RestrictionWriter;
 import org.atlasapi.output.writers.SubtitleWriter;
@@ -37,7 +33,6 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
     private final SubtitleWriter subtitleWriter;
     private final ReleaseDateWriter releaseDateWriter;
     private final RestrictionWriter restrictionWriter;
-    private final PriorityScoreReasonsWriter priorityScoreReasonsWriter;
 
     public ExtendedDescriptionAnnotation() {
         super();
@@ -46,7 +41,6 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         this.subtitleWriter = new SubtitleWriter(languageWriter);
         releaseDateWriter = new ReleaseDateWriter();
         this.restrictionWriter = new RestrictionWriter();
-        this.priorityScoreReasonsWriter = new PriorityScoreReasonsWriter();
     }
 
     private Map<String, Locale> initLocalMap() {
@@ -62,7 +56,6 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         writer.writeList("genres", "genre", desc.getGenres(), ctxt);
         writer.writeField("presentation_channel", desc.getPresentationChannel());
         writer.writeField("priority", desc.getPriority() != null ? desc.getPriority().getPriority() : null);
-        writer.writeObject(priorityScoreReasonsWriter, desc.getPriority().getReasons(), ctxt);
         writer.writeField("long_description", desc.getLongDescription());
         
         if (desc instanceof Item) {
