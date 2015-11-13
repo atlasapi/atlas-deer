@@ -190,6 +190,11 @@ public class AtlasPersistenceModule {
     public EquivalenceGraphStore getContentEquivalenceGraphStore() {
         return persistenceModule().contentEquivalenceGraphStore();
     }
+
+    @Bean
+    public EquivalenceGraphStore nullMessageSendingEquivalenceGraphStore() {
+        return persistenceModule().nullMessageSendingEquivalenceGraphStore();
+    }
     
     @Bean
     public EquivalentContentStore getEquivalentContentStore() {

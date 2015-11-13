@@ -23,6 +23,8 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
@@ -34,8 +36,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.collect.OptionalMap;
 
 public class ContentBootstrapListener extends ContentVisitorAdapter<
         ContentBootstrapListener.Result> {
@@ -51,11 +56,19 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     private final LegacySegmentMigrator legacySegmentMigrator;
     private final ContentResolver legacyContentResolver;
 
-    private ContentBootstrapListener(ContentWriter contentWriter,
+    private final boolean migrateEquivalents;
+    private final EquivalenceGraphStore equivalenceGraphStore;
+
+    private ContentBootstrapListener(
+            ContentWriter contentWriter,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             EquivalentContentStore equivalentContentStore,
-            ContentIndex contentIndex, boolean migrateHierarchy,
-            LegacyPersistenceModule legacyPersistenceModule) {
+            ContentIndex contentIndex,
+            boolean migrateHierarchy,
+            LegacyPersistenceModule legacyPersistenceModule,
+            boolean migrateEquivalents,
+            EquivalenceGraphStore equivalenceGraphStore
+    ) {
         this.contentWriter = checkNotNull(contentWriter);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
@@ -72,6 +85,16 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             this.legacySegmentMigrator = null;
             this.legacyContentResolver = null;
         }
+
+        this.migrateEquivalents = checkNotNull(migrateEquivalents);
+        checkArgument(!migrateEquivalents || equivalenceGraphStore != null);
+
+        if (equivalenceGraphStore != null) {
+            this.equivalenceGraphStore = checkNotNull(equivalenceGraphStore);
+        }
+        else {
+            this.equivalenceGraphStore = null;
+        }
     }
 
     public static Builder builder() {
@@ -86,6 +109,10 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
         if(migrateHierarchy && resultBuilder.isSucceeded()) {
             migrateSegments(item, resultBuilder);
+        }
+
+        if (migrateEquivalents) {
+            migrateEquivalents(item, resultBuilder);
         }
 
         return resultBuilder.build();
@@ -265,6 +292,44 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                 unsuccessfullyMigrated);
     }
 
+    private void migrateEquivalents(Item item, ResultBuilder resultBuilder) {
+        OptionalMap<Id, EquivalenceGraph> equivalenceGraphOptional = Futures.getUnchecked(
+                equivalenceGraphStore.resolveIds(ImmutableList.of(item.getId()))
+        );
+
+        if (equivalenceGraphOptional.get(item.getId()).isPresent()) {
+            Set<Id> equivalentIds =
+                    Sets.difference(
+                            equivalenceGraphOptional.get(item.getId()).get()
+                                    .getEquivalenceSet(),
+                            ImmutableSet.of(item.getId())
+                    );
+
+            migrateEquivalents(equivalentIds, resultBuilder);
+        }
+    }
+
+    private void migrateEquivalents(Set<Id> equivalentIds, ResultBuilder resultBuilder) {
+        Set<Id> successfullyMigrated = new HashSet<>();
+        Set<Id> unsuccessfullyMigrated = new HashSet<>();
+
+        for (Id equivalentId : equivalentIds) {
+            ResultBuilder equivalentResultBuilder = resultBuilder();
+            Content content = resolveLegacyContent(equivalentId);
+            migrateContent(content, equivalentResultBuilder);
+
+            if (equivalentResultBuilder.isSucceeded()) {
+                successfullyMigrated.add(equivalentId);
+            }
+            else {
+                unsuccessfullyMigrated.add(equivalentId);
+            }
+        }
+
+        addMigrationResult(resultBuilder, "equivalents", successfullyMigrated,
+                unsuccessfullyMigrated);
+    }
+
     private Content resolveLegacyContent(Id id) {
         return Iterables.getOnlyElement(
                 Futures.getUnchecked(legacyContentResolver.resolveIds(ImmutableList.of(id)))
@@ -311,6 +376,9 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         private boolean migrateHierarchy = false;
         private LegacyPersistenceModule legacyPersistenceModule = null;
 
+        private boolean migrateEquivalents = false;
+        private EquivalenceGraphStore equivalenceGraphStore = null;
+
         private Builder() { }
 
         public Builder withContentWriter(ContentWriter contentWriter) {
@@ -340,6 +408,12 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             return this;
         }
 
+        public Builder withMigrateEquivalents(EquivalenceGraphStore equivalenceGraphStore) {
+            this.migrateEquivalents = true;
+            this.equivalenceGraphStore = equivalenceGraphStore;
+            return this;
+        }
+
         public ContentBootstrapListener build() {
             return new ContentBootstrapListener(
                     contentWriter,
@@ -347,7 +421,9 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                     equivalentContentStore,
                     contentIndex,
                     migrateHierarchy,
-                    legacyPersistenceModule
+                    legacyPersistenceModule,
+                    migrateEquivalents,
+                    equivalenceGraphStore
             );
         }
     }
