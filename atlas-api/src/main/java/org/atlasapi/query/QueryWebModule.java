@@ -121,6 +121,7 @@ import static org.atlasapi.annotation.Annotation.CHANNEL;
 import static org.atlasapi.annotation.Annotation.CHANNELS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
+import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CLIPS;
@@ -421,6 +422,7 @@ public class QueryWebModule {
                 .register(REGIONS, new PlatformAnnontation(channelGroupResolver), CHANNEL_GROUP)
                 .register(PLATFORM, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
                 .register(CHANNEL_GROUPS_SUMMARY,  NullWriter.create(ChannelGroup.class),ImmutableList.of(CHANNELS, CHANNEL_GROUP))
+                .register(ADVERTISED_CHANNELS, new ChannelGroupAdvertisedChannelsAnnotation(new ChannelGroupChannelWriter(channelWriter()), channelResolver))
                 .build());
     }
 
@@ -453,9 +455,7 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_TYPE,
                                 AttributeCoercers.stringCoercer()),
                         QueryAtomParser.valueOf(Attributes.CHANNEL_GROUP_CHANNEL_GENRES,
-                                AttributeCoercers.stringCoercer()),
-                        QueryAtomParser.valueOf(Attributes.ADVERTISED_ON,
-                                AttributeCoercers.booleanCoercer())
+                                AttributeCoercers.stringCoercer())
                 )
         );
     }
