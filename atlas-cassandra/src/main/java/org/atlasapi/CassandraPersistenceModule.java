@@ -75,6 +75,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraSegmentStore segmentStore;
     private DatastaxCassandraService dataStaxService;
     private CassandraEquivalenceGraphStore contentEquivalenceGraphStore;
+    private CassandraEquivalenceGraphStore nullMessageSendingEquivalenceGraphStore;
 
     private CassandraEquivalenceGraphStore nullMessageSendingEquivGraphStore;
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
@@ -148,7 +149,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
 
-        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class), session, read, write);
+        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
+        this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                nullMessageSender(EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(contentEquivalenceGraphStore, contentStore, session, read, write, new SystemClock());
         this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(nullMessageSender(
                 EquivalenceGraphUpdateMessage.class), session, read, write);
@@ -276,6 +284,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public EquivalenceGraphStore contentEquivalenceGraphStore() {
         return this.contentEquivalenceGraphStore;
+    }
+
+    public EquivalenceGraphStore nullMessageSendingEquivalenceGraphStore() {
+        return this.nullMessageSendingEquivalenceGraphStore;
     }
 
     public com.datastax.driver.core.ConsistencyLevel getReadConsistencyLevel() {

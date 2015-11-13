@@ -64,6 +64,7 @@ public class ContentBootstrapController {
     private final Timer timer;
 
     private final ContentBootstrapListener contentBootstrapListener;
+    private final ContentBootstrapListener contentAndEquivalentsBoostrapListener;
 
     public ContentBootstrapController(
             ContentResolver read,
@@ -88,14 +89,35 @@ public class ContentBootstrapController {
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(contentIndex)
                 .build();
+
+        this.contentAndEquivalentsBoostrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(write)
+                .withEquivalenceMigrator(equivalenceMigrator)
+                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
+                .withContentIndex(contentIndex)
+                .withMigrateEquivalents(persistence.nullMessageSendingEquivalenceGraphStore())
+                .build();
     }
 
     @RequestMapping(value = "/system/bootstrap/source", method = RequestMethod.POST)
-    public void bootstrapSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
+    public void bootstrapSource(@RequestParam("source") String sourceString,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
+            HttpServletResponse resp) {
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
-        executorService.execute(bootstrappingRunnable(contentBootstrapListener, fromKey.requireValue(), progress));
+
+        Runnable listener;
+        if (Boolean.TRUE.equals(migrateEquivalents)) {
+            listener = bootstrappingRunnable(contentAndEquivalentsBoostrapListener,
+                    fromKey.requireValue(), progress);
+        }
+        else {
+            listener = bootstrappingRunnable(contentBootstrapListener,
+                    fromKey.requireValue(), progress);
+        }
+        executorService.execute(listener);
+
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 
