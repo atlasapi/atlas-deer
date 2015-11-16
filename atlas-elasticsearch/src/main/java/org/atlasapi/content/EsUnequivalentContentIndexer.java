@@ -2,18 +2,14 @@ package org.atlasapi.content;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
+import java.util.Map;
+
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.SecondaryIndex;
 import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.action.IndicesRequest;
-import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -22,14 +18,11 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.ImmutableSet;
 
 public class EsUnequivalentContentIndexer {
 
@@ -60,12 +53,10 @@ public class EsUnequivalentContentIndexer {
 
     }
 
-    /* We unindex content before inserting any new records to avoid duplicates when a piece of
-        content changes type (e.g. from top level to child)
-     */
     public void index(Content content) throws IndexException {
-        removeContent(content);
+        removeStaleContent(content);
         if (!content.isActivelyPublished()) {
+            removeContent(content);
             return;
         }
         try {
@@ -92,15 +83,35 @@ public class EsUnequivalentContentIndexer {
         };
     }
 
-    private void removeContent(Content content) {
+    private void removeStaleContent(Content content) {
+        // Remove from index entries with the same ID, but different mapping type to avoid
+        // duplicates when a piece of content changes type (e.g. from top-level to child)
+
         Long id = content.getId().longValue();
-        log.debug("Content {} is not actively published, removing from index", id);
-        if (content instanceof Item) {
+        if (content instanceof Container) {
             deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
         }
+        else if (content instanceof Episode) {
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
+        }
+        else if (content instanceof Item) {
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
+            deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
+        }
+    }
+
+    private void removeContent(Content content) {
+        long id = content.getId().longValue();
         if (content instanceof Container) {
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
+        }
+        else if (content instanceof Episode) {
+            deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
+        }
+        else if (content instanceof Item) {
+            deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
         }
     }
 
@@ -113,6 +124,7 @@ public class EsUnequivalentContentIndexer {
                     .get()
                     .exists();
             if (exists) {
+                log.debug("Deleting content {} from index", id);
                 esClient.delete(new DeleteRequest(indexName, mappingType, id.toString())).get();
             }
         } catch (Exception e) {
