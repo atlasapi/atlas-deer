@@ -1,5 +1,7 @@
 package org.atlasapi.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -17,17 +19,15 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.EsTopic;
-
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.HasChildFilterBuilder;
+import org.elasticsearch.index.query.NestedFilterBuilder;
+import org.elasticsearch.index.query.OrFilterBuilder;
 import org.elasticsearch.index.query.RangeFilterBuilder;
 import org.elasticsearch.index.query.TermsFilterBuilder;
-import org.elasticsearch.index.query.OrFilterBuilder;
-import org.elasticsearch.index.query.NestedFilterBuilder;
-
 import org.joda.time.DateTime;
 
 import com.google.common.base.Throwables;
@@ -45,7 +45,7 @@ public class FiltersBuilder {
     public static TermsFilterBuilder buildForSpecializations(Iterable<Specialization> specializations) {
         return FilterBuilders.termsFilter(
                 EsContent.SPECIALIZATION,
-                Iterables.transform(specializations, input -> input.name())
+                Iterables.transform(specializations, Enum::name)
         );
     }
 
@@ -113,20 +113,32 @@ public class FiltersBuilder {
 
     public static FilterBuilder buildBroadcastRangeFilter(DateTime broadcastTimeGreaterThan, DateTime broadcastTimeLessThan,
                                                           Optional<Id> maybeRegionId, ChannelGroupResolver cgResolver) {
+        if (broadcastTimeGreaterThan != null && broadcastTimeLessThan != null) {
+            checkArgument(
+                    !broadcastTimeGreaterThan.isAfter(broadcastTimeLessThan),
+                    "Invalid range in actionableFilterParameters, broadcast.time.gt cannot be "
+                            + "after broadcast.time.lt"
+            );
+        }
 
         RangeFilterBuilder startTimeFilter = FilterBuilders.rangeFilter(
                 EsContent.BROADCASTS + "." + EsBroadcast.TRANSMISSION_TIME
         );
-        if (broadcastTimeGreaterThan != null) {
-            startTimeFilter.gte(broadcastTimeGreaterThan.toString());
-        }
         RangeFilterBuilder endTimeFilter = FilterBuilders.rangeFilter(
                 EsContent.BROADCASTS + "." + EsBroadcast.TRANSMISSION_END_TIME
         );
-        if (broadcastTimeLessThan != null) {
-            endTimeFilter.lte(broadcastTimeLessThan.toString());
+
+        // Query for broadcast times that are at least partially contained between
+        // broadcastTimeGreaterThan and broadcastTimeLessThan
+        if (broadcastTimeGreaterThan != null) {
+            endTimeFilter.gte(broadcastTimeGreaterThan.toString());
         }
+        if (broadcastTimeLessThan != null) {
+            startTimeFilter.lte(broadcastTimeLessThan.toString());
+        }
+
         AndFilterBuilder rangeFilter = FilterBuilders.andFilter(startTimeFilter, endTimeFilter);
+
         if (maybeRegionId.isPresent()) {
             FilterBuilder regionFilter = buildRegionFilter(maybeRegionId.get(), cgResolver);
             NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
