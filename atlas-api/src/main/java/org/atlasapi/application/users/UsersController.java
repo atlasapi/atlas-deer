@@ -170,8 +170,7 @@ public class UsersController {
             Optional<User> user = userStore.userForId(userId);
             if (user.isPresent()) {
                 UserRef userRef = user.get().getUserRef();
-                Credentials credentialsMaybe = credentialsStore.find(userRef).requireValue();
-                Credentials credentials = credentialsMaybe;
+                Credentials credentials = credentialsStore.find(userRef).requireValue();
                 credentialsStore.expired(credentials.authToken());
             } else {
                 throw new NotFoundException(userId);
