@@ -116,8 +116,8 @@ public class FiltersBuilder {
         if (broadcastTimeGreaterThan != null && broadcastTimeLessThan != null) {
             checkArgument(
                     !broadcastTimeGreaterThan.isAfter(broadcastTimeLessThan),
-                    "Invalid range, broadcastTimeGreaterThan cannot be after broadcastTimeLessThan "
-                            + "in ES broadcast range filter"
+                    "Invalid range in actionableFilterParameters, broadcast.time.gt cannot be "
+                            + "after broadcast.time.lt"
             );
         }
 
