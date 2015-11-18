@@ -104,7 +104,9 @@ public class AtlasPersistenceModule {
     private final String cassandraClientThreads = Configurer.get("cassandra.clientThreads").get();
     private final Integer cassandraConnectionsPerHostLocal = Configurer.get("cassandra.connectionsPerHost.local").toInt();
     private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
- 
+    private final Integer cassandraTimeoutConnection = Configurer.get("cassandra.datastax.timeouts.connections", "20000").toInt();
+    private final Integer cassandraTimeoutRead = Configurer.get("cassandra.datastax.timeouts.read", "20000").toInt();
+
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final int port = Ints.saturatedCast(Configurer.get("elasticsearch.port").toLong());
     private final boolean ssl = Configurer.get("elasticsearch.ssl").toBoolean();
@@ -150,9 +152,7 @@ public class AtlasPersistenceModule {
 
     private DatastaxCassandraService getCassandraService(Iterable<String> nodes,
                                                          Integer connectionsPerHostLocal, Integer connectionsPerHostRemote) {
-
-        // replicate the default behaviour of DatastaxCassandraService::DatastaxCassandraService
-        return getCassandraService(nodes, connectionsPerHostLocal, connectionsPerHostRemote, 20000, 20000);
+        return getCassandraService(nodes, connectionsPerHostLocal, connectionsPerHostRemote, cassandraTimeoutConnection, cassandraTimeoutRead);
     }
 
     @Bean
