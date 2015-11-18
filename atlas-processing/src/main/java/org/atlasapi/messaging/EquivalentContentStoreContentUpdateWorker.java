@@ -20,7 +20,8 @@ import com.metabroadcast.common.queue.Worker;
 
 public class EquivalentContentStoreContentUpdateWorker implements Worker<ResourceUpdatedMessage> {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger LOG =
+            LoggerFactory.getLogger(EquivalentContentStoreContentUpdateWorker.class);
 
     private final ContentResolver contentResolver;
 
@@ -39,6 +40,9 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
+        LOG.debug("Processing message on id {}, message: {}",
+                message.getUpdatedResource().getId(), message);
+
         try {
             Timer.Context timer = messageTimer.time();
             ListenableFuture<Resolved<Content>> contentFuture = contentResolver.resolveIds(

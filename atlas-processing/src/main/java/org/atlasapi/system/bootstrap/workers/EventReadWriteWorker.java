@@ -22,7 +22,7 @@ import com.metabroadcast.common.queue.Worker;
 
 public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger LOG = LoggerFactory.getLogger(EventReadWriteWorker.class);
 
     private final EventResolver resolver;
     private final EventWriter writer;
@@ -35,6 +35,9 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
     @Override
     public void process(ResourceUpdatedMessage message)
             throws RecoverableException {
+        LOG.debug("Processing message on id {}, message: {}",
+                message.getUpdatedResource().getId(), message);
+
         ImmutableList<Id> ids = ImmutableList.of(message.getUpdatedResource().getId());
         process(ids);
     }
@@ -49,7 +52,7 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
                     try {
                         writer.write(event);
                     } catch (WriteException e) {
-                        log.warn("Failed to write event " + event.getId());
+                        LOG.warn("Failed to write event " + event.getId());
                     }
                 }
             }
