@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
@@ -46,7 +47,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -107,7 +107,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         RegularStatement statement = select().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, QueryBuilder.bindMarker()))
+                .where(eq(SET_ID_KEY, bindMarker()))
                 .orderBy(asc(CONTENT_ID_KEY));
         statement.setFetchSize(Integer.MAX_VALUE);
 
@@ -115,23 +115,23 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         this.rowDelete = session.prepare(delete()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, QueryBuilder.bindMarker("setId")))
-                .and(eq(CONTENT_ID_KEY, QueryBuilder.bindMarker("contentId"))));
+                .where(eq(SET_ID_KEY, bindMarker("setId")))
+                .and(eq(CONTENT_ID_KEY, bindMarker("contentId"))));
 
         statement = delete().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(in(SET_ID_KEY, QueryBuilder.bindMarker()));
+                .where(in(SET_ID_KEY, bindMarker()));
         statement.setConsistencyLevel(writeConsistency);
         this.setsDelete = session.prepare(statement);
 
         this.dataRowUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, QueryBuilder.bindMarker("setId")))
-                .and(eq(CONTENT_ID_KEY, QueryBuilder.bindMarker("contentId")))
-                .with(set(DATA_KEY, QueryBuilder.bindMarker("data"))));
+                .where(eq(SET_ID_KEY, bindMarker("setId")))
+                .and(eq(CONTENT_ID_KEY, bindMarker("contentId")))
+                .with(set(DATA_KEY, bindMarker("data"))));
 
         this.equivSetSelect = session.prepare(select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY)
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, QueryBuilder.bindMarker())));
+                .where(eq(SET_ID_KEY, bindMarker())));
         this.equivSetSelect.setConsistencyLevel(readConsistency);
     }
 

@@ -37,7 +37,7 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
-public abstract class TestCassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
+public class TestCassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     
@@ -90,9 +90,8 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         context.start();
         tearDown();
         Session session = cassandraService.getCluster().connect();
-        session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
-        createTables(session, context);
-        
+        CassandraInit.createTables(session, context);
+
         CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(
                 messageSenderFactory, context, cassandraService, keyspace, idGeneratorBuilder(),
                 content -> UUID.randomUUID().toString(), event -> UUID.randomUUID().toString(),
@@ -100,13 +99,11 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         persistenceModule.startAsync().awaitRunning();
         return persistenceModule;
     }
-    
-    protected abstract void createTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException;
 
     public void tearDown() {
         try {
             Session session = cassandraService.getCluster().connect();
-            session.execute("DROP KEYSPACE " + keyspace);
+            CassandraInit.nukeIt(session);
         } catch (InvalidQueryException iqe){
             log.warn("failed to drop " + keyspace);
         }
@@ -117,7 +114,9 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         clearTables(session, context);
     }
 
-    protected abstract void clearTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException;
+    protected void clearTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException {
+        CassandraInit.truncate(session, context);
+    }
 
     private IdGeneratorBuilder idGeneratorBuilder() {
         return new IdGeneratorBuilder() {

@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
@@ -39,11 +38,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.time.DateTimeZones;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
-import com.netflix.astyanax.serializers.LongSerializer;
-import com.netflix.astyanax.serializers.StringSerializer;
 
 
 public class CassandraEquivalentContentStoreRowIT {
@@ -52,29 +46,7 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @BeforeClass
     public static void setup() throws Exception {
-        persistenceModule = new TestCassandraPersistenceModule() {
-            @Override
-            protected void createTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException {
-                 session.execute("CREATE TABLE atlas_testing.equivalence_graph_index (resource_id bigint, graph_id bigint, PRIMARY KEY (resource_id));");
-                 session.execute("CREATE TABLE atlas_testing.equivalence_graph (graph_id bigint, graph blob, PRIMARY KEY (graph_id));");
-                 session.execute("CREATE TABLE atlas_testing.equivalent_content_index (key bigint, value bigint, PRIMARY KEY (key));");
-                 session.execute("CREATE TABLE atlas_testing.equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
-                 CassandraHelper.createColumnFamily(context, "content", LongSerializer.get(), StringSerializer.get());
-                 CassandraHelper.createColumnFamily(context, "content_aliases", StringSerializer.get(), StringSerializer.get(), LongSerializer.get());
-            }
-            
-            @Override
-            protected void clearTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException {
-                ImmutableList<String> tables = ImmutableList.of(
-                     "equivalence_graph_index", "equivalence_graph", 
-                     "equivalent_content_index", "equivalent_content");
-                for (String table : tables) {
-                     session.execute(String.format("TRUNCATE %s", table));
-                }
-                CassandraHelper.clearColumnFamily(context, "content");
-                CassandraHelper.clearColumnFamily(context, "content_aliases");
-            }
-        };
+        persistenceModule = new TestCassandraPersistenceModule();
         persistenceModule.startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
     

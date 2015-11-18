@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
@@ -15,7 +16,6 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.collect.ImmutableSet;
 
 public class DatastaxProtobufContentMarshaller extends ProtobufContentMarshaller<BatchStatement, Iterable<Row>> {
@@ -34,9 +34,9 @@ public class DatastaxProtobufContentMarshaller extends ProtobufContentMarshaller
         this.session = checkNotNull(session);
 
         this.updateStatement = session.prepare(update(TABLE)
-                .where(eq(PRIMARY_KEY_COLUMN, QueryBuilder.bindMarker("key")))
-                .and(eq(CLUSTERING_KEY_COLUMN, QueryBuilder.bindMarker("clustering")))
-                .with(set(VALUE_COLUMN, QueryBuilder.bindMarker("value")))
+                .where(eq(PRIMARY_KEY_COLUMN, bindMarker("key")))
+                .and(eq(CLUSTERING_KEY_COLUMN, bindMarker("clustering")))
+                .with(set(VALUE_COLUMN, bindMarker("value")))
         );
     }
 

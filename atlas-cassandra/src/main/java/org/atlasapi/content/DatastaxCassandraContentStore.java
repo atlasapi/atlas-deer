@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
@@ -34,7 +35,6 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -84,7 +84,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         this.readConsistency = checkNotNull(readConsistency);
 
         RegularStatement statement = select().all().from(CONTENT_TABLE)
-                .where(eq(PRIMARY_KEY_COLUMN, QueryBuilder.bindMarker("key")))
+                .where(eq(PRIMARY_KEY_COLUMN, bindMarker("key")))
                 .and(
                         in(
                                 CLUSTERING_KEY_COLUMN,
@@ -101,7 +101,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                 .from(CONTENT_TABLE)
                 .where(
                         in(
-                                PRIMARY_KEY_COLUMN, QueryBuilder.bindMarker("keys")
+                                PRIMARY_KEY_COLUMN, bindMarker("keys")
                         )
                 );
         statement.setConsistencyLevel(readConsistency);
@@ -109,8 +109,8 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
 
         contentDelete = session.prepare(delete().all()
                 .from(CONTENT_TABLE)
-                .where(eq(PRIMARY_KEY_COLUMN, QueryBuilder.bindMarker("key")))
-                .and(eq(CLUSTERING_KEY_COLUMN, QueryBuilder.bindMarker("clustering"))));
+                .where(eq(PRIMARY_KEY_COLUMN, bindMarker("key")))
+                .and(eq(CLUSTERING_KEY_COLUMN, bindMarker("clustering"))));
     }
 
     @Override
