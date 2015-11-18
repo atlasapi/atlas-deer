@@ -6,6 +6,10 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.*;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.FluentIterable;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.CassandraEquivalentContentStore;
@@ -100,7 +104,9 @@ public class AtlasPersistenceModule {
     private final String cassandraClientThreads = Configurer.get("cassandra.clientThreads").get();
     private final Integer cassandraConnectionsPerHostLocal = Configurer.get("cassandra.connectionsPerHost.local").toInt();
     private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
- 
+    private final Integer cassandraTimeoutConnection = Configurer.get("cassandra.datastax.timeouts.connections", "20000").toInt();
+    private final Integer cassandraTimeoutRead = Configurer.get("cassandra.datastax.timeouts.read", "20000").toInt();
+
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final int port = Ints.saturatedCast(Configurer.get("elasticsearch.port").toLong());
     private final boolean ssl = Configurer.get("elasticsearch.ssl").toBoolean();
@@ -120,6 +126,35 @@ public class AtlasPersistenceModule {
         persistenceModule().startAsync().awaitRunning();
     }
 
+
+    private DatastaxCassandraService getCassandraService(Iterable<String> nodes,
+                                                         Integer connectionsPerHostLocal, Integer connectionsPerHostRemote,
+                                                         Integer connectionTimeoutMs, Integer readTimeoutMs) {
+        // this code is borrowed from DatastaxCassandraService::DatastaxCassandraService
+        // but enhances timeout criteria to improve Atlas performance when cluster is loaded
+        PoolingOptions poolingOptions = new PoolingOptions();
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, Preconditions.checkNotNull(connectionsPerHostLocal));
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, Preconditions.checkNotNull(connectionsPerHostLocal));
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, Preconditions.checkNotNull(connectionsPerHostRemote));
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, Preconditions.checkNotNull(connectionsPerHostRemote));
+
+        Cluster.Builder builder = Cluster.builder()
+                .addContactPoints((String[]) FluentIterable.from(nodes).toArray(String.class))
+                .withCompression(ProtocolOptions.Compression.SNAPPY)
+                .withSocketOptions((new SocketOptions()).setReadTimeoutMillis(readTimeoutMs).setConnectTimeoutMillis(connectionTimeoutMs))
+                .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
+                .withLoadBalancingPolicy(new TokenAwarePolicy(new DCAwareRoundRobinPolicy()))
+                .withPoolingOptions(poolingOptions)
+                .withReconnectionPolicy(new ExponentialReconnectionPolicy(100L, 20000L));
+
+        return new DatastaxCassandraService(builder);
+    }
+
+    private DatastaxCassandraService getCassandraService(Iterable<String> nodes,
+                                                         Integer connectionsPerHostLocal, Integer connectionsPerHostRemote) {
+        return getCassandraService(nodes, connectionsPerHostLocal, connectionsPerHostRemote, cassandraTimeoutConnection, cassandraTimeoutRead);
+    }
+
     @Bean
     public CassandraPersistenceModule persistenceModule() {
         Iterable<String> seeds = Splitter.on(",").split(cassandraSeeds);
@@ -129,7 +164,7 @@ public class AtlasPersistenceModule {
                 health.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
-        DatastaxCassandraService cassandraService = new DatastaxCassandraService(
+        DatastaxCassandraService cassandraService = getCassandraService(
                 seeds,
                 cassandraConnectionsPerHostLocal,
                 cassandraConnectionsPerHostRemote
@@ -147,7 +182,7 @@ public class AtlasPersistenceModule {
                 health.metrics()
         );
     }
-    
+
     @Bean
     public ContentStore contentStore() {
         return persistenceModule().contentStore();
