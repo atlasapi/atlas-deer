@@ -133,10 +133,10 @@ public class AtlasPersistenceModule {
         // this code is borrowed from DatastaxCassandraService::DatastaxCassandraService
         // but enhances timeout criteria to improve Atlas performance when cluster is loaded
         PoolingOptions poolingOptions = new PoolingOptions();
-        poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, ((Integer) Preconditions.checkNotNull(connectionsPerHostLocal)).intValue());
-        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, ((Integer) Preconditions.checkNotNull(connectionsPerHostLocal)).intValue());
-        poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, ((Integer) Preconditions.checkNotNull(connectionsPerHostRemote)).intValue());
-        poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, ((Integer) Preconditions.checkNotNull(connectionsPerHostRemote)).intValue());
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, Preconditions.checkNotNull(connectionsPerHostLocal));
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, Preconditions.checkNotNull(connectionsPerHostLocal));
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, Preconditions.checkNotNull(connectionsPerHostRemote));
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, Preconditions.checkNotNull(connectionsPerHostRemote));
 
         Cluster.Builder builder = Cluster.builder()
                 .addContactPoints((String[]) FluentIterable.from(nodes).toArray(String.class))
