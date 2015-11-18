@@ -6,6 +6,10 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.*;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.FluentIterable;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.CassandraEquivalentContentStore;
@@ -120,6 +124,37 @@ public class AtlasPersistenceModule {
         persistenceModule().startAsync().awaitRunning();
     }
 
+
+    private DatastaxCassandraService getCassandraService(Iterable<String> nodes,
+                                                         Integer connectionsPerHostLocal, Integer connectionsPerHostRemote,
+                                                         Integer connectionTimeoutMs, Integer readTimeoutMs) {
+        // this code is borrowed from DatastaxCassandraService::DatastaxCassandraService
+        // but enhances timeout criteria to improve Atlas performance when cluster is loaded
+        PoolingOptions poolingOptions = new PoolingOptions();
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, ((Integer) Preconditions.checkNotNull(connectionsPerHostLocal)).intValue());
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, ((Integer) Preconditions.checkNotNull(connectionsPerHostLocal)).intValue());
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, ((Integer) Preconditions.checkNotNull(connectionsPerHostRemote)).intValue());
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, ((Integer) Preconditions.checkNotNull(connectionsPerHostRemote)).intValue());
+
+        Cluster.Builder builder = Cluster.builder()
+                .addContactPoints((String[]) FluentIterable.from(nodes).toArray(String.class))
+                .withCompression(ProtocolOptions.Compression.SNAPPY)
+                .withSocketOptions((new SocketOptions()).setReadTimeoutMillis(readTimeoutMs).setConnectTimeoutMillis(connectionTimeoutMs))
+                .withRetryPolicy(new LoggingRetryPolicy(DefaultRetryPolicy.INSTANCE))
+                .withLoadBalancingPolicy(new TokenAwarePolicy(new DCAwareRoundRobinPolicy()))
+                .withPoolingOptions(poolingOptions)
+                .withReconnectionPolicy(new ExponentialReconnectionPolicy(100L, 20000L));
+
+        return new DatastaxCassandraService(builder);
+    }
+
+    private DatastaxCassandraService getCassandraService(Iterable<String> nodes,
+                                                         Integer connectionsPerHostLocal, Integer connectionsPerHostRemote) {
+
+        // replicate the default behaviour of DatastaxCassandraService::DatastaxCassandraService
+        return getCassandraService(nodes, connectionsPerHostLocal, connectionsPerHostRemote, 20000, 20000);
+    }
+
     @Bean
     public CassandraPersistenceModule persistenceModule() {
         Iterable<String> seeds = Splitter.on(",").split(cassandraSeeds);
@@ -129,7 +164,7 @@ public class AtlasPersistenceModule {
                 health.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
-        DatastaxCassandraService cassandraService = new DatastaxCassandraService(
+        DatastaxCassandraService cassandraService = getCassandraService(
                 seeds,
                 cassandraConnectionsPerHostLocal,
                 cassandraConnectionsPerHostRemote
@@ -147,7 +182,7 @@ public class AtlasPersistenceModule {
                 health.metrics()
         );
     }
-    
+
     @Bean
     public ContentStore contentStore() {
         return persistenceModule().contentStore();
