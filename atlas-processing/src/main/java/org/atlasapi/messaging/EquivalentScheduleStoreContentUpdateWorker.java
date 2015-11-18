@@ -11,6 +11,8 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.util.ImmutableCollectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -20,10 +22,12 @@ import com.metabroadcast.common.queue.Worker;
 
 public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<EquivalentContentUpdatedMessage> {
 
+    private static final Logger LOG =
+            LoggerFactory.getLogger(EquivalentScheduleStoreContentUpdateWorker.class);
+
     private final EquivalentContentStore contentStore;
     private final EquivalentScheduleWriter scheduleWriter;
     private final Timer messageTimer;
-
 
     public EquivalentScheduleStoreContentUpdateWorker(
             EquivalentContentStore contentStore,
@@ -37,6 +41,9 @@ public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<Equiv
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
+        LOG.debug("Processing message on id {}, message: {}",
+                message.getEquivalentSetId(), message);
+
         Set<Content> content = Futures.get(
                 contentStore.resolveEquivalentSet(message.getEquivalentSetId()),
                 RecoverableException.class

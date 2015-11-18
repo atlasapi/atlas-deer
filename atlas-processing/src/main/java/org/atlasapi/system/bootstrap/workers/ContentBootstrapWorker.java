@@ -1,11 +1,9 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.queue.Worker;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.concurrent.ExecutionException;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
@@ -16,13 +14,16 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutionException;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.queue.Worker;
 
 public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
-    private final Logger log = LoggerFactory.getLogger(ContentBootstrapWorker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ContentBootstrapWorker.class);
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
@@ -36,18 +37,20 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
     @Override
     public void process(ResourceUpdatedMessage message) {
+        Id contentId = message.getUpdatedResource().getId();
+        LOG.debug("Processing message on id {}, message: {}", contentId, message);
+
         try {
             Timer.Context time = messagesTimer.time();
-            Id contentId = message.getUpdatedResource().getId();
             Resolved<Content> content = Futures.get(
                     contentResolver.resolveIds(ImmutableList.of(contentId)),
                     ExecutionException.class
             );
             WriteResult<Content, Content> result = writer.writeContent(content.getResources().first().get());
-            log.debug("Bootstrapped content {}", result.toString());
+            LOG.debug("Bootstrapped content {}", result.toString());
             time.stop();
         } catch (Exception e) {
-            log.error("Failed to bootstrap content {} - {} {}", message.getUpdatedResource(), e, Throwables.getStackTraceAsString(e));
+            LOG.error("Failed to bootstrap content {} - {} {}", message.getUpdatedResource(), e, Throwables.getStackTraceAsString(e));
         }
     }
 }
