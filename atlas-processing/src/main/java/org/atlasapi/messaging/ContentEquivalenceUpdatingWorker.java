@@ -4,17 +4,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
 
+import com.codahale.metrics.Meter;
+import com.metabroadcast.common.queue.RecoverableException;
+
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+
 
 public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAssertionMessage> {
 
@@ -44,6 +47,11 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                 message);
 
         try {
+            if (LOG.isTraceEnabled()) {
+                for (ResourceRef resourceRef : message.getAssertedAdjacents()) {
+                    LOG.trace("Subject: {} Adjacent: {}" + message.getSubject().getId().toString(), resourceRef.toString());
+                }
+            }
             if (messageTimer != null) {
                 Timer.Context timer = messageTimer.time();
                 graphStore.updateEquivalences(message.getSubject(), message.getAssertedAdjacents(),
