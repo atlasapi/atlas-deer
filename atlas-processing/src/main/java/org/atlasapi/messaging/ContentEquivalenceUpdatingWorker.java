@@ -49,7 +49,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         try {
             if (LOG.isTraceEnabled()) {
                 for (ResourceRef resourceRef : message.getAssertedAdjacents()) {
-                    LOG.trace("Subject: {} Adjacent: {}" + message.getSubject().getId().toString(), resourceRef.toString());
+                    LOG.trace("Subject: {} Adjacent: {}", message.getSubject().getId().toString(), resourceRef.toString());
                 }
             }
             if (messageTimer != null) {
