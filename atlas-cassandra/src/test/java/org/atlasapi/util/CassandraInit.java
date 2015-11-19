@@ -60,7 +60,9 @@ public class CassandraInit {
         session.execute("CREATE TABLE equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
         session.execute("CREATE TABLE equivalent_schedule (source text, channel bigint, day timestamp, broadcast_id text, broadcast_start timestamp, broadcast blob, graph blob, content_count bigint, content blob, schedule_update timestamp, equiv_update timestamp, PRIMARY KEY ((source, channel, day), broadcast_id)) ");
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_event.schema")));
+        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_schedule_v2.schema")));
 
+        CassandraHelper.createColumnFamily(context, "schedule", StringSerializer.get(), StringSerializer.get());
         CassandraHelper.createColumnFamily(context, "event_aliases", StringSerializer.get(), StringSerializer.get());
         CassandraHelper.createColumnFamily(context, "content", LongSerializer.get(), StringSerializer .get());
         CassandraHelper.createColumnFamily(context, "content_aliases", StringSerializer.get(), StringSerializer.get(), LongSerializer.get());
