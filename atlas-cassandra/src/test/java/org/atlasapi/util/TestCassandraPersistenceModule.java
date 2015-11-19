@@ -1,5 +1,6 @@
 package org.atlasapi.util;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import org.atlasapi.CassandraPersistenceModule;
@@ -22,6 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.metabroadcast.common.ids.IdGenerator;
@@ -77,7 +79,11 @@ public class TestCassandraPersistenceModule extends AbstractIdleService implemen
     
     @Override
     protected void startUp() throws ConnectionException {
-        persistenceModule = persistenceModule();
+        try {
+            persistenceModule = persistenceModule();
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
     
     @Override
@@ -85,7 +91,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService implemen
         tearDown();
     }
 
-    private CassandraPersistenceModule persistenceModule() throws ConnectionException {
+    private CassandraPersistenceModule persistenceModule() throws ConnectionException, IOException {
         cassandraService.startAsync().awaitRunning();
         context.start();
         tearDown();

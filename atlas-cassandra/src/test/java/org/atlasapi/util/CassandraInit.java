@@ -1,5 +1,8 @@
 package org.atlasapi.util;
 
+import java.io.IOException;
+
+import org.apache.commons.io.IOUtils;
 import org.atlasapi.entity.CassandraHelper;
 
 import com.datastax.driver.core.Session;
@@ -12,7 +15,7 @@ import com.netflix.astyanax.serializers.StringSerializer;
 
 public class CassandraInit {
     public static void createTables(Session session, AstyanaxContext<Keyspace> context)
-            throws ConnectionException {
+            throws ConnectionException, IOException {
         session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
 
         session.execute("USE atlas_testing");
@@ -56,7 +59,9 @@ public class CassandraInit {
         session.execute("CREATE TABLE equivalent_content_index (key bigint, value bigint, PRIMARY KEY (key));");
         session.execute("CREATE TABLE equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
         session.execute("CREATE TABLE equivalent_schedule (source text, channel bigint, day timestamp, broadcast_id text, broadcast_start timestamp, broadcast blob, graph blob, content_count bigint, content blob, schedule_update timestamp, equiv_update timestamp, PRIMARY KEY ((source, channel, day), broadcast_id)) ");
+        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_event.schema")));
 
+        CassandraHelper.createColumnFamily(context, "event_aliases", StringSerializer.get(), StringSerializer.get());
         CassandraHelper.createColumnFamily(context, "content", LongSerializer.get(), StringSerializer .get());
         CassandraHelper.createColumnFamily(context, "content_aliases", StringSerializer.get(), StringSerializer.get(), LongSerializer.get());
     }
@@ -69,12 +74,13 @@ public class CassandraInit {
             throws ConnectionException {
         ImmutableList<String> tables = ImmutableList.of(
                 "equivalence_graph_index", "equivalence_graph", "segments", "segments_aliases",
-                "equivalent_content_index", "equivalent_content", "equivalent_schedule");
+                "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event");
         for (String table : tables) {
             session.execute(String.format("TRUNCATE %s", table));
         }
 
         CassandraHelper.clearColumnFamily(context, "content");
         CassandraHelper.clearColumnFamily(context, "content_aliases");
+        CassandraHelper.clearColumnFamily(context, "event_aliases");
     }
 }

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.Set;
 
 import org.atlasapi.ConfiguredAstyanaxContext;
@@ -59,7 +60,7 @@ public class CassandraEquivalenceGraphStoreIT {
     private static AstyanaxContext<Keyspace> context;
 
     @BeforeClass
-    public static void setUp() throws ConnectionException {
+    public static void setUp() throws ConnectionException, IOException {
         bbcItem.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         paItem.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         itvItem.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
