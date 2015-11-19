@@ -100,6 +100,8 @@ public class AtlasPersistenceModule {
     private final String cassandraClientThreads = Configurer.get("cassandra.clientThreads").get();
     private final Integer cassandraConnectionsPerHostLocal = Configurer.get("cassandra.connectionsPerHost.local").toInt();
     private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
+    private final Integer cassandraDatastaxConnectionTimeout = Configurer.get("cassandra.datastax.timeouts.connections").toInt();
+    private final Integer cassandraDatastaxReadTimeout = Configurer.get("cassandra.datastax.timeouts.read").toInt();
  
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final int port = Ints.saturatedCast(Configurer.get("elasticsearch.port").toLong());
@@ -129,11 +131,15 @@ public class AtlasPersistenceModule {
                 health.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
-        DatastaxCassandraService cassandraService = new DatastaxCassandraService(
-                seeds,
-                cassandraConnectionsPerHostLocal,
-                cassandraConnectionsPerHostRemote
-        );
+
+        DatastaxCassandraService cassandraService = DatastaxCassandraService.builder()
+                .withNodes(seeds)
+                .withConnectionsPerHostLocal(cassandraConnectionsPerHostLocal)
+                .withConnectionsPerHostRemote(cassandraConnectionsPerHostRemote)
+                .withConnectTimeoutMillis(cassandraDatastaxConnectionTimeout)
+                .withReadTimeoutMillis(cassandraDatastaxReadTimeout)
+                .build();
+
         cassandraService.startAsync().awaitRunning();
         return new CassandraPersistenceModule(
                 messaging.messageSenderFactory(),
