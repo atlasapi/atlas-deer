@@ -1,4 +1,4 @@
-package org.atlasapi.event;
+package org.atlasapi.organisation;
 
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.entity.Person;
@@ -6,7 +6,6 @@ import org.atlasapi.entity.Person;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 public class Organisation extends ContentGroup {
 

@@ -30,7 +30,7 @@ public class LegacyOrganisationTransformerTest {
     public void testTransformation() throws Exception {
         Organisation input = getOrganisation();
 
-        org.atlasapi.event.Organisation organisation = transformer.apply(input);
+        org.atlasapi.organisation.Organisation organisation = transformer.apply(input);
 
         checkOrganisation(organisation, input);
     }
@@ -53,7 +53,7 @@ public class LegacyOrganisationTransformerTest {
         return organisation;
     }
 
-    private void checkOrganisation(org.atlasapi.event.Organisation organisation, Organisation input) {
+    private void checkOrganisation(org.atlasapi.organisation.Organisation organisation, Organisation input) {
         assertThat(organisation.getTitle(), is(input.getTitle()));
         assertThat(organisation.getType(), is(org.atlasapi.content.ContentGroup.Type.ORGANISATION));
         checkContent(organisation, input);
@@ -61,7 +61,7 @@ public class LegacyOrganisationTransformerTest {
         assertThat(organisation.members().get(0).getId().longValue(), is(input.members().get(0).getId()));
     }
 
-    private void checkContent(org.atlasapi.event.Organisation organisation, Organisation input) {
+    private void checkContent(org.atlasapi.organisation.Organisation organisation, Organisation input) {
         ContentRef content = organisation.getContents().get(0);
         ChildRef inputContent = input.getContents().get(0);
 

@@ -6,7 +6,7 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.media.entity.Organisation;
 
 public class LegacyOrganisationTransformer extends DescribedLegacyResourceTransformer<
-        Organisation, org.atlasapi.event.Organisation> {
+        Organisation, org.atlasapi.organisation.Organisation> {
 
     private final LegacyPersonTransformer legacyPersonTransformer;
 
@@ -15,8 +15,8 @@ public class LegacyOrganisationTransformer extends DescribedLegacyResourceTransf
     }
 
     @Override
-    protected org.atlasapi.event.Organisation createDescribed(Organisation input) {
-        org.atlasapi.event.Organisation organisation = new org.atlasapi.event.Organisation();
+    protected org.atlasapi.organisation.Organisation createDescribed(Organisation input) {
+        org.atlasapi.organisation.Organisation organisation = new org.atlasapi.organisation.Organisation();
 
         LegacyContentGroupTransformer.transformInto(organisation, input);
 

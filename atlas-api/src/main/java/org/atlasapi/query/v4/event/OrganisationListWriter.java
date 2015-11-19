@@ -3,7 +3,7 @@ package org.atlasapi.query.v4.event;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.entity.Person;
-import org.atlasapi.event.Organisation;
+import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;

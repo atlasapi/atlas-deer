@@ -7,6 +7,7 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.organisation.Organisation;
 import org.atlasapi.topic.Topic;
 import org.joda.time.DateTime;
 

@@ -3,7 +3,7 @@ package org.atlasapi.output.annotation;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Person;
 import org.atlasapi.event.Event;
-import org.atlasapi.event.Organisation;
+import org.atlasapi.organisation.Organisation;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
