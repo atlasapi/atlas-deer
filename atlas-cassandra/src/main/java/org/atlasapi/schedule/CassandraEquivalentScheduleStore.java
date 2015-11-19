@@ -1,6 +1,6 @@
 package org.atlasapi.schedule;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.channel.Channel;
@@ -48,8 +49,9 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.RegularStatement;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -57,7 +59,6 @@ import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.QueryExecutionException;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Update.Assignments;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -77,56 +78,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private static final Logger log = LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
     private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
-
-    @Override
-    public void updateContent(Iterable<Item> content) throws WriteException {
-        ByteBuffer serializedContent = serialize(content);
-        int contentCount = Iterables.size(content);
-        ImmutableList.Builder<RegularStatement> statments = ImmutableList.builder();
-        for (Item item : content) {
-            Publisher src = item.getSource();
-            ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport.stream(
-                    item.getBroadcasts().spliterator(), false)
-                    .filter(b -> Broadcast.ACTIVELY_PUBLISHED.apply(b))
-                    .collect(ImmutableCollectors.toList());
-            for (Broadcast broadcast : activelyPublishedBroadcasts) {
-                statments.addAll(contentUpdateStatements(src, broadcast, serializedContent, contentCount));
-            }
-        }
-        try {
-            session.execute(
-                    batch(
-                            Iterables.toArray(statments.build(), RegularStatement.class)
-                    ).setConsistencyLevel(write)
-            );
-        } catch(NoHostAvailableException | QueryExecutionException e) {
-            throw new WriteException(e);
-        }
-    }
-
-
-
-    private Iterable<RegularStatement> contentUpdateStatements(
-            Publisher src,
-            Broadcast broadcast,
-            ByteBuffer serializedContent,
-            int contentCount
-    ) {
-        ImmutableList.Builder<RegularStatement> statements = ImmutableList.builder();
-        for (Date day : daysIn(broadcast.getTransmissionInterval())) {
-            statements.add(
-                    update(EQUIVALENT_SCHEDULE_TABLE)
-                            .where(eq(SOURCE.name(), src.key()))
-                            .and(eq(CHANNEL.name(), broadcast.getChannelId().longValue()))
-                            .and(eq(DAY.name(), day))
-                            .and(eq(BROADCAST_ID.name(), broadcast.getSourceId()))
-                            .with(set(CONTENT_COUNT.name(), contentCount))
-                            .and(set(CONTENT.name(), serializedContent))
-            );
-        }
-
-        return statements.build();
-    }
 
     private final class ToEquivalentSchedule implements Function<List<ResultSet>, EquivalentSchedule> {
 
@@ -236,11 +187,18 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
     private final Clock clock;
-    
+
     private final ContentSerializer contentSerializer;
     private final EquivalenceGraphSerializer graphSerializer = new EquivalenceGraphSerializer();
     private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
-    
+
+    private final PreparedStatement scheduleSelect;
+    private final PreparedStatement broadcastDelete;
+    private final PreparedStatement contentUpdate;
+    private final PreparedStatement broadcastEquivUpdate;
+    private final PreparedStatement broadcastScheduleUpdate;
+    private final PreparedStatement broadcastSelect;
+
     public CassandraEquivalentScheduleStore(EquivalenceGraphStore graphStore,
             ContentResolver contentStore, Session session, ConsistencyLevel read,
             ConsistencyLevel write, Clock clock) {
@@ -250,6 +208,105 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         this.read = checkNotNull(read);
         this.write = checkNotNull(write);
         this.clock = checkNotNull(clock);
+
+        this.broadcastSelect = session.prepare(
+                select(CHANNEL.name(), SOURCE.name(), DAY.name(), BROADCAST_ID.name(), BROADCAST.name())
+                        .from(EQUIVALENT_SCHEDULE_TABLE)
+                        .where(eq(SOURCE.name(), bindMarker("source")))
+                        .and(eq(CHANNEL.name(), bindMarker("channel")))
+                        .and(eq(DAY.name(), bindMarker("day"))));
+
+        this.scheduleSelect = session.prepare(select().all()
+                .from(EQUIVALENT_SCHEDULE_TABLE)
+                .where(eq(SOURCE.name(), bindMarker("source")))
+                .and(eq(CHANNEL.name(), bindMarker("channel")))
+                .and(in(DAY.name(), bindMarker("days"))));
+
+        this.broadcastDelete = session.prepare(
+                QueryBuilder.delete().all().from(EQUIVALENT_SCHEDULE_TABLE)
+                        .where(eq(SOURCE.name(), bindMarker("source")))
+                        .and(eq(CHANNEL.name(), bindMarker("channel")))
+                        .and(eq(DAY.name(), bindMarker("day")))
+                        .and(eq(BROADCAST_ID.name(), bindMarker("broadcast"))));
+
+        this.contentUpdate = session.prepare(update(EQUIVALENT_SCHEDULE_TABLE)
+                .where(eq(SOURCE.name(), bindMarker("source")))
+                .and(eq(CHANNEL.name(), bindMarker("channel")))
+                .and(eq(DAY.name(), bindMarker("day")))
+                .and(eq(BROADCAST_ID.name(), bindMarker("broadcast")))
+                .with(set(CONTENT_COUNT.name(), bindMarker("contentCount")))
+                .and(set(CONTENT.name(), bindMarker("data"))));
+
+        this.broadcastEquivUpdate = session.prepare(update(EQUIVALENT_SCHEDULE_TABLE)
+                .where(eq(SOURCE.name(), bindMarker("source")))
+                .and(eq(CHANNEL.name(), bindMarker("channel")))
+                .and(eq(DAY.name(), bindMarker("day")))
+                .and(eq(BROADCAST_ID.name(), bindMarker("broadcast")))
+                .with(set(BROADCAST.name(), bindMarker("broadcastData")))
+                .and(set(BROADCAST_START.name(), bindMarker("broadcastStartData")))
+                .and(set(GRAPH.name(), bindMarker("graphData")))
+                .and(set(CONTENT_COUNT.name(), bindMarker("contentCountData")))
+                .and(set(CONTENT.name(), bindMarker("contentData")))
+                .and(set(EQUIV_UPDATE.name(), bindMarker("now"))));
+
+        this.broadcastScheduleUpdate = session.prepare(update(EQUIVALENT_SCHEDULE_TABLE)
+                .where(eq(SOURCE.name(), bindMarker("source")))
+                .and(eq(CHANNEL.name(), bindMarker("channel")))
+                .and(eq(DAY.name(), bindMarker("day")))
+                .and(eq(BROADCAST_ID.name(), bindMarker("broadcast")))
+                .with(set(BROADCAST.name(), bindMarker("broadcastData")))
+                .and(set(BROADCAST_START.name(), bindMarker("broadcastStartData")))
+                .and(set(GRAPH.name(), bindMarker("graphData")))
+                .and(set(CONTENT_COUNT.name(), bindMarker("contentCountData")))
+                .and(set(CONTENT.name(), bindMarker("contentData")))
+                .and(set(SCHEDULE_UPDATE.name(), bindMarker("now"))));
+    }
+
+    @Override
+    public void updateContent(Iterable<Item> content) throws WriteException {
+        ByteBuffer serializedContent = serialize(content);
+        int contentCount = Iterables.size(content);
+        ImmutableList.Builder<Statement> statements = ImmutableList.builder();
+        for (Item item : content) {
+            Publisher src = item.getSource();
+            ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport.stream(
+                    item.getBroadcasts().spliterator(), false)
+                    .filter(b -> Broadcast.ACTIVELY_PUBLISHED.apply(b))
+                    .collect(ImmutableCollectors.toList());
+            for (Broadcast broadcast : activelyPublishedBroadcasts) {
+                statements.addAll(contentUpdateStatements(src, broadcast, serializedContent, contentCount));
+            }
+        }
+        try {
+            BatchStatement batchStatement = new BatchStatement();
+            batchStatement.addAll(statements.build());
+            batchStatement.setConsistencyLevel(write);
+            session.execute(batchStatement);
+        } catch(NoHostAvailableException | QueryExecutionException e) {
+            throw new WriteException(e);
+        }
+    }
+
+    private Iterable<Statement> contentUpdateStatements(
+            Publisher src,
+            Broadcast broadcast,
+            ByteBuffer serializedContent,
+            int contentCount
+    ) {
+        ImmutableList.Builder<Statement> statements = ImmutableList.builder();
+        for (Date day : daysIn(broadcast.getTransmissionInterval())) {
+            statements.add(
+                    contentUpdate.bind()
+                        .setString("source", src.key())
+                        .setLong("channel", broadcast.getChannelId().longValue())
+                        .setDate("day", day)
+                        .setString("broadcast", broadcast.getSourceId())
+                        .setInt("contentCount", contentCount)
+                        .setBytes("data", serializedContent)
+            );
+        }
+
+        return statements.build();
     }
 
     @Override
@@ -261,7 +318,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     ) {
         final Set<Channel> chans = ImmutableSet.copyOf(channels);
         List<Statement> selects = selectStatements(source, channels, interval);
-        ListenableFuture<List<ResultSet>> results = Futures.allAsList(Lists.transform(selects, 
+        ListenableFuture<List<ResultSet>> results = Futures.allAsList(Lists.transform(selects,
             new Function<Statement, ListenableFuture<ResultSet>>(){
                 @Override
                 public ListenableFuture<ResultSet> apply(Statement input) {
@@ -294,24 +351,20 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private List<Statement> selectStatements(Publisher src, Iterable<Channel> channels, Interval interval) {
         ImmutableList.Builder<Statement> selects = ImmutableList.builder();
-        Object[] days = daysIn(interval); 
+        List<Date> days = daysIn(interval);
         for (Channel channel : channels) {
-            selects.add(QueryBuilder.select().all()
-                .from(EQUIVALENT_SCHEDULE_TABLE)
-                .where(eq(SOURCE.name(), src.key()))
-                    .and(eq(CHANNEL.name(), channel.getId().longValue()))
-                    .and(in(DAY.name(), days)));
+            selects.add(scheduleSelect.bind()
+                    .setString("source", src.key())
+                    .setLong("channel", channel.getId().longValue())
+                    .setList("days", days));
         }
         return selects.build();
     }
 
-    private Date[] daysIn(Interval interval) {
-        return Iterables.toArray(
-                Iterables.transform(
-                        new ScheduleIntervalDates(interval),
-                        LocalDate::toDate
-                ),
-                Date.class);
+    private List<Date> daysIn(Interval interval) {
+        return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
+                .map(LocalDate::toDate)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -321,7 +374,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule().getScheduleEntries()
                 .stream()
-                .map(scheduleRef -> scheduleRef.getBroadcast())
+                .map(ScheduleRef.Entry::getBroadcast)
                 .collect(ImmutableCollectors.toSet());
 
         Set<String> updateBroadcastIds = updateBroadcastRefs
@@ -339,7 +392,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .filter(broadcastRef -> !updateBroadcastIds.contains(broadcastRef.getSourceId()))
                 .collect(ImmutableCollectors.toSet());
 
-        List<RegularStatement> deletes = deleteStatements(
+        List<Statement> deletes = deleteStatements(
                 update.getSource(),
                 Sets.union(staleBroadcasts, update.getStaleBroadcasts()),
                 update.getSchedule().getInterval()
@@ -354,7 +407,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 updateLog(update.getStaleBroadcasts()),
                 updateLog(staleBroadcasts)
         );
-        List<RegularStatement> updates = updateStatements(update.getSource(),
+        List<Statement> updates = updateStatements(update.getSource(),
                 update.getSchedule(),
                 content,
                 now);
@@ -362,7 +415,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             return;
         }
 
-        Statement updateBatch = batch(Iterables.toArray(Iterables.concat(updates, deletes), RegularStatement.class));
+        BatchStatement updateBatch = new BatchStatement();
+        updateBatch.addAll(Iterables.concat(updates, deletes));
+
         try {
             session.execute(updateBatch.setConsistencyLevel(write));
             log.info(
@@ -395,9 +450,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return update.toString();
     }
 
-    private List<RegularStatement> updateStatements(Publisher source, ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)
+    private List<Statement> updateStatements(Publisher source, ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)
             throws WriteException {
-        ImmutableList.Builder<RegularStatement> stmts = ImmutableList.builder();
+        ImmutableList.Builder<Statement> stmts = ImmutableList.builder();
         for (ScheduleRef.Entry entry : scheduleRef.getScheduleEntries()) {
             EquivalentScheduleEntry entryItems = content.get(entry);
             if (entryItems != null) {
@@ -410,7 +465,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
     
     private void statementsForEntry(
-            ImmutableList.Builder<RegularStatement> stmts,
+            ImmutableList.Builder<Statement> stmts,
             Publisher source,
             ScheduleRef.Entry entry,
             EquivalentScheduleEntry content,
@@ -428,12 +483,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
     }
 
-    private RegularStatement updateStatement(Publisher source, Date day, ScheduleRef.Entry entry,
+    private Statement updateStatement(Publisher source, Date day, ScheduleRef.Entry entry,
             int contentCount, ByteBuffer content, ByteBuffer graph, ByteBuffer broadcast, DateTime now) {
         Date broadcastStart = entry.getBroadcast().getTransmissionInterval().getStart().toDate();
-        return updateStatement(source, entry.getBroadcast().getChannelId(),
-            day, entry.getBroadcast().getSourceId(), broadcastStart, broadcast, graph, contentCount, content
-        ).and(set(SCHEDULE_UPDATE.name(), now.toDate()));
+        return scheduleUpdateStatement(source, entry.getBroadcast().getChannelId(),
+            day, entry.getBroadcast().getSourceId(), broadcastStart, broadcast, graph, contentCount, content, now
+        );
     }
 
     private ByteBuffer serialize(Iterable<Item> resources) throws WriteException {
@@ -461,8 +516,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
      * @param interval
      * @return
      */
-    private List<RegularStatement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts, Interval interval) {
-        ImmutableList.Builder<RegularStatement> stmts = ImmutableList.builder();
+    private List<Statement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts, Interval interval) {
+        ImmutableList.Builder<Statement> stmts = ImmutableList.builder();
         for (BroadcastRef ref : staleBroadcasts) {
             for (Date day : daysIn(interval)) {
                 stmts.add(delete(ref, src, day));
@@ -471,12 +526,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return stmts.build();
     }
 
-    private RegularStatement delete(BroadcastRef ref, Publisher src, Date date) {
-        return QueryBuilder.delete().all().from(EQUIVALENT_SCHEDULE_TABLE)
-                .where(eq(SOURCE.name(), src.key()))
-                .and(eq(CHANNEL.name(), ref.getChannelId().longValue()))
-                .and(eq(DAY.name(), date))
-                .and(eq(BROADCAST_ID.name(), ref.getSourceId()));
+    private Statement delete(BroadcastRef ref, Publisher src, Date date) {
+        return broadcastDelete.bind()
+                .setString("source", src.key())
+                .setLong("channel", ref.getChannelId().longValue())
+                .setDate("day", date)
+                .setString("broadcast", ref.getSourceId());
     }
 
     @Override
@@ -486,49 +541,61 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             EquivalenceGraph graph,
             ImmutableSet<Item> content
     ) throws WriteException {
-        DateTime now = clock.now();
 
         Date bcastStart = bcast.getTransmissionTime().toDate();
         ByteBuffer bcastBytes = serialize(bcast);
         ByteBuffer graphBytes = graphSerializer.serialize(graph);
         ByteBuffer contentBytes = serialize(content);
         
-        ImmutableList.Builder<RegularStatement> stmts = ImmutableList.builder();
+        ImmutableList.Builder<Statement> stmts = ImmutableList.builder();
         for (Date day : daysIn(bcast.getTransmissionInterval())) {
-            stmts.add(updateStatement(publisher, bcast.getChannelId(), day,
-                    bcast.getSourceId(), bcastStart, bcastBytes, graphBytes, content.size(), contentBytes)
-                    .and(set(EQUIV_UPDATE.name(), now.toDate())));
+            stmts.add(equivUpdateStatement(publisher, bcast.getChannelId(), day,
+                    bcast.getSourceId(), bcastStart, bcastBytes, graphBytes, content.size(), contentBytes));
         }
-        for (RegularStatement statement : stmts.build()) {
+        for (Statement statement : stmts.build()) {
             session.execute(statement.setConsistencyLevel(write));
         }
     }
 
-    private Assignments updateStatement(Publisher publisher, Id channelId, Date day, String bcastId,
+    private Statement equivUpdateStatement(Publisher publisher, Id channelId, Date day, String bcastId,
             Date bcastStart, ByteBuffer bcastBytes, ByteBuffer graphBytes, int contentCount, ByteBuffer contentBytes) {
-        return update(EQUIVALENT_SCHEDULE_TABLE)
-            .where(eq(SOURCE.name(), publisher.key()))
-                .and(eq(CHANNEL.name(), channelId.longValue()))
-                .and(eq(DAY.name(), day))
-                .and(eq(BROADCAST_ID.name(), bcastId))
-            .with(set(BROADCAST.name(), bcastBytes))
-                .and(set(BROADCAST_START.name(), bcastStart))
-                .and(set(GRAPH.name(), graphBytes))
-                .and(set(CONTENT_COUNT.name(), contentCount))
-                .and(set(CONTENT.name(), contentBytes));
+        return broadcastEquivUpdate.bind()
+                .setString("source", publisher.key())
+                .setLong("channel", channelId.longValue())
+                .setDate("day", day)
+                .setString("broadcast", bcastId)
+                .setBytes("broadcastData", bcastBytes)
+                .setDate("broadcastStartData", bcastStart)
+                .setBytes("graphData", graphBytes)
+                .setInt("contentCountData", contentCount)
+                .setBytes("contentData", contentBytes)
+                .setDate("now", clock.now().toDate());
+    }
+
+    private Statement scheduleUpdateStatement(Publisher publisher, Id channelId, Date day, String bcastId,
+            Date bcastStart, ByteBuffer bcastBytes, ByteBuffer graphBytes, int contentCount,
+            ByteBuffer contentBytes, DateTime now) {
+        return broadcastScheduleUpdate.bind()
+                .setString("source", publisher.key())
+                .setLong("channel", channelId.longValue())
+                .setDate("day", day)
+                .setString("broadcast", bcastId)
+                .setBytes("broadcastData", bcastBytes)
+                .setDate("broadcastStartData", bcastStart)
+                .setBytes("graphData", graphBytes)
+                .setInt("contentCountData", contentCount)
+                .setBytes("contentData", contentBytes)
+                .setDate("now", now.toDate());
     }
 
     private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId, Interval interval) throws WriteException {
         ImmutableList.Builder<ListenableFuture<ResultSet>> broadcastFutures = ImmutableList.builder();
         for (Date day : daysIn(interval)) {
             broadcastFutures.add(session.executeAsync(
-                            select(CHANNEL.name(), SOURCE.name(), DAY.name(), BROADCAST_ID.name(), BROADCAST.name())
-                                    .from(EQUIVALENT_SCHEDULE_TABLE)
-                                    .where(eq(SOURCE.name(), publisher.key()))
-                                    .and(eq(CHANNEL.name(), channelId.longValue()))
-                                    .and(eq(DAY.name(), day))
-                    )
-            );
+                    broadcastSelect.bind()
+                            .setString("source", publisher.key())
+                            .setLong("channel", channelId.longValue())
+                            .setDate("day", day)));
         }
         ImmutableList<Row> rows = Futures.get(
                 Futures.allAsList(
@@ -555,8 +622,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             try {
                 Broadcast broadcast  = broadcastSerializer.deserialize(
                         ContentProtos.Broadcast.parseFrom(
-                                ByteString.copyFrom(BROADCAST.valueFrom(row)
-                                )
+                                ByteString.copyFrom(BROADCAST.valueFrom(row))
                         )
                 );
                 if (broadcast.getTransmissionInterval().overlaps(interval)) {
