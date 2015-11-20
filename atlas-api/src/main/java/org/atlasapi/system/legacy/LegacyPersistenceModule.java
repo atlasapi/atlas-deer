@@ -36,8 +36,10 @@ import com.mongodb.ReadPreference;
 @Import(AtlasPersistenceModule.class)
 public class LegacyPersistenceModule {
 
+    public static final String MONGO_COLLECTION_LOOKUP = "lookup";
+
     @Autowired
-    AtlasPersistenceModule persistence;
+    private AtlasPersistenceModule persistence;
 
     @Bean
     @Qualifier("legacy")
@@ -54,9 +56,14 @@ public class LegacyPersistenceModule {
     @Qualifier("legacy")
     public ContentListerResourceListerAdapter legacyContentLister() {
         DatabasedMongo mongoDb = persistence.databasedReadMongo();
-        LegacyMongoContentLister contentLister =
-                new LegacyMongoContentLister(persistence.databasedReadMongo(), new MongoContentResolver(mongoDb, legacyEquivalenceStore()
-        ));
+        LegacyContentLister contentLister = new LegacyLookupResolvingContentLister(
+                new MongoLookupEntryStore(
+                        mongoDb.collection(MONGO_COLLECTION_LOOKUP),
+                        new NoLoggingPersistenceAuditLog(),
+                        ReadPreference.primary()
+                ),
+                new MongoContentResolver(mongoDb, legacyEquivalenceStore())
+        );
         return new ContentListerResourceListerAdapter(
                 contentLister,
                 new LegacyContentTransformer(
