@@ -39,6 +39,7 @@ import org.joda.time.Interval;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -88,6 +89,7 @@ public abstract class CassandraScheduleStoreIT {
     private final Publisher source = Publisher.METABROADCAST;
     private final Channel channel = Channel.builder(Publisher.BBC).build();
 
+    @BeforeClass
     public static void setup() throws ConnectionException, IOException {
         context.start();
         cassandraService = new DatastaxCassandraService(seeds, 8, 2);

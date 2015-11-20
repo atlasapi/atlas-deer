@@ -78,12 +78,12 @@ public class DatastaxCassandraEventStoreIT {
     public static void init() throws Exception {
         // Thrift init
         context.start();
-        cleanUp();
 
         // CQL init
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
         cassandraService.startAsync().awaitRunning();
         session = cassandraService.getCluster().connect(keyspace);
+        cleanUp();
         CassandraInit.createTables(session, context);
     }
 
