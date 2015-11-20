@@ -57,7 +57,8 @@ import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
 
 public final class AstyanaxCassandraContentStore extends AbstractContentStore {
-    
+
+    private static final int RESOLVE_TIMEOUT = 10;
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     public static final Builder builder(AstyanaxContext<Keyspace> context, 
@@ -194,7 +195,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 return ImmutableOptionalMap.of();
             }
             // TODO: move timeout to config
-            Map<Long, ColumnList<String>> resolved = resolveLongs(ids).get(10, TimeUnit.SECONDS);
+            Map<Long, ColumnList<String>> resolved = resolveLongs(ids).get(RESOLVE_TIMEOUT, TimeUnit.SECONDS);
             Iterable<Content> contents = resolved.entrySet()
                     .stream()
                     .map(rowToContent::apply)
