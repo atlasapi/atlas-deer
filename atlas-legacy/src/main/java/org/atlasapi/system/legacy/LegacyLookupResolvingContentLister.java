@@ -38,9 +38,7 @@ public class LegacyLookupResolvingContentLister implements LegacyContentLister {
     }
 
     private Iterator<Content> iteratorsFor(ContentListingCriteria criteria) {
-        Iterable<LookupEntry> entries = lookupEntryStore.entriesForPublishers(
-                criteria, false
-        );
+        Iterable<LookupEntry> entries = lookupEntryStore.allEntriesForPublishers(criteria);
 
         return FluentIterable.from(entries)
                 .transform(this::resolveLookup)

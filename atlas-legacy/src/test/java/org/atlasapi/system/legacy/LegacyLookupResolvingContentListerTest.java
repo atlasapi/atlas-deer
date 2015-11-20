@@ -59,7 +59,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Test
     public void testListContent() throws Exception {
-        when(lookupEntryStore.entriesForPublishers(criteria, false))
+        when(lookupEntryStore.allEntriesForPublishers(criteria))
                 .thenReturn(ImmutableList.of(itemEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(itemEntry.lookupRef())))
                 .thenReturn(
@@ -76,7 +76,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Test
     public void testListContentFiltersNonContent() throws Exception {
-        when(lookupEntryStore.entriesForPublishers(criteria, false))
+        when(lookupEntryStore.allEntriesForPublishers(criteria))
                 .thenReturn(ImmutableList.of(personEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(personEntry.lookupRef())))
                 .thenReturn(
@@ -92,7 +92,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Test
     public void testListContentFiltersNonResolvingLookupEntries() throws Exception {
-        when(lookupEntryStore.entriesForPublishers(criteria, false))
+        when(lookupEntryStore.allEntriesForPublishers(criteria))
                 .thenReturn(ImmutableList.of(itemEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(itemEntry.lookupRef())))
                 .thenReturn(ResolvedContent.builder().build());
