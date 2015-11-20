@@ -15,8 +15,6 @@ import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
 import com.metabroadcast.common.base.Maybe;
 
 public class LegacyLookupResolvingContentLister implements LegacyContentLister {
@@ -33,9 +31,6 @@ public class LegacyLookupResolvingContentLister implements LegacyContentLister {
     @Override
     public Iterator<Content> listContent(Iterable<Publisher> publishers,
             ContentListingProgress progress) {
-        if (Iterables.isEmpty(publishers)) {
-            return Iterators.emptyIterator();
-        }
         return iteratorsFor(publishers, progress);
     }
 
