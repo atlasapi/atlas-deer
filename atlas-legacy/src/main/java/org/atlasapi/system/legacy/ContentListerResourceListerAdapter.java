@@ -1,35 +1,31 @@
 package org.atlasapi.system.legacy;
 
-import java.util.Iterator;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Function;
+import java.util.Iterator;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.ContentCategory;
-import org.atlasapi.persistence.content.listing.ContentLister;
 import org.atlasapi.persistence.content.listing.ContentListingCriteria;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.source.Sources;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public class ContentListerResourceListerAdapter implements ResourceLister<Content> {
 
     private static final Logger log = LoggerFactory.getLogger(ContentListerResourceListerAdapter.class);
-    private final LegacyMongoContentLister contentLister;
+    private final LegacyContentLister contentLister;
     private final LegacyContentTransformer transformer;
 
     public ContentListerResourceListerAdapter(
-            LegacyMongoContentLister contentLister,
+            LegacyContentLister contentLister,
             LegacyContentTransformer transformer
     ) {
         this.contentLister = checkNotNull(contentLister);
