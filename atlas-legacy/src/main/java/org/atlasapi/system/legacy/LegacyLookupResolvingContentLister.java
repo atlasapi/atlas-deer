@@ -3,15 +3,12 @@ package org.atlasapi.system.legacy;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Identified;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.ResolvedContent;
 import org.atlasapi.persistence.content.listing.ContentListingCriteria;
-import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
@@ -31,23 +28,18 @@ public class LegacyLookupResolvingContentLister implements LegacyContentLister {
         this.contentResolver = checkNotNull(contentResolver);
     }
 
-    /**
-     * This implementation ignores content categories in ContentListingCriteria and only uses
-     * Publishers and ContentListingProgress
-     */
     @Override
     public Iterator<Content> listContent(ContentListingCriteria criteria) {
         if (criteria.getPublishers().isEmpty()) {
             return Iterators.emptyIterator();
         }
 
-        return iteratorsFor(criteria.getPublishers(), criteria.getProgress());
+        return iteratorsFor(criteria);
     }
 
-    private Iterator<Content> iteratorsFor(List<Publisher> publishers,
-            ContentListingProgress progress) {
+    private Iterator<Content> iteratorsFor(ContentListingCriteria criteria) {
         Iterable<LookupEntry> entries = lookupEntryStore.entriesForPublishers(
-                publishers, progress, false
+                criteria, false
         );
 
         return FluentIterable.from(entries)

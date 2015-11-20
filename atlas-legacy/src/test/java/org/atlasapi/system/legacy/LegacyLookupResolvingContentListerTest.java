@@ -14,7 +14,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.ResolvedContent;
 import org.atlasapi.persistence.content.listing.ContentListingCriteria;
-import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 import org.junit.Before;
@@ -31,7 +30,7 @@ public class LegacyLookupResolvingContentListerTest {
     private @Mock LookupEntryStore lookupEntryStore;
     private @Mock KnownTypeContentResolver contentResolver;
 
-    private Publisher publisher;
+    private ContentListingCriteria criteria;
 
     private Item item;
     private Person person;
@@ -45,7 +44,11 @@ public class LegacyLookupResolvingContentListerTest {
     public void setUp() throws Exception {
         contentLister = new LegacyLookupResolvingContentLister(lookupEntryStore,  contentResolver);
 
-        publisher = Publisher.BBC;
+        Publisher publisher = Publisher.BBC;
+
+        criteria = ContentListingCriteria.defaultCriteria()
+                .forPublisher(Publisher.BBC)
+                .build();
 
         item = new Item("uriA", "uriA", publisher);
         person = new Person("uriB", "uriB", publisher);
@@ -56,9 +59,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Test
     public void testListContent() throws Exception {
-        when(lookupEntryStore.entriesForPublishers(
-                ImmutableList.of(publisher), ContentListingProgress.START, false
-        ))
+        when(lookupEntryStore.entriesForPublishers(criteria, false))
                 .thenReturn(ImmutableList.of(itemEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(itemEntry.lookupRef())))
                 .thenReturn(
@@ -67,11 +68,7 @@ public class LegacyLookupResolvingContentListerTest {
                                 .build()
                 );
 
-        Iterator<Content> content = contentLister.listContent(
-                ContentListingCriteria.defaultCriteria()
-                        .forPublisher(publisher)
-                        .build()
-        );
+        Iterator<Content> content = contentLister.listContent(criteria);
 
         assertThat(content.hasNext(), is(true));
         assertThat(content.next(), sameInstance(item));
@@ -79,9 +76,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Test
     public void testListContentFiltersNonContent() throws Exception {
-        when(lookupEntryStore.entriesForPublishers(
-                ImmutableList.of(publisher), ContentListingProgress.START, false
-        ))
+        when(lookupEntryStore.entriesForPublishers(criteria, false))
                 .thenReturn(ImmutableList.of(personEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(personEntry.lookupRef())))
                 .thenReturn(
@@ -90,29 +85,19 @@ public class LegacyLookupResolvingContentListerTest {
                                 .build()
                 );
 
-        Iterator<Content> content = contentLister.listContent(
-                ContentListingCriteria.defaultCriteria()
-                        .forPublisher(publisher)
-                        .build()
-        );
+        Iterator<Content> content = contentLister.listContent(criteria);
 
         assertThat(content.hasNext(), is(false));
     }
 
     @Test
     public void testListContentFiltersNonResolvingLookupEntries() throws Exception {
-        when(lookupEntryStore.entriesForPublishers(
-                ImmutableList.of(publisher), ContentListingProgress.START, false
-        ))
+        when(lookupEntryStore.entriesForPublishers(criteria, false))
                 .thenReturn(ImmutableList.of(itemEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(itemEntry.lookupRef())))
                 .thenReturn(ResolvedContent.builder().build());
 
-        Iterator<Content> content = contentLister.listContent(
-                ContentListingCriteria.defaultCriteria()
-                        .forPublisher(publisher)
-                        .build()
-        );
+        Iterator<Content> content = contentLister.listContent(criteria);
 
         assertThat(content.hasNext(), is(false));
     }
