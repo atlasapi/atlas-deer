@@ -89,11 +89,11 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         }
     }
 
-    @Override public void write(Organisation event) {
-        byte[] serializedOrganisation = serializer.serialize(event).toByteArray();
+    @Override public void write(Organisation organisation) {
+        byte[] serializedOrganisation = serializer.serialize(organisation).toByteArray();
         PreparedStatement statement = session.prepare(
                 update(ORGANISATION_TABLE).
-                        where(eq(PRIMARY_KEY_COLUMN, event.getId().longValue())).
+                        where(eq(PRIMARY_KEY_COLUMN, organisation.getId().longValue())).
                         with(set(DATA_COLUMN, serializedOrganisation)));
         session.execute(statement.setConsistencyLevel(writeConsistency).bind());
     }
