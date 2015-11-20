@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.CassandraHelper;
@@ -20,6 +19,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.util.CassandraInit;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -45,8 +45,6 @@ import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
-import com.netflix.astyanax.serializers.StringSerializer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DatastaxCassandraEventStoreIT {
@@ -81,27 +79,17 @@ public class DatastaxCassandraEventStoreIT {
         // Thrift init
         context.start();
         cleanUp();
-        CassandraHelper.createKeyspace(context);
-        CassandraHelper.createColumnFamily(
-                context, EVENT_ALIASES_TABLE, StringSerializer.get(), StringSerializer.get()
-        );
 
         // CQL init
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
         cassandraService.startAsync().awaitRunning();
         session = cassandraService.getCluster().connect(keyspace);
-
-        session.execute(IOUtils.toString(DatastaxCassandraEventStoreIT.class
-                .getResourceAsStream("/atlas_event.schema")));
+        CassandraInit.createTables(session, context);
     }
 
     @AfterClass
     public static void cleanUp() throws Exception {
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) {
-            // Nothing to do
-        }
+        CassandraInit.nukeIt(session);
     }
 
     @Before

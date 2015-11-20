@@ -18,11 +18,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.ImmutableSet;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
-import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.Item;
@@ -34,31 +33,31 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.util.CassandraInit;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
+import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.ids.SequenceGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.TimeMachine;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.model.ConsistencyLevel;
 
@@ -66,9 +65,12 @@ public abstract class CassandraScheduleStoreIT {
 
     protected static final String CONTENT_CF_NAME = "content";
     protected static final String CONTENT_ALIASES_CF_NAME = "content_aliases";
+    protected static final AstyanaxContext<Keyspace> context = CassandraHelper.testCassandraContext();
+    protected static Session session;
 
-    protected static final AstyanaxContext<Keyspace> context =
-            CassandraHelper.testCassandraContext();
+    private static final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
+    private static final String keyspace = "atlas_testing";
+    private static DatastaxCassandraService cassandraService;
 
     //hasher is mock till we have a non-Mongo based one.
     @Mock protected ContentHasher hasher;
@@ -88,14 +90,16 @@ public abstract class CassandraScheduleStoreIT {
 
     public static void setup() throws ConnectionException, IOException {
         context.start();
-        tearDown();
+        cassandraService = new DatastaxCassandraService(seeds, 8, 2);
+        cassandraService.startAsync().awaitRunning();
+        session = cassandraService.getCluster().connect(keyspace);
+
+        CassandraInit.createTables(session, context);
     }
 
     @AfterClass
     public static void tearDown() throws ConnectionException {
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) { }
+        CassandraInit.nukeIt(session);
     }
     
     @Before

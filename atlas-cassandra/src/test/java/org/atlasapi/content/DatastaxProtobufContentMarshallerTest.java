@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.hamcrest.Matchers.is;
@@ -16,10 +15,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Batch;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.netflix.astyanax.AstyanaxContext;
@@ -32,10 +31,10 @@ public class DatastaxProtobufContentMarshallerTest {
 
     private final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
     private final String keyspace = "atlas_testing";
-    private final ContentMarshaller<Batch, Iterable<Row>> marshaller = new DatastaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver())));
     private final AstyanaxContext<Keyspace> context
             = new ConfiguredAstyanaxContext("Atlas", keyspace, seeds, 9160, 5, 60).get();
     private final DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
+    private ContentMarshaller<BatchStatement, Iterable<Row>> marshaller;
     private Session session;
 
 
@@ -46,10 +45,11 @@ public class DatastaxProtobufContentMarshallerTest {
         session = cassandraService.getCluster().connect();
         session.execute("DROP KEYSPACE IF EXISTS atlas_testing");
         session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
-        session = cassandraService.getCluster().connect("atlas_testing");
-
+        session = cassandraService.getCluster().connect(keyspace);
 
         CassandraHelper.createColumnFamily(context, "content", LongSerializer.get(), StringSerializer.get());
+
+        marshaller = new DatastaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver())), session);
     }
 
     @After
@@ -72,7 +72,7 @@ public class DatastaxProtobufContentMarshallerTest {
         content.setFirstSeen(DateTime.now(DateTimeZone.UTC).minusHours(1));
         content.setLastUpdated(DateTime.now(DateTimeZone.UTC));
 
-        Batch batch = batch();
+        BatchStatement batch = new BatchStatement();
         marshaller.marshallInto(content.getId(), batch, content, true);
 
         session.execute(batch);

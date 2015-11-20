@@ -1,5 +1,6 @@
 package org.atlasapi.event;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -20,13 +21,12 @@ import org.atlasapi.media.entity.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Batch;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
@@ -49,30 +49,28 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
     private final ConsistencyLevel readConsistency;
     private final DatastaxProtobufEventMarshaller marshaller;
 
+    private final PreparedStatement idsSelect;
+
     protected DatastaxCassandraEventStore(AliasIndex<Event> aliasIndex, Session session,
             ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency) {
         this.aliasIndex = checkNotNull(aliasIndex);
         this.session = checkNotNull(session);
         this.writeConsistency = checkNotNull(writeConsistency);
         this.readConsistency = checkNotNull(readConsistency);
-        this.marshaller = new DatastaxProtobufEventMarshaller(new EventSerializer());
+        this.marshaller = new DatastaxProtobufEventMarshaller(new EventSerializer(), session);
+
+        this.idsSelect = session.prepare(select().all()
+                .from(EVENT_TABLE)
+                .where(in(PRIMARY_KEY_COLUMN, bindMarker())));
+        this.idsSelect.setConsistencyLevel(readConsistency);
     }
 
     @Override
     public ListenableFuture<Resolved<Event>> resolveIds(Iterable<Id> ids) {
-        Select.Where select = select().all()
-                .from(EVENT_TABLE)
-                .where(
-                        in(
-                                PRIMARY_KEY_COLUMN,
-                                StreamSupport.stream(ids.spliterator(), false)
-                                        .map(Id::longValue)
-                                        .collect(Collectors.toList())
-                        )
-                );
-
-        select.setConsistencyLevel(readConsistency);
-        ResultSetFuture result = session.executeAsync(select);
+        ResultSetFuture result = session.executeAsync(idsSelect.bind(
+                StreamSupport.stream(ids.spliterator(), false)
+                    .map(Id::longValue)
+                    .collect(Collectors.toList())));
 
         return Futures.transform(
                 result,
@@ -119,7 +117,7 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
     @Override
     public void write(Event event, Event previous) {
         try {
-            Batch batch = QueryBuilder.batch();
+            BatchStatement batch = new BatchStatement();
             batch.setConsistencyLevel(writeConsistency);
             marshaller.marshallInto(event.getId(), batch, event);
             aliasIndex.mutateAliasesAndExecute(event, previous);

@@ -1,5 +1,6 @@
 package org.atlasapi.event;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
@@ -10,23 +11,29 @@ import java.nio.ByteBuffer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Serializer;
 
+import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Row;
-import com.datastax.driver.core.querybuilder.Batch;
+import com.datastax.driver.core.Session;
 
-public class DatastaxProtobufEventMarshaller implements EventMarshaller<Batch, Row> {
+public class DatastaxProtobufEventMarshaller implements EventMarshaller<BatchStatement, Row> {
 
     private static final String TABLE = "event";
     private static final String PRIMARY_KEY_COLUMN = "event_id";
     private static final String DATA_COLUMN = "data";
 
     private final Serializer<Event, byte[]> serializer;
+    private final PreparedStatement dataUpdate;
 
-    protected DatastaxProtobufEventMarshaller(Serializer<Event, byte[]> serialiser) {
+    protected DatastaxProtobufEventMarshaller(Serializer<Event, byte[]> serialiser, Session session) {
         this.serializer = checkNotNull(serialiser);
+        this.dataUpdate = session.prepare(update(TABLE)
+                .where(eq(PRIMARY_KEY_COLUMN, bindMarker("id")))
+                .with(set(DATA_COLUMN, bindMarker("data"))));
     }
 
     @Override
-    public void marshallInto(Id id, Batch mutation, Event event) {
+    public void marshallInto(Id id, BatchStatement mutation, Event event) {
         byte[] serialized = serializer.serialize(event);
         addDataToBatch(mutation, id, serialized);
     }
@@ -36,12 +43,9 @@ public class DatastaxProtobufEventMarshaller implements EventMarshaller<Batch, R
         return serializer.deserialize(toByteArrayValues(data));
     }
 
-    protected void addDataToBatch(Batch mutation, Id id, byte[] data) {
-        mutation.add(
-                update(TABLE)
-                        .where(eq(PRIMARY_KEY_COLUMN, id.longValue()))
-                        .with(set(DATA_COLUMN, ByteBuffer.wrap(data)))
-        );
+    protected void addDataToBatch(BatchStatement mutation, Id id, byte[] data) {
+        mutation.add(dataUpdate.bind().setLong("id", id.longValue()).setBytes("data",
+                ByteBuffer.wrap(data)));
     }
 
     protected byte[] toByteArrayValues(Row row) {

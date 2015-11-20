@@ -1,5 +1,6 @@
 package org.atlasapi.util;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import org.atlasapi.CassandraPersistenceModule;
@@ -22,6 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.metabroadcast.common.ids.IdGenerator;
@@ -37,7 +39,7 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
-public abstract class TestCassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
+public class TestCassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     
@@ -77,7 +79,11 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
     
     @Override
     protected void startUp() throws ConnectionException {
-        persistenceModule = persistenceModule();
+        try {
+            persistenceModule = persistenceModule();
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
     
     @Override
@@ -85,14 +91,13 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         tearDown();
     }
 
-    private CassandraPersistenceModule persistenceModule() throws ConnectionException {
+    private CassandraPersistenceModule persistenceModule() throws ConnectionException, IOException {
         cassandraService.startAsync().awaitRunning();
         context.start();
         tearDown();
         Session session = cassandraService.getCluster().connect();
-        session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
-        createTables(session, context);
-        
+        CassandraInit.createTables(session, context);
+
         CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(
                 messageSenderFactory, context, cassandraService, keyspace, idGeneratorBuilder(),
                 content -> UUID.randomUUID().toString(), event -> UUID.randomUUID().toString(),
@@ -100,13 +105,11 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         persistenceModule.startAsync().awaitRunning();
         return persistenceModule;
     }
-    
-    protected abstract void createTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException;
 
     public void tearDown() {
         try {
             Session session = cassandraService.getCluster().connect();
-            session.execute("DROP KEYSPACE " + keyspace);
+            CassandraInit.nukeIt(session);
         } catch (InvalidQueryException iqe){
             log.warn("failed to drop " + keyspace);
         }
@@ -117,7 +120,9 @@ public abstract class TestCassandraPersistenceModule extends AbstractIdleService
         clearTables(session, context);
     }
 
-    protected abstract void clearTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException;
+    protected void clearTables(Session session, AstyanaxContext<Keyspace> context) throws ConnectionException {
+        CassandraInit.truncate(session, context);
+    }
 
     private IdGeneratorBuilder idGeneratorBuilder() {
         return new IdGeneratorBuilder() {
