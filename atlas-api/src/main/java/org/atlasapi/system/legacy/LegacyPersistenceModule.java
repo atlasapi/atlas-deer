@@ -60,7 +60,7 @@ public class LegacyPersistenceModule {
                 new MongoLookupEntryStore(
                         mongoDb.collection(MONGO_COLLECTION_LOOKUP),
                         new NoLoggingPersistenceAuditLog(),
-                        ReadPreference.primary()
+                        ReadPreference.secondary()
                 ),
                 new MongoContentResolver(mongoDb, legacyEquivalenceStore())
         );
