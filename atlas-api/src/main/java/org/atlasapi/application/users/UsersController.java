@@ -166,6 +166,7 @@ public class UsersController {
             if (!editingUser.is(Role.ADMIN)) {
                 throw new ResourceForbiddenException();
             }
+
             Id userId = Id.valueOf(idCodec.decode(uid));
             Optional<User> user = userStore.userForId(userId);
             if (user.isPresent()) {
@@ -179,7 +180,7 @@ public class UsersController {
             log.error("Request exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
-            }
+        }
     }
     
     private boolean isUserRoleChanged(User posted, User existing) {
