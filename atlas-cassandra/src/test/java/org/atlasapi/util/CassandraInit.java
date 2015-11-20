@@ -5,7 +5,9 @@ import java.io.IOException;
 import org.apache.commons.io.IOUtils;
 import org.atlasapi.entity.CassandraHelper;
 
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
 import com.google.common.collect.ImmutableList;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
@@ -61,6 +63,7 @@ public class CassandraInit {
         session.execute("CREATE TABLE equivalent_schedule (source text, channel bigint, day timestamp, broadcast_id text, broadcast_start timestamp, broadcast blob, graph blob, content_count bigint, content blob, schedule_update timestamp, equiv_update timestamp, PRIMARY KEY ((source, channel, day), broadcast_id)) ");
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_event.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_schedule_v2.schema")));
+        session.execute("CREATE INDEX inverse_equivalent_content_index ON equivalent_content_index(value);");
 
         CassandraHelper.createColumnFamily(context, "schedule", StringSerializer.get(), StringSerializer.get());
         CassandraHelper.createColumnFamily(context, "event_aliases", StringSerializer.get(), StringSerializer.get());
@@ -75,14 +78,13 @@ public class CassandraInit {
     public static void truncate(Session session, AstyanaxContext<Keyspace> context)
             throws ConnectionException {
         ImmutableList<String> tables = ImmutableList.of(
-                "equivalence_graph_index", "equivalence_graph", "segments", "segments_aliases",
+                "content", "content_aliases", "event_aliases", "equivalence_graph_index",
+                "equivalence_graph", "segments", "segments_aliases",
                 "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event");
         for (String table : tables) {
-            session.execute(String.format("TRUNCATE %s", table));
+            session.execute(
+                    new SimpleStatement(String.format("TRUNCATE %s", table))
+                            .setConsistencyLevel(ConsistencyLevel.ALL));
         }
-
-        CassandraHelper.clearColumnFamily(context, "content");
-        CassandraHelper.clearColumnFamily(context, "content_aliases");
-        CassandraHelper.clearColumnFamily(context, "event_aliases");
     }
 }

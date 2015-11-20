@@ -107,10 +107,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         RegularStatement statement = select().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker()))
+                .where(eq(SET_ID_KEY, bindMarker("set_id")))
                 .orderBy(asc(CONTENT_ID_KEY));
         statement.setFetchSize(Integer.MAX_VALUE);
-
+        statement.setConsistencyLevel(read);
         this.setsSelect = session.prepare(statement);
 
         this.rowDelete = session.prepare(delete()
@@ -121,8 +121,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         statement = delete().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(in(SET_ID_KEY, bindMarker()));
-        statement.setConsistencyLevel(writeConsistency);
         this.setsDelete = session.prepare(statement);
+        this.setsDelete.setConsistencyLevel(writeConsistency);
 
         this.dataRowUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker("setId")))
@@ -261,16 +261,15 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries, ConsistencyLevel readConsistency) {
         ImmutableList.Builder<ListenableFuture<ResultSet>> resultSets = ImmutableList.builder();
         for (Statement query : queries) {
-            resultSets.add(session.executeAsync(query.setConsistencyLevel(readConsistency)));
+            resultSets.add(session.executeAsync(query));
         }
-
 
         return Futures.allAsList(resultSets.build());
     }
     
     private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
-                .map(setsSelect::bind)
+                .map(k -> setsSelect.bind().setLong("set_id", k))
                 .collect(ImmutableCollectors.toList());
     }
     
@@ -350,8 +349,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         batchStatement.addAll(graphsAndContent.entries()
                 .stream()
                 .map(entry -> index.insertStatement(
-                        entry.getKey().getId().longValue(),
-                        entry.getValue().getId().longValue()))
+                        entry.getValue().getId().longValue(),
+                        entry.getKey().getId().longValue()))
                 .collect(Collectors.toList()));
 
         session.execute(batchStatement);

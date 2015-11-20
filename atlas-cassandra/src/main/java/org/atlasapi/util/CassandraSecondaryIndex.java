@@ -76,7 +76,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
 
         this.select = session.prepare(select(KEY_KEY, VALUE_KEY)
                 .from(indexTable)
-                .where(in(KEY_KEY, bindMarker())));
+                .where(in(KEY_KEY, bindMarker("keys"))));
 
         this.canonicalToSecondariesSelect = session.prepare(select(KEY_KEY, VALUE_KEY)
                 .from(indexTable)
@@ -107,7 +107,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     }
 
     private Statement queryFor(Iterable<Long> keys, ConsistencyLevel level) {
-        return select.bind(ImmutableList.copyOf(keys)).setConsistencyLevel(level);
+        return select.bind().setList("keys", ImmutableList.copyOf(keys)).setConsistencyLevel(level);
     }
 
     @Override

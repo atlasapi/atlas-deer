@@ -15,6 +15,7 @@ import static org.atlasapi.util.Column.textColumn;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
@@ -583,7 +584,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .setBytes("broadcastData", bcastBytes)
                 .setDate("broadcastStartData", bcastStart)
                 .setBytes("graphData", graphBytes)
-                .setInt("contentCountData", contentCount)
+                .setVarint("contentCountData", BigInteger.valueOf(contentCount))
                 .setBytes("contentData", contentBytes)
                 .setDate("now", now.toDate());
     }

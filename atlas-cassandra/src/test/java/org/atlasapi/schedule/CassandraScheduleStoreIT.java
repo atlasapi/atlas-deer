@@ -94,9 +94,11 @@ public abstract class CassandraScheduleStoreIT {
         context.start();
         cassandraService = new DatastaxCassandraService(seeds, 8, 2);
         cassandraService.startAsync().awaitRunning();
-        session = cassandraService.getCluster().connect(keyspace);
+        session = cassandraService.getCluster().connect();
 
         CassandraInit.createTables(session, context);
+
+        session = cassandraService.getCluster().connect(keyspace);
     }
 
     @AfterClass
@@ -119,9 +121,7 @@ public abstract class CassandraScheduleStoreIT {
 
     @After
     public void clearCf() throws ConnectionException {
-        context.getClient().truncateColumnFamily(provideScheduleCfName());
-        context.getClient().truncateColumnFamily(CONTENT_CF_NAME);
-        context.getClient().truncateColumnFamily(CONTENT_ALIASES_CF_NAME);
+        CassandraInit.truncate(session, context);
     }
 
     @Test

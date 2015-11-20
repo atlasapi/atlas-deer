@@ -127,9 +127,10 @@ public class CassandraEquivalentContentStoreRowIT {
         makeEquivalent(c1, c2);
         makeEquivalent(c2, c1);
 
-        Statement delete = delete().column("data").from("equivalent_content").where(
-                eq("set_id", 1)
-        ).and(eq("content_id", 2));
+        Statement delete = delete().column("data")
+                .from("equivalent_content")
+                .where(eq("set_id", 1))
+                .and(eq("content_id", 2));
 
         Session session = persistenceModule.getCassandraSession();
         session.execute(delete);

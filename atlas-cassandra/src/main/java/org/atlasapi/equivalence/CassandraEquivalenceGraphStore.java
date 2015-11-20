@@ -77,10 +77,12 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         this.indexDelete = session.prepare(
                 delete().all().from(EQUIVALENCE_GRAPH_INDEX_TABLE)
                         .where(eq(RESOURCE_ID_KEY, bindMarker())));
+        this.indexDelete.setConsistencyLevel(write);
 
         this.graphDelete = session.prepare(
                 delete().all().from(EQUIVALENCE_GRAPHS_TABLE)
                         .where(eq(GRAPH_ID_KEY, bindMarker())));
+        this.graphDelete.setConsistencyLevel(write);
 
         this.graphRowsSelect = session.prepare(select().all()
                 .from(EQUIVALENCE_GRAPHS_TABLE)
@@ -95,11 +97,13 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         this.indexInsert = session.prepare(insertInto(EQUIVALENCE_GRAPH_INDEX_TABLE)
                 .value(RESOURCE_ID_KEY, bindMarker("resourceId"))
                 .value(GRAPH_ID_KEY, bindMarker("graphId")));
+        this.indexInsert.setConsistencyLevel(write);
 
         this.graphInsert = session.prepare(
                 insertInto(EQUIVALENCE_GRAPHS_TABLE)
                         .value(GRAPH_ID_KEY, bindMarker("graphId"))
                         .value(GRAPH_KEY, bindMarker("data")));
+        this.graphInsert.setConsistencyLevel(write);
     }
 
     @Override

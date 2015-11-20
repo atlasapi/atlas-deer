@@ -29,7 +29,6 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
@@ -83,7 +82,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         this.writeConsistency = checkNotNull(writeConsistency);
         this.readConsistency = checkNotNull(readConsistency);
 
-        RegularStatement statement = select().all().from(CONTENT_TABLE)
+        this.summarizeSelect = session.prepare(select().all().from(CONTENT_TABLE)
                 .where(eq(PRIMARY_KEY_COLUMN, bindMarker("key")))
                 .and(
                         in(
@@ -93,21 +92,17 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                                 IDENTIFICATION.toString(),
                                 DESCRIPTION.toString()
                         )
-                );
-        statement.setConsistencyLevel(readConsistency);
-        summarizeSelect = session.prepare(statement);
+                ));
+        this.summarizeSelect.setConsistencyLevel(readConsistency);
 
-        statement = select().all()
+        this.idsSelect = session.prepare(select().all()
                 .from(CONTENT_TABLE)
                 .where(
-                        in(
-                                PRIMARY_KEY_COLUMN, bindMarker("keys")
-                        )
-                );
-        statement.setConsistencyLevel(readConsistency);
-        idsSelect = session.prepare(statement);
+                        in(PRIMARY_KEY_COLUMN, bindMarker("keys"))
+                ));
+        this.idsSelect.setConsistencyLevel(readConsistency);
 
-        contentDelete = session.prepare(delete().all()
+        this.contentDelete = session.prepare(delete().all()
                 .from(CONTENT_TABLE)
                 .where(eq(PRIMARY_KEY_COLUMN, bindMarker("key")))
                 .and(eq(CLUSTERING_KEY_COLUMN, bindMarker("clustering"))));
