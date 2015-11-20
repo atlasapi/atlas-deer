@@ -5,20 +5,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.event.Event;
-import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -29,19 +24,16 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DatastaxCassandraOrganisationStoreTest {
+public class DatastaxCassandraOrganizationStoreTest {
     private static final String ORGANISATION_TABLE = "organisation";
 
     private static final AstyanaxContext<Keyspace> context =
@@ -66,7 +58,7 @@ public class DatastaxCassandraOrganisationStoreTest {
         cassandraService.startAsync().awaitRunning();
         session = cassandraService.getCluster().connect(keyspace);
 
-        session.execute(IOUtils.toString(DatastaxCassandraOrganisationStoreTest.class
+        session.execute(IOUtils.toString(DatastaxCassandraOrganizationStoreTest.class
                 .getResourceAsStream("/atlas_organisation.schema")));
     }
 
@@ -95,9 +87,17 @@ public class DatastaxCassandraOrganisationStoreTest {
 
     @Test
     public void testWriteAndReadEvent() throws Exception {
+        Set<String> titles = ImmutableSet.of("title1", "title2");
         Organisation expected = new Organisation();
-        expected.setAlternativeTitles(ImmutableSet.of("title1", "title2"));
+        expected.setAlternativeTitles(titles);
+        expected.setId(Id.valueOf(1));
         store.write(expected);
+        Resolved<Organisation> resolved = store
+                .resolveIds(ImmutableList.of(Id.valueOf(expected.getId().longValue())))
+                .get(1, TimeUnit.SECONDS);
+        Organisation actual = Iterables.getOnlyElement(resolved.getResources());
+        assertThat(actual.getAlternativeTitles(), is(titles));
+        assertThat(actual.getId(), is(Id.valueOf(1)));
     }
 }
 

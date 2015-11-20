@@ -1,5 +1,6 @@
 package org.atlasapi.organisation;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
@@ -19,11 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.driver.core.Statement;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -41,29 +43,36 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private final ConsistencyLevel writeConsistency;
     private final ConsistencyLevel readConsistency;
     private final OrganisationSerializer serializer;
+    private final PreparedStatement rowUpdate;
+    private final PreparedStatement selectStatement;
 
     protected DatastaxCassandraOrganisationStore(Session session,
             ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency) {
         this.session = checkNotNull(session);
-        this.writeConsistency = checkNotNull(writeConsistency);
         this.readConsistency = checkNotNull(readConsistency);
         this.serializer = new OrganisationSerializer();
+        this.writeConsistency = checkNotNull(writeConsistency);
+
+        RegularStatement statement = select().all()
+                .from(ORGANISATION_TABLE)
+                .where(in(PRIMARY_KEY_COLUMN, bindMarker("keys")));
+        statement.setFetchSize(Integer.MAX_VALUE);
+        selectStatement = session.prepare(statement);
+
+        rowUpdate = session.prepare(update(ORGANISATION_TABLE)
+                .where(eq(PRIMARY_KEY_COLUMN, bindMarker("organisationId")))
+                .with(set(DATA_COLUMN, bindMarker("data"))))
+                .setConsistencyLevel(writeConsistency);
     }
 
     @Override
     public ListenableFuture<Resolved<Organisation>> resolveIds(Iterable<Id> ids) {
-        Select.Where select = select().all()
-                .from(ORGANISATION_TABLE)
-                .where(
-                        in(
-                                PRIMARY_KEY_COLUMN,
-                                StreamSupport.stream(ids.spliterator(), false)
-                                        .map(Id::longValue)
-                                        .collect(Collectors.toList())
-                        )
-                );
+        Statement select = selectStatement.bind().setList("keys",
+                StreamSupport.stream(ids.spliterator(), false)
+                        .map(Id::longValue)
+                        .collect(Collectors.toList()))
+                .setConsistencyLevel(readConsistency);
 
-        select.setConsistencyLevel(readConsistency);
         ResultSetFuture result = session.executeAsync(select);
 
         return Futures.transform(
@@ -90,12 +99,11 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     }
 
     @Override public void write(Organisation organisation) {
-        byte[] serializedOrganisation = serializer.serialize(organisation).toByteArray();
-        PreparedStatement statement = session.prepare(
-                update(ORGANISATION_TABLE).
-                        where(eq(PRIMARY_KEY_COLUMN, organisation.getId().longValue())).
-                        with(set(DATA_COLUMN, serializedOrganisation)));
-        session.execute(statement.setConsistencyLevel(writeConsistency).bind());
+        ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation).toByteArray());
+
+        session.execute(rowUpdate.bind()
+                .setLong("organisationId",organisation.getId().longValue())
+                .setBytes("data",serializedOrganisation));
     }
 
     public static SessionStep builder() {
