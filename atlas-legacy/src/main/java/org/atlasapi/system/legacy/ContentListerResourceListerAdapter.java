@@ -7,8 +7,6 @@ import java.util.Iterator;
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.persistence.content.ContentCategory;
-import org.atlasapi.persistence.content.listing.ContentListingCriteria;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.source.Sources;
 import org.slf4j.Logger;
@@ -54,16 +52,8 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
             public Iterator<Content> iterator() {
                 return Iterators.transform(
                         contentLister.listContent(
-                                ContentListingCriteria.defaultCriteria()
-                                        .forPublishers(ImmutableList.copyOf(sources))
-                                        .startingAt(progress)
-                                        .forContent(
-                                                ContentCategory.CONTAINER,
-                                                ContentCategory.PROGRAMME_GROUP,
-                                                ContentCategory.TOP_LEVEL_ITEM,
-                                                ContentCategory.CHILD_ITEM
-                                        )
-                                        .build()
+                                ImmutableList.copyOf(sources),
+                                progress
                         ),
                         input -> {
                             try {

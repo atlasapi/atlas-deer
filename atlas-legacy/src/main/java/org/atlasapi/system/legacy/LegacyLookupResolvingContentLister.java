@@ -6,14 +6,16 @@ import java.util.Iterator;
 
 import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Identified;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.ResolvedContent;
-import org.atlasapi.persistence.content.listing.ContentListingCriteria;
+import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.metabroadcast.common.base.Maybe;
 
@@ -29,16 +31,19 @@ public class LegacyLookupResolvingContentLister implements LegacyContentLister {
     }
 
     @Override
-    public Iterator<Content> listContent(ContentListingCriteria criteria) {
-        if (criteria.getPublishers().isEmpty()) {
+    public Iterator<Content> listContent(Iterable<Publisher> publishers,
+            ContentListingProgress progress) {
+        if (Iterables.isEmpty(publishers)) {
             return Iterators.emptyIterator();
         }
-
-        return iteratorsFor(criteria);
+        return iteratorsFor(publishers, progress);
     }
 
-    private Iterator<Content> iteratorsFor(ContentListingCriteria criteria) {
-        Iterable<LookupEntry> entries = lookupEntryStore.allEntriesForPublishers(criteria);
+    private Iterator<Content> iteratorsFor(Iterable<Publisher> publishers,
+            ContentListingProgress progress) {
+        Iterable<LookupEntry> entries = lookupEntryStore.allEntriesForPublishers(
+                publishers, progress
+        );
 
         return FluentIterable.from(entries)
                 .transform(this::resolveLookup)

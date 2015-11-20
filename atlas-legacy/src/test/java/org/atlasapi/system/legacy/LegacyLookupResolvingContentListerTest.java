@@ -13,7 +13,7 @@ import org.atlasapi.media.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.ResolvedContent;
-import org.atlasapi.persistence.content.listing.ContentListingCriteria;
+import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 import org.junit.Before;
@@ -30,7 +30,8 @@ public class LegacyLookupResolvingContentListerTest {
     private @Mock LookupEntryStore lookupEntryStore;
     private @Mock KnownTypeContentResolver contentResolver;
 
-    private ContentListingCriteria criteria;
+    private Iterable<Publisher> publishers;
+    private ContentListingProgress progress;
 
     private Item item;
     private Person person;
@@ -46,9 +47,8 @@ public class LegacyLookupResolvingContentListerTest {
 
         Publisher publisher = Publisher.BBC;
 
-        criteria = ContentListingCriteria.defaultCriteria()
-                .forPublisher(Publisher.BBC)
-                .build();
+        publishers = ImmutableList.of(publisher);
+        progress = ContentListingProgress.START;
 
         item = new Item("uriA", "uriA", publisher);
         person = new Person("uriB", "uriB", publisher);
@@ -59,7 +59,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Test
     public void testListContent() throws Exception {
-        when(lookupEntryStore.allEntriesForPublishers(criteria))
+        when(lookupEntryStore.allEntriesForPublishers(publishers, progress))
                 .thenReturn(ImmutableList.of(itemEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(itemEntry.lookupRef())))
                 .thenReturn(
@@ -68,7 +68,7 @@ public class LegacyLookupResolvingContentListerTest {
                                 .build()
                 );
 
-        Iterator<Content> content = contentLister.listContent(criteria);
+        Iterator<Content> content = contentLister.listContent(publishers, progress);
 
         assertThat(content.hasNext(), is(true));
         assertThat(content.next(), sameInstance(item));
@@ -76,7 +76,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Test
     public void testListContentFiltersNonContent() throws Exception {
-        when(lookupEntryStore.allEntriesForPublishers(criteria))
+        when(lookupEntryStore.allEntriesForPublishers(publishers, progress))
                 .thenReturn(ImmutableList.of(personEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(personEntry.lookupRef())))
                 .thenReturn(
@@ -85,19 +85,19 @@ public class LegacyLookupResolvingContentListerTest {
                                 .build()
                 );
 
-        Iterator<Content> content = contentLister.listContent(criteria);
+        Iterator<Content> content = contentLister.listContent(publishers, progress);
 
         assertThat(content.hasNext(), is(false));
     }
 
     @Test
     public void testListContentFiltersNonResolvingLookupEntries() throws Exception {
-        when(lookupEntryStore.allEntriesForPublishers(criteria))
+        when(lookupEntryStore.allEntriesForPublishers(publishers, progress))
                 .thenReturn(ImmutableList.of(itemEntry));
         when(contentResolver.findByLookupRefs(ImmutableList.of(itemEntry.lookupRef())))
                 .thenReturn(ResolvedContent.builder().build());
 
-        Iterator<Content> content = contentLister.listContent(criteria);
+        Iterator<Content> content = contentLister.listContent(publishers, progress);
 
         assertThat(content.hasNext(), is(false));
     }
