@@ -1,6 +1,6 @@
 package org.atlasapi.system.legacy;
 
-import static com.google.gson.internal.$Gson$Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Iterator;
 import java.util.List;
