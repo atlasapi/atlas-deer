@@ -82,9 +82,10 @@ public class DatastaxCassandraEventStoreIT {
         // CQL init
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
         cassandraService.startAsync().awaitRunning();
-        session = cassandraService.getCluster().connect(keyspace);
+        session = cassandraService.getCluster().connect();
         cleanUp();
         CassandraInit.createTables(session, context);
+        session = cassandraService.getCluster().connect(keyspace);
     }
 
     @AfterClass
