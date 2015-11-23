@@ -63,7 +63,7 @@ public class UsersController {
             NumberToShortStringCodec idCodec,
             UserFetcher userFetcher,
             UserStore userStore,
-            MongoDBCredentialsStore credentialsStore,
+            CredentialsStore credentialsStore,
             Clock clock) {
         this.requestParser = requestParser;
         this.queryExecutor = queryExecutor;
@@ -73,7 +73,7 @@ public class UsersController {
         this.userFetcher = userFetcher;
         this.userStore = userStore;
         this.clock = clock;
-        this.credentialsStore = credentialsStore;
+        this.credentialsStore = (MongoDBCredentialsStore) credentialsStore;
     }
 
     @RequestMapping({ "/4/users/{uid}.*", "/4/users.*" })
@@ -163,6 +163,7 @@ public class UsersController {
         ResponseWriter writer = null;
         try {
             User editingUser = userFetcher.userFor(request).get();
+
             if (!editingUser.is(Role.ADMIN)) {
                 throw new ResourceForbiddenException();
             }
