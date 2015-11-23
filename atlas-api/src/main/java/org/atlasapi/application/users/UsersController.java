@@ -63,7 +63,7 @@ public class UsersController {
             NumberToShortStringCodec idCodec,
             UserFetcher userFetcher,
             UserStore userStore,
-            CredentialsStore credentialsStore,
+            MongoDBCredentialsStore credentialsStore,
             Clock clock) {
         this.requestParser = requestParser;
         this.queryExecutor = queryExecutor;
@@ -73,7 +73,7 @@ public class UsersController {
         this.userFetcher = userFetcher;
         this.userStore = userStore;
         this.clock = clock;
-        this.credentialsStore = (MongoDBCredentialsStore) credentialsStore;
+        this.credentialsStore = credentialsStore;
     }
 
     @RequestMapping({ "/4/users/{uid}.*", "/4/users.*" })
