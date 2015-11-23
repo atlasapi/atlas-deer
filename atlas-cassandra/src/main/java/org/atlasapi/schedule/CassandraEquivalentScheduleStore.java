@@ -15,7 +15,6 @@ import static org.atlasapi.util.Column.textColumn;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
@@ -302,7 +301,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setLong("channel", broadcast.getChannelId().longValue())
                         .setDate("day", day)
                         .setString("broadcast", broadcast.getSourceId())
-                        .setInt("contentCount", contentCount)
+                        .setLong("contentCount", contentCount)
                         .setBytes("data", serializedContent)
             );
         }
@@ -568,7 +567,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .setBytes("broadcastData", bcastBytes)
                 .setDate("broadcastStartData", bcastStart)
                 .setBytes("graphData", graphBytes)
-                .setInt("contentCountData", contentCount)
+                .setLong("contentCountData", contentCount)
                 .setBytes("contentData", contentBytes)
                 .setDate("now", clock.now().toDate());
     }
@@ -584,7 +583,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .setBytes("broadcastData", bcastBytes)
                 .setDate("broadcastStartData", bcastStart)
                 .setBytes("graphData", graphBytes)
-                .setVarint("contentCountData", BigInteger.valueOf(contentCount))
+                .setLong("contentCountData", contentCount)
                 .setBytes("contentData", contentBytes)
                 .setDate("now", now.toDate());
     }

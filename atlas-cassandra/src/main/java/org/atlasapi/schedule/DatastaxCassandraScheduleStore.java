@@ -99,11 +99,13 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                 .with(putAll(BROADCASTS_COLUMN, bindMarker("broadcastsData")))
                 .and(set(BROADCAST_IDS_COLUMN, bindMarker("broadcastsIdsData")))
                 .and(set(UPDATED_COLUMN, bindMarker("updatedData"))));
+        this.scheduleUpdate.setConsistencyLevel(writeCl);
 
         this.scheduleSelect = session.prepare(select().all().from(table)
                 .where(eq(SOURCE_COLUMN, bindMarker("source")))
                 .and(eq(CHANNEL_COLUMN, bindMarker("channel")))
                 .and(eq(DAY_COLUMN, bindMarker("day"))));
+        this.scheduleSelect.setConsistencyLevel(readCl);
     }
 
     @Override
@@ -186,7 +188,6 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         ImmutableList.Builder<Statement> selects = ImmutableList.builder();
         for (Channel channel : channels) {
             for (Date date : datesToResolve) {
-                scheduleSelect.setConsistencyLevel(readCl);
                 selects.add(scheduleSelect.bind()
                         .setString("source", source.key())
                         .setLong("channel", channel.getId().longValue())

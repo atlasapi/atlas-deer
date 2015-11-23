@@ -5,9 +5,7 @@ import java.io.IOException;
 import org.apache.commons.io.IOUtils;
 import org.atlasapi.entity.CassandraHelper;
 
-import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SimpleStatement;
 import com.google.common.collect.ImmutableList;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
@@ -19,7 +17,6 @@ public class CassandraInit {
     public static void createTables(Session session, AstyanaxContext<Keyspace> context)
             throws ConnectionException, IOException {
         session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
-
         session.execute("USE atlas_testing");
 
         session.execute("CREATE TABLE segments_aliases (\n" +
@@ -61,6 +58,12 @@ public class CassandraInit {
         session.execute("CREATE TABLE equivalent_content_index (key bigint, value bigint, PRIMARY KEY (key));");
         session.execute("CREATE TABLE equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
         session.execute("CREATE TABLE equivalent_schedule (source text, channel bigint, day timestamp, broadcast_id text, broadcast_start timestamp, broadcast blob, graph blob, content_count bigint, content blob, schedule_update timestamp, equiv_update timestamp, PRIMARY KEY ((source, channel, day), broadcast_id)) ");
+
+        /*
+        TODO: this. It doesn't work atm because Dstax sessions can't execute files, they need separate statements
+        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas.schema")));
+         */
+
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_event.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_schedule_v2.schema")));
         session.execute("CREATE INDEX inverse_equivalent_content_index ON equivalent_content_index(value);");
@@ -79,12 +82,10 @@ public class CassandraInit {
             throws ConnectionException {
         ImmutableList<String> tables = ImmutableList.of(
                 "content", "content_aliases", "event_aliases", "equivalence_graph_index",
-                "equivalence_graph", "segments", "segments_aliases",
+                "equivalence_graph", "segments", "segments_aliases", "schedule_v2", "schedule",
                 "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event");
         for (String table : tables) {
-            session.execute(
-                    new SimpleStatement(String.format("TRUNCATE %s", table))
-                            .setConsistencyLevel(ConsistencyLevel.ALL));
+            session.execute(String.format("TRUNCATE %s", table));
         }
     }
 }
