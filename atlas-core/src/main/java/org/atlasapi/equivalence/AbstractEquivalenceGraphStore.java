@@ -71,15 +71,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
         Set<Id> transitiveSetsIds = null;
         try {
-            LOG.debug("Thread {} is trying to enter synchronized block to lock graph IDs", Thread.currentThread().getName());
-            synchronized (lock()) {
-                LOG.debug("Thread {} has entered synchronized block to lock graph IDs", Thread.currentThread().getName());
-                while((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
-                    lock().unlock(subjectAndAdjacents);
-                    lock().wait();
-                }
-            }
-            LOG.debug("Thread {} has left synchronized block, having locked graph IDs", Thread.currentThread().getName());
+            LOG.debug("Thread {} is trying to lock graph IDs", Thread.currentThread().getName());
+            transitiveSetsIds = lockAllIds(subjectAndAdjacents);
+            LOG.debug("Thread {} has locked graph IDs", Thread.currentThread().getName());
 
             Optional<EquivalenceGraphUpdate> updated
                 = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
@@ -128,23 +122,23 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
     }
 
-    private Set<Id> tryLockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
-        if (!lock().tryLock(adjacentsIds)) {
-            return null;
-        }
+    private Set<Id> lockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
+        lock().lock(adjacentsIds);
+        
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
-        return lock().tryLock(ImmutableSet.copyOf(idsToLock)) ? allIds : null;
+        lock().lock(ImmutableSet.copyOf(idsToLock));
+        return allIds;
     }
 
     private Iterable<Id> transitiveIdsToLock(Set<Id> adjacentsIds) throws StoreException {
-        return Iterables.concat(Iterables.transform(get(resolveIds(adjacentsIds)).values(),
+        return Iterables.transform(get(resolveIds(adjacentsIds)).values(),
                 input -> input.isPresent()
                          ? input.get().getAdjacencyList().keySet()
                          : ImmutableSet.<Id>of()
-        ));
+        );
     }
 
     private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject, 
