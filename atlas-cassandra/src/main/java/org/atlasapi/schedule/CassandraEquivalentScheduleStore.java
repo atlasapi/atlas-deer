@@ -2,7 +2,6 @@ package org.atlasapi.schedule;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
@@ -220,7 +219,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .from(EQUIVALENT_SCHEDULE_TABLE)
                 .where(eq(SOURCE.name(), bindMarker("source")))
                 .and(eq(CHANNEL.name(), bindMarker("channel")))
-                .and(in(DAY.name(), bindMarker("days"))));
+                .and(eq(DAY.name(), bindMarker("day"))));
 
         this.broadcastDelete = session.prepare(
                 QueryBuilder.delete().all().from(EQUIVALENT_SCHEDULE_TABLE)
@@ -319,12 +318,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         final Set<Channel> chans = ImmutableSet.copyOf(channels);
         List<Statement> selects = selectStatements(source, channels, interval);
         ListenableFuture<List<ResultSet>> results = Futures.allAsList(Lists.transform(selects,
-            new Function<Statement, ListenableFuture<ResultSet>>(){
-                @Override
-                public ListenableFuture<ResultSet> apply(Statement input) {
-                    return session.executeAsync(input.setConsistencyLevel(read));
-                }
-            }
+                (Function<Statement, ListenableFuture<ResultSet>>) input ->
+                        session.executeAsync(input.setConsistencyLevel(read))
         ));
         return Futures.transform(results, new ToEquivalentSchedule(chans, interval, selectedSources));
     }
@@ -353,10 +348,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ImmutableList.Builder<Statement> selects = ImmutableList.builder();
         List<Date> days = daysIn(interval);
         for (Channel channel : channels) {
-            selects.add(scheduleSelect.bind()
-                    .setString("source", src.key())
-                    .setLong("channel", channel.getId().longValue())
-                    .setList("days", days));
+            for (Date day : days) {
+                selects.add(scheduleSelect.bind()
+                        .setString("source", src.key())
+                        .setLong("channel", channel.getId().longValue())
+                        .setDate("day", day));
+            }
         }
         return selects.build();
     }
