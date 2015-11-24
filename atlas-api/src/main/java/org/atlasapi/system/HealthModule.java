@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import javax.annotation.PostConstruct;
 
+import org.atlasapi.AtlasPersistenceModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.probes.DiskSpaceProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
+import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 
@@ -20,16 +22,17 @@ import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 public class HealthModule {
 
     private static final MetricRegistry metrics = new MetricRegistry();
-    private final ImmutableList<HealthProbe> systemProbes = ImmutableList.of(
-            new MemoryInfoProbe(),
-            new DiskSpaceProbe()
-    );
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
+    private @Autowired AtlasPersistenceModule persistenceModule;
 
     public @Bean HealthController healthController() {
-        return new HealthController(systemProbes);
+        return new HealthController(ImmutableList.of(
+                new MemoryInfoProbe(),
+                new DiskSpaceProbe(),
+                new CassandraProbe(persistenceModule.persistenceModule().getSession())
+        ));
     }
 
     public @Bean org.atlasapi.system.HealthController threadController() {
@@ -41,10 +44,6 @@ public class HealthModule {
     }
 
     public @Bean MetricRegistry metrics() {
-        return metrics;
-    }
-
-    public static MetricRegistry staticMetrics() {
         return metrics;
     }
 
