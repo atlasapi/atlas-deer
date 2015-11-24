@@ -12,6 +12,7 @@ import static org.atlasapi.content.ContentColumn.SOURCE;
 import static org.atlasapi.content.ContentColumn.TYPE;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -25,21 +26,23 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.util.ImmutableCollectors;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
@@ -62,7 +65,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
     private final ContentMarshaller<BatchStatement, Iterable<Row>> marshaller;
 
     private final PreparedStatement summarizeSelect;
-    private final PreparedStatement idsSelect;
+    private final PreparedStatement idSelect;
     private final PreparedStatement contentDelete;
 
     public DatastaxCassandraContentStore(
@@ -95,12 +98,12 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                 ));
         this.summarizeSelect.setConsistencyLevel(readConsistency);
 
-        this.idsSelect = session.prepare(select().all()
+        this.idSelect = session.prepare(select().all()
                 .from(CONTENT_TABLE)
                 .where(
-                        in(PRIMARY_KEY_COLUMN, bindMarker("keys"))
+                        eq(PRIMARY_KEY_COLUMN, bindMarker())
                 ));
-        this.idsSelect.setConsistencyLevel(readConsistency);
+        this.idSelect.setConsistencyLevel(readConsistency);
 
         this.contentDelete = session.prepare(delete().all()
                 .from(CONTENT_TABLE)
@@ -337,14 +340,25 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
 
     @Override
     public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
-        ResultSetFuture result = session.executeAsync(
-                idsSelect.bind().setList("keys",
-                        StreamSupport.stream(ids.spliterator(), false)
-                                .map(Id::longValue)
-                                .collect(Collectors.toList())));
+        ListenableFuture<List<Row>> resultsFuture = Futures.transform(Futures.allAsList(
+                StreamSupport.stream(ids.spliterator(), false)
+                        .map(Id::longValue)
+                        .unordered()
+                        .distinct()
+                        .map(idSelect::bind)
+                        .map(session::executeAsync)
+                        .map(rsFuture -> Futures.transform(rsFuture,
+                                (Function<ResultSet, List<Row>>) input ->
+                                        input != null ? input.all() : Lists.newArrayList()))
+                        .collect(Collectors.toList())),
+                (Function<List<List<Row>>, List<Row>>) input -> input.stream()
+                        .flatMap(Collection::stream)
+                        .collect(ImmutableCollectors.toList())
+        );
+
         return Futures.transform(
-                result,
-                (ResultSet input) -> {
+                resultsFuture,
+                (Iterable<Row> input) -> {
                     return Resolved.valueOf(
                             StreamSupport.stream(input.spliterator(), false)
                                     .collect(Collectors.groupingBy(row -> row.getLong(PRIMARY_KEY_COLUMN)))
