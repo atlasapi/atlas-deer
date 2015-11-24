@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.RegularStatement;
@@ -280,48 +281,48 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             log.warn("Empty content for " + update);
             return;
         }
-        updateDataRows(graphsAndContent);
-        updateIndexRows(graphsAndContent);
-        deleteStaleSets(update.getDeleted());
-        deleteStaleRows(update.getUpdated(), update.getCreated());
+
+        BatchStatement statement = new BatchStatement();
+        statement.setConsistencyLevel(writeConsistency);
+
+        statement.addAll(getUpdateDataRows(graphsAndContent));
+        statement.addAll(getUpdateIndexRows(graphsAndContent));
+        statement.addAll(getDeleteStaleSets(update.getDeleted()));
+        statement.addAll(getDeleteStaleRows(update.getCreated(), update.getUpdated().getId()));
+
+        session.execute(statement);
     }
 
-    private void deleteStaleRows(EquivalenceGraph updated, ImmutableSet<EquivalenceGraph> created) {
-        if (created.isEmpty()) {
-            return;
-        }
-        long id = updated.getId().longValue();
-
-        BatchStatement batchStatement = new BatchStatement();
-        batchStatement.setConsistencyLevel(writeConsistency);
-
-        batchStatement.addAll(created.stream()
-                .flatMap(graph -> graph.getEquivalenceSet().stream())
-                .map(elem -> rowDelete.bind()
-                        .setLong("setId", id)
-                        .setLong("contentId", elem.longValue()))
-                .collect(Collectors.toList()));
-
-        session.execute(batchStatement);
-    }
-
-    private void deleteStaleSets(Set<Id> deletedGraphs) {
-        if (deletedGraphs.isEmpty()) {
-            return;
-        }
-        List<Long> ids = deletedGraphs.stream().map(Id.toLongValue()::apply).collect(Collectors.toList());
-        session.execute(setsDelete.bind().setList(0, ids));
-    }
-
-    private void updateDataRows(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
-        BatchStatement batchStatement = new BatchStatement();
-        batchStatement.setConsistencyLevel(writeConsistency);
-
-        batchStatement.addAll(graphsAndContent.entries().stream()
+    private ImmutableList<Statement> getUpdateDataRows(
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
+        return graphsAndContent.entries().stream()
                 .map(entry -> dataRowUpdateFor(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList()));
+                .collect(ImmutableCollectors.toList());
+    }
 
-        session.execute(batchStatement);
+    private ImmutableList<Statement> getUpdateIndexRows(
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
+        return graphsAndContent.entries()
+                .stream()
+                .map(entry -> index.insertStatement(
+                        entry.getValue().getId().longValue(),
+                        entry.getKey().getId().longValue()))
+                .collect(ImmutableCollectors.toList());
+    }
+
+    private ImmutableList<BoundStatement> getDeleteStaleSets(ImmutableSet<Id> deletedGraphs) {
+        Iterable<Long> deletedIds = Iterables.transform(deletedGraphs, Id::longValue);
+        return ImmutableList.of(setsDelete.bind().setList(0, ImmutableList.copyOf(deletedIds)));
+    }
+
+    private List<BoundStatement> getDeleteStaleRows(ImmutableSet<EquivalenceGraph> createdGraphs,
+            Id updatedGraphId) {
+        return createdGraphs.stream()
+                    .flatMap(graph -> graph.getEquivalenceSet().stream())
+                    .map(elem -> rowDelete.bind()
+                            .setLong("setId", updatedGraphId.longValue())
+                            .setLong("contentId", elem.longValue()))
+                    .collect(Collectors.toList());
     }
 
     private Statement dataRowUpdateFor(EquivalenceGraph graph, Content content) {
