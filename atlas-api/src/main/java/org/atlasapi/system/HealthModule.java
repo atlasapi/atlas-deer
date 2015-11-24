@@ -13,7 +13,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
-import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 
@@ -28,8 +27,7 @@ public class HealthModule {
 
     public @Bean HealthController healthController() {
         return new HealthController(ImmutableList.of(
-                new MemoryInfoProbe(),
-                new CassandraProbe(persistenceModule.persistenceModule().getSession())
+                new MemoryInfoProbe()
         ));
     }
 
