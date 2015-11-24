@@ -76,7 +76,7 @@ public class GroupLockTest {
 
         String id = "A";
         assertTrue(lock.tryLock(id));
-        assertFalse(lock.tryLock(id));
+        assertTrue(lock.tryLock(id));
         lock.unlock(id);
         assertTrue(lock.tryLock(id));
     }
@@ -153,13 +153,26 @@ public class GroupLockTest {
     @Test
     public void testUnlocksAllGroupElementsIfTryLockFailsAGroup() throws InterruptedException {
 
+        final CountDownLatch finish = new CountDownLatch(2);
         final GroupLock<String> lock = GroupLock.<String>natural();
-        lock.lock("B");
+        
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(new Callable<Void>() {
+
+            @Override
+            public Void call() throws Exception {
+                lock.lock(ImmutableSet.of("B"));
+                finish.await();
+                return null;
+            }
+        });
+        
         assertFalse(lock.tryLock(ImmutableSet.of("A","B","C")));
         assertTrue(lock.tryLock("A"));
         assertTrue(lock.tryLock("C"));
-        lock.unlock(ImmutableSet.of("A","B","C"));
-        assertTrue(lock.tryLock(ImmutableSet.of("A","B","C")));
+        lock.unlock(ImmutableSet.of("A","C"));
+        assertTrue(lock.tryLock(ImmutableSet.of("A","C")));
+        finish.countDown();
     }
 
 }
