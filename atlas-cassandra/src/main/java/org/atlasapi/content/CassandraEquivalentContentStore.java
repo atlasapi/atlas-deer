@@ -4,7 +4,6 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
@@ -85,7 +84,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private final PreparedStatement setsSelect;
     private final PreparedStatement rowDelete;
-    private final PreparedStatement setsDelete;
+    private final PreparedStatement setDelete;
     private final PreparedStatement dataRowUpdate;
     private final PreparedStatement equivSetSelect;
 
@@ -108,7 +107,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         RegularStatement statement = select().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker("set_id")))
+                .where(eq(SET_ID_KEY, bindMarker("setId")))
                 .orderBy(asc(CONTENT_ID_KEY));
         statement.setFetchSize(Integer.MAX_VALUE);
         statement.setConsistencyLevel(read);
@@ -119,11 +118,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .where(eq(SET_ID_KEY, bindMarker("setId")))
                 .and(eq(CONTENT_ID_KEY, bindMarker("contentId"))));
 
-        statement = delete().all()
+        this.setDelete = session.prepare(delete().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(in(SET_ID_KEY, bindMarker()));
-        this.setsDelete = session.prepare(statement);
-        this.setsDelete.setConsistencyLevel(writeConsistency);
+                .where(eq(SET_ID_KEY, bindMarker())));
+        this.setDelete.setConsistencyLevel(writeConsistency);
 
         this.dataRowUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker("setId")))
@@ -270,7 +268,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     
     private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
-                .map(k -> setsSelect.bind().setLong("set_id", k))
+                .map(k -> setsSelect.bind().setLong("setId", k))
                 .collect(ImmutableCollectors.toList());
     }
     
@@ -300,6 +298,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .collect(ImmutableCollectors.toList());
     }
 
+    private ImmutableList<Statement> getDeleteStaleSets(ImmutableSet<Id> deletedGraphs) {
+        if (deletedGraphs.isEmpty()) {
+            return ImmutableList.of();
+        }
+
+        return deletedGraphs.stream()
+                .map(Id.toLongValue()::apply)
+                .map(setDelete::bind)
+                .collect(ImmutableCollectors.toList());
+    }
+
     private ImmutableList<Statement> getUpdateIndexRows(
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         return graphsAndContent.entries()
@@ -308,11 +317,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         entry.getValue().getId().longValue(),
                         entry.getKey().getId().longValue()))
                 .collect(ImmutableCollectors.toList());
-    }
-
-    private ImmutableList<BoundStatement> getDeleteStaleSets(ImmutableSet<Id> deletedGraphs) {
-        Iterable<Long> deletedIds = Iterables.transform(deletedGraphs, Id::longValue);
-        return ImmutableList.of(setsDelete.bind().setList(0, ImmutableList.copyOf(deletedIds)));
     }
 
     private List<BoundStatement> getDeleteStaleRows(ImmutableSet<EquivalenceGraph> createdGraphs,
