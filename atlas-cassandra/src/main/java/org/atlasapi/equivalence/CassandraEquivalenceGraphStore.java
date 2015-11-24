@@ -10,6 +10,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -86,7 +87,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
 
         this.graphRowsSelect = session.prepare(select().all()
                 .from(EQUIVALENCE_GRAPHS_TABLE)
-                .where(in(GRAPH_ID_KEY, bindMarker())));
+                .where(eq(GRAPH_ID_KEY, bindMarker())));
         this.graphRowsSelect.setConsistencyLevel(read);
 
         this.graphIdsSelect = session.prepare(select(RESOURCE_ID_KEY, GRAPH_ID_KEY)
@@ -123,7 +124,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         }
     }
 
-    private final Function<ResultSet, Map<Long, EquivalenceGraph>> toGraph = rows -> {
+    private final Function<Iterable<Row>, Map<Long, EquivalenceGraph>> toGraph = rows -> {
             ImmutableMap.Builder<Long, EquivalenceGraph> idGraph = ImmutableMap.builder();
             for (Row row : rows) {
                 Long graphId = row.getLong(GRAPH_ID_KEY);
@@ -132,21 +133,25 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
             return idGraph.build();
         };
 
-    private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs
-        = idIndex -> {
-            ResultSetFuture graphRows = resultOf(queryForGraphRows(idIndex));
-            return Futures.transform(Futures.transform(graphRows, toGraph), toIdGraphIndex(idIndex));
-        };
+    private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs = idIndex -> {
+        ListenableFuture<List<Row>> rowFutures = Futures.allAsList(idIndex.values()
+                .stream()
+                .unordered()
+                .distinct()
+                .map(this::queryForGraphRow)
+                .map(this::resultOf)
+                .map(resultSetFuture -> Futures.transform(resultSetFuture, ResultSet::one))
+                .collect(Collectors.toList()));
+
+        return Futures.transform(Futures.transform(rowFutures, toGraph), toIdGraphIndex(idIndex));
+    };
 
     private Function<Map<Long, EquivalenceGraph>, OptionalMap<Id, EquivalenceGraph>> toIdGraphIndex(final Map<Id, Long> idIndex) {
         return rowGraphIndex -> ImmutableOptionalMap.fromMap(Maps.transformValues(idIndex, Functions.forMap(rowGraphIndex, null)));
     }
     
-    private Statement queryForGraphRows(final Map<Id, Long> idIndex) {
-        return graphRowsSelect.bind(idIndex.values().stream()
-                .unordered()
-                .distinct()
-                .collect(Collectors.toList()));
+    private Statement queryForGraphRow(Long id) {
+        return graphRowsSelect.bind(id);
     }
 
     private final Function<ResultSet, Map<Id, Long>> toGraphIdIndex
