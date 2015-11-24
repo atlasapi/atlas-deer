@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.ProbeResult;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
+import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
@@ -98,7 +99,10 @@ public class ProcessingHealthModule extends HealthModule {
 
     @PostConstruct
     public void addProbes() {
-        healthController.addProbes(ImmutableList.of(metricsProbe()));
+        healthController.addProbes(ImmutableList.of(
+                new CassandraProbe(persistenceModule.persistenceModule().getSession()),
+                metricsProbe()
+        ));
     }
 
     private void registerMetrics(String prefix, MetricSet metrics, MetricRegistry registry) {
