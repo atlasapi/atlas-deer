@@ -23,8 +23,8 @@ import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.ProbeResult;
-import com.metabroadcast.common.health.probes.DiskSpaceProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
+import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
@@ -32,11 +32,6 @@ import com.netflix.astyanax.connectionpool.ConnectionPoolMonitor;
 
 @Configuration
 public class ProcessingHealthModule extends HealthModule {
-
-    private final ImmutableList<HealthProbe> systemProbes = ImmutableList.of(
-            new MemoryInfoProbe(),
-            new DiskSpaceProbe()
-    );
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
@@ -46,7 +41,10 @@ public class ProcessingHealthModule extends HealthModule {
     private final int graphitePort =  Configurer.get("metrics.graphite.port").toInt();
 
     public @Bean HealthController healthController() {
-        return new HealthController(systemProbes);
+        return new HealthController(ImmutableList.of(
+                new MemoryInfoProbe(),
+                new CassandraProbe(persistenceModule.persistenceModule().getSession())
+        ));
     }
 
     public @Bean org.atlasapi.system.HealthController threadController() {
