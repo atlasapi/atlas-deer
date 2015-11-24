@@ -3,12 +3,14 @@ package org.atlasapi.util;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 
 /**
  * <p>
@@ -18,8 +20,8 @@ import com.google.common.collect.Sets;
  * </p>
  * 
  * <p>
- * This is not re-entrant: if the same thread attempts to lock the same value(s)
- * twice it will block until interrupted.
+ * This is backed by a {@link ReentrantLock} so locking of values matches its
+ * behaviour.
  * </p>
  * 
  * @param <T>
@@ -47,7 +49,7 @@ public final class GroupLock<T> {
         return new GroupLock<U>(Ordering.from(comparator));
     }
 
-    private final Set<T> locked = Sets.newHashSet();
+    private final ConcurrentMap<T, ReentrantLock> locked = Maps.newConcurrentMap();
     private final Logger log = LoggerFactory.getLogger(GroupLock.class);
     private final Ordering<? super T> ordering;
 
@@ -73,14 +75,13 @@ public final class GroupLock<T> {
      */
     public void lock(T id) throws InterruptedException {
         log.trace("{} trying to lock {}", Thread.currentThread().getName(), id.toString());
-        synchronized (locked) {
-            while (locked.contains(id)) {
-                log.trace("{} waiting on lock for {}", Thread.currentThread().getName(), id.toString());
-                locked.wait();
-            }
-            log.trace("{} acquired lock for {}", Thread.currentThread().getName(), id.toString());
-            locked.add(id);
-        }
+        ReentrantLock lock = lockFor(id);
+        log.trace("{} waiting on lock for {}", Thread.currentThread().getName(), id.toString());
+        lock.lock();
+    }
+    
+    private ReentrantLock lockFor(T id) {
+        return locked.computeIfAbsent(id, (i) -> new ReentrantLock());
     }
 
     /**
@@ -99,12 +100,20 @@ public final class GroupLock<T> {
      */
     public void unlock(T id) {
         log.trace("{} trying to unlock {}", Thread.currentThread().getName(), id.toString());
-        synchronized (locked) {
-            if (locked.remove(id)) {
-                log.trace("{} unlocked {}", Thread.currentThread().getName(), id.toString());
-                locked.notifyAll();
+        ReentrantLock lock = locked.get(id);
+        if (lock != null) {
+            try {
+                lock.unlock();
+                attemptGarbageCollection(id);
+            } catch (IllegalMonitorStateException e) {
+                // Preserving existing behaviour where an unlock attempt
+                // of an id not locked succeeds.
             }
         }
+    }
+
+    private void attemptGarbageCollection(T id) {
+        locked.computeIfPresent(id, (key, value) -> value.isLocked() ? value : null );
     }
 
     /**
@@ -118,15 +127,13 @@ public final class GroupLock<T> {
      */
     public boolean tryLock(T id) throws InterruptedException {
         log.trace("{} attempting to lock {}", Thread.currentThread().getName(), id.toString());
-        synchronized (locked) {
-            if (!locked.contains(id)) {
-                log.trace("{} got lock for {}", Thread.currentThread().getName(), id.toString());
-                lock(id);
-                return true;
-            }
-            log.trace("{} didnt get lock {}", Thread.currentThread().getName(), id.toString());
-            return false;
+        boolean gotLock = lockFor(id).tryLock();
+        if (gotLock) {
+            log.trace("{} got lock for {}", Thread.currentThread().getName(), id.toString());
+        } else {
+            log.trace("{} didnt get lock {}", Thread.currentThread().getName(), id.toString());            
         }
+        return gotLock;
     }
 
     /**
