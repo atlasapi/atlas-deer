@@ -1,5 +1,5 @@
 package org.atlasapi.organisation;
 
 public interface OrganisationWriter {
-    void write(Organisation event);
+    void write(Organisation organisation);
 }

@@ -19,6 +19,7 @@ import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.legacy.LegacyOrganisationTransformer;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
 import org.atlasapi.topic.TopicStore;
@@ -56,6 +57,7 @@ public class BootstrapWorkersModule {
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private String eventChanges = Configurer.get("messaging.destination.event.changes").get();
+    private String organisationChanges = Configurer.get("messaging.destination.organisation.changes").get();
     
     private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
     private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
@@ -66,6 +68,7 @@ public class BootstrapWorkersModule {
     private Boolean scheduleBootstrapEnabled = Configurer.get("messaging.enabled.schedule.bootstrap").toBoolean();
     private Boolean topicBootstrapEnabled = Configurer.get("messaging.enabled.topic.bootstrap").toBoolean();
     private Boolean eventBoostrapEnabled = Configurer.get("messaging.enabled.event.bootstrap").toBoolean();
+    private Boolean organisationBootstrapEnabled = Configurer.get("messaging.enabled.organisation.bootstrap").toBoolean();
 
     private Set<Publisher> ignoredScheduleSources
             = Sets.difference(Publisher.all(), ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT));
@@ -89,6 +92,7 @@ public class BootstrapWorkersModule {
         return new KafkaMessageConsumerFactory(zookeeper, originSystem, backOffBase, maxBackOff);
     }
 
+
     @Bean
     @Lazy(true)
     KafkaConsumer contentBootstrapWorker() {
@@ -101,6 +105,23 @@ public class BootstrapWorkersModule {
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory().createConsumer(worker, serializer, contentChanges, "ContentBootstrap")
+                .withConsumerSystem(consumerSystem)
+                .withDefaultConsumers(consumers)
+                .withMaxConsumers(maxConsumers)
+                .build();
+    }
+
+    @Bean
+    @Lazy(true)
+    KafkaConsumer organisationBootstrapWorker() {
+        OrganisationBootstrapWorker worker = new OrganisationBootstrapWorker(
+                legacy.legacyOrganisationResolver(),
+                persistence.organisationStore(),
+                health.metrics()
+        );
+        MessageSerializer<ResourceUpdatedMessage> serializer =
+                new EntityUpdatedLegacyMessageSerializer();
+        return bootstrapQueueFactory().createConsumer(worker, serializer, organisationChanges, "OrganisationBootstrap")
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(consumers)
                 .withMaxConsumers(maxConsumers)
@@ -184,6 +205,9 @@ public class BootstrapWorkersModule {
         }
         if(eventBoostrapEnabled) {
             services.add(eventReadWriter());
+        }
+        if(organisationBootstrapEnabled) {
+            services.add(organisationBootstrapWorker());
         }
 
         consumerManager = new ServiceManager(services.build());

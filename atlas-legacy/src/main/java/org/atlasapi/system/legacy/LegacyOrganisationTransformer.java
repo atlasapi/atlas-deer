@@ -23,6 +23,7 @@ public class LegacyOrganisationTransformer extends DescribedLegacyResourceTransf
         organisation.setMembers(input.members().stream()
                 .map(legacyPersonTransformer::apply)
                 .collect(Collectors.toList()));
+        organisation.setAlternativeTitles(input.getAlternativeTitles());
 
         return organisation;
     }
