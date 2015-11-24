@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
-import com.metabroadcast.common.health.probes.DiskSpaceProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
 import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.webapp.health.HealthController;
@@ -30,7 +29,6 @@ public class HealthModule {
     public @Bean HealthController healthController() {
         return new HealthController(ImmutableList.of(
                 new MemoryInfoProbe(),
-                new DiskSpaceProbe(),
                 new CassandraProbe(persistenceModule.persistenceModule().getSession())
         ));
     }
