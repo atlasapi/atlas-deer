@@ -15,6 +15,7 @@ import org.atlasapi.event.DatastaxCassandraEventStore;
 import org.atlasapi.event.EventHasher;
 import org.atlasapi.event.EventPersistenceStore;
 import org.atlasapi.event.EventStore;
+import org.atlasapi.instrumentation.InstrumentedCassandraSession;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
@@ -57,6 +58,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
     private Integer cassandraTimeoutSeconds = Configurer.get("cassandra.schedule.timeout.seconds", "60").toInt();
+    private Boolean instrumentCassandra = Configurer.get("cassandra.datastax.instrumentsession", "false").toBoolean();
 
     private Boolean processing = Objects.firstNonNull(Configurer.get("processing.config"), Parameter.valueOf("false")).toBoolean();
 
@@ -135,6 +137,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     @Override
     protected void startUp() throws Exception {
         Session session = dataStaxService.getSession(keyspace);
+
+        // interpose a logging wrapper to all Cassandra requests
+        if(instrumentCassandra) {
+            session = new InstrumentedCassandraSession(session);
+        }
+
         com.datastax.driver.core.ConsistencyLevel read = getReadConsistencyLevel();
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
         ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
