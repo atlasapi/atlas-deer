@@ -1,15 +1,10 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -116,33 +111,6 @@ public class CassandraEquivalentContentStoreRowIT {
         assertNoRowsWithSetId(c5.getId());
     }
 
-    @Test
-    public void testResolvesNullContentColumn() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(1), Publisher.METABROADCAST);
-        Content c2 = createAndWriteItem(Id.valueOf(2), Publisher.METABROADCAST);
-
-        persistenceModule.equivalentContentStore().updateContent(c1);
-        persistenceModule.equivalentContentStore().updateContent(c2);
-
-        makeEquivalent(c1, c2);
-        makeEquivalent(c2, c1);
-
-        Statement delete = delete().column("data")
-                .from("equivalent_content")
-                .where(eq("set_id", 1))
-                .and(eq("content_id", 2));
-
-        Session session = persistenceModule.getCassandraSession();
-        session.execute(delete);
-
-        resolved(c1, c1, c2);
-        resolved(c2, c1, c2);
-
-        assertThatDataRowIsPresent(1, 2);
-
-    }
-
-
     private void assertNoRowsWithIds(Id setId, Id contentId) {
         Session session = persistenceModule.getCassandraSession();
         Statement rowsForIdQuery = select().all().from("equivalent_content")
@@ -159,15 +127,6 @@ public class CassandraEquivalentContentStoreRowIT {
         ResultSet rows = session.execute(rowsForIdQuery);
         boolean exhausted = rows.isExhausted();
         assertTrue(String.format("Expected 0 rows for %s, got %s", setId, rows.all().size()), exhausted);
-    }
-
-    private void assertThatDataRowIsPresent(long setId, long contentId) {
-        Session session = persistenceModule.getCassandraSession();
-        Statement rowsForIdQuery = select().all().from("equivalent_content")
-                .where(eq("set_id", setId))
-                .and(eq("content_id", contentId));
-        ResultSet rows = session.execute(rowsForIdQuery);
-        assertThat(rows.one().getBytes("data"), not(nullValue(ByteBuffer.class)));
     }
 
     private void resolved(Content c, Content... cs) throws Exception {

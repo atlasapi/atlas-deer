@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import javax.annotation.PostConstruct;
 
-import org.atlasapi.AtlasPersistenceModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +12,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
-import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
 
@@ -24,12 +22,12 @@ public class HealthModule {
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
-    private @Autowired AtlasPersistenceModule persistenceModule;
+    // TODO There is a circular dependency here. Extract metrics to their own modules
+    // private @Autowired AtlasPersistenceModule persistenceModule;
 
     public @Bean HealthController healthController() {
         return new HealthController(ImmutableList.of(
-                new MemoryInfoProbe(),
-                new CassandraProbe(persistenceModule.persistenceModule().getSession())
+                new MemoryInfoProbe()
         ));
     }
 
@@ -47,6 +45,9 @@ public class HealthModule {
 
     @PostConstruct
     public void addProbes() {
+//        healthController.addProbes(ImmutableList.of(
+//                new CassandraProbe(persistenceModule.persistenceModule().getSession())
+//        ));
         healthController.addProbes(probes);
     }
 }
