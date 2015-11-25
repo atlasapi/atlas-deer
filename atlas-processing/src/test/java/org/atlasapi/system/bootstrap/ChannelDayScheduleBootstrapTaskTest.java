@@ -10,6 +10,7 @@ import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.ContentVisitor;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -54,7 +56,8 @@ public class ChannelDayScheduleBootstrapTaskTest {
                 day.plusDays(1).toDateTimeAtStartOfDay(DateTimeZones.UTC));
         
         ChannelIntervalScheduleBootstrapTask task 
-            = new ChannelIntervalScheduleBootstrapTask(resolver, writer, contentStore, src, chan, interval);
+            = new ChannelIntervalScheduleBootstrapTask(resolver, writer, contentStore, src, chan, interval, 
+                    Optional.absent());
         
         Brand brand1 = new Brand(Id.valueOf(11), src);
         Item item1 = new Item(Id.valueOf(1), src);
