@@ -73,10 +73,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         try {
             LOG.debug("Thread {} is trying to enter synchronized block to lock graph IDs", Thread.currentThread().getName());
             synchronized (lock()) {
-                LOG.debug("Thread {} has entered synchronized block to lock graph IDs", Thread.currentThread().getName());
+                LOG.debug("Thread {} has entered synchronized block to lock graph IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
                 while((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
                     lock().unlock(subjectAndAdjacents);
-                    lock().wait();
+                    lock().wait(5000);
+                    LOG.debug("Attempting to lock IDs");
                 }
             }
             LOG.debug("Thread {} has left synchronized block, having locked graph IDs", Thread.currentThread().getName());
@@ -130,13 +131,16 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
         if (!lock().tryLock(adjacentsIds)) {
+            LOG.debug("Failed to lock adjacents {}", adjacentsIds);
             return null;
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
-        return lock().tryLock(ImmutableSet.copyOf(idsToLock)) ? allIds : null;
+        boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
+        LOG.debug("Lock attempt success status {} locking transitive set {}", locked, idsToLock);
+        return locked ? allIds : null;
     }
 
     private Iterable<Id> transitiveIdsToLock(Set<Id> adjacentsIds) throws StoreException {
