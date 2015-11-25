@@ -10,6 +10,7 @@ import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
+import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.bootstrap.workers.LegacyRetryingContentResolver;
@@ -68,7 +69,7 @@ public class WorkersModule {
     @Autowired
     private AtlasPersistenceModule persistence;
     @Autowired
-    private ProcessingHealthModule health;
+    private ProcessingMetricsModule metricsModule;
     private ServiceManager consumerManager;
 
     private <M extends Message> MessageSerializer<M> serializer(Class<M> cls) {
@@ -78,7 +79,8 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ResourceUpdatedMessage> topicIndexingWorker() {
-        return new TopicIndexingWorker(persistence.topicStore(), persistence.topicIndex(), health.metrics());
+        return new TopicIndexingWorker(persistence.topicStore(), persistence.topicIndex(), metricsModule
+                .metrics());
     }
 
     @Bean
@@ -94,7 +96,8 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceGraphUpdateMessage> equivalentContentStoreGraphUpdateWorker() {
-        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore(), health.metrics());
+        return new EquivalentContentStoreGraphUpdateWorker(persistence.getEquivalentContentStore(), metricsModule
+                .metrics());
     }
 
     @Bean
@@ -118,7 +121,7 @@ public class WorkersModule {
                         persistence.legacyContentResolver(),
                         persistence.nullMessageSendingContentStore()
                 ),
-                health.metrics()
+                metricsModule.metrics()
         );
     }
 
@@ -136,7 +139,8 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<EquivalenceGraphUpdateMessage> equivalentScheduletStoreGraphUpdateWorker() {
-        return new EquivalentScheduleStoreGraphUpdateWorker(persistence.getEquivalentScheduleStore(), health.metrics());
+        return new EquivalentScheduleStoreGraphUpdateWorker(persistence.getEquivalentScheduleStore(), metricsModule
+                .metrics());
     }
 
     @Bean
@@ -145,7 +149,7 @@ public class WorkersModule {
         return new EquivalentScheduleStoreContentUpdateWorker(
                 persistence.getEquivalentContentStore(),
                 persistence.getEquivalentScheduleStore(),
-                health.metrics()
+                metricsModule.metrics()
         );
     }
 
@@ -174,7 +178,8 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public Worker<ScheduleUpdateMessage> equivalentScheduleStoreScheduleUpdateWorker() {
-        return new EquivalentScheduleStoreScheduleUpdateWorker(persistence.getEquivalentScheduleStore(), health.metrics());
+        return new EquivalentScheduleStoreScheduleUpdateWorker(persistence.getEquivalentScheduleStore(), metricsModule
+                .metrics());
     }
 
     @Bean
@@ -192,7 +197,7 @@ public class WorkersModule {
     public Worker<EquivalenceAssertionMessage> contentEquivalenceUpdater() {
         return new ContentEquivalenceUpdatingWorker(
                 persistence.getContentEquivalenceGraphStore(),
-                health.metrics(),
+                metricsModule.metrics(),
                 explicitEquivalenceMigrator()
         );
     }
@@ -212,7 +217,7 @@ public class WorkersModule {
     @Lazy(true)
     public EquivalentContentIndexingContentWorker equivalentContentIndexingWorker() {
         return new EquivalentContentIndexingContentWorker(
-                persistence.contentStore(), persistence.contentIndex(), health.metrics()
+                persistence.contentStore(), persistence.contentIndex(), metricsModule.metrics()
         );
     }
 
@@ -235,7 +240,7 @@ public class WorkersModule {
     @Bean
     @Lazy(true)
     public EquivalentContentIndexingGraphWorker equivalentContentIndexingGraphWorker() {
-        return new EquivalentContentIndexingGraphWorker(persistence.contentIndex(), health.metrics());
+        return new EquivalentContentIndexingGraphWorker(persistence.contentIndex(), metricsModule.metrics());
     }
 
     @Bean
