@@ -19,6 +19,7 @@ import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
 import org.atlasapi.topic.TopicStore;
@@ -165,6 +166,16 @@ public class BootstrapWorkersModule {
                 .withMaxConsumers(maxConsumers)
                 .build();
     }
+    
+    @Bean
+    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
+                legacy.legacyContentResolver(),
+                legacy.legacyEquivalenceStore(),
+                persistence.nullMessageSendingGraphStore()
+        );
+    }
+
 
     @PostConstruct
     public void start() throws TimeoutException {
@@ -200,7 +211,18 @@ public class BootstrapWorkersModule {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
     }
+    
+//    (ScheduleResolver scheduleResolver,
+//            ScheduleWriter scheduleWriter, ContentStore contentStore, ContentIndex contentIndex,
+//            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, AtlasPersistenceModule persistence)
 
+    @Bean
+    public ScheduleBootstrapWithContentMigrationTaskFactory scheduleBootstrapWithContentMigrationTaskFactory() {
+        return new ScheduleBootstrapWithContentMigrationTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
+                new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()), search.equivContentIndex(), 
+                explicitEquivalenceMigrator(), persistence);
+    }
+    
     @Bean
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleV2BootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.v2ScheduleStore(),
