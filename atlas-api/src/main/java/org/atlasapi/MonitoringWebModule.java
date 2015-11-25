@@ -16,7 +16,8 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import({
         HealthModule.class,
-        MetricsModule.class
+        MetricsModule.class,
+        AtlasPersistenceModule.class
 })
 public class MonitoringWebModule {
 
