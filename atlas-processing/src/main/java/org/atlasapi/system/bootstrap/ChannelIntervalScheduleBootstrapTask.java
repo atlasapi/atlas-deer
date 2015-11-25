@@ -16,6 +16,7 @@ import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.ContentVisitor;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
@@ -67,16 +68,19 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
     private final Channel channel;
     private final Interval interval;
     private final Publisher source;
+    private final Optional<ContentVisitor<?>> scheduleContentVisitor;
 
     public ChannelIntervalScheduleBootstrapTask(ScheduleResolver scheduleResolver,
             ScheduleWriter scheduleWriter, ContentStore contentStore,
-            Publisher source, Channel channel, Interval interval) {
+            Publisher source, Channel channel, Interval interval, 
+            Optional<ContentVisitor<?>> scheduleContentVisitor) {
         this.scheduleResolver = checkNotNull(scheduleResolver);
         this.scheduleWriter = checkNotNull(scheduleWriter);
         this.contentStore = checkNotNull(contentStore);
         this.channel = checkNotNull(channel);
         this.interval = checkNotNull(interval);
         this.source = checkNotNull(source);
+        this.scheduleContentVisitor = checkNotNull(scheduleContentVisitor);
     }
 
     @Override
@@ -112,9 +116,27 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             iab = new ItemAndBroadcast(contentOrNull(possItem, Item.class),broadcast);
             schedule.add(new ScheduleHierarchy(iab, topLevelContainer, series));
         }
-        return tryWrite(schedule.build());
+        ImmutableList<ScheduleHierarchy> builtSchedule = schedule.build();
+        UpdateProgress progress = tryWrite(builtSchedule);
+        notifyListener(builtSchedule);
+        return progress;
     }
 
+    private void notifyListener(List<ScheduleHierarchy> schedule) {
+        if (!scheduleContentVisitor.isPresent()) {
+            return;
+        }
+        
+        for (ScheduleHierarchy slot : schedule) {
+            slot.getItemAndBroadcast().getItem().accept(scheduleContentVisitor.get());
+            if (slot.getPossibleSeries().isPresent()) {
+                slot.getPossibleSeries().get().accept(scheduleContentVisitor.get());
+            }
+            if (slot.getPrimaryContainer().isPresent()) {
+                slot.getPrimaryContainer().get().accept(scheduleContentVisitor.get());
+            }
+        }
+    }
     private Container topLevelContainer(ItemAndBroadcast iab, Map<Id, Optional<Content>> containers) {
         ContainerRef containerRef = iab.getItem().getContainerRef();
         if (containerRef != null) {
@@ -133,7 +155,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
                 return contentOrNull(containers.get(id), Series.class);
             }
         }
-        return null;
+        return null;    
     }
 
     private <T extends Content> T contentOrNull(Optional<Content> possContent, Class<T> cls) {

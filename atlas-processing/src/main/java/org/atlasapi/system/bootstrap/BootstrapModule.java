@@ -55,6 +55,7 @@ public class BootstrapModule {
     @Autowired private SchedulerModule scheduler;
     @Autowired private ElasticSearchContentIndexModule search;
     @Autowired private MetricRegistry metrics;
+    @Autowired private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator;
 
     @Bean
     BootstrapController bootstrapController() {
@@ -87,7 +88,7 @@ public class BootstrapModule {
                 persistence.nullMessageSendingContentStore(),
                 search.equivContentIndex(),
                 persistence,
-                explicitEquivalenceMigrator(),
+                explicitEquivalenceMigrator,
                 NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
                 progressStore(),
                 metrics
@@ -97,14 +98,6 @@ public class BootstrapModule {
     @Bean
     public ProgressStore progressStore() {
         return new MongoProgressStore(persistence.databasedWriteMongo());
-    }
-
-    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
-        return new DirectAndExplicitEquivalenceMigrator(
-                legacy.legacyContentResolver(),
-                legacy.legacyEquivalenceStore(),
-                persistence.nullMessageSendingGraphStore()
-        );
     }
 
     @Bean
