@@ -1,15 +1,19 @@
 package org.atlasapi.segment;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -21,17 +25,23 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraUtil;
+import org.atlasapi.util.ImmutableCollectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.base.Equivalence;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.SystemClock;
@@ -39,7 +49,8 @@ import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
 public class CassandraSegmentStore extends AbstractSegmentStore {
 
-   private static final String SEGMENT = "column1";
+    private static final String SEGMENT = "column1";
+    public static final int SELECT_TIMEOUT = 10;
 
     private final Session session;
     private final AliasIndex<Segment> aliasIndex;
@@ -49,7 +60,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final PreparedStatement segmentInsert;
-    private final PreparedStatement segmentsSelect;
+    private final PreparedStatement segmentSelect;
 
     private CassandraSegmentStore(Session session, String keyspace, String tableName,
                                  AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
@@ -67,8 +78,8 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
                 .value(CassandraUtil.VALUE, bindMarker("data"))
                 .setForceNoValues(true));
 
-        this.segmentsSelect = session.prepare(select().from(keyspace, tableName)
-                .where(in(CassandraUtil.KEY, bindMarker()))
+        this.segmentSelect = session.prepare(select().from(keyspace, tableName)
+                .where(eq(CassandraUtil.KEY, bindMarker()))
                 .setForceNoValues(true));
     }
 
@@ -118,34 +129,39 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
     @Override
     public Iterable<Segment> resolveSegments(Iterable<Id> ids) {
-        ResultSet rows = executeReadQuery(ids);
+        return transformResultSet(executeReadQuery(ids));
+    }
 
-        if (rows == null || rows.isExhausted()) {
-            return ImmutableList.of();
+    private Iterable<Row> executeReadQuery(Iterable<Id> ids) {
+        ListenableFuture<List<Row>> rowFuture = Futures.transform(
+                Futures.allAsList(StreamSupport.stream(ids.spliterator(), false)
+                        .map(Id.toLongValue()::apply)
+                        .map(segmentSelect::bind)
+                        .map(session::executeAsync)
+                        .map(rsFuture -> Futures.transform(rsFuture,
+                                (Function<ResultSet, List<Row>>) input ->
+                                        input != null ? input.all() : Lists.newArrayList()))
+                        .collect(Collectors.toList())),
+                (Function<List<List<Row>>, List<Row>>) input -> input.stream()
+                        .flatMap(Collection::stream)
+                        .collect(ImmutableCollectors.toList())
+        );
+        try {
+            return rowFuture.get(SELECT_TIMEOUT, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw Throwables.propagate(e);
         }
-
-        return transformResultSet(rows);
     }
 
-    private ResultSet executeReadQuery(Iterable<Id> ids) {
-        return session.execute(segmentsSelect.bind(idsToList(ids)));
-    }
-
-    private Iterable<Segment> transformResultSet(ResultSet rows) {
+    private Iterable<Segment> transformResultSet(Iterable<Row> rows) {
         ImmutableList.Builder<Segment> list = ImmutableList.builder();
-        while (!rows.isExhausted()) {
-            ByteBuffer buffer = rows.one().getBytes(CassandraUtil.VALUE).slice();
+        for (Row row : rows) {
+            ByteBuffer buffer = row.getBytes(CassandraUtil.VALUE).slice();
             byte[] bytes = new byte[buffer.limit()];
             buffer.get(bytes, 0, buffer.limit());
             list.add(segmentSerializer.deserialize(bytes));
         }
         return list.build();
-    }
-
-    private List<Long> idsToList(Iterable<Id> ids) {
-        return StreamSupport.stream(ids.spliterator(), false)
-                .map(Id::longValue)
-                .collect(Collectors.toList());
     }
 
     public static Builder builder() {

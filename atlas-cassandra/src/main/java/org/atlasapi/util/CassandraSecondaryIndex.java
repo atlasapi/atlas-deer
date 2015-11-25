@@ -2,13 +2,13 @@ package org.atlasapi.util;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Id;
@@ -20,6 +20,7 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
+import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -49,16 +50,13 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     private final String indexTable;
     private final ConsistencyLevel readConsistency;
 
-    private final Function<ResultSet, ImmutableMap<Long, Long>> toMap
-        = new Function<ResultSet, ImmutableMap<Long, Long>>() {
-            @Override
-            public ImmutableMap<Long, Long> apply(ResultSet rows) {
-                Builder<Long, Long> index = ImmutableMap.builder();
-                for (Row row : rows) {
-                    index.put(row.getLong(KEY_KEY), row.getLong(VALUE_KEY));
-                }
-                return index.build();
+    private final Function<Iterable<Row>, ImmutableMap<Long, Long>> toMap
+        = rows -> {
+            Builder<Long, Long> index = ImmutableMap.builder();
+            for (Row row : rows) {
+                index.put(row.getLong(KEY_KEY), row.getLong(VALUE_KEY));
             }
+            return index.build();
         };
 
     private final PreparedStatement insert;
@@ -76,7 +74,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
 
         this.select = session.prepare(select(KEY_KEY, VALUE_KEY)
                 .from(indexTable)
-                .where(in(KEY_KEY, bindMarker("keys"))));
+                .where(eq(KEY_KEY, bindMarker("key"))));
 
         this.canonicalToSecondariesSelect = session.prepare(select(KEY_KEY, VALUE_KEY)
                 .from(indexTable)
@@ -98,16 +96,27 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
 
     @Override
     public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys) {
-        return Futures.transform(session.executeAsync(queryFor(keys, readConsistency)), toMap);
+        return lookup(keys, readConsistency);
     }
 
     @Override
     public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys, ConsistencyLevel level) {
-        return Futures.transform(session.executeAsync(queryFor(keys, level)), toMap);
+        ListenableFuture<List<Row>> resultsFuture = Futures.transform(Futures.allAsList(
+                queriesFor(keys, readConsistency).stream()
+                        .map(session::executeAsync)
+                        .map(rsFuture -> Futures.transform(rsFuture,
+                                (Function<ResultSet, Row>) input -> input != null ? input.one() : null))
+                        .collect(Collectors.toList())),
+                (Function<List<Row>, List<Row>>) input -> input.stream()
+                        .filter(Predicates.notNull()::apply).collect(Collectors.toList())
+        );
+        return Futures.transform(resultsFuture, toMap);
     }
 
-    private Statement queryFor(Iterable<Long> keys, ConsistencyLevel level) {
-        return select.bind().setList("keys", ImmutableList.copyOf(keys)).setConsistencyLevel(level);
+    private List<Statement> queriesFor(Iterable<Long> keys, ConsistencyLevel level) {
+        return StreamSupport.stream(keys.spliterator(), false)
+                .map(k -> select.bind().setLong("key", k).setConsistencyLevel(level))
+                .collect(Collectors.toList());
     }
 
     @Override

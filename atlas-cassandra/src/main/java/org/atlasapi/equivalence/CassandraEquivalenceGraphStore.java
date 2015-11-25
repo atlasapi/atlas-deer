@@ -3,13 +3,13 @@ package org.atlasapi.equivalence;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -18,6 +18,7 @@ import java.util.stream.StreamSupport;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
 import org.atlasapi.util.GroupLock;
+import org.atlasapi.util.ImmutableCollectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -86,12 +88,12 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
 
         this.graphRowsSelect = session.prepare(select().all()
                 .from(EQUIVALENCE_GRAPHS_TABLE)
-                .where(in(GRAPH_ID_KEY, bindMarker())));
+                .where(eq(GRAPH_ID_KEY, bindMarker())));
         this.graphRowsSelect.setConsistencyLevel(read);
 
         this.graphIdsSelect = session.prepare(select(RESOURCE_ID_KEY, GRAPH_ID_KEY)
                 .from(EQUIVALENCE_GRAPH_INDEX_TABLE)
-                .where(in(RESOURCE_ID_KEY, bindMarker())));
+                .where(eq(RESOURCE_ID_KEY, bindMarker())));
         this.graphIdsSelect.setConsistencyLevel(read);
 
         this.indexInsert = session.prepare(insertInto(EQUIVALENCE_GRAPH_INDEX_TABLE)
@@ -123,7 +125,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         }
     }
 
-    private final Function<ResultSet, Map<Long, EquivalenceGraph>> toGraph = rows -> {
+    private final Function<Iterable<Row>, Map<Long, EquivalenceGraph>> toGraph = rows -> {
             ImmutableMap.Builder<Long, EquivalenceGraph> idGraph = ImmutableMap.builder();
             for (Row row : rows) {
                 Long graphId = row.getLong(GRAPH_ID_KEY);
@@ -132,24 +134,28 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
             return idGraph.build();
         };
 
-    private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs
-        = idIndex -> {
-            ResultSetFuture graphRows = resultOf(queryForGraphRows(idIndex));
-            return Futures.transform(Futures.transform(graphRows, toGraph), toIdGraphIndex(idIndex));
-        };
+    private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs = idIndex -> {
+        ListenableFuture<List<Row>> rowFutures = Futures.allAsList(idIndex.values()
+                .stream()
+                .unordered()
+                .distinct()
+                .map(this::queryForGraphRow)
+                .map(this::resultOf)
+                .map(resultSetFuture -> Futures.transform(resultSetFuture, ResultSet::one))
+                .collect(Collectors.toList()));
+
+        return Futures.transform(Futures.transform(rowFutures, toGraph), toIdGraphIndex(idIndex));
+    };
 
     private Function<Map<Long, EquivalenceGraph>, OptionalMap<Id, EquivalenceGraph>> toIdGraphIndex(final Map<Id, Long> idIndex) {
         return rowGraphIndex -> ImmutableOptionalMap.fromMap(Maps.transformValues(idIndex, Functions.forMap(rowGraphIndex, null)));
     }
     
-    private Statement queryForGraphRows(final Map<Id, Long> idIndex) {
-        return graphRowsSelect.bind(idIndex.values().stream()
-                .unordered()
-                .distinct()
-                .collect(Collectors.toList()));
+    private Statement queryForGraphRow(Long id) {
+        return graphRowsSelect.bind(id);
     }
 
-    private final Function<ResultSet, Map<Id, Long>> toGraphIdIndex
+    private final Function<Iterable<Row>, Map<Id, Long>> toGraphIdIndex
         = rows -> {
             ImmutableMap.Builder<Id, Long> idIndex = ImmutableMap.builder();
             for (Row row : rows) {
@@ -166,23 +172,31 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         return Futures.transform(graphIdIndex, toGraphs);
     }
 
-
-
     private ListenableFuture<Map<Id,Long>> resolveToGraphIds(Iterable<Id> ids) {
-        return Futures.transform(resultOf(queryForGraphIds(ids)), toGraphIdIndex);
+        ListenableFuture<List<Row>> resultsFuture = Futures.transform(Futures.allAsList(
+                queriesForGraphIds(ids)
+                        .stream()
+                        .map(this::resultOf)
+                        .map(resultSetFuture -> Futures.transform(resultSetFuture,
+                                (Function<ResultSet, Row>) rs -> rs != null ? rs.one() : null))
+                        .collect(Collectors.toList())),
+                (Function<List<Row>, List<Row>>) input -> input.stream()
+                        .filter(Predicates.notNull()::apply)
+                        .collect(ImmutableCollectors.toList()));
+        return Futures.transform(resultsFuture, toGraphIdIndex);
     }
 
     private ResultSetFuture resultOf(Statement query) {
         return session.executeAsync(query);
     }
 
-    private Statement queryForGraphIds(Iterable<Id> ids) {
-        return graphIdsSelect.bind(
-                 StreamSupport.stream(ids.spliterator(), false)
-                        .map(Id.toLongValue()::apply)
-                        .unordered()
-                        .distinct()
-                        .collect(Collectors.toList()));
+    private List<Statement> queriesForGraphIds(Iterable<Id> ids) {
+        return StreamSupport.stream(ids.spliterator(), false)
+                .map(Id.toLongValue()::apply)
+                .unordered()
+                .distinct()
+                .map(graphIdsSelect::bind)
+                .collect(ImmutableCollectors.toList());
     }
 
     @Override
