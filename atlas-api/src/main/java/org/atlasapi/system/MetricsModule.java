@@ -1,10 +1,14 @@
 package org.atlasapi.system;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import com.codahale.metrics.MetricRegistry;
 
-public interface MetricsModule {
+@Configuration
+public class MetricsModule {
 
-    @Bean MetricRegistry metrics();
+    public @Bean MetricRegistry metrics() {
+        return new MetricRegistry();
+    }
 }

@@ -21,7 +21,7 @@ public class HealthModule {
 
     private @Autowired Collection<HealthProbe> probes;
     private @Autowired HealthController healthController;
-    private @Autowired ApiMetricsModule metricsModule;
+    private @Autowired MetricsModule metricsModule;
     private @Autowired AtlasPersistenceModule persistenceModule;
 
     public @Bean HealthController healthController() {
