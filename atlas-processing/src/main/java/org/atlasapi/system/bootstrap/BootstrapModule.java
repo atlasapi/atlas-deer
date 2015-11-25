@@ -132,6 +132,7 @@ public class BootstrapModule {
     public ScheduleBootstrapController scheduleBootstrapController() {
         return new ScheduleBootstrapController(
                 workers.scheduleBootstrapTaskFactory(),
+                workers.scheduleBootstrapWithContentMigrationTaskFactory(),
                 persistence.channelResolver(),
                 executorService(NUMBER_OF_SCHECHULE_CONTROLLER_THREADS, "ScheduleBootstrapController"),
                 scheduleBootstrapper()
@@ -142,7 +143,8 @@ public class BootstrapModule {
     public ScheduleBootstrapper scheduleBootstrapper() {
         return new ScheduleBootstrapper(
                 executorService(NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS, "ScheduleBootstrapper"),
-                workers.scheduleBootstrapTaskFactory()
+                workers.scheduleBootstrapTaskFactory(),
+                workers.scheduleBootstrapWithContentMigrationTaskFactory()
         );
     }
 

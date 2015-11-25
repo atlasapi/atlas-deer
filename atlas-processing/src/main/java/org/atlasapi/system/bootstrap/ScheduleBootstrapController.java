@@ -51,7 +51,7 @@ public class ScheduleBootstrapController {
     private final ExecutorService executor;
     private final ScheduleBootstrapper scheduleBootstrapper;
     private final ObjectMapper jsonMapper = new ObjectMapper();
-    private final ChannelIntervalScheduleBootstrapTaskFactory bootstrapWithMigrationTaskFactory;
+    private final ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory;
 
     private static final DateTimeFormatter dateParser = ISODateTimeFormat.date();
     private static final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -59,7 +59,7 @@ public class ScheduleBootstrapController {
 
     public ScheduleBootstrapController(
             ChannelIntervalScheduleBootstrapTaskFactory taskFactory,
-            ChannelIntervalScheduleBootstrapTaskFactory bootstrapWithMigrationTaskFactory,
+            ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory,
             ChannelResolver channelResvoler,
             ExecutorService executor,
             ScheduleBootstrapper scheduleBootstrapper
