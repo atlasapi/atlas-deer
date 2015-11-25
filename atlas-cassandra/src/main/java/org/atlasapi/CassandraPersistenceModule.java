@@ -287,7 +287,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     public Session getSession() {
-        return dataStaxService.getSession(keyspace);
+        Session session = dataStaxService.getSession(keyspace);
+
+        // interpose a logging wrapper to all Cassandra requests
+        if(instrumentCassandra) {
+            session = new InstrumentedCassandraSession(session);
+        }
+
+        return session;
     }
 
     public EquivalenceGraphStore contentEquivalenceGraphStore() {

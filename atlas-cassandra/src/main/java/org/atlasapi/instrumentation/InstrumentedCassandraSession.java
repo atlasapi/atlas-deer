@@ -1,13 +1,6 @@
 package org.atlasapi.instrumentation;
 
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.CloseFuture;
-import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.RegularStatement;
-import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.*;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -22,7 +15,9 @@ public class InstrumentedCassandraSession implements Session {
     private static final Logger LOG = LoggerFactory.getLogger(InstrumentedCassandraSession.class);
     private final Session sut;
 
-    private AtomicLong callId = new AtomicLong(0);
+    // we need this id to unique across all instances of Session
+    // Atlas-Deer appears to create 5 (but this might be getSession calls)
+    private static AtomicLong callId = new AtomicLong(0);
 
     public InstrumentedCassandraSession(Session sut) {
         this.sut = checkNotNull(sut);
@@ -57,7 +52,7 @@ public class InstrumentedCassandraSession implements Session {
 
     @Override
     public ResultSet execute(Statement statement) {
-        long id = startObserving("executeS", statement.toString());
+        long id = startObserving("executeS", toMessage(statement));
         ResultSet result = sut.execute(statement);
         finishObserving(id);
         return result;
@@ -81,7 +76,7 @@ public class InstrumentedCassandraSession implements Session {
 
     @Override
     public ResultSetFuture executeAsync(Statement statement) {
-        long id = startObserving("executeAsyncS", statement.toString());
+        long id = startObserving("executeAsyncS", toMessage(statement));
         ResultSetFuture result = sut.executeAsync(statement);
         finishObservingAsync(id, result);
         return result;
@@ -89,22 +84,34 @@ public class InstrumentedCassandraSession implements Session {
 
     @Override
     public PreparedStatement prepare(String query) {
-        return sut.prepare(query);
+        long id = startObserving("prepareQ", query);
+        PreparedStatement result = sut.prepare(query);
+        finishObserving(id);
+        return result;
     }
 
     @Override
     public PreparedStatement prepare(RegularStatement statement) {
-        return sut.prepare(statement);
+        long id = startObserving("prepareS", statement.toString());
+        PreparedStatement result = sut.prepare(statement);
+        finishObserving(id);
+        return result;
     }
 
     @Override
     public ListenableFuture<PreparedStatement> prepareAsync(String query) {
-        return sut.prepareAsync(query);
+        long id = startObserving("prepareAsyncQ", query);
+        ListenableFuture<PreparedStatement> result = sut.prepareAsync(query);
+        finishObservingAsync(id, result);
+        return result;
     }
 
     @Override
     public ListenableFuture<PreparedStatement> prepareAsync(RegularStatement statement) {
-        return sut.prepareAsync(statement);
+        long id = startObserving("prepareAsyncS", statement.toString());
+        ListenableFuture<PreparedStatement> result = sut.prepareAsync(statement);
+        finishObservingAsync(id, result);
+        return result;
     }
 
     @Override
@@ -142,8 +149,25 @@ public class InstrumentedCassandraSession implements Session {
     private void finishObservingAsync(long id, ResultSetFuture observee) {
 
         Futures.addCallback(observee, new FutureCallback<ResultSet>() {
+
             @Override
             public void onSuccess(ResultSet resultSetFuture) {
+                LOG.info("<-- " + id);
+            }
+
+            @Override
+            public void onFailure(Throwable thrown) {
+                LOG.info("<-- " + id + " Error: " + thrown.toString());
+            }
+        });
+
+    }
+
+    private void finishObservingAsync(long id, ListenableFuture<PreparedStatement> observee) {
+
+        Futures.addCallback(observee, new FutureCallback<PreparedStatement>() {
+            @Override
+            public void onSuccess(PreparedStatement resultSetFuture) {
                 LOG.info("<-- " + id);
             }
 
@@ -159,4 +183,12 @@ public class InstrumentedCassandraSession implements Session {
         LOG.info("<-- " + id);
     }
 
+
+    private String toMessage(Statement statement) {
+        String message = statement instanceof BoundStatement
+                         ? ((BoundStatement) statement).preparedStatement().getQueryString()
+                         : statement.toString();
+
+        return message;
+    }
 }
