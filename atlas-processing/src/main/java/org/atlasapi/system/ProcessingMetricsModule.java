@@ -17,7 +17,7 @@ import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.metabroadcast.common.properties.Configurer;
 
 @Configuration
-public class ProcessingMetricsModule extends MetricsModule {
+public class ProcessingMetricsModule implements MetricsModule {
 
     private final String environmentPrefix = Configurer.get("metrics.environment.prefix").get();
     private final String graphiteHost = Configurer.get("metrics.graphite.host").get();
