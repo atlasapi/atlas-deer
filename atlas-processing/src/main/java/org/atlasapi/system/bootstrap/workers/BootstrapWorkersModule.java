@@ -18,6 +18,7 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
+import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
@@ -78,7 +79,7 @@ public class BootstrapWorkersModule {
     @Autowired
     private KafkaMessagingModule messaging;
     @Autowired
-    private ProcessingHealthModule health;
+    private ProcessingMetricsModule metricsModule;
     @Autowired
     private ElasticSearchContentIndexModule search;
 
@@ -97,7 +98,7 @@ public class BootstrapWorkersModule {
         ContentBootstrapWorker worker = new ContentBootstrapWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                health.metrics()
+                metricsModule.metrics()
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();

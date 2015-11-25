@@ -42,7 +42,7 @@ import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.schedule.ScheduleWriter;
 import org.atlasapi.segment.SegmentStore;
-import org.atlasapi.system.HealthModule;
+import org.atlasapi.system.MetricsModule;
 import org.atlasapi.system.legacy.LegacyChannelGroupResolver;
 import org.atlasapi.system.legacy.LegacyChannelGroupTransformer;
 import org.atlasapi.system.legacy.LegacyChannelResolver;
@@ -113,8 +113,8 @@ public class AtlasPersistenceModule {
 
     private String equivalentContentChanges = Configurer.get("messaging.destination.equivalent.content.changes").get();
 
-    @Autowired MessagingModule messaging;
-    @Autowired HealthModule health;
+    private @Autowired MessagingModule messaging;
+    private @Autowired MetricsModule metricsModule;
 
 
     @PostConstruct
@@ -128,7 +128,7 @@ public class AtlasPersistenceModule {
         ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster, cassandraKeyspace,
                 seeds, Integer.parseInt(cassandraPort),
                 Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout),
-                health.metrics());
+                metricsModule.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
 
@@ -150,7 +150,7 @@ public class AtlasPersistenceModule {
                 content -> UUID.randomUUID().toString(),
                 event -> UUID.randomUUID().toString(),
                 seeds,
-                health.metrics()
+                metricsModule.metrics()
         );
     }
     
@@ -244,7 +244,7 @@ public class AtlasPersistenceModule {
                         esIndex,
                         Long.parseLong(esRequestTimeout),
                         persistenceModule().contentStore(),
-                        health.metrics(),
+                        metricsModule.metrics(),
                         channelGroupResolver(),
                         new CassandraSecondaryIndex(
                                 persistenceModule().getSession(),
