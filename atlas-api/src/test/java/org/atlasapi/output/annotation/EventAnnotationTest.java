@@ -14,7 +14,7 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.v4.event.OrganisationListWriter;
+import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 import org.atlasapi.query.v4.event.PersonListWriter;
 import org.atlasapi.topic.Topic;
 import org.joda.time.DateTime;
