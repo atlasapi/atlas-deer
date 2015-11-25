@@ -220,7 +220,7 @@ public class BootstrapWorkersModule {
     public ScheduleBootstrapWithContentMigrationTaskFactory scheduleBootstrapWithContentMigrationTaskFactory() {
         return new ScheduleBootstrapWithContentMigrationTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()), search.equivContentIndex(), 
-                explicitEquivalenceMigrator(), persistence);
+                explicitEquivalenceMigrator(), persistence, legacy);
     }
     
     @Bean

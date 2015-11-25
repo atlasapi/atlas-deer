@@ -253,7 +253,8 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             Content series = resolveLegacyContent(seriesRefId);
             migrateContent(series, seriesMigrationResultBuilder);
 
-            if(seriesMigrationResultBuilder.isSucceeded() && series instanceof Container) {
+            if(seriesMigrationResultBuilder.isSucceeded() 
+                    && series instanceof Container) {
                 migrateHierarchy((Container) series, seriesMigrationResultBuilder);
             }
 
@@ -401,6 +402,11 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             this.contentIndex = contentIndex;
             return this;
         }
+        
+        public Builder withLegacyPersistenceModule(LegacyPersistenceModule legacyPersistenceModule) {
+            this.legacyPersistenceModule = legacyPersistenceModule;
+            return this;
+        }
 
         public Builder withMigrateHierarchies(LegacyPersistenceModule legacyPersistenceModule) {
             this.migrateHierarchy = true;
@@ -420,7 +426,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                     equivalenceMigrator,
                     equivalentContentStore,
                     contentIndex,
-                    migrateHierarchy,
+                    migrateHierarchy,   
                     legacyPersistenceModule,
                     migrateEquivalents,
                     equivalenceGraphStore

@@ -11,6 +11,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.schedule.ScheduleWriter;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.joda.time.Interval;
 
 import com.google.common.base.Optional;
@@ -32,7 +33,8 @@ public class ScheduleBootstrapWithContentMigrationTaskFactory
 
     public ScheduleBootstrapWithContentMigrationTaskFactory(ScheduleResolver scheduleResolver,
             ScheduleWriter scheduleWriter, ContentStore contentStore, ContentIndex contentIndex,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, AtlasPersistenceModule persistence) {
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, AtlasPersistenceModule persistence,
+            LegacyPersistenceModule legacyPersistenceModule) {
         this.scheduleResolver = checkNotNull(scheduleResolver);
         this.scheduleWriter = checkNotNull(scheduleWriter);
         this.contentStore = checkNotNull(contentStore);
@@ -42,6 +44,7 @@ public class ScheduleBootstrapWithContentMigrationTaskFactory
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(contentIndex)
                 .withMigrateEquivalents(persistence.nullMessageSendingEquivalenceGraphStore())
+                .withLegacyPersistenceModule(legacyPersistenceModule)
                 .build();
     }
 
