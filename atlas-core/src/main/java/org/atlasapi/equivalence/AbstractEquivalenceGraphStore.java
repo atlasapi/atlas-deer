@@ -77,7 +77,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 while((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
                     lock().unlock(subjectAndAdjacents);
                     lock().wait(5000);
-                    LOG.debug("Attempting to lock IDs");
+                    LOG.debug("Thread {} attempting to lock IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
                 }
             }
             LOG.debug("Thread {} has left synchronized block, having locked graph IDs", Thread.currentThread().getName());
@@ -99,11 +99,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             cleanGraphAndIndex(e.getSubjectId());
             return updateEquivalences(subject, assertedAdjacents, sources);
         } finally {
+            LOG.debug("Thread {} waiting for lock to unlock {} and {}", Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds);
             synchronized (lock()) {
+                LOG.debug("Thread {} unlocking IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
                 lock().unlock(subjectAndAdjacents);
                 if (transitiveSetsIds != null) {
+                    LOG.debug("Thread {} unlocking transitive IDs {}", Thread.currentThread().getName(), transitiveSetsIds);
                     lock().unlock(transitiveSetsIds);
                 }
+                LOG.debug("Thread {} performing notifyAll", Thread.currentThread().getName(), transitiveSetsIds);
                 lock().notifyAll();
             }
         }
@@ -131,7 +135,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
         if (!lock().tryLock(adjacentsIds)) {
-            LOG.debug("Failed to lock adjacents {}", adjacentsIds);
+            LOG.debug("Thread {} failed to lock adjacents {}", Thread.currentThread().getName(), adjacentsIds);
             return null;
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
@@ -139,7 +143,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
-        LOG.debug("Lock attempt success status {} locking transitive set {}", locked, idsToLock);
+        LOG.debug("Thread {} Lock attempt success status {} locking transitive set {}", Thread.currentThread().getName(), locked, idsToLock);
         return locked ? allIds : null;
     }
 
