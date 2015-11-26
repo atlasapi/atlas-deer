@@ -445,6 +445,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         );
     }
 
+    // This is sanity checking that the resolved row actually belongs to the set graph.
+    // It might not be in case of stale entries that were removed from the graph, but
+    // due to a bug or missed message the row did not get removed in this store.
+    // In that case the row will currently never get removed
     private boolean containedInGraph(Id contentId, Row row) {
         if (row.getBytes(GRAPH_KEY) == null) {
             return true;
