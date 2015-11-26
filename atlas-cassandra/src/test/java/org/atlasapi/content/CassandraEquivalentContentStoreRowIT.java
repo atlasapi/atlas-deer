@@ -3,6 +3,10 @@ package org.atlasapi.content;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static org.atlasapi.content.CassandraEquivalentContentStore.CONTENT_ID_KEY;
+import static org.atlasapi.content.CassandraEquivalentContentStore.EQUIVALENT_CONTENT_TABLE;
+import static org.atlasapi.content.CassandraEquivalentContentStore.GRAPH_KEY;
+import static org.atlasapi.content.CassandraEquivalentContentStore.SET_ID_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -130,9 +134,9 @@ public class CassandraEquivalentContentStoreRowIT {
         persistenceModule.equivalentContentStore().updateContent(c1);
 
         persistenceModule.getCassandraSession().execute(
-                QueryBuilder.update("equivalent_content")
-                        .where(eq("set_id", c1.getId().longValue()))
-                        .with(set("graph", null))
+                QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
+                        .where(eq(SET_ID_KEY, c1.getId().longValue()))
+                        .with(set(GRAPH_KEY, null))
         );
 
         resolved(c1, c1);
@@ -188,9 +192,9 @@ public class CassandraEquivalentContentStoreRowIT {
         makeEquivalent(c1, c2);
 
         persistenceModule.getCassandraSession().execute(
-                QueryBuilder.update("equivalent_content")
-                        .where(eq("set_id", c1.getId().longValue()))
-                        .with(set("graph", null))
+                QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
+                        .where(eq(SET_ID_KEY, c1.getId().longValue()))
+                        .with(set(GRAPH_KEY, null))
         );
 
         resolvedSet(c1.getId(), c1, c2);
@@ -205,18 +209,18 @@ public class CassandraEquivalentContentStoreRowIT {
         persistenceModule.equivalentContentStore().updateContent(c2);
 
         ResultSet result = persistenceModule.getCassandraSession().execute(
-                QueryBuilder.select("graph").from("equivalent_content")
-                        .where(eq("set_id", c1.getId().longValue()))
+                QueryBuilder.select(GRAPH_KEY).from(EQUIVALENT_CONTENT_TABLE)
+                        .where(eq(SET_ID_KEY, c1.getId().longValue()))
         );
 
         makeEquivalent(c1, c2);
 
-        ByteBuffer oldGraph = result.iterator().next().getBytes("graph");
+        ByteBuffer oldGraph = result.iterator().next().getBytes(GRAPH_KEY);
 
         persistenceModule.getCassandraSession().execute(
-                QueryBuilder.update("equivalent_content")
-                        .where(eq("set_id", c1.getId().longValue()))
-                        .with(set("graph", oldGraph))
+                QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
+                        .where(eq(SET_ID_KEY, c1.getId().longValue()))
+                        .with(set(GRAPH_KEY, oldGraph))
         );
 
         resolvedSet(c1.getId(), c1);
@@ -224,9 +228,9 @@ public class CassandraEquivalentContentStoreRowIT {
 
     private void assertNoRowsWithIds(Id setId, Id contentId) {
         Session session = persistenceModule.getCassandraSession();
-        Statement rowsForIdQuery = select().all().from("equivalent_content")
-                .where(eq("set_id", setId.longValue()))
-                .and(eq("content_id", contentId.longValue()));
+        Statement rowsForIdQuery = select().all().from(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, setId.longValue()))
+                .and(eq(CONTENT_ID_KEY, contentId.longValue()));
         ResultSet rows = session.execute(rowsForIdQuery);
         boolean exhausted = rows.isExhausted();
         assertTrue(String.format("Expected 0 rows for %s-%s, got %s", setId, contentId, rows.all().size()), exhausted);
@@ -234,7 +238,7 @@ public class CassandraEquivalentContentStoreRowIT {
 
     private void assertNoRowsWithSetId(Id setId) {
         Session session = persistenceModule.getCassandraSession();
-        Statement rowsForIdQuery = select().all().from("equivalent_content").where(eq("set_id", setId.longValue()));
+        Statement rowsForIdQuery = select().all().from(EQUIVALENT_CONTENT_TABLE).where(eq(SET_ID_KEY, setId.longValue()));
         ResultSet rows = session.execute(rowsForIdQuery);
         boolean exhausted = rows.isExhausted();
         assertTrue(String.format("Expected 0 rows for %s, got %s", setId, rows.all().size()), exhausted);

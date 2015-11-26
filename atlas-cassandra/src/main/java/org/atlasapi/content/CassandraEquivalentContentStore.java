@@ -67,12 +67,17 @@ import com.metabroadcast.common.queue.MessageSender;
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
     public static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
-    private static final String EQUIVALENT_CONTENT_TABLE = "equivalent_content";
-    
-    private static final String SET_ID_KEY = "set_id";
-    private static final String CONTENT_ID_KEY = "content_id";
-    private static final String DATA_KEY = "data";
-    private static final String GRAPH_KEY = "graph";
+    public static final String EQUIVALENT_CONTENT_TABLE = "equivalent_content";
+
+    public static final String SET_ID_KEY = "set_id";
+    public static final String CONTENT_ID_KEY = "content_id";
+    public static final String DATA_KEY = "data";
+    public static final String GRAPH_KEY = "graph";
+
+    private static final String SET_ID_BIND = "set_id";
+    private static final String CONTENT_ID_BIND = "content_id";
+    private static final String DATA_BIND = "data";
+    private static final String GRAPH_BIND = "graph";
 
     private final LegacyContentResolver legacyContentResolver;
     private final Session session;
@@ -113,7 +118,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         RegularStatement statement = select().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker("setId")))
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .orderBy(asc(CONTENT_ID_KEY));
         statement.setFetchSize(Integer.MAX_VALUE);
         statement.setConsistencyLevel(read);
@@ -121,8 +126,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         this.rowDelete = session.prepare(delete()
                 .from(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker("setId")))
-                .and(eq(CONTENT_ID_KEY, bindMarker("contentId"))));
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .and(eq(CONTENT_ID_KEY, bindMarker(CONTENT_ID_BIND))));
 
         this.setDelete = session.prepare(delete().all()
                 .from(EQUIVALENT_CONTENT_TABLE)
@@ -130,20 +135,20 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         this.setDelete.setConsistencyLevel(writeConsistency);
 
         this.dataRowUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker("setId")))
-                .and(eq(CONTENT_ID_KEY, bindMarker("contentId")))
-                .with(set(DATA_KEY, bindMarker("data"))));
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .and(eq(CONTENT_ID_KEY, bindMarker(CONTENT_ID_BIND)))
+                .with(set(DATA_KEY, bindMarker(DATA_BIND))));
 
         this.singleDataRowUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker("setId")))
-                .and(eq(CONTENT_ID_KEY, bindMarker("contentId")))
-                .with(set(DATA_KEY, bindMarker("data")))
-                .and(set(GRAPH_KEY, bindMarker("graph")))
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .and(eq(CONTENT_ID_KEY, bindMarker(CONTENT_ID_BIND)))
+                .with(set(DATA_KEY, bindMarker(DATA_BIND)))
+                .and(set(GRAPH_KEY, bindMarker(GRAPH_BIND)))
         );
 
         this.graphUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker("setId")))
-                .with(set(GRAPH_KEY, bindMarker("graph")))
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .with(set(GRAPH_KEY, bindMarker(GRAPH_BIND)))
         );
 
         this.equivSetSelect = session.prepare(
@@ -289,7 +294,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     
     private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
-                .map(k -> setsSelect.bind().setLong("setId", k))
+                .map(k -> setsSelect.bind().setLong(SET_ID_BIND, k))
                 .collect(ImmutableCollectors.toList());
     }
     
@@ -322,8 +327,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         return uniqueGraphs.entrySet().stream()
                 .map(entry -> graphUpdate.bind()
-                        .setLong("setId", entry.getKey().longValue())
-                        .setBytes("graph", graphSerializer.serialize(entry.getValue()))
+                        .setLong(SET_ID_BIND, entry.getKey().longValue())
+                        .setBytes(GRAPH_BIND, graphSerializer.serialize(entry.getValue()))
                 )
                 .collect(ImmutableCollectors.toList());
     }
@@ -334,9 +339,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .map(entry -> {
                     Content content = entry.getValue();
                     return dataRowUpdate.bind()
-                            .setLong("setId", entry.getKey().getId().longValue())
-                            .setLong("contentId", content.getId().longValue())
-                            .setBytes("data", serialize(content));
+                            .setLong(SET_ID_BIND, entry.getKey().getId().longValue())
+                            .setLong(CONTENT_ID_BIND, content.getId().longValue())
+                            .setBytes(DATA_BIND, serialize(content));
                 })
                 .collect(ImmutableCollectors.toList());
     }
@@ -367,8 +372,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return createdGraphs.stream()
                     .flatMap(graph -> graph.getEquivalenceSet().stream())
                     .map(elem -> rowDelete.bind()
-                            .setLong("setId", updatedGraphId.longValue())
-                            .setLong("contentId", elem.longValue()))
+                            .setLong(SET_ID_BIND, updatedGraphId.longValue())
+                            .setLong(CONTENT_ID_BIND, elem.longValue()))
                     .collect(Collectors.toList());
     }
 
@@ -386,10 +391,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     @Override
     protected void updateInSet(EquivalenceGraph graph, Content content) {
         session.execute(singleDataRowUpdate.bind()
-                .setLong("setId", graph.getId().longValue())
-                .setLong("contentId", content.getId().longValue())
-                .setBytes("data", serialize(content))
-                .setBytes("graph", graphSerializer.serialize(graph))
+                .setLong(SET_ID_BIND, graph.getId().longValue())
+                .setLong(CONTENT_ID_BIND, content.getId().longValue())
+                .setBytes(DATA_BIND, serialize(content))
+                .setBytes(GRAPH_BIND, graphSerializer.serialize(graph))
                 .setConsistencyLevel(writeConsistency));
     }
 
@@ -418,9 +423,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private void updateDataColumn(Long setId, Content content) {
         session.executeAsync(dataRowUpdate.bind()
-                .setLong("setId", setId)
-                .setLong("contentId", content.getId().longValue())
-                .setBytes("data", serialize(content)));
+                .setLong(SET_ID_BIND, setId)
+                .setLong(CONTENT_ID_BIND, content.getId().longValue())
+                .setBytes(DATA_BIND, serialize(content)));
     }
 
     @Override
