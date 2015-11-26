@@ -56,7 +56,7 @@ public class CassandraInit {
         session.execute("CREATE TABLE equivalence_graph_index (resource_id bigint, graph_id bigint, PRIMARY KEY (resource_id));");
         session.execute("CREATE TABLE equivalence_graph (graph_id bigint, graph blob, PRIMARY KEY (graph_id));");
         session.execute("CREATE TABLE equivalent_content_index (key bigint, value bigint, PRIMARY KEY (key));");
-        session.execute("CREATE TABLE equivalent_content (set_id bigint, content_id bigint, graph blob, data blob, PRIMARY KEY (set_id,content_id));");
+        session.execute("CREATE TABLE equivalent_content (set_id bigint, content_id bigint, graph blob static, data blob, PRIMARY KEY (set_id,content_id));");
         session.execute("CREATE TABLE equivalent_schedule (source text, channel bigint, day timestamp, broadcast_id text, broadcast_start timestamp, broadcast blob, graph blob, content_count bigint, content blob, schedule_update timestamp, equiv_update timestamp, PRIMARY KEY ((source, channel, day), broadcast_id)) ");
 
         /*
