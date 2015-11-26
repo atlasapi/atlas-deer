@@ -61,6 +61,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private Boolean processing = Objects.firstNonNull(Configurer.get("processing.config"), Parameter.valueOf("false")).toBoolean();
 
     private final String keyspace;
+    private final Session session;
 
     private final ContentHasher contentHasher;
     private final EventHasher eventHasher;
@@ -106,6 +107,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.keyspace = keyspace;
         this.context = context;
         this.metrics = metrics;
+        this.session = dataStaxService.getSession(keyspace);
     }
 
     private Equivalence<Segment> segmentEquivalence() {
@@ -279,7 +281,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     public Session getSession() {
-        return dataStaxService.getSession(keyspace);
+        return session;
     }
 
     public EquivalenceGraphStore contentEquivalenceGraphStore() {
