@@ -223,7 +223,7 @@ public class QueryWebModule {
     }
 
     @Bean SelectionBuilder selectionBuilder() {
-        return Selection.builder().withDefaultLimit(50).withMaxLimit(100);
+        return Selection.builder().withDefaultLimit(50).withMaxLimit(250);
     }
 
     @Bean EntityWriter<HttpServletRequest> requestWriter() {
