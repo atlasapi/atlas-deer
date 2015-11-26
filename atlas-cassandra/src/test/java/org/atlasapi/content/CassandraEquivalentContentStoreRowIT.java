@@ -2,9 +2,11 @@ package org.atlasapi.content;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +28,7 @@ import org.junit.Test;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -111,6 +114,114 @@ public class CassandraEquivalentContentStoreRowIT {
         assertNoRowsWithSetId(c5.getId());
     }
 
+    @Test
+    public void testResolveSingleContent() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1);
+
+        resolved(c1, c1);
+    }
+
+    @Test
+    public void testResolveSingleContentWithNoGraph() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1);
+
+        persistenceModule.getCassandraSession().execute(
+                QueryBuilder.update("equivalent_content")
+                        .where(eq("set_id", c1.getId().longValue()))
+                        .with(set("graph", null))
+        );
+
+        resolved(c1, c1);
+    }
+
+    @Test
+    public void testResolveAllContentInSet() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c2);
+
+        makeEquivalent(c1, c2);
+
+        resolved(c1, c1, c2);
+    }
+
+    @Test
+    public void testResolveAllContentInSetWithNoGraph() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c2);
+
+        makeEquivalent(c1, c2);
+
+        persistenceModule.equivalentContentStore().resolveEquivalentSet(c1.getId().longValue());
+    }
+
+    @Test
+    public void testResolveSet() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c2);
+
+        makeEquivalent(c1, c2);
+
+        resolvedSet(c1.getId(), c1, c2);
+    }
+
+    @Test
+    public void testResolveSetWithNoGraph() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c2);
+
+        makeEquivalent(c1, c2);
+
+        persistenceModule.getCassandraSession().execute(
+                QueryBuilder.update("equivalent_content")
+                        .where(eq("set_id", c1.getId().longValue()))
+                        .with(set("graph", null))
+        );
+
+        resolvedSet(c1.getId(), c1, c2);
+    }
+
+    @Test
+    public void testDoNotResolveContentThatIsNotInGraph() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c2);
+
+        ResultSet result = persistenceModule.getCassandraSession().execute(
+                QueryBuilder.select("graph").from("equivalent_content")
+                        .where(eq("set_id", c1.getId().longValue()))
+        );
+
+        makeEquivalent(c1, c2);
+
+        ByteBuffer oldGraph = result.iterator().next().getBytes("graph");
+
+        persistenceModule.getCassandraSession().execute(
+                QueryBuilder.update("equivalent_content")
+                        .where(eq("set_id", c1.getId().longValue()))
+                        .with(set("graph", oldGraph))
+        );
+
+        resolvedSet(c1.getId(), c1);
+    }
+
     private void assertNoRowsWithIds(Id setId, Id contentId) {
         Session session = persistenceModule.getCassandraSession();
         Statement rowsForIdQuery = select().all().from("equivalent_content")
@@ -135,6 +246,12 @@ public class CassandraEquivalentContentStoreRowIT {
                     ImmutableSet.of(Publisher.METABROADCAST), Annotation.all()));
         ImmutableSet<Content> idContent = resolved.get(c.getId());
         assertEquals(ImmutableSet.copyOf(cs), idContent);
+    }
+
+    private void resolvedSet(Id setId, Content... cs) throws Exception {
+        Set<Content> content = get(persistenceModule.equivalentContentStore()
+                .resolveEquivalentSet(setId.longValue()));
+        assertEquals(ImmutableSet.copyOf(cs), content);
     }
 
     private <T> T get(ListenableFuture<T> resolveIds) throws Exception {
