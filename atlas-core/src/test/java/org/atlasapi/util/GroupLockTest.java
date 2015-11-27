@@ -153,7 +153,6 @@ public class GroupLockTest {
     @Test
     public void testUnlocksAllGroupElementsIfTryLockFailsAGroup() throws InterruptedException {
 
-        final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch finish = new CountDownLatch(2);
         final GroupLock<String> lock = GroupLock.<String>natural();
         
@@ -163,13 +162,11 @@ public class GroupLockTest {
             @Override
             public Void call() throws Exception {
                 lock.lock(ImmutableSet.of("B"));
-                start.countDown();
                 finish.await();
                 return null;
             }
         });
         
-        start.await();
         assertFalse(lock.tryLock(ImmutableSet.of("A","B","C")));
         assertTrue(lock.tryLock("A"));
         assertTrue(lock.tryLock("C"));
