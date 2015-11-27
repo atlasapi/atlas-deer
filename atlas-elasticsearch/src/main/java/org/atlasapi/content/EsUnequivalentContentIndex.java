@@ -239,6 +239,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             reqBuilder.addSort(
                     SortBuilders
                             .fieldSort(translateOrderField(order.getPath()))
+                            .missing("_last")
                             .order(order.isAscending() ? SortOrder.ASC : SortOrder.DESC)
             );
         }
