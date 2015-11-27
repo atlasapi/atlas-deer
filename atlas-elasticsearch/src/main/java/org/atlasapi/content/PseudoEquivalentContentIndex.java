@@ -124,8 +124,9 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
             ListenableFuture<ImmutableMap<Long, Long>> result =
                     equivIdIndex.lookup(ImmutableList.of(id.longValue()));
             ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
-            if(idToCanonical.get(Long.valueOf(id.longValue())) != null) {
-                return Optional.of(Id.valueOf(idToCanonical.get(id.longValue())));
+            Long canonicalId = idToCanonical.get(id.longValue());
+            if (canonicalId != null) {
+                return Optional.of(Id.valueOf(canonicalId));
             }
             LOG.warn("Found no canonical ID for {} using {}", id, id);
         } catch (IOException e) {
