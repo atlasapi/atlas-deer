@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Arrays;
 
 import org.atlasapi.util.ImmutableCollectors;
@@ -18,8 +20,8 @@ public class QueryOrdering {
         private final Direction direction;
 
         public Node(String path, Direction direction) {
-            this.path = path;
-            this.direction = direction;
+            this.path = checkNotNull(path);
+            this.direction = checkNotNull(direction);
         }
 
         public boolean isAscending() {
@@ -34,7 +36,7 @@ public class QueryOrdering {
     private final ImmutableList<Node> sortOrder;
 
     public QueryOrdering(ImmutableList<Node> sortOrder) {
-        this.sortOrder = sortOrder;
+        this.sortOrder = checkNotNull(sortOrder);
     }
 
     public ImmutableList<Node> getSortOrder() {
