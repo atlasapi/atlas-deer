@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.atlasapi.util.ImmutableCollectors;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 public class QueryOrdering {
@@ -31,6 +32,14 @@ public class QueryOrdering {
         public String getPath() {
             return path;
         }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this)
+                    .add("path", path)
+                    .add("direction", direction)
+                    .toString();
+        }
     }
 
     private final ImmutableList<Clause> sortOrder;
@@ -48,11 +57,11 @@ public class QueryOrdering {
                 .map(clause -> {
                     int lastDot = clause.lastIndexOf(".");
                     if (lastDot == -1) {
-                        throw new IllegalArgumentException("Missing .asc or .desc operator after " + clause);
+                        return new Clause(clause, Direction.ASC);
                     }
 
-                   String path = clause.substring(0, lastDot);
-                   Direction direction = Direction.valueOf(clause.substring(lastDot + 1, clause.length()).toUpperCase());
+                    String path = clause.substring(0, lastDot);
+                    Direction direction = Direction.valueOf(clause.substring(lastDot + 1, clause.length()).toUpperCase());
 
                     return new Clause(path, direction);
                 })
