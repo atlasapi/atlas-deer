@@ -1,10 +1,14 @@
 package org.atlasapi.content;
 
 import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +38,6 @@ import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.index.get.GetField;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -72,7 +75,9 @@ public class EsUnequivalentContentIndexTest {
 
     @Before
     public void setup() {
-        index = new EsUnequivalentContentIndex(esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), equivIdIndex, 60);
+        index = new EsUnequivalentContentIndex(
+                esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(),
+                mock(ChannelGroupResolver.class), equivIdIndex, 60_000);
         index.startAsync().awaitRunning();
     }
 
@@ -285,7 +290,6 @@ public class EsUnequivalentContentIndexTest {
         assertThat(result.getIds().first().get(), is(item1.getId()));
     }
 
-
     @Test
     public void testTitlePrefixQueryWithNonLetterCharacter() throws Exception {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l, 30l, 30l)));
@@ -367,7 +371,13 @@ public class EsUnequivalentContentIndexTest {
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
     }
 
+    @Test
     public void testQueryOrder() throws Exception {
+        for (Long id : ImmutableList.of(1L, 2L, 3L)) {
+            when(equivIdIndex.lookup(eq(ImmutableList.of(id))))
+                    .thenReturn(Futures.immediateFuture(ImmutableMap.of(id, id)));
+        }
+
         Content episode1 = episode(1);
         episode1.setTags(ImmutableList.of(new Tag(4L,
                 1.0f,
@@ -386,18 +396,140 @@ public class EsUnequivalentContentIndexTest {
 
         indexAndRefresh(episode1, episode2, episode3);
 
-        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(Operators.EQUALS,
-                ImmutableList.of(Id.valueOf(4)));
+        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(
+                Operators.EQUALS,
+                ImmutableList.of(Id.valueOf(4))
+        );
 
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
-        ListenableFuture<IndexQueryResult> result = index.query(querySet,
+        ListenableFuture<IndexQueryResult> result = index.query(
+                querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all(), Optional.empty());
+                Selection.all(),
+                Optional.of(new IndexQueryParams(
+                        Optional.empty(),
+                        Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc")),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Boolean.TRUE,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty()
+                )
+        ));
 
-        IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
+        IndexQueryResult ids = result.get();
+        assertThat(ids.getIds().get(0), is(Id.valueOf(3)));
+        assertThat(ids.getIds().get(1), is(Id.valueOf(2)));
+        assertThat(ids.getIds().get(2), is(Id.valueOf(1)));
+    }
+
+    @Test
+    public void orderByMissingFieldGetsContentWithNullsLast() throws Exception {
+        for (Long id : ImmutableList.of(1L, 2L, 3L)) {
+            when(equivIdIndex.lookup(eq(ImmutableList.of(id))))
+                    .thenReturn(Futures.immediateFuture(ImmutableMap.of(id, id)));
+        }
+
+        Content episode1 = episode(1);
+        episode1.setTags(ImmutableList.of(new Tag(4L,
+                1.0f,
+                true,
+                Tag.Relationship.ABOUT)));
+        Content episode2 = episode(2);
+        episode2.setTags(ImmutableList.of(new Tag(4L,
+                1.5f,
+                true,
+                Tag.Relationship.ABOUT)));
+        Content episode3 = episode(3);
+
+        indexAndRefresh(episode1, episode2, episode3);
+
+        AttributeQuery<Id> query = Attributes.ID.createQuery(
+                Operators.EQUALS,
+                ImmutableList.of(Id.valueOf(1), Id.valueOf(2), Id.valueOf(3))
+        );
+
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
+        ListenableFuture<IndexQueryResult> result = index.query(
+                querySet,
+                ImmutableList.of(Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.of(new IndexQueryParams(
+                                Optional.empty(),
+                                Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc")),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Boolean.TRUE,
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
+                ));
+
+        IndexQueryResult ids = result.get();
         assertThat(ids.getIds().get(0), is(Id.valueOf(2)));
         assertThat(ids.getIds().get(1), is(Id.valueOf(1)));
         assertThat(ids.getIds().get(2), is(Id.valueOf(3)));
+    }
+
+    @Test
+    public void orderByMultipleFieldsWorks() throws Exception {
+        for (Long id : ImmutableList.of(1L, 2L, 3L)) {
+            when(equivIdIndex.lookup(eq(ImmutableList.of(id))))
+                    .thenReturn(Futures.immediateFuture(ImmutableMap.of(id, id)));
+        }
+
+        Content episode1 = episode(1);
+        episode1.setTags(ImmutableList.of(new Tag(4L,
+                1.0f,
+                true,
+                Tag.Relationship.ABOUT)));
+        Content episode2 = episode(2);
+        episode2.setTags(ImmutableList.of(new Tag(4L,
+                1.0f,
+                true,
+                Tag.Relationship.ABOUT)));
+        Content episode3 = episode(3);
+        episode3.setTags(ImmutableList.of(new Tag(4L,
+                2.0f,
+                false,
+                Tag.Relationship.ABOUT)));
+
+        indexAndRefresh(episode1, episode2, episode3);
+
+        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(
+                Operators.EQUALS,
+                ImmutableList.of(Id.valueOf(4))
+        );
+
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
+        ListenableFuture<IndexQueryResult> result = index.query(
+                querySet,
+                ImmutableList.of(Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.of(new IndexQueryParams(
+                                Optional.empty(),
+                                Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc,id.asc")),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Boolean.TRUE,
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
+                ));
+
+        IndexQueryResult ids = result.get();
+        assertThat(ids.getIds().get(0), is(Id.valueOf(3)));
+        assertThat(ids.getIds().get(1), is(Id.valueOf(1)));
+        assertThat(ids.getIds().get(2), is(Id.valueOf(2)));
     }
 
     private Content episode(int id) {
