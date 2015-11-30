@@ -233,15 +233,15 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
     private void addSortOrder(Optional<QueryOrdering> ordering, SearchRequestBuilder reqBuilder) {
         QueryOrdering order = ordering.get();
-        for (QueryOrdering.Node node : order.getSortOrder()) {
-            if ("relevance".equalsIgnoreCase(node.getPath())) {
+        for (QueryOrdering.Clause clause : order.getSortOrder()) {
+            if ("relevance".equalsIgnoreCase(clause.getPath())) {
                 reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
             } else {
                 reqBuilder.addSort(
                         SortBuilders
-                                .fieldSort(translateOrderField(node.getPath()))
+                                .fieldSort(translateOrderField(clause.getPath()))
                                 .missing("_last")
-                                .order(node.isAscending() ? SortOrder.ASC : SortOrder.DESC)
+                                .order(clause.isAscending() ? SortOrder.ASC : SortOrder.DESC)
                 );
             }
         }
