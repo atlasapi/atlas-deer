@@ -1,5 +1,6 @@
 package org.atlasapi.system.legacy;
 
+import org.atlasapi.content.criteria.ContentQuery;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -56,6 +57,13 @@ public class LegacyTopicResolver implements TopicResolver {
                 }
             }
         ));
+    }
+
+    public Iterable<Topic> resolveAll() {
+        return Iterables.transform(
+                topicResolver.topicsFor(ContentQuery.MATCHES_EVERYTHING),
+                transformer
+        );
     }
 
 }

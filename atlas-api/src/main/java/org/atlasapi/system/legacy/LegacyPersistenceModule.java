@@ -75,7 +75,7 @@ public class LegacyPersistenceModule {
 
     @Bean
     @Qualifier("legacy")
-    public TopicResolver legacyTopicResolver() {
+    public LegacyTopicResolver legacyTopicResolver() {
         return new LegacyTopicResolver(legacyTopicStore(), legacyTopicStore());
     }
 
