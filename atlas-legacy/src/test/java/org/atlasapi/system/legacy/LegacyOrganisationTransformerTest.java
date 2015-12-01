@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 public class LegacyOrganisationTransformerTest {
 
@@ -45,6 +46,7 @@ public class LegacyOrganisationTransformerTest {
         organisation.setContents(ImmutableList.of(
                 new ChildRef(1111L, "uri", "sort", DateTime.now(), EntityType.ITEM)
         ));
+        organisation.setAlternativeTitles(ImmutableSet.of("title1","title2"));
 
         Person person = new Person();
         person.setId(2222L);
@@ -59,6 +61,7 @@ public class LegacyOrganisationTransformerTest {
         checkContent(organisation, input);
         assertThat(organisation.members().size(), is(input.members().size()));
         assertThat(organisation.members().get(0).getId().longValue(), is(input.members().get(0).getId()));
+        assertThat(organisation.getAlternativeTitles().size(), is(input.getAlternativeTitles().size()));
     }
 
     private void checkContent(org.atlasapi.organisation.Organisation organisation, Organisation input) {

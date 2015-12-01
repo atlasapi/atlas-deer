@@ -33,8 +33,7 @@ public class OrganisationQueryExecutorTest {
     @InjectMocks
     private OrganisationQueryExecutor objectUnderTest;
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
+
     @Test
     public void testExecuteSingle() throws Exception {
         Id organisationId = Id.valueOf(1L);
@@ -58,11 +57,10 @@ public class OrganisationQueryExecutorTest {
     }
 
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void testExecuteMultiFails() throws Exception {
         Query<Organisation> organisationQuery = mock(Query.class);
         when(organisationQuery.isListQuery()).thenReturn(true);
-        exception.expect(UnsupportedOperationException.class);
         objectUnderTest.execute(organisationQuery);
     }
 }

@@ -19,7 +19,7 @@ public class LegacyOrganisationResolver implements OrganisationResolver {
     private OrganisationStore store;
     private LegacyOrganisationTransformer transformer;
 
-    public LegacyOrganisationResolver(MongoOrganisationStore store, LegacyOrganisationTransformer transformer) {
+    public LegacyOrganisationResolver(OrganisationStore store, LegacyOrganisationTransformer transformer) {
         this.store = store;
         this.transformer = transformer;
     }
