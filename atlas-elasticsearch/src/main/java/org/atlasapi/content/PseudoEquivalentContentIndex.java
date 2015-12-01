@@ -3,8 +3,8 @@ package org.atlasapi.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -49,7 +49,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     Exception.class
             );
 
-            Set<Id> canonicalIds = result.getCanonicalIds();
+            List<Id> canonicalIds = result.getCanonicalIds();
             ImmutableList<Id> paginatedCanonicalIds = paginateIds(canonicalIds, selection);
 
             ImmutableList<Id> ids = resolveCanonicalIds(paginatedCanonicalIds, result);

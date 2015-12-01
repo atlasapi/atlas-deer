@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -150,10 +150,10 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
          * then we have more: return for use with response.
          */
         return Futures.transform(response, (SearchResponse input) -> {
-            ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = StreamSupport
+            ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap = StreamSupport
                     .stream(input.getHits().spliterator(), false)
                     .filter(hit -> getCanonicalId(hit) != null)
-                    .collect(ImmutableCollectors.toMultiMap(this::getCanonicalId, this::getId));
+                    .collect(ImmutableCollectors.toListMultiMap(this::getCanonicalId, this::getId));
 
             return IndexQueryResult.withIdsAndCanonicalIds(
                     canonicalIdToIdMultiMap,
