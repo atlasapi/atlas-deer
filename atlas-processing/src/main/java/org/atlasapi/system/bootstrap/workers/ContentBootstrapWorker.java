@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
 public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
@@ -36,7 +36,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     }
 
     @Override
-    public void process(ResourceUpdatedMessage message) {
+    public void process(ResourceUpdatedMessage message) throws RecoverableException {
         Id contentId = message.getUpdatedResource().getId();
         LOG.debug("Processing message on id {}, message: {}", contentId, message);
 
@@ -50,7 +50,9 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             LOG.debug("Bootstrapped content {}", result.toString());
             time.stop();
         } catch (Exception e) {
-            LOG.error("Failed to bootstrap content {} - {} {}", message.getUpdatedResource(), e, Throwables.getStackTraceAsString(e));
+            String errorMsg = "Failed to bootstrap content " + message.getUpdatedResource();
+            LOG.error(errorMsg, e);
+            throw new RecoverableException(errorMsg, e);
         }
     }
 }
