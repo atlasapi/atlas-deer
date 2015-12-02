@@ -54,7 +54,9 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             String errorMsg = "Failed to bootstrap content " + message.getUpdatedResource();
             LOG.error(errorMsg, e);
 
-            if (e.getCause() instanceof MissingResourceException) {
+            boolean nonRecoverable = Throwables.getCausalChain(e).stream()
+                    .anyMatch((MissingResourceException.class)::isInstance);
+            if (nonRecoverable) {
                 throw Throwables.propagate(e);
             }
             throw new RecoverableException(errorMsg, e);
