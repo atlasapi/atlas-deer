@@ -8,6 +8,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.queue.RecoverableException;
@@ -40,19 +42,33 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         Id contentId = message.getUpdatedResource().getId();
         LOG.debug("Processing message on id {}, message: {}", contentId, message);
 
+        Timer.Context time = messagesTimer.time();
+        Resolved<Content> content = resolveContent(contentId);
+
         try {
-            Timer.Context time = messagesTimer.time();
-            Resolved<Content> content = Futures.get(
-                    contentResolver.resolveIds(ImmutableList.of(contentId)),
-                    ExecutionException.class
-            );
-            WriteResult<Content, Content> result = writer.writeContent(content.getResources().first().get());
+            WriteResult<Content, Content> result =
+                    writer.writeContent(content.getResources().first().get());
             LOG.debug("Bootstrapped content {}", result.toString());
             time.stop();
         } catch (Exception e) {
             String errorMsg = "Failed to bootstrap content " + message.getUpdatedResource();
             LOG.error(errorMsg, e);
+
+            if (e.getCause() instanceof MissingResourceException) {
+                throw Throwables.propagate(e);
+            }
             throw new RecoverableException(errorMsg, e);
+        }
+    }
+
+    private Resolved<Content> resolveContent(Id contentId) {
+        try {
+            return Futures.get(
+                    contentResolver.resolveIds(ImmutableList.of(contentId)),
+                    ExecutionException.class
+            );
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
         }
     }
 }
