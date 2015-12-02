@@ -8,7 +8,6 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -22,7 +21,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
-import com.netflix.astyanax.connectionpool.exceptions.OperationTimeoutException;
 
 public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
@@ -54,10 +52,6 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         } catch (Exception e) {
             String errorMsg = "Failed to bootstrap content " + message.getUpdatedResource();
             LOG.error(errorMsg, e);
-
-            if (isRecoverable(e)) {
-                throw new RecoverableException(errorMsg, e);
-            }
             throw Throwables.propagate(e);
         }
     }
@@ -71,15 +65,5 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
-    }
-
-    private boolean isRecoverable(Exception e) {
-        // OperationTimeoutException could be caused by a C* tombstone issue that is
-        // currently non-recoverable
-        return Throwables.getCausalChain(e).stream()
-                .noneMatch(
-                        cause -> MissingResourceException.class.isInstance(cause)
-                                || OperationTimeoutException.class.isInstance(cause)
-                );
     }
 }
