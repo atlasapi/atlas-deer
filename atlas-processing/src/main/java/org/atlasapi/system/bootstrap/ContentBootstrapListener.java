@@ -115,7 +115,11 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             migrateEquivalents(item, resultBuilder);
         }
 
-        return resultBuilder.build();
+        Result result = resultBuilder.build();
+        LOG.info("Bootstrap of {} finished, result {} - {}",
+                item.getId(), result.isSucceeded(), result.getMessage());
+
+        return result;
     }
 
     @Override
@@ -128,7 +132,11 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             migrateHierarchy(container, resultBuilder);
         }
 
-        return resultBuilder.build();
+        Result result = resultBuilder.build();
+        LOG.info("Bootstrap of {} finished, result {} - {}",
+                container.getId(), result.isSucceeded(), result.getMessage());
+
+        return result;
     }
 
     private void migrateContent(Content content, ResultBuilder resultBuilder) {
