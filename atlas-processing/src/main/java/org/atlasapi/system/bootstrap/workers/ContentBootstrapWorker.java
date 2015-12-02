@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.netflix.astyanax.connectionpool.exceptions.OperationTimeoutException;
 
 public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
@@ -54,12 +55,10 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             String errorMsg = "Failed to bootstrap content " + message.getUpdatedResource();
             LOG.error(errorMsg, e);
 
-            boolean nonRecoverable = Throwables.getCausalChain(e).stream()
-                    .anyMatch((MissingResourceException.class)::isInstance);
-            if (nonRecoverable) {
-                throw Throwables.propagate(e);
+            if (isRecoverable(e)) {
+                throw new RecoverableException(errorMsg, e);
             }
-            throw new RecoverableException(errorMsg, e);
+            throw Throwables.propagate(e);
         }
     }
 
@@ -72,5 +71,15 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
+    }
+
+    private boolean isRecoverable(Exception e) {
+        // OperationTimeoutException could be caused by a C* tombstone issue that is
+        // currently non-recoverable
+        return Throwables.getCausalChain(e).stream()
+                .noneMatch(
+                        cause -> MissingResourceException.class.isInstance(cause)
+                                || OperationTimeoutException.class.isInstance(cause)
+                );
     }
 }
