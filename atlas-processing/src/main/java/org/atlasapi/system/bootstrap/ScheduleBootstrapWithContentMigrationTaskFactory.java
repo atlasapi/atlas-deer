@@ -3,7 +3,6 @@ package org.atlasapi.system.bootstrap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.PersistenceModule;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
@@ -58,6 +57,7 @@ public class ScheduleBootstrapWithContentMigrationTaskFactory
                 source,
                 channel,
                 interval,
-                Optional.of(contentAndEquivalentsBoostrapListener));
+                Optional.of(contentAndEquivalentsBoostrapListener),
+                Optional.absent());
     }
 }

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
@@ -29,6 +30,7 @@ import org.atlasapi.entity.util.StoreException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ChannelSchedule;
+import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleHierarchy;
 import org.atlasapi.schedule.ScheduleResolver;
@@ -39,6 +41,7 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -69,11 +72,13 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
     private final Interval interval;
     private final Publisher source;
     private final Optional<ContentVisitor<?>> scheduleContentVisitor;
+    private final Optional<EquivalentScheduleWriter> equivalenceUpdater;
 
     public ChannelIntervalScheduleBootstrapTask(ScheduleResolver scheduleResolver,
             ScheduleWriter scheduleWriter, ContentStore contentStore,
-            Publisher source, Channel channel, Interval interval, 
-            Optional<ContentVisitor<?>> scheduleContentVisitor) {
+            Publisher source, Channel channel, Interval interval,
+            Optional<ContentVisitor<?>> scheduleContentVisitor,
+            Optional<EquivalentScheduleWriter> equivalenceUpdater) {
         this.scheduleResolver = checkNotNull(scheduleResolver);
         this.scheduleWriter = checkNotNull(scheduleWriter);
         this.contentStore = checkNotNull(contentStore);
@@ -81,6 +86,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         this.interval = checkNotNull(interval);
         this.source = checkNotNull(source);
         this.scheduleContentVisitor = checkNotNull(scheduleContentVisitor);
+        this.equivalenceUpdater = checkNotNull(equivalenceUpdater);
     }
 
     @Override
@@ -119,7 +125,25 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         ImmutableList<ScheduleHierarchy> builtSchedule = schedule.build();
         UpdateProgress progress = tryWrite(builtSchedule);
         notifyListener(builtSchedule);
+        writeEquivalences(builtSchedule);
         return progress;
+    }
+
+    private void writeEquivalences(ImmutableList<ScheduleHierarchy> builtSchedule) {
+        if (!equivalenceUpdater.isPresent()) {
+            return;
+        }
+
+        EquivalentScheduleWriter updater = equivalenceUpdater.get();
+        try {
+            updater.updateContent(builtSchedule.stream()
+                    .map(ScheduleHierarchy::getItemAndBroadcast)
+                    .map(ItemAndBroadcast::getItem)
+                    .collect(Collectors.toList()));
+        } catch (WriteException e) {
+            log.warn("Failed to update equivs {} {} {}", source, channel, interval);
+            throw Throwables.propagate(e);
+        }
     }
 
     private void notifyListener(List<ScheduleHierarchy> schedule) {
