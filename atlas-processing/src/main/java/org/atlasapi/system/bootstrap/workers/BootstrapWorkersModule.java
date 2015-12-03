@@ -232,7 +232,8 @@ public class BootstrapWorkersModule {
                 legacy.legacyScheduleStore(),
                 persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()),
-                persistence.getEquivalentScheduleStore()
+                persistence.getEquivalentScheduleStore(),
+                persistence.getContentEquivalenceGraphStore()
         );
     }
 

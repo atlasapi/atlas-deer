@@ -36,8 +36,8 @@ public class ChannelIntervalScheduleBootstrapTaskFactory
                 source,
                 channel,
                 interval, 
-                Optional.<ContentVisitor<?>>absent(),
-                Optional.absent());
+                Optional.<ContentVisitor<?>>absent()
+        );
     }
     
 }

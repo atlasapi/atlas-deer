@@ -57,7 +57,7 @@ public class ScheduleBootstrapWithContentMigrationTaskFactory
                 source,
                 channel,
                 interval,
-                Optional.of(contentAndEquivalentsBoostrapListener),
-                Optional.absent());
+                Optional.of(contentAndEquivalentsBoostrapListener)
+        );
     }
 }

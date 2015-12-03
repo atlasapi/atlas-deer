@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,9 @@ import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.StoreException;
 import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
@@ -42,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.api.client.util.Lists;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -73,12 +78,23 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
     private final Publisher source;
     private final Optional<ContentVisitor<?>> scheduleContentVisitor;
     private final Optional<EquivalentScheduleWriter> equivalenceUpdater;
+    private final Optional<EquivalenceGraphStore> equivGraphStore;
+
+    public ChannelIntervalScheduleBootstrapTask(ScheduleResolver scheduleResolver,
+            ScheduleWriter scheduleWriter, ContentStore contentStore,
+            Publisher source, Channel channel, Interval interval,
+            Optional<ContentVisitor<?>> scheduleContentVisitor) {
+        this(scheduleResolver, scheduleWriter, contentStore, source, channel, interval,
+                scheduleContentVisitor, Optional.absent(), Optional.absent());
+    }
 
     public ChannelIntervalScheduleBootstrapTask(ScheduleResolver scheduleResolver,
             ScheduleWriter scheduleWriter, ContentStore contentStore,
             Publisher source, Channel channel, Interval interval,
             Optional<ContentVisitor<?>> scheduleContentVisitor,
-            Optional<EquivalentScheduleWriter> equivalenceUpdater) {
+            Optional<EquivalentScheduleWriter> equivalenceUpdater,
+            Optional<EquivalenceGraphStore> equivGraphStore
+    ) {
         this.scheduleResolver = checkNotNull(scheduleResolver);
         this.scheduleWriter = checkNotNull(scheduleWriter);
         this.contentStore = checkNotNull(contentStore);
@@ -87,6 +103,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         this.source = checkNotNull(source);
         this.scheduleContentVisitor = checkNotNull(scheduleContentVisitor);
         this.equivalenceUpdater = checkNotNull(equivalenceUpdater);
+        this.equivGraphStore = checkNotNull(equivGraphStore);
     }
 
     @Override
@@ -134,13 +151,31 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             return;
         }
 
+        List<Item> items = builtSchedule.stream()
+                .map(ScheduleHierarchy::getItemAndBroadcast)
+                .map(ItemAndBroadcast::getItem)
+                .collect(Collectors.toList());
+
+        EquivalenceGraphStore graphStore = equivGraphStore.get();
         EquivalentScheduleWriter updater = equivalenceUpdater.get();
+
         try {
-            updater.updateContent(builtSchedule.stream()
-                    .map(ScheduleHierarchy::getItemAndBroadcast)
-                    .map(ItemAndBroadcast::getItem)
-                    .collect(Collectors.toList()));
-        } catch (WriteException e) {
+            Map<Id, Optional<EquivalenceGraph>> graphs = graphStore.resolveIds(
+                    items.stream().map(Item::getId).collect(Collectors.toList())
+            ).get();
+
+
+            graphs.values().stream().filter(Optional::isPresent).map(Optional::get).forEach(graph -> {
+                try {
+                    updater.updateEquivalences(new EquivalenceGraphUpdate(
+                            graph, Lists.newArrayList(), Lists.newArrayList()));
+                } catch (WriteException e) {
+                    throw Throwables.propagate(e);
+                }
+            });
+
+            updater.updateContent(items);
+        } catch (WriteException | InterruptedException | ExecutionException e) {
             log.warn("Failed to update equivs {} {} {}", source, channel, interval);
             throw Throwables.propagate(e);
         }
