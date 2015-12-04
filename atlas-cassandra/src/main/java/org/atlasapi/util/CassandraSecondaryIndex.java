@@ -101,8 +101,12 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
 
     @Override
     public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys, ConsistencyLevel level) {
+        ImmutableList<Long> uniqueKeys = StreamSupport.stream(keys.spliterator(), false)
+                .distinct()
+                .collect(ImmutableCollectors.toList());
+
         ListenableFuture<List<Row>> resultsFuture = Futures.transform(Futures.allAsList(
-                queriesFor(keys, readConsistency).stream()
+                queriesFor(uniqueKeys, readConsistency).stream()
                         .map(session::executeAsync)
                         .map(rsFuture -> Futures.transform(rsFuture,
                                 (Function<ResultSet, Row>) input -> input != null ? input.one() : null))
