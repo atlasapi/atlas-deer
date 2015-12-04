@@ -10,7 +10,6 @@ import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.ContentVisitor;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
@@ -57,7 +56,7 @@ public class ChannelDayScheduleBootstrapTaskTest {
         
         ChannelIntervalScheduleBootstrapTask task 
             = new ChannelIntervalScheduleBootstrapTask(resolver, writer, contentStore, src, chan, interval, 
-                    Optional.absent());
+                    Optional.absent(), Optional.absent());
         
         Brand brand1 = new Brand(Id.valueOf(11), src);
         Item item1 = new Item(Id.valueOf(1), src);

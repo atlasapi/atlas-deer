@@ -20,6 +20,7 @@ import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
@@ -223,7 +224,19 @@ public class BootstrapWorkersModule {
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()), search.equivContentIndex(), 
                 explicitEquivalenceMigrator(), persistence, legacy);
     }
-    
+
+    @Bean
+    // yes, I know.
+    public EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory() {
+        return new EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory(
+                legacy.legacyScheduleStore(),
+                persistence.scheduleStore(),
+                new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()),
+                persistence.getEquivalentScheduleStore(),
+                persistence.getContentEquivalenceGraphStore()
+        );
+    }
+
     @Bean
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleV2BootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.v2ScheduleStore(),

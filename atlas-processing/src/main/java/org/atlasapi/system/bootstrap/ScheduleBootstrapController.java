@@ -40,42 +40,39 @@ import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.http.HttpStatusCode;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.scheduling.UpdateProgress;
 import com.metabroadcast.common.time.DateTimeZones;
 
 @Controller
 public class ScheduleBootstrapController {
-    
-    private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
+
     private final ChannelResolver channelResolver;
     private final ExecutorService executor;
     private final ScheduleBootstrapper scheduleBootstrapper;
     private final ObjectMapper jsonMapper = new ObjectMapper();
-    private final ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory;
 
     private static final DateTimeFormatter dateParser = ISODateTimeFormat.date();
     private static final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private static final Logger log = LoggerFactory.getLogger(ScheduleBootstrapper.class);
 
     public ScheduleBootstrapController(
-            ChannelIntervalScheduleBootstrapTaskFactory taskFactory,
-            ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory,
             ChannelResolver channelResvoler,
             ExecutorService executor,
             ScheduleBootstrapper scheduleBootstrapper
     ) {
         this.executor = checkNotNull(executor);
         this.scheduleBootstrapper = checkNotNull(scheduleBootstrapper);
-        this.taskFactory = checkNotNull(taskFactory);
-        this.bootstrapWithMigrationTaskFactory = checkNotNull(bootstrapWithMigrationTaskFactory);
         this.channelResolver = checkNotNull(channelResvoler);
     }
     
     @RequestMapping(value="/system/bootstrap/schedule",method=RequestMethod.POST)
-    public Void bootstrapSchedule(HttpServletResponse resp, @RequestParam("source") String src,
-            @RequestParam("day") String day, @RequestParam("channel") String channelId,
-            @RequestParam(value="migrateContent", required=false, defaultValue="false") boolean migrateContent)
-            throws Exception {
+    public Void bootstrapSchedule(
+            HttpServletResponse resp,
+            @RequestParam("source") String src,
+            @RequestParam("day") String day,
+            @RequestParam("channel") String channelId,
+            @RequestParam(value="migrateContent", required=false, defaultValue="false") boolean migrateContent,
+            @RequestParam(value="writeEquivalences", required=false, defaultValue="false") boolean writeEquivs
+    ) throws Exception {
         
         Maybe<Publisher> source = Publisher.fromKey(src);
         if (!source.hasValue()) {
@@ -95,21 +92,15 @@ public class ScheduleBootstrapController {
         }
         
         try {
-            UpdateProgress progress = createTask(source, channel, date, migrateContent).call();
-            resp.setStatus(HttpStatusCode.OK.code());
-            resp.getWriter().write(progress.toString());
+            boolean success = scheduleBootstrapper.bootstrapSchedules(ImmutableList.of(channel.get()),
+                    interval(date), source.requireValue(), migrateContent);
+            resp.setStatus((success ? HttpStatusCode.OK : HttpStatusCode.CONFLICT).code());
+            resp.getWriter().write(success ?
+                                   scheduleBootstrapper.getProgress().toString() :
+                                   "Another schedule bootstrap is already running");
             return null;
         } catch (Exception e) {
             return failure(resp, SERVER_ERROR, Throwables.getStackTraceAsString(e));
-        }
-    }
-
-    private ChannelIntervalScheduleBootstrapTask createTask(Maybe<Publisher> source,
-            Optional<Channel> channel, LocalDate date, boolean migrateContent) {
-        if (migrateContent) {
-            return bootstrapWithMigrationTaskFactory.create(source.requireValue(), channel.get(), interval(date));
-        } else {
-            return taskFactory.create(source.requireValue(), channel.get(), interval(date));
         }
     }
 
@@ -119,7 +110,8 @@ public class ScheduleBootstrapController {
             @RequestParam("source") String src,
             @RequestParam("from") String from,
             @RequestParam("to") String to,
-            @RequestParam(value="migrateContent", required=false, defaultValue="false") boolean migrateContent
+            @RequestParam(value="migrateContent", required=false, defaultValue="false") boolean migrateContent,
+            @RequestParam(value="writeEquivalences", required=false, defaultValue="false") boolean writeEquivs
     )
             throws Exception {
 
@@ -158,7 +150,8 @@ public class ScheduleBootstrapController {
                         channels,
                         interval,
                         source.requireValue(),
-                        migrateContent
+                        migrateContent,
+                        writeEquivs
                 );
                 if (!bootstrapping) {
                     log.warn("Bootstrapping failed because apparently busy bootstrapping something else.");

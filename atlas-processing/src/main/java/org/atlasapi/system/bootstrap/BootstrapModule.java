@@ -131,8 +131,6 @@ public class BootstrapModule {
     @Bean
     public ScheduleBootstrapController scheduleBootstrapController() {
         return new ScheduleBootstrapController(
-                workers.scheduleBootstrapTaskFactory(),
-                workers.scheduleBootstrapWithContentMigrationTaskFactory(),
                 persistence.channelResolver(),
                 executorService(NUMBER_OF_SCHECHULE_CONTROLLER_THREADS, "ScheduleBootstrapController"),
                 scheduleBootstrapper()
@@ -144,7 +142,8 @@ public class BootstrapModule {
         return new ScheduleBootstrapper(
                 executorService(NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS, "ScheduleBootstrapper"),
                 workers.scheduleBootstrapTaskFactory(),
-                workers.scheduleBootstrapWithContentMigrationTaskFactory()
+                workers.scheduleBootstrapWithContentMigrationTaskFactory(),
+                workers.equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory()
         );
     }
 

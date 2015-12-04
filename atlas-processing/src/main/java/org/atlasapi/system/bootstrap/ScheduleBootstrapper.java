@@ -33,20 +33,24 @@ public class ScheduleBootstrapper {
     private final ListeningExecutorService executor;
     private final ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
     private final ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory;
+    private final EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory equivTaskFactory;
 
     public ScheduleBootstrapper(
             ListeningExecutorService executor,
             ChannelIntervalScheduleBootstrapTaskFactory taskFactory,
-            ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory
+            ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory,
+            EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory bootstrapWithEquiv
     ) {
         this.executor = checkNotNull(executor);
         this.taskFactory = checkNotNull(taskFactory);
         this.bootstrapWithMigrationTaskFactory = checkNotNull(bootstrapWithMigrationTaskFactory);
+        this.equivTaskFactory = checkNotNull(bootstrapWithEquiv);
     }
 
-
-    public boolean bootstrapSchedules(Iterable<Channel> channels, Interval interval, Publisher source,
-            boolean migrateContent) {
+    public boolean bootstrapSchedules(
+            Iterable<Channel> channels, Interval interval,
+            Publisher source, boolean migrateContent, boolean writeEquivalences
+    ) {
         if (!bootstrapLock.tryLock()) {
             return false;
         }
@@ -64,7 +68,7 @@ public class ScheduleBootstrapper {
         );
         try {
             for (Channel channel : channels) {
-                futures.add(bootstrapChannel(channel, interval, source, migrateContent));
+                futures.add(bootstrapChannel(channel, interval, source, migrateContent, writeEquivalences));
             }
             Futures.get(Futures.allAsList(futures), Exception.class);
         } catch (Exception e) {
@@ -76,12 +80,18 @@ public class ScheduleBootstrapper {
         return true;
     }
 
+    public boolean bootstrapSchedules(Iterable<Channel> channels, Interval interval, Publisher source, boolean migrateContent) {
+        return bootstrapSchedules(channels, interval, source, migrateContent, false);
+    }
+
     private ListenableFuture<UpdateProgress> bootstrapChannel(final Channel channel, Interval interval, 
-            Publisher source, boolean migrateContent) {
+            Publisher source, boolean migrateContent, boolean writeEquivalences) {
         log.info("Bootstrapping channel {}/{}", channel.getId(), channel.getTitle());
         ChannelIntervalScheduleBootstrapTask task;
         if (migrateContent) {
             task = bootstrapWithMigrationTaskFactory.create(source, channel, interval);
+        } else if (writeEquivalences) {
+            task = equivTaskFactory.create(source, channel, interval);
         } else {
             task = taskFactory.create(source, channel, interval);
         }
