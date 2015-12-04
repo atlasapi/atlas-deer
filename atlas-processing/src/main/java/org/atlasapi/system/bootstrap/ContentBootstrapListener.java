@@ -316,6 +316,9 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
             migrateEquivalents(equivalentIds, resultBuilder);
         }
+        else {
+            LOG.warn("Failed to find equivalence graph for {}", item.getId().longValue());
+        }
     }
 
     private void migrateEquivalents(Set<Id> equivalentIds, ResultBuilder resultBuilder) {
