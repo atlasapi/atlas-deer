@@ -55,8 +55,7 @@ public class ChannelDayScheduleBootstrapTaskTest {
                 day.plusDays(1).toDateTimeAtStartOfDay(DateTimeZones.UTC));
         
         ChannelIntervalScheduleBootstrapTask task 
-            = new ChannelIntervalScheduleBootstrapTask(resolver, writer, contentStore, src, chan, interval, 
-                    Optional.absent(), Optional.absent());
+            = new ChannelIntervalScheduleBootstrapTask(resolver, writer, contentStore, src, chan, interval, Optional.absent());
         
         Brand brand1 = new Brand(Id.valueOf(11), src);
         Item item1 = new Item(Id.valueOf(1), src);
