@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 import java.io.IOException;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Clip;
 import org.atlasapi.content.Content;
@@ -59,7 +60,9 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
             @Override
             public Void visit(Episode episode) {
                 visit((Item) episode);
-                writeField("episode_number", episode.getEpisodeNumber());
+                if (!ctxt.getActiveAnnotations().contains(Annotation.SUPPRESS_EPISODE_NUMBERS)) {
+                    writeField("episode_number", episode.getEpisodeNumber());
+                }
                 writeField("series_number", episode.getSeriesNumber());
                 return null;
             }

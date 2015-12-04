@@ -65,7 +65,8 @@ public enum Annotation {
     SUB_ITEM_SUMMARIES,
     EVENT,
     EVENT_DETAILS,
-    ADVERTISED_CHANNELS
+    ADVERTISED_CHANNELS,
+    SUPPRESS_EPISODE_NUMBERS
     ;
     
     public String toKey() {
