@@ -177,8 +177,6 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
                     log.warn("Failed to resolve graph for {}", id);
                 }
             }
-
-            updater.updateContent(items);
         } catch (WriteException | InterruptedException | ExecutionException e) {
             log.warn("Failed to update equivs {} {} {}", source, channel, interval);
             throw Throwables.propagate(e);

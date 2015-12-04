@@ -19,6 +19,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -77,6 +80,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private static final Logger log = LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
     private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
+    public static final int CONTENT_UPDATE_TIMEOUT = 10;
 
     private final class ToEquivalentSchedule implements Function<List<ResultSet>, EquivalentSchedule> {
 
@@ -265,6 +269,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     public void updateContent(Iterable<Item> content) throws WriteException {
         ByteBuffer serializedContent = serialize(content);
         int contentCount = Iterables.size(content);
+
         ImmutableList.Builder<Statement> statements = ImmutableList.builder();
         for (Item item : content) {
             Publisher src = item.getSource();
@@ -272,16 +277,28 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     item.getBroadcasts().spliterator(), false)
                     .filter(b -> Broadcast.ACTIVELY_PUBLISHED.apply(b))
                     .collect(ImmutableCollectors.toList());
-            for (Broadcast broadcast : activelyPublishedBroadcasts) {
-                statements.addAll(contentUpdateStatements(src, broadcast, serializedContent, contentCount));
-            }
+
+            BatchStatement batchStatement = new BatchStatement();
+            batchStatement.addAll(activelyPublishedBroadcasts.stream()
+                    .flatMap(broadcast -> StreamSupport.stream(
+                            contentUpdateStatements(src, broadcast, serializedContent, contentCount).spliterator(), false))
+                    .collect(Collectors.toList()))
+                    .setConsistencyLevel(write);
+            statements.add(batchStatement);
         }
         try {
-            BatchStatement batchStatement = new BatchStatement();
-            batchStatement.addAll(statements.build());
-            batchStatement.setConsistencyLevel(write);
-            session.execute(batchStatement);
-        } catch(NoHostAvailableException | QueryExecutionException e) {
+            ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
+                    .stream()
+                    .map(session::executeAsync)
+                    .collect(Collectors.toList()));
+            insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
+        } catch(NoHostAvailableException
+                | QueryExecutionException
+                | InterruptedException
+                | ExecutionException
+                | TimeoutException
+                e
+        ) {
             throw new WriteException(e);
         }
     }
