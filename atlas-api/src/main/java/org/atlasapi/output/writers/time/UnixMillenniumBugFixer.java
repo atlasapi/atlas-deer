@@ -26,6 +26,10 @@ public class UnixMillenniumBugFixer {
             new DateTime(2038, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, DateTimeZone.UTC);
 
     public DateTime clampDateTime(DateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+
         if (DateTime.now().withZone(DateTimeZone.UTC).isAfter(FIX_DISABLE_DATE_TIME)) {
             return dateTime;
         }

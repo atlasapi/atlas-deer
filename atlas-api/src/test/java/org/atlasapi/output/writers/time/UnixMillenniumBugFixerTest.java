@@ -4,6 +4,7 @@ import static org.atlasapi.output.writers.time.UnixMillenniumBugFixer.FIX_DISABL
 import static org.atlasapi.output.writers.time.UnixMillenniumBugFixer.MAX_ALLOWED_DATE_TIME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -49,5 +50,12 @@ public class UnixMillenniumBugFixerTest {
     @Test
     public void testFixExpirationDateHasNotPassed() throws Exception {
         assertThat(FIX_DISABLE_DATE_TIME.isAfterNow(), is(true));
+    }
+
+    @Test
+    public void testReturnNullIfGivenNull() throws Exception {
+        DateTime dateTime = fixer.clampDateTime(null);
+
+        assertThat(dateTime, is(nullValue()));
     }
 }
