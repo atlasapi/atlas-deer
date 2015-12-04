@@ -5,6 +5,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Region;
@@ -16,9 +19,6 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Contains state required during the output of a response.
@@ -80,6 +80,10 @@ public class OutputContext {
     public final OutputContext endResource() {
         resources.remove(resources.size()-1);
         return this;
+    }
+
+    public ImmutableSet<Annotation> getActiveAnnotations() {
+        return annotations.forPath(resources);
     }
     
     public <T> List<OutputAnnotation<? super T>> getAnnotations(AnnotationRegistry<T> registry) {
