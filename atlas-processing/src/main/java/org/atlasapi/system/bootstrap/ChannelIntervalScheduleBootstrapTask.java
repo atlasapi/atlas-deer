@@ -156,6 +156,10 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
                 .map(ItemAndBroadcast::getItem)
                 .collect(Collectors.toList());
 
+        List<Id> ids = items.stream()
+                .map(Item::getId)
+                .collect(Collectors.toList());
+
         EquivalenceGraphStore graphStore = equivGraphStore.get();
         EquivalentScheduleWriter updater = equivalenceUpdater.get();
 
@@ -164,15 +168,15 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
                     items.stream().map(Item::getId).collect(Collectors.toList())
             ).get();
 
-
-            graphs.values().stream().filter(Optional::isPresent).map(Optional::get).forEach(graph -> {
-                try {
+            for (Id id : ids) {
+                Optional<EquivalenceGraph> graph = graphs.get(id);
+                if (graph.isPresent()) {
                     updater.updateEquivalences(new EquivalenceGraphUpdate(
-                            graph, Lists.newArrayList(), Lists.newArrayList()));
-                } catch (WriteException e) {
-                    throw Throwables.propagate(e);
+                            graph.get(), Lists.newArrayList(), Lists.newArrayList()));
+                } else {
+                    log.warn("Failed to resolve graph for {}", id);
                 }
-            });
+            }
 
             updater.updateContent(items);
         } catch (WriteException | InterruptedException | ExecutionException e) {
