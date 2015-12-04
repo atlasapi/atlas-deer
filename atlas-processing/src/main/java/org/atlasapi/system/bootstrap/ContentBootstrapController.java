@@ -102,23 +102,29 @@ public class ContentBootstrapController {
     @RequestMapping(value = "/system/bootstrap/source", method = RequestMethod.POST)
     public void bootstrapSource(@RequestParam("source") String sourceString,
             @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
-            HttpServletResponse resp) {
+            HttpServletResponse resp) throws IOException {
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
 
+        Publisher source = fromKey.requireValue();
         Runnable listener;
         if (Boolean.TRUE.equals(migrateEquivalents)) {
             listener = bootstrappingRunnable(contentAndEquivalentsBoostrapListener,
-                    fromKey.requireValue(), progress);
+                    source, progress);
         }
         else {
             listener = bootstrappingRunnable(contentBootstrapListener,
-                    fromKey.requireValue(), progress);
+                    source, progress);
         }
         executorService.execute(listener);
 
         resp.setStatus(HttpStatus.ACCEPTED.value());
+        resp.getWriter().println(
+                "Starting bootstrap of " + source + " "
+                        + (migrateEquivalents ? "with" : "without") + " equivalents"
+        );
+        resp.getWriter().flush();
     }
 
     @RequestMapping(value = "/system/bootstrap/all", method = RequestMethod.POST)
