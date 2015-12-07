@@ -93,7 +93,7 @@ public class ScheduleBootstrapController {
         
         try {
             boolean success = scheduleBootstrapper.bootstrapSchedules(ImmutableList.of(channel.get()),
-                    interval(date), source.requireValue(), migrateContent);
+                    interval(date), source.requireValue(), migrateContent, writeEquivs);
             resp.setStatus((success ? HttpStatusCode.OK : HttpStatusCode.CONFLICT).code());
             resp.getWriter().write(success ?
                                    scheduleBootstrapper.getProgress().toString() :
