@@ -35,6 +35,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import org.joda.time.DateTimeFieldType;
+import org.joda.time.ReadablePeriod;
 
 public class FiltersBuilder {
 
@@ -83,9 +85,9 @@ public class FiltersBuilder {
                 EsContent.LOCATIONS,
                 FilterBuilders.andFilter(
                         FilterBuilders.rangeFilter(EsLocation.AVAILABILITY_TIME)
-                                .lte(DateTime.now().toString()),
+                                .lte(ElasticsearchUtils.clampDateToFloorMinute(DateTime.now()).toString()),
                         FilterBuilders.rangeFilter(EsLocation.AVAILABILITY_END_TIME)
-                                .gte(DateTime.now().toString()))
+                                .gte(ElasticsearchUtils.clampDateToFloorMinute(DateTime.now()).toString()))
         );
         return FilterBuilders.orFilter(
                 rangeFilter,
@@ -131,10 +133,10 @@ public class FiltersBuilder {
         // Query for broadcast times that are at least partially contained between
         // broadcastTimeGreaterThan and broadcastTimeLessThan
         if (broadcastTimeGreaterThan != null) {
-            endTimeFilter.gte(broadcastTimeGreaterThan.toString());
+            endTimeFilter.gte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeGreaterThan));
         }
         if (broadcastTimeLessThan != null) {
-            startTimeFilter.lte(broadcastTimeLessThan.toString());
+            startTimeFilter.lte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeLessThan));
         }
 
         AndFilterBuilder rangeFilter = FilterBuilders.andFilter(startTimeFilter, endTimeFilter);
@@ -146,13 +148,13 @@ public class FiltersBuilder {
                     rangeFilter.add(regionFilter)
             );
             HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter);
-            return FilterBuilders.orFilter(parentFilter, childFilter);
+            return FilterBuilders.orFilter(parentFilter, childFilter).cache(true);
         }
         return FilterBuilders.nestedFilter(
                 EsContent.BROADCASTS,
                 FilterBuilders.orFilter(
                         rangeFilter,
-                        FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter)
+                        FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter).cache(true)
                 )
         );
     }
@@ -160,7 +162,7 @@ public class FiltersBuilder {
     public static FilterBuilder getSeriesIdFilter(Id id, SecondaryIndex equivIdIndex) {
         try {
             ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
-            return FilterBuilders.termsFilter(EsContent.SERIES, ids);
+            return FilterBuilders.termsFilter(EsContent.SERIES, ids).cache(true);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
@@ -169,7 +171,7 @@ public class FiltersBuilder {
     public static FilterBuilder getBrandIdFilter(Id id, SecondaryIndex equivIdIndex) {
         try {
             ImmutableSet<Long> ids = Futures.get(equivIdIndex.reverseLookup(id), IOException.class);
-            return FilterBuilders.termsFilter(EsContent.BRAND, ids);
+            return FilterBuilders.termsFilter(EsContent.BRAND, ids).cache(true);
         } catch (IOException ioe) {
             throw Throwables.propagate(ioe);
         }
@@ -193,6 +195,6 @@ public class FiltersBuilder {
                 .map(Id::longValue)
                 .collect(ImmutableCollectors.toList());
 
-        return FilterBuilders.termsFilter(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion);
+        return FilterBuilders.termsFilter(EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL, channelsIdsForRegion).cache(true);
     }
 }
