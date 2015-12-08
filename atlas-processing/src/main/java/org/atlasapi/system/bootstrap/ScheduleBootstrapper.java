@@ -128,6 +128,7 @@ public class ScheduleBootstrapper {
         });
         return updateFuture;
     }
+
     public UpdateProgress getProgress() {
         return new UpdateProgress(processed.get(), failures.get());
     }
