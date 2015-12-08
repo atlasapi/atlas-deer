@@ -133,10 +133,10 @@ public class FiltersBuilder {
         // Query for broadcast times that are at least partially contained between
         // broadcastTimeGreaterThan and broadcastTimeLessThan
         if (broadcastTimeGreaterThan != null) {
-            endTimeFilter.gte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeGreaterThan));
+            endTimeFilter.gte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeGreaterThan).toString());
         }
         if (broadcastTimeLessThan != null) {
-            startTimeFilter.lte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeLessThan));
+            startTimeFilter.lte(ElasticsearchUtils.clampDateToFloorMinute(broadcastTimeLessThan).toString());
         }
 
         AndFilterBuilder rangeFilter = FilterBuilders.andFilter(startTimeFilter, endTimeFilter);
