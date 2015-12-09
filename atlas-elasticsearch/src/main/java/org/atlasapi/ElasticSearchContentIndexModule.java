@@ -10,20 +10,21 @@ import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.EsUnequivalentContentIndex;
 import org.atlasapi.content.InstrumentedContentIndex;
 import org.atlasapi.content.PseudoEquivalentContentIndex;
+import org.atlasapi.elasticsearch.client.EsHttpClient;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.util.SecondaryIndex;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Service.State;
+
+import io.searchbox.client.JestClientFactory;
+import io.searchbox.client.config.HttpClientConfig;
 
 public class ElasticSearchContentIndexModule implements IndexModule {
 
@@ -38,9 +39,6 @@ public class ElasticSearchContentIndexModule implements IndexModule {
 
     public ElasticSearchContentIndexModule(
             String seeds,
-            int port,
-            boolean ssl,
-            String clusterName,
             String indexName,
             Long requestTimeout,
             ContentResolver resolver,
@@ -48,10 +46,13 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivContentIndex
     ) {
+        JestClientFactory factory = new JestClientFactory();
+        factory.setHttpClientConfig(new HttpClientConfig
+                .Builder(Lists.newArrayList(seeds.split(",")))
+                .multiThreaded(true)
+                .build());
 
-        Settings settings = createSettings(clusterName, ssl);
-        TransportClient esClient = new TransportClient(settings);
-        registerSeeds(esClient, seeds, port);
+        Client esClient = new EsHttpClient(factory.getObject());
 
         unequivIndex = new EsUnequivalentContentIndex(
                 esClient,
@@ -76,21 +77,6 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         this.popularTopicsIndex = new EsPopularTopicIndex(esClient);
         this.topicIndex = new EsTopicIndex(esClient, EsSchema.TOPICS_INDEX, 60, TimeUnit.SECONDS);
         this.contentSearcher = new EsContentTitleSearcher(esClient);
-    }
-
-    private Settings createSettings(String clusterName, boolean ssl) {
-        return ImmutableSettings.settingsBuilder()
-                    .put("client.transport.sniff", true)
-                    .put("cluster.name", clusterName)
-                    .put("shield.transport.ssl", ssl ? "true" : "false")
-                    .build();
-    }
-
-    private void registerSeeds(TransportClient client, String seeds, int port) {
-        
-        for (String host : Splitter.on(",").splitToList(seeds)) {
-            client.addTransportAddress(new InetSocketTransportAddress(host, port));
-        }
     }
 
     public void init() {
