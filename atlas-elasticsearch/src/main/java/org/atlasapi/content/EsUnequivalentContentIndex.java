@@ -10,7 +10,6 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ElasticsearchIndexCreator;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
@@ -86,9 +85,10 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
     @Override
     protected void startUp() throws IOException {
-        if (ElasticsearchIndexCreator.createContentIndex(esClient, index)) {
-            ElasticsearchIndexCreator.putTypeMapping(esClient, index);
-        }
+        // TODO: disabled for ES HTTP client, recheck if we really need this here
+//        if (ElasticsearchIndexCreator.createContentIndex(esClient, index)) {
+//            ElasticsearchIndexCreator.putTypeMapping(esClient, index);
+//        }
         log.info("Staring ElasticsearchUnequivalentContentIndex");
     }
 
