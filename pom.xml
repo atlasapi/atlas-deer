@@ -151,6 +151,21 @@
       <version>${guava.version}</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- TODO: these 2 are for the ES http client, remove once it's been properly split out -->
+    <dependency>
+      <groupId>io.searchbox</groupId>
+      <artifactId>jest</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-smile</artifactId>
+      <version>2.5.0</version>
+    </dependency>
+    <!-- ENDTODO: these 2 are for the ES http client, remove once it's been properly split out -->
+
   </dependencies>
 
   <dependencyManagement>
