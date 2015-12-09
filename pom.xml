@@ -365,7 +365,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <atlas.version>${project.version}</atlas.version>
-    <atlas.legacy.version>5.0-SNAPSHOT</atlas.legacy.version>
+    <atlas.legacy.version>5.1-SNAPSHOT</atlas.legacy.version>
     <guava.version>16.0.1</guava.version>
     <jetty.version>9.0.6.v20130930</jetty.version>
     <slf4j.version>1.7.5</slf4j.version>

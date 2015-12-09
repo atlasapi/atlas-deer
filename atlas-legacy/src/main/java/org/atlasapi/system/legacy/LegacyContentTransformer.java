@@ -351,6 +351,10 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         l.setEmbedCode(input.getEmbedCode());
         l.setEmbedId(input.getEmbedId());
         l.setPolicy(transformPolicy(input.getPolicy()));
+        l.setRequiredEncryption(input.getRequiredEncryption());
+        l.setVat(input.getVat());
+        l.setSubtitledLanguages(input.getSubtitledLanguages());
+
         return l;
     }
 
@@ -468,6 +472,9 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         e.setEpisodeNumber(input.getEpisodeNumber());
         e.setPartNumber(e.getPartNumber());
         e.setSeriesNumber(input.getSeriesNumber());
+        e.setShortDescription(input.getShortDescription());
+        e.setMediumDescription(input.getMediumDescription());
+        e.setLongDescription(input.getLongDescription());
         if (input.getSeriesRef() != null) {
             e.setSeriesRef(transformToSeriesRef(input.getSeriesRef(), input.getPublisher()));
         }

@@ -164,7 +164,6 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             clips.add((Clip) new Clip().accept(new ContentDeserializationVisitor(clipPb)));
         }
         content.setClips(clips.build());
-        
         ImmutableSet.Builder<ContentGroupRef> groupRefs = ImmutableSet.builder();
         for (Reference groupRef : msg.getContentGroupsList()) {
             groupRefs.add(new ContentGroupRef(
