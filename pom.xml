@@ -155,20 +155,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- TODO: these 2 are for the ES http client, remove once it's been properly split out -->
-      <dependency>
-        <groupId>io.searchbox</groupId>
-        <artifactId>jest</artifactId>
-        <version>2.0.0</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.fasterxml.jackson.dataformat</groupId>
-        <artifactId>jackson-dataformat-smile</artifactId>
-        <version>2.5.0</version>
-      </dependency>
-      <!-- ENDTODO: these 2 are for the ES http client, remove once it's been properly split out -->
-
       <dependency>
         <groupId>com.metabroadcast.common</groupId>
         <artifactId>common</artifactId>
@@ -181,14 +167,6 @@
           <exclusion>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
           </exclusion>
         </exclusions>
       </dependency>

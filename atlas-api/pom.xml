@@ -240,10 +240,6 @@
 	  <artifactId>reflections</artifactId>
 	  <version>0.9.9</version>
     </dependency>
-    <dependency>
-      <groupId>io.searchbox</groupId>
-      <artifactId>jest</artifactId>
-    </dependency>
   </dependencies>
 
   <distributionManagement>

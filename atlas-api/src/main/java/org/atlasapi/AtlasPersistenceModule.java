@@ -238,6 +238,9 @@ public class AtlasPersistenceModule {
         ElasticSearchContentIndexModule module =
                 new ElasticSearchContentIndexModule(
                         esSeeds,
+                        port,
+                        ssl,
+                        esCluster,
                         esIndex,
                         Long.parseLong(esRequestTimeout),
                         persistenceModule().contentStore(),

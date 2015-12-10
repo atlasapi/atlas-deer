@@ -34,15 +34,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.searchbox</groupId>
-            <artifactId>jest</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-smile</artifactId>
-        </dependency>
     </dependencies>
     <name>Atlas ElasticSearch</name>
     <description>ElasticSearch implementations of core Atlas index interfaces</description>

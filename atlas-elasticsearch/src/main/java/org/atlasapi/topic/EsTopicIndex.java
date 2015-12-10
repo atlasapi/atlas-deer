@@ -15,9 +15,11 @@ import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
@@ -53,20 +55,19 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
 
     @Override
     protected void startUp() throws Exception {
-        // TODO: disabled for ES HTTP client, recheck if we really need this here
-        //        IndicesAdminClient indices = esClient.admin().indices();
-//        IndicesExistsResponse exists = get(indices.exists(
-//            Requests.indicesExistsRequest(indexName)
-//        ));
-//        if (!exists.isExists()) {
-//            log.info("Creating index {}", indexName);
-//            get(indices.create(Requests.createIndexRequest(indexName)));
-//            get(indices.putMapping(Requests.putMappingRequest(indexName)
-//                .type(EsTopic.TYPE_NAME).source(EsTopic.getMapping())
-//            ));
-//        } else {
-//            log.info("Index {} exists", indexName);
-//        }
+        IndicesAdminClient indices = esClient.admin().indices();
+        IndicesExistsResponse exists = get(indices.exists(
+            Requests.indicesExistsRequest(indexName)
+        ));
+        if (!exists.isExists()) {
+            log.info("Creating index {}", indexName);
+            get(indices.create(Requests.createIndexRequest(indexName)));
+            get(indices.putMapping(Requests.putMappingRequest(indexName)
+                .type(EsTopic.TYPE_NAME).source(EsTopic.getMapping())
+            ));
+        } else {
+            log.info("Index {} exists", indexName);
+        }
     }
 
     private <T> T get(ActionFuture<T> future) {
