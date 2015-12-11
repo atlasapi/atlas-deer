@@ -320,7 +320,9 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             migrateEquivalents(equivalentIds, resultBuilder);
         }
         else {
-            LOG.warn("Failed to find equivalence graph for {}", content.getId().longValue());
+            String message = "Failed to find equivalence graph for " + content.getId().longValue();
+            LOG.warn(message);
+            resultBuilder.failure(message);
         }
     }
 
