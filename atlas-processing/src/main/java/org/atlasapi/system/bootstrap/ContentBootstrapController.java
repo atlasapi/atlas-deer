@@ -64,7 +64,7 @@ public class ContentBootstrapController {
     private final Timer timer;
 
     private final ContentBootstrapListener contentBootstrapListener;
-    private final ContentBootstrapListener contentAndEquivalentsBoostrapListener;
+    private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
 
     public ContentBootstrapController(
             ContentResolver read,
@@ -90,7 +90,7 @@ public class ContentBootstrapController {
                 .withContentIndex(contentIndex)
                 .build();
 
-        this.contentAndEquivalentsBoostrapListener = ContentBootstrapListener.builder()
+        this.contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(write)
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
@@ -110,7 +110,7 @@ public class ContentBootstrapController {
         Publisher source = fromKey.requireValue();
         Runnable listener;
         if (Boolean.TRUE.equals(migrateEquivalents)) {
-            listener = bootstrappingRunnable(contentAndEquivalentsBoostrapListener,
+            listener = bootstrappingRunnable(contentAndEquivalentsBootstrapListener,
                     source, progress);
         }
         else {

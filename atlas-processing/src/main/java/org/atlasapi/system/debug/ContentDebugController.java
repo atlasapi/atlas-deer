@@ -37,8 +37,6 @@ import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -76,13 +74,13 @@ public class ContentDebugController {
             .create();
     private final ObjectMapper jackson = new ObjectMapper();
 
-    private final Logger log = LoggerFactory.getLogger(ContentDebugController.class);
     private final LegacyPersistenceModule legacyPersistence;
     private final AtlasPersistenceModule persistence;
     private final ContentIndex index;
     private final EsContentTranslator esContentTranslator;
 
     private final ContentBootstrapListener contentBootstrapListener;
+    private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
 
     public ContentDebugController(
             LegacyPersistenceModule legacyPersistence,
@@ -105,6 +103,15 @@ public class ContentDebugController {
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(index)
                 .withMigrateHierarchies(legacyPersistence)
+                .build();
+
+        this.contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(persistence.nullMessageSendingContentStore())
+                .withEquivalenceMigrator(equivalenceMigrator)
+                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
+                .withContentIndex(index)
+                .withMigrateHierarchies(legacyPersistence)
+                .withMigrateEquivalents(persistence.nullMessageSendingEquivalenceGraphStore())
                 .build();
     }
 
@@ -215,13 +222,18 @@ public class ContentDebugController {
 
     @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(@PathVariable("id") String id,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
             final HttpServletResponse response) throws IOException {
         try {
             Long decodedId = lowercase.decode(id).longValue();
 
             Content content = resolveLegacyContent(decodedId);
 
-            ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
+            ContentBootstrapListener listener = migrateEquivalents
+                                                ? contentAndEquivalentsBootstrapListener
+                                                : contentBootstrapListener;
+
+            ContentBootstrapListener.Result result = content.accept(listener);
 
             if(result.isSucceeded()) {
                 response.setStatus(HttpStatus.OK.value());
