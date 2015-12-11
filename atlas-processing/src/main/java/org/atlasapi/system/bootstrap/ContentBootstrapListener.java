@@ -116,8 +116,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         }
 
         Result result = resultBuilder.build();
-        LOG.info("Bootstrap of {} finished, result {} - {}",
-                item.getId(), result.isSucceeded(), result.getMessage());
+        logResult(item.getId(), result);
 
         return result;
     }
@@ -137,8 +136,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         }
 
         Result result = resultBuilder.build();
-        LOG.info("Bootstrap of {} finished, result {} - {}",
-                container.getId(), result.isSucceeded(), result.getMessage());
+        logResult(container.getId(), result);
 
         return result;
     }
@@ -382,6 +380,13 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         }
 
         return successMessage;
+    }
+
+    private void logResult(Id id, Result result) {
+        LOG.info(
+                "Bootstrap of {} finished, result {} - {}",
+                id, result.isSucceeded(), result.getMessage().replaceAll("\n", " | ")
+        );
     }
 
     public static class Builder {
