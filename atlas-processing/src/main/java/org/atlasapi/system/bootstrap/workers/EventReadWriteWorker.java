@@ -12,6 +12,7 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
@@ -26,10 +27,12 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
     private final EventResolver resolver;
     private final EventWriter writer;
+    private final Timer metricsTimer;
 
-    public EventReadWriteWorker(EventResolver resolver, EventWriter writer) {
+    public EventReadWriteWorker(EventResolver resolver, EventWriter writer, Timer metricsTimer) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
+        this.metricsTimer = checkNotNull(metricsTimer);
     }
 
     @Override
@@ -43,6 +46,8 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
     }
 
     public void process(Iterable<Id> ids) {
+        Timer.Context time = metricsTimer.time();
+
         ListenableFuture<Resolved<Event>> future = resolver.resolveIds(ids);
         Futures.addCallback(future, new FutureCallback<Resolved<Event>>() {
 
@@ -54,11 +59,15 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
                     } catch (WriteException e) {
                         LOG.warn("Failed to write event " + event.getId());
                     }
+                    finally {
+                        time.stop();
+                    }
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
+                time.stop();
                 throw Throwables.propagate(t);
             }
         });

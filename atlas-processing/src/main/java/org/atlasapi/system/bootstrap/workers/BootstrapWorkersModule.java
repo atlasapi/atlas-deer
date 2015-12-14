@@ -99,7 +99,7 @@ public class BootstrapWorkersModule {
         ContentBootstrapWorker worker = new ContentBootstrapWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                metricsModule.metrics()
+                metricsModule.metrics().timer("ContentBootstrapWorker")
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
@@ -113,8 +113,12 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy(true)
     KafkaConsumer scheduleReadWriter() {
-        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(scheduleBootstrapTaskFactory(),
-                persistence.channelResolver(), ignoredScheduleSources);
+        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
+                scheduleBootstrapTaskFactory(),
+                persistence.channelResolver(),
+                ignoredScheduleSources,
+                metricsModule.metrics().timer("ScheduleBootstrapWorker")
+        );
         MessageSerializer<ScheduleUpdateMessage> serializer
                 = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
         return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrap")
@@ -127,8 +131,12 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy(true)
     KafkaConsumer scheduleV2ReadWriter() {
-        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(scheduleV2BootstrapTaskFactory(),
-                persistence.channelResolver(), ignoredScheduleSources);
+        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
+                scheduleV2BootstrapTaskFactory(),
+                persistence.channelResolver(),
+                ignoredScheduleSources,
+                metricsModule.metrics().timer("ScheduleV2BootstrapWorker")
+        );
         MessageSerializer<ScheduleUpdateMessage> serializer
                 = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
         return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrapV2")
@@ -143,7 +151,11 @@ public class BootstrapWorkersModule {
     KafkaConsumer topicReadWriter() {
         TopicResolver legacyResolver = legacy.legacyTopicResolver();
         TopicStore writer = persistence.topicStore();
-        TopicReadWriteWorker worker = new TopicReadWriteWorker(legacyResolver, writer);
+        TopicReadWriteWorker worker = new TopicReadWriteWorker(
+                legacyResolver,
+                writer,
+                metricsModule.metrics().timer("TopicBootstrapWorker")
+        );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory().createConsumer(worker, serializer, topicChanges, "TopicBootstrap")
@@ -158,7 +170,11 @@ public class BootstrapWorkersModule {
     KafkaConsumer eventReadWriter() {
         EventResolver legacyResolver = legacy.legacyEventResolver();
         EventWriter writer = persistence.eventWriter();
-        EventReadWriteWorker worker = new EventReadWriteWorker(legacyResolver, writer);
+        EventReadWriteWorker worker = new EventReadWriteWorker(
+                legacyResolver,
+                writer,
+                metricsModule.metrics().timer("EventBootstrapWorker")
+        );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory()
