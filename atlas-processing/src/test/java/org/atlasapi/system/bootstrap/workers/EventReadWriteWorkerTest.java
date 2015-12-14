@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 
@@ -24,6 +25,8 @@ public class EventReadWriteWorkerTest {
 
     private @Mock EventResolver resolver;
     private @Mock EventWriter writer;
+    private @Mock Timer timer;
+    private @Mock Timer.Context timerContext;
     private @Mock ResourceUpdatedMessage message;
     private @Mock ResourceRef updatedResource;
     private @Mock Event event;
@@ -32,13 +35,14 @@ public class EventReadWriteWorkerTest {
 
     @Before
     public void setUp() throws Exception {
-        worker = new EventReadWriteWorker(resolver, writer);
+        worker = new EventReadWriteWorker(resolver, writer, timer);
 
         Id id = Id.valueOf(0L);
         when(message.getUpdatedResource()).thenReturn(updatedResource);
         when(updatedResource.getId()).thenReturn(id);
         when(resolver.resolveIds(ImmutableList.of(id)))
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(event))));
+        when(timer.time()).thenReturn(timerContext);
     }
 
     @Test
