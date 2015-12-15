@@ -52,13 +52,17 @@ public class DirectAndExplicitEquivalenceMigrator {
             LookupEntry legacyLookupEntry = resolveLegacyEquivalents(contentId);
             Set<LookupRef> legacyEquivRefs = Sets.union(legacyLookupEntry.explicitEquivalents(), legacyLookupEntry.directEquivalents());
             if (!legacyEquivRefs.isEmpty()) {
-                log.trace("Resolved {} legacy explicit equiv refs for {}",
+                log.debug("Resolved {} legacy explicit equiv refs for {}",
                         legacyEquivRefs.size(), contentId);
+                log.trace("Legacy explicit refs for {} resolved as {}", contentId, legacyEquivRefs);
                 Set<ResourceRef> equivRefs = resolveLegacyContent(legacyEquivRefs);
-                log.trace("Dereferenced {} of {} explicit equivalents for {}",
+                log.debug("Dereferenced {} of {} explicit equivalents for {}",
                         equivRefs.size(), legacyEquivRefs.size(), contentId);
                 Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(ref, equivRefs);
-                log.trace("Updated graph store for {}? {}", contentId, graphUpdate.isPresent());
+                log.debug("Updated graph store for {}? {}", contentId, graphUpdate.isPresent());
+                if (graphUpdate.isPresent()) {
+                    log.trace("Graph update for ref {} is {}", contentId, graphUpdate.get());
+                }
                 return graphUpdate;
             } else {
                 log.warn("Content {} has no explicit equivalents", contentId);
