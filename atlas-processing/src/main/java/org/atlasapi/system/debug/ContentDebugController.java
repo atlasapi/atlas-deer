@@ -11,18 +11,15 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.primitives.Longs;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.content.Container;
-import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentIndex;
-import org.atlasapi.content.EsContent;
-import org.atlasapi.content.EsContentTranslator;
-import org.atlasapi.content.Item;
+import org.atlasapi.content.*;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
@@ -130,6 +127,24 @@ public class ContentDebugController {
     private void encodeLowercaseId(@PathVariable("id") Long id, final HttpServletResponse response)
             throws IOException {
         response.getWriter().write(lowercase.encode(BigInteger.valueOf(id)));
+    }
+
+    /* Deactivates a piece of content by setting activelyPublished to false */
+    @RequestMapping("/system/debug/content/{id}/deactivate")
+    private void deactivateContent(@PathVariable("id") String id,
+                                   final HttpServletResponse response) throws IOException {
+        try {
+            ContentStore contentStore = persistence.contentStore();
+            Resolved<Content> resolved = Futures.get(
+                    contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))), IOException.class
+            );
+            Content content = Iterables.getOnlyElement(resolved.getResources());
+            content.setActivelyPublished(false);
+            WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
+            gson.toJson(writeResult.written(), response.getWriter());
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     /* Returns the JSON representation of a legacy content read from Mongo and translated to the v4 model */
