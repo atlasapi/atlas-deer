@@ -97,19 +97,37 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             throw new WriteException(e);
         } catch (CorruptEquivalenceGraphIndexException e) {
             cleanGraphAndIndex(e.getSubjectId());
+            /*
+             TODO: the proper fix for this is making the lock reentrant, however that also breaks
+                   other places where the lock is used. This is a workaround to prevent deadlocks
+                   when there's an exception.
+             */
+            unlock(subjectAndAdjacents, transitiveSetsIds);
             return updateEquivalences(subject, assertedAdjacents, sources);
         } finally {
-            LOG.debug("Thread {} waiting for lock to unlock {} and {}", Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds);
-            synchronized (lock()) {
-                LOG.debug("Thread {} unlocking IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
-                lock().unlock(subjectAndAdjacents);
-                if (transitiveSetsIds != null) {
-                    LOG.debug("Thread {} unlocking transitive IDs {}", Thread.currentThread().getName(), transitiveSetsIds);
-                    lock().unlock(transitiveSetsIds);
-                }
-                LOG.debug("Thread {} performing notifyAll", Thread.currentThread().getName(), transitiveSetsIds);
-                lock().notifyAll();
+            unlock(subjectAndAdjacents, transitiveSetsIds);
+        }
+    }
+
+    private void unlock(Set<Id> subjectAndAdjacents, Set<Id> transitiveSetsIds) {
+        LOG.debug("Thread {} waiting for lock to unlock {} and {}",
+                Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds);
+
+        synchronized (lock()) {
+            LOG.debug("Thread {} unlocking IDs {}",
+                    Thread.currentThread().getName(), subjectAndAdjacents);
+
+            lock().unlock(subjectAndAdjacents);
+
+            if (transitiveSetsIds != null) {
+                LOG.debug("Thread {} unlocking transitive IDs {}",
+                        Thread.currentThread().getName(), transitiveSetsIds);
+
+                lock().unlock(transitiveSetsIds);
             }
+            LOG.debug("Thread {} performing notifyAll", Thread.currentThread().getName(), transitiveSetsIds);
+
+            lock().notifyAll();
         }
     }
 
