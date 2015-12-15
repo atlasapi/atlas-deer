@@ -154,6 +154,23 @@ public class ContentDebugController {
         }
     }
 
+    /* Updates the equivalent content store representation of a piece of content */
+    @RequestMapping("/system/debug/content/{id}/updateEquivalentContentStore")
+    private void updateEquivalentContentStore(@PathVariable("id") String id,
+                                   final HttpServletResponse response) throws IOException {
+        try {
+            ContentStore contentStore = persistence.contentStore();
+            Resolved<Content> resolved = Futures.get(
+                    contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))), IOException.class
+            );
+            Content content = Iterables.getOnlyElement(resolved.getResources());
+            EquivalentContentStore equivContentStore = persistence.getEquivalentContentStore();
+            equivContentStore.updateContent(content);
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
     /* Returns the JSON representation of a legacy content read from Mongo and translated to the v4 model */
     @RequestMapping("/system/debug/content/{id}/legacy")
     public void printLegacyContent(@PathVariable("id") String id,
