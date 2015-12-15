@@ -14,7 +14,6 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -28,12 +27,13 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
-    private final Timer messagesTimer;
+    private final Timer metricsTimer;
 
-    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer, MetricRegistry metricsRegistry) {
+    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer,
+            Timer metricsTimer) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
-        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("ContentBootstrapWorker")) : null);
+        this.metricsTimer = checkNotNull(metricsTimer);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         Id contentId = message.getUpdatedResource().getId();
         LOG.debug("Processing message on id {}, message: {}", contentId, message);
 
-        Timer.Context time = messagesTimer.time();
+        Timer.Context time = metricsTimer.time();
         Resolved<Content> content = resolveContent(contentId);
 
         try {

@@ -17,6 +17,7 @@ import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -36,12 +37,18 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory;
     private final ChannelResolver channelResolver;
     private final Set<Publisher> ignoredSources;
+    private final Timer metricsTimer;
 
-    public ScheduleReadWriteWorker(SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory, 
-            ChannelResolver channelResolver, Iterable<Publisher> ignoredSources ) {
+    public ScheduleReadWriteWorker(
+            SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory,
+            ChannelResolver channelResolver,
+            Iterable<Publisher> ignoredSources,
+            Timer metricsTimer
+    ) {
         this.channelResolver = checkNotNull(channelResolver);
         this.taskFactory = checkNotNull(taskFactory);
         this.ignoredSources = ImmutableSet.copyOf(ignoredSources);
+        this.metricsTimer = checkNotNull(metricsTimer);
     }
     
     @Override
@@ -64,6 +71,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
 
         LOG.debug("Processing message on id {}, message: {}", cid, msg);
 
+        Timer.Context time = metricsTimer.time();
         ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList.of(cid));
         try {
             Resolved<Channel> resolvedChannel = Futures.get(channelFuture, 1, TimeUnit.MINUTES, Exception.class);
@@ -77,6 +85,8 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             if (!Publisher.PA.equals(src)) {
                 updatePaSchedule(updateMsg, resolvedChannel, interval);
             }
+
+            time.stop();
         } catch (Exception e) {
             LOG.error("failed " + updateMsg, e);
         }

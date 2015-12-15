@@ -48,7 +48,6 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivContentIndex
     ) {
-
         Settings settings = createSettings(clusterName, ssl);
         TransportClient esClient = new TransportClient(settings);
         registerSeeds(esClient, seeds, port);
@@ -80,14 +79,14 @@ public class ElasticSearchContentIndexModule implements IndexModule {
 
     private Settings createSettings(String clusterName, boolean ssl) {
         return ImmutableSettings.settingsBuilder()
-                    .put("client.transport.sniff", true)
-                    .put("cluster.name", clusterName)
-                    .put("shield.transport.ssl", ssl ? "true" : "false")
-                    .build();
+                .put("client.transport.sniff", true)
+                .put("cluster.name", clusterName)
+                .put("shield.transport.ssl", ssl ? "true" : "false")
+                .build();
     }
 
     private void registerSeeds(TransportClient client, String seeds, int port) {
-        
+
         for (String host : Splitter.on(",").splitToList(seeds)) {
             client.addTransportAddress(new InetSocketTransportAddress(host, port));
         }

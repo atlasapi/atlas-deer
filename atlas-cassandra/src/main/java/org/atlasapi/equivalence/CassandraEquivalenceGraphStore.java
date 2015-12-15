@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -32,7 +33,6 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -46,6 +46,11 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;
 
 public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGraphStore {
+
+    public static final Function<List<Row>, List<Row>> filterNulls = (Function<List<Row>, List<Row>>) input -> input
+            .stream()
+            .filter(Objects::nonNull)
+            .collect(ImmutableCollectors.toList());
 
     private static final String EQUIVALENCE_GRAPHS_TABLE = "equivalence_graph";
     private static final String EQUIVALENCE_GRAPH_INDEX_TABLE = "equivalence_graph_index";
@@ -135,14 +140,17 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         };
 
     private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs = idIndex -> {
-        ListenableFuture<List<Row>> rowFutures = Futures.allAsList(idIndex.values()
-                .stream()
-                .unordered()
-                .distinct()
-                .map(this::queryForGraphRow)
-                .map(this::resultOf)
-                .map(resultSetFuture -> Futures.transform(resultSetFuture, ResultSet::one))
-                .collect(Collectors.toList()));
+        ListenableFuture<List<Row>> rowFutures = Futures.transform(
+                Futures.allAsList(idIndex.values()
+                    .stream()
+                    .unordered()
+                    .distinct()
+                    .map(this::queryForGraphRow)
+                    .map(this::resultOf)
+                    .map(resultSetFuture -> Futures.transform(resultSetFuture, ResultSet::one))
+                    .collect(Collectors.toList())),
+                filterNulls
+        );
 
         return Futures.transform(Futures.transform(rowFutures, toGraph), toIdGraphIndex(idIndex));
     };
@@ -180,9 +188,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
                         .map(resultSetFuture -> Futures.transform(resultSetFuture,
                                 (Function<ResultSet, Row>) rs -> rs != null ? rs.one() : null))
                         .collect(Collectors.toList())),
-                (Function<List<Row>, List<Row>>) input -> input.stream()
-                        .filter(Predicates.notNull()::apply)
-                        .collect(ImmutableCollectors.toList()));
+                 filterNulls);
         return Futures.transform(resultsFuture, toGraphIdIndex);
     }
 

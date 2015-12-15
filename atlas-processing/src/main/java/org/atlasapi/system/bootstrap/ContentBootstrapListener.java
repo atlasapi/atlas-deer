@@ -116,8 +116,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         }
 
         Result result = resultBuilder.build();
-        LOG.info("Bootstrap of {} finished, result {} - {}",
-                item.getId(), result.isSucceeded(), result.getMessage());
+        logResult(item.getId(), result);
 
         return result;
     }
@@ -132,9 +131,12 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             migrateHierarchy(container, resultBuilder);
         }
 
+        if (migrateEquivalents) {
+            migrateEquivalents(container, resultBuilder);
+        }
+
         Result result = resultBuilder.build();
-        LOG.info("Bootstrap of {} finished, result {} - {}",
-                container.getId(), result.isSucceeded(), result.getMessage());
+        logResult(container.getId(), result);
 
         return result;
     }
@@ -261,8 +263,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             Content series = resolveLegacyContent(seriesRefId);
             migrateContent(series, seriesMigrationResultBuilder);
 
-            if(seriesMigrationResultBuilder.isSucceeded() 
-                    && series instanceof Container) {
+            if(seriesMigrationResultBuilder.isSucceeded() && series instanceof Container) {
                 migrateHierarchy((Container) series, seriesMigrationResultBuilder);
             }
 
@@ -301,23 +302,25 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                 unsuccessfullyMigrated);
     }
 
-    private void migrateEquivalents(Item item, ResultBuilder resultBuilder) {
+    private void migrateEquivalents(Content content, ResultBuilder resultBuilder) {
         OptionalMap<Id, EquivalenceGraph> equivalenceGraphOptional = Futures.getUnchecked(
-                equivalenceGraphStore.resolveIds(ImmutableList.of(item.getId()))
+                equivalenceGraphStore.resolveIds(ImmutableList.of(content.getId()))
         );
 
-        if (equivalenceGraphOptional.get(item.getId()).isPresent()) {
+        if (equivalenceGraphOptional.get(content.getId()).isPresent()) {
             Set<Id> equivalentIds =
                     Sets.difference(
-                            equivalenceGraphOptional.get(item.getId()).get()
+                            equivalenceGraphOptional.get(content.getId()).get()
                                     .getEquivalenceSet(),
-                            ImmutableSet.of(item.getId())
+                            ImmutableSet.of(content.getId())
                     );
 
             migrateEquivalents(equivalentIds, resultBuilder);
         }
         else {
-            LOG.warn("Failed to find equivalence graph for {}", item.getId().longValue());
+            String message = "Failed to find equivalence graph for " + content.getId().longValue();
+            LOG.warn(message);
+            resultBuilder.failure(message);
         }
     }
 
@@ -377,6 +380,13 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         }
 
         return successMessage;
+    }
+
+    private void logResult(Id id, Result result) {
+        LOG.info(
+                "Bootstrap of {} finished, result {} - {}",
+                id, result.isSucceeded(), result.getMessage().replaceAll("\n", " | ")
+        );
     }
 
     public static class Builder {
