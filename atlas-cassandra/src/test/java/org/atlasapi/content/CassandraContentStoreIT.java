@@ -7,7 +7,9 @@ import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -50,6 +52,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -129,7 +132,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(writeResult.getResource().getId().longValue(), is(1234l));
         assertFalse(writeResult.getPrevious().isPresent());
         
-        verify(sender).sendMessage(argThat(isA(ResourceUpdatedMessage.class)));
+        verify(sender).sendMessage(argThat(isA(ResourceUpdatedMessage.class)), any());
         
         Content item = resolve(content.getId().longValue());
         
@@ -186,7 +189,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(writeResult.getResource().getId().longValue(), is(1234l));
         assertFalse(writeResult.getPrevious().isPresent());
 
-        verify(sender).sendMessage(argThat(isA(ResourceUpdatedMessage.class)));
+        verify(sender).sendMessage(argThat(isA(ResourceUpdatedMessage.class)), any());
 
         Item read = (Item) resolve(item.getId().longValue());
 
@@ -428,7 +431,7 @@ public abstract class CassandraContentStoreIT {
         
         assertThat(resolvedItem.getContainerRef().getId().longValue(), is(1234L));
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
-        verify(sender, times(3)).sendMessage(captor.capture());
+        verify(sender, times(3)).sendMessage(captor.capture(), any());
 
         assertThat(captor.getAllValues().get(0).getUpdatedResource().getId().longValue(), is(1234L));
         assertThat(captor.getAllValues().get(1).getUpdatedResource().getId().longValue(), is(1235L));
@@ -794,7 +797,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedEpisode1.getBroadcasts(), is(broadcasts));
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
-        verify(sender, times(5)).sendMessage(captor.capture());
+        verify(sender, times(5)).sendMessage(captor.capture(), any());
         assertThat(captor.getAllValues().get(3).getUpdatedResource().getId().longValue(), is(1234L));
         assertThat(captor.getAllValues().get(4).getUpdatedResource().getId().longValue(), is(1235L));
 
@@ -1008,7 +1011,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
-        verify(sender, times(5)).sendMessage(captor.capture());
+        verify(sender, times(5)).sendMessage(captor.capture(), any());
 
         assertThat(captor.getAllValues().get(3).getUpdatedResource().getId().longValue(), is(1234L));
         assertThat(captor.getAllValues().get(4).getUpdatedResource().getId().longValue(), is(1235L));
@@ -1212,7 +1215,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(storedSummary.getDescription().get(), is(item.getDescription()));
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
-        verify(sender, times(3)).sendMessage(captor.capture());
+        verify(sender, times(3)).sendMessage(captor.capture(), any());
 
 
     }
@@ -1332,7 +1335,7 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedBrand.getSeriesRefs(), is(ImmutableList.of(series2.toRef())));
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
-        verify(sender, times(4)).sendMessage(captor.capture());
+        verify(sender, times(4)).sendMessage(captor.capture(), any());
     }
 
 
@@ -1672,7 +1675,7 @@ public abstract class CassandraContentStoreIT {
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
 
-        verify(sender, times(7)).sendMessage(captor.capture());
+        verify(sender, times(7)).sendMessage(captor.capture(), any());
 
         List<ResourceUpdatedMessage> messagesSent = captor.getAllValues();
 
@@ -1895,5 +1898,26 @@ public abstract class CassandraContentStoreIT {
         assertThat(finalResult.getResources().first().get().getManifestedAs().isEmpty(), is(true));
     }
 
+    @Test
+    public void testWriteSendsResourceUpdatedMessage() throws Exception {
+        Content content = create(new Item());
+        content.setTitle("title");
 
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+
+        WriteResult<Content, Content> writeResult = store.writeContent(content);
+        assertTrue(writeResult.written());
+        assertThat(writeResult.getResource().getId().longValue(), is(1234L));
+        assertFalse(writeResult.getPrevious().isPresent());
+
+        ArgumentCaptor<ResourceUpdatedMessage> messageCaptor =
+                ArgumentCaptor.forClass(ResourceUpdatedMessage.class);
+        verify(sender).sendMessage(
+                messageCaptor.capture(),
+                eq(Longs.toByteArray(1234L))
+        );
+        assertThat(messageCaptor.getValue().getUpdatedResource().getId().longValue(), is(1234L));
+    }
 }

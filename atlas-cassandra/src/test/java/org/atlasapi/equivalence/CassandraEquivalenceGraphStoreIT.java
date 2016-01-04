@@ -32,6 +32,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
@@ -53,8 +54,15 @@ public class CassandraEquivalenceGraphStoreIT {
         }
 
         @Override
+        public void sendMessage(EquivalenceGraphUpdateMessage message,
+                byte[] partitionKey)
+                throws MessagingException {
+            //no-op
+        }
+
+        @Override
         public void close() throws Exception {
-            
+            //no-op
         }
     };
     private static AstyanaxContext<Keyspace> context;

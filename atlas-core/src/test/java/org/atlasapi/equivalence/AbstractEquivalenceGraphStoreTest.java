@@ -59,6 +59,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 
 public class AbstractEquivalenceGraphStoreTest {
@@ -593,6 +594,13 @@ public class AbstractEquivalenceGraphStoreTest {
                 @Override
                 public void sendMessage(EquivalenceGraphUpdateMessage message)  {
                     // no-op
+                }
+
+                @Override
+                public void sendMessage(EquivalenceGraphUpdateMessage message,
+                        byte[] partitionKey)
+                        throws MessagingException {
+
                 }
 
                 @Override
