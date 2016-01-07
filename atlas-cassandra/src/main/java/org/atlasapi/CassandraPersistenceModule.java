@@ -130,6 +130,9 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             public void sendMessage(T resourceUpdatedMessage) throws MessagingException { }
 
             @Override
+            public void sendMessage(T message, byte[] partitionKey) throws MessagingException { }
+
+            @Override
             public void close() throws Exception { }
         };
     }
@@ -212,6 +215,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             public void sendMessage(M message) throws MessagingException {
                 Timer.Context time = timer.time();
                 delegate.sendMessage(message);
+                time.stop();
+            }
+
+            @Override
+            public void sendMessage(M message, byte[] partitionKey)
+                    throws MessagingException {
+                Timer.Context time = timer.time();
+                delegate.sendMessage(message, partitionKey);
                 time.stop();
             }
 

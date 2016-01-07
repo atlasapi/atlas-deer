@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Equivalence;
 import com.google.common.base.Optional;
+import com.google.common.primitives.Longs;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
@@ -73,7 +74,8 @@ abstract public class AbstractSegmentStore implements SegmentStore {
     private void writeMessage(WriteResult<Segment, Segment> result) {
         ResourceUpdatedMessage msg = createEntityUpdatedMessage(result);
         try {
-            sender.sendMessage(msg);
+            Id resourceId = msg.getUpdatedResource().getId();
+            sender.sendMessage(msg, Longs.toByteArray(resourceId.longValue()));
         } catch (MessagingException e) {
             log.error("Failed to send resource update message [{}] - {}",
                     msg.getUpdatedResource().toString(), e.toString());

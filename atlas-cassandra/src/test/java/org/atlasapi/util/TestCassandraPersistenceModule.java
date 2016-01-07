@@ -59,6 +59,11 @@ public class TestCassandraPersistenceModule extends AbstractIdleService implemen
                 @Override
                 public void sendMessage(M message) throws MessagingException {
                 }
+
+                @Override
+                public void sendMessage(M message, byte[] partitionKey)
+                        throws MessagingException {
+                }
             };
         }
         

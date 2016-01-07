@@ -39,6 +39,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.MoreSets;
@@ -141,11 +142,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated)  {
         try {
-            messageSender.sendMessage(new EquivalenceGraphUpdateMessage(
-                UUID.randomUUID().toString(),
-                Timestamp.of(DateTime.now(DateTimeZones.UTC)),
-                updated.get()
-            ));
+            messageSender.sendMessage(
+                    new EquivalenceGraphUpdateMessage(
+                        UUID.randomUUID().toString(),
+                        Timestamp.of(DateTime.now(DateTimeZones.UTC)),
+                        updated.get()
+                    ),
+                    Longs.toByteArray(updated.get().getUpdated().getId().longValue())
+            );
         } catch (MessagingException e) {
             log().warn("messaging failed for equivalence update of " + subject, e);
         }

@@ -30,6 +30,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Longs;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
@@ -156,14 +157,17 @@ public class ConcreteEventStoreTest {
         when(persistenceStore.resolvePrevious(any(), any(), any()))
                 .thenReturn(Optional.<Event>absent());
 
-        Event expected = (Event) getEvent().build();
+        Event expected = (Event) getEvent().withId(Id.valueOf(1L)).build();
         eventStore.write(expected);
 
-        verify(sender).sendMessage(messageCaptor.capture());
+        verify(sender).sendMessage(
+                messageCaptor.capture(), eq(Longs.toByteArray(expected.getId().longValue()))
+        );
 
         ResourceUpdatedMessage actual = messageCaptor.getValue();
         assertThat(actual.getMessageId(), not(nullValue()));
         assertThat(actual.getTimestamp().toDateTimeUTC(), is(now.withZone(DateTimeZone.UTC)));
+        assertThat(actual.getUpdatedResource().getId(), is(expected.getId()));
     }
 
     private Event.Builder getEvent() {

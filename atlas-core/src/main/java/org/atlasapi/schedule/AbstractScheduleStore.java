@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.queue.MessageSender;
@@ -55,7 +56,7 @@ import com.metabroadcast.common.time.Timestamp;
  * start or end of the block interval.
  * 
  * This base will also detect overwritten
- * {@link org.atlasapi.media.entry.Broadcast Broadcast}s and update them in the
+ * {@link Broadcast Broadcast}s and update them in the
  * {@code ContentStore}.
  * 
  */
@@ -144,13 +145,16 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
 
     private void sendUpdateMessage(Publisher source, List<ScheduleHierarchy> content, ScheduleBlocksUpdate update, Channel channel, Interval interval) throws WriteException {
         try {
-            String mid = UUID.randomUUID().toString();
-            Timestamp mts = Timestamp.of(DateTime.now(DateTimeZones.UTC));
+            String messageId = UUID.randomUUID().toString();
+            Timestamp messageTimestamp = Timestamp.of(DateTime.now(DateTimeZones.UTC));
             ScheduleRef updateRef = scheduleRef(content, channel, interval);
             ImmutableSet<BroadcastRef> staleRefs = broadcastRefs(update.getStaleEntries());
-            messageSender.sendMessage(new ScheduleUpdateMessage(mid, mts, 
-                new ScheduleUpdate(source, updateRef, staleRefs)
-            ));
+
+            ScheduleUpdateMessage message = new ScheduleUpdateMessage(messageId, messageTimestamp,
+                    new ScheduleUpdate(source, updateRef, staleRefs)
+            );
+            Id channelId = message.getScheduleUpdate().getSchedule().getChannel();
+            messageSender.sendMessage(message, Longs.toByteArray(channelId.longValue()));
         } catch (MessagingException e) {
             throw new WriteException(e);
         }
