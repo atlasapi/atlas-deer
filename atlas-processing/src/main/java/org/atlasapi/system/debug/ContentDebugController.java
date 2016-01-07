@@ -11,12 +11,18 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.common.primitives.Longs;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.content.*;
+import org.atlasapi.content.Container;
+import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.EquivalentContentStore;
+import org.atlasapi.content.EsContent;
+import org.atlasapi.content.EsContentTranslator;
+import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
@@ -285,18 +291,25 @@ public class ContentDebugController {
     public void debugEquivalentSchedule(
             @RequestParam(value = "channel", required = true) String channelId,
             @RequestParam(value = "source", required = true) String sourceKey,
-            @RequestParam(value = "selectedSources", required = true) String selectedSourcesKeys,
+            @RequestParam(value = "selectedSources", required = false) String selectedSourcesKeys,
             @RequestParam(value = "day", required = true) String day,
             final HttpServletResponse response
     ) throws IOException {
         try {
 
             Publisher source = Publisher.fromKey(sourceKey).requireValue();
-            Set<Publisher> selectedSources = Splitter.on(",")
-                    .splitToList(selectedSourcesKeys)
-                    .stream()
-                    .map(key -> Publisher.fromKey(key).requireValue())
-                    .collect(Collectors.toSet());
+
+            Set<Publisher> selectedSources = null;
+
+            if (selectedSourcesKeys != null) {
+                Splitter.on(",")
+                        .splitToList(selectedSourcesKeys)
+                        .stream()
+                        .map(key -> Publisher.fromKey(key).requireValue())
+                        .collect(Collectors.toSet());
+            } else {
+                selectedSources = Publisher.all();
+            }
 
             LocalDate date;
             try {
