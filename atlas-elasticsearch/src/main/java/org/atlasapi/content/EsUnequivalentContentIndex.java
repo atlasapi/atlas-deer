@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -41,9 +40,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.metabroadcast.common.query.Selection;
 
 public class EsUnequivalentContentIndex extends AbstractIdleService implements ContentIndex {
-
-    // This script is located on the ES nodes themselves, in /etc/elasticsearch/scripts
-    public static final String SORT_PUBLISHERS_SCRIPT = "sort-publishers";
 
     private static final int DEFAULT_LIMIT = 50;
 
@@ -133,15 +129,17 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
         if (queryParams.isPresent()) {
 
-            addOrdering(queryParams, publishers, reqBuilder);
+            addOrdering(queryParams, reqBuilder);
 
-            queryBuilder = addFuzzyQuery(queryParams, queryBuilder);
+            queryBuilder = addFuzzyQuery(queryParams, queryBuilder, reqBuilder);
 
             addBrandId(queryParams, filterBuilder);
             addSeriesId(queryParams, filterBuilder);
             addTopicFilter(queryParams, filterBuilder);
             addActionableFilter(queryParams, filterBuilder);
         }
+
+        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         FilteredQueryBuilder finalQuery = QueryBuilders.filteredQuery(queryBuilder, filterBuilder);
         reqBuilder.setQuery(finalQuery);
@@ -165,26 +163,14 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
     }
 
     private void addOrdering(Optional<IndexQueryParams> queryParams,
-            Iterable<Publisher> publishers, SearchRequestBuilder reqBuilder) {
-        boolean shouldScoreSort = queryParams.get().getFuzzyQueryParams().isPresent();
-
+            SearchRequestBuilder reqBuilder) {
         if (queryParams.get().getOrdering().isPresent()) {
             addSortOrder(queryParams.get().getOrdering(), reqBuilder);
-
-            if (!shouldScoreSort) {
-                addPublisherPrecedenceSortOrder(publishers, reqBuilder);
-            }
         }
-
-        if (shouldScoreSort) {
-            reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
-        }
-
-        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
     }
 
     private QueryBuilder addFuzzyQuery(Optional<IndexQueryParams> queryParams,
-            QueryBuilder queryBuilder) {
+            QueryBuilder queryBuilder, SearchRequestBuilder reqBuilder) {
         if (queryParams.get().getFuzzyQueryParams().isPresent()) {
             queryBuilder = addTitleQuery(queryParams, queryBuilder);
             if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
@@ -195,6 +181,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             } else {
                 queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
             }
+            reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
         }
         return queryBuilder;
     }
@@ -258,22 +245,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 );
             }
         }
-    }
-
-    private void addPublisherPrecedenceSortOrder(Iterable<Publisher> publishers,
-            SearchRequestBuilder reqBuilder) {
-        ImmutableMap.Builder<String, Object> scriptFactors = ImmutableMap.<String, Object>builder();
-        int index = 0;
-
-        for (Publisher publisher : publishers) {
-            scriptFactors.put(publisher.key(), index++);
-        }
-
-        reqBuilder.addSort(
-                SortBuilders.scriptSort(SORT_PUBLISHERS_SCRIPT, "number")
-                        .setParams(scriptFactors.build())
-                        .order(SortOrder.ASC)
-        );
     }
 
     private String translateOrderField(String orderField) {
