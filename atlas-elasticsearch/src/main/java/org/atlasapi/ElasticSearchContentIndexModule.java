@@ -58,14 +58,13 @@ public class ElasticSearchContentIndexModule implements IndexModule {
                 resolver,
                 channelGroupResolver,
                 equivContentIndex,
-                requestTimeout.intValue(),
-                EsUnequivalentContentIndex.SortPublishersScript.PRODUCTION
+                requestTimeout.intValue()
         );
         this.translator = new EsContentTranslator(
                 indexName,
                 esClient,
                 equivContentIndex,
-                requestTimeout,
+                requestTimeout.longValue(),
                 resolver
         );
 

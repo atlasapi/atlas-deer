@@ -43,8 +43,7 @@ public class PseudoEquivalentContentIndexIT {
                 new NoOpContentResolver(),
                 mock(ChannelGroupResolver.class),
                 equivIndex,
-                60000,
-                EsUnequivalentContentIndex.SortPublishersScript.TESTING
+                60000
         );
         delegate.startAsync().awaitRunning();
         contentIndex = new PseudoEquivalentContentIndex(delegate, equivIndex);
