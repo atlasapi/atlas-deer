@@ -63,15 +63,7 @@ public final class EsUnequivalentContentIndexingTest {
     @Before
     public void setup() throws TimeoutException {
         ElasticSearchHelper.refresh(esClient.client());
-        contentIndexer = new EsUnequivalentContentIndex(
-                esClient.client(),
-                EsSchema.CONTENT_INDEX,
-                new NoOpContentResolver(),
-                mock(ChannelGroupResolver.class),
-                new NoOpSecondaryIndex(),
-                6000,
-                EsUnequivalentContentIndex.SortPublishersScript.TESTING
-        );
+        contentIndexer = new EsUnequivalentContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 6000);
         contentIndexer.startAsync().awaitRunning(25, TimeUnit.SECONDS);
     }
     

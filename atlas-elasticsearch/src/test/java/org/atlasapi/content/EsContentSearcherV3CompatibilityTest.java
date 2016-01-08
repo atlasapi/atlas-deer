@@ -69,15 +69,7 @@ public class EsContentSearcherV3CompatibilityTest {
     @Before
     public void setUp() throws Exception {
         ElasticSearchHelper.refresh(esClient.client());
-        indexer = new EsUnequivalentContentIndex(
-                esClient.client(),
-                EsSchema.CONTENT_INDEX,
-                new NoOpContentResolver(),
-                mock(ChannelGroupResolver.class),
-                new NoOpSecondaryIndex(),
-                60000,
-                EsUnequivalentContentIndex.SortPublishersScript.TESTING
-        );
+        indexer = new EsUnequivalentContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60000);
         indexer.startAsync().awaitRunning(10, TimeUnit.SECONDS);
         refresh(esClient.client());
     }
