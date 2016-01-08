@@ -2,6 +2,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <groovy-all.version>2.3.5</groovy-all.version>
+    </properties>
     <parent>
         <groupId>org.atlasapi</groupId>
         <artifactId>atlas</artifactId>
@@ -29,6 +32,12 @@
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>1.7.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy-all.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

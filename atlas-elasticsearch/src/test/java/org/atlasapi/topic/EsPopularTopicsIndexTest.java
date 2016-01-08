@@ -41,7 +41,13 @@ public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
     private final EsUnequivalentContentIndex index = new EsUnequivalentContentIndex(
-            esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60
+            esClient.client(),
+            EsSchema.CONTENT_INDEX,
+            new NoOpContentResolver(),
+            mock(ChannelGroupResolver.class),
+            new NoOpSecondaryIndex(),
+            60,
+            EsUnequivalentContentIndex.SortPublishersScript.TESTING
     );
 
     @BeforeClass
