@@ -9,6 +9,7 @@ import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
@@ -19,8 +20,13 @@ public class ElasticSearchHelper {
     
     public static Node testNode() {
         return NodeBuilder.nodeBuilder()
-            .local(true).clusterName(UUID.randomUUID().toString())
-            .build().start();
+                .local(true)
+                .clusterName(UUID.randomUUID().toString())
+                .settings(ImmutableSettings.settingsBuilder()
+                        .put("script.engine.groovy.inline.search", "on")
+                        .build())
+                .build()
+                .start();
     }
     
     public static void clearIndices(Client esClient) {

@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -40,6 +41,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.metabroadcast.common.query.Selection;
 
 public class EsUnequivalentContentIndex extends AbstractIdleService implements ContentIndex {
+
+    public static final String SORT_PUBLISHERS_SCRIPT_PARAMS_NAME = "factor";
 
     private static final int DEFAULT_LIMIT = 50;
 
@@ -54,13 +57,16 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
     private final SecondaryIndex equivIdIndex;
     private final EsUnequivalentContentIndexer indexer;
 
+    private final SortPublishersScript sortPublishersScript;
+
     public EsUnequivalentContentIndex(
             Client esClient,
             String indexName,
             ContentResolver resolver,
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivIdIndex,
-            Integer requestTimeout
+            Integer requestTimeout,
+            SortPublishersScript sortPublishersScript
     ) {
         this.esClient = checkNotNull(esClient);
         this.index = checkNotNull(indexName);
@@ -82,6 +88,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 equivIdIndex,
                 translator
         );
+        this.sortPublishersScript = checkNotNull(sortPublishersScript);
     }
 
     @Override
@@ -129,17 +136,15 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
         if (queryParams.isPresent()) {
 
-            addOrdering(queryParams, reqBuilder);
+            addOrdering(queryParams, publishers, reqBuilder);
 
-            queryBuilder = addFuzzyQuery(queryParams, queryBuilder, reqBuilder);
+            queryBuilder = addFuzzyQuery(queryParams, queryBuilder);
 
             addBrandId(queryParams, filterBuilder);
             addSeriesId(queryParams, filterBuilder);
             addTopicFilter(queryParams, filterBuilder);
             addActionableFilter(queryParams, filterBuilder);
         }
-
-        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
         FilteredQueryBuilder finalQuery = QueryBuilders.filteredQuery(queryBuilder, filterBuilder);
         reqBuilder.setQuery(finalQuery);
@@ -163,14 +168,26 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
     }
 
     private void addOrdering(Optional<IndexQueryParams> queryParams,
-            SearchRequestBuilder reqBuilder) {
+            Iterable<Publisher> publishers, SearchRequestBuilder reqBuilder) {
+        boolean shouldScoreSort = queryParams.get().getFuzzyQueryParams().isPresent();
+
         if (queryParams.get().getOrdering().isPresent()) {
             addSortOrder(queryParams.get().getOrdering(), reqBuilder);
+
+            if (!shouldScoreSort) {
+                addPublisherPrecedenceSortOrder(publishers, reqBuilder);
+            }
         }
+
+        if (shouldScoreSort) {
+            reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
+        }
+
+        reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
     }
 
     private QueryBuilder addFuzzyQuery(Optional<IndexQueryParams> queryParams,
-            QueryBuilder queryBuilder, SearchRequestBuilder reqBuilder) {
+            QueryBuilder queryBuilder) {
         if (queryParams.get().getFuzzyQueryParams().isPresent()) {
             queryBuilder = addTitleQuery(queryParams, queryBuilder);
             if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
@@ -181,7 +198,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
             } else {
                 queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
             }
-            reqBuilder.addSort(SortBuilders.scoreSort().order(SortOrder.DESC));
         }
         return queryBuilder;
     }
@@ -247,6 +263,24 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         }
     }
 
+    private void addPublisherPrecedenceSortOrder(Iterable<Publisher> publishers,
+            SearchRequestBuilder reqBuilder) {
+        ImmutableMap.Builder<String, Object> scriptFactors = ImmutableMap.<String, Object>builder();
+        int index = 0;
+
+        for (Publisher publisher : publishers) {
+            scriptFactors.put(publisher.key(), index++);
+        }
+
+        reqBuilder.addSort(
+                SortBuilders.scriptSort(sortPublishersScript.getScript(), "number")
+                        .setParams(ImmutableMap.<String, Object>builder()
+                                .put(SORT_PUBLISHERS_SCRIPT_PARAMS_NAME, scriptFactors.build())
+                                .build())
+                        .order(SortOrder.ASC)
+        );
+    }
+
     private String translateOrderField(String orderField) {
         if ("title".equalsIgnoreCase(orderField)) {
             return "flattenedTitle";
@@ -273,5 +307,31 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         }
         Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
         return Id.valueOf(id);
+    }
+
+    /**
+     * Due to the linked issue we can't inline a groovy script in the ES request when using the
+     * production ES cluster. Therefore we have to switch between the following two:
+     * <ul>
+     *     <li>Testing: Inline the script</li>
+     *     <li>Production: Provide the name of a copy of the script that is saved locally on the
+     *     ES nodes</li>
+     * </ul>
+     *
+     * @see <a href="https://jira.metabroadcast.com/browse/MBST-13786">MBST-13786</a>
+     */
+    public enum SortPublishersScript {
+        PRODUCTION("sort-publishers"),
+        TESTING("factor.get(doc['source'].value)");
+
+        private final String script;
+
+        SortPublishersScript(String script) {
+            this.script = script;
+        }
+
+        public String getScript() {
+            return script;
+        }
     }
 }

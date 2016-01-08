@@ -76,8 +76,14 @@ public class EsUnequivalentContentIndexTest {
     @Before
     public void setup() {
         index = new EsUnequivalentContentIndex(
-                esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(),
-                mock(ChannelGroupResolver.class), equivIdIndex, 60_000);
+                esClient,
+                EsSchema.CONTENT_INDEX,
+                new NoOpContentResolver(),
+                mock(ChannelGroupResolver.class),
+                equivIdIndex,
+                60_000,
+                EsUnequivalentContentIndex.SortPublishersScript.TESTING
+        );
         index.startAsync().awaitRunning();
     }
 
@@ -530,6 +536,49 @@ public class EsUnequivalentContentIndexTest {
         assertThat(ids.getIds().get(0), is(Id.valueOf(3)));
         assertThat(ids.getIds().get(1), is(Id.valueOf(1)));
         assertThat(ids.getIds().get(2), is(Id.valueOf(2)));
+    }
+
+    @Test
+    public void testOrderByWithNoFuzzySearchAlsoSortsByPublisherPrecedence() throws Exception {
+        for (Long id : ImmutableList.of(1L, 2L)) {
+            when(equivIdIndex.lookup(eq(ImmutableList.of(id))))
+                    .thenReturn(Futures.immediateFuture(ImmutableMap.of(id, 10L)));
+        }
+
+        Episode episode1 = new Episode();
+        episode1.setId(1);
+        episode1.setPublisher(Publisher.METABROADCAST);
+        episode1.setEpisodeNumber(1);
+
+        Episode episode2 = new Episode();
+        episode2.setId(2);
+        episode2.setPublisher(Publisher.BBC);
+        episode2.setEpisodeNumber(1);
+
+        indexAndRefresh(episode1, episode2);
+
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of());
+        ListenableFuture<IndexQueryResult> result = index.query(
+                querySet,
+                ImmutableList.of(Publisher.BBC, Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.of(new IndexQueryParams(
+                                Optional.empty(),
+                                Optional.of(QueryOrdering.fromOrderBy("episodeNumber.desc")),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Boolean.TRUE,
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
+                ));
+
+        IndexQueryResult ids = result.get();
+        assertThat(ids.getIds().get(0), is(Id.valueOf(2)));
+        assertThat(ids.getIds().get(1), is(Id.valueOf(1)));
     }
 
     private Content episode(int id) {
