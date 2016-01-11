@@ -33,13 +33,18 @@ public class EquivalentContentStoreGraphUpdateWorker implements Worker<Equivalen
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
-        LOG.debug(
-                "Processing message on ids {}, message: {}",
-                message.getGraphUpdate().getAllGraphs().stream()
-                        .map(EquivalenceGraph::getId)
-                        .collect(ImmutableCollectors.toList()),
-                message
-        );
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(
+                    "Processing message on updated graph: {}, created graph(s): {},"
+                            + "deleted graph(s): {}, message: {}",
+                    message.getGraphUpdate().getUpdated().getId(),
+                    message.getGraphUpdate().getCreated().stream()
+                            .map(EquivalenceGraph::getId)
+                            .collect(ImmutableCollectors.toList()),
+                    message.getGraphUpdate().getDeleted(),
+                    message
+            );
+        }
 
         try {
             if (messageTimer != null) {
@@ -50,8 +55,17 @@ public class EquivalentContentStoreGraphUpdateWorker implements Worker<Equivalen
                 equivalentContentStore.updateEquivalences(message.getGraphUpdate());
             }
         } catch (WriteException e) {
+            LOG.warn(
+                    "Failed to process message on updated graph: {}, created graph(s): {},"
+                            + "deleted graph(s): {}, message: {}. Retrying...",
+                    message.getGraphUpdate().getUpdated().getId(),
+                    message.getGraphUpdate().getCreated().stream()
+                            .map(EquivalenceGraph::getId)
+                            .collect(ImmutableCollectors.toList()),
+                    message.getGraphUpdate().getDeleted(),
+                    message
+            );
             throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
         }
     }
-
 }
