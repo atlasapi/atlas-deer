@@ -23,7 +23,7 @@ public class ApiKeySourcesFetcher implements ApplicationSourcesFetcher {
     
     @Override
     public ImmutableSet<String> getParameterNames() {
-        return ImmutableSet.of(API_KEY_QUERY_PARAMETER);
+        return ImmutableSet.of();
     }
 
     @Override
