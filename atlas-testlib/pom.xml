@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.atlasapi</groupId>
     <artifactId>atlas</artifactId>
-    <version>7.0.457-SNAPSHOT</version>
+    <version>7.0.458-SNAPSHOT</version>
   </parent>
   <artifactId>atlas-testlib</artifactId>
   <packaging>jar</packaging>
