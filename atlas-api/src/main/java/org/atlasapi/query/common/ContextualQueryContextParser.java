@@ -2,7 +2,6 @@ package org.atlasapi.query.common;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
