@@ -2,6 +2,7 @@ package org.atlasapi.query.common;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -49,11 +50,12 @@ public class ContextualQueryContextParser implements ParameterNameProvider {
             userFetcher.getParameterNames(),
             annotationExtractor.getParameterNames(), 
             selectionBuilder.getParameterNames(),
+            configFetcher.getParameterNames(),
             ImmutableSet.of(JsonResponseWriter.CALLBACK))));
     }
     
     @Override
     public Set<String> getRequiredParameters() {
-        return configFetcher.getParameterNames();
+        return ImmutableSet.of();
     }
 }
