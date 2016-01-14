@@ -6,7 +6,6 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
@@ -48,6 +47,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -94,7 +94,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private final PreparedStatement rowDelete;
     private final PreparedStatement setDelete;
     private final PreparedStatement dataRowUpdate;
-    private final PreparedStatement singleDataRowUpdate;
     private final PreparedStatement graphUpdate;
     private final PreparedStatement equivSetSelect;
 
@@ -134,19 +133,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .where(eq(SET_ID_KEY, bindMarker())));
         this.setDelete.setConsistencyLevel(writeConsistency);
 
-        this.dataRowUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
+        this.dataRowUpdate = session.prepare(QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .and(eq(CONTENT_ID_KEY, bindMarker(CONTENT_ID_BIND)))
                 .with(set(DATA_KEY, bindMarker(DATA_BIND))));
 
-        this.singleDataRowUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
-                .and(eq(CONTENT_ID_KEY, bindMarker(CONTENT_ID_BIND)))
-                .with(set(DATA_KEY, bindMarker(DATA_BIND)))
-                .and(set(GRAPH_KEY, bindMarker(GRAPH_BIND)))
-        );
-
-        this.graphUpdate = session.prepare(update(EQUIVALENT_CONTENT_TABLE)
+        this.graphUpdate = session.prepare(QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .with(set(GRAPH_KEY, bindMarker(GRAPH_BIND)))
         );
@@ -297,10 +289,18 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 .map(k -> setsSelect.bind().setLong(SET_ID_BIND, k))
                 .collect(ImmutableCollectors.toList());
     }
-    
+
     @Override
-    protected void updateEquivalences(
-            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent, EquivalenceGraphUpdate update) {
+    protected void update(EquivalenceGraph graph, Content content) {
+        update(
+                ImmutableSetMultimap.of(graph, content),
+                EquivalenceGraphUpdate.builder(graph).build()
+        );
+    }
+
+    @Override
+    protected void update(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent,
+            EquivalenceGraphUpdate update) {
         if (graphsAndContent.isEmpty()) {
             log.warn("Empty content for " + update);
             return;
@@ -388,16 +388,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return buffer;
     }
 
-    @Override
-    protected void updateInSet(EquivalenceGraph graph, Content content) {
-        session.execute(singleDataRowUpdate.bind()
-                .setLong(SET_ID_BIND, graph.getId().longValue())
-                .setLong(CONTENT_ID_BIND, content.getId().longValue())
-                .setBytes(DATA_BIND, serialize(content))
-                .setBytes(GRAPH_BIND, graphSerializer.serialize(graph))
-                .setConsistencyLevel(writeConsistency));
-    }
-
     private Content resolvedContentFromNonEquivalentContentStore(Id contentId) throws IOException {
         Resolved<Content> deerContent = Futures.get(
                 getContentResolver().resolveIds(ImmutableList.of(contentId)),
@@ -455,5 +445,20 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
         EquivalenceGraph graph = graphSerializer.deserialize(row.getBytes(GRAPH_KEY));
         return graph.getEquivalenceSet().contains(contentId);
+    }
+
+    // This is effectively leaking implementation details to the abstract store which should not
+    // know them, but it is required in order to find potentially stale content and update it
+    @Override
+    protected ListenableFuture<Set<Content>> resolveEquivalentSetIncludingStaleContent(
+            Long equivalentSetId) {
+        return Futures.transform(
+                session.executeAsync(equivSetSelect.bind(equivalentSetId)),
+                (ResultSet resultSet) -> {
+                    return StreamSupport.stream(resultSet.spliterator(), false)
+                            .map(this::deserialize)
+                            .collect(ImmutableCollectors.toSet());
+                }
+        );
     }
 }

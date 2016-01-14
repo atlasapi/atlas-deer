@@ -19,7 +19,6 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
-import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContent;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.Item;
@@ -165,13 +164,8 @@ public class ContentDebugController {
     private void updateEquivalentContentStore(@PathVariable("id") String id,
                                    final HttpServletResponse response) throws IOException {
         try {
-            ContentStore contentStore = persistence.contentStore();
-            Resolved<Content> resolved = Futures.get(
-                    contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))), IOException.class
-            );
-            Content content = Iterables.getOnlyElement(resolved.getResources());
-            EquivalentContentStore equivContentStore = persistence.getEquivalentContentStore();
-            equivContentStore.updateContent(content);
+            Id contentId = Id.valueOf(lowercase.decode(id));
+            persistence.getEquivalentContentStore().updateContent(contentId);
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }

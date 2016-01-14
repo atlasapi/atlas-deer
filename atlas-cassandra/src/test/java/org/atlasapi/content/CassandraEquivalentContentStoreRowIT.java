@@ -7,6 +7,7 @@ import static org.atlasapi.content.CassandraEquivalentContentStore.CONTENT_ID_KE
 import static org.atlasapi.content.CassandraEquivalentContentStore.EQUIVALENT_CONTENT_TABLE;
 import static org.atlasapi.content.CassandraEquivalentContentStore.GRAPH_KEY;
 import static org.atlasapi.content.CassandraEquivalentContentStore.SET_ID_KEY;
+import static org.atlasapi.media.entity.Publisher.METABROADCAST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -64,19 +65,19 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @Test
     public void testRemovesOldRows() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
-        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
-        Content c3 = createAndWriteItem(Id.valueOf(31), Publisher.METABROADCAST);
-        Content c4 = createAndWriteItem(Id.valueOf(41), Publisher.METABROADCAST);
-        Content c5 = createAndWriteItem(Id.valueOf(51), Publisher.METABROADCAST);
-        Content c6 = createAndWriteItem(Id.valueOf(61), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), METABROADCAST);
+        Content c3 = createAndWriteItem(Id.valueOf(31), METABROADCAST);
+        Content c4 = createAndWriteItem(Id.valueOf(41), METABROADCAST);
+        Content c5 = createAndWriteItem(Id.valueOf(51), METABROADCAST);
+        Content c6 = createAndWriteItem(Id.valueOf(61), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
-        persistenceModule.equivalentContentStore().updateContent(c2);
-        persistenceModule.equivalentContentStore().updateContent(c3);
-        persistenceModule.equivalentContentStore().updateContent(c4);
-        persistenceModule.equivalentContentStore().updateContent(c5);
-        persistenceModule.equivalentContentStore().updateContent(c6);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
+        persistenceModule.equivalentContentStore().updateContent(c3.getId());
+        persistenceModule.equivalentContentStore().updateContent(c4.getId());
+        persistenceModule.equivalentContentStore().updateContent(c5.getId());
+        persistenceModule.equivalentContentStore().updateContent(c6.getId());
         
         makeEquivalent(c2, c4);
         makeEquivalent(c3, c5);
@@ -120,18 +121,18 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @Test
     public void testResolveSingleContent() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
 
         resolved(c1, c1);
     }
 
     @Test
     public void testResolveSingleContentWithNoGraph() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
 
         persistenceModule.getCassandraSession().execute(
                 QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
@@ -144,11 +145,11 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @Test
     public void testResolveAllContentInSet() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
-        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
-        persistenceModule.equivalentContentStore().updateContent(c2);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
 
         makeEquivalent(c1, c2);
 
@@ -157,11 +158,11 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @Test
     public void testResolveAllContentInSetWithNoGraph() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
-        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
-        persistenceModule.equivalentContentStore().updateContent(c2);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
 
         makeEquivalent(c1, c2);
 
@@ -170,11 +171,11 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @Test
     public void testResolveSet() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
-        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
-        persistenceModule.equivalentContentStore().updateContent(c2);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
 
         makeEquivalent(c1, c2);
 
@@ -183,11 +184,11 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @Test
     public void testResolveSetWithNoGraph() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
-        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
-        persistenceModule.equivalentContentStore().updateContent(c2);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
 
         makeEquivalent(c1, c2);
 
@@ -202,11 +203,11 @@ public class CassandraEquivalentContentStoreRowIT {
 
     @Test
     public void testDoNotResolveContentThatIsNotInGraph() throws Exception {
-        Content c1 = createAndWriteItem(Id.valueOf(11), Publisher.METABROADCAST);
-        Content c2 = createAndWriteItem(Id.valueOf(21), Publisher.METABROADCAST);
+        Content c1 = createAndWriteItem(Id.valueOf(11), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(21), METABROADCAST);
 
-        persistenceModule.equivalentContentStore().updateContent(c1);
-        persistenceModule.equivalentContentStore().updateContent(c2);
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
 
         ResultSet result = persistenceModule.getCassandraSession().execute(
                 QueryBuilder.select(GRAPH_KEY).from(EQUIVALENT_CONTENT_TABLE)
@@ -224,6 +225,40 @@ public class CassandraEquivalentContentStoreRowIT {
         );
 
         resolvedSet(c1.getId(), c1);
+    }
+
+    @Test
+    public void testDeletingGraphUpdatesStaleContent() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(1), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(2), METABROADCAST);
+        Content c3 = createAndWriteItem(Id.valueOf(3), METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
+        persistenceModule.equivalentContentStore().updateContent(c3.getId());
+
+        makeEquivalent(c2, c3);
+
+        // This is the message that should have split off c3 into its own graph, but the message
+        // was not processed by the equivalent content store thus leaving c3 in the original set
+        // as stale content
+        persistenceModule.contentEquivalenceGraphStore().updateEquivalences(
+                c2.toRef(), ImmutableSet.of(), ImmutableSet.of(METABROADCAST)
+        );
+
+        // This adds a content with a smaller ID to the set thus causing the canonical ID to change
+        // and effectively causing the deletion of the old graph. c3 is no longer in the graph
+        // as far as equivalence graph knows so it's not mentioned anywhere in this update
+        Optional<EquivalenceGraphUpdate> updateOptional = persistenceModule
+                .contentEquivalenceGraphStore()
+                .updateEquivalences(
+                        c1.toRef(), ImmutableSet.of(c2.toRef()), ImmutableSet.of(METABROADCAST)
+                );
+
+        persistenceModule.equivalentContentStore().updateEquivalences(updateOptional.get());
+
+        resolvedSet(c1.getId(), c1, c2);
+        resolvedSet(c3.getId(), c3);
     }
 
     private void assertNoRowsWithIds(Id setId, Id contentId) {
@@ -247,7 +282,7 @@ public class CassandraEquivalentContentStoreRowIT {
     private void resolved(Content c, Content... cs) throws Exception {
         ResolvedEquivalents<Content> resolved
             = get(persistenceModule.equivalentContentStore().resolveIds(ImmutableList.of(c.getId()), 
-                    ImmutableSet.of(Publisher.METABROADCAST), Annotation.all()));
+                    ImmutableSet.of(METABROADCAST), Annotation.all()));
         ImmutableSet<Content> idContent = resolved.get(c.getId());
         assertEquals(ImmutableSet.copyOf(cs), idContent);
     }
@@ -269,7 +304,7 @@ public class CassandraEquivalentContentStoreRowIT {
        
         Optional<EquivalenceGraphUpdate> graphs
             = persistenceModule.contentEquivalenceGraphStore().updateEquivalences(c.toRef(), csRefs, 
-                ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC));
+                ImmutableSet.of(METABROADCAST, Publisher.BBC));
         
         persistenceModule.equivalentContentStore().updateEquivalences(graphs.get());
         
