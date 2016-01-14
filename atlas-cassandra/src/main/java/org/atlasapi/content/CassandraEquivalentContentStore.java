@@ -292,10 +292,16 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     @Override
     protected void update(EquivalenceGraph graph, Content content) {
-        update(
-                ImmutableSetMultimap.of(graph, content),
-                EquivalenceGraphUpdate.builder(graph).build()
-        );
+        BatchStatement statement = new BatchStatement();
+        statement.setConsistencyLevel(writeConsistency);
+
+        statement.add(getGraphUpdateRow(graph));
+        statement.add(getUpdateDataRow(graph, content));
+        statement.add(index.insertStatement(
+                content.getId().longValue(), graph.getId().longValue()
+        ));
+
+        session.execute(statement);
     }
 
     @Override
@@ -325,25 +331,29 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         graph -> graph
                 ));
 
-        return uniqueGraphs.entrySet().stream()
-                .map(entry -> graphUpdate.bind()
-                        .setLong(SET_ID_BIND, entry.getKey().longValue())
-                        .setBytes(GRAPH_BIND, graphSerializer.serialize(entry.getValue()))
-                )
+        return uniqueGraphs.values().stream()
+                .map(this::getGraphUpdateRow)
                 .collect(ImmutableCollectors.toList());
+    }
+
+    private BoundStatement getGraphUpdateRow(EquivalenceGraph graph) {
+        return graphUpdate.bind()
+                .setLong(SET_ID_BIND, graph.getId().longValue())
+                .setBytes(GRAPH_BIND, graphSerializer.serialize(graph));
     }
 
     private ImmutableList<Statement> getUpdateDataRows(
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         return graphsAndContent.entries().stream()
-                .map(entry -> {
-                    Content content = entry.getValue();
-                    return dataRowUpdate.bind()
-                            .setLong(SET_ID_BIND, entry.getKey().getId().longValue())
-                            .setLong(CONTENT_ID_BIND, content.getId().longValue())
-                            .setBytes(DATA_BIND, serialize(content));
-                })
+                .map(entry -> getUpdateDataRow(entry.getKey(), entry.getValue()))
                 .collect(ImmutableCollectors.toList());
+    }
+
+    private BoundStatement getUpdateDataRow(EquivalenceGraph graph, Content content) {
+        return dataRowUpdate.bind()
+                .setLong(SET_ID_BIND, graph.getId().longValue())
+                .setLong(CONTENT_ID_BIND, content.getId().longValue())
+                .setBytes(DATA_BIND, serialize(content));
     }
 
     private ImmutableList<Statement> getDeleteStaleSets(ImmutableSet<Id> deletedGraphs) {
@@ -359,11 +369,29 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private ImmutableList<Statement> getUpdateIndexRows(
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
-        return graphsAndContent.entries()
-                .stream()
+        ImmutableMap<Id, Id> contentIdToGraphId = graphsAndContent.entries().stream()
+                .collect(ImmutableCollectors.toMap(
+                        entry -> entry.getValue().getId(),
+                        entry -> entry.getKey().getId()
+                ));
+
+        // This is to ensure we have a mapping in the index from the graph ID to itself in case
+        // the content after which the graph is named failed to resolve
+        ImmutableMap<Id, Id> graphIdToGraphId = graphsAndContent.keySet().stream()
+                .collect(ImmutableCollectors.toMap(
+                        EquivalenceGraph::getId,
+                        EquivalenceGraph::getId
+                ));
+
+        ImmutableMap<Id, Id> desiredIndexMappings = ImmutableMap.<Id, Id>builder()
+                .putAll(contentIdToGraphId)
+                .putAll(graphIdToGraphId)
+                .build();
+
+        return desiredIndexMappings.entrySet().stream()
                 .map(entry -> index.insertStatement(
-                        entry.getValue().getId().longValue(),
-                        entry.getKey().getId().longValue()))
+                        entry.getKey().longValue(), entry.getValue().longValue()
+                ))
                 .collect(ImmutableCollectors.toList());
     }
 
