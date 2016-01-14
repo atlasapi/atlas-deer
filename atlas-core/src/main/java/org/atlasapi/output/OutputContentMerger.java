@@ -62,6 +62,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5).getMillis();
 
+    private static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
+
+        @Override
+        public Set<Broadcast> apply(Item input) {
+            return input.getBroadcasts();
+        } 
+    };
+
     private EquivalentSetContentHierarchyChooser hierarchyChooser;
 
     public OutputContentMerger(EquivalentSetContentHierarchyChooser hierarchyChooser) {
@@ -359,7 +367,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                                .leastOf(Iterables.filter(all, HAS_BROADCASTS), 1);
         
         if (!first.isEmpty()) {
-            chosen.setBroadcasts(Sets.newHashSet(Iterables.getOnlyElement(first).getBroadcasts()));
+            Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
+            chosen.setBroadcasts(Sets.newHashSet(
+                                  Iterables.concat(
+                                    Iterables.transform(Iterables.filter(all, isPublisher(sourceForBroadcasts)), 
+                                                        TO_BROADCASTS)
+                                 )));
+            
         }
                 
         List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
@@ -368,6 +382,17 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 matchAndMerge(chosenBroadcast, notChosenOrdered);
             }
         }
+    }
+    
+    private static Predicate<Item> isPublisher(Publisher publisher) {
+        return new Predicate<Item>() {
+
+            @Override
+            public boolean apply(Item input) {
+                return publisher.equals(input.getSource());
+            }
+            
+        };
     }
 
     private <T extends Content> void mergeEncodings(ApplicationSources sources, T chosen, Iterable<T> notChosen) {

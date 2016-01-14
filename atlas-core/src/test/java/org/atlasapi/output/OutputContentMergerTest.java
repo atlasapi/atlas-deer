@@ -35,7 +35,6 @@ import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.junit.Test;
 
@@ -468,7 +467,34 @@ public class OutputContentMergerTest {
     }
     
     @Test
-    public void testMergesBroadcastsWithSimilarStartTimes() {
+    // If there are multiple items in the equivalent set belonging to the same source 
+    // as the item whose broadcasts are chosen, then broadcasts across all items from
+    // that source should be output, since it is assumed that within a data source
+    // broadcasts aren't duplicated
+    public void testOutputsAllBroadcastsFromPrecedentPublisher() {
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
+        
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Broadcast b1 = new Broadcast(Id.valueOf(1), 
+                                     new Interval(new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 0, 0), new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 1, 0)));
+        item1.setBroadcasts(ImmutableSet.of(b1));
+        
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Broadcast b2 = new Broadcast(Id.valueOf(2), 
+                                    new Interval(new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 1, 0), new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 2, 0)));
+        item2.setBroadcasts(ImmutableSet.of(b2));
+        
+        Item item3 = item(5L, "item3", Publisher.BBC);
+        Broadcast b3 = new Broadcast(Id.valueOf(3), 
+                                    new Interval(new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 2, 0), new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 3, 0)));
+        item3.setBroadcasts(ImmutableSet.of(b3));
+        
+        Item merged = (Item) merger.merge(item1,  ImmutableList.of(item2, item3), sources);
+        assertThat(merged.getBroadcasts().size(), is(2));
+    }
+    
+    @Test
+    public void testMergesBroadcastsWithSimilarStartTimes() {   
         
         ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
                 .copy()
