@@ -1,16 +1,9 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,8 +28,8 @@ import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.queue.MessageSender;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -62,7 +55,16 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
-import com.metabroadcast.common.queue.MessageSender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
@@ -325,8 +327,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private ImmutableList<Statement> getGraphUpdateRows(ImmutableSet<EquivalenceGraph> graphs) {
-        ImmutableMap<Id, EquivalenceGraph> uniqueGraphs = graphs.stream()
-                .collect(ImmutableCollectors.toMap(
+        Map<Id, EquivalenceGraph> uniqueGraphs = graphs.stream()
+                .collect(Collectors.toMap(
                         EquivalenceGraph::getId,
                         graph -> graph
                 ));
@@ -369,24 +371,23 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private ImmutableList<Statement> getUpdateIndexRows(
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
-        ImmutableMap<Id, Id> contentIdToGraphId = graphsAndContent.entries().stream()
-                .collect(ImmutableCollectors.toMap(
+        Map<Id, Id> contentIdToGraphId = graphsAndContent.entries().stream()
+                .collect(Collectors.toMap(
                         entry -> entry.getValue().getId(),
                         entry -> entry.getKey().getId()
                 ));
 
         // This is to ensure we have a mapping in the index from the graph ID to itself in case
         // the content after which the graph is named failed to resolve
-        ImmutableMap<Id, Id> graphIdToGraphId = graphsAndContent.keySet().stream()
-                .collect(ImmutableCollectors.toMap(
+        Map<Id, Id> graphIdToGraphId = graphsAndContent.keySet().stream()
+                .collect(Collectors.toMap(
                         EquivalenceGraph::getId,
                         EquivalenceGraph::getId
                 ));
 
-        ImmutableMap<Id, Id> desiredIndexMappings = ImmutableMap.<Id, Id>builder()
-                .putAll(contentIdToGraphId)
-                .putAll(graphIdToGraphId)
-                .build();
+        Map<Id, Id> desiredIndexMappings = new HashMap<>();
+        desiredIndexMappings.putAll(contentIdToGraphId);
+        desiredIndexMappings.putAll(graphIdToGraphId);
 
         return desiredIndexMappings.entrySet().stream()
                 .map(entry -> index.insertStatement(
