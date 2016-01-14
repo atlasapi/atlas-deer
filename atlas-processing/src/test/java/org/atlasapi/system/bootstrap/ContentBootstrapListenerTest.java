@@ -199,7 +199,7 @@ public class ContentBootstrapListenerTest {
             EquivalenceGraphUpdate graphUpdate) throws Exception {
         verify(contentWriter).writeContent(content);
         verify(equivalenceMigrator).migrateEquivalence(contentRef);
-        verify(equivalentContentStore).updateContent(content);
+        verify(equivalentContentStore).updateContent(content.getId());
         verify(equivalentContentStore).updateEquivalences(graphUpdate);
         verify(contentIndex).index(content);
     }

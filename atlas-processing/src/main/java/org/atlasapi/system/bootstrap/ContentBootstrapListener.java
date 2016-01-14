@@ -160,7 +160,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             Instant graphUpdateEnd = Instant.now();
             resultBuilder.success("Migrated equivalence graph");
 
-            equivalentContentStore.updateContent(content);
+            equivalentContentStore.updateContent(content.getId());
 
             if(graphUpdate.isPresent()) {
                 equivalentContentStore.updateEquivalences(graphUpdate.get());
