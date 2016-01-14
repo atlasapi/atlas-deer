@@ -282,6 +282,7 @@ public class ApplicationWebModule {
                 idCodec,
                 userFetcher(),
                 appPersistence.userStore(),
+                appPersistence.credentialsStore(),
                 new SystemClock());
     }
     
