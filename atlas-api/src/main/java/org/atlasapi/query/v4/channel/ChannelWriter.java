@@ -83,6 +83,7 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         format.writeField("regional", entity.getRegional());
         format.writeList(RELATED_LINKS_WRITER, entity.getRelatedLinks(), ctxt);
         format.writeField("start_date", entity.getStartDate());
+        format.writeField("advertiseFrom", entity.getAdvertiseFrom());
 
         if(hasChannelGroupSummaryAnnotation(ctxt)) {
 
