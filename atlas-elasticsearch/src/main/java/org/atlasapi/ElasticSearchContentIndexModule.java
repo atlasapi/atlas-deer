@@ -13,17 +13,17 @@ import org.atlasapi.content.PseudoEquivalentContentIndex;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.util.SecondaryIndex;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.Service.State;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.Service.State;
 
 public class ElasticSearchContentIndexModule implements IndexModule {
 
@@ -69,7 +69,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         );
 
         PseudoEquivalentContentIndex equivalentEsIndex =
-                new PseudoEquivalentContentIndex(unequivIndex, equivContentIndex);
+                new PseudoEquivalentContentIndex(unequivIndex);
 
         this.equivContentIndex = new InstrumentedContentIndex(equivalentEsIndex, metrics);
         this.popularTopicsIndex = new EsPopularTopicIndex(esClient);

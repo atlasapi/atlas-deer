@@ -1,7 +1,5 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -16,6 +14,16 @@ import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
 import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
+
+import com.metabroadcast.common.base.Maybe;
+import com.metabroadcast.common.query.Selection;
+
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -31,15 +39,10 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import com.metabroadcast.common.query.Selection;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EsUnequivalentContentIndex extends AbstractIdleService implements ContentIndex {
+public class EsUnequivalentContentIndex extends AbstractIdleService
+        implements ContentIndex, DelegateContentIndex {
 
     private static final int DEFAULT_LIMIT = 50;
 
@@ -109,7 +112,47 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
 
     @Override
     public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
-            Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams) {
+        SettableFuture<SearchResponse> response = queryInternal(
+                query, publishers, selection, queryParams
+        );
+
+        return Futures.transform(response, (SearchResponse input) -> {
+            ImmutableList<Id> ids = StreamSupport.stream(input.getHits().spliterator(), false)
+                    .map(this::getId)
+                    .collect(ImmutableCollectors.toList());
+
+            return IndexQueryResult.withIds(ids, input.getHits().getTotalHits());
+        });
+    }
+
+    @Override
+    public ListenableFuture<DelegateIndexQueryResult> delegateQuery(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams) {
+        SettableFuture<SearchResponse> response = queryInternal(
+                query, publishers, selection, queryParams
+        );
+
+        return Futures.transform(response, (SearchResponse input) -> {
+            DelegateIndexQueryResult.Builder resultBuilder = DelegateIndexQueryResult.builder(
+                    input.getHits().getTotalHits()
+            );
+
+            StreamSupport.stream(input.getHits().spliterator(), false)
+                    .filter(hit -> getCanonicalId(hit).isPresent() && getSource(hit).isPresent())
+                    .forEach(hit -> resultBuilder.add(
+                            getId(hit), getCanonicalId(hit).get(), getSource(hit).get()
+                    ));
+
+            return resultBuilder.build();
+        });
+    }
+
+    private SettableFuture<SearchResponse> queryInternal(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
         QueryBuilder queryBuilder = this.queryBuilderFactory.buildQuery(query);
@@ -123,6 +166,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
                 .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
                 .addField(EsContent.CANONICAL_ID)
                 .addField(EsContent.ID)
+                .addField(EsContent.SOURCE)
                 .setPostFilter(FiltersBuilder.buildForPublishers(EsContent.SOURCE, publishers))
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
@@ -145,21 +189,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         reqBuilder.setQuery(finalQuery);
         log.debug(reqBuilder.internalBuilder().toString());
         reqBuilder.execute(FutureSettingActionListener.setting(response));
-        /* TODO
-         * if selection.offset + selection.limit < totalHits
-         * then we have more: return for use with response.
-         */
-        return Futures.transform(response, (SearchResponse input) -> {
-            ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap = StreamSupport
-                    .stream(input.getHits().spliterator(), false)
-                    .filter(hit -> getCanonicalId(hit) != null)
-                    .collect(ImmutableCollectors.toListMultiMap(this::getCanonicalId, this::getId));
-
-            return IndexQueryResult.withIdsAndCanonicalIds(
-                    canonicalIdToIdMultiMap,
-                    input.getHits().getTotalHits()
-            );
-        });
+        return response;
     }
 
     private void addOrdering(Optional<IndexQueryParams> queryParams,
@@ -267,11 +297,21 @@ public class EsUnequivalentContentIndex extends AbstractIdleService implements C
         return Id.valueOf(hit.field(EsContent.ID).<Number>value().longValue());
     }
 
-    private Id getCanonicalId(SearchHit hit) {
+    private Optional<Id> getCanonicalId(SearchHit hit) {
         if (hit == null || hit.field(EsContent.CANONICAL_ID) == null) {
-            return null;
+            return Optional.empty();
         }
         Long id = hit.field(EsContent.CANONICAL_ID).<Number>value().longValue();
-        return Id.valueOf(id);
+        return Optional.of(Id.valueOf(id));
+    }
+
+    private Optional<Publisher> getSource(SearchHit hit) {
+        if (hit == null || hit.field(EsContent.SOURCE) == null) {
+            return Optional.empty();
+        }
+        String source = hit.field(EsContent.SOURCE).<String>value();
+        Maybe<Publisher> publisherMaybe = Publisher.fromKey(source);
+
+        return Optional.ofNullable(publisherMaybe.valueOrNull());
     }
 }
