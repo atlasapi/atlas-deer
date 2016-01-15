@@ -37,6 +37,11 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private static final String PRIMARY_KEY_COLUMN = "organisation_id";
     private static final String DATA_COLUMN = "data";
 
+    private final String KEYS = "keys";
+    private final String ORGANISATION_ID = "organisationId";
+    private final String DATA = "data";
+
+
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final Session session;
@@ -55,19 +60,19 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
         RegularStatement statement = select().all()
                 .from(ORGANISATION_TABLE)
-                .where(in(PRIMARY_KEY_COLUMN, bindMarker("keys")));
+                .where(in(PRIMARY_KEY_COLUMN, bindMarker(KEYS)));
         statement.setFetchSize(Integer.MAX_VALUE);
         selectStatement = session.prepare(statement);
 
         rowUpdate = session.prepare(update(ORGANISATION_TABLE)
-                .where(eq(PRIMARY_KEY_COLUMN, bindMarker("organisationId")))
-                .with(set(DATA_COLUMN, bindMarker("data"))))
+                .where(eq(PRIMARY_KEY_COLUMN, bindMarker(ORGANISATION_ID)))
+                .with(set(DATA_COLUMN, bindMarker(DATA))))
                 .setConsistencyLevel(writeConsistency);
     }
 
     @Override
     public ListenableFuture<Resolved<Organisation>> resolveIds(Iterable<Id> ids) {
-        Statement select = selectStatement.bind().setList("keys",
+        Statement select = selectStatement.bind().setList(KEYS,
                 StreamSupport.stream(ids.spliterator(), false)
                         .map(Id::longValue)
                         .collect(Collectors.toList()))
@@ -87,6 +92,14 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         );
     }
 
+    @Override public void write(Organisation organisation) {
+        ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation).toByteArray());
+
+        session.execute(rowUpdate.bind()
+                .setLong(ORGANISATION_ID,organisation.getId().longValue())
+                .setBytes(DATA,serializedOrganisation));
+    }
+
     protected Organisation extractOrganisation(Row row) {
         ByteBuffer buffer = row.getBytes(DATA_COLUMN);
         byte[] bytes = new byte[buffer.remaining()];
@@ -96,34 +109,6 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         } catch (InvalidProtocolBufferException e) {
             throw Throwables.propagate(e);
         }
-    }
-
-    @Override public void write(Organisation organisation) {
-        ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation).toByteArray());
-
-        session.execute(rowUpdate.bind()
-                .setLong("organisationId",organisation.getId().longValue())
-                .setBytes("data",serializedOrganisation));
-    }
-
-    public static SessionStep builder() {
-        return new Builder();
-    }
-
-    public interface SessionStep {
-        WriteConsistencyStep withSession(Session session);
-    }
-
-    public interface WriteConsistencyStep {
-        ReadConsistencyStep withWriteConsistency(ConsistencyLevel writeConsistency);
-    }
-
-    public interface ReadConsistencyStep {
-        BuildStep withReadConsistency(ConsistencyLevel readConsistency);
-    }
-
-    public interface BuildStep {
-        DatastaxCassandraOrganisationStore build();
     }
 
     private static class Builder implements SessionStep, WriteConsistencyStep,
@@ -161,5 +146,25 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
                     this.readConsistency
             );
         }
+    }
+
+    public interface SessionStep {
+        WriteConsistencyStep withSession(Session session);
+    }
+
+    public interface WriteConsistencyStep {
+        ReadConsistencyStep withWriteConsistency(ConsistencyLevel writeConsistency);
+    }
+
+    public interface ReadConsistencyStep {
+        BuildStep withReadConsistency(ConsistencyLevel readConsistency);
+    }
+
+    public interface BuildStep {
+        DatastaxCassandraOrganisationStore build();
+    }
+
+    public static SessionStep builder() {
+        return new Builder();
     }
 }
