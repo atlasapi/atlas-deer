@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,6 +13,7 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphSerializer;
@@ -327,13 +327,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private ImmutableList<Statement> getGraphUpdateRows(ImmutableSet<EquivalenceGraph> graphs) {
-        Map<Id, EquivalenceGraph> uniqueGraphs = graphs.stream()
-                .collect(Collectors.toMap(
-                        EquivalenceGraph::getId,
-                        graph -> graph
-                ));
-
-        return uniqueGraphs.values().stream()
+        return graphs.stream()
                 .map(this::getGraphUpdateRow)
                 .collect(ImmutableCollectors.toList());
     }
@@ -371,29 +365,26 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private ImmutableList<Statement> getUpdateIndexRows(
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
-        Map<Id, Id> contentIdToGraphId = graphsAndContent.entries().stream()
-                .collect(Collectors.toMap(
-                        entry -> entry.getValue().getId(),
-                        entry -> entry.getKey().getId()
-                ));
 
-        // This is to ensure we have a mapping in the index from the graph ID to itself in case
-        // the content after which the graph is named failed to resolve
-        Map<Id, Id> graphIdToGraphId = graphsAndContent.keySet().stream()
-                .collect(Collectors.toMap(
-                        EquivalenceGraph::getId,
-                        EquivalenceGraph::getId
-                ));
+        ImmutableList.Builder<Statement> statementBuilder = ImmutableList.<Statement>builder();
 
-        Map<Id, Id> desiredIndexMappings = new HashMap<>();
-        desiredIndexMappings.putAll(contentIdToGraphId);
-        desiredIndexMappings.putAll(graphIdToGraphId);
+        for (EquivalenceGraph graph : graphsAndContent.keySet()) {
+            Set<Id> indexKeys = graphsAndContent.get(graph).stream()
+                    .map(Identified::getId)
+                    .collect(Collectors.toSet());
 
-        return desiredIndexMappings.entrySet().stream()
-                .map(entry -> index.insertStatement(
-                        entry.getKey().longValue(), entry.getValue().longValue()
-                ))
-                .collect(ImmutableCollectors.toList());
+            // This is to ensure we have a mapping in the index from the graph ID to itself in case
+            // the content whose ID is the graph's canonical ID has failed to resolve
+            indexKeys.add(graph.getId());
+
+            indexKeys.stream()
+                    .map(indexKey -> index.insertStatement(
+                            indexKey.longValue(), graph.getId().longValue()
+                    ))
+                    .forEach(statementBuilder::add);
+        }
+
+        return statementBuilder.build();
     }
 
     private List<BoundStatement> getDeleteStaleRows(ImmutableSet<EquivalenceGraph> createdGraphs,
