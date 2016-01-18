@@ -1,14 +1,12 @@
-package org.atlasapi.organisation;
+package org.atlasapi.event;
 
 import java.util.stream.Collectors;
 
 import org.atlasapi.content.ContentGroupSerializer;
 import org.atlasapi.entity.PersonSerializer;
-import org.atlasapi.entity.Serializer;
-import org.atlasapi.organisation.Organisation;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
-public class OrganisationSerializer implements Serializer<Organisation, CommonProtos.Organisation> {
+public class OrganisationSerializer {
 
     private final ContentGroupSerializer<Organisation> organisationContentGroupSerializer =
             new ContentGroupSerializer<>();
@@ -25,15 +23,10 @@ public class OrganisationSerializer implements Serializer<Organisation, CommonPr
                     .collect(Collectors.toList()));
         }
 
-        if (organisation.getAlternativeTitles() != null) {
-            builder.addAllAlternativeTitles(organisation.getAlternativeTitles());
-        }
-
         return builder.build();
     }
 
     public Organisation deserialize(CommonProtos.Organisation msg) {
-
         Organisation organisation = new Organisation();
 
         organisationContentGroupSerializer.deserialize(msg.getContentGroup(), organisation);
@@ -41,8 +34,6 @@ public class OrganisationSerializer implements Serializer<Organisation, CommonPr
         organisation.setMembers(msg.getMemberList().stream()
                 .map(personSerializer::deserialize)
                 .collect(Collectors.toList()));
-
-        organisation.setAlternativeTitles(msg.getAlternativeTitlesList());
 
         return organisation;
     }

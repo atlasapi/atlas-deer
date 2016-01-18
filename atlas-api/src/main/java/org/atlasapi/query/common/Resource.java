@@ -18,7 +18,6 @@ public enum Resource {
     MODEL_INFO("model_class", "model_classes"),
     ENDPOINT_INFO("endpoint", "endpoints"),
     EVENT("event","events"),
-    ORGANISATION("organisation", "organisations")
     ;
     
     private final String singular;

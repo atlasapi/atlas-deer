@@ -3,7 +3,6 @@ package org.atlasapi;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.event.EventStore;
-import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.segment.SegmentStore;
@@ -26,6 +25,4 @@ public interface PersistenceModule {
     EquivalentScheduleStore equivalentScheduleStore();
 
     EventStore eventStore();
-
-    OrganisationStore organisationStore();
 }

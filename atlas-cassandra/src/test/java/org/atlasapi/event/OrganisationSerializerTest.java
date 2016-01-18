@@ -6,8 +6,6 @@ import static org.junit.Assert.assertThat;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.entity.Person;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.organisation.Organisation;
-import org.atlasapi.organisation.OrganisationSerializer;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.junit.Before;
 import org.junit.Test;
