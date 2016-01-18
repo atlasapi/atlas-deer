@@ -27,6 +27,7 @@ import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
+import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
@@ -190,6 +191,11 @@ public class AtlasPersistenceModule {
     @Bean
     public EventResolver eventResolver() {
         return persistenceModule().eventStore();
+    }
+
+    @Bean
+    public OrganisationStore organisationStore() {
+        return persistenceModule().organisationStore();
     }
 
     @Bean
