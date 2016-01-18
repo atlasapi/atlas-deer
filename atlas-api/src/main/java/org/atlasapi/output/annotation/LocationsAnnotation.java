@@ -1,22 +1,17 @@
 package org.atlasapi.output.annotation;
 
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.util.Set;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
-import org.atlasapi.content.Item;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Player;
 import org.atlasapi.content.Policy;
 import org.atlasapi.content.Service;
-import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
@@ -24,6 +19,7 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.PlayerWriter;
 import org.atlasapi.output.writers.ServiceWriter;
+import org.atlasapi.output.writers.time.UnixMillenniumBugFixer;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.system.legacy.LegacyPlayerTransformer;
@@ -32,13 +28,11 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Ints;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 
 public class LocationsAnnotation extends OutputAnnotation<Content> {
@@ -86,6 +80,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         private final PricingWriter pricingWriter = new PricingWriter();
         private final String listName;
 
+        private final UnixMillenniumBugFixer unixMillenniumBugFixer = new UnixMillenniumBugFixer();
+
         public EncodedLocationWriter(String listName, PlayerResolver playerResolver, ServiceResolver serviceResolver) {
             this.listName = checkNotNull(listName);
             this.serviceResolver = checkNotNull(serviceResolver);
@@ -121,8 +117,11 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("embed_id", location.getEmbedId());
             writer.writeField("embed_code", location.getEmbedCode());
 
-            writer.writeField("availability_start", policy.getAvailabilityStart());
-            writer.writeField("availability_end", policy.getAvailabilityEnd());
+            writer.writeField("availability_start",
+                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityStart()));
+            writer.writeField("availability_end",
+                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityEnd()));
+
             writer.writeList("available_countries", "country", policy.getAvailableCountries(), ctxt);
             if (policy.getServiceRef() != null) {
                 writeService(writer, ctxt, policy);

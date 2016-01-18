@@ -27,7 +27,8 @@ public class EquivalentContentIndexingContentWorker implements Worker<Equivalent
 
     private static final String METRICS_TIMER = "EquivalentContentIndexingContentWorker";
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger LOG =
+            LoggerFactory.getLogger(EquivalentContentIndexingContentWorker.class);
 
     private final ContentResolver contentResolver;
     private final ContentIndex contentIndex;
@@ -42,9 +43,9 @@ public class EquivalentContentIndexingContentWorker implements Worker<Equivalent
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
-        log.debug("Processing message {}", message.toString());
-
         Id contentId = getContentId(message);
+
+        LOG.debug("Processing message on id {}, message: {}", contentId, message);
 
         Timer.Context time = timer.time();
         try {
@@ -67,7 +68,7 @@ public class EquivalentContentIndexingContentWorker implements Worker<Equivalent
 
         if (contentOptional.isPresent()) {
             Content content = contentOptional.get();
-            log.debug("Indexing message {}", content);
+            LOG.debug("Indexing message {}", content);
             contentIndex.index(content);
         }
     }

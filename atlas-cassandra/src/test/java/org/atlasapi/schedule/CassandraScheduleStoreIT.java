@@ -18,11 +18,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.ImmutableSet;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
-import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.Item;
@@ -34,6 +33,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.util.CassandraInit;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.After;
@@ -42,23 +42,24 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
+import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.ids.SequenceGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.TimeMachine;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.model.ConsistencyLevel;
 
@@ -66,9 +67,12 @@ public abstract class CassandraScheduleStoreIT {
 
     protected static final String CONTENT_CF_NAME = "content";
     protected static final String CONTENT_ALIASES_CF_NAME = "content_aliases";
+    protected static final AstyanaxContext<Keyspace> context = CassandraHelper.testCassandraContext();
+    protected static Session session;
 
-    protected static final AstyanaxContext<Keyspace> context =
-            CassandraHelper.testCassandraContext();
+    private static final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
+    private static final String keyspace = "atlas_testing";
+    private static DatastaxCassandraService cassandraService;
 
     //hasher is mock till we have a non-Mongo based one.
     @Mock protected ContentHasher hasher;
@@ -86,16 +90,23 @@ public abstract class CassandraScheduleStoreIT {
     private final Publisher source = Publisher.METABROADCAST;
     private final Channel channel = Channel.builder(Publisher.BBC).build();
 
+    @BeforeClass
     public static void setup() throws ConnectionException, IOException {
         context.start();
-        tearDown();
+        cassandraService = new DatastaxCassandraService(seeds, 8, 2);
+        cassandraService.startAsync().awaitRunning();
+        session = cassandraService.getCluster().connect();
+
+        CassandraInit.nukeIt(session);
+        CassandraInit.createTables(session, context);
+
+        session = cassandraService.getCluster().connect(keyspace);
     }
 
     @AfterClass
     public static void tearDown() throws ConnectionException {
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) { }
+        CassandraInit.nukeIt(session);
+        cassandraService.stopAsync().awaitTerminated();
     }
     
     @Before
@@ -113,9 +124,7 @@ public abstract class CassandraScheduleStoreIT {
 
     @After
     public void clearCf() throws ConnectionException {
-        context.getClient().truncateColumnFamily(provideScheduleCfName());
-        context.getClient().truncateColumnFamily(CONTENT_CF_NAME);
-        context.getClient().truncateColumnFamily(CONTENT_ALIASES_CF_NAME);
+        CassandraInit.truncate(session, context);
     }
 
     @Test
@@ -125,7 +134,7 @@ public abstract class CassandraScheduleStoreIT {
         DateTime middle = new DateTime(2013,05,31,23,0,0,0,DateTimeZones.LONDON);
         DateTime end = new DateTime(2013,06,01,14,0,0,0,DateTimeZones.LONDON);
         
-        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.<ScheduleHierarchy>of(
+        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(itemAndBroadcast(null, "one", source, channel, start, middle)), 
             ScheduleHierarchy.itemOnly(itemAndBroadcast(null, "two", source, channel, middle, end))
         );
@@ -159,7 +168,7 @@ public abstract class CassandraScheduleStoreIT {
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
 
-        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.<ScheduleHierarchy>of(
+        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(episode1),
             ScheduleHierarchy.itemOnly(episode2)
         );
@@ -179,7 +188,7 @@ public abstract class CassandraScheduleStoreIT {
 
         episode1 = itemAndBroadcast(null, "one", source, channel, start, newMiddle);
         ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, newMiddle, end);
-        hiers = ImmutableList.<ScheduleHierarchy>of(
+        hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(episode1),
             ScheduleHierarchy.itemOnly(episode3)
         );
@@ -248,14 +257,14 @@ public abstract class CassandraScheduleStoreIT {
 
 
         ItemAndBroadcast episode4 = itemAndBroadcast(null, "four", source, channel, newMiddle, end);
-        hiers = ImmutableList.<ScheduleHierarchy>of(
+        hiers = ImmutableList.of(
                 ScheduleHierarchy.itemOnly(episode1),
                 ScheduleHierarchy.itemOnly(episode4)
         );
         store.writeSchedule(hiers, channel, writtenInterval);
 
         ArgumentCaptor<ScheduleUpdateMessage> captor = ArgumentCaptor.forClass(ScheduleUpdateMessage.class);
-        verify(scheduleUpdateSender, times(3)).sendMessage(captor.capture());
+        verify(scheduleUpdateSender, times(3)).sendMessage(captor.capture(), Matchers.any());
 
         assertThat(
                 captor.getAllValues().get(2).getScheduleUpdate().getStaleBroadcasts(),
@@ -336,7 +345,7 @@ public abstract class CassandraScheduleStoreIT {
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
         
-        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.<ScheduleHierarchy>of(
+        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(episode1), 
             ScheduleHierarchy.itemOnly(episode2)
         );
@@ -356,7 +365,7 @@ public abstract class CassandraScheduleStoreIT {
         
         episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, middle, newEnd);
-        hiers = ImmutableList.<ScheduleHierarchy>of(
+        hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(episode1), 
             ScheduleHierarchy.itemOnly(episode3)
         );
@@ -412,7 +421,7 @@ public abstract class CassandraScheduleStoreIT {
         
         ItemAndBroadcast iab1 = new ItemAndBroadcast(item1, broadcast1);
         ItemAndBroadcast iab2 = new ItemAndBroadcast(item1.copy(), broadcast2);
-        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.<ScheduleHierarchy>of(
+        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(iab1), 
             ScheduleHierarchy.itemOnly(iab2)
         );
@@ -458,7 +467,7 @@ public abstract class CassandraScheduleStoreIT {
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
         
-        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.<ScheduleHierarchy>of(
+        ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(episode1), 
             ScheduleHierarchy.itemOnly(episode2)
         );
@@ -478,7 +487,7 @@ public abstract class CassandraScheduleStoreIT {
         
         episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, middle, newEnd);
-        hiers = ImmutableList.<ScheduleHierarchy>of(
+        hiers = ImmutableList.of(
             ScheduleHierarchy.itemOnly(episode1), 
             ScheduleHierarchy.itemOnly(episode3)
         );

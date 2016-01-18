@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -143,7 +144,8 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                         Timestamp.of(DateTime.now(DateTimeZone.UTC)),
                         graph.getId().longValue(),
                         content.toRef()
-                )
+                ),
+                Longs.toByteArray(graph.getId().longValue())
         );
     }
 

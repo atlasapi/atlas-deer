@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.system.legacy.LegacyTopicResolver;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 import org.atlasapi.topic.TopicWriter;
@@ -27,11 +28,11 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 @Controller
 public class IndividualTopicBootstrapController {
 
-    private final TopicResolver resolver;
+    private final LegacyTopicResolver resolver;
     private final TopicWriter writer;
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
-    public IndividualTopicBootstrapController(TopicResolver read, TopicWriter write) {
+    public IndividualTopicBootstrapController(LegacyTopicResolver read, TopicWriter write) {
         this.resolver = checkNotNull(read);
         this.writer = checkNotNull(write);
     }
@@ -48,6 +49,17 @@ public class IndividualTopicBootstrapController {
             return;
         }
         for (Topic topic : resolved.getResources()) {
+            writer.writeTopic(topic);
+        }
+        resp.setStatus(HttpStatus.OK.value());
+        resp.setContentLength(0);
+    }
+
+    @RequestMapping(value="/system/bootstrap/topic/all", method=RequestMethod.POST)
+    public void bootstrapAllTopic(HttpServletResponse resp) throws IOException {
+        Iterable<Topic> topics = resolver.resolveAll();
+
+        for (Topic topic : topics) {
             writer.writeTopic(topic);
         }
         resp.setStatus(HttpStatus.OK.value());

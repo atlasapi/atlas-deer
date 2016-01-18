@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
@@ -122,7 +123,8 @@ public class ConcreteEventStore implements EventStore {
     private void sendResourceUpdatedMessage(WriteResult<Event, Event> result) {
         ResourceUpdatedMessage message = createEntityUpdatedMessages(result);
         try {
-            sender.sendMessage(message);
+            Id resourceId = message.getUpdatedResource().getId();
+            sender.sendMessage(message, Longs.toByteArray(resourceId.longValue()));
         } catch (Exception e) {
             log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
         }

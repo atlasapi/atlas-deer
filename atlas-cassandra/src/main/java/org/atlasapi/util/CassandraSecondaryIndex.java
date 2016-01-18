@@ -1,30 +1,31 @@
 package org.atlasapi.util;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Id;
 
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
+import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -49,55 +50,77 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     private final String indexTable;
     private final ConsistencyLevel readConsistency;
 
-    private final Function<ResultSet, ImmutableMap<Long, Long>> toMap
-        = new Function<ResultSet, ImmutableMap<Long, Long>>() {
-            @Override
-            public ImmutableMap<Long, Long> apply(ResultSet rows) {
-                Builder<Long, Long> index = ImmutableMap.builder();
-                for (Row row : rows) {
-                    index.put(row.getLong(KEY_KEY), row.getLong(VALUE_KEY));
-                }
-                return index.build();
+    private final Function<Iterable<Row>, ImmutableMap<Long, Long>> toMap
+        = rows -> {
+            Builder<Long, Long> index = ImmutableMap.builder();
+            for (Row row : rows) {
+                index.put(row.getLong(KEY_KEY), row.getLong(VALUE_KEY));
             }
+            return index.build();
         };
+
+    private final PreparedStatement insert;
+    private final PreparedStatement select;
+    private final PreparedStatement canonicalToSecondariesSelect;
 
     public CassandraSecondaryIndex(Session session, String table, ConsistencyLevel read) {
         this.session = checkNotNull(session);
         this.indexTable = checkNotNull(table);
         this.readConsistency = checkNotNull(read);
+
+        this.insert = session.prepare(insertInto(indexTable)
+                .value(KEY_KEY, bindMarker("key"))
+                .value(VALUE_KEY, bindMarker("value")));
+
+        this.select = session.prepare(select(KEY_KEY, VALUE_KEY)
+                .from(indexTable)
+                .where(eq(KEY_KEY, bindMarker("key"))));
+
+        this.canonicalToSecondariesSelect = session.prepare(select(KEY_KEY, VALUE_KEY)
+                .from(indexTable)
+                .where(eq(VALUE_KEY, bindMarker())));
+        this.canonicalToSecondariesSelect.setConsistencyLevel(readConsistency);
     }
 
     @Override
     public Statement insertStatement(Long key, Long value) {
-        return insertInto(indexTable)
-                .value(KEY_KEY, key)
-                .value(VALUE_KEY, value);
+        return insert.bind().setLong("key", key).setLong("value", value);
     }
 
     @Override
     public List<Statement> insertStatements(Iterable<Long> keys, Long value) {
-        ArrayList<Statement> inserts = Lists.newArrayList();
-        for (Long key : keys) {
-            inserts.add(insertStatement(key, value));
-        }
-        return inserts;
+        return StreamSupport.stream(keys.spliterator(), false)
+                .map(k -> insertStatement(k, value))
+                .collect(ImmutableCollectors.toList());
     }
 
     @Override
     public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys) {
-        return Futures.transform(session.executeAsync(queryFor(keys, readConsistency)), toMap);
+        return lookup(keys, readConsistency);
     }
 
     @Override
     public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys, ConsistencyLevel level) {
-        return Futures.transform(session.executeAsync(queryFor(keys, level)), toMap);
+        ImmutableList<Long> uniqueKeys = StreamSupport.stream(keys.spliterator(), false)
+                .distinct()
+                .collect(ImmutableCollectors.toList());
+
+        ListenableFuture<List<Row>> resultsFuture = Futures.transform(Futures.allAsList(
+                queriesFor(uniqueKeys, readConsistency).stream()
+                        .map(session::executeAsync)
+                        .map(rsFuture -> Futures.transform(rsFuture,
+                                (Function<ResultSet, Row>) input -> input != null ? input.one() : null))
+                        .collect(Collectors.toList())),
+                (Function<List<Row>, List<Row>>) input -> input.stream()
+                        .filter(Predicates.notNull()::apply).collect(Collectors.toList())
+        );
+        return Futures.transform(resultsFuture, toMap);
     }
 
-    private Statement queryFor(Iterable<Long> keys, ConsistencyLevel level) {
-        return select(KEY_KEY, VALUE_KEY)
-                .from(indexTable)
-                .where(in(KEY_KEY, Iterables.toArray(keys, Object.class)))
-                .setConsistencyLevel(level);
+    private List<Statement> queriesFor(Iterable<Long> keys, ConsistencyLevel level) {
+        return StreamSupport.stream(keys.spliterator(), false)
+                .map(k -> select.bind().setLong("key", k).setConsistencyLevel(level))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -107,13 +130,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
                     Futures.get(lookup(ImmutableList.of(id.longValue())), IOException.class);
 
             Long canonical = idToCanonical.get(id.longValue());
-
-            Statement canonicalToSecondaries = select(KEY_KEY, VALUE_KEY)
-                    .from(indexTable)
-                    .where(eq(VALUE_KEY, canonical))
-                    .setConsistencyLevel(readConsistency);
-
-            return Futures.transform(session.executeAsync(canonicalToSecondaries), RESULT_TO_IDS);
+            return Futures.transform(session.executeAsync(canonicalToSecondariesSelect.bind(canonical)), RESULT_TO_IDS);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }

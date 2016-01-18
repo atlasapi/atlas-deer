@@ -106,7 +106,7 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
                 case Attributes.ORDER_BY_PARAM:
                     ordering = ordering(attributeQuery.getValue().get(0).toString());
                     break;
-                case Attributes.ADVERTISED_ON:
+                case Attributes.ADVERTISED_FROM_PARAM:
                     channelQueryBuilder.withAdvertisedOn(DateTime.now(DateTimeZone.UTC));
                     break;
                 default:

@@ -4,20 +4,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
 
-import com.metabroadcast.common.queue.RecoverableException;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
+import org.atlasapi.util.ImmutableCollectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
 public class EquivalentContentStoreGraphUpdateWorker implements Worker<EquivalenceGraphUpdateMessage> {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger LOG =
+            LoggerFactory.getLogger(EquivalentContentStoreGraphUpdateWorker.class);
     
     private final EquivalentContentStore equivalentContentStore;
     private final Timer messageTimer;
@@ -30,6 +33,19 @@ public class EquivalentContentStoreGraphUpdateWorker implements Worker<Equivalen
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(
+                    "Processing message on updated graph: {}, created graph(s): {},"
+                            + "deleted graph(s): {}, message: {}",
+                    message.getGraphUpdate().getUpdated().getId(),
+                    message.getGraphUpdate().getCreated().stream()
+                            .map(EquivalenceGraph::getId)
+                            .collect(ImmutableCollectors.toList()),
+                    message.getGraphUpdate().getDeleted(),
+                    message
+            );
+        }
+
         try {
             if (messageTimer != null) {
                 Timer.Context timer = messageTimer.time();
@@ -39,8 +55,17 @@ public class EquivalentContentStoreGraphUpdateWorker implements Worker<Equivalen
                 equivalentContentStore.updateEquivalences(message.getGraphUpdate());
             }
         } catch (WriteException e) {
+            LOG.warn(
+                    "Failed to process message on updated graph: {}, created graph(s): {},"
+                            + "deleted graph(s): {}, message: {}. Retrying...",
+                    message.getGraphUpdate().getUpdated().getId(),
+                    message.getGraphUpdate().getCreated().stream()
+                            .map(EquivalenceGraph::getId)
+                            .collect(ImmutableCollectors.toList()),
+                    message.getGraphUpdate().getDeleted(),
+                    message
+            );
             throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
         }
     }
-
 }

@@ -21,8 +21,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
@@ -48,7 +48,7 @@ public class PseudoEquivalentContentIndexTest {
 
     @Test
     public void testQuery() throws Exception {
-        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.of(
+        ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableListMultimap.of(
                 Id.valueOf(0L), Id.valueOf(10L),
                 Id.valueOf(0L), Id.valueOf(11L),
                 Id.valueOf(1L), Id.valueOf(12L)
@@ -67,7 +67,7 @@ public class PseudoEquivalentContentIndexTest {
 
     @Test
     public void testQueryPagination() throws Exception {
-        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
+        ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableListMultimap.<Id, Id>builder()
                 .put(Id.valueOf(0L), Id.valueOf(10L))
                 .put(Id.valueOf(1L), Id.valueOf(11L))
                 .put(Id.valueOf(2L), Id.valueOf(13L))
@@ -91,7 +91,7 @@ public class PseudoEquivalentContentIndexTest {
         Id id = Id.valueOf(10L);
         Id canonicalId = Id.valueOf(20L);
 
-        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
+        ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableListMultimap.<Id, Id>builder()
                 .put(indexCanonicalId, id)
                 .build();
 
@@ -115,7 +115,7 @@ public class PseudoEquivalentContentIndexTest {
         Id idB = Id.valueOf(11L);
         Id canonicalId = Id.valueOf(20L);
 
-        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
+        ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableListMultimap.<Id, Id>builder()
                 .put(indexCanonicalId, idA)
                 .put(indexCanonicalId, idB)
                 .build();
@@ -140,7 +140,7 @@ public class PseudoEquivalentContentIndexTest {
         Id indexCanonicalId = Id.valueOf(0L);
         Id id = Id.valueOf(10L);
 
-        ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableMultimap.<Id, Id>builder()
+        ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap = ImmutableListMultimap.<Id, Id>builder()
                 .put(indexCanonicalId, id)
                 .build();
 
@@ -156,7 +156,8 @@ public class PseudoEquivalentContentIndexTest {
 
     }
 
-    private void setupMocks(ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap, long resultCount) {
+    private void setupMocks(ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap,
+            long resultCount) {
         mockDelegate(canonicalIdToIdMultiMap, resultCount);
 
         for (Map.Entry<Id, Id> entry : canonicalIdToIdMultiMap.entries()) {
@@ -168,7 +169,8 @@ public class PseudoEquivalentContentIndexTest {
         }
     }
 
-    private void mockDelegate(ImmutableMultimap<Id, Id> canonicalIdToIdMultiMap, long resultCount) {
+    private void mockDelegate(ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap,
+            long resultCount) {
         when(esUnequivalentContentIndex.query(
                 eq(new AttributeQuerySet(Lists.newArrayList())),
                 eq(publishers),

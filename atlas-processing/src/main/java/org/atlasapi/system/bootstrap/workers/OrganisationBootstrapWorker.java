@@ -32,10 +32,10 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
     private final OrganisationWriter writer;
     private final Timer messagesTimer;
 
-    public OrganisationBootstrapWorker(OrganisationResolver resolver,OrganisationWriter writer, MetricRegistry metricsRegistry) {
+    public OrganisationBootstrapWorker(OrganisationResolver resolver,OrganisationWriter writer, Timer timer) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
-        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("OrganisationBootstrapWorker")) : null);
+        this.messagesTimer = checkNotNull(timer);
     }
 
     @Override

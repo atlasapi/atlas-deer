@@ -3,6 +3,7 @@ package org.atlasapi;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.WorkersModule;
 import org.atlasapi.system.ProcessingHealthModule;
+import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.BootstrapModule;
 import org.atlasapi.system.debug.DebugModule;
 import org.springframework.context.annotation.Bean;
@@ -13,12 +14,13 @@ import com.metabroadcast.common.webapp.properties.ContextConfigurer;
 
 @Configuration
 @Import({
-    ProcessingHealthModule.class,
-    KafkaMessagingModule.class,
-    AtlasPersistenceModule.class,
-    WorkersModule.class,
-    BootstrapModule.class,
-    DebugModule.class
+        ProcessingHealthModule.class,
+        ProcessingMetricsModule.class,
+        KafkaMessagingModule.class,
+        AtlasPersistenceModule.class,
+        WorkersModule.class,
+        BootstrapModule.class,
+        DebugModule.class
 })
 public class AtlasProcessingModule {
 

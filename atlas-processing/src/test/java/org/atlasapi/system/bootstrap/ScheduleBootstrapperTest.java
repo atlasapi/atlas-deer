@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.metabroadcast.common.scheduling.UpdateProgress;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
+import org.elasticsearch.common.base.Optional;
 import org.joda.time.Interval;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,7 +65,8 @@ public class ScheduleBootstrapperTest {
                         channel3
                 ),
                 interval,
-                source
+                source,
+                false
         );
 
         assertThat(objectUnderTest.getProgress().getProcessed(), is(3));

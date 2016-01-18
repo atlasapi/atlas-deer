@@ -55,6 +55,7 @@ public class BootstrapModule {
     @Autowired private SchedulerModule scheduler;
     @Autowired private ElasticSearchContentIndexModule search;
     @Autowired private MetricRegistry metrics;
+    @Autowired private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator;
 
     @Bean
     BootstrapController bootstrapController() {
@@ -87,7 +88,7 @@ public class BootstrapModule {
                 persistence.nullMessageSendingContentStore(),
                 search.equivContentIndex(),
                 persistence,
-                explicitEquivalenceMigrator(),
+                explicitEquivalenceMigrator,
                 NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
                 progressStore(),
                 metrics
@@ -97,14 +98,6 @@ public class BootstrapModule {
     @Bean
     public ProgressStore progressStore() {
         return new MongoProgressStore(persistence.databasedWriteMongo());
-    }
-
-    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
-        return new DirectAndExplicitEquivalenceMigrator(
-                legacy.legacyContentResolver(),
-                legacy.legacyEquivalenceStore(),
-                persistence.nullMessageSendingGraphStore()
-        );
     }
 
     @Bean
@@ -138,7 +131,6 @@ public class BootstrapModule {
     @Bean
     public ScheduleBootstrapController scheduleBootstrapController() {
         return new ScheduleBootstrapController(
-                workers.scheduleBootstrapTaskFactory(),
                 persistence.channelResolver(),
                 executorService(NUMBER_OF_SCHECHULE_CONTROLLER_THREADS, "ScheduleBootstrapController"),
                 scheduleBootstrapper()
@@ -149,7 +141,9 @@ public class BootstrapModule {
     public ScheduleBootstrapper scheduleBootstrapper() {
         return new ScheduleBootstrapper(
                 executorService(NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS, "ScheduleBootstrapper"),
-                workers.scheduleBootstrapTaskFactory()
+                workers.scheduleBootstrapTaskFactory(),
+                workers.scheduleBootstrapWithContentMigrationTaskFactory(),
+                workers.equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory()
         );
     }
 

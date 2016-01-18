@@ -6,6 +6,8 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
 
 import com.google.common.base.Throwables;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeFieldType;
 
 public class ElasticsearchUtils {
 
@@ -17,5 +19,16 @@ public class ElasticsearchUtils {
             Throwables.propagateIfInstanceOf(root, ElasticsearchException.class);
             throw Throwables.propagate(ese);
         }
+    }
+
+    /*
+     * This makes the Dates we pass to ElasticSearch cache-useful
+     */
+    public static DateTime clampDateToFloorMinute(DateTime dt) {
+        if (dt == null) {
+            return null;
+        }
+        return dt.withField(DateTimeFieldType.secondOfMinute(), 0)
+                .withField(DateTimeFieldType.millisOfSecond(), 0);
     }
 }

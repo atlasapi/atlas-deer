@@ -18,8 +18,11 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
+import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
-import org.atlasapi.system.legacy.LegacyOrganisationTransformer;
+
+import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.topic.TopicResolver;
 import org.atlasapi.topic.TopicStore;
@@ -80,7 +83,7 @@ public class BootstrapWorkersModule {
     @Autowired
     private KafkaMessagingModule messaging;
     @Autowired
-    private ProcessingHealthModule health;
+    private ProcessingMetricsModule metricsModule;
     @Autowired
     private ElasticSearchContentIndexModule search;
 
@@ -100,7 +103,7 @@ public class BootstrapWorkersModule {
         ContentBootstrapWorker worker = new ContentBootstrapWorker(
                 legacyResolver,
                 persistence.contentStore(),
-                health.metrics()
+                metricsModule.metrics().timer("ContentBootstrapWorker")
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
@@ -117,7 +120,7 @@ public class BootstrapWorkersModule {
         OrganisationBootstrapWorker worker = new OrganisationBootstrapWorker(
                 legacy.legacyOrganisationResolver(),
                 persistence.organisationStore(),
-                health.metrics()
+                metricsModule.metrics().timer("OrganisationBootstrapWorker")
         );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
@@ -131,8 +134,12 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy(true)
     KafkaConsumer scheduleReadWriter() {
-        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(scheduleBootstrapTaskFactory(),
-                persistence.channelResolver(), ignoredScheduleSources);
+        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
+                scheduleBootstrapTaskFactory(),
+                persistence.channelResolver(),
+                ignoredScheduleSources,
+                metricsModule.metrics().timer("ScheduleBootstrapWorker")
+        );
         MessageSerializer<ScheduleUpdateMessage> serializer
                 = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
         return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrap")
@@ -145,8 +152,12 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy(true)
     KafkaConsumer scheduleV2ReadWriter() {
-        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(scheduleV2BootstrapTaskFactory(),
-                persistence.channelResolver(), ignoredScheduleSources);
+        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
+                scheduleV2BootstrapTaskFactory(),
+                persistence.channelResolver(),
+                ignoredScheduleSources,
+                metricsModule.metrics().timer("ScheduleV2BootstrapWorker")
+        );
         MessageSerializer<ScheduleUpdateMessage> serializer
                 = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
         return bootstrapQueueFactory().createConsumer(worker, serializer, scheduleChanges, "ScheduleBootstrapV2")
@@ -161,7 +172,11 @@ public class BootstrapWorkersModule {
     KafkaConsumer topicReadWriter() {
         TopicResolver legacyResolver = legacy.legacyTopicResolver();
         TopicStore writer = persistence.topicStore();
-        TopicReadWriteWorker worker = new TopicReadWriteWorker(legacyResolver, writer);
+        TopicReadWriteWorker worker = new TopicReadWriteWorker(
+                legacyResolver,
+                writer,
+                metricsModule.metrics().timer("TopicBootstrapWorker")
+        );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory().createConsumer(worker, serializer, topicChanges, "TopicBootstrap")
@@ -176,7 +191,11 @@ public class BootstrapWorkersModule {
     KafkaConsumer eventReadWriter() {
         EventResolver legacyResolver = legacy.legacyEventResolver();
         EventWriter writer = persistence.eventWriter();
-        EventReadWriteWorker worker = new EventReadWriteWorker(legacyResolver, writer);
+        EventReadWriteWorker worker = new EventReadWriteWorker(
+                legacyResolver,
+                writer,
+                metricsModule.metrics().timer("EventBootstrapWorker")
+        );
         MessageSerializer<ResourceUpdatedMessage> serializer =
                 new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory()
@@ -186,6 +205,16 @@ public class BootstrapWorkersModule {
                 .withMaxConsumers(maxConsumers)
                 .build();
     }
+    
+    @Bean
+    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
+                legacy.legacyContentResolver(),
+                legacy.legacyEquivalenceStore(),
+                persistence.nullMessageSendingGraphStore()
+        );
+    }
+
 
     @PostConstruct
     public void start() throws TimeoutException {
@@ -223,6 +252,29 @@ public class BootstrapWorkersModule {
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
                 new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
+    }
+    
+//    (ScheduleResolver scheduleResolver,
+//            ScheduleWriter scheduleWriter, ContentStore contentStore, ContentIndex contentIndex,
+//            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, AtlasPersistenceModule persistence)
+
+    @Bean
+    public ScheduleBootstrapWithContentMigrationTaskFactory scheduleBootstrapWithContentMigrationTaskFactory() {
+        return new ScheduleBootstrapWithContentMigrationTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(),
+                new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()), search.equivContentIndex(), 
+                explicitEquivalenceMigrator(), persistence, legacy);
+    }
+
+    @Bean
+    // yes, I know.
+    public EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory() {
+        return new EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory(
+                legacy.legacyScheduleStore(),
+                persistence.scheduleStore(),
+                new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()),
+                persistence.getEquivalentScheduleStore(),
+                persistence.getContentEquivalenceGraphStore()
+        );
     }
 
     @Bean

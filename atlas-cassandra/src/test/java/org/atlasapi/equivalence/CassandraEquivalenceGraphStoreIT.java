@@ -5,15 +5,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.Set;
 
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import org.atlasapi.ConfiguredAstyanaxContext;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.CassandraInit;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -22,18 +24,24 @@ import org.junit.Test;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
 public class CassandraEquivalenceGraphStoreIT {
 
+    private static final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
+    private static final String keyspace = "atlas_testing";
     private static DatastaxCassandraService service
         = new DatastaxCassandraService(ImmutableList.of("localhost"), 8, 2);
     private static CassandraEquivalenceGraphStore store;
@@ -46,47 +54,44 @@ public class CassandraEquivalenceGraphStoreIT {
         }
 
         @Override
+        public void sendMessage(EquivalenceGraphUpdateMessage message,
+                byte[] partitionKey)
+                throws MessagingException {
+            //no-op
+        }
+
+        @Override
         public void close() throws Exception {
-            
+            //no-op
         }
     };
+    private static AstyanaxContext<Keyspace> context;
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp() throws ConnectionException, IOException {
         bbcItem.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         paItem.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         itvItem.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         c4Item.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         fiveItem.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
-        
+
         service.startAsync().awaitRunning();
+        context = new ConfiguredAstyanaxContext("Atlas", keyspace, seeds, 9160, 5, 60).get();
+        context.start();
         session = service.getCluster().connect();
         tearDown();
-        session.execute("CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
-        session = service.getSession("atlas_testing");
-        session.execute(
-            "CREATE TABLE equivalence_graph_index (resource_id bigint, graph_id bigint, PRIMARY KEY (resource_id));"
-        );
-        session.execute("CREATE TABLE equivalence_graph ("
-            + "graph_id bigint, "
-            + "graph blob, "
-            + "PRIMARY KEY (graph_id)"
-        + ");");
+        CassandraInit.createTables(session, context);
         store = new CassandraEquivalenceGraphStore(messageSender, session , ConsistencyLevel.ONE, ConsistencyLevel.ONE);
     }
     
     @AfterClass
     public static void tearDown() {
-        try {
-            session.execute("DROP KEYSPACE atlas_testing");
-        } catch (InvalidQueryException iqe){
-        }
+        CassandraInit.nukeIt(session);
     }
     
     @After
-    public void truncate() {
-        session.execute("TRUNCATE equivalence_graph_index");
-        session.execute("TRUNCATE equivalence_graph");
+    public void truncate() throws ConnectionException {
+        CassandraInit.truncate(session, context);
     }
     
     private static final Item bbcItem = new Item(Id.valueOf(1), Publisher.BBC);

@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.atlasapi</groupId>
   <artifactId>atlas</artifactId>
-  <version>7.0.372-SNAPSHOT</version>
+  <version>7.0.458-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -17,6 +17,42 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <append>true</append>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-prepare-agent-integration</id>
+            <goals>
+              <goal>prepare-agent-integration</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-report</id>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-report-integration</id>
+            <goals>
+              <goal>report-integration</goal>
+            </goals>
+            <configuration>
+              <dataFile>${project.basedir}/../target/jacoco-it.exec</dataFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>
@@ -33,6 +69,11 @@
     </plugins>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.7.5.201505241946</version>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
@@ -93,6 +134,11 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.codepoetics</groupId>
+      <artifactId>protonpack</artifactId>
+      <version>${protonpack.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
@@ -367,6 +413,7 @@
     <atlas.version>${project.version}</atlas.version>
     <atlas.legacy.version>5.0-SNAPSHOT</atlas.legacy.version>
     <guava.version>16.0.1</guava.version>
+    <protonpack.version>1.7</protonpack.version>
     <jetty.version>9.0.6.v20130930</jetty.version>
     <slf4j.version>1.7.5</slf4j.version>
     <astyanax.version>2.0.2</astyanax.version>
@@ -376,6 +423,13 @@
     <spring.version>4.2.1.RELEASE</spring.version>
     <datastax.version>2.1.7.1</datastax.version>
     <jackson.version>2.3.0</jackson.version>
+
+    <sonar.jacoco.itReportPath>${project.basedir}/target/jacoco-it.exec</sonar.jacoco.itReportPath>
+    <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
+    <sonar.junit.reportsPath>${project.basedir}/target/surefire-reports</sonar.junit.reportsPath>
+    <sonar.branch>deer</sonar.branch>
+    <sonar.language>java</sonar.language>
+    <sonar.exclusions>**/target/**/*,**/src/main/java/**/generated/**/*</sonar.exclusions>
   </properties>
 
   <scm>

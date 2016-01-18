@@ -1,10 +1,12 @@
 package org.atlasapi.event;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -17,17 +19,19 @@ import org.atlasapi.entity.CassandraPersistenceException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.ImmutableCollectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Batch;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -49,34 +53,40 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
     private final ConsistencyLevel readConsistency;
     private final DatastaxProtobufEventMarshaller marshaller;
 
+    private final PreparedStatement idSelect;
+
     protected DatastaxCassandraEventStore(AliasIndex<Event> aliasIndex, Session session,
             ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency) {
         this.aliasIndex = checkNotNull(aliasIndex);
         this.session = checkNotNull(session);
         this.writeConsistency = checkNotNull(writeConsistency);
         this.readConsistency = checkNotNull(readConsistency);
-        this.marshaller = new DatastaxProtobufEventMarshaller(new EventSerializer());
+        this.marshaller = new DatastaxProtobufEventMarshaller(new EventSerializer(), session);
+
+        this.idSelect = session.prepare(select().all()
+                .from(EVENT_TABLE)
+                .where(eq(PRIMARY_KEY_COLUMN, bindMarker())));
+        this.idSelect.setConsistencyLevel(readConsistency);
     }
 
     @Override
     public ListenableFuture<Resolved<Event>> resolveIds(Iterable<Id> ids) {
-        Select.Where select = select().all()
-                .from(EVENT_TABLE)
-                .where(
-                        in(
-                                PRIMARY_KEY_COLUMN,
-                                StreamSupport.stream(ids.spliterator(), false)
-                                        .map(Id::longValue)
-                                        .collect(Collectors.toList())
-                        )
-                );
-
-        select.setConsistencyLevel(readConsistency);
-        ResultSetFuture result = session.executeAsync(select);
+        ListenableFuture<List<Row>> resultsFuture = Futures.transform(
+                Futures.allAsList(StreamSupport.stream(ids.spliterator(), false)
+                        .map(Id::longValue)
+                        .map(idSelect::bind)
+                        .map(session::executeAsync)
+                        .map(rsFuture -> Futures.transform(rsFuture,
+                                (Function<ResultSet, Row>) input -> input != null ? input.one() : null))
+                        .collect(Collectors.toList())),
+                (Function<List<Row>, List<Row>>) input -> input.stream()
+                        .filter(Predicates.notNull()::apply)
+                        .collect(ImmutableCollectors.toList())
+        );
 
         return Futures.transform(
-                result,
-                (ResultSet input) -> {
+                resultsFuture,
+                (Iterable<Row> input) -> {
                     return Resolved.valueOf(
                             StreamSupport.stream(input.spliterator(), false)
                                     .map(marshaller::unmarshall)
@@ -119,7 +129,7 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
     @Override
     public void write(Event event, Event previous) {
         try {
-            Batch batch = QueryBuilder.batch();
+            BatchStatement batch = new BatchStatement();
             batch.setConsistencyLevel(writeConsistency);
             marshaller.marshallInto(event.getId(), batch, event);
             aliasIndex.mutateAliasesAndExecute(event, previous);

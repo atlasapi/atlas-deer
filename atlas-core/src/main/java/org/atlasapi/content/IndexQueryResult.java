@@ -1,37 +1,36 @@
 package org.atlasapi.content;
 
-import java.util.Set;
+import java.util.List;
 
 import org.atlasapi.entity.Id;
 
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 
 public class IndexQueryResult {
 
-    private final ImmutableSet<Id> ids;
-    private final Multimap<Id, Id> canonicalIdToIdMultiMap;
+    private final ImmutableList<Id> ids;
+    private final ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap;
     private final Long count;
 
-    private IndexQueryResult(Iterable<Id> ids, Multimap<Id, Id> canonicalIdToIdMultiMap,
+    private IndexQueryResult(Iterable<Id> ids, ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap,
             long totalResultCount) {
-        this.ids = ImmutableSet.copyOf(ids);
-        this.canonicalIdToIdMultiMap = ImmutableMultimap.copyOf(canonicalIdToIdMultiMap);
+        this.ids = ImmutableList.copyOf(ids);
+        this.canonicalIdToIdMultiMap = ImmutableListMultimap.copyOf(canonicalIdToIdMultiMap);
         this.count = totalResultCount;
     }
 
     public static IndexQueryResult withSingleId(Id id) {
-        return new IndexQueryResult(ImmutableSet.of(id), ImmutableMultimap.of(), 1L);
+        return new IndexQueryResult(ImmutableList.of(id), ImmutableListMultimap.of(), 1L);
     }
 
     public static IndexQueryResult withIds(Iterable<Id> ids, long resultCount) {
-        return new IndexQueryResult(ids, ImmutableMultimap.of(), resultCount);
+        return new IndexQueryResult(ids, ImmutableListMultimap.of(), resultCount);
     }
 
-    public static IndexQueryResult withIdsAndCanonicalIds(Multimap<Id, Id> canonicalIdToIdMultiMap,
-            long resultCount) {
+    public static IndexQueryResult withIdsAndCanonicalIds(
+            ImmutableListMultimap<Id, Id> canonicalIdToIdMultiMap, long resultCount) {
         return new IndexQueryResult(
                 canonicalIdToIdMultiMap.values(),
                 canonicalIdToIdMultiMap,
@@ -47,11 +46,11 @@ public class IndexQueryResult {
         return FluentIterable.from(ids);
     }
 
-    public Set<Id> getIds(Id canonicalId) {
-        return ImmutableSet.copyOf(canonicalIdToIdMultiMap.get(canonicalId));
+    public List<Id> getIds(Id canonicalId) {
+        return ImmutableList.copyOf(canonicalIdToIdMultiMap.get(canonicalId));
     }
 
-    public Set<Id> getCanonicalIds() {
-        return canonicalIdToIdMultiMap.keySet();
+    public List<Id> getCanonicalIds() {
+        return ImmutableList.copyOf(canonicalIdToIdMultiMap.keySet());
     }
 }

@@ -58,6 +58,7 @@ public class QueryContextParser implements ParameterNameProvider {
                                 userFetcher.getParameterNames(),
                                 annotationExtractor.getParameterNames(),
                                 selectionBuilder.getParameterNames(),
+                                configFetcher.getParameterNames(),
                                 ImmutableSet.of(
                                         JsonResponseWriter.CALLBACK,
                                         "available",
@@ -94,7 +95,7 @@ public class QueryContextParser implements ParameterNameProvider {
 
     @Override
     public Set<String> getRequiredParameters() {
-        return configFetcher.getParameterNames();
+        return ImmutableSet.of();
     }
 
 }

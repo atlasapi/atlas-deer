@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
@@ -16,6 +18,7 @@ import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.ContentVisitor;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
@@ -26,8 +29,12 @@ import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.StoreException;
 import org.atlasapi.entity.util.WriteException;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.ChannelSchedule;
+import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleHierarchy;
 import org.atlasapi.schedule.ScheduleResolver;
@@ -38,6 +45,8 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.api.client.util.Lists;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -67,16 +76,34 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
     private final Channel channel;
     private final Interval interval;
     private final Publisher source;
+    private final Optional<ContentVisitor<?>> scheduleContentVisitor;
+    private final Optional<EquivalentScheduleWriter> equivalenceUpdater;
+    private final Optional<EquivalenceGraphStore> equivGraphStore;
 
     public ChannelIntervalScheduleBootstrapTask(ScheduleResolver scheduleResolver,
             ScheduleWriter scheduleWriter, ContentStore contentStore,
-            Publisher source, Channel channel, Interval interval) {
+            Publisher source, Channel channel, Interval interval,
+            Optional<ContentVisitor<?>> scheduleContentVisitor) {
+        this(scheduleResolver, scheduleWriter, contentStore, source, channel, interval,
+                scheduleContentVisitor, Optional.absent(), Optional.absent());
+    }
+
+    public ChannelIntervalScheduleBootstrapTask(ScheduleResolver scheduleResolver,
+            ScheduleWriter scheduleWriter, ContentStore contentStore,
+            Publisher source, Channel channel, Interval interval,
+            Optional<ContentVisitor<?>> scheduleContentVisitor,
+            Optional<EquivalentScheduleWriter> equivalenceUpdater,
+            Optional<EquivalenceGraphStore> equivGraphStore
+    ) {
         this.scheduleResolver = checkNotNull(scheduleResolver);
         this.scheduleWriter = checkNotNull(scheduleWriter);
         this.contentStore = checkNotNull(contentStore);
         this.channel = checkNotNull(channel);
         this.interval = checkNotNull(interval);
         this.source = checkNotNull(source);
+        this.scheduleContentVisitor = checkNotNull(scheduleContentVisitor);
+        this.equivalenceUpdater = checkNotNull(equivalenceUpdater);
+        this.equivGraphStore = checkNotNull(equivGraphStore);
     }
 
     @Override
@@ -112,9 +139,65 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             iab = new ItemAndBroadcast(contentOrNull(possItem, Item.class),broadcast);
             schedule.add(new ScheduleHierarchy(iab, topLevelContainer, series));
         }
-        return tryWrite(schedule.build());
+        ImmutableList<ScheduleHierarchy> builtSchedule = schedule.build();
+        UpdateProgress progress = tryWrite(builtSchedule);
+        notifyListener(builtSchedule);
+        writeEquivalences(builtSchedule);
+        return progress;
     }
 
+    private void writeEquivalences(ImmutableList<ScheduleHierarchy> builtSchedule) {
+        if (!equivalenceUpdater.isPresent()) {
+            return;
+        }
+
+        List<Item> items = builtSchedule.stream()
+                .map(ScheduleHierarchy::getItemAndBroadcast)
+                .map(ItemAndBroadcast::getItem)
+                .collect(Collectors.toList());
+
+        List<Id> ids = items.stream()
+                .map(Item::getId)
+                .collect(Collectors.toList());
+
+        EquivalenceGraphStore graphStore = equivGraphStore.get();
+        EquivalentScheduleWriter updater = equivalenceUpdater.get();
+
+        try {
+            Map<Id, Optional<EquivalenceGraph>> graphs = graphStore.resolveIds(
+                    items.stream().map(Item::getId).collect(Collectors.toList())
+            ).get();
+
+            for (Id id : ids) {
+                Optional<EquivalenceGraph> graph = graphs.get(id);
+                if (graph.isPresent()) {
+                    updater.updateEquivalences(new EquivalenceGraphUpdate(
+                            graph.get(), Lists.newArrayList(), Lists.newArrayList()));
+                } else {
+                    log.warn("Failed to resolve graph for {}", id);
+                }
+            }
+        } catch (WriteException | InterruptedException | ExecutionException e) {
+            log.warn("Failed to update equivs {} {} {}", source, channel, interval);
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private void notifyListener(List<ScheduleHierarchy> schedule) {
+        if (!scheduleContentVisitor.isPresent()) {
+            return;
+        }
+        
+        for (ScheduleHierarchy slot : schedule) {
+            slot.getItemAndBroadcast().getItem().accept(scheduleContentVisitor.get());
+            if (slot.getPossibleSeries().isPresent()) {
+                slot.getPossibleSeries().get().accept(scheduleContentVisitor.get());
+            }
+            if (slot.getPrimaryContainer().isPresent()) {
+                slot.getPrimaryContainer().get().accept(scheduleContentVisitor.get());
+            }
+        }
+    }
     private Container topLevelContainer(ItemAndBroadcast iab, Map<Id, Optional<Content>> containers) {
         ContainerRef containerRef = iab.getItem().getContainerRef();
         if (containerRef != null) {
@@ -133,7 +216,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
                 return contentOrNull(containers.get(id), Series.class);
             }
         }
-        return null;
+        return null;    
     }
 
     private <T extends Content> T contentOrNull(Optional<Content> possContent, Class<T> cls) {

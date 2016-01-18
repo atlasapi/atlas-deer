@@ -1,6 +1,6 @@
 package org.atlasapi.schedule;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.putAll;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
@@ -31,13 +31,13 @@ import org.atlasapi.media.entity.Publisher;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.querybuilder.Batch;
-import com.datastax.driver.core.querybuilder.Update;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
@@ -69,6 +69,8 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
     private final Integer timeoutSeconds;
 
     private final ItemAndBroadcastSerializer serializer;
+    private final PreparedStatement scheduleUpdate;
+    private final PreparedStatement scheduleSelect;
 
     public DatastaxCassandraScheduleStore(
             String table,
@@ -89,6 +91,21 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         this.session = checkNotNull(session);
         this.serializer = checkNotNull(serializer);
         this.timeoutSeconds = checkNotNull(timeoutSeconds);
+
+        this.scheduleUpdate = session.prepare(update(table)
+                .where(eq(SOURCE_COLUMN, bindMarker("source")))
+                .and(eq(CHANNEL_COLUMN, bindMarker("channel")))
+                .and(eq(DAY_COLUMN, bindMarker("day")))
+                .with(putAll(BROADCASTS_COLUMN, bindMarker("broadcastsData")))
+                .and(set(BROADCAST_IDS_COLUMN, bindMarker("broadcastsIdsData")))
+                .and(set(UPDATED_COLUMN, bindMarker("updatedData"))));
+        this.scheduleUpdate.setConsistencyLevel(writeCl);
+
+        this.scheduleSelect = session.prepare(select().all().from(table)
+                .where(eq(SOURCE_COLUMN, bindMarker("source")))
+                .and(eq(CHANNEL_COLUMN, bindMarker("channel")))
+                .and(eq(DAY_COLUMN, bindMarker("day"))));
+        this.scheduleSelect.setConsistencyLevel(readCl);
     }
 
     @Override
@@ -122,7 +139,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         if (blocks.isEmpty()) {
             return;
         }
-        Batch batch = batch();
+        BatchStatement batch = new BatchStatement();
         batch.setConsistencyLevel(writeCl);
         for (ChannelSchedule block : blocks) {
             Long channelId = block.getChannel().getId().longValue();
@@ -134,15 +151,13 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                             )
                     );
 
-            Update.Assignments scheduleUpdate = update(table)
-                    .where(eq(SOURCE_COLUMN, source.key()))
-                    .and(eq(CHANNEL_COLUMN, channelId))
-                    .and(eq(DAY_COLUMN, block.getInterval().getStart().toLocalDate().toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate()))
-                    .with(putAll(BROADCASTS_COLUMN, broadcasts))
-                    .and(set(BROADCAST_IDS_COLUMN, broadcasts.keySet()))
-                    .and(set(UPDATED_COLUMN, clock.now().toDate()));
-            batch.add(scheduleUpdate);
-
+            batch.add(scheduleUpdate.bind()
+                    .setString("source", source.key())
+                    .setLong("channel", channelId)
+                    .setDate("day", block.getInterval().getStart().toLocalDate().toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate())
+                    .setMap("broadcastsData", broadcasts)
+                    .setSet("broadcastsIdsData", broadcasts.keySet())
+                    .setDate("updatedData", clock.now().toDate()));
         }
         session.execute(batch);
     }
@@ -173,12 +188,10 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         ImmutableList.Builder<Statement> selects = ImmutableList.builder();
         for (Channel channel : channels) {
             for (Date date : datesToResolve) {
-                Statement select = select().all().from(table)
-                        .where(eq(SOURCE_COLUMN, source.key()))
-                        .and(eq(CHANNEL_COLUMN, channel.getId().longValue()))
-                        .and(eq(DAY_COLUMN, date));
-                select.setConsistencyLevel(readCl);
-                selects.add(select);
+                selects.add(scheduleSelect.bind()
+                        .setString("source", source.key())
+                        .setLong("channel", channel.getId().longValue())
+                        .setDate("day", date));
             }
         }
 

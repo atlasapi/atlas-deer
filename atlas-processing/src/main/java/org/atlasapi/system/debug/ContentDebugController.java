@@ -18,11 +18,14 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContent;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
@@ -37,8 +40,6 @@ import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -76,13 +77,13 @@ public class ContentDebugController {
             .create();
     private final ObjectMapper jackson = new ObjectMapper();
 
-    private final Logger log = LoggerFactory.getLogger(ContentDebugController.class);
     private final LegacyPersistenceModule legacyPersistence;
     private final AtlasPersistenceModule persistence;
     private final ContentIndex index;
     private final EsContentTranslator esContentTranslator;
 
     private final ContentBootstrapListener contentBootstrapListener;
+    private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
 
     public ContentDebugController(
             LegacyPersistenceModule legacyPersistence,
@@ -105,6 +106,15 @@ public class ContentDebugController {
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(index)
                 .withMigrateHierarchies(legacyPersistence)
+                .build();
+
+        this.contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(persistence.nullMessageSendingContentStore())
+                .withEquivalenceMigrator(equivalenceMigrator)
+                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
+                .withContentIndex(index)
+                .withMigrateHierarchies(legacyPersistence)
+                .withMigrateEquivalents(persistence.nullMessageSendingEquivalenceGraphStore())
                 .build();
     }
 
@@ -130,6 +140,41 @@ public class ContentDebugController {
     private void encodeLowercaseId(@PathVariable("id") Long id, final HttpServletResponse response)
             throws IOException {
         response.getWriter().write(lowercase.encode(BigInteger.valueOf(id)));
+    }
+
+    /* Deactivates a piece of content by setting activelyPublished to false */
+    @RequestMapping("/system/debug/content/{id}/deactivate")
+    private void deactivateContent(@PathVariable("id") String id,
+                                   final HttpServletResponse response) throws IOException {
+        try {
+            ContentStore contentStore = persistence.contentStore();
+            Resolved<Content> resolved = Futures.get(
+                    contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))), IOException.class
+            );
+            Content content = Iterables.getOnlyElement(resolved.getResources());
+            content.setActivelyPublished(false);
+            WriteResult<Content, Content> writeResult = contentStore.writeContent(content);
+            gson.toJson(writeResult.written(), response.getWriter());
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    /* Updates the equivalent content store representation of a piece of content */
+    @RequestMapping("/system/debug/content/{id}/updateEquivalentContentStore")
+    private void updateEquivalentContentStore(@PathVariable("id") String id,
+                                   final HttpServletResponse response) throws IOException {
+        try {
+            ContentStore contentStore = persistence.contentStore();
+            Resolved<Content> resolved = Futures.get(
+                    contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))), IOException.class
+            );
+            Content content = Iterables.getOnlyElement(resolved.getResources());
+            EquivalentContentStore equivContentStore = persistence.getEquivalentContentStore();
+            equivContentStore.updateContent(content);
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     /* Returns the JSON representation of a legacy content read from Mongo and translated to the v4 model */
@@ -215,13 +260,18 @@ public class ContentDebugController {
 
     @RequestMapping("/system/debug/content/{id}/migrate")
     public void forceEquivUpdate(@PathVariable("id") String id,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
             final HttpServletResponse response) throws IOException {
         try {
             Long decodedId = lowercase.decode(id).longValue();
 
             Content content = resolveLegacyContent(decodedId);
 
-            ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
+            ContentBootstrapListener listener = migrateEquivalents
+                                                ? contentAndEquivalentsBootstrapListener
+                                                : contentBootstrapListener;
+
+            ContentBootstrapListener.Result result = content.accept(listener);
 
             if(result.isSucceeded()) {
                 response.setStatus(HttpStatus.OK.value());
@@ -241,18 +291,25 @@ public class ContentDebugController {
     public void debugEquivalentSchedule(
             @RequestParam(value = "channel", required = true) String channelId,
             @RequestParam(value = "source", required = true) String sourceKey,
-            @RequestParam(value = "selectedSources", required = true) String selectedSourcesKeys,
+            @RequestParam(value = "selectedSources", required = false) String selectedSourcesKeys,
             @RequestParam(value = "day", required = true) String day,
             final HttpServletResponse response
     ) throws IOException {
         try {
 
             Publisher source = Publisher.fromKey(sourceKey).requireValue();
-            Set<Publisher> selectedSources = Splitter.on(",")
-                    .splitToList(selectedSourcesKeys)
-                    .stream()
-                    .map(key -> Publisher.fromKey(key).requireValue())
-                    .collect(Collectors.toSet());
+
+            Set<Publisher> selectedSources = null;
+
+            if (selectedSourcesKeys != null) {
+                Splitter.on(",")
+                        .splitToList(selectedSourcesKeys)
+                        .stream()
+                        .map(key -> Publisher.fromKey(key).requireValue())
+                        .collect(Collectors.toSet());
+            } else {
+                selectedSources = Publisher.all();
+            }
 
             LocalDate date;
             try {

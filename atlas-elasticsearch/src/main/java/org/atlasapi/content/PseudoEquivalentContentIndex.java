@@ -3,8 +3,8 @@ package org.atlasapi.content;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -49,7 +49,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
                     Exception.class
             );
 
-            Set<Id> canonicalIds = result.getCanonicalIds();
+            List<Id> canonicalIds = result.getCanonicalIds();
             ImmutableList<Id> paginatedCanonicalIds = paginateIds(canonicalIds, selection);
 
             ImmutableList<Id> ids = resolveCanonicalIds(paginatedCanonicalIds, result);
@@ -124,8 +124,9 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
             ListenableFuture<ImmutableMap<Long, Long>> result =
                     equivIdIndex.lookup(ImmutableList.of(id.longValue()));
             ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
-            if(idToCanonical.get(Long.valueOf(id.longValue())) != null) {
-                return Optional.of(Id.valueOf(idToCanonical.get(id.longValue())));
+            Long canonicalId = idToCanonical.get(id.longValue());
+            if (canonicalId != null) {
+                return Optional.of(Id.valueOf(canonicalId));
             }
             LOG.warn("Found no canonical ID for {} using {}", id, id);
         } catch (IOException e) {

@@ -57,7 +57,8 @@ public class ContentController {
             QueryResult<Content> queryResult = queryExecutor.execute(contentQuery);
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
-            log.error("Request exception " + request.getRequestURI(), e);
+            String queryString = request.getQueryString();
+            log.error("Request exception " + request.getRequestURI() + (queryString != null ? queryString : ""), e);
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
         }
