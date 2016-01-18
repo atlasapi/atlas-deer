@@ -71,7 +71,6 @@ import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
-import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
@@ -162,7 +161,6 @@ import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.event.EventController;
 import org.atlasapi.query.v4.event.EventListWriter;
 import org.atlasapi.query.v4.event.EventQueryResultWriter;
-import org.atlasapi.query.v4.event.PersonListWriter;
 import org.atlasapi.query.v4.meta.LinkCreator;
 import org.atlasapi.query.v4.meta.MetaApiLinkCreator;
 import org.atlasapi.query.v4.meta.endpoint.EndpointController;
@@ -171,9 +169,6 @@ import org.atlasapi.query.v4.meta.endpoint.EndpointInfoQueryResultWriter;
 import org.atlasapi.query.v4.meta.model.ModelController;
 import org.atlasapi.query.v4.meta.model.ModelInfoListWriter;
 import org.atlasapi.query.v4.meta.model.ModelInfoQueryResultWriter;
-import org.atlasapi.query.v4.organisation.OrganisationController;
-import org.atlasapi.query.v4.organisation.OrganisationListWriter;
-import org.atlasapi.query.v4.organisation.OrganisationQueryResultWriter;
 import org.atlasapi.query.v4.schedule.ContentListWriter;
 import org.atlasapi.query.v4.schedule.LegacyChannelListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleController;
@@ -338,14 +333,6 @@ public class QueryWebModule {
         return new EventController(eventQueryParser(),
                 queryModule.eventQueryExecutor(),
                 new EventQueryResultWriter(eventListWriter(),licenseWriter,requestWriter()));
-    }
-
-
-    @Bean OrganisationController organisationController() {
-        return new OrganisationController(organisationQueryParser(),
-                queryModule.organisationQueryExecutor(),
-                new OrganisationQueryResultWriter(organisationListWriter(), licenseWriter, requestWriter())
-        );
     }
 
     @Bean LinkCreator linkCreator() {
@@ -607,17 +594,6 @@ public class QueryWebModule {
         );
     }
 
-    private StandardQueryParser<Organisation> organisationQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
-                new IndexAnnotationsExtractor(organisationAnnotationIndex()), selectionBuilder());
-
-        return new StandardQueryParser<Organisation>(Resource.ORGANISATION,
-                new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())))),
-                idCodec(), contextParser
-        );
-    }
-
     @Bean PopularTopicController popularTopicController() {
         return new PopularTopicController(topicResolver,
                 popularTopicIndex,
@@ -656,10 +632,6 @@ public class QueryWebModule {
 
     @Bean ResourceAnnotationIndex endpointInfoAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.ENDPOINT_INFO, Annotation.all()).build();
-    }
-
-    @Bean ResourceAnnotationIndex organisationAnnotationIndex() {
-        return ResourceAnnotationIndex.builder(Resource.ORGANISATION, Annotation.all()).build();
     }
 
     @Bean EntityListWriter<Content> contentListWriter() {
@@ -818,12 +790,6 @@ public class QueryWebModule {
                 .register(EVENT, new EventAnnotation(new ItemRefWriter(idCodec(), "content")))
                 .register(EVENT_DETAILS, new EventDetailsAnnotation(topicAnnotationRegistry()))
                 .build());
-    }
-
-
-    @Bean
-    protected EntityListWriter<Organisation> organisationListWriter() {
-        return new OrganisationListWriter(new PersonListWriter());
     }
 
     private AnnotationRegistry<Topic> topicAnnotationRegistry(){
