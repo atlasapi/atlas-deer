@@ -8,6 +8,7 @@ import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.IdentifiedSerializer;
 import org.atlasapi.entity.PersonSerializer;
 import org.atlasapi.entity.Serializer;
+import org.atlasapi.organisation.OrganisationSerializer;
 import org.atlasapi.serialization.protobuf.EventProtos;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.TopicSerializer;

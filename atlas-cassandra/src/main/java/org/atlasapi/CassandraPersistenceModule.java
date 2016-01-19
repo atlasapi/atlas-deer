@@ -17,6 +17,8 @@ import org.atlasapi.event.EventPersistenceStore;
 import org.atlasapi.event.EventStore;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.organisation.DatastaxCassandraOrganisationStore;
+import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
 import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
 import org.atlasapi.schedule.DatastaxCassandraScheduleStore;
@@ -84,6 +86,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private AstyanaxCassandraContentStore contentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
+    private DatastaxCassandraOrganisationStore organisationStore;
 
     private MessageSenderFactory messageSenderFactory;
 
@@ -198,6 +201,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .build();
 
         this.eventStore = getEventStore(session);
+        this.organisationStore = getOrganisationStore(session);
     }
 
     public EquivalenceGraphStore nullMessageSendingGraphStore() {
@@ -276,6 +280,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return eventStore;
     }
 
+    @Override
+    public OrganisationStore organisationStore() {
+        return organisationStore;
+    }
+
     private Equivalence<? super Topic> topicEquivalence() {
         return new Equivalence<Topic>() {
 
@@ -331,5 +340,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withSender(nullMessageSender(ResourceUpdatedMessage.class))
                 .withPersistenceStore(eventPersistenceStore)
                 .build();
+    }
+
+    private DatastaxCassandraOrganisationStore getOrganisationStore(Session session) {
+        DatastaxCassandraOrganisationStore organisationStore = DatastaxCassandraOrganisationStore.builder()
+                .withSession(session)
+                .withWriteConsistency(getWriteConsistencyLevel())
+                .withReadConsistency(getReadConsistencyLevel())
+                .build();
+        return organisationStore;
     }
 }
