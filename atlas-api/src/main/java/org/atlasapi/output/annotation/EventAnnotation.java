@@ -3,14 +3,14 @@ package org.atlasapi.output.annotation;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Person;
 import org.atlasapi.event.Event;
-import org.atlasapi.event.Organisation;
+import org.atlasapi.organisation.Organisation;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SourceWriter;
-import org.atlasapi.query.v4.event.OrganisationListWriter;
+import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 import org.atlasapi.query.v4.event.PersonListWriter;
 
 import java.io.IOException;

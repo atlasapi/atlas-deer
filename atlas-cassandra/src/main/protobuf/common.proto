@@ -107,6 +107,7 @@ message Person {
 
 message Organisation {
     repeated Person member = 1;
+    repeated string alternativeTitles = 2;
 
     required ContentGroup contentGroup = 100;
 }
