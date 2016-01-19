@@ -612,8 +612,9 @@ public class QueryWebModule {
                 new IndexAnnotationsExtractor(organisationAnnotationIndex()), selectionBuilder());
 
         return new StandardQueryParser<Organisation>(Resource.ORGANISATION,
-                new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec())))),
+                new QueryAttributeParser(ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec()))
+                )),
                 idCodec(), contextParser
         );
     }
