@@ -54,7 +54,7 @@ public class OrganisationQueryExecutor implements QueryExecutor<Organisation> {
     }
 
     private ListenableFuture<QueryResult<Organisation>> executeListQuery(final Query<Organisation> query) {
-        throw new UnsupportedOperationException();
+        return executeSingleQuery(query);
     }
     private ListenableFuture<Resolved<Organisation>> resolve(Id id) {
         return resolver.resolveIds(ImmutableSet.of(id));
