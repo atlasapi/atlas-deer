@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @ProducesType(type=Organisation.class)
 @Controller
-@RequestMapping("/4/organisation")
+@RequestMapping("/4/organisations")
 public class OrganisationController {
 
     private static Logger log = LoggerFactory.getLogger(OrganisationController.class);
