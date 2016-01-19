@@ -35,7 +35,7 @@ public class OrganisationBootstrapWorkerTest {
     @Before
     public void setUp() {
         when(metric.timer("OrganisationBootstrapWorker")).thenReturn(new Timer());
-        worker = new OrganisationBootstrapWorker(resolver,writer,metric);
+        worker = new OrganisationBootstrapWorker(resolver,writer,metric.timer("OrganisationBootstrapWorker"));
 
         Id id = Id.valueOf(0L);
         when(message.getUpdatedResource()).thenReturn(updatedResource);
