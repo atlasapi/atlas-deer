@@ -9,14 +9,14 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Identified;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.atlasapi.util.ImmutableCollectors;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.entity.Identified> implements
 		LegacyResourceTransformer<F, T> {
@@ -41,36 +41,33 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
 
 	protected Iterable<RelatedLink> transformRelatedLinks(
 			Set<org.atlasapi.media.entity.RelatedLink> relatedLinks) {
-		return Iterables.transform(relatedLinks,
-				new Function<org.atlasapi.media.entity.RelatedLink, RelatedLink>() {
-					@Override
-					public RelatedLink apply(org.atlasapi.media.entity.RelatedLink input) {
-						RelatedLink.LinkType type = transformEnum(input.getType(), RelatedLink.LinkType.class);
-						return RelatedLink.relatedLink(type, input.getUrl())
-								.withDescription(input.getDescription())
-								.withImage(input.getImage())
-								.withShortName(input.getShortName())
-								.withSourceId(input.getSourceId())
-								.withThumbnail(input.getThumbnail())
-								.withTitle(input.getTitle())
-								.build();
-					}
-				}
-		);
+		return Iterables.transform(
+                relatedLinks,
+                input -> {
+                    RelatedLink.LinkType type = transformEnum(
+                            input.getType(), RelatedLink.LinkType.class
+                    );
+                    return RelatedLink.relatedLink(type, input.getUrl())
+                            .withDescription(input.getDescription())
+                            .withImage(input.getImage())
+                            .withShortName(input.getShortName())
+                            .withSourceId(input.getSourceId())
+                            .withThumbnail(input.getThumbnail())
+                            .withTitle(input.getTitle())
+                            .build();
+                }
+        );
 	}
-
 
 	protected Iterable<Image> transformImages(Set<org.atlasapi.media.entity.Image> images) {
 		if (images == null) {
-			return ImmutableList.of();
+            return ImmutableList.of();
 		}
 
-		return Iterables.transform(images, new Function<org.atlasapi.media.entity.Image, Image>() {
-			@Override
-			public Image apply(org.atlasapi.media.entity.Image input) {
-				return transformImage(input);
-			}
-		});
+        return images.stream()
+                .filter(image -> image.getCanonicalUri() != null)
+                .map(this::transformImage)
+                .collect(ImmutableCollectors.toSet());
 	}
 
 	protected Image transformImage(org.atlasapi.media.entity.Image input) {
@@ -92,26 +89,16 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
 	protected ImmutableSet<Alias> transformAliases(Identified input) {
 		ImmutableSet.Builder<Alias> aliases = ImmutableSet.builder();
 		aliases.addAll(transformAliases(input.getAliases()));
-		aliases.addAll(Collections2.transform(input.getAliasUrls(),
-				new Function<String, Alias>() {
-					@Override
-					public Alias apply(String input) {
-						return new Alias(Alias.URI_NAMESPACE, input);
-					}
-				}
-		));
+		aliases.addAll(Collections2.transform(
+                input.getAliasUrls(), aliasUrl -> new Alias(Alias.URI_NAMESPACE, aliasUrl)
+        ));
 		return aliases.build();
 	}
 
 	private Set<? extends Alias> transformAliases(Set<org.atlasapi.media.entity.Alias> aliases) {
-		return ImmutableSet.copyOf(Collections2.transform(aliases,
-				new Function<org.atlasapi.media.entity.Alias, Alias>() {
-					@Override
-					public Alias apply(org.atlasapi.media.entity.Alias input) {
-						return new Alias(input.getNamespace(), input.getValue());
-					}
-				}
-		));
+		return ImmutableSet.copyOf(Collections2.transform(
+                aliases, input -> new Alias(input.getNamespace(), input.getValue())
+        ));
 	}
 
 	protected void addIdentified(Identified source, org.atlasapi.entity.Identified target) {
