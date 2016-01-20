@@ -2,7 +2,6 @@ package org.atlasapi.util;
 
 import java.io.IOException;
 
-import org.apache.commons.io.IOUtils;
 import org.atlasapi.entity.CassandraHelper;
 
 import com.datastax.driver.core.Session;
@@ -12,6 +11,7 @@ import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
+import org.apache.commons.io.IOUtils;
 
 public class CassandraInit {
     public static void createTables(Session session, AstyanaxContext<Keyspace> context)
@@ -66,6 +66,7 @@ public class CassandraInit {
 
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_event.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_schedule_v2.schema")));
+        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas_organisation.schema")));
         session.execute("CREATE INDEX inverse_equivalent_content_index ON equivalent_content_index(value);");
 
         CassandraHelper.createColumnFamily(context, "schedule", StringSerializer.get(), StringSerializer.get());
@@ -83,7 +84,9 @@ public class CassandraInit {
         ImmutableList<String> tables = ImmutableList.of(
                 "content", "content_aliases", "event_aliases", "equivalence_graph_index",
                 "equivalence_graph", "segments", "segments_aliases", "schedule_v2", "schedule",
-                "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event");
+                "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event",
+                "organisation"
+        );
         for (String table : tables) {
             session.execute(String.format("TRUNCATE %s", table));
         }
