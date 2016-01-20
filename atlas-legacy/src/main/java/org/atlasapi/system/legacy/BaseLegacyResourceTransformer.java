@@ -64,6 +64,8 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
             return ImmutableList.of();
 		}
 
+        // There are some images in Owl that have null canonical URIs. Those have no value and
+        // should be rejected.
         return images.stream()
                 .filter(image -> image.getCanonicalUri() != null)
                 .map(this::transformImage)
