@@ -1,5 +1,55 @@
 package org.atlasapi.content;
 
+import java.io.IOException;
+import java.util.Currency;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import org.atlasapi.EsSchema;
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ChannelGroupRef;
+import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ChannelNumbering;
+import org.atlasapi.channel.ChannelRef;
+import org.atlasapi.criteria.AttributeQuery;
+import org.atlasapi.criteria.AttributeQuerySet;
+import org.atlasapi.criteria.EnumAttributeQuery;
+import org.atlasapi.criteria.IdAttributeQuery;
+import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.criteria.operator.Operators;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.CassandraSecondaryIndex;
+import org.atlasapi.util.ElasticSearchHelper;
+
+import com.metabroadcast.common.currency.Price;
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.query.Selection;
+
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import static org.atlasapi.content.ComplexItemTestDataBuilder.complexItem;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -12,52 +62,13 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.util.Currency;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.atlasapi.EsSchema;
-import org.atlasapi.channel.ChannelGroupResolver;
-import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.criteria.EnumAttributeQuery;
-import org.atlasapi.criteria.IdAttributeQuery;
-import org.atlasapi.criteria.attribute.Attributes;
-import org.atlasapi.criteria.operator.Operators;
-import org.atlasapi.entity.Id;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.CassandraSecondaryIndex;
-import org.atlasapi.util.ElasticSearchHelper;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
-import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.currency.Price;
-import com.metabroadcast.common.query.Selection;
-
 public class EsUnequivalentContentIndexTest {
 
     private static final Client esClient = ElasticSearchHelper.testNode().client();
+
     private final CassandraSecondaryIndex equivIdIndex = mock(CassandraSecondaryIndex.class);
+    private final ChannelGroupResolver channelGroupResolver = mock(ChannelGroupResolver.class);
+
     private EsUnequivalentContentIndex index;
 
     @BeforeClass
@@ -77,7 +88,7 @@ public class EsUnequivalentContentIndexTest {
     public void setup() {
         index = new EsUnequivalentContentIndex(
                 esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(),
-                mock(ChannelGroupResolver.class), equivIdIndex, 60_000);
+                channelGroupResolver, equivIdIndex, 60_000);
         index.startAsync().awaitRunning();
     }
 
@@ -163,47 +174,27 @@ public class EsUnequivalentContentIndexTest {
     }
 
     @Test
-    public void testActionableContentFilters() throws IndexException, IOException {
+    public void testActionableContentWithLocationAvailable() throws Exception {
+        Publisher publisher = Publisher.METABROADCAST;
+
         when(equivIdIndex.lookup(any()))
-                .thenReturn(
-                        Futures.immediateFuture(
-                                ImmutableMap.of(
-                                        10l, 10l,
-                                        20l, 20l,
-                                        1l, 1l,
-                                        2l, 2l,
-                                        30l, 30l
-                                )
-                        )
-                );
-        Brand broadcastBrand = new Brand(Id.valueOf(10l), Publisher.METABROADCAST);
-        broadcastBrand.setTitle("Broadcast brand");
-        Item broadcastItem = new Item(Id.valueOf(1l), Publisher.METABROADCAST);
-        broadcastItem.setContainerRef(broadcastBrand.toRef());
-        broadcastItem.setBroadcasts(ImmutableSet.of(
-                new Broadcast(Id.valueOf(1l), DateTime.now(), DateTime.now().plusHours(1))
-        ));
+                .thenReturn(Futures.immediateFuture(
+                        ImmutableMap.of(1L, 1L, 2L, 2L)
+                ));
 
-        Brand vodBrand = new Brand(Id.valueOf(20l), Publisher.METABROADCAST);
-        vodBrand.setTitle("Vod brand");
-        Item vodItem = new Item(Id.valueOf(2l), Publisher.METABROADCAST);
-        vodItem.setContainerRef(vodBrand.toRef());
+        Policy availablePolicy = new Policy();
+        availablePolicy.setAvailabilityStart(DateTime.now().minusDays(1));
+        availablePolicy.setAvailabilityEnd(DateTime.now().plusDays(30));
 
-        Policy pol = new Policy();
-        pol.setAvailabilityStart(DateTime.now().minusDays(1));
-        pol.setAvailabilityEnd(DateTime.now().plusDays(30));
+        Policy nonAvailablePolicy = new Policy();
+        nonAvailablePolicy.setAvailabilityStart(DateTime.now().plusDays(1));
+        nonAvailablePolicy.setAvailabilityEnd(DateTime.now().plusDays(3));
 
-        Location loc = new Location();
-        loc.setPolicy(pol);
+        Item availableItem = getItemWithPolicy(Id.valueOf(1L), publisher, availablePolicy);
 
-        Encoding encoding = new Encoding();
-        encoding.setAvailableAt(ImmutableSet.of(loc));
+        Item nonAvailableItem = getItemWithPolicy(Id.valueOf(2L), publisher, nonAvailablePolicy);
 
-        vodItem.setManifestedAs(ImmutableSet.of(encoding));
-
-        Brand notAvailableBrand = new Brand(Id.valueOf(30l), Publisher.METABROADCAST);
-
-        indexAndRefresh(vodBrand, vodItem, broadcastBrand, broadcastItem, notAvailableBrand);
+        indexAndRefresh(availableItem, nonAvailableItem);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
                 new AttributeQuerySet(
@@ -211,11 +202,11 @@ public class EsUnequivalentContentIndexTest {
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
                                         Operators.EQUALS,
-                                        ImmutableList.of(ContentType.BRAND)
+                                        ImmutableList.of(ContentType.ITEM)
                                 )
                         )
                 ),
-                ImmutableList.of(Publisher.METABROADCAST),
+                ImmutableList.of(publisher),
                 Selection.all(),
                 Optional.of(
                         new IndexQueryParams(
@@ -227,20 +218,279 @@ public class EsUnequivalentContentIndexTest {
                                 Optional.empty(),
                                 false,
                                 Optional.empty(),
-                                Optional.of(
-                                        ImmutableMap.of(
-                                                "location.available", "true",
-                                                "broadcast.time.gt", DateTime.now().minusHours(2).toString()
-                                                )
-                                ),
+                                Optional.of(ImmutableMap.of("location.available", "true")),
                                 Optional.empty()
                         )
                 )
         );
         IndexQueryResult result = Futures.get(resultFuture, IOException.class);
         FluentIterable<Id> ids = result.getIds();
-        assertThat(ids, containsInAnyOrder(Id.valueOf(10), Id.valueOf(20)));
-        assertThat(ids, not(containsInAnyOrder(Id.valueOf(30))));
+        assertThat(ids, containsInAnyOrder(Id.valueOf(1L)));
+        assertThat(ids, not(containsInAnyOrder(Id.valueOf(2L))));
+
+    }
+
+    @Test
+    public void testActionableContentWithBroadcastAvailable() throws Exception {
+        Publisher publisher = Publisher.METABROADCAST;
+
+        when(equivIdIndex.lookup(any()))
+                .thenReturn(Futures.immediateFuture(
+                        ImmutableMap.of(1L, 1L, 2L, 2L)
+                ));
+
+        Item availableItem = new Item(Id.valueOf(1L), publisher);
+        availableItem.setBroadcasts(ImmutableSet.of(
+                new Broadcast(Id.valueOf(1L), DateTime.now(), DateTime.now().plusHours(1))
+        ));
+
+        Item nonAvailableItem = new Item(Id.valueOf(2L), publisher);
+        nonAvailableItem.setBroadcasts(ImmutableSet.of(
+                new Broadcast(Id.valueOf(2L), DateTime.now().plusHours(10),
+                        DateTime.now().plusHours(11))
+        ));
+
+        indexAndRefresh(availableItem, nonAvailableItem);
+
+        ListenableFuture<IndexQueryResult> resultFuture = index.query(
+                new AttributeQuerySet(
+                        ImmutableSet.of(
+                                new EnumAttributeQuery<>(
+                                        Attributes.CONTENT_TYPE,
+                                        Operators.EQUALS,
+                                        ImmutableList.of(ContentType.ITEM)
+                                )
+                        )
+                ),
+                ImmutableList.of(publisher),
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of(
+                                        "broadcast.time.gt", DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt", DateTime.now().plusHours(2).toString()
+                                )),
+                                Optional.empty()
+                        )
+                )
+        );
+        IndexQueryResult result = Futures.get(resultFuture, IOException.class);
+        FluentIterable<Id> ids = result.getIds();
+        assertThat(ids, containsInAnyOrder(Id.valueOf(1L)));
+        assertThat(ids, not(containsInAnyOrder(Id.valueOf(2L))));
+
+    }
+
+    @Test
+    public void testActionableBrandWithChildWithLocationAvailable() throws Exception {
+        Publisher publisher = Publisher.METABROADCAST;
+
+        when(equivIdIndex.lookup(any()))
+                .thenReturn(Futures.immediateFuture(
+                        ImmutableMap.of(1L, 1L, 2L, 2L, 3L, 3L)
+                ));
+
+        Policy availablePolicy = new Policy();
+        availablePolicy.setAvailabilityStart(DateTime.now().minusDays(1));
+        availablePolicy.setAvailabilityEnd(DateTime.now().plusDays(30));
+
+        Item availableItem = getItemWithPolicy(Id.valueOf(1L), publisher, availablePolicy);
+
+        Brand availableBrand = new Brand(Id.valueOf(2L), publisher);
+
+        Brand nonAvailableBrand = new Brand(Id.valueOf(3L), publisher);
+
+        availableItem.setContainerRef(availableBrand.toRef());
+
+        indexAndRefresh(availableBrand, availableItem, nonAvailableBrand);
+
+        ListenableFuture<IndexQueryResult> resultFuture = index.query(
+                new AttributeQuerySet(
+                        ImmutableSet.of(
+                                new EnumAttributeQuery<>(
+                                        Attributes.CONTENT_TYPE,
+                                        Operators.EQUALS,
+                                        ImmutableList.of(ContentType.BRAND)
+                                )
+                        )
+                ),
+                ImmutableList.of(publisher),
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of("location.available", "true")),
+                                Optional.empty()
+                        )
+                )
+        );
+        IndexQueryResult result = Futures.get(resultFuture, IOException.class);
+        FluentIterable<Id> ids = result.getIds();
+        assertThat(ids, containsInAnyOrder(availableBrand.getId()));
+        assertThat(ids, not(containsInAnyOrder(nonAvailableBrand.getId())));
+    }
+
+    @Test
+    public void testActionableBrandWithChildWithBroadcastAvailable() throws Exception {
+        Publisher publisher = Publisher.METABROADCAST;
+
+        when(equivIdIndex.lookup(any()))
+                .thenReturn(Futures.immediateFuture(
+                        ImmutableMap.of(1L, 1L, 2L, 2L, 3L, 3L)
+                ));
+
+        Item availableItem = new Item(Id.valueOf(1L), publisher);
+        availableItem.setBroadcasts(ImmutableSet.of(
+                  new Broadcast(Id.valueOf(1L), DateTime.now(), DateTime.now().plusHours(1))
+        ));
+
+        Brand availableBrand = new Brand(Id.valueOf(2L), publisher);
+
+        Brand nonAvailableBrand = new Brand(Id.valueOf(3L), publisher);
+
+        availableItem.setContainerRef(availableBrand.toRef());
+
+        indexAndRefresh(availableBrand, availableItem);
+
+        ListenableFuture<IndexQueryResult> resultFuture = index.query(
+                new AttributeQuerySet(
+                        ImmutableSet.of(
+                                new EnumAttributeQuery<>(
+                                        Attributes.CONTENT_TYPE,
+                                        Operators.EQUALS,
+                                        ImmutableList.of(ContentType.BRAND)
+                                )
+                        )
+                ),
+                ImmutableList.of(publisher),
+                Selection.all(),
+
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of(
+                                        "broadcast.time.gt", DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt", DateTime.now().plusHours(2).toString()
+                                )),
+                                Optional.empty()
+                        )
+                )
+        );
+        IndexQueryResult result = Futures.get(resultFuture, IOException.class);
+        FluentIterable<Id> ids = result.getIds();
+        assertThat(ids, containsInAnyOrder(availableBrand.getId()));
+        assertThat(ids, not(containsInAnyOrder(nonAvailableBrand.getId())));
+    }
+
+    @Test
+    public void testActionableBrandWithChildWithBroadcastAvailableAndRegionFilter()
+            throws Exception {
+        Publisher publisher = Publisher.METABROADCAST;
+
+        when(equivIdIndex.lookup(any()))
+                .thenReturn(Futures.immediateFuture(
+                        ImmutableMap.of(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L)
+                ));
+
+        Id regionId = Id.valueOf(10L);
+        Id channelId = Id.valueOf(11L);
+
+        ChannelNumbering channelNumbering = new ChannelNumbering(
+                new ChannelGroupRef(regionId, publisher),
+                new ChannelRef(channelId, publisher),
+                LocalDate.now().minusYears(1),
+                LocalDate.now().plusYears(1),
+                "1"
+        );
+        ChannelGroup<ChannelNumbering> channelGroup = new ChannelGroup<>(
+                regionId,
+                publisher,
+                ImmutableSet.of(channelNumbering),
+                ImmutableSet.of(Countries.GB),
+                ImmutableSet.of()
+        );
+        when(channelGroupResolver.resolveIds(ImmutableList.of(regionId)))
+                .thenReturn(Futures.immediateFuture(
+                        Resolved.valueOf(ImmutableList.of(channelGroup))
+                ));
+
+        Item availableItem = new Item(Id.valueOf(1L), publisher);
+        availableItem.setBroadcasts(ImmutableSet.of(
+                new Broadcast(channelId, DateTime.now(), DateTime.now().plusHours(1))
+        ));
+
+        Brand availableBrand = new Brand(Id.valueOf(2L), publisher);
+
+        availableItem.setContainerRef(availableBrand.toRef());
+
+        Item nonAvailableItem = new Item(Id.valueOf(3L), publisher);
+        nonAvailableItem.setBroadcasts(ImmutableSet.of(
+                new Broadcast(Id.valueOf(100L), DateTime.now(), DateTime.now().plusHours(1))
+        ));
+
+        Brand nonAvailableBrand = new Brand(Id.valueOf(4L), publisher);
+
+        nonAvailableItem.setContainerRef(nonAvailableBrand.toRef());
+
+        indexAndRefresh(availableBrand, availableItem, nonAvailableBrand);
+
+        ListenableFuture<IndexQueryResult> resultFuture = index.query(
+                new AttributeQuerySet(
+                        ImmutableSet.of(
+                                new EnumAttributeQuery<>(
+                                        Attributes.CONTENT_TYPE,
+                                        Operators.EQUALS,
+                                        ImmutableList.of(ContentType.BRAND)
+                                )
+                        )
+                ),
+                ImmutableList.of(publisher),
+                Selection.all(),
+
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.of(regionId),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of(
+                                        "broadcast.time.gt", DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt", DateTime.now().plusHours(2).toString()
+                                )),
+                                Optional.empty()
+                        )
+                )
+        );
+        IndexQueryResult result = Futures.get(resultFuture, IOException.class);
+        FluentIterable<Id> ids = result.getIds();
+        assertThat(ids, containsInAnyOrder(availableBrand.getId()));
+        assertThat(ids, not(containsInAnyOrder(nonAvailableBrand.getId())));
     }
 
     @Test
@@ -649,5 +899,18 @@ public class EsUnequivalentContentIndexTest {
 
         assertThat(resolvedFields.get(EsContent.TITLE), is(equalTo("Test title!")));
         assertThat(resolvedFields.get(EsContent.CANONICAL_ID), is(equalTo(20)));
+    }
+
+    private Item getItemWithPolicy(Id id, Publisher publisher, Policy policy) {
+        Item availableItem = new Item(id, publisher);
+
+        Location locationA = new Location();
+        locationA.setPolicy(policy);
+
+        Encoding encodingA = new Encoding();
+        encodingA.setAvailableAt(ImmutableSet.of(locationA));
+
+        availableItem.setManifestedAs(ImmutableSet.of(encodingA));
+        return availableItem;
     }
 }

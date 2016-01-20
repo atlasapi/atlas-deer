@@ -1,7 +1,5 @@
 package org.atlasapi.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +17,12 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.EsTopic;
+
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
 import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
@@ -30,13 +34,7 @@ import org.elasticsearch.index.query.RangeFilterBuilder;
 import org.elasticsearch.index.query.TermsFilterBuilder;
 import org.joda.time.DateTime;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import org.joda.time.DateTimeFieldType;
-import org.joda.time.ReadablePeriod;
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class FiltersBuilder {
 
@@ -143,20 +141,16 @@ public class FiltersBuilder {
 
         if (maybeRegionId.isPresent()) {
             FilterBuilder regionFilter = buildRegionFilter(maybeRegionId.get(), cgResolver);
-            NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
-                    EsContent.BROADCASTS,
-                    rangeFilter.add(regionFilter)
-            );
-            HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter);
-            return FilterBuilders.orFilter(parentFilter, childFilter).cache(true);
+            rangeFilter = rangeFilter.add(regionFilter);
         }
-        return FilterBuilders.nestedFilter(
+
+        NestedFilterBuilder parentFilter = FilterBuilders.nestedFilter(
                 EsContent.BROADCASTS,
-                FilterBuilders.orFilter(
-                        rangeFilter,
-                        FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, rangeFilter).cache(true)
-                )
+                rangeFilter
         );
+        HasChildFilterBuilder childFilter = FilterBuilders.hasChildFilter(EsContent.CHILD_ITEM, parentFilter);
+
+        return FilterBuilders.orFilter(parentFilter, childFilter).cache(true);
     }
 
     public static FilterBuilder getSeriesIdFilter(Id id, SecondaryIndex equivIdIndex) {
