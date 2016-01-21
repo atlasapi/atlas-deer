@@ -186,7 +186,7 @@ public class Item extends Content {
     }
 
     public boolean isChild() {
-        return this.containerRef == null;
+        return this.containerRef != null;
     }
 
     public static final Function<Item, Item> COPY = new Function<Item, Item>() {
