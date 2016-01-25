@@ -4,8 +4,8 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 
 public class ImmutableCollectors {
@@ -40,15 +40,17 @@ public class ImmutableCollectors {
         );
     }
 
-    public static <T, K, V> Collector<T, ImmutableMultimap.Builder<K, V>, ImmutableMultimap<K, V>> toMultiMap(
-            Function<T, K> keyFunction, Function<T, V> valueFunction) {
+    public static <T, K, V> Collector<T, ImmutableListMultimap.Builder<K, V>,
+            ImmutableListMultimap<K, V>> toListMultiMap(
+            Function<T, K> keyFunction, Function<T, V> valueFunction
+    ) {
         return Collector.of(
-                ImmutableMultimap.Builder::new,
+                ImmutableListMultimap::builder,
                 (builder, t) -> builder.put(
                         keyFunction.apply(t), valueFunction.apply(t)
                 ),
                 (b1, b2) -> b1.putAll(b2.build()),
-                ImmutableMultimap.Builder::build
+                ImmutableListMultimap.Builder::build
         );
     }
 }

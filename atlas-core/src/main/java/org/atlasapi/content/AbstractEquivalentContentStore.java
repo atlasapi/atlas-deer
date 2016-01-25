@@ -13,6 +13,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.util.GroupLock;
+import org.atlasapi.util.ImmutableCollectors;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -58,14 +60,25 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
         Set<Id> ids = idsOf(update);
         try {
             lock.lock(ids);
-            ImmutableSetMultimap.Builder<EquivalenceGraph, Content> graphsAndContent
+
+            ImmutableSetMultimap.Builder<EquivalenceGraph, Content> graphsAndContentBuilder
                 = ImmutableSetMultimap.builder();
             Function<Id, Optional<Content>> toContent = Functions.forMap(resolveIds(ids));
+
             for (EquivalenceGraph graph : graphsOf(update)) {
-                Iterable<Optional<Content>> content = Collections2.transform(graph.getEquivalenceSet(), toContent);
-                graphsAndContent.putAll(graph, Optional.presentInstances(content));
+                Iterable<Optional<Content>> content =
+                        Collections2.transform(graph.getEquivalenceSet(), toContent);
+                graphsAndContentBuilder.putAll(graph, Optional.presentInstances(content));
             }
-            updateEquivalences(graphsAndContent.build(), update);
+
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent =
+                    graphsAndContentBuilder.build();
+
+            // This has to run before we process the update so we can still resolve the set(s)
+            // that are going to be deleted
+            updateStaleContent(update, graphsAndContent);
+
+            update(graphsAndContent, update);
         } catch (InterruptedException e) {
             throw new WriteException("Updating " + ids, e);
         } finally {
@@ -74,10 +87,13 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     }
 
     @Override
-    public final void updateContent(Content content) throws WriteException {
+    public final void updateContent(Id contentId) throws WriteException {
         try {
-            lock.lock(content.getId());
-            ImmutableList<Id> ids = ImmutableList.of(content.getId());
+            lock.lock(contentId);
+
+            Content content = resolveId(contentId);
+
+            ImmutableList<Id> ids = ImmutableList.of(contentId);
 
             ListenableFuture<OptionalMap<Id, EquivalenceGraph>> graphs = graphStore.resolveIds(ids);
             Optional<EquivalenceGraph> possibleGraph = get(graphs).get(content.getId());
@@ -85,26 +101,27 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             EquivalenceGraph graph;
             if (possibleGraph.isPresent()) {
                 graph = possibleGraph.get();
-                updateInSet(graph, content);
-
+                update(graph, content);
             } else {
                 graph = EquivalenceGraph.valueOf(content.toRef());
-                updateEquivalences(ImmutableSetMultimap.of(graph, content),
-                        EquivalenceGraphUpdate.builder(graph).build());
+                update(graph, content);
             }
 
             sendEquivalentContentChangedMessage(content, graph);
         } catch (MessagingException | InterruptedException e) {
-            throw new WriteException("Updating " + content.getId(), e);
+            throw new WriteException("Updating " + contentId, e);
         } finally {
-            lock.unlock(content.getId());
+            lock.unlock(contentId);
         }
     }
 
-    protected abstract void updateInSet(EquivalenceGraph graph, Content content);
+    protected abstract void update(EquivalenceGraph graph, Content content);
 
-    protected abstract void updateEquivalences(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent,
+    protected abstract void update(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent,
             EquivalenceGraphUpdate update);
+
+    protected abstract ListenableFuture<Set<Content>> resolveEquivalentSetIncludingStaleContent(
+            Long equivalentSetId);
 
     protected ContentResolver getContentResolver() {
         return contentResolver;
@@ -127,6 +144,15 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                 .build();
     }
 
+    private Content resolveId(Id contentId) throws WriteException {
+        Optional<Content> contentOptional = resolveIds(ImmutableList.of(contentId)).get(contentId);
+
+        if (contentOptional.isPresent()) {
+            return contentOptional.get();
+        }
+        throw new WriteException("Failed to resolve content " + contentId);
+    }
+
     private OptionalMap<Id, Content> resolveIds(Iterable<Id> ids) throws WriteException {
         return get(contentResolver.resolveIds(ids)).toMap();
     }
@@ -143,8 +169,51 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                         Timestamp.of(DateTime.now(DateTimeZone.UTC)),
                         graph.getId().longValue(),
                         content.toRef()
-                )
+                ),
+                Longs.toByteArray(graph.getId().longValue())
         );
     }
 
+    // This will resolve all content in the graphs that are about to be deleted and then check
+    // if that content appears in the updated or created graphs. If not it could be stale content
+    // so we are forcing an update
+    private void updateStaleContent(EquivalenceGraphUpdate update,
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
+        ImmutableSet<Id> staleContentIds = getStaleContent(update.getDeleted(), graphsAndContent);
+
+        staleContentIds.stream()
+                .forEach(contentId -> {
+                    try {
+                        updateContent(contentId);
+                    } catch (WriteException e) {
+                        LOG.warn("Failed to update stale content {}", contentId, e);
+                    }
+                });
+    }
+
+    private ImmutableSet<Id> getStaleContent(ImmutableSet<Id> deletedGraphIds,
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
+        ImmutableSet<Id> idsOfContentToBeUpdated = graphsAndContent.values().stream()
+                .map(Content::getId)
+                .collect(ImmutableCollectors.toSet());
+
+        return deletedGraphIds.stream()
+                .flatMap(graphId -> getStaleContent(graphId, idsOfContentToBeUpdated).stream())
+                .collect(ImmutableCollectors.toSet());
+    }
+
+    private ImmutableSet<Id> getStaleContent(Id deletedGraphId,
+            ImmutableSet<Id> contentIdsToBeUpdated) {
+        try {
+            return get(resolveEquivalentSetIncludingStaleContent(deletedGraphId.longValue()))
+                            .stream()
+                            .map(Content::getId)
+                            .filter(id -> !contentIdsToBeUpdated.contains(id))
+                            .collect(ImmutableCollectors.toSet());
+
+        } catch (WriteException e) {
+            LOG.warn("Failed to resolve equivalent set {}", deletedGraphId, e);
+        }
+        return ImmutableSet.of();
+    }
 }

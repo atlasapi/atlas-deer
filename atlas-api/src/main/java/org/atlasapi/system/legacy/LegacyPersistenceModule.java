@@ -6,6 +6,7 @@ import org.atlasapi.content.NullContentResolver;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
 import org.atlasapi.persistence.audit.PersistenceAuditLog;
 import org.atlasapi.persistence.content.DefaultEquivalentContentResolver;
@@ -15,8 +16,10 @@ import org.atlasapi.persistence.content.LookupResolvingContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentGroupResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoTopicStore;
+import org.atlasapi.persistence.content.organisation.MongoOrganisationStore;
 import org.atlasapi.persistence.content.schedule.mongo.MongoScheduleStore;
 import org.atlasapi.persistence.event.MongoEventStore;
+import org.atlasapi.persistence.lookup.TransitiveLookupWriter;
 import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.topic.TopicResolver;
@@ -36,8 +39,10 @@ import com.mongodb.ReadPreference;
 @Import(AtlasPersistenceModule.class)
 public class LegacyPersistenceModule {
 
+    public static final String MONGO_COLLECTION_LOOKUP = "lookup";
+
     @Autowired
-    AtlasPersistenceModule persistence;
+    private AtlasPersistenceModule persistence;
 
     @Bean
     @Qualifier("legacy")
@@ -54,9 +59,14 @@ public class LegacyPersistenceModule {
     @Qualifier("legacy")
     public ContentListerResourceListerAdapter legacyContentLister() {
         DatabasedMongo mongoDb = persistence.databasedReadMongo();
-        LegacyMongoContentLister contentLister =
-                new LegacyMongoContentLister(persistence.databasedReadMongo(), new MongoContentResolver(mongoDb, legacyEquivalenceStore()
-        ));
+        LegacyContentLister contentLister = new LegacyLookupResolvingContentLister(
+                new MongoLookupEntryStore(
+                        mongoDb.collection(MONGO_COLLECTION_LOOKUP),
+                        new NoLoggingPersistenceAuditLog(),
+                        ReadPreference.secondary()
+                ),
+                new MongoContentResolver(mongoDb, legacyEquivalenceStore())
+        );
         return new ContentListerResourceListerAdapter(
                 contentLister,
                 new LegacyContentTransformer(
@@ -68,7 +78,7 @@ public class LegacyPersistenceModule {
 
     @Bean
     @Qualifier("legacy")
-    public TopicResolver legacyTopicResolver() {
+    public LegacyTopicResolver legacyTopicResolver() {
         return new LegacyTopicResolver(legacyTopicStore(), legacyTopicStore());
     }
 
@@ -125,6 +135,15 @@ public class LegacyPersistenceModule {
     @Qualifier("legacy")
     public EventResolver legacyEventResolver() {
         return new LegacyEventResolver(new MongoEventStore(persistence.databasedReadMongo()));
+    }
+
+    @Bean
+    @Qualifier("legacy")
+    public OrganisationResolver legacyOrganisationResolver() {
+        TransitiveLookupWriter lookupWriter = TransitiveLookupWriter.generatedTransitiveLookupWriter(legacyEquivalenceStore());
+        MongoOrganisationStore store = new MongoOrganisationStore(persistence.databasedReadMongo(),lookupWriter,legacyEquivalenceStore(),persistenceAuditLog());
+        LegacyOrganisationTransformer transformer = new LegacyOrganisationTransformer();
+        return new LegacyOrganisationResolver(store, transformer);
     }
 
     private PersistenceAuditLog persistenceAuditLog() {

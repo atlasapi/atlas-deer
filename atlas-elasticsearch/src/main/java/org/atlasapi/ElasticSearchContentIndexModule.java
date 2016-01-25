@@ -13,17 +13,17 @@ import org.atlasapi.content.PseudoEquivalentContentIndex;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.util.SecondaryIndex;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.Service.State;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.Service.State;
 
 public class ElasticSearchContentIndexModule implements IndexModule {
 
@@ -48,7 +48,6 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivContentIndex
     ) {
-
         Settings settings = createSettings(clusterName, ssl);
         TransportClient esClient = new TransportClient(settings);
         registerSeeds(esClient, seeds, port);
@@ -70,7 +69,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         );
 
         PseudoEquivalentContentIndex equivalentEsIndex =
-                new PseudoEquivalentContentIndex(unequivIndex, equivContentIndex);
+                new PseudoEquivalentContentIndex(unequivIndex);
 
         this.equivContentIndex = new InstrumentedContentIndex(equivalentEsIndex, metrics);
         this.popularTopicsIndex = new EsPopularTopicIndex(esClient);
@@ -80,14 +79,14 @@ public class ElasticSearchContentIndexModule implements IndexModule {
 
     private Settings createSettings(String clusterName, boolean ssl) {
         return ImmutableSettings.settingsBuilder()
-                    .put("client.transport.sniff", true)
-                    .put("cluster.name", clusterName)
-                    .put("shield.transport.ssl", ssl ? "true" : "false")
-                    .build();
+                .put("client.transport.sniff", true)
+                .put("cluster.name", clusterName)
+                .put("shield.transport.ssl", ssl ? "true" : "false")
+                .build();
     }
 
     private void registerSeeds(TransportClient client, String seeds, int port) {
-        
+
         for (String host : Splitter.on(",").splitToList(seeds)) {
             client.addTransportAddress(new InetSocketTransportAddress(host, port));
         }

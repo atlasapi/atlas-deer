@@ -21,6 +21,8 @@ import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
@@ -37,8 +39,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ContentBootstrapListenerTest {
@@ -50,6 +54,7 @@ public class ContentBootstrapListenerTest {
     private @Mock LegacyPersistenceModule legacyPersistenceModule;
     private @Mock LegacySegmentMigrator legacySegmentMigrator;
     private @Mock ContentResolver legacyContentResolver;
+    private @Mock EquivalenceGraphStore equivalenceGraphStore;
 
     private @Mock Item item;
     private ItemRef itemRef = new ItemRef(Id.valueOf(0L), Publisher.BBC, "", DateTime.now());
@@ -72,6 +77,8 @@ public class ContentBootstrapListenerTest {
     public void setUp() throws Exception {
         when(legacyPersistenceModule.legacyContentResolver()).thenReturn(legacyContentResolver);
         when(legacyPersistenceModule.legacySegmentMigrator()).thenReturn(legacySegmentMigrator);
+
+        when(item.getId()).thenReturn(itemRef.getId());
 
         contentBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(contentWriter)
@@ -117,6 +124,42 @@ public class ContentBootstrapListenerTest {
         verifyContentMigration(item, itemRef, itemGraphUpdate);
     }
 
+    @Test
+    public void testMigrateEquivalents() throws Exception {
+        ContentBootstrapListener contentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(contentWriter)
+                .withEquivalenceMigrator(equivalenceMigrator)
+                .withEquivalentContentStore(equivalentContentStore)
+                .withContentIndex(contentIndex)
+                .withMigrateHierarchies(legacyPersistenceModule)
+                .withMigrateEquivalents(equivalenceGraphStore)
+                .build();
+
+        mockContentMigration(item, itemRef);
+        EquivalenceGraphUpdate seriesItemGraphUpdate = mockContentMigration(seriesItem, seriesItemRef);
+
+        when(item.getSegmentEvents()).thenReturn(ImmutableList.of());
+        EquivalenceGraph equivalenceGraph = new EquivalenceGraph(
+                ImmutableMap.of(
+                        itemRef.getId(), EquivalenceGraph.Adjacents.valueOf(seriesItemRef),
+                        seriesItemRef.getId(), EquivalenceGraph.Adjacents.valueOf(itemRef)
+                ),
+                DateTime.now()
+        );
+        when(equivalenceGraphStore.resolveIds(ImmutableList.of(itemRef.getId())))
+                .thenReturn(Futures.immediateFuture(ImmutableOptionalMap.of(
+                        itemRef.getId(), equivalenceGraph
+                )));
+        when(legacyContentResolver.resolveIds(ImmutableList.of(seriesItemRef.getId())))
+                .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(seriesItem))));
+
+        ContentBootstrapListener.Result result = contentBootstrapListener.visit(item);
+
+        assertThat(result.isSucceeded(), is(true));
+
+        verifyContentMigration(seriesItem, seriesItemRef, seriesItemGraphUpdate);
+    }
+
     private EquivalenceGraphUpdate mockContentMigration(Content content, ContentRef contentRef)
             throws Exception {
         EquivalenceGraphUpdate graphUpdate = mock(EquivalenceGraphUpdate.class);
@@ -156,7 +199,7 @@ public class ContentBootstrapListenerTest {
             EquivalenceGraphUpdate graphUpdate) throws Exception {
         verify(contentWriter).writeContent(content);
         verify(equivalenceMigrator).migrateEquivalence(contentRef);
-        verify(equivalentContentStore).updateContent(content);
+        verify(equivalentContentStore).updateContent(content.getId());
         verify(equivalentContentStore).updateEquivalences(graphUpdate);
         verify(contentIndex).index(content);
     }

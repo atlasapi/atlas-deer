@@ -46,6 +46,21 @@ public class ApiKeySourcesFetcherTest {
     }
 
     @Test
+    public void testGetsSourcesForApiKeyInHeader() throws Exception {
+
+        String apiKey = "apikey";
+        Application app = Application.builder()
+                .withCredentials(ApplicationCredentials.builder().withApiKey(apiKey).build())
+                .build();
+        when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
+
+        Optional<ApplicationSources> srcs = fetcher.sourcesFor(new StubHttpServletRequest().withHeader("key", apiKey));
+
+        assertTrue(srcs.isPresent());
+        assertThat(srcs.get(), is(app.getSources()));
+    }
+
+    @Test
     public void testReturnsAbsentIfNoApiKeyIsSupplied() throws Exception {
         
         String apiKey = "apikey";

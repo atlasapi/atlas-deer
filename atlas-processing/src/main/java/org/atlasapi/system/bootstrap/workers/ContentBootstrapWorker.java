@@ -1,11 +1,9 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.queue.Worker;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.concurrent.ExecutionException;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
@@ -16,38 +14,56 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutionException;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.codahale.metrics.Timer;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 
 public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
-    private final Logger log = LoggerFactory.getLogger(ContentBootstrapWorker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ContentBootstrapWorker.class);
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
-    private final Timer messagesTimer;
+    private final Timer metricsTimer;
 
-    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer, MetricRegistry metricsRegistry) {
+    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer,
+            Timer metricsTimer) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
-        this.messagesTimer = (metricsRegistry != null ? checkNotNull(metricsRegistry.timer("ContentBootstrapWorker")) : null);
+        this.metricsTimer = checkNotNull(metricsTimer);
     }
 
     @Override
-    public void process(ResourceUpdatedMessage message) {
+    public void process(ResourceUpdatedMessage message) throws RecoverableException {
+        Id contentId = message.getUpdatedResource().getId();
+        LOG.debug("Processing message on id {}, message: {}", contentId, message);
+
+        Timer.Context time = metricsTimer.time();
+        Resolved<Content> content = resolveContent(contentId);
+
         try {
-            Timer.Context time = messagesTimer.time();
-            Id contentId = message.getUpdatedResource().getId();
-            Resolved<Content> content = Futures.get(
+            WriteResult<Content, Content> result =
+                    writer.writeContent(content.getResources().first().get());
+            LOG.debug("Bootstrapped content {}", result.toString());
+            time.stop();
+        } catch (Exception e) {
+            String errorMsg = "Failed to bootstrap content " + message.getUpdatedResource();
+            LOG.error(errorMsg, e);
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private Resolved<Content> resolveContent(Id contentId) {
+        try {
+            return Futures.get(
                     contentResolver.resolveIds(ImmutableList.of(contentId)),
                     ExecutionException.class
             );
-            WriteResult<Content, Content> result = writer.writeContent(content.getResources().first().get());
-            log.debug("Bootstrapped content {}", result.toString());
-            time.stop();
         } catch (Exception e) {
-            log.error("Failed to bootstrap content {} - {} {}", message.getUpdatedResource(), e, Throwables.getStackTraceAsString(e));
+            throw Throwables.propagate(e);
         }
     }
 }

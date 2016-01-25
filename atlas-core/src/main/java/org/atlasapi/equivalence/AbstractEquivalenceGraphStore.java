@@ -39,6 +39,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.MoreSets;
@@ -73,10 +74,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         try {
             LOG.debug("Thread {} is trying to enter synchronized block to lock graph IDs", Thread.currentThread().getName());
             synchronized (lock()) {
-                LOG.debug("Thread {} has entered synchronized block to lock graph IDs", Thread.currentThread().getName());
+                LOG.debug("Thread {} has entered synchronized block to lock graph IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
                 while((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
                     lock().unlock(subjectAndAdjacents);
-                    lock().wait();
+                    lock().wait(5000);
+                    LOG.debug("Thread {} attempting to lock IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
                 }
             }
             LOG.debug("Thread {} has left synchronized block, having locked graph IDs", Thread.currentThread().getName());
@@ -96,15 +98,37 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             throw new WriteException(e);
         } catch (CorruptEquivalenceGraphIndexException e) {
             cleanGraphAndIndex(e.getSubjectId());
+            /*
+             TODO: the proper fix for this is making the lock reentrant, however that also breaks
+                   other places where the lock is used. This is a workaround to prevent deadlocks
+                   when there's an exception.
+             */
+            unlock(subjectAndAdjacents, transitiveSetsIds);
             return updateEquivalences(subject, assertedAdjacents, sources);
         } finally {
-            synchronized (lock()) {
-                lock().unlock(subjectAndAdjacents);
-                if (transitiveSetsIds != null) {
-                    lock().unlock(transitiveSetsIds);
-                }
-                lock().notifyAll();
+            unlock(subjectAndAdjacents, transitiveSetsIds);
+        }
+    }
+
+    private void unlock(Set<Id> subjectAndAdjacents, Set<Id> transitiveSetsIds) {
+        LOG.debug("Thread {} waiting for lock to unlock {} and {}",
+                Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds);
+
+        synchronized (lock()) {
+            LOG.debug("Thread {} unlocking IDs {}",
+                    Thread.currentThread().getName(), subjectAndAdjacents);
+
+            lock().unlock(subjectAndAdjacents);
+
+            if (transitiveSetsIds != null) {
+                LOG.debug("Thread {} unlocking transitive IDs {}",
+                        Thread.currentThread().getName(), transitiveSetsIds);
+
+                lock().unlock(transitiveSetsIds);
             }
+            LOG.debug("Thread {} performing notifyAll", Thread.currentThread().getName(), transitiveSetsIds);
+
+            lock().notifyAll();
         }
     }
 
@@ -118,11 +142,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated)  {
         try {
-            messageSender.sendMessage(new EquivalenceGraphUpdateMessage(
-                UUID.randomUUID().toString(),
-                Timestamp.of(DateTime.now(DateTimeZones.UTC)),
-                updated.get()
-            ));
+            messageSender.sendMessage(
+                    new EquivalenceGraphUpdateMessage(
+                        UUID.randomUUID().toString(),
+                        Timestamp.of(DateTime.now(DateTimeZones.UTC)),
+                        updated.get()
+                    ),
+                    Longs.toByteArray(updated.get().getUpdated().getId().longValue())
+            );
         } catch (MessagingException e) {
             log().warn("messaging failed for equivalence update of " + subject, e);
         }
@@ -130,13 +157,16 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
         if (!lock().tryLock(adjacentsIds)) {
+            LOG.debug("Thread {} failed to lock adjacents {}", Thread.currentThread().getName(), adjacentsIds);
             return null;
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
-        return lock().tryLock(ImmutableSet.copyOf(idsToLock)) ? allIds : null;
+        boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
+        LOG.debug("Thread {} Lock attempt success status {} locking transitive set {}", Thread.currentThread().getName(), locked, idsToLock);
+        return locked ? allIds : null;
     }
 
     private Iterable<Id> transitiveIdsToLock(Set<Id> adjacentsIds) throws StoreException {

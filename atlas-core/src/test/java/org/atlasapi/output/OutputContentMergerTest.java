@@ -12,6 +12,7 @@ import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Brand;
+import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Container;
@@ -32,6 +33,7 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.util.ImmutableCollectors;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeConstants;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
@@ -462,6 +464,60 @@ public class OutputContentMergerTest {
         
         Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
         assertThat(merged.getItemRefs(), is(equalTo(bbcEpisodes)));   
+    }
+    
+    @Test
+    // If there are multiple items in the equivalent set belonging to the same source 
+    // as the item whose broadcasts are chosen, then broadcasts across all items from
+    // that source should be output, since it is assumed that within a data source
+    // broadcasts aren't duplicated
+    public void testOutputsAllBroadcastsFromPrecedentPublisher() {
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
+        
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Broadcast b1 = new Broadcast(Id.valueOf(1), 
+                                     new Interval(new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 0, 0), new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 1, 0)));
+        item1.setBroadcasts(ImmutableSet.of(b1));
+        
+        Item item2 = item(5L, "item2", Publisher.PA);
+        Broadcast b2 = new Broadcast(Id.valueOf(2), 
+                                    new Interval(new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 1, 0), new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 2, 0)));
+        item2.setBroadcasts(ImmutableSet.of(b2));
+        
+        Item item3 = item(5L, "item3", Publisher.BBC);
+        Broadcast b3 = new Broadcast(Id.valueOf(3), 
+                                    new Interval(new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 2, 0), new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 3, 0)));
+        item3.setBroadcasts(ImmutableSet.of(b3));
+        
+        Item merged = (Item) merger.merge(item1,  ImmutableList.of(item2, item3), sources);
+        assertThat(merged.getBroadcasts().size(), is(2));
+    }
+    
+    @Test
+    public void testMergesBroadcastsWithSimilarStartTimes() {   
+        
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
+                .copy()
+                .withContentHierarchyPrecedence(ImmutableList.of(Publisher.BBC, Publisher.PA))
+                .build();
+        
+        DateTime b1StartTime = new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 20, 0, 0);
+        
+        Item item1 = item(4L, "item1", Publisher.BBC);
+        Broadcast b1 = new Broadcast(Id.valueOf(1), new Interval(b1StartTime, b1StartTime.plusMinutes(10)));
+        b1.addAlias(new Alias("ns1", "v1"));
+        item1.setBroadcasts(ImmutableSet.of(b1));
+        
+        Item item2 = item(5L, "item2", Publisher.PA);
+        DateTime b2StartTime = b1StartTime.plusMinutes(1);
+        
+        Broadcast b2 = new Broadcast(Id.valueOf(1), new Interval(b2StartTime, b2StartTime.plusMinutes(10)));
+        item2.setBroadcasts(ImmutableSet.of(b2));
+        b2.addAlias(new Alias("ns2", "v2"));
+        
+        Item merged = (Item) merger.merge(item1,  ImmutableList.of(item2), sources);
+        assertThat(Iterables.getOnlyElement(merged.getBroadcasts()).getAliases().size(), is(2));
+
     }
 
     private Brand brand(long id, String uri, Publisher source) {

@@ -12,6 +12,7 @@ import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
@@ -22,24 +23,31 @@ import com.metabroadcast.common.queue.Worker;
 
 public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger LOG = LoggerFactory.getLogger(EventReadWriteWorker.class);
 
     private final EventResolver resolver;
     private final EventWriter writer;
+    private final Timer metricsTimer;
 
-    public EventReadWriteWorker(EventResolver resolver, EventWriter writer) {
+    public EventReadWriteWorker(EventResolver resolver, EventWriter writer, Timer metricsTimer) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
+        this.metricsTimer = checkNotNull(metricsTimer);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message)
             throws RecoverableException {
+        LOG.debug("Processing message on id {}, message: {}",
+                message.getUpdatedResource().getId(), message);
+
         ImmutableList<Id> ids = ImmutableList.of(message.getUpdatedResource().getId());
         process(ids);
     }
 
     public void process(Iterable<Id> ids) {
+        Timer.Context time = metricsTimer.time();
+
         ListenableFuture<Resolved<Event>> future = resolver.resolveIds(ids);
         Futures.addCallback(future, new FutureCallback<Resolved<Event>>() {
 
@@ -49,13 +57,17 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
                     try {
                         writer.write(event);
                     } catch (WriteException e) {
-                        log.warn("Failed to write event " + event.getId());
+                        LOG.warn("Failed to write event " + event.getId());
+                    }
+                    finally {
+                        time.stop();
                     }
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
+                time.stop();
                 throw Throwables.propagate(t);
             }
         });

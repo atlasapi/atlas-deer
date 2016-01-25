@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -15,18 +14,16 @@ import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+
+import com.google.common.collect.ImmutableMap;
 import org.atlasapi.output.writers.CertificateWriter;
 import org.atlasapi.output.writers.LanguageWriter;
 import org.atlasapi.output.writers.ReleaseDateWriter;
 import org.atlasapi.output.writers.RestrictionWriter;
 import org.atlasapi.output.writers.SubtitleWriter;
-
-import com.google.common.collect.ImmutableMap;
 import org.atlasapi.util.ImmutableCollectors;
 
 public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {

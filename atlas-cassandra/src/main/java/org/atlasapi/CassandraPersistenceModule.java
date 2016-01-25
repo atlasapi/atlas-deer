@@ -17,6 +17,8 @@ import org.atlasapi.event.EventPersistenceStore;
 import org.atlasapi.event.EventStore;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.organisation.DatastaxCassandraOrganisationStore;
+import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.schedule.AstyanaxCassandraScheduleStore;
 import org.atlasapi.schedule.CassandraEquivalentScheduleStore;
 import org.atlasapi.schedule.DatastaxCassandraScheduleStore;
@@ -61,6 +63,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private Boolean processing = Objects.firstNonNull(Configurer.get("processing.config"), Parameter.valueOf("false")).toBoolean();
 
     private final String keyspace;
+    private final Session session;
 
     private final ContentHasher contentHasher;
     private final EventHasher eventHasher;
@@ -75,6 +78,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraSegmentStore segmentStore;
     private DatastaxCassandraService dataStaxService;
     private CassandraEquivalenceGraphStore contentEquivalenceGraphStore;
+    private CassandraEquivalenceGraphStore nullMessageSendingEquivalenceGraphStore;
 
     private CassandraEquivalenceGraphStore nullMessageSendingEquivGraphStore;
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
@@ -82,6 +86,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private AstyanaxCassandraContentStore contentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
+    private DatastaxCassandraOrganisationStore organisationStore;
 
     private MessageSenderFactory messageSenderFactory;
 
@@ -105,6 +110,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.keyspace = keyspace;
         this.context = context;
         this.metrics = metrics;
+        this.session = dataStaxService.getSession(keyspace);
     }
 
     private Equivalence<Segment> segmentEquivalence() {
@@ -125,6 +131,9 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return new MessageSender<T>() {
             @Override
             public void sendMessage(T resourceUpdatedMessage) throws MessagingException { }
+
+            @Override
+            public void sendMessage(T message, byte[] partitionKey) throws MessagingException { }
 
             @Override
             public void close() throws Exception { }
@@ -148,7 +157,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
 
-        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class), session, read, write);
+        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
+        this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                nullMessageSender(EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(contentEquivalenceGraphStore, contentStore, session, read, write, new SystemClock());
         this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(nullMessageSender(
                 EquivalenceGraphUpdateMessage.class), session, read, write);
@@ -185,6 +201,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .build();
 
         this.eventStore = getEventStore(session);
+        this.organisationStore = getOrganisationStore(session);
     }
 
     public EquivalenceGraphStore nullMessageSendingGraphStore() {
@@ -202,6 +219,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             public void sendMessage(M message) throws MessagingException {
                 Timer.Context time = timer.time();
                 delegate.sendMessage(message);
+                time.stop();
+            }
+
+            @Override
+            public void sendMessage(M message, byte[] partitionKey)
+                    throws MessagingException {
+                Timer.Context time = timer.time();
+                delegate.sendMessage(message, partitionKey);
                 time.stop();
             }
 
@@ -255,6 +280,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return eventStore;
     }
 
+    @Override
+    public OrganisationStore organisationStore() {
+        return organisationStore;
+    }
+
     private Equivalence<? super Topic> topicEquivalence() {
         return new Equivalence<Topic>() {
 
@@ -271,11 +301,15 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     public Session getSession() {
-        return dataStaxService.getSession(keyspace);
+        return session;
     }
 
     public EquivalenceGraphStore contentEquivalenceGraphStore() {
         return this.contentEquivalenceGraphStore;
+    }
+
+    public EquivalenceGraphStore nullMessageSendingEquivalenceGraphStore() {
+        return this.nullMessageSendingEquivalenceGraphStore;
     }
 
     public com.datastax.driver.core.ConsistencyLevel getReadConsistencyLevel() {
@@ -306,5 +340,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withSender(nullMessageSender(ResourceUpdatedMessage.class))
                 .withPersistenceStore(eventPersistenceStore)
                 .build();
+    }
+
+    private DatastaxCassandraOrganisationStore getOrganisationStore(Session session) {
+        DatastaxCassandraOrganisationStore organisationStore = DatastaxCassandraOrganisationStore.builder()
+                .withSession(session)
+                .withWriteConsistency(getWriteConsistencyLevel())
+                .withReadConsistency(getReadConsistencyLevel())
+                .build();
+        return organisationStore;
     }
 }

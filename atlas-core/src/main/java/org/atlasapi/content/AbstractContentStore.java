@@ -6,8 +6,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Set;
 import java.util.UUID;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -21,7 +19,10 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.primitives.Longs;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
@@ -319,7 +320,8 @@ public abstract class AbstractContentStore implements ContentStore {
                 itemRef
         );
         try {
-            sender.sendMessage(message);
+            Id resourceId = message.getUpdatedResource().getId();
+            sender.sendMessage(message, Longs.toByteArray(resourceId.longValue()));
         } catch (Exception e) {
             log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
         }
@@ -329,7 +331,8 @@ public abstract class AbstractContentStore implements ContentStore {
         Iterable<ResourceUpdatedMessage> messages = createEntityUpdatedMessages(result);
         for (ResourceUpdatedMessage message : messages) {
             try {
-                sender.sendMessage(message);
+                Id resourceId = message.getUpdatedResource().getId();
+                sender.sendMessage(message, Longs.toByteArray(resourceId.longValue()));
             } catch (Exception e) {
                 log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
             }

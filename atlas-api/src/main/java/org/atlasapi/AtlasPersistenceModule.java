@@ -27,6 +27,7 @@ import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
+import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
@@ -42,7 +43,7 @@ import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.schedule.ScheduleWriter;
 import org.atlasapi.segment.SegmentStore;
-import org.atlasapi.system.HealthModule;
+import org.atlasapi.system.MetricsModule;
 import org.atlasapi.system.legacy.LegacyChannelGroupResolver;
 import org.atlasapi.system.legacy.LegacyChannelGroupTransformer;
 import org.atlasapi.system.legacy.LegacyChannelResolver;
@@ -100,6 +101,8 @@ public class AtlasPersistenceModule {
     private final String cassandraClientThreads = Configurer.get("cassandra.clientThreads").get();
     private final Integer cassandraConnectionsPerHostLocal = Configurer.get("cassandra.connectionsPerHost.local").toInt();
     private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
+    private final Integer cassandraDatastaxConnectionTimeout = Configurer.get("cassandra.datastax.timeouts.connections").toInt();
+    private final Integer cassandraDatastaxReadTimeout = Configurer.get("cassandra.datastax.timeouts.read").toInt();
  
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final int port = Ints.saturatedCast(Configurer.get("elasticsearch.port").toLong());
@@ -111,8 +114,8 @@ public class AtlasPersistenceModule {
 
     private String equivalentContentChanges = Configurer.get("messaging.destination.equivalent.content.changes").get();
 
-    @Autowired MessagingModule messaging;
-    @Autowired HealthModule health;
+    private @Autowired MessagingModule messaging;
+    private @Autowired MetricsModule metricsModule;
 
 
     @PostConstruct
@@ -126,14 +129,18 @@ public class AtlasPersistenceModule {
         ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster, cassandraKeyspace,
                 seeds, Integer.parseInt(cassandraPort),
                 Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout),
-                health.metrics());
+                metricsModule.metrics());
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
-        DatastaxCassandraService cassandraService = new DatastaxCassandraService(
-                seeds,
-                cassandraConnectionsPerHostLocal,
-                cassandraConnectionsPerHostRemote
-        );
+
+        DatastaxCassandraService cassandraService = DatastaxCassandraService.builder()
+                .withNodes(seeds)
+                .withConnectionsPerHostLocal(cassandraConnectionsPerHostLocal)
+                .withConnectionsPerHostRemote(cassandraConnectionsPerHostRemote)
+                .withConnectTimeoutMillis(cassandraDatastaxConnectionTimeout)
+                .withReadTimeoutMillis(cassandraDatastaxReadTimeout)
+                .build();
+
         cassandraService.startAsync().awaitRunning();
         return new CassandraPersistenceModule(
                 messaging.messageSenderFactory(),
@@ -144,7 +151,7 @@ public class AtlasPersistenceModule {
                 content -> UUID.randomUUID().toString(),
                 event -> UUID.randomUUID().toString(),
                 seeds,
-                health.metrics()
+                metricsModule.metrics()
         );
     }
     
@@ -187,8 +194,18 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
+    public OrganisationStore organisationStore() {
+        return persistenceModule().organisationStore();
+    }
+
+    @Bean
     public EquivalenceGraphStore getContentEquivalenceGraphStore() {
         return persistenceModule().contentEquivalenceGraphStore();
+    }
+
+    @Bean
+    public EquivalenceGraphStore nullMessageSendingEquivalenceGraphStore() {
+        return persistenceModule().nullMessageSendingEquivalenceGraphStore();
     }
     
     @Bean
@@ -233,7 +250,7 @@ public class AtlasPersistenceModule {
                         esIndex,
                         Long.parseLong(esRequestTimeout),
                         persistenceModule().contentStore(),
-                        health.metrics(),
+                        metricsModule.metrics(),
                         channelGroupResolver(),
                         new CassandraSecondaryIndex(
                                 persistenceModule().getSession(),

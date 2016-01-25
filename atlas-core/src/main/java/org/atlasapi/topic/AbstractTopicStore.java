@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Equivalence;
+import com.google.common.primitives.Longs;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
@@ -73,7 +74,8 @@ public abstract class AbstractTopicStore implements TopicStore {
     private void writeMessage(final WriteResult<Topic, Topic> result) {
         ResourceUpdatedMessage message = createEntityUpdatedMessage(result);
         try {
-            sender.sendMessage(message);
+            Id resourceId = message.getUpdatedResource().getId();
+            sender.sendMessage(message, Longs.toByteArray(resourceId.longValue()));
         } catch (Exception e) {
             log.error(message.getUpdatedResource().toString(), e);
         }

@@ -40,6 +40,7 @@ import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.SeriesOrder;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
+import org.joda.time.Duration;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -58,6 +59,16 @@ import com.google.common.collect.Sets;
 public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private static final Ordering<Episode> SERIES_ORDER = Ordering.from(new SeriesOrder());
+
+    private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5).getMillis();
+
+    private static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
+
+        @Override
+        public Set<Broadcast> apply(Item input) {
+            return input.getBroadcasts();
+        } 
+    };
 
     private EquivalentSetContentHierarchyChooser hierarchyChooser;
 
@@ -356,7 +367,13 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                                .leastOf(Iterables.filter(all, HAS_BROADCASTS), 1);
         
         if (!first.isEmpty()) {
-            chosen.setBroadcasts(Sets.newHashSet(Iterables.getOnlyElement(first).getBroadcasts()));
+            Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();
+            chosen.setBroadcasts(Sets.newHashSet(
+                                  Iterables.concat(
+                                    Iterables.transform(Iterables.filter(all, isPublisher(sourceForBroadcasts)), 
+                                                        TO_BROADCASTS)
+                                 )));
+            
         }
                 
         List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
@@ -365,6 +382,17 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 matchAndMerge(chosenBroadcast, notChosenOrdered);
             }
         }
+    }
+    
+    private static Predicate<Item> isPublisher(Publisher publisher) {
+        return new Predicate<Item>() {
+
+            @Override
+            public boolean apply(Item input) {
+                return publisher.equals(input.getSource());
+            }
+            
+        };
     }
 
     private <T extends Content> void mergeEncodings(ApplicationSources sources, T chosen, Iterable<T> notChosen) {
@@ -384,7 +412,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 @Override
                 public boolean apply(Broadcast input) {
                     return chosenBroadcast.getChannelId().equals(input.getChannelId())
-                            && chosenBroadcast.getTransmissionTime().equals(input.getTransmissionTime());
+                            && Math.abs(chosenBroadcast.getTransmissionTime().getMillis() - 
+                                        input.getTransmissionTime().getMillis()) <= BROADCAST_START_TIME_TOLERANCE_IN_MS;
                 }
              });
             if (matched.isPresent()) {

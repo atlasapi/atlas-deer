@@ -1,15 +1,5 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -18,12 +8,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -35,24 +28,26 @@ import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import com.metabroadcast.common.queue.MessageSender;
+
+import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FutureCallback;
@@ -60,16 +55,31 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
-import com.metabroadcast.common.queue.MessageSender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CassandraEquivalentContentStore extends AbstractEquivalentContentStore {
 
     public static final String EQUIVALENT_CONTENT_INDEX = "equivalent_content_index";
-    private static final String EQUIVALENT_CONTENT_TABLE = "equivalent_content";
-    
-    private static final String SET_ID_KEY = "set_id";
-    private static final String CONTENT_ID_KEY = "content_id";
-    private static final String DATA_KEY = "data";
+    public static final String EQUIVALENT_CONTENT_TABLE = "equivalent_content";
+
+    public static final String SET_ID_KEY = "set_id";
+    public static final String CONTENT_ID_KEY = "content_id";
+    public static final String DATA_KEY = "data";
+    public static final String GRAPH_KEY = "graph";
+
+    private static final String SET_ID_BIND = "set_id";
+    private static final String CONTENT_ID_BIND = "content_id";
+    private static final String DATA_BIND = "data";
+    private static final String GRAPH_BIND = "graph";
 
     private final LegacyContentResolver legacyContentResolver;
     private final Session session;
@@ -80,7 +90,15 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final ContentSerializer contentSerializer;
-    
+    private final EquivalenceGraphSerializer graphSerializer;
+
+    private final PreparedStatement setsSelect;
+    private final PreparedStatement rowDelete;
+    private final PreparedStatement setDelete;
+    private final PreparedStatement dataRowUpdate;
+    private final PreparedStatement graphUpdate;
+    private final PreparedStatement equivSetSelect;
+
     public CassandraEquivalentContentStore(
             ContentResolver contentResolver,
             LegacyContentResolver legacyContentResolver,
@@ -93,10 +111,46 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         super(contentResolver, graphStore, equivalentContentUpdatedMessageSender);
         this.legacyContentResolver = checkNotNull(legacyContentResolver);
         this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(contentResolver));
+        this.graphSerializer = new EquivalenceGraphSerializer();
         this.session = session;
         this.readConsistency = read;
         this.writeConsistency = write;
         this.index = new CassandraSecondaryIndex(session, EQUIVALENT_CONTENT_INDEX, read);
+
+        RegularStatement statement = select().all()
+                .from(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .orderBy(asc(CONTENT_ID_KEY));
+        statement.setFetchSize(Integer.MAX_VALUE);
+        statement.setConsistencyLevel(read);
+        this.setsSelect = session.prepare(statement);
+
+        this.rowDelete = session.prepare(delete()
+                .from(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .and(eq(CONTENT_ID_KEY, bindMarker(CONTENT_ID_BIND))));
+
+        this.setDelete = session.prepare(delete().all()
+                .from(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, bindMarker())));
+        this.setDelete.setConsistencyLevel(writeConsistency);
+
+        this.dataRowUpdate = session.prepare(QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .and(eq(CONTENT_ID_KEY, bindMarker(CONTENT_ID_BIND)))
+                .with(set(DATA_KEY, bindMarker(DATA_BIND))));
+
+        this.graphUpdate = session.prepare(QueryBuilder.update(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
+                .with(set(GRAPH_KEY, bindMarker(GRAPH_BIND)))
+        );
+
+        this.equivSetSelect = session.prepare(
+                select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY, GRAPH_KEY)
+                    .from(EQUIVALENT_CONTENT_TABLE)
+                    .where(eq(SET_ID_KEY, bindMarker()))
+        );
+        this.equivSetSelect.setConsistencyLevel(readConsistency);
     }
 
     @Override
@@ -143,34 +197,25 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
     private AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Set<Publisher> selectedSources, final ConsistencyLevel readConsistency) {
-        return new AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>>() {
-            @Override
-            public ListenableFuture<Optional<ResolvedEquivalents<Content>>> apply(Map<Long, Long> index)
-                    throws Exception {
-                return Futures.transform(
-                        resultOf(selectSetsQueries(index.values()), readConsistency),
-                        toEquivalentsSets(index, selectedSources)
-                );
-            }
-        };
+        return index -> Futures.transform(
+                resultOf(selectSetsQueries(index.values()), readConsistency),
+                toEquivalentsSets(index, selectedSources)
+        );
     }
 
     private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
             final Map<Long, Long> index, final Set<Publisher> selectedSources) {
-        return new Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>>() {
-            @Override
-            public Optional<ResolvedEquivalents<Content>> apply(Iterable<ResultSet> setsRows) {
-                Multimap<Long, Content> sets = deserialize(setsRows, selectedSources);
-                if (sets == null) {
-                    return Optional.absent();
-                }
-                ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
-                for (Entry<Long, Long> id : index.entrySet()) {
-                    Collection<Content> setForId = sets.get(id.getValue());
-                    results.putEquivalents(Id.valueOf(id.getKey()), setForId);
-                }
-                return Optional.of(results.build());
+        return setsRows -> {
+            Multimap<Long, Content> sets = deserialize(setsRows, selectedSources);
+            if (sets == null) {
+                return Optional.absent();
             }
+            ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
+            for (Entry<Long, Long> id : index.entrySet()) {
+                Collection<Content> setForId = sets.get(id.getValue());
+                results.putEquivalents(Id.valueOf(id.getKey()), setForId);
+            }
+            return Optional.of(results.build());
         };
     }
 
@@ -186,7 +231,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
             Content content = deserialize(row);
 
-            if (contentSelected(content, selectedSources)) {
+            if (contentSelected(content, selectedSources)
+                    && containedInGraph(content.getId(), row)) {
                 sets.put(setId, content);
             }
         }
@@ -234,85 +280,121 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries, ConsistencyLevel readConsistency) {
         ImmutableList.Builder<ListenableFuture<ResultSet>> resultSets = ImmutableList.builder();
         for (Statement query : queries) {
-            resultSets.add(session.executeAsync(query.setConsistencyLevel(readConsistency)));
+            resultSets.add(session.executeAsync(query));
         }
-
 
         return Futures.allAsList(resultSets.build());
     }
     
     private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
-        ImmutableList.Builder<Statement> statements = ImmutableList.builder();
-        for (Long key : keys) {
-            statements.add(
-                    select().all()
-                    .from(EQUIVALENT_CONTENT_TABLE)
-                    .where(eq(SET_ID_KEY, key))
-                    .orderBy(asc(CONTENT_ID_KEY))
-                    .setFetchSize(Integer.MAX_VALUE)
-            );
-        }
-        return statements.build();
+        return StreamSupport.stream(keys.spliterator(), false)
+                .map(k -> setsSelect.bind().setLong(SET_ID_BIND, k))
+                .collect(ImmutableCollectors.toList());
     }
-    
+
     @Override
-    protected void updateEquivalences(
-            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent, EquivalenceGraphUpdate update) {
+    protected void update(EquivalenceGraph graph, Content content) {
+        BatchStatement statement = new BatchStatement();
+        statement.setConsistencyLevel(writeConsistency);
+
+        statement.add(getGraphUpdateRow(graph));
+        statement.add(getUpdateDataRow(graph, content));
+        statement.add(index.insertStatement(
+                content.getId().longValue(), graph.getId().longValue()
+        ));
+
+        session.execute(statement);
+    }
+
+    @Override
+    protected void update(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent,
+            EquivalenceGraphUpdate update) {
         if (graphsAndContent.isEmpty()) {
             log.warn("Empty content for " + update);
             return;
         }
-        updateDataRows(graphsAndContent);
-        updateIndexRows(graphsAndContent);
-        deleteStaleSets(update.getDeleted());
-        deleteStaleRows(update.getUpdated(), update.getCreated());
+
+        BatchStatement statement = new BatchStatement();
+        statement.setConsistencyLevel(writeConsistency);
+
+        statement.addAll(getGraphUpdateRows(graphsAndContent.keySet()));
+        statement.addAll(getUpdateDataRows(graphsAndContent));
+        statement.addAll(getUpdateIndexRows(graphsAndContent));
+        statement.addAll(getDeleteStaleSets(update.getDeleted()));
+        statement.addAll(getDeleteStaleRows(update.getCreated(), update.getUpdated().getId()));
+
+        session.execute(statement);
     }
 
-    private void deleteStaleRows(EquivalenceGraph updated, ImmutableSet<EquivalenceGraph> created) {
-        if (created.isEmpty()) {
-            return;
-        }
-        long id = updated.getId().longValue();
-        List<Statement> deletes = Lists.newArrayList();
-        for (EquivalenceGraph graph : created) {
-            for (Id elem : graph.getEquivalenceSet()) {
-                deletes.add(delete()
-                    .from(EQUIVALENT_CONTENT_TABLE)
-                    .where(eq(SET_ID_KEY, id))
-                        .and(eq(CONTENT_ID_KEY, elem.longValue())));
-            }
-        }
-        session.execute(batch(deletes.toArray(new RegularStatement[deletes.size()]))
-                .setConsistencyLevel(writeConsistency));
+    private ImmutableList<Statement> getGraphUpdateRows(ImmutableSet<EquivalenceGraph> graphs) {
+        return graphs.stream()
+                .map(this::getGraphUpdateRow)
+                .collect(ImmutableCollectors.toList());
     }
 
-    private void deleteStaleSets(Set<Id> deletedGraphs) {
+    private BoundStatement getGraphUpdateRow(EquivalenceGraph graph) {
+        return graphUpdate.bind()
+                .setLong(SET_ID_BIND, graph.getId().longValue())
+                .setBytes(GRAPH_BIND, graphSerializer.serialize(graph));
+    }
+
+    private ImmutableList<Statement> getUpdateDataRows(
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
+        return graphsAndContent.entries().stream()
+                .map(entry -> getUpdateDataRow(entry.getKey(), entry.getValue()))
+                .collect(ImmutableCollectors.toList());
+    }
+
+    private BoundStatement getUpdateDataRow(EquivalenceGraph graph, Content content) {
+        return dataRowUpdate.bind()
+                .setLong(SET_ID_BIND, graph.getId().longValue())
+                .setLong(CONTENT_ID_BIND, content.getId().longValue())
+                .setBytes(DATA_BIND, serialize(content));
+    }
+
+    private ImmutableList<Statement> getDeleteStaleSets(ImmutableSet<Id> deletedGraphs) {
         if (deletedGraphs.isEmpty()) {
-            return;
+            return ImmutableList.of();
         }
-        Object[] ids = Collections2.transform(deletedGraphs, Id.toLongValue()).toArray();
-        session.execute(delete().all()
-                .from(EQUIVALENT_CONTENT_TABLE)
-                .where(in(SET_ID_KEY, ids))
-                .setConsistencyLevel(writeConsistency));
+
+        return deletedGraphs.stream()
+                .map(Id.toLongValue()::apply)
+                .map(setDelete::bind)
+                .collect(ImmutableCollectors.toList());
     }
 
-    private void updateDataRows(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
-        List<Statement> updates = Lists.newArrayListWithExpectedSize(graphsAndContent.size());
-        for (Entry<EquivalenceGraph, Content> graphAndContent : graphsAndContent.entries()) {
-            EquivalenceGraph graph = graphAndContent.getKey();
-            Content content = graphAndContent.getValue();
-            updates.add(dataRowUpdateFor(graph, content));
+    private ImmutableList<Statement> getUpdateIndexRows(
+            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
+
+        ImmutableList.Builder<Statement> statementBuilder = ImmutableList.<Statement>builder();
+
+        for (EquivalenceGraph graph : graphsAndContent.keySet()) {
+            Set<Id> indexKeys = graphsAndContent.get(graph).stream()
+                    .map(Identified::getId)
+                    .collect(Collectors.toSet());
+
+            // This is to ensure we have a mapping in the index from the graph ID to itself in case
+            // the content whose ID is the graph's canonical ID has failed to resolve
+            indexKeys.add(graph.getId());
+
+            indexKeys.stream()
+                    .map(indexKey -> index.insertStatement(
+                            indexKey.longValue(), graph.getId().longValue()
+                    ))
+                    .forEach(statementBuilder::add);
         }
-        session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
-                .setConsistencyLevel(writeConsistency));
+
+        return statementBuilder.build();
     }
 
-    private Statement dataRowUpdateFor(EquivalenceGraph graph, Content content) {
-        return update(EQUIVALENT_CONTENT_TABLE)
-                .where(eq(SET_ID_KEY, graph.getId().longValue()))
-                .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
-                .with(set(DATA_KEY, serialize(content)));
+    private List<BoundStatement> getDeleteStaleRows(ImmutableSet<EquivalenceGraph> createdGraphs,
+            Id updatedGraphId) {
+        return createdGraphs.stream()
+                    .flatMap(graph -> graph.getEquivalenceSet().stream())
+                    .map(elem -> rowDelete.bind()
+                            .setLong(SET_ID_BIND, updatedGraphId.longValue())
+                            .setLong(CONTENT_ID_BIND, elem.longValue()))
+                    .collect(Collectors.toList());
     }
 
     private ByteBuffer serialize(Content content) {
@@ -325,24 +407,6 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
         return buffer;
     }
-    
-    private void updateIndexRows(ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
-        List<Statement> updates = Lists.newArrayListWithExpectedSize(graphsAndContent.size());
-        for (Entry<EquivalenceGraph, Content> graphAndContent : graphsAndContent.entries()) {
-            EquivalenceGraph graph = graphAndContent.getKey();
-            Content content = graphAndContent.getValue();
-            updates.add(index.insertStatement(content.getId().longValue(),
-                    graph.getId().longValue()));
-        }
-        session.execute(batch(updates.toArray(new RegularStatement[updates.size()]))
-                .setConsistencyLevel(writeConsistency));
-    }
-
-    @Override
-    protected void updateInSet(EquivalenceGraph graph, Content content) {
-        session.execute(dataRowUpdateFor(graph, content).setConsistencyLevel(writeConsistency));
-    }
-
 
     private Content resolvedContentFromNonEquivalentContentStore(Id contentId) throws IOException {
         Resolved<Content> deerContent = Futures.get(
@@ -368,29 +432,53 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private void updateDataColumn(Long setId, Content content) {
-        Statement statement = update((EQUIVALENT_CONTENT_TABLE))
-                .where(eq(SET_ID_KEY, setId))
-                .and(eq(CONTENT_ID_KEY, content.getId().longValue()))
-                .with(set(DATA_KEY, serialize(content)));
-        session.executeAsync(statement);
+        session.executeAsync(dataRowUpdate.bind()
+                .setLong(SET_ID_BIND, setId)
+                .setLong(CONTENT_ID_BIND, content.getId().longValue())
+                .setBytes(DATA_BIND, serialize(content)));
     }
 
     @Override
     public ListenableFuture<Set<Content>> resolveEquivalentSet(Long equivalentSetId) {
         return Futures.transform(
-                session.executeAsync(
-                        select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY)
-                        .from(EQUIVALENT_CONTENT_TABLE)
-                        .where(eq(SET_ID_KEY, equivalentSetId)).setConsistencyLevel(readConsistency)
-                ),
+                session.executeAsync(equivSetSelect.bind(equivalentSetId)),
                 (ResultSet resultSet) -> {
                     ImmutableSet.Builder<Content> content = ImmutableSet.builder();
                     for (Row row : resultSet) {
-                        content.add(deserialize(row));
+                        Content deserialized = deserialize(row);
+                        if (containedInGraph(deserialized.getId(), row)) {
+                            content.add(deserialized);
+                        }
                     }
                     return content.build();
                 }
+        );
+    }
 
+    // This is sanity checking that the resolved row actually belongs to the set graph.
+    // It might not be in case of stale entries that were removed from the graph, but
+    // due to a bug or missed message the row did not get removed in this store.
+    // In that case the row will currently never get removed
+    private boolean containedInGraph(Id contentId, Row row) {
+        if (row.getBytes(GRAPH_KEY) == null) {
+            return true;
+        }
+        EquivalenceGraph graph = graphSerializer.deserialize(row.getBytes(GRAPH_KEY));
+        return graph.getEquivalenceSet().contains(contentId);
+    }
+
+    // This is effectively leaking implementation details to the abstract store which should not
+    // know them, but it is required in order to find potentially stale content and update it
+    @Override
+    protected ListenableFuture<Set<Content>> resolveEquivalentSetIncludingStaleContent(
+            Long equivalentSetId) {
+        return Futures.transform(
+                session.executeAsync(equivSetSelect.bind(equivalentSetId)),
+                (ResultSet resultSet) -> {
+                    return StreamSupport.stream(resultSet.spliterator(), false)
+                            .map(this::deserialize)
+                            .collect(ImmutableCollectors.toSet());
+                }
         );
     }
 }

@@ -1,15 +1,55 @@
 package org.atlasapi.query;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
-import com.metabroadcast.common.time.SystemClock;
+import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
+import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
+import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
+import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
+import static org.atlasapi.annotation.Annotation.BRAND_REFERENCE;
+import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
+import static org.atlasapi.annotation.Annotation.BROADCASTS;
+import static org.atlasapi.annotation.Annotation.CHANNEL;
+import static org.atlasapi.annotation.Annotation.CHANNELS;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
+import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS_SUMMARY;
+import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
+import static org.atlasapi.annotation.Annotation.CLIPS;
+import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
+import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
+import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.DESCRIPTION;
+import static org.atlasapi.annotation.Annotation.EVENT;
+import static org.atlasapi.annotation.Annotation.EVENT_DETAILS;
+import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
+import static org.atlasapi.annotation.Annotation.EXTENDED_ID;
+import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.ID;
+import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
+import static org.atlasapi.annotation.Annotation.IMAGES;
+import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
+import static org.atlasapi.annotation.Annotation.LOCATIONS;
+import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
+import static org.atlasapi.annotation.Annotation.META_MODEL;
+import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.PARENT;
+import static org.atlasapi.annotation.Annotation.PEOPLE;
+import static org.atlasapi.annotation.Annotation.PLATFORM;
+import static org.atlasapi.annotation.Annotation.REGIONS;
+import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
+import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
+import static org.atlasapi.annotation.Annotation.SERIES;
+import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
+import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
+import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
+import static org.atlasapi.annotation.Annotation.SUB_ITEM_SUMMARIES;
+import static org.atlasapi.annotation.Annotation.SUPPRESS_EPISODE_NUMBERS;
+import static org.atlasapi.annotation.Annotation.TAGS;
+import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
+import static org.atlasapi.annotation.Annotation.VARIATIONS;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -31,6 +71,7 @@ import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
+import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
@@ -38,15 +79,61 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
-import org.atlasapi.output.annotation.*;
-import org.atlasapi.output.writers.SeriesWriter;
-import org.atlasapi.output.writers.SubItemSummaryListWriter;
+import org.atlasapi.output.annotation.AvailableContentAnnotation;
+import org.atlasapi.output.annotation.AvailableContentDetailAnnotation;
+import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
+import org.atlasapi.output.annotation.BrandReferenceAnnotation;
+import org.atlasapi.output.annotation.BroadcastsAnnotation;
+import org.atlasapi.output.annotation.ChannelAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupAdvertisedChannelsAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupMembershipListWriter;
+import org.atlasapi.output.annotation.ChannelSummaryWriter;
+import org.atlasapi.output.annotation.ChannelVariationAnnotation;
+import org.atlasapi.output.annotation.ChannelsAnnotation;
+import org.atlasapi.output.annotation.ClipsAnnotation;
+import org.atlasapi.output.annotation.ContainerSummaryAnnotation;
+import org.atlasapi.output.annotation.ContentDescriptionAnnotation;
+import org.atlasapi.output.annotation.CurrentAndFutureBroadcastsAnnotation;
+import org.atlasapi.output.annotation.DescriptionAnnotation;
+import org.atlasapi.output.annotation.EndpointInfoAnnotation;
+import org.atlasapi.output.annotation.EventAnnotation;
+import org.atlasapi.output.annotation.EventDetailsAnnotation;
+import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
+import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
+import org.atlasapi.output.annotation.FirstBroadcastAnnotation;
+import org.atlasapi.output.annotation.IdentificationAnnotation;
+import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
+import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
+import org.atlasapi.output.annotation.LegacyChannelAnnotation;
+import org.atlasapi.output.annotation.LocationsAnnotation;
+import org.atlasapi.output.annotation.ModelInfoAnnotation;
+import org.atlasapi.output.annotation.NextBroadcastAnnotation;
+import org.atlasapi.output.annotation.NullWriter;
+import org.atlasapi.output.annotation.ParentChannelAnnotation;
+import org.atlasapi.output.annotation.PeopleAnnotation;
+import org.atlasapi.output.annotation.PlatformAnnontation;
+import org.atlasapi.output.annotation.RegionsAnnotation;
+import org.atlasapi.output.annotation.RelatedLinksAnnotation;
+import org.atlasapi.output.annotation.SegmentEventsAnnotation;
+import org.atlasapi.output.annotation.SeriesAnnotation;
+import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
+import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
+import org.atlasapi.output.annotation.SubItemAnnotation;
+import org.atlasapi.output.annotation.SubItemSummariesAnnotations;
+import org.atlasapi.output.annotation.TopicsAnnotation;
+import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
+import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.ItemDetailWriter;
 import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.output.writers.SeriesSummaryWriter;
+import org.atlasapi.output.writers.SeriesWriter;
+import org.atlasapi.output.writers.SubItemSummaryListWriter;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.ImagesAnnotation;
@@ -75,6 +162,7 @@ import org.atlasapi.query.v4.content.ContentController;
 import org.atlasapi.query.v4.event.EventController;
 import org.atlasapi.query.v4.event.EventListWriter;
 import org.atlasapi.query.v4.event.EventQueryResultWriter;
+import org.atlasapi.query.v4.event.PersonListWriter;
 import org.atlasapi.query.v4.meta.LinkCreator;
 import org.atlasapi.query.v4.meta.MetaApiLinkCreator;
 import org.atlasapi.query.v4.meta.endpoint.EndpointController;
@@ -83,6 +171,9 @@ import org.atlasapi.query.v4.meta.endpoint.EndpointInfoQueryResultWriter;
 import org.atlasapi.query.v4.meta.model.ModelController;
 import org.atlasapi.query.v4.meta.model.ModelInfoListWriter;
 import org.atlasapi.query.v4.meta.model.ModelInfoQueryResultWriter;
+import org.atlasapi.query.v4.organisation.OrganisationController;
+import org.atlasapi.query.v4.organisation.OrganisationListWriter;
+import org.atlasapi.query.v4.organisation.OrganisationQueryResultWriter;
 import org.atlasapi.query.v4.schedule.ContentListWriter;
 import org.atlasapi.query.v4.schedule.LegacyChannelListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleController;
@@ -109,54 +200,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import javax.servlet.http.HttpServletRequest;
-
-import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
-import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
-import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
-import static org.atlasapi.annotation.Annotation.BRAND_REFERENCE;
-import static org.atlasapi.annotation.Annotation.BRAND_SUMMARY;
-import static org.atlasapi.annotation.Annotation.BROADCASTS;
-import static org.atlasapi.annotation.Annotation.CHANNEL;
-import static org.atlasapi.annotation.Annotation.CHANNELS;
-import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
-import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
-import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
-import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS_SUMMARY;
-import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
-import static org.atlasapi.annotation.Annotation.CLIPS;
-import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
-import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
-import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.DESCRIPTION;
-import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
-import static org.atlasapi.annotation.Annotation.EXTENDED_ID;
-import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.ID;
-import static org.atlasapi.annotation.Annotation.ID_SUMMARY;
-import static org.atlasapi.annotation.Annotation.IMAGES;
-import static org.atlasapi.annotation.Annotation.KEY_PHRASES;
-import static org.atlasapi.annotation.Annotation.LOCATIONS;
-import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
-import static org.atlasapi.annotation.Annotation.META_MODEL;
-import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.PARENT;
-import static org.atlasapi.annotation.Annotation.PEOPLE;
-import static org.atlasapi.annotation.Annotation.PLATFORM;
-import static org.atlasapi.annotation.Annotation.REGIONS;
-import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
-import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
-import static org.atlasapi.annotation.Annotation.SERIES;
-import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
-import static org.atlasapi.annotation.Annotation.SERIES_SUMMARY;
-import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
-import static org.atlasapi.annotation.Annotation.SUB_ITEM_SUMMARIES;
-import static org.atlasapi.annotation.Annotation.TAGS;
-import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
-import static org.atlasapi.annotation.Annotation.VARIATIONS;
-import static org.atlasapi.annotation.Annotation.EVENT;
-import static org.atlasapi.annotation.Annotation.EVENT_DETAILS;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.time.SystemClock;
 
 @Configuration
 @Import({ QueryModule.class, LicenseModule.class })
@@ -223,7 +276,7 @@ public class QueryWebModule {
     }
 
     @Bean SelectionBuilder selectionBuilder() {
-        return Selection.builder().withDefaultLimit(50).withMaxLimit(100);
+        return Selection.builder().withDefaultLimit(50).withMaxLimit(250);
     }
 
     @Bean EntityWriter<HttpServletRequest> requestWriter() {
@@ -285,6 +338,14 @@ public class QueryWebModule {
         return new EventController(eventQueryParser(),
                 queryModule.eventQueryExecutor(),
                 new EventQueryResultWriter(eventListWriter(),licenseWriter,requestWriter()));
+    }
+
+
+    @Bean OrganisationController organisationController() {
+        return new OrganisationController(organisationQueryParser(),
+                queryModule.organisationQueryExecutor(),
+                new OrganisationQueryResultWriter(organisationListWriter(), licenseWriter, requestWriter())
+        );
     }
 
     @Bean LinkCreator linkCreator() {
@@ -546,6 +607,18 @@ public class QueryWebModule {
         );
     }
 
+    private StandardQueryParser<Organisation> organisationQueryParser() {
+        QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
+                new IndexAnnotationsExtractor(organisationAnnotationIndex()), selectionBuilder());
+
+        return new StandardQueryParser<Organisation>(Resource.ORGANISATION,
+                new QueryAttributeParser(ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec()))
+                )),
+                idCodec(), contextParser
+        );
+    }
+
     @Bean PopularTopicController popularTopicController() {
         return new PopularTopicController(topicResolver,
                 popularTopicIndex,
@@ -584,6 +657,10 @@ public class QueryWebModule {
 
     @Bean ResourceAnnotationIndex endpointInfoAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.ENDPOINT_INFO, Annotation.all()).build();
+    }
+
+    @Bean ResourceAnnotationIndex organisationAnnotationIndex() {
+        return ResourceAnnotationIndex.builder(Resource.ORGANISATION, Annotation.all()).build();
     }
 
     @Bean EntityListWriter<Content> contentListWriter() {
@@ -712,6 +789,10 @@ public class QueryWebModule {
                         ,
                         commonImplied
                 )
+                .register(
+                        SUPPRESS_EPISODE_NUMBERS,
+                        NullWriter.create(Content.class)
+                )
                 .build();
     }
 
@@ -738,6 +819,12 @@ public class QueryWebModule {
                 .register(EVENT, new EventAnnotation(new ItemRefWriter(idCodec(), "content")))
                 .register(EVENT_DETAILS, new EventDetailsAnnotation(topicAnnotationRegistry()))
                 .build());
+    }
+
+
+    @Bean
+    protected EntityListWriter<Organisation> organisationListWriter() {
+        return new OrganisationListWriter(new PersonListWriter());
     }
 
     private AnnotationRegistry<Topic> topicAnnotationRegistry(){

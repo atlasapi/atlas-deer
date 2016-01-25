@@ -1,27 +1,29 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableSet;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.atlasapi.content.Content;
-import org.atlasapi.persistence.content.listing.ContentLister;
-import org.atlasapi.persistence.content.listing.ContentListingCriteria;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableSet;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ContentListerResourceListerAdapterTest {
 
     @Mock
-    private LegacyMongoContentLister contentLister;
+    private LegacyContentLister contentLister;
 
     @Mock
     private LegacyContentTransformer transformer;
@@ -45,7 +47,8 @@ public class ContentListerResourceListerAdapterTest {
         when(transformer.createDescribed(legacyContent3)).thenReturn(content3);
 
         when(
-                contentLister.listContent(any(ContentListingCriteria.class)
+                contentLister.listContent(
+                        anyListOf(Publisher.class), any(ContentListingProgress.class)
                 )
         ).thenReturn(ImmutableSet.of(legacyContent1, legacyContent2, legacyContent3).iterator());
 

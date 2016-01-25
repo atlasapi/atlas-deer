@@ -175,7 +175,7 @@ public class Channel extends Identified implements Sourced {
         return endDate;
     }
 
-    @FieldName("advertise_from")
+    @FieldName("advertised_from")
     public DateTime getAdvertiseFrom() {
         return advertiseFrom;
     }

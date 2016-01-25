@@ -66,7 +66,7 @@ CREATE TABLE equivalent_content (
   set_id bigint,
   content_id bigint,
   data blob,
-  graph blob,
+  graph blob static,
   PRIMARY KEY (set_id, content_id)
 ) WITH
   bloom_filter_fp_chance=0.010000 AND

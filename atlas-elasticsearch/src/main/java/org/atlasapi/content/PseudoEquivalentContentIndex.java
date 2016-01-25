@@ -1,39 +1,34 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ImmutableCollectors;
-import org.atlasapi.util.SecondaryIndex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PseudoEquivalentContentIndex implements ContentIndex {
 
     private static final Logger LOG = LoggerFactory.getLogger(PseudoEquivalentContentIndex.class);
 
     private final EsUnequivalentContentIndex delegate;
-    private final SecondaryIndex equivIdIndex;
 
-    public PseudoEquivalentContentIndex(EsUnequivalentContentIndex delegate,
-            SecondaryIndex equivIdIndex) {
+    public PseudoEquivalentContentIndex(EsUnequivalentContentIndex delegate) {
         this.delegate = checkNotNull(delegate);
-        this.equivIdIndex = checkNotNull(equivIdIndex);
     }
 
     @Override
@@ -44,18 +39,16 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
 
             Selection selectionForDelegate = getSelectionForDelegate(publishers, selection);
 
-            IndexQueryResult result = Futures.get(
-                    delegate.query(query, publishers, selectionForDelegate, searchParam),
+            DelegateIndexQueryResult result = Futures.get(
+                    delegate.delegateQuery(query, publishers, selectionForDelegate, searchParam),
                     Exception.class
             );
 
-            Set<Id> canonicalIds = result.getCanonicalIds();
-            ImmutableList<Id> paginatedCanonicalIds = paginateIds(canonicalIds, selection);
-
-            ImmutableList<Id> ids = resolveCanonicalIds(paginatedCanonicalIds, result);
+            ImmutableList<Id> dedupedIds = dedupeIds(result, publishers);
+            ImmutableList<Id> paginatedIds = paginateIds(dedupedIds, selection);
 
             return Futures.immediateFuture(
-                    IndexQueryResult.withIds(ids, result.getTotalCount())
+                    IndexQueryResult.withIds(paginatedIds, result.getTotalCount())
             );
 
         } catch (Exception e) {
@@ -83,54 +76,67 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
 
         return Selection.limitedTo(delegateLimit);
     }
+    
+    private ImmutableList<Id> dedupeIds(DelegateIndexQueryResult result,
+            Iterable<Publisher> publishers) {
+        LinkedHashMap<Id, DelegateIndexQueryResult.Result> dedupedEntries = new LinkedHashMap<>();
+
+        for (DelegateIndexQueryResult.Result entry : result.getResults()) {
+            addToDedupedResults(entry, dedupedEntries, publishers);
+        }
+
+        return dedupedEntries.entrySet().stream()
+                .map(entry -> entry.getValue().getId())
+                .collect(ImmutableCollectors.toList());
+    }
+
+    private void addToDedupedResults(DelegateIndexQueryResult.Result entry,
+            LinkedHashMap<Id, DelegateIndexQueryResult.Result> dedupedEntries,
+            Iterable<Publisher> publishers) {
+        Id canonicalId = entry.getCanonicalId();
+
+        if (!dedupedEntries.containsKey(canonicalId)) {
+            dedupedEntries.put(canonicalId, entry);
+            return;
+        }
+
+        DelegateIndexQueryResult.Result existingEntry = dedupedEntries.get(canonicalId);
+        if (hasHigherPrecedence(entry, existingEntry, publishers)) {
+            // Remove before put to ensure we update the ordering for this canonical ID
+            // to the position of this entry
+            dedupedEntries.remove(canonicalId);
+            dedupedEntries.put(canonicalId, entry);
+        }
+    }
+
+    private boolean hasHigherPrecedence(DelegateIndexQueryResult.Result currentEntry,
+            DelegateIndexQueryResult.Result existingEntry, Iterable<Publisher> publishers) {
+        return hasHigherPrecedence(
+                currentEntry.getPublisher(), existingEntry.getPublisher(), publishers
+        );
+    }
+
+    private boolean hasHigherPrecedence(Publisher currentPublisher, Publisher existingPublisher,
+            Iterable<Publisher> publisherPrecedence) {
+        for (Publisher publisher : publisherPrecedence) {
+            if (publisher == existingPublisher) {
+                return false;
+            }
+            if (publisher == currentPublisher) {
+                return true;
+            }
+        }
+
+        // This should never happen as the delegate uses the same publishers for the query
+        LOG.error("Delegate content index returned publisher {} that was not asked for."
+                + " Requested publishers: {}", currentPublisher, publisherPrecedence);
+        return false;
+    }
 
     private ImmutableList<Id> paginateIds(Iterable<Id> ids, Selection selection) {
          return StreamSupport.stream(ids.spliterator(), false)
                 .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
                 .limit(selection.limitOrDefaultValue(100))
                 .collect(ImmutableCollectors.toList());
-    }
-
-    // This is to deal with a bug where the canonical ID in the index is wrong
-    // To fix it we are trying to resolve the canonical ID from the secondary index
-    // using the IDs in the index canonical ID. This still returns the index canonical
-    // ID if it fails to resolve it from the secondary index
-    private ImmutableList<Id> resolveCanonicalIds(Iterable<Id> indexCanonicalIds,
-            IndexQueryResult queryResult) {
-        return StreamSupport.stream(indexCanonicalIds.spliterator(), false)
-                .map(indexCanonicalId -> resolveCanonicalIdFromIndexCanonicalId(
-                        indexCanonicalId, queryResult
-                ))
-                .collect(ImmutableCollectors.toList());
-    }
-
-    private Id resolveCanonicalIdFromIndexCanonicalId(Id indexCanonicalId,
-            IndexQueryResult queryResult) {
-
-        for (Id id : queryResult.getIds(indexCanonicalId)) {
-            Optional<Id> resolvedCanonicalId = resolveCanonicalId(id);
-
-            if(resolvedCanonicalId.isPresent()) {
-                return resolvedCanonicalId.get();
-            }
-        }
-
-        LOG.warn("Failed to resolve canonical ID for index canonical ID {}", indexCanonicalId);
-        return indexCanonicalId;
-    }
-
-    private Optional<Id> resolveCanonicalId(Id id) {
-        try {
-            ListenableFuture<ImmutableMap<Long, Long>> result =
-                    equivIdIndex.lookup(ImmutableList.of(id.longValue()));
-            ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
-            if(idToCanonical.get(Long.valueOf(id.longValue())) != null) {
-                return Optional.of(Id.valueOf(idToCanonical.get(id.longValue())));
-            }
-            LOG.warn("Found no canonical ID for {} using {}", id, id);
-        } catch (IOException e) {
-            LOG.warn("Found no canonical ID for {} using {}", id, id, e);
-        }
-        return Optional.empty();
     }
 }

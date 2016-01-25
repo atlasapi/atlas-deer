@@ -1,11 +1,5 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -18,16 +12,23 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.atlasapi.util.SecondaryIndex;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.client.Client;
-import org.junit.Before;
-import org.junit.Test;
+
+import com.metabroadcast.common.query.Selection;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.client.Client;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class PseudoEquivalentContentIndexIT {
 
@@ -46,7 +47,7 @@ public class PseudoEquivalentContentIndexIT {
                 60000
         );
         delegate.startAsync().awaitRunning();
-        contentIndex = new PseudoEquivalentContentIndex(delegate, equivIndex);
+        contentIndex = new PseudoEquivalentContentIndex(delegate);
     }
 
     @Test

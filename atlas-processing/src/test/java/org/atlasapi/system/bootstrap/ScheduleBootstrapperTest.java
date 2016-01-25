@@ -1,35 +1,44 @@
 package org.atlasapi.system.bootstrap;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import org.atlasapi.channel.Channel;
+import org.atlasapi.media.entity.Publisher;
+import org.joda.time.Interval;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.metabroadcast.common.scheduling.UpdateProgress;
-import org.atlasapi.channel.Channel;
-import org.atlasapi.media.entity.Publisher;
-import org.joda.time.Interval;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScheduleBootstrapperTest {
 
+    private @Mock ListeningExecutorService executorService;
+    private @Mock ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
+    private @Mock ScheduleBootstrapWithContentMigrationTaskFactory bootstrapWithMigrationTaskFactory;
+    private @Mock EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory equivTaskFactory;
 
-    @Mock
-    ListeningExecutorService executorService;
-    @Mock
-    ChannelIntervalScheduleBootstrapTaskFactory taskFactory;
+    private ScheduleBootstrapper objectUnderTest;
 
+    @Before
+    public void setUp() throws Exception {
+        objectUnderTest = new ScheduleBootstrapper(
+                executorService,
+                taskFactory,
+                bootstrapWithMigrationTaskFactory,
+                equivTaskFactory
+        );
+    }
 
-    @InjectMocks
-    ScheduleBootstrapper objectUnderTest;
     @Test
     public void testBootstrapSchedules() throws Exception {
         Channel channel1 = mock(Channel.class);
@@ -63,7 +72,8 @@ public class ScheduleBootstrapperTest {
                         channel3
                 ),
                 interval,
-                source
+                source,
+                false
         );
 
         assertThat(objectUnderTest.getProgress().getProcessed(), is(3));
