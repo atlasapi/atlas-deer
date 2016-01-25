@@ -26,6 +26,7 @@ public class User implements Identifiable {
     private final Role role;
     private final boolean profileComplete;
     private final Optional<DateTime> licenseAccepted;
+    private final boolean profileDeactivated;
     
     private final Set<Id> applicationIds;
     private final Set<Publisher> sources;
@@ -33,7 +34,7 @@ public class User implements Identifiable {
     private User(Id id, UserRef userRef, String screenName, String fullName,
             String company, String email, String website, String profileImage, Role role,
             Set<Id> applicationIds, Set<Publisher> publishers, boolean profileComplete,
-            Optional<DateTime> licenseAccepted) {
+            Optional<DateTime> licenseAccepted, boolean profileDeactivated) {
         this.id = id;
         this.userRef = userRef;
         this.screenName = screenName;
@@ -47,6 +48,7 @@ public class User implements Identifiable {
         this.sources = ImmutableSet.copyOf(publishers);
         this.profileComplete = profileComplete;
         this.licenseAccepted = licenseAccepted;
+        this.profileDeactivated = profileDeactivated;
     }
 
     public UserRef getUserRef() {
@@ -117,6 +119,10 @@ public class User implements Identifiable {
         return this.role == role;
     }
 
+    public boolean isProfileDeactivated() {
+        return profileDeactivated;
+    }
+
     public User copyWithAdditionalApplication(Application application) {
         Set<Id> applicationIds = ImmutableSet.<Id>builder().add(application.getId()).addAll(this.getApplicationIds()).build();
         return this.copy().withApplicationIds(applicationIds).build();
@@ -136,7 +142,8 @@ public class User implements Identifiable {
                     .withSources(this.getSources())
                     .withRole(this.getRole())
                     .withProfileComplete(this.isProfileComplete())
-                    .withLicenseAccepted(this.getLicenseAccepted().orNull());
+                    .withLicenseAccepted(this.getLicenseAccepted().orNull())
+                    .withProfileDeactivated(this.profileDeactivated);
     }
     
     public static Builder builder() {
@@ -157,6 +164,7 @@ public class User implements Identifiable {
         private Set<Publisher> sources = ImmutableSet.of();
         private boolean profileComplete = false;
         private Optional<DateTime> licenseAccepted = Optional.absent();
+        private boolean profileDeactivated = false;
         
         public Builder withId(Id id) {
             this.id = id;
@@ -222,12 +230,17 @@ public class User implements Identifiable {
             this.licenseAccepted = Optional.fromNullable(licenseAccepted);
             return this;
         }
+
+        public Builder withProfileDeactivated(boolean profileDeactivated) {
+            this.profileDeactivated = profileDeactivated;
+            return this;
+        }
         
         public User build() {
             Preconditions.checkNotNull(id);
             return new User(id, userRef, screenName, fullName,
                     company, email, website, profileImage, role,
-                    applicationIds, sources, profileComplete, licenseAccepted);
+                    applicationIds, sources, profileComplete, licenseAccepted, profileDeactivated);
         }
     }
 }

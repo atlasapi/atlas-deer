@@ -53,7 +53,6 @@ public class UsersController {
     private final NumberToShortStringCodec idCodec;
     private final UserFetcher userFetcher;
     private final UserStore userStore;
-    private final MongoDBCredentialsStore credentialsStore;
     private final Clock clock;
     
     public UsersController(UserAwareQueryParser<User> requestParser,
@@ -63,7 +62,6 @@ public class UsersController {
             NumberToShortStringCodec idCodec,
             UserFetcher userFetcher,
             UserStore userStore,
-            CredentialsStore credentialsStore,
             Clock clock) {
         this.requestParser = requestParser;
         this.queryExecutor = queryExecutor;
@@ -73,7 +71,6 @@ public class UsersController {
         this.userFetcher = userFetcher;
         this.userStore = userStore;
         this.clock = clock;
-        this.credentialsStore = (MongoDBCredentialsStore) credentialsStore;
     }
 
     @RequestMapping({ "/4/users/{uid}.*", "/4/users.*" })
@@ -162,18 +159,22 @@ public class UsersController {
             @PathVariable String uid) throws IOException {
         ResponseWriter writer = null;
         try {
+            writer = writerResolver.writerFor(request, response);
+            Id userId = Id.valueOf(idCodec.decode(uid));
             User editingUser = userFetcher.userFor(request).get();
 
             if (!editingUser.is(Role.ADMIN)) {
                 throw new ResourceForbiddenException();
             }
-
-            Id userId = Id.valueOf(idCodec.decode(uid));
-            Optional<User> user = userStore.userForId(userId);
-            if (user.isPresent()) {
-                UserRef userRef = user.get().getUserRef();
-                Credentials credentials = credentialsStore.find(userRef).requireValue();
-                credentialsStore.expired(credentials.authToken());
+            Optional<User> existing = userStore.userForId(userId);
+            if (existing.isPresent()) {
+                if (!editingUser.is(Role.ADMIN)) {
+                    throw new InsufficientPrivilegeException("You do not have permission to deactivate user");
+                }
+                User deactivated = existing.get().copy().withProfileDeactivated(true).build();
+                userStore.store(deactivated);
+                UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(deactivated, UserAwareQueryContext.standard(request));
+                resultWriter.write(queryResult, writer);
             } else {
                 throw new NotFoundException(userId);
             }
@@ -202,7 +203,6 @@ public class UsersController {
                 .build();
                 
     }
-    
     
     private <T> T deserialize(Reader input, Class<T> cls) throws IOException, ReadException {
         return reader.read(new BufferedReader(input), cls);
