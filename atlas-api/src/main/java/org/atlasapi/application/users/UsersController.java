@@ -153,7 +153,7 @@ public class UsersController {
         }
     }
 
-    @RequestMapping(value = "/4/users/deactivate/{uid}.*", method = RequestMethod.POST)
+    @RequestMapping(value = "/4/users/{uid}/deactivate.*", method = RequestMethod.POST)
     public void deactivateUser(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String uid) throws IOException {
