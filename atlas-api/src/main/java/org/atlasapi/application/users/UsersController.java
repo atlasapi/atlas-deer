@@ -27,13 +27,19 @@ import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.google.common.base.Optional;
+import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.social.auth.credentials.Credentials;
+import com.metabroadcast.common.social.auth.credentials.CredentialsStore;
+import com.metabroadcast.common.social.auth.credentials.MongoDBCredentialsStore;
+import com.metabroadcast.common.social.model.UserRef;
 import com.metabroadcast.common.time.Clock;
 
 @Controller
@@ -146,6 +152,38 @@ public class UsersController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
+
+    @RequestMapping(value = "/4/users/{uid}.*", method = RequestMethod.DELETE)
+    public void deactivateUser(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String uid) throws IOException {
+        ResponseWriter writer = null;
+        try {
+            writer = writerResolver.writerFor(request, response);
+            Id userId = Id.valueOf(idCodec.decode(uid));
+            User editingUser = userFetcher.userFor(request).get();
+
+            if (!editingUser.is(Role.ADMIN)) {
+                throw new ResourceForbiddenException();
+            }
+            Optional<User> existing = userStore.userForId(userId);
+            if (existing.isPresent()) {
+                if (!editingUser.is(Role.ADMIN)) {
+                    throw new InsufficientPrivilegeException("You do not have permission to deactivate user");
+                }
+                User deactivated = existing.get().copy().withProfileDeactivated(true).build();
+                userStore.store(deactivated);
+                UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(deactivated, UserAwareQueryContext.standard(request));
+                resultWriter.write(queryResult, writer);
+            } else {
+                throw new NotFoundException(userId);
+            }
+        } catch (Exception e) {
+            log.error("Request exception " + request.getRequestURI(), e);
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, writer, request, response);
+        }
+    }
     
     private boolean isUserRoleChanged(User posted, User existing) {
         return !posted.getRole().equals(existing.getRole());
@@ -165,7 +203,6 @@ public class UsersController {
                 .build();
                 
     }
-    
     
     private <T> T deserialize(Reader input, Class<T> cls) throws IOException, ReadException {
         return reader.read(new BufferedReader(input), cls);
