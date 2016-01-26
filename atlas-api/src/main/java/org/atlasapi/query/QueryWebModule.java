@@ -31,6 +31,7 @@ import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.META_ENDPOINT;
 import static org.atlasapi.annotation.Annotation.META_MODEL;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.NON_MERGED;
 import static org.atlasapi.annotation.Annotation.PARENT;
 import static org.atlasapi.annotation.Annotation.PEOPLE;
 import static org.atlasapi.annotation.Annotation.PLATFORM;
@@ -793,6 +794,7 @@ public class QueryWebModule {
                         SUPPRESS_EPISODE_NUMBERS,
                         NullWriter.create(Content.class)
                 )
+                .register(NON_MERGED, NullWriter.create(Content.class))
                 .build();
     }
 
