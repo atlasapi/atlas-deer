@@ -1,17 +1,5 @@
 package org.atlasapi.equivalence;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -31,14 +19,12 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.GroupLock;
-import org.hamcrest.FeatureMatcher;
-import org.hamcrest.Matcher;
-import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -56,11 +42,27 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.DateTimeZones;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
+import org.joda.time.DateTime;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class AbstractEquivalenceGraphStoreTest {
 
@@ -434,6 +436,39 @@ public class AbstractEquivalenceGraphStoreTest {
         assertTrue(paItemEquivalenceGraph.isPresent());
     }
 
+    @Test
+    public void testBreakingEquivalenceCreatesNewGraph() throws Exception {
+        /*    BBC ----> PA
+         *     |        ^
+         *     |   ____/
+         *     V _/
+         *    C4  ----> ITV
+         */
+        makeEquivalent(bbcItem, paItem, c4Item);
+        makeEquivalent(c4Item, paItem, itvItem);
+
+        Optional<EquivalenceGraphUpdate> updateOptional = makeEquivalent(
+                c4Item,
+                ImmutableSet.of(Publisher.C4, Publisher.ITV),
+                paItem
+        );
+
+        assertThat(updateOptional.isPresent(), is(true));
+
+        EquivalenceGraphUpdate update = updateOptional.get();
+
+        assertThat(update.getUpdated().getId(), is(bbcItem.getId()));
+        assertThat(update.getUpdated().getEquivalenceSet(),
+                containsInAnyOrder(bbcItem.getId(), paItem.getId(), c4Item.getId()));
+
+        assertThat(update.getCreated().size(), is(1));
+        EquivalenceGraph createdGraph = Iterables.getOnlyElement(update.getCreated());
+        assertThat(createdGraph.getId(), is(itvItem.getId()));
+        assertThat(createdGraph.getEquivalenceSet(), containsInAnyOrder(itvItem.getId()));
+
+        assertThat(update.getDeleted().isEmpty(), is(true));
+    }
+
     private void assertOnlyTransitivelyEquivalent(Item left, Item right) {
         EquivalenceGraph lg = graphOf(left);
         Adjacents la = lg.getAdjacents(left.getId());
@@ -638,13 +673,12 @@ public class AbstractEquivalenceGraphStoreTest {
         }
 
         @Override
-        protected void cleanGraphAndIndex(Id subjectId) {
-            store.remove(subjectId);
-        }
-
-        @Override
         protected GroupLock<Id> lock() {
             return lock;
+        }
+
+        protected void cleanGraphAndIndex(Id subjectId) {
+            store.remove(subjectId);
         }
     }
 }

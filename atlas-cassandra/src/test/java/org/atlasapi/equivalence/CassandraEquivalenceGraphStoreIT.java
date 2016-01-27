@@ -1,10 +1,5 @@
 package org.atlasapi.equivalence;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.Set;
 
@@ -16,27 +11,37 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraInit;
+
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.DateTimeZones;
+
+import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Session;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.DateTimeZones;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import static org.atlasapi.equivalence.CassandraEquivalenceGraphStore.EQUIVALENCE_GRAPH_INDEX_TABLE;
+import static org.atlasapi.equivalence.CassandraEquivalenceGraphStore.GRAPH_ID_KEY;
+import static org.atlasapi.equivalence.CassandraEquivalenceGraphStore.RESOURCE_ID_KEY;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class CassandraEquivalenceGraphStoreIT {
 
@@ -149,5 +154,25 @@ public class CassandraEquivalenceGraphStoreIT {
         assertTrue(graph.getAdjacents(Id.valueOf(1)).getEfferent().contains(equiv));
         assertTrue(graph.getAdjacents(Id.valueOf(2)).getAfferent().contains(subject));
     }
-    
+
+    @Test
+    public void testDoNotResolveGraphsFromStaleIndexEntries() throws Exception {
+        store.updateEquivalences(
+                bbcItem.toRef(), ImmutableSet.of(paItem.toRef()), ImmutableSet.of(Publisher.PA)
+        );
+
+        // Add a stale entry to the index, i.e. an entry that points to a graph that does not
+        // contain the given resource ID
+        session.execute(
+                QueryBuilder.insertInto(EQUIVALENCE_GRAPH_INDEX_TABLE)
+                        .value(RESOURCE_ID_KEY, itvItem.getId().longValue())
+                        .value(GRAPH_ID_KEY, bbcItem.getId().longValue())
+        );
+
+        OptionalMap<Id, EquivalenceGraph> optionalMap = store.resolveIds(
+                ImmutableList.of(itvItem.getId())
+        ).get();
+
+        assertThat(optionalMap.isEmpty(), is(true));
+    }
 }
