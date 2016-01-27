@@ -1,16 +1,10 @@
 package org.atlasapi.equivalence;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
-
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -22,9 +16,13 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.GroupLock;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.MoreSets;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.DateTimeZones;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -42,20 +40,19 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.MoreSets;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.DateTimeZones;
-import com.metabroadcast.common.time.Timestamp;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
 
 public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalenceGraphStore.class);
     private static final int TIMEOUT = 1;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
-    
-    private static final Pattern MISSING_ID_FROM_MAP = Pattern.compile("Key '([0-9]*)' not present in map");
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
     
@@ -96,15 +93,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         } catch (StoreException e) {
             Throwables.propagateIfPossible(e, WriteException.class);
             throw new WriteException(e);
-        } catch (CorruptEquivalenceGraphIndexException e) {
-            cleanGraphAndIndex(e.getSubjectId());
-            /*
-             TODO: the proper fix for this is making the lock reentrant, however that also breaks
-                   other places where the lock is used. This is a workaround to prevent deadlocks
-                   when there's an exception.
-             */
-            unlock(subjectAndAdjacents, transitiveSetsIds);
-            return updateEquivalences(subject, assertedAdjacents, sources);
         } finally {
             unlock(subjectAndAdjacents, transitiveSetsIds);
         }
@@ -133,8 +121,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     protected abstract void doStore(ImmutableSet<EquivalenceGraph> graphs);
-
-    protected abstract void cleanGraphAndIndex(Id subjectId);
 
     protected abstract GroupLock<Id> lock();
 
@@ -178,15 +164,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject, 
-            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws StoreException, CorruptEquivalenceGraphIndexException {
+            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws StoreException {
 
         Optional<EquivalenceGraph> optionalSubjGraph = existingGraph(subject);
         EquivalenceGraph subjGraph = optionalSubjGraph.or(EquivalenceGraph.valueOf(subject));
         Adjacents subAdjs = subjGraph.getAdjacents(subject);
-        
-        if(subAdjs == null) {
-            throw new CorruptEquivalenceGraphIndexException(subject.getId());
-        }
 
         OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraphs = existingGraphMaps(
                 assertedAdjacents);
@@ -222,13 +204,20 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     private EquivalenceGraphUpdate computeUpdate(ResourceRef subject,
-            Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs, Map<Id, Adjacents> updatedAdjacents) throws CorruptEquivalenceGraphIndexException {
+            Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs,
+            Map<Id, Adjacents> updatedAdjacents)  {
         Map<Id, EquivalenceGraph> updatedGraphs = computeUpdatedGraphs(updatedAdjacents);
         EquivalenceGraph updatedGraph = graphFor(subject, updatedGraphs);
-        return new EquivalenceGraphUpdate(updatedGraph,
-            Collections2.filter(updatedGraphs.values(), Predicates.not(Predicates.equalTo(updatedGraph))),
-            Iterables.filter(Iterables.transform(assertedAdjacentGraphs.values(), Identifiables.toId()),
-                    Predicates.not(Predicates.in(updatedGraphs.keySet())))
+        return new EquivalenceGraphUpdate(
+                updatedGraph,
+                Collections2.filter(
+                        updatedGraphs.values(),
+                        Predicates.not(Predicates.equalTo(updatedGraph))
+                ),
+                Iterables.filter(
+                        Iterables.transform(assertedAdjacentGraphs.values(), Identifiables.toId()),
+                        Predicates.not(Predicates.in(updatedGraphs.keySet()))
+                )
         );
     }
 
@@ -241,7 +230,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         throw new IllegalStateException("Couldn't find updated graph for " + subject);
     }
 
-    private Map<Id, EquivalenceGraph> computeUpdatedGraphs(Map<Id, Adjacents> updatedAdjacents) throws CorruptEquivalenceGraphIndexException {
+    private Map<Id, EquivalenceGraph> computeUpdatedGraphs(Map<Id, Adjacents> updatedAdjacents)  {
         Function<Identifiable, Adjacents> toAdjs =
                 Functions.compose(Functions.forMap(updatedAdjacents), Identifiables.toId());
         Set<Id> seen = Sets.newHashSetWithExpectedSize(updatedAdjacents.size());
@@ -257,7 +246,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return updated;
     }
 
-    private Set<Adjacents> transitiveSet(Adjacents adj, Function<Identifiable, Adjacents> toAdjs) throws CorruptEquivalenceGraphIndexException {
+    private Set<Adjacents> transitiveSet(Adjacents adj, Function<Identifiable, Adjacents> toAdjs) {
         Set<Adjacents> set = Sets.newHashSet();
         Predicate<Adjacents> notSeen = Predicates.not(Predicates.in(set));
 
@@ -266,15 +255,10 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         while(!work.isEmpty()) {
             Adjacents curr = work.poll();
             set.add(curr);
-            try {
-                work.addAll(Collections2.filter(Collections2.transform(curr.getAdjacent(), toAdjs),notSeen));
-            } catch (IllegalArgumentException iae) {
-                Matcher matcher = MISSING_ID_FROM_MAP.matcher(iae.getMessage());
-                if (matcher.find()) {
-                    throw new CorruptEquivalenceGraphIndexException(Id.valueOf(matcher.group(1)));
-                }
-                throw iae;
-            }
+            work.addAll(Collections2.filter(
+                    Collections2.transform(curr.getAdjacent(), toAdjs),
+                    notSeen
+            ));
         }
         return set;
     }
@@ -348,8 +332,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     private Map<ResourceRef, EquivalenceGraph> resolveRefs(Set<ResourceRef> adjacents,
-            OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraph)
-            throws WriteException {
+            OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraph) {
         Map<ResourceRef, EquivalenceGraph> graphs = Maps.newHashMapWithExpectedSize(adjacents.size());
         for (ResourceRef adj : adjacents) {
             graphs.put(adj, adjacentsExistingGraph.get(adj.getId())

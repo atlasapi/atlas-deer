@@ -1,13 +1,5 @@
 package org.atlasapi.equivalence;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.delete;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +12,10 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
 import org.atlasapi.util.GroupLock;
 import org.atlasapi.util.ImmutableCollectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.queue.MessageSender;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -31,32 +25,37 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.queue.MessageSender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGraphStore {
 
-    public static final Function<List<Row>, List<Row>> filterNulls = (Function<List<Row>, List<Row>>) input -> input
-            .stream()
-            .filter(Objects::nonNull)
-            .collect(ImmutableCollectors.toList());
+    public static final Function<List<Row>, List<Row>> filterNulls =
+            (Function<List<Row>, List<Row>>) input -> input.stream()
+                    .filter(Objects::nonNull)
+                    .collect(ImmutableCollectors.toList());
 
     private static final String EQUIVALENCE_GRAPHS_TABLE = "equivalence_graph";
-    private static final String EQUIVALENCE_GRAPH_INDEX_TABLE = "equivalence_graph_index";
+    // These are exposed to allow testing that we can cope with stale index entries which
+    // exist in the db due to past, now fixed, bugs
+    @VisibleForTesting static final String EQUIVALENCE_GRAPH_INDEX_TABLE = "equivalence_graph_index";
 
-    private static final String RESOURCE_ID_KEY = "resource_id";
-    private static final String GRAPH_ID_KEY = "graph_id";
+    @VisibleForTesting static final String RESOURCE_ID_KEY = "resource_id";
+    @VisibleForTesting static final String GRAPH_ID_KEY = "graph_id";
     private static final String GRAPH_KEY = "graph";
     
     private static final GroupLock<Id> lock = GroupLock.natural();
@@ -68,8 +67,6 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
 
-    private final PreparedStatement indexDelete;
-    private final PreparedStatement graphDelete;
     private final PreparedStatement graphRowsSelect;
     private final PreparedStatement graphIdsSelect;
     private final PreparedStatement indexInsert;
@@ -80,16 +77,6 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         this.session = checkNotNull(session);
         this.read = read;
         this.write = write;
-
-        this.indexDelete = session.prepare(
-                delete().all().from(EQUIVALENCE_GRAPH_INDEX_TABLE)
-                        .where(eq(RESOURCE_ID_KEY, bindMarker())));
-        this.indexDelete.setConsistencyLevel(write);
-
-        this.graphDelete = session.prepare(
-                delete().all().from(EQUIVALENCE_GRAPHS_TABLE)
-                        .where(eq(GRAPH_ID_KEY, bindMarker())));
-        this.graphDelete.setConsistencyLevel(write);
 
         this.graphRowsSelect = session.prepare(select().all()
                 .from(EQUIVALENCE_GRAPHS_TABLE)
@@ -113,23 +100,6 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         this.graphInsert.setConsistencyLevel(write);
     }
 
-    @Override
-    protected void cleanGraphAndIndex(Id subjectId) {
-        log.warn("Cleaning graph and index for subject {}", subjectId);
-        try {
-            Long graphId = Futures.get(resolveToGraphIds(ImmutableList.of(subjectId)), IOException.class)
-                    .get(subjectId);
-            /* Remove index entry */
-            log.warn("Cleaning graph index for subject {}", subjectId);
-            session.execute(indexDelete.bind(subjectId.longValue()));
-            /* Remove graph entry */
-            log.warn("Deleting graph {} for subject {}", graphId, subjectId);
-            session.execute(graphDelete.bind(graphId));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private final Function<Iterable<Row>, Map<Long, EquivalenceGraph>> toGraph = rows -> {
             ImmutableMap.Builder<Long, EquivalenceGraph> idGraph = ImmutableMap.builder();
             for (Row row : rows) {
@@ -139,7 +109,8 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
             return idGraph.build();
         };
 
-    private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs = idIndex -> {
+    private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs =
+            idIndex -> {
         ListenableFuture<List<Row>> rowFutures = Futures.transform(
                 Futures.allAsList(idIndex.values()
                     .stream()
@@ -152,13 +123,36 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
                 filterNulls
         );
 
-        return Futures.transform(Futures.transform(rowFutures, toGraph), toIdGraphIndex(idIndex));
+        return Futures.transform(
+                Futures.transform(rowFutures, toGraph),
+                (Function<Map<Long,EquivalenceGraph>, OptionalMap<Id,EquivalenceGraph>>)
+                        rowGraphIndex -> getRequestedIdToGraphMap(idIndex, rowGraphIndex)
+        );
     };
 
-    private Function<Map<Long, EquivalenceGraph>, OptionalMap<Id, EquivalenceGraph>> toIdGraphIndex(final Map<Id, Long> idIndex) {
-        return rowGraphIndex -> ImmutableOptionalMap.fromMap(Maps.transformValues(idIndex, Functions.forMap(rowGraphIndex, null)));
+    private OptionalMap<Id, EquivalenceGraph> getRequestedIdToGraphMap(
+            Map<Id, Long> idIndex, Map<Long, EquivalenceGraph> rowGraphIndex) {
+        return ImmutableOptionalMap.fromMap(
+                idIndex.entrySet().stream()
+                    .filter(entry -> hasResolvedEquivalenceGraph(
+                            entry.getValue(), entry.getKey(), rowGraphIndex
+                    ))
+                    .collect(ImmutableCollectors.toMap(
+                            Entry::getKey,
+                            entry -> rowGraphIndex.get(entry.getValue())
+                    ))
+        );
     }
-    
+
+    private boolean hasResolvedEquivalenceGraph(Long graphId, Id requestedId,
+            Map<Long, EquivalenceGraph> rowGraphIndex) {
+        EquivalenceGraph graph = rowGraphIndex.get(graphId);
+
+        // Index entries can be stale and point to a graph that the requested ID used to be part
+        // of, but no longer is. Here we filter out such stale entries
+        return graph != null && graph.getEquivalenceSet().contains(requestedId);
+    }
+
     private Statement queryForGraphRow(Long id) {
         return graphRowsSelect.bind(id);
     }
