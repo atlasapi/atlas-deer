@@ -13,6 +13,7 @@ import org.atlasapi.entity.Id;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -67,7 +68,7 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
                     for (Object e : entry.getValue()) {
                         if (e instanceof Content) {
                             if (Iterables.contains(ids, ((Content) e).getId())){
-                                builder.putEquivalents(entry.getKey(), entry.getValue());
+                                builder.putEquivalents(entry.getKey(), ImmutableSet.of((E)e));
                             }
                         }
                     }
