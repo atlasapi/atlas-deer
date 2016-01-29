@@ -37,6 +37,7 @@ public class UserModelTranslatorTest {
 	private static final Role ROLE = Role.ADMIN;
 	private static final Set<Publisher> SOURCES = ImmutableSet.of(Publisher.ARCHIVE_ORG, Publisher.DBPEDIA);
     private static final boolean PROFILE_COMPLETE = true;
+	private static final boolean PROFILE_DEACTIVATED = true;
     private static final Set<String> APP_SLUGS = ImmutableSet.of("app1", "app2");
     private static final Set<Id> APP_IDS = ImmutableSet.of(Id.valueOf(7000), Id.valueOf(8000));
     
@@ -69,6 +70,7 @@ public class UserModelTranslatorTest {
             .withSources(SOURCES)
             .withProfileComplete(PROFILE_COMPLETE)
             .withLicenseAccepted(licenseAccepted)
+            .withProfileDeactivated(PROFILE_DEACTIVATED)
         .build();
 		
 		UserModelTranslator translator = new UserModelTranslator(store);
@@ -85,6 +87,7 @@ public class UserModelTranslatorTest {
 		assertTrue(result.getApplicationIds().containsAll(APP_IDS));
 		assertTrue(result.getSources().containsAll(SOURCES));
 		assertTrue(result.isProfileComplete());
+        assertTrue(result.isProfileDeactivated());
 		
 	}
 	
@@ -105,6 +108,7 @@ public class UserModelTranslatorTest {
             .withRole(ROLE)
             .withProfileComplete(PROFILE_COMPLETE)
             .withLicenseAccepted(licenseAccepted)
+            .withProfileDeactivated(PROFILE_DEACTIVATED)
         .build();
 		
 		UserModelTranslator translator = new UserModelTranslator(store);
@@ -120,5 +124,6 @@ public class UserModelTranslatorTest {
 		assertTrue(result.getApplicationSlugs().containsAll(APP_SLUGS));
 		assertTrue(result.getSources().containsAll(SOURCES));
 		assertTrue(result.isProfileComplete());
+        assertTrue(result.isProfileDeactivated());
 	}
 }
