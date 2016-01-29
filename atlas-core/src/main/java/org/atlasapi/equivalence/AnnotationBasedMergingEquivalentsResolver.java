@@ -8,10 +8,12 @@ import java.util.Set;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.content.Content;
 import org.atlasapi.entity.Id;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -63,8 +65,12 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
 
                 ResolvedEquivalents.Builder<E> builder = ResolvedEquivalents.builder();
                 for (Map.Entry<Id, Collection<E>> entry : input.asMap().entrySet()) {
-                    if (Iterables.contains(ids, entry.getKey())){
-                        builder.putEquivalents(entry.getKey(), entry.getValue());
+                    for (Object e : entry.getValue()) {
+                        if (e instanceof Content) {
+                            if (Iterables.contains(ids, ((Content) e).getId())){
+                                builder.putEquivalents(entry.getKey(), ImmutableSet.of((E)e));
+                            }
+                        }
                     }
                 }
                 return builder.build();
