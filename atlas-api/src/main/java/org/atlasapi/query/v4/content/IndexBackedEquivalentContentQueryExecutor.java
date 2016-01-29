@@ -73,8 +73,12 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
                     if (equivs.isEmpty()) {
                         throw new UncheckedQueryExecutionException(new NotFoundException(contentId));
                     }
-                    Content resource = equivs.get(0);
-                    return QueryResult.singleResult(resource, query.getContext());
+                    if (equivs.size() == 1) {
+                        Content resource = equivs.get(0);
+                        return QueryResult.singleResult(resource, query.getContext());
+                    } else {
+                        return QueryResult.listResult(equivs, query.getContext(), equivs.size());
+                    }
                 }
         );
     }
