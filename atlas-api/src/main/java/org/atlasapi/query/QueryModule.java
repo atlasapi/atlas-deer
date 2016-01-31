@@ -20,7 +20,7 @@ import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
-import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
+import org.atlasapi.equivalence.DefaultMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.event.Event;
 import org.atlasapi.organisation.Organisation;
@@ -91,7 +91,7 @@ public class QueryModule {
 
 
     public MergingEquivalentsResolver<Content> mergingContentResolver() {
-        return new AnnotationBasedMergingEquivalentsResolver<Content>(
+        return new DefaultMergingEquivalentsResolver<Content>(
             persistenceModule.getEquivalentContentStore(), 
             equivalentsMerger()
         );

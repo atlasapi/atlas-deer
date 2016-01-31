@@ -15,13 +15,13 @@ import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
+public class DefaultMergingEquivalentsResolver<E extends Equivalable<E>>
         implements MergingEquivalentsResolver<E> {
     
     private final EquivalentsResolver<E> resolver;
     private final ApplicationEquivalentsMerger<E> merger;
 
-    public AnnotationBasedMergingEquivalentsResolver(EquivalentsResolver<E> resolver, ApplicationEquivalentsMerger<E> merger) {
+    public DefaultMergingEquivalentsResolver(EquivalentsResolver<E> resolver, ApplicationEquivalentsMerger<E> merger) {
         this.resolver = checkNotNull(resolver);
         this.merger = checkNotNull(merger);
     }
@@ -31,12 +31,8 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
             ApplicationSources sources, Set<Annotation> activeAnnotations) {
         ListenableFuture<ResolvedEquivalents<E>> unmerged
             = resolver.resolveIds(ids, sources.getEnabledReadSources(), activeAnnotations);
-
-        if(activeAnnotations.contains(Annotation.NON_MERGED)) {
-            return unmerged;
-        } else {
-            return Futures.transform(unmerged, mergeUsing(sources));
-        }
+        
+        return Futures.transform(unmerged, mergeUsing(sources));
     }
 
     private Function<ResolvedEquivalents<E>, ResolvedEquivalents<E>> mergeUsing(
