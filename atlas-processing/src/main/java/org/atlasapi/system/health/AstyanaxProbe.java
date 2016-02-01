@@ -1,12 +1,13 @@
 package org.atlasapi.system.health;
 
-import static com.google.gson.internal.$Gson$Preconditions.checkNotNull;
-
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.ProbeResult;
+
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.ConnectionPoolMonitor;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class AstyanaxProbe implements HealthProbe {
 
@@ -25,6 +26,11 @@ public class AstyanaxProbe implements HealthProbe {
         result.addInfo("Pool-exhausted timeouts", Long.toString(pool.getPoolExhaustedTimeoutCount()));
         result.addInfo("Connections opened", Long.toString(pool.getConnectionCreatedCount()));
         result.addInfo("Connections closed", Long.toString(pool.getConnectionClosedCount()));
+        result.add(
+                "Active hosts",
+                Long.toString(pool.getHostActiveCount()),
+                pool.getHostActiveCount() > 0
+        );
         return result;
     }
 
