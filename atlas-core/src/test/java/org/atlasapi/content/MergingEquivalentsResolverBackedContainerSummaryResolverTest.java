@@ -4,9 +4,14 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
+import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
+import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
 import org.atlasapi.equivalence.EquivalenceRef;
+import org.atlasapi.equivalence.EquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
@@ -21,6 +26,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
@@ -29,6 +35,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
 
     @Mock
     private MergingEquivalentsResolver<Content> contentResolver;
+    private AnnotationBasedMergingEquivalentsResolver<Content> contentAnnotationBasedMergingEquivalentsResolver;
     @InjectMocks
     private MergingEquivalentsResolverBackedContainerSummaryResolver objectUnderTest;
 
@@ -101,5 +108,17 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources, ImmutableSet.of());
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
+    }
+
+    @Test
+    public void testAnnotationBasedMErger() throws Exception {
+        EquivalentsResolver<Content> resolver = mock(EquivalentsResolver.class);
+        ApplicationEquivalentsMerger<Content> merger = mock(ApplicationEquivalentsMerger.class);
+        ApplicationSources sources = mock(ApplicationSources.class);
+        contentAnnotationBasedMergingEquivalentsResolver = new AnnotationBasedMergingEquivalentsResolver<>(resolver, merger);
+        contentAnnotationBasedMergingEquivalentsResolver.resolveIds(ImmutableSet.of(), sources, ImmutableSet.of(
+                Annotation.NON_MERGED));
+        verify(resolver).resolveIdsWithoutEquivalence(ImmutableSet.of(), null, ImmutableSet.of(
+                Annotation.NON_MERGED));
     }
 }
