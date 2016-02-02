@@ -220,6 +220,9 @@ message Location {
     repeated string subscription_packages = 20;
     repeated common.Alias aliases = 21 [(column)=IDENT];
     repeated Pricing pricing = 22;
+    optional bool required_encryption = 23;
+    optional double vat = 24;
+    repeated string subtitled_languages = 25;
 }
 
 message Pricing {

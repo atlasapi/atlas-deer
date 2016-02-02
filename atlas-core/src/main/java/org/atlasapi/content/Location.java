@@ -15,6 +15,9 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
+import java.util.List;
+import java.util.Set;
+
 import org.atlasapi.entity.Identified;
 import org.atlasapi.meta.annotations.FieldName;
 import org.joda.time.DateTime;
@@ -22,6 +25,9 @@ import org.joda.time.DateTimeZone;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Iterables;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -44,6 +50,12 @@ public class Location extends Identified {
     private String embedId;
     
     private Policy policy;
+
+    private Boolean requiredEncryption;
+
+    private Set<String> subtitledLanguages;
+
+    private Double vat;
     
     @FieldName("policy")
     public Policy getPolicy() { 
@@ -121,6 +133,39 @@ public class Location extends Identified {
         return AVAILABLE.apply(this);
     }
 
+    @FieldName("vat")
+    public Double getVat() {
+        return vat;
+    }
+
+    public void setVat(Double vat) {
+        this.vat = vat;
+    }
+
+    @FieldName("subtitledLanguages")
+    public Set<String> getSubtitledLanguages() {
+        return subtitledLanguages;
+    }
+
+    public void setSubtitledLanguages(Iterable<String> subtitledLanguages) {
+        this.subtitledLanguages = ImmutableSortedSet.copyOf(subtitledLanguages);
+    }
+    public void addSubtitledLanguages(String subtitledLanguage) {
+        addSubtitledLanguages(ImmutableList.of(subtitledLanguage));
+    }
+
+    public void addSubtitledLanguages(Iterable<String> subtitledLanguages) {
+        setSubtitledLanguages(Iterables.concat(this.subtitledLanguages, ImmutableList.copyOf(subtitledLanguages)));
+    }
+    @FieldName("requiredEncryption")
+    public Boolean getRequiredEncryption() {
+        return requiredEncryption;
+    }
+
+    public void setRequiredEncryption(Boolean requiredEncryption) {
+        this.requiredEncryption = requiredEncryption;
+    }
+
     public LocationSummary toSummary() {
         return new LocationSummary(
                 available,
@@ -143,6 +188,9 @@ public class Location extends Identified {
         copy.transportSubType = transportSubType;
         copy.transportType = transportType;
         copy.uri = uri;
+        copy.requiredEncryption = requiredEncryption;
+        copy.vat = vat;
+        copy.subtitledLanguages = subtitledLanguages;
         return copy;
     }
     

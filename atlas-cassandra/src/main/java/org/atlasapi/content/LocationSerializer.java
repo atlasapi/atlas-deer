@@ -11,6 +11,7 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
 import org.atlasapi.util.ImmutableCollectors;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Countries;
@@ -33,6 +34,19 @@ public class LocationSerializer {
             builder.setTransportType(location.getTransportType().toString());
         }
         if (location.getUri() != null) { builder.setUri(location.getUri()); }
+
+        if(location.getVat() != null) { builder.setVat(location.getVat()); }
+
+        if(location.getRequiredEncryption() != null) { builder.setRequiredEncryption(
+                location.getRequiredEncryption());
+        }
+
+        for(String subtitledLanguages: location.getSubtitledLanguages()) {
+            if(!Strings.isNullOrEmpty(subtitledLanguages)) {
+                builder.addSubtitledLanguages(subtitledLanguages);
+            }
+        }
+
         for (Alias alias : location.getAliases()) {
             builder.addAliases(CommonProtos.Alias.newBuilder()
                     .setNamespace(alias.getNamespace())
@@ -98,6 +112,16 @@ public class LocationSerializer {
         location.setEmbedId(msg.hasEmbedId() ? msg.getEmbedId() : null);
         location.setTransportIsLive(msg.hasTransportIsLive() ? msg.getTransportIsLive() : null);
         location.setUri(msg.hasUri() ? msg.getUri() : null);
+        location.setVat(msg.hasVat() ? msg.getVat() : null);
+        location.setRequiredEncryption(msg.hasRequiredEncryption() ? msg.getRequiredEncryption() : null);
+
+        ImmutableSet.Builder<String> subtitledLanguages = ImmutableSet.builder();
+
+        for(String subtitledLanguage: msg.getSubtitledLanguagesList()) {
+            subtitledLanguages.add(subtitledLanguage);
+        }
+        location.setSubtitledLanguages(subtitledLanguages.build());
+
         if (msg.hasTransportType()) {
             location.setTransportType(TransportType.fromString(msg.getTransportType()));
         }
