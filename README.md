@@ -35,6 +35,16 @@ At this stage you hopefully have successfully obtained war files.
 Finally:
 * java -jar atlas-api/target/atlas-api.war
 
+Development
+--------------------------
+## Tests
+The integration tests are run via the `failsafe` plugin, which hooks into the `verify` Maven phase.
+This means that to run **all** the tests, you need to run `mvn test verify` instead of `mvn test`.
+
+## Netty
+The netty transport is set to use `epoll`, which may not work if you want to run it in a non-Linux
+environment. If you see issues around the Cassandra driver or Netty's transport, try removing the
+relevant lines from the POMs and rebuilding.
 
 Problems
 --------
