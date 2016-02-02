@@ -5,16 +5,18 @@ import java.util.Collection;
 import javax.annotation.PostConstruct;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.atlasapi.system.health.AstyanaxProbe;
 
-import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.probes.MemoryInfoProbe;
 import com.metabroadcast.common.persistence.cassandra.health.CassandraProbe;
 import com.metabroadcast.common.webapp.health.HealthController;
 import com.metabroadcast.common.webapp.health.probes.MetricsProbe;
+
+import com.google.common.collect.ImmutableList;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class HealthModule {
@@ -39,7 +41,8 @@ public class HealthModule {
     @PostConstruct
     public void addProbes() {
         healthController.addProbes(ImmutableList.of(
-                new CassandraProbe(persistenceModule.persistenceModule().getSession())
+                new CassandraProbe(persistenceModule.persistenceModule().getSession()),
+                new AstyanaxProbe(persistenceModule.persistenceModule().getContext())
         ));
         healthController.addProbes(probes);
         healthController.addProbes(ImmutableList.of(
