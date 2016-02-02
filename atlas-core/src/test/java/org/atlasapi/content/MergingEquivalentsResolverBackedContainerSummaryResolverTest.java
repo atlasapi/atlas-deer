@@ -52,7 +52,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 resolvedEquivalents
         );
 
-        when(contentResolver.resolveIds(containerIds, applicationSources, null)).thenReturn(resolved);
+        when(contentResolver.resolveIds(containerIds, applicationSources, ImmutableSet.of())).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources);
 
@@ -70,7 +70,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         ApplicationSources applicationSources = mock(ApplicationSources.class);
 
 
-        when(contentResolver.resolveIds(containerIds, applicationSources, null)).thenReturn(resolved);
+        when(contentResolver.resolveIds(containerIds, applicationSources, ImmutableSet.of())).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources);
 
@@ -96,7 +96,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
                 resolvedEquivalents
         );
 
-        when(contentResolver.resolveIds(containerIds, applicationSources, null)).thenReturn(resolved);
+        when(contentResolver.resolveIds(containerIds, applicationSources, ImmutableSet.of())).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources);
 
