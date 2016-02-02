@@ -294,6 +294,12 @@
         <version>${datastax.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-epoll</artifactId>
+        <version>${netty.version}</version>
+        <classifier>linux-x86_64</classifier>
+      </dependency>
+      <dependency>
         <groupId>javax.servlet</groupId>
         <artifactId>javax.servlet-api</artifactId>
         <version>3.1.0</version>
@@ -430,6 +436,7 @@
     <sonar.branch>deer</sonar.branch>
     <sonar.language>java</sonar.language>
     <sonar.exclusions>**/target/**/*,**/src/main/java/**/generated/**/*</sonar.exclusions>
+    <netty.version>4.0.27.Final</netty.version>
   </properties>
 
   <scm>
