@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
@@ -164,6 +165,33 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         resolveWithConsistency(result, ids, selectedSources, readConsistency);
         
         return result;
+    }
+
+    @Override
+    public ListenableFuture<ResolvedEquivalents<Content>> resolveIdsWithoutEquivalence(Iterable<Id> ids,
+            Set<Publisher> selectedSources, Set<Annotation> activeAnnotations) {
+
+        ListenableFuture<ResolvedEquivalents<Content>> equivalents = resolveIds(ids, selectedSources, activeAnnotations);
+        return Futures.transform(equivalents, extractTargetContent(ids));
+    }
+
+    private Function<ResolvedEquivalents<Content>, ResolvedEquivalents<Content>> extractTargetContent(
+            final Iterable<Id> ids) {
+        return new Function<ResolvedEquivalents<Content>, ResolvedEquivalents<Content>>() {
+            @Override
+            public ResolvedEquivalents<Content> apply(ResolvedEquivalents<Content> input) {
+
+                ResolvedEquivalents.Builder<Content> builder = ResolvedEquivalents.builder();
+                for (Map.Entry<Id, Collection<Content>> entry : input.asMap().entrySet()) {
+                    for (Content content : entry.getValue()) {
+                        if (Iterables.contains(ids, content.getId())){
+                            builder.putEquivalents(entry.getKey(), ImmutableSet.of(content));
+                        }
+                    }
+                }
+                return builder.build();
+            }
+        };
     }
 
     private void resolveWithConsistency(final SettableFuture<ResolvedEquivalents<Content>> result, 

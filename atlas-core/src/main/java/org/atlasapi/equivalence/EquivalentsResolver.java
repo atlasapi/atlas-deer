@@ -29,4 +29,7 @@ public interface EquivalentsResolver<E extends Equivalable<E>> {
      */
     ListenableFuture<ResolvedEquivalents<E>> resolveIds(Iterable<Id> ids, Set<Publisher> selectedSources, Set<Annotation> activeAnnotations);
 
+    ListenableFuture<ResolvedEquivalents<E>> resolveIdsWithoutEquivalence(Iterable<Id> ids, Set<Publisher> selectedSources, Set<Annotation> activeAnnotations);
+
+
 }

@@ -29,13 +29,13 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
     @Override
     public ListenableFuture<ResolvedEquivalents<E>> resolveIds(Iterable<Id> ids,
             ApplicationSources sources, Set<Annotation> activeAnnotations) {
-        ListenableFuture<ResolvedEquivalents<E>> unmerged
-            = resolver.resolveIds(ids, sources.getEnabledReadSources(), activeAnnotations);
 
-        if(activeAnnotations.contains(Annotation.NON_MERGED)) {
-            return unmerged;
-        } else {
+        if(!activeAnnotations.contains(Annotation.NON_MERGED)) {
+            ListenableFuture<ResolvedEquivalents<E>> unmerged
+                    = resolver.resolveIds(ids, sources.getEnabledReadSources(), activeAnnotations);
             return Futures.transform(unmerged, mergeUsing(sources));
+        } else {
+            return resolver.resolveIdsWithoutEquivalence(ids, sources.getEnabledReadSources(), activeAnnotations);
         }
     }
 
