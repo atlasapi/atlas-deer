@@ -21,16 +21,22 @@ public class AstyanaxProbe implements HealthProbe {
     public ProbeResult probe() throws Exception {
         ProbeResult result = new ProbeResult(title());
         ConnectionPoolMonitor pool = context.getConnectionPoolMonitor();
+
         result.addInfo("Socket timeouts", Long.toString(pool.getSocketTimeoutCount()));
         result.addInfo("Transport errors", Long.toString(pool.getTransportErrorCount()));
-        result.addInfo("Pool-exhausted timeouts", Long.toString(pool.getPoolExhaustedTimeoutCount()));
+        result.addInfo(
+                "Pool-exhausted timeouts",
+                Long.toString(pool.getPoolExhaustedTimeoutCount())
+        );
         result.addInfo("Connections opened", Long.toString(pool.getConnectionCreatedCount()));
         result.addInfo("Connections closed", Long.toString(pool.getConnectionClosedCount()));
+
         result.add(
                 "Active hosts",
                 Long.toString(pool.getHostActiveCount()),
                 pool.getHostActiveCount() > 0
         );
+
         return result;
     }
 
