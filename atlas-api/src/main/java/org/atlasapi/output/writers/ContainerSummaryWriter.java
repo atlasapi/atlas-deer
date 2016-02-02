@@ -33,7 +33,7 @@ public class ContainerSummaryWriter implements EntityWriter<Item> {
 
         Optional<ContainerSummary> summary = Optional.fromNullable(entity.getContainerSummary());
         if(!summary.isPresent()) {
-            summary = containerSummaryResolver.resolveContainerSummary(container.getId(), ctxt.getApplicationSources());
+            summary = containerSummaryResolver.resolveContainerSummary(container.getId(), ctxt.getApplicationSources(), ctxt.getActiveAnnotations());
         }
         if (summary.isPresent()) {
             writer.writeField("type", summary.get().getType().toLowerCase());

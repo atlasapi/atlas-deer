@@ -9,6 +9,7 @@ import static org.atlasapi.content.CassandraEquivalentContentStore.GRAPH_KEY;
 import static org.atlasapi.content.CassandraEquivalentContentStore.SET_ID_KEY;
 import static org.atlasapi.media.entity.Publisher.METABROADCAST;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
@@ -261,6 +262,22 @@ public class CassandraEquivalentContentStoreRowIT {
         resolvedSet(c3.getId(), c3);
     }
 
+    @Test
+    public void testResolvingTargetIdFromEquivalentSet() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(97), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(98), METABROADCAST);
+        Content c3 = createAndWriteItem(Id.valueOf(99), METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
+        persistenceModule.equivalentContentStore().updateContent(c3.getId());
+
+        makeEquivalent(c1, c2, c3);
+
+        resolvedWithoutEquivalence(c1.getId());
+
+    }
+
     private void assertNoRowsWithIds(Id setId, Id contentId) {
         Session session = persistenceModule.getCassandraSession();
         Statement rowsForIdQuery = select().all().from(EQUIVALENT_CONTENT_TABLE)
@@ -285,6 +302,15 @@ public class CassandraEquivalentContentStoreRowIT {
                     ImmutableSet.of(METABROADCAST), Annotation.all()));
         ImmutableSet<Content> idContent = resolved.get(c.getId());
         assertEquals(ImmutableSet.copyOf(cs), idContent);
+    }
+
+    private void resolvedWithoutEquivalence(Id setId) throws Exception {
+        ResolvedEquivalents<Content> resolvedWithoutEquivalence = get(persistenceModule.equivalentContentStore().
+                resolveIdsWithoutEquivalence(ImmutableSet.of(setId), ImmutableSet.of(METABROADCAST), ImmutableSet.of()));
+        ResolvedEquivalents<Content> resolved = get(persistenceModule.equivalentContentStore().
+                resolveIds(ImmutableSet.of(setId), ImmutableSet.of(METABROADCAST), ImmutableSet.of()));
+        assertEquals(resolved.size(), 3);
+        assertEquals(resolvedWithoutEquivalence.size(), 1);
     }
 
     private void resolvedSet(Id setId, Content... cs) throws Exception {
