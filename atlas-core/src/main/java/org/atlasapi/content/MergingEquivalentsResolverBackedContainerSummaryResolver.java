@@ -5,6 +5,8 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
@@ -31,7 +33,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolver implements
         ResolvedEquivalents<Content> contentResolved = null;
         try {
             contentResolved = Futures.get(
-                    contentResolver.resolveIds(ImmutableSet.of(id), applicationSources, null),
+                    contentResolver.resolveIds(ImmutableSet.of(id), applicationSources, ImmutableSet.<Annotation>of()),
                     1, TimeUnit.MINUTES,
                     Exception.class
             );
