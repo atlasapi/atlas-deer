@@ -29,11 +29,11 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolver implements
     }
 
     @Override
-    public Optional<ContainerSummary> resolveContainerSummary(Id id, ApplicationSources applicationSources) {
+    public Optional<ContainerSummary> resolveContainerSummary(Id id, ApplicationSources applicationSources, Set<Annotation> annotations) {
         ResolvedEquivalents<Content> contentResolved = null;
         try {
             contentResolved = Futures.get(
-                    contentResolver.resolveIds(ImmutableSet.of(id), applicationSources, ImmutableSet.<Annotation>of()),
+                    contentResolver.resolveIds(ImmutableSet.of(id), applicationSources, annotations),
                     1, TimeUnit.MINUTES,
                     Exception.class
             );

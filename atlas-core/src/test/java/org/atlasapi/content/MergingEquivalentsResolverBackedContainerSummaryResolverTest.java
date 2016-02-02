@@ -54,7 +54,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
 
         when(contentResolver.resolveIds(containerIds, applicationSources, ImmutableSet.of())).thenReturn(resolved);
 
-        Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources);
+        Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources, ImmutableSet.of());
 
         assertThat(containerSummaryOptional.get(), is(containerSummary));
     }
@@ -72,7 +72,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
 
         when(contentResolver.resolveIds(containerIds, applicationSources, ImmutableSet.of())).thenReturn(resolved);
 
-        Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources);
+        Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources, ImmutableSet.of());
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
     }
@@ -98,7 +98,7 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
 
         when(contentResolver.resolveIds(containerIds, applicationSources, ImmutableSet.of())).thenReturn(resolved);
 
-        Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources);
+        Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(id, applicationSources, ImmutableSet.of());
 
         assertThat(containerSummaryOptional.isPresent(), is(false));
     }
