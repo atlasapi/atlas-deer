@@ -1,7 +1,5 @@
 package org.atlasapi.system.debug;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
@@ -12,7 +10,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Container;
@@ -34,16 +31,10 @@ import org.atlasapi.system.bootstrap.ContentBootstrapListener;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.util.EsObject;
-import org.joda.time.DateTime;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
@@ -58,9 +49,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import org.joda.time.DateTime;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class ContentDebugController {
@@ -197,14 +197,37 @@ public class ContentDebugController {
     
     /* Returns the JSON representation of a piece of content stored in the equivalent content store */
     @RequestMapping("/system/debug/equivalentcontent/{id}")
-    public void printEquivalentContent(@PathVariable("id") String idString, final HttpServletResponse response)
-            throws Exception {
+    public void printEquivalentContent(@PathVariable("id") String idString,
+            HttpServletResponse response) throws Exception {
         Id id = Id.valueOf(lowercase.decode(idString).longValue());
-        ImmutableList<Id> ids = ImmutableList.of();
+        ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
-                persistence.getEquivalentContentStore().resolveIds(ids, Publisher.all(), Annotation.all()), 1, TimeUnit.MINUTES, Exception.class
+                persistence.getEquivalentContentStore().resolveIds(
+                        ids, Publisher.all(), ImmutableSet.of()
+                ),
+                1,
+                TimeUnit.MINUTES,
+                Exception.class
         );
         Content content = result.get(id).iterator().next();
+        gson.toJson(content, response.getWriter());
+    }
+
+    /* Returns the JSON representation of a set stored in the equivalent content store */
+    @RequestMapping("/system/debug/equivalentcontent/{id}/set")
+    public void printEquivalentContentSet(@PathVariable("id") String idString,
+            HttpServletResponse response) throws Exception {
+        Id id = Id.valueOf(lowercase.decode(idString).longValue());
+        ImmutableList<Id> ids = ImmutableList.of(id);
+        ResolvedEquivalents<Content> result = Futures.get(
+                persistence.getEquivalentContentStore().resolveIds(
+                        ids, Publisher.all(), ImmutableSet.of()
+                ),
+                1,
+                TimeUnit.MINUTES,
+                Exception.class
+        );
+        ImmutableSet<Content> content = result.get(id);
         gson.toJson(content, response.getWriter());
     }
 
