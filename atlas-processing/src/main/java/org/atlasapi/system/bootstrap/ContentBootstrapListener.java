@@ -1,8 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
@@ -17,9 +14,11 @@ import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
+import org.atlasapi.content.Episode;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteResult;
@@ -31,8 +30,8 @@ import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrato
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.system.legacy.UnresolvedLegacySegmentException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.OptionalMap;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -40,7 +39,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.collect.OptionalMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentBootstrapListener extends ContentVisitorAdapter<
         ContentBootstrapListener.Result> {
@@ -105,9 +108,13 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     protected Result visitItem(Item item) {
         ResultBuilder resultBuilder = resultBuilder();
 
+        if (migrateHierarchy && item instanceof Episode) {
+            migrateParentsForEpisode((Episode) item, resultBuilder);
+        }
+
         migrateContent(item, resultBuilder);
 
-        if(migrateHierarchy && resultBuilder.isSucceeded()) {
+        if (migrateHierarchy && resultBuilder.isSucceeded()) {
             migrateSegments(item, resultBuilder);
         }
 
@@ -125,6 +132,10 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     protected Result visitContainer(Container container) {
         ResultBuilder resultBuilder = resultBuilder();
 
+        if (migrateHierarchy && container instanceof Series) {
+            migrateParentsForSeries((Series) container, resultBuilder);
+        }
+
         migrateContent(container, resultBuilder);
 
         if(migrateHierarchy && resultBuilder.isSucceeded()) {
@@ -139,6 +150,39 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         logResult(container.getId(), result);
 
         return result;
+    }
+
+    private void migrateParentsForEpisode(Episode episode, ResultBuilder resultBuilder) {
+        if (episode.getSeriesRef() != null) {
+            Id seriesId = episode.getSeriesRef().getId();
+            migrateParent(seriesId, "series", resultBuilder);
+        }
+
+        if (episode.getContainerRef() != null) {
+            Id containerId = episode.getContainerRef().getId();
+            migrateParent(containerId, "container", resultBuilder);
+        }
+    }
+
+    private void migrateParentsForSeries(Series series, ResultBuilder resultBuilder) {
+        if (series.getBrandRef() != null) {
+            Id brandId = series.getBrandRef().getId();
+            migrateParent(brandId, "brand", resultBuilder);
+        }
+    }
+
+    private void migrateParent(Id parentId, String parentType, ResultBuilder resultBuilder) {
+        ResultBuilder result = resultBuilder();
+
+        Content content = resolveLegacyContent(parentId);
+        migrateContent(content, result);
+
+        if (result.isSucceeded()) {
+            resultBuilder.addMessage("Successfully migrated parent " + parentType + " " + parentId);
+        }
+        else {
+            resultBuilder.failure("Failed to migrate parent " + parentType + " " + parentId);
+        }
     }
 
     private void migrateContent(Content content, ResultBuilder resultBuilder) {
