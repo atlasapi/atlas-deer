@@ -407,7 +407,7 @@ public class OutputContentMergerTest {
 
         image1.setAvailabilityStart(DateTime.now().minusDays(1));
         image1.setAvailabilityEnd(DateTime.now());
-        image1.setType(Image.Type.GENERIC);
+        image1.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
 
         item1.setImages(ImmutableSet.of(image1));
 
