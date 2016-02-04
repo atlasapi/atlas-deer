@@ -498,7 +498,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         String rewrittenUri = imageUri.replace("http://images.atlasapi.org/pa/",
                 "http://images.atlas.metabroadcast.com/pressassociation.com/");
 
-        // If there is a corresponding Image object for this URI, we check its availability
+        // If there is a corresponding Image object for this URI, we check its availability and
+        // whether it is generic.
         for (Image image : images) {
             if (image.getCanonicalUri().equals(rewrittenUri)) {
                return Image.IS_AVAILABLE.apply(image) && !ImageType.GENERIC.equals(image.getType());
