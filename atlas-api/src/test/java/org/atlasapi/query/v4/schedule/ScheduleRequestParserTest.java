@@ -1,16 +1,5 @@
 package org.atlasapi.query.v4.schedule;
 
-import static org.atlasapi.media.entity.Publisher.BBC;
-import static org.atlasapi.media.entity.Publisher.METABROADCAST;
-import static org.atlasapi.media.entity.Publisher.PA;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.when;
-
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
@@ -22,14 +11,27 @@ import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
 import org.atlasapi.query.common.InvalidParameterException;
-import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.Resource;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.servlet.StubHttpServletRequest;
+import com.metabroadcast.common.time.DateTimeZones;
+import com.metabroadcast.common.time.TimeMachine;
+
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
@@ -41,17 +43,17 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.servlet.StubHttpServletRequest;
-import com.metabroadcast.common.time.DateTimeZones;
-import com.metabroadcast.common.time.TimeMachine;
+import static org.atlasapi.media.entity.Publisher.BBC;
+import static org.atlasapi.media.entity.Publisher.METABROADCAST;
+import static org.atlasapi.media.entity.Publisher.PA;
+import static org.atlasapi.media.entity.Publisher.YOUTUBE;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScheduleRequestParserTest {
@@ -61,7 +63,7 @@ public class ScheduleRequestParserTest {
     @Mock private ApplicationSourcesFetcher applicationFetcher;
     @Mock private ContextualAnnotationsExtractor annotationsExtractor;
 
-    private DateTime time = new DateTime(2012, 12, 14, 10,00,00,000, DateTimeZones.UTC);
+    private DateTime time = new DateTime(2012, 12, 14, 10, 0, 0, 0, DateTimeZones.UTC);
     private ScheduleRequestParser builder;
 
     private final NumberToShortStringCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -90,15 +92,35 @@ public class ScheduleRequestParserTest {
             .thenThrow(new InvalidApiKeyException("therequestedapikey"));
     }
     
-    private Matcher<HttpServletRequest> httpRequestWithParam(final String key, final Matcher<? super String> value) {
+    private Matcher<HttpServletRequest> httpRequestWithParam(
+            final String key,
+            final Matcher<? super String> value
+    ) {
         String desc = String.format("request with param %s", key);
         return new FeatureMatcher<HttpServletRequest, String>(value, desc, "request param " + key) {
-
             @Override
             protected String featureValueOf(HttpServletRequest actual) {
                 return actual.getParameter(key);
             }
         };
+    }
+
+    @Test
+    public void parsesOverrideSource() throws Exception {
+        StubHttpServletRequest request = new StubHttpServletRequest().withRequestUri(
+                String.format(
+                        "test/schedules/%s.json",
+                        codec.encode(BigInteger.valueOf(channel1.getId()))
+                )
+        )
+                .withParam("from", DateTime.now().toString())
+                .withParam("count", "5")
+                .withParam("source", BBC.key())
+                .withParam("override_source", YOUTUBE.key())
+                .withParam(KEY_PARAM, "apikey");
+        ScheduleQuery query = builder.queryFrom(request);
+
+        assertThat(query.getOverride().get(), is(YOUTUBE));
     }
 
     @Test
@@ -126,7 +148,8 @@ public class ScheduleRequestParserTest {
     }
     
     @Test
-    public void testCreatesSingleQueryFromValidSingleQueryStringWithNoExtension() throws Exception {
+    public void testCreatesSingleQueryFromValidSingleQueryStringWithNoExtension()
+            throws Exception {
 
         DateTime start = new DateTime(DateTimeZones.UTC);
         DateTime end = start.plusHours(1);
@@ -198,7 +221,6 @@ public class ScheduleRequestParserTest {
         assertThat(query.getContext().getApplicationSources(), is(sources));
     }
 
-
     @Test(expected=IllegalArgumentException.class)
     public void testThrowsExceptionWhenCountIsTooHigh() throws Exception {
 
@@ -222,7 +244,6 @@ public class ScheduleRequestParserTest {
         assertThat(query.getContext().getApplicationSources(), is(sources));
     }
 
-    
     @Test(expected=IllegalArgumentException.class)
     public void testDoesntAcceptQueryDurationGreaterThanMax() throws Exception {
         

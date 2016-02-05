@@ -1,16 +1,5 @@
 package org.atlasapi.schedule;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.util.Column.bigIntColumn;
-import static org.atlasapi.util.Column.bytesColumn;
-import static org.atlasapi.util.Column.dateColumn;
-import static org.atlasapi.util.Column.textColumn;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,12 +33,8 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
 import org.atlasapi.util.ImmutableCollectors;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.time.Clock;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -74,13 +59,30 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.metabroadcast.common.time.Clock;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.util.Column.bigIntColumn;
+import static org.atlasapi.util.Column.bytesColumn;
+import static org.atlasapi.util.Column.dateColumn;
+import static org.atlasapi.util.Column.textColumn;
 
 public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
 
-    private static final Logger log = LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
     private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
-    public static final int CONTENT_UPDATE_TIMEOUT = 10;
+    private static final int CONTENT_UPDATE_TIMEOUT = 10;
 
     private final class ToEquivalentSchedule implements Function<List<ResultSet>, EquivalentSchedule> {
 
@@ -338,7 +340,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 (Function<Statement, ListenableFuture<ResultSet>>) input ->
                         session.executeAsync(input.setConsistencyLevel(read))
         ));
-        return Futures.transform(results, new ToEquivalentSchedule(chans, interval, selectedSources));
+
+        return Futures.transform(
+                results,
+                new ToEquivalentSchedule(chans, interval, selectedSources)
+        );
     }
 
     @Override
@@ -352,16 +358,15 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         Interval interval = new Interval(start, start.plus(MAX_SCHEDULE_LENGTH));
         return Futures.transform(
                 resolveSchedules(channels, interval, source, selectedSources),
-                new Function<EquivalentSchedule, EquivalentSchedule>() {
-                    @Override
-                    public EquivalentSchedule apply(EquivalentSchedule input) {
-                        return input.withLimitedBroadcasts(count);
-                    }
-                }
+                (EquivalentSchedule input) -> input.withLimitedBroadcasts(count)
         );
     }
 
-    private List<Statement> selectStatements(Publisher src, Iterable<Channel> channels, Interval interval) {
+    private List<Statement> selectStatements(
+            Publisher src,
+            Iterable<Channel> channels,
+            Interval interval
+    ) {
         ImmutableList.Builder<Statement> selects = ImmutableList.builder();
         List<Date> days = daysIn(interval);
         for (Channel channel : channels) {
@@ -382,8 +387,10 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    protected synchronized void writeSchedule(ScheduleUpdate update, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
-            throws WriteException {
+    protected synchronized void writeSchedule(
+            ScheduleUpdate update,
+            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
+    ) throws WriteException {
         DateTime now = clock.now();
 
         ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule().getScheduleEntries()
@@ -464,8 +471,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return update.toString();
     }
 
-    private List<Statement> updateStatements(Publisher source, ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)
-            throws WriteException {
+    private List<Statement> updateStatements(
+            Publisher source,
+            ScheduleRef scheduleRef,
+            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content,
+            DateTime now
+    ) throws WriteException {
         ImmutableList.Builder<Statement> stmts = ImmutableList.builder();
         for (ScheduleRef.Entry entry : scheduleRef.getScheduleEntries()) {
             EquivalentScheduleEntry entryItems = content.get(entry);
@@ -497,8 +508,16 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
     }
 
-    private Statement updateStatement(Publisher source, Date day, ScheduleRef.Entry entry,
-            int contentCount, ByteBuffer content, ByteBuffer graph, ByteBuffer broadcast, DateTime now) {
+    private Statement updateStatement(
+            Publisher source,
+            Date day,
+            ScheduleRef.Entry entry,
+            int contentCount,
+            ByteBuffer content,
+            ByteBuffer graph,
+            ByteBuffer broadcast,
+            DateTime now
+    ) {
         Date broadcastStart = entry.getBroadcast().getTransmissionInterval().getStart().toDate();
         return scheduleUpdateStatement(source, entry.getBroadcast().getChannelId(),
             day, entry.getBroadcast().getSourceId(), broadcastStart, broadcast, graph, contentCount, content, now
@@ -530,7 +549,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
      * @param interval
      * @return
      */
-    private List<Statement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts, Interval interval) {
+    private List<Statement> deleteStatements(
+            Publisher src,
+            Set<BroadcastRef> staleBroadcasts,
+            Interval interval
+    ) {
         ImmutableList.Builder<Statement> stmts = ImmutableList.builder();
         for (BroadcastRef ref : staleBroadcasts) {
             for (Date day : daysIn(interval)) {
@@ -571,8 +594,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
     }
 
-    private Statement equivUpdateStatement(Publisher publisher, Id channelId, Date day, String bcastId,
-            Date bcastStart, ByteBuffer bcastBytes, ByteBuffer graphBytes, int contentCount, ByteBuffer contentBytes) {
+    private Statement equivUpdateStatement(
+            Publisher publisher,
+            Id channelId,
+            Date day,
+            String bcastId,
+            Date bcastStart,
+            ByteBuffer bcastBytes,
+            ByteBuffer graphBytes,
+            int contentCount,
+            ByteBuffer contentBytes
+    ) {
         return broadcastEquivUpdate.bind()
                 .setString("source", publisher.key())
                 .setLong("channel", channelId.longValue())
@@ -586,9 +618,18 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .setDate("now", clock.now().toDate());
     }
 
-    private Statement scheduleUpdateStatement(Publisher publisher, Id channelId, Date day, String bcastId,
-            Date bcastStart, ByteBuffer bcastBytes, ByteBuffer graphBytes, int contentCount,
-            ByteBuffer contentBytes, DateTime now) {
+    private Statement scheduleUpdateStatement(
+            Publisher publisher,
+            Id channelId,
+            Date day,
+            String bcastId,
+            Date bcastStart,
+            ByteBuffer bcastBytes,
+            ByteBuffer graphBytes,
+            int contentCount,
+            ByteBuffer contentBytes,
+            DateTime now
+    ) {
         return broadcastScheduleUpdate.bind()
                 .setString("source", publisher.key())
                 .setLong("channel", channelId.longValue())
@@ -602,7 +643,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .setDate("now", now.toDate());
     }
 
-    private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId, Interval interval) throws WriteException {
+    private Set<BroadcastRef> resolveBroadcasts(
+            Publisher publisher,
+            Id channelId,
+            Interval interval
+    ) throws WriteException {
         ImmutableList.Builder<ListenableFuture<ResultSet>> broadcastFutures = ImmutableList.builder();
         for (Date day : daysIn(interval)) {
             broadcastFutures.add(session.executeAsync(
@@ -648,6 +693,4 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
         return broadcasts.build();
     }
-
-
 }

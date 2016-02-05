@@ -1,23 +1,5 @@
 package org.atlasapi.query.v4.schedule;
 
-import static org.atlasapi.media.entity.Publisher.METABROADCAST;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.iterableWithSize;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
-
 import java.util.List;
 import java.util.Set;
 
@@ -50,6 +32,15 @@ import org.atlasapi.schedule.EquivalentSchedule;
 import org.atlasapi.schedule.EquivalentScheduleEntry;
 import org.atlasapi.schedule.EquivalentScheduleResolver;
 import org.atlasapi.schedule.FlexibleBroadcastMatcher;
+
+import com.metabroadcast.common.time.DateTimeZones;
+
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.Before;
@@ -58,13 +49,20 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.time.DateTimeZones;
+import static org.atlasapi.media.entity.Publisher.METABROADCAST;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
@@ -96,7 +94,10 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), channel.getId());
+        ScheduleQuery query = ScheduleQuery.single(
+                METABROADCAST, null, start, end,
+                QueryContext.standard(mock(HttpServletRequest.class)), channel.getId()
+        );
 
         EquivalentChannelSchedule channelSchedule = new EquivalentChannelSchedule(channel, interval, ImmutableList.<EquivalentScheduleEntry>of());
 
@@ -126,7 +127,11 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
         List<Id> cids = ImmutableList.of(channelOne.getId(), channelTwo.getId());
-        ScheduleQuery query = ScheduleQuery.multi(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), cids);
+        ScheduleQuery query = ScheduleQuery.multi(
+                METABROADCAST, null,
+                start, end,
+                QueryContext.standard(mock(HttpServletRequest.class)), cids
+        );
 
         EquivalentChannelSchedule cs1 = new EquivalentChannelSchedule(channelOne, interval, ImmutableList.<EquivalentScheduleEntry>of());
         EquivalentChannelSchedule cs2 = new EquivalentChannelSchedule(channelTwo, interval, ImmutableList.<EquivalentScheduleEntry>of());
@@ -155,7 +160,10 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(1));
+        ScheduleQuery query = ScheduleQuery.single(
+                METABROADCAST, null, start, end,
+                QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(1)
+        );
 
         try {
             executor.execute(query);
@@ -211,7 +219,9 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
             )
         ));
 
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, context, channel.getId());
+        ScheduleQuery query = ScheduleQuery.single(
+                METABROADCAST, null, start, end, context, channel.getId()
+        );
 
         when(channelResolver.resolveIds(argThat(org.hamcrest.Matchers.<Id>iterableWithSize(1))))
             .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(channel))));
