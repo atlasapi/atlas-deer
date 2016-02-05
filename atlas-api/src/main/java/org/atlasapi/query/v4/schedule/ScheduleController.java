@@ -15,13 +15,14 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
+
+import com.metabroadcast.common.time.SystemClock;
+
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import com.metabroadcast.common.time.SystemClock;
 
 @ProducesType(type = ChannelSchedule.class)
 @Controller
@@ -38,10 +39,12 @@ public class ScheduleController {
 
     private ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    public ScheduleController(ScheduleQueryExecutor queryExecutor,
-        ApplicationSourcesFetcher appFetcher,
-        QueryResultWriter<ChannelSchedule> resultWriter,
-        ContextualAnnotationsExtractor annotationsExtractor) {
+    public ScheduleController(
+            ScheduleQueryExecutor queryExecutor,
+            ApplicationSourcesFetcher appFetcher,
+            QueryResultWriter<ChannelSchedule> resultWriter,
+            ContextualAnnotationsExtractor annotationsExtractor
+    ) {
         this.requestParser = new ScheduleRequestParser(
             appFetcher,
             MAX_REQUEST_DURATION,

@@ -1,44 +1,45 @@
 package org.atlasapi.query.v4.schedule;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.metabroadcast.common.webapp.query.DateTimeInQueryParser.queryDateTimeParser;
-
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.google.common.collect.Range;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
 import org.atlasapi.query.common.InvalidAnnotationException;
 import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.SetBasedRequestParameterValidator;
 import org.atlasapi.source.Sources;
-import org.elasticsearch.common.collect.ImmutableList;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.Interval;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.metabroadcast.common.webapp.query.DateTimeInQueryParser.queryDateTimeParser;
+
 class ScheduleRequestParser {
-    
+
     private static final Pattern CHANNEL_ID_PATTERN = Pattern.compile(
         ".*schedules/([^.]+)(.[\\w\\d.]+)?$"
     );
@@ -50,10 +51,12 @@ class ScheduleRequestParser {
     private static final String TO_PARAM = "to";
     private static final String COUNT_PARAM = "count";
     private static final String SOURCE_PARAM = "source";
+    private static final String OVERRIDE_SOURCE_PARAM = "override_source";
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String CALLBACK_PARAM = "callback";
     private static final String ID_PARAM = "id";
-    
+    private static final String ORDER_BY = "order_by";
+
     private final ApplicationSourcesFetcher applicationFetcher;
 
     private final SetBasedRequestParameterValidator singleValidator;
@@ -65,7 +68,12 @@ class ScheduleRequestParser {
     private final Duration maxQueryDuration;
     private final Clock clock;
 
-    public ScheduleRequestParser(ApplicationSourcesFetcher appFetcher, Duration maxQueryDuration, Clock clock, ContextualAnnotationsExtractor annotationsExtractor) {
+    public ScheduleRequestParser(
+            ApplicationSourcesFetcher appFetcher,
+            Duration maxQueryDuration,
+            Clock clock,
+            ContextualAnnotationsExtractor annotationsExtractor
+    ) {
         this.applicationFetcher = appFetcher;
         this.maxQueryDuration = maxQueryDuration;
         this.idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -81,31 +89,38 @@ class ScheduleRequestParser {
         this.multiValidator = multiRequestValidator(applicationFetcher);
     }
 
-    private SetBasedRequestParameterValidator singleRequestValidator(ApplicationSourcesFetcher fetcher) {
+    private SetBasedRequestParameterValidator singleRequestValidator(
+            ApplicationSourcesFetcher fetcher
+    ) {
         ImmutableList<String> required = ImmutableList.<String>builder()
             .add(FROM_PARAM, SOURCE_PARAM)
             .addAll(fetcher.getParameterNames())
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
+            .withOptionalParameters(
+                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM)
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
 
-    private SetBasedRequestParameterValidator multiRequestValidator(ApplicationSourcesFetcher fetcher) {
+    private SetBasedRequestParameterValidator multiRequestValidator(
+            ApplicationSourcesFetcher fetcher
+    ) {
         ImmutableList<String> required = ImmutableList.<String>builder()
             .add(ID_PARAM, FROM_PARAM, SOURCE_PARAM)
             .addAll(fetcher.getParameterNames())
             .build();
         return SetBasedRequestParameterValidator.builder()
             .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
+            .withOptionalParameters(
+                    ANNOTATIONS_PARAM, CALLBACK_PARAM, ORDER_BY, OVERRIDE_SOURCE_PARAM)
             .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
             .build();
     }
 
-    public ScheduleQuery queryFrom(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public ScheduleQuery queryFrom(HttpServletRequest request)
+            throws QueryParseException, InvalidApiKeyException {
         Matcher matcher = CHANNEL_ID_PATTERN.matcher(request.getRequestURI());
         return matcher.matches() ? parseSingleRequest(request)
                                  : parseMultiRequest(request);
@@ -120,14 +135,31 @@ class ScheduleRequestParser {
         Id channel = extractChannel(request);
 
         DateTime from = extractFrom(request);
+        Optional<Publisher> override = extractOverride(request);
+
         Optional<DateTime> to = extractTo(request);
         if (to.isPresent()) {
             checkInterval(from, to.get());
-            return ScheduleQuery.single(publisher, from, to.get(), context, channel);
+            return ScheduleQuery.single(
+                    publisher, override.orElse(null),
+                    from, to.get(), context, channel
+            );
         }
 
         Integer count = extractCount(request);
-        return ScheduleQuery.single(publisher, from, count, context, channel);
+        return ScheduleQuery.single(
+                publisher, override.orElse(null),
+                from, count, context, channel
+        );
+    }
+
+    private Optional<Publisher> extractOverride(HttpServletRequest request) {
+        String param = request.getParameter(OVERRIDE_SOURCE_PARAM);
+        if (Strings.isNullOrEmpty(param)) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(Publisher.fromKey(param).valueOrNull());
     }
 
     private ScheduleQuery parseMultiRequest(HttpServletRequest request)
@@ -140,14 +172,17 @@ class ScheduleRequestParser {
         List<Id> channels = extractChannels(request);
 
         DateTime from = extractFrom(request);
+        Optional<Publisher> override = extractOverride(request);
         Optional<DateTime> to = extractTo(request);
         if (to.isPresent()) {
             checkInterval(from, to.get());
-            return ScheduleQuery.multi(publisher, from, to.get(), context, channels);
+            return ScheduleQuery.multi(
+                    publisher, override.orElse(null), from, to.get(), context, channels);
         }
 
         Integer count = extractCount(request);
-        return ScheduleQuery.multi(publisher, from, count, context, channels);
+        return ScheduleQuery.multi(
+                publisher, override.orElse(null), from, count, context, channels);
     }
 
 
@@ -206,7 +241,7 @@ class ScheduleRequestParser {
         DateTime now = clock.now();
         String toParam = request.getParameter(TO_PARAM);
         if (Strings.isNullOrEmpty(toParam)) {
-            return Optional.absent();
+            return Optional.empty();
         }
         DateTime from = dateTimeParser.parse(toParam, now);
         return Optional.of(from);
@@ -226,13 +261,15 @@ class ScheduleRequestParser {
 
     private Publisher extractPublisher(HttpServletRequest request) {
         String pubKey = getParameter(request, SOURCE_PARAM);
-        Optional<Publisher> publisher = Sources.fromPossibleKey(pubKey);
+        com.google.common.base.Optional<Publisher> publisher =
+                Sources.fromPossibleKey(pubKey);
         checkArgument(publisher.isPresent(), "Unknown source %s", pubKey);
         return publisher.get();
     }
 
     private ApplicationSources getConfiguration(HttpServletRequest request) throws InvalidApiKeyException {
-        Optional<ApplicationSources> config = applicationFetcher.sourcesFor(request);
+        com.google.common.base.Optional<ApplicationSources> config =
+                applicationFetcher.sourcesFor(request);
         if (config.isPresent()) {
             return config.get();
         }

@@ -1,34 +1,49 @@
 package org.atlasapi.query.v4.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 
-import com.google.common.base.Optional;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.common.QueryContext;
-import org.joda.time.DateTime;
-import org.joda.time.Interval;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
+import org.joda.time.DateTime;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class ScheduleQuery {
-    
-    public static final ScheduleQuery single(Publisher source, DateTime start, DateTime end, QueryContext context, Id channelId) {
-        return new SingleScheduleQuery(source, start, end, context, channelId);
+
+    public static ScheduleQuery single(
+            Publisher source, Publisher override,
+            DateTime start, DateTime end,
+            QueryContext context, Id channelId
+    ) {
+        return new SingleScheduleQuery(source, override, start, end, context, channelId);
     }
 
-    public static final ScheduleQuery single(Publisher source, DateTime start, Integer count, QueryContext context, Id channelId) {
-        return new SingleScheduleQuery(source, start, count, context, channelId);
+    public static ScheduleQuery single(
+            Publisher source, Publisher override,
+            DateTime start, Integer count,
+            QueryContext context, Id channelId
+    ) {
+        return new SingleScheduleQuery(source, override, start, count, context, channelId);
     }
     
-    public static final ScheduleQuery multi(Publisher source, DateTime start, DateTime end, QueryContext context, List<Id> channelIds) {
-        return new MultiScheduleQuery(source, start, end, context, channelIds);
+    public static ScheduleQuery multi(
+            Publisher source, Publisher override, DateTime start,
+            DateTime end, QueryContext context,
+            List<Id> channelIds
+    ) {
+        return new MultiScheduleQuery(source, override, start, end, context, channelIds);
     }
 
-    public static final ScheduleQuery multi(Publisher source, DateTime start, Integer count, QueryContext context, List<Id> channelIds) {
-        return new MultiScheduleQuery(source, start, count, context, channelIds);
+    public static ScheduleQuery multi(
+            Publisher source, Publisher override, DateTime start,
+            Integer count, QueryContext context,
+            List<Id> channelIds
+    ) {
+        return new MultiScheduleQuery(source, override, start, count, context, channelIds);
     }
     
     private final Publisher source;
@@ -36,23 +51,52 @@ public abstract class ScheduleQuery {
     private final Optional<DateTime> end;
     private final Optional<Integer> count;
     private final QueryContext context;
+    private final Optional<Publisher> override;
 
-    public ScheduleQuery(Publisher source, DateTime start, DateTime end, QueryContext context) {
-        this.source = checkNotNull(source);
-        this.start = checkNotNull(start);
-        this.end = Optional.of(end);
-        this.count = Optional.absent();
-        this.context = checkNotNull(context);
+    public ScheduleQuery(
+            Publisher source, Publisher override,
+            DateTime start, DateTime end, QueryContext context) {
+        this(
+                checkNotNull(source),
+                Optional.fromNullable(override),
+                checkNotNull(start),
+                Optional.of(end),
+                Optional.absent(),
+                checkNotNull(context)
+        );
     }
 
-    public ScheduleQuery(Publisher source, DateTime start, Integer count, QueryContext context) {
-        this.source = checkNotNull(source);
-        this.start = checkNotNull(start);
-        this.end = Optional.absent();
-        this.count = Optional.of(count);
-        this.context = checkNotNull(context);
+    public ScheduleQuery(
+            Publisher source, Publisher override,
+            DateTime start, Integer count,
+            QueryContext context
+    ) {
+        this(
+                checkNotNull(source),
+                Optional.fromNullable(override),
+                checkNotNull(start),
+                Optional.absent(),
+                Optional.of(count),
+                checkNotNull(context)
+        );
     }
-    
+
+    private ScheduleQuery(
+            Publisher source,
+            Optional<Publisher> override,
+            DateTime start,
+            Optional<DateTime> end,
+            Optional<Integer> count,
+            QueryContext context
+    ) {
+        this.source = source;
+        this.override = override;
+        this.start = start;
+        this.end = end;
+        this.count = count;
+        this.context = context;
+    }
+
     public abstract boolean isMultiChannel();
     
     public abstract Id getChannelId();
@@ -79,17 +123,29 @@ public abstract class ScheduleQuery {
         return count;
     }
 
+    public Optional<Publisher> getOverride() {
+        return override;
+    }
+
     private static final class SingleScheduleQuery extends ScheduleQuery {
 
         private final Id channelId;
 
-        public SingleScheduleQuery(Publisher source, DateTime start, DateTime end, QueryContext context, Id channelId) {
-            super(source, start, end, context);
+        public SingleScheduleQuery(
+                Publisher source, Publisher override,
+                DateTime start, DateTime end,
+                QueryContext context, Id channelId
+        ) {
+            super(source, override, start, end, context);
             this.channelId = channelId;
         }
 
-        public SingleScheduleQuery(Publisher source, DateTime start, Integer count, QueryContext context, Id channelId) {
-            super(source, start, count, context);
+        public SingleScheduleQuery(
+                Publisher source, Publisher override,
+                DateTime start, Integer count,
+                QueryContext context, Id channelId
+        ) {
+            super(source, override, start, count, context);
             this.channelId = channelId;
         }
         
@@ -107,20 +163,25 @@ public abstract class ScheduleQuery {
         public ImmutableSet<Id> getChannelIds() {
             throw new IllegalStateException("Can't call ScheduleQuery.getChannelIds() on single query");
         }
-        
     }
 
     private static final class MultiScheduleQuery extends ScheduleQuery {
 
         private final ImmutableSet<Id> channelIds;
 
-        public MultiScheduleQuery(Publisher source, DateTime start, DateTime end, QueryContext context, List<Id> ids) {
-            super(source, start, end, context);
+        public MultiScheduleQuery(
+                Publisher source, Publisher override, DateTime start, DateTime end,
+                QueryContext context, Iterable<Id> ids
+        ) {
+            super(source, override, start, end, context);
             this.channelIds = ImmutableSet.copyOf(ids);
         }
 
-        public MultiScheduleQuery(Publisher source, DateTime start, Integer count, QueryContext context, List<Id> ids) {
-            super(source, start, count, context);
+        public MultiScheduleQuery(
+                Publisher source, Publisher override, DateTime start, Integer count,
+                QueryContext context, Iterable<Id> ids
+        ) {
+            super(source, override, start, count, context);
             this.channelIds = ImmutableSet.copyOf(ids);
         }
 

@@ -1,20 +1,5 @@
 package org.atlasapi.query.v4.schedule;
 
-import static org.atlasapi.media.entity.Publisher.METABROADCAST;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
-
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -42,6 +27,14 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
+
+import com.metabroadcast.common.time.DateTimeZones;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.Before;
@@ -50,14 +43,20 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.time.DateTimeZones;
+import static org.atlasapi.media.entity.Publisher.METABROADCAST;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScheduleResolverBackedScheduleQueryExecutorTest {
@@ -82,7 +81,11 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST,start, end, QueryContext.standard(mock(HttpServletRequest.class)), channel.getId());
+        ScheduleQuery query = ScheduleQuery.single(
+                METABROADCAST, null, start, end,
+                QueryContext.standard(mock(HttpServletRequest.class)),
+                channel.getId()
+        );
 
         ChannelSchedule channelSchedule = new ChannelSchedule(channel, interval, ImmutableList.<ItemAndBroadcast>of());
 
@@ -111,7 +114,10 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
         List<Id> cids = ImmutableList.of(channelOne.getId(), channelTwo.getId());
-        ScheduleQuery query = ScheduleQuery.multi(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), cids);
+        ScheduleQuery query = ScheduleQuery.multi(
+                METABROADCAST, null, start, end,
+                QueryContext.standard(mock(HttpServletRequest.class)), cids
+        );
 
         ChannelSchedule cs1 = new ChannelSchedule(channelOne, interval, ImmutableList.<ItemAndBroadcast>of());
         ChannelSchedule cs2 = new ChannelSchedule(channelTwo, interval, ImmutableList.<ItemAndBroadcast>of());
@@ -136,7 +142,10 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(1));
+        ScheduleQuery query = ScheduleQuery.single(
+                METABROADCAST, null, start, end,
+                QueryContext.standard(mock(HttpServletRequest.class)), Id.valueOf(1)
+        );
         
         try {
             executor.execute(query);
@@ -175,7 +184,9 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
             )
         ));
 
-        ScheduleQuery query = ScheduleQuery.single(METABROADCAST, start, end, context, channel.getId());
+        ScheduleQuery query = ScheduleQuery.single(
+                METABROADCAST, null, start, end, context, channel.getId()
+        );
 
         Item equivalentItem = new Item(itemId, METABROADCAST);
         when(channelResolver.resolveIds(argThat(org.hamcrest.Matchers.<Id>iterableWithSize(1))))
