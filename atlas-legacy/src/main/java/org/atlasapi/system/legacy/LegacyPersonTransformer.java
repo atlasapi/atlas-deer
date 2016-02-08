@@ -20,7 +20,7 @@ public class LegacyPersonTransformer extends DescribedLegacyResourceTransformer<
         person.setBirthDate(input.getBirthDate());
         person.setBirthPlace(input.getBirthPlace());
         person.setQuotes(input.getQuotes());
-        
+
         return person;
     }
 

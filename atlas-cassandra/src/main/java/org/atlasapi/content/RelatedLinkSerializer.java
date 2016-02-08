@@ -48,6 +48,7 @@ public class RelatedLinkSerializer {
 
     public final Function<RelatedLink, CommonProtos.RelatedLink> TO_PROTO =
             new Function<RelatedLink, CommonProtos.RelatedLink>() {
+
                 @Nullable
                 @Override
                 public CommonProtos.RelatedLink apply(@Nullable RelatedLink relatedLink) {
@@ -57,6 +58,7 @@ public class RelatedLinkSerializer {
 
     public final Function<CommonProtos.RelatedLink, RelatedLink> FROM_PROTO =
             new Function<CommonProtos.RelatedLink, RelatedLink>() {
+
                 @Nullable
                 @Override
                 public RelatedLink apply(@Nullable CommonProtos.RelatedLink msg) {

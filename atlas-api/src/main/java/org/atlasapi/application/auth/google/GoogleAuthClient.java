@@ -1,9 +1,10 @@
 package org.atlasapi.application.auth.google;
 
-import static com.google.api.client.repackaged.com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.Collection;
+
+import com.metabroadcast.common.social.auth.credentials.AuthToken;
+import com.metabroadcast.common.social.model.UserRef.UserNamespace;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
@@ -16,11 +17,11 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfo;
-import com.metabroadcast.common.social.auth.credentials.AuthToken;
-import com.metabroadcast.common.social.model.UserRef.UserNamespace;
 
+import static com.google.api.client.repackaged.com.google.common.base.Preconditions.checkNotNull;
 
 public class GoogleAuthClient {
+
     private static final String OAUTH_APPROVAL_PROMPT_FORCE = "force";
     private static final String OAUTH_ACCESS_TYPE_OFFLINE = "offline";
     private static final String ATLAS_APP_NAME = "Atlas";
@@ -43,26 +44,30 @@ public class GoogleAuthClient {
         return oauth2.userinfo().get().execute();
     }
 
-    public String getAuthorizationCodeRequestUrl(Collection<String> scopes, String callbackUrl, String state) {
+    public String getAuthorizationCodeRequestUrl(Collection<String> scopes, String callbackUrl,
+            String state) {
         return new GoogleAuthorizationCodeRequestUrl(consumerKey,
-                callbackUrl, scopes)
+                callbackUrl, scopes
+        )
                 .setState(state)
                 .setAccessType(OAUTH_ACCESS_TYPE_OFFLINE)
                 .setApprovalPrompt(OAUTH_APPROVAL_PROMPT_FORCE)
                 .build();
     }
-    
+
     public AuthToken getAuthTokenForCode(String code, String redirectUri) throws IOException {
-        GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(httpTransport,
+        GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(
+                httpTransport,
                 jsonFactory,
                 consumerKey,
                 consumerSecret,
                 code,
-                redirectUri)
+                redirectUri
+        )
                 .execute();
         return new AuthToken(tokenResponse.getAccessToken(), "", UserNamespace.GOOGLE, null);
     }
-    
+
     private Credential getCredentialForToken(AuthToken token) {
         return new GoogleCredential.Builder()
                 .setJsonFactory(jsonFactory)

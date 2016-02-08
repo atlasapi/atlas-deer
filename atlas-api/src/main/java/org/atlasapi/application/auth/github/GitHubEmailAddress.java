@@ -3,8 +3,8 @@ package org.atlasapi.application.auth.github;
 import com.google.api.client.repackaged.com.google.common.base.Objects;
 import com.google.api.client.util.Key;
 
-
 public class GitHubEmailAddress {
+
     @Key("email")
     private String email;
 
@@ -25,7 +25,7 @@ public class GitHubEmailAddress {
     public Boolean getVerified() {
         return verified;
     }
-    
+
     public String toString() {
         return Objects.toStringHelper(getClass())
                 .add("email", this.getEmail())

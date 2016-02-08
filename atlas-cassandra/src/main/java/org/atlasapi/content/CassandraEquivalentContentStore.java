@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
@@ -111,7 +110,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     ) {
         super(contentResolver, graphStore, equivalentContentUpdatedMessageSender);
         this.legacyContentResolver = checkNotNull(legacyContentResolver);
-        this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(contentResolver));
+        this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(
+                contentResolver));
         this.graphSerializer = new EquivalenceGraphSerializer();
         this.session = session;
         this.readConsistency = read;
@@ -148,8 +148,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         this.equivSetSelect = session.prepare(
                 select(SET_ID_KEY, CONTENT_ID_KEY, DATA_KEY, GRAPH_KEY)
-                    .from(EQUIVALENT_CONTENT_TABLE)
-                    .where(eq(SET_ID_KEY, bindMarker()))
+                        .from(EQUIVALENT_CONTENT_TABLE)
+                        .where(eq(SET_ID_KEY, bindMarker()))
         );
         this.equivSetSelect.setConsistencyLevel(readConsistency);
     }
@@ -159,32 +159,38 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             Set<Publisher> selectedSources, Set<Annotation> activeAnnotations) {
 
         log.debug("Resolving IDs {}", Iterables.toString(ids));
-        
+
         final SettableFuture<ResolvedEquivalents<Content>> result = SettableFuture.create();
-  
+
         resolveWithConsistency(result, ids, selectedSources, readConsistency);
-        
+
         return result;
     }
 
     @Override
-    public ListenableFuture<ResolvedEquivalents<Content>> resolveIdsWithoutEquivalence(Iterable<Id> ids,
+    public ListenableFuture<ResolvedEquivalents<Content>> resolveIdsWithoutEquivalence(
+            Iterable<Id> ids,
             Set<Publisher> selectedSources, Set<Annotation> activeAnnotations) {
 
-        ListenableFuture<ResolvedEquivalents<Content>> equivalents = resolveIds(ids, selectedSources, activeAnnotations);
+        ListenableFuture<ResolvedEquivalents<Content>> equivalents = resolveIds(
+                ids,
+                selectedSources,
+                activeAnnotations
+        );
         return Futures.transform(equivalents, extractTargetContent(ids));
     }
 
     private Function<ResolvedEquivalents<Content>, ResolvedEquivalents<Content>> extractTargetContent(
             final Iterable<Id> ids) {
         return new Function<ResolvedEquivalents<Content>, ResolvedEquivalents<Content>>() {
+
             @Override
             public ResolvedEquivalents<Content> apply(ResolvedEquivalents<Content> input) {
 
                 ResolvedEquivalents.Builder<Content> builder = ResolvedEquivalents.builder();
                 for (Map.Entry<Id, Collection<Content>> entry : input.asMap().entrySet()) {
                     for (Content content : entry.getValue()) {
-                        if (Iterables.contains(ids, content.getId())){
+                        if (Iterables.contains(ids, content.getId())) {
                             builder.putEquivalents(entry.getKey(), ImmutableSet.of(content));
                         }
                     }
@@ -194,13 +200,19 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         };
     }
 
-    private void resolveWithConsistency(final SettableFuture<ResolvedEquivalents<Content>> result, 
-            final Iterable<Id> ids, final Set<Publisher> selectedSources, final ConsistencyLevel readConsistency) {
-        ListenableFuture<ImmutableMap<Long, Long>> setsToResolve = 
+    private void resolveWithConsistency(final SettableFuture<ResolvedEquivalents<Content>> result,
+            final Iterable<Id> ids, final Set<Publisher> selectedSources,
+            final ConsistencyLevel readConsistency) {
+        ListenableFuture<ImmutableMap<Long, Long>> setsToResolve =
                 index.lookup(Iterables.transform(ids, Id.toLongValue()), readConsistency);
-        
-        Futures.addCallback(Futures.transform(setsToResolve, toEquivalentsSets(selectedSources, readConsistency)), 
-                new FutureCallback<Optional<ResolvedEquivalents<Content>>>(){
+
+        Futures.addCallback(
+                Futures.transform(
+                        setsToResolve,
+                        toEquivalentsSets(selectedSources, readConsistency)
+                ),
+                new FutureCallback<Optional<ResolvedEquivalents<Content>>>() {
+
                     @Override
                     public void onSuccess(Optional<ResolvedEquivalents<Content>> resolved) {
                         /* Because QUORUM writes are used, reads may see a set in an inconsistent 
@@ -210,17 +222,24 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                         if (resolved.isPresent()) {
                             result.set(resolved.get());
                         } else if (readConsistency != ConsistencyLevel.QUORUM) {
-                            resolveWithConsistency(result, ids, selectedSources, ConsistencyLevel.QUORUM);
+                            resolveWithConsistency(
+                                    result,
+                                    ids,
+                                    selectedSources,
+                                    ConsistencyLevel.QUORUM
+                            );
                         } else {
-                            result.setException(new IllegalStateException("Failed to resolve " + ids));
+                            result.setException(new IllegalStateException("Failed to resolve "
+                                    + ids));
                         }
                     }
-        
+
                     @Override
                     public void onFailure(Throwable t) {
                         result.setException(t);
                     }
-                });
+                }
+        );
     }
 
     private AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
@@ -296,16 +315,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             }
             return content;
         } catch (IOException e) {
-            throw new RuntimeException(setId +":"+row.getLong(CONTENT_ID_KEY), e);
+            throw new RuntimeException(setId + ":" + row.getLong(CONTENT_ID_KEY), e);
         }
     }
 
     private boolean contentSelected(Content content, Set<Publisher> selectedSources) {
         return content.isActivelyPublished()
-            && selectedSources.contains(content.getSource());
+                && selectedSources.contains(content.getSource());
     }
 
-    private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries, ConsistencyLevel readConsistency) {
+    private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries,
+            ConsistencyLevel readConsistency) {
         ImmutableList.Builder<ListenableFuture<ResultSet>> resultSets = ImmutableList.builder();
         for (Statement query : queries) {
             resultSets.add(session.executeAsync(query));
@@ -313,7 +333,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         return Futures.allAsList(resultSets.build());
     }
-    
+
     private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
                 .map(k -> setsSelect.bind().setLong(SET_ID_BIND, k))
@@ -418,11 +438,11 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private List<BoundStatement> getDeleteStaleRows(ImmutableSet<EquivalenceGraph> createdGraphs,
             Id updatedGraphId) {
         return createdGraphs.stream()
-                    .flatMap(graph -> graph.getEquivalenceSet().stream())
-                    .map(elem -> rowDelete.bind()
-                            .setLong(SET_ID_BIND, updatedGraphId.longValue())
-                            .setLong(CONTENT_ID_BIND, elem.longValue()))
-                    .collect(Collectors.toList());
+                .flatMap(graph -> graph.getEquivalenceSet().stream())
+                .map(elem -> rowDelete.bind()
+                        .setLong(SET_ID_BIND, updatedGraphId.longValue())
+                        .setLong(CONTENT_ID_BIND, elem.longValue()))
+                .collect(Collectors.toList());
     }
 
     private ByteBuffer serialize(Content content) {

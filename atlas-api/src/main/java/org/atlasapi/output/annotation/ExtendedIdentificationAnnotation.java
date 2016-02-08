@@ -1,6 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
 import java.io.IOException;
 
 import org.atlasapi.entity.Identified;
@@ -12,13 +11,13 @@ import org.atlasapi.output.writers.AliasWriter;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-
 public class ExtendedIdentificationAnnotation extends OutputAnnotation<Identified> {
 
     private final EntityListWriter<EquivalenceRef> equivalentWriter = new EntityListWriter<EquivalenceRef>() {
 
         @Override
-        public void write(EquivalenceRef entity, FieldWriter formatter, OutputContext ctxt) throws IOException {
+        public void write(EquivalenceRef entity, FieldWriter formatter, OutputContext ctxt)
+                throws IOException {
             formatter.writeField("id", idCodec.encode(entity.getId().toBigInteger()));
             formatter.writeField("source", entity.getSource().key());
         }
@@ -33,7 +32,7 @@ public class ExtendedIdentificationAnnotation extends OutputAnnotation<Identifie
             return "equivalent";
         }
     };
-    
+
     private final NumberToShortStringCodec idCodec;
     private final AliasWriter aliasWriter;
 
@@ -44,9 +43,10 @@ public class ExtendedIdentificationAnnotation extends OutputAnnotation<Identifie
     }
 
     @Override
-    public void write(Identified entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(Identified entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
         writer.writeList(aliasWriter, entity.getAliases(), ctxt);
         writer.writeList(equivalentWriter, entity.getEquivalentTo(), ctxt);
     }
-    
+
 }

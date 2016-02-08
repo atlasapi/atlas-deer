@@ -1,6 +1,7 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.collect.Iterables;
+import java.util.Set;
+
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
@@ -8,9 +9,10 @@ import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.media.entity.Publisher;
 
-import java.util.Set;
+import com.google.common.collect.Iterables;
 
-public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer<org.atlasapi.media.channel.ChannelGroup,ChannelGroup<?>> {
+public class LegacyChannelGroupTransformer extends
+        BaseLegacyResourceTransformer<org.atlasapi.media.channel.ChannelGroup, ChannelGroup<?>> {
 
     protected Iterable<ChannelNumbering> transformChannelNumbering(
             Set<org.atlasapi.media.channel.ChannelNumbering> channelNumberings,
@@ -28,11 +30,9 @@ public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer
         );
     }
 
-
-
     @Override
     public ChannelGroup apply(org.atlasapi.media.channel.ChannelGroup input) {
-        if(input instanceof org.atlasapi.media.channel.Platform) {
+        if (input instanceof org.atlasapi.media.channel.Platform) {
             return transformService((org.atlasapi.media.channel.Platform) input);
         } else {
             return transformRegion((org.atlasapi.media.channel.Region) input);
@@ -45,7 +45,10 @@ public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer
                 .withAvailableCountries(input.getAvailableCountries())
                 .withRegionIds(input.getRegions())
                 .withTitles(input.getAllTitles())
-                .withChannels(transformChannelNumbering(input.getChannelNumberings(), input.getPublisher()))
+                .withChannels(transformChannelNumbering(
+                        input.getChannelNumberings(),
+                        input.getPublisher()
+                ))
                 .withAliases(transformAliases(input))
                 .build();
     }
@@ -56,7 +59,10 @@ public class LegacyChannelGroupTransformer extends BaseLegacyResourceTransformer
                 .withAvailableCountries(input.getAvailableCountries())
                 .withPlaformId(input.getPlatform())
                 .withTitles(input.getAllTitles())
-                .withChannels(transformChannelNumbering(input.getChannelNumberings(), input.getPublisher()))
+                .withChannels(transformChannelNumbering(
+                        input.getChannelNumberings(),
+                        input.getPublisher()
+                ))
                 .withAliases(transformAliases(input))
                 .build();
     }

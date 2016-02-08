@@ -1,25 +1,26 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.util.concurrent.Futures;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.media.entity.Publisher;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
 
-import com.google.common.base.Supplier;
-import com.google.common.collect.AbstractIterator;
-import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.DayRange;
 import com.metabroadcast.common.time.DayRangeGenerator;
+
+import com.google.common.base.Supplier;
+import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SourceChannelIntervalTaskSupplier<T> implements Supplier<Iterable<T>> {
 
@@ -29,13 +30,14 @@ public class SourceChannelIntervalTaskSupplier<T> implements Supplier<Iterable<T
         private final Iterator<Publisher> srcs;
         private final DayRange dayRange;
         private final Iterable<Channel> channels;
-        
+
         private Iterator<LocalDate> days;
         private Iterator<Channel> chans;
         private Publisher src;
         private LocalDate day;
 
-        public ChannelDayScheduleFactoryIterator(SourceChannelIntervalFactory<? extends T> taskFactory,
+        public ChannelDayScheduleFactoryIterator(
+                SourceChannelIntervalFactory<? extends T> taskFactory,
                 ImmutableSet<Publisher> sources, DayRange dayRange, Iterable<Channel> channels) {
             this.factory = taskFactory;
             this.srcs = sources.iterator();
@@ -58,10 +60,12 @@ public class SourceChannelIntervalTaskSupplier<T> implements Supplier<Iterable<T
             }
             return factory.create(src, chans.next(), interval(day));
         }
-        
+
         private Interval interval(LocalDate day) {
-            return new Interval(day.toDateTimeAtStartOfDay(DateTimeZones.UTC),
-                    day.plusDays(1).toDateTimeAtStartOfDay(DateTimeZones.UTC));
+            return new Interval(
+                    day.toDateTimeAtStartOfDay(DateTimeZones.UTC),
+                    day.plusDays(1).toDateTimeAtStartOfDay(DateTimeZones.UTC)
+            );
         }
 
     }
@@ -90,14 +94,21 @@ public class SourceChannelIntervalTaskSupplier<T> implements Supplier<Iterable<T
             channels = Futures.get(
                     channelResolver.resolveChannels(ChannelQuery.builder().build()),
                     1, TimeUnit.MINUTES,
-                    Exception.class).getResources();
+                    Exception.class
+            ).getResources();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return new Iterable<T>() {
+
             @Override
             public Iterator<T> iterator() {
-                return new ChannelDayScheduleFactoryIterator<T>(taskFactory, sources, dayRange, channels);
+                return new ChannelDayScheduleFactoryIterator<T>(
+                        taskFactory,
+                        sources,
+                        dayRange,
+                        channels
+                );
             }
         };
     }

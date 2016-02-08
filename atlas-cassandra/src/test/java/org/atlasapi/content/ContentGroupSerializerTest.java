@@ -1,15 +1,16 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class ContentGroupSerializerTest {
 
@@ -26,7 +27,8 @@ public class ContentGroupSerializerTest {
 
         expected.setType(ContentGroup.Type.FRANCHISE);
         expected.addContent(new ItemRef(Id.valueOf(0L), Publisher.BBC, "sort",
-                DateTime.now().withZone(DateTimeZone.UTC)));
+                DateTime.now().withZone(DateTimeZone.UTC)
+        ));
         expected.setTitle("title");
 
         CommonProtos.ContentGroup serialized = serializer.serialize(expected);

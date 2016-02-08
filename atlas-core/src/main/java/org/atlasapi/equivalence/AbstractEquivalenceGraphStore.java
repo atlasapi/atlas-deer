@@ -55,39 +55,54 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
-    
-    public AbstractEquivalenceGraphStore(MessageSender<EquivalenceGraphUpdateMessage> messageSender) {
+
+    public AbstractEquivalenceGraphStore(
+            MessageSender<EquivalenceGraphUpdateMessage> messageSender) {
         this.messageSender = checkNotNull(messageSender);
     }
-    
+
     @Override
     public final Optional<EquivalenceGraphUpdate> updateEquivalences(ResourceRef subject,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws WriteException {
 
         ImmutableSet<Id> newAdjacents
-            = ImmutableSet.copyOf(Iterables.transform(assertedAdjacents, Identifiables.toId()));
+                = ImmutableSet.copyOf(Iterables.transform(assertedAdjacents, Identifiables.toId()));
         Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
         Set<Id> transitiveSetsIds = null;
         try {
-            LOG.debug("Thread {} is trying to enter synchronized block to lock graph IDs", Thread.currentThread().getName());
+            LOG.debug(
+                    "Thread {} is trying to enter synchronized block to lock graph IDs",
+                    Thread.currentThread().getName()
+            );
             synchronized (lock()) {
-                LOG.debug("Thread {} has entered synchronized block to lock graph IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
-                while((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
+                LOG.debug(
+                        "Thread {} has entered synchronized block to lock graph IDs {}",
+                        Thread.currentThread().getName(),
+                        subjectAndAdjacents
+                );
+                while ((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
                     lock().unlock(subjectAndAdjacents);
                     lock().wait(5000);
-                    LOG.debug("Thread {} attempting to lock IDs {}", Thread.currentThread().getName(), subjectAndAdjacents);
+                    LOG.debug(
+                            "Thread {} attempting to lock IDs {}",
+                            Thread.currentThread().getName(),
+                            subjectAndAdjacents
+                    );
                 }
             }
-            LOG.debug("Thread {} has left synchronized block, having locked graph IDs", Thread.currentThread().getName());
+            LOG.debug(
+                    "Thread {} has left synchronized block, having locked graph IDs",
+                    Thread.currentThread().getName()
+            );
 
             Optional<EquivalenceGraphUpdate> updated
-                = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
+                    = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
             if (updated.isPresent()) {
                 sendUpdateMessage(subject, updated);
             }
             return updated;
-            
-        } catch(InterruptedException e) {
+
+        } catch (InterruptedException e) {
             log().error(String.format("%s: %s", subject, newAdjacents), e);
             return Optional.absent();
         } catch (StoreException e) {
@@ -100,21 +115,28 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private void unlock(Set<Id> subjectAndAdjacents, Set<Id> transitiveSetsIds) {
         LOG.debug("Thread {} waiting for lock to unlock {} and {}",
-                Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds);
+                Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds
+        );
 
         synchronized (lock()) {
             LOG.debug("Thread {} unlocking IDs {}",
-                    Thread.currentThread().getName(), subjectAndAdjacents);
+                    Thread.currentThread().getName(), subjectAndAdjacents
+            );
 
             lock().unlock(subjectAndAdjacents);
 
             if (transitiveSetsIds != null) {
                 LOG.debug("Thread {} unlocking transitive IDs {}",
-                        Thread.currentThread().getName(), transitiveSetsIds);
+                        Thread.currentThread().getName(), transitiveSetsIds
+                );
 
                 lock().unlock(transitiveSetsIds);
             }
-            LOG.debug("Thread {} performing notifyAll", Thread.currentThread().getName(), transitiveSetsIds);
+            LOG.debug(
+                    "Thread {} performing notifyAll",
+                    Thread.currentThread().getName(),
+                    transitiveSetsIds
+            );
 
             lock().notifyAll();
         }
@@ -126,13 +148,13 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     protected abstract Logger log();
 
-    private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated)  {
+    private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated) {
         try {
             messageSender.sendMessage(
                     new EquivalenceGraphUpdateMessage(
-                        UUID.randomUUID().toString(),
-                        Timestamp.of(DateTime.now(DateTimeZones.UTC)),
-                        updated.get()
+                            UUID.randomUUID().toString(),
+                            Timestamp.of(DateTime.now(DateTimeZones.UTC)),
+                            updated.get()
                     ),
                     Longs.toByteArray(updated.get().getUpdated().getId().longValue())
             );
@@ -141,9 +163,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
     }
 
-    private Set<Id> tryLockAllIds(Set<Id> adjacentsIds) throws InterruptedException, StoreException {
+    private Set<Id> tryLockAllIds(Set<Id> adjacentsIds)
+            throws InterruptedException, StoreException {
         if (!lock().tryLock(adjacentsIds)) {
-            LOG.debug("Thread {} failed to lock adjacents {}", Thread.currentThread().getName(), adjacentsIds);
+            LOG.debug(
+                    "Thread {} failed to lock adjacents {}",
+                    Thread.currentThread().getName(),
+                    adjacentsIds
+            );
             return null;
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
@@ -151,20 +178,27 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
-        LOG.debug("Thread {} Lock attempt success status {} locking transitive set {}", Thread.currentThread().getName(), locked, idsToLock);
+        LOG.debug(
+                "Thread {} Lock attempt success status {} locking transitive set {}",
+                Thread.currentThread().getName(),
+                locked,
+                idsToLock
+        );
         return locked ? allIds : null;
     }
 
     private Iterable<Id> transitiveIdsToLock(Set<Id> adjacentsIds) throws StoreException {
-        return Iterables.concat(Iterables.transform(get(resolveIds(adjacentsIds)).values(),
+        return Iterables.concat(Iterables.transform(
+                get(resolveIds(adjacentsIds)).values(),
                 input -> input.isPresent()
                          ? input.get().getAdjacencyList().keySet()
                          : ImmutableSet.<Id>of()
         ));
     }
 
-    private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject, 
-            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws StoreException {
+    private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject,
+            ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources)
+            throws StoreException {
 
         Optional<EquivalenceGraph> optionalSubjGraph = existingGraph(subject);
         EquivalenceGraph subjGraph = optionalSubjGraph.or(EquivalenceGraph.valueOf(subject));
@@ -173,27 +207,31 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraphs = existingGraphMaps(
                 assertedAdjacents);
 
-        if(optionalSubjGraph.isPresent() &&
+        if (optionalSubjGraph.isPresent() &&
                 checkForOrphanedContent(subjGraph, adjacentsExistingGraphs, assertedAdjacents)) {
-            LOG.warn("Found orphaned content in graph {}. Rewriting graph in store and retrying",
-                    subjGraph.getId().longValue());
+            LOG.warn(
+                    "Found orphaned content in graph {}. Rewriting graph in store and retrying",
+                    subjGraph.getId().longValue()
+            );
             store(ImmutableSet.of(subjGraph));
             adjacentsExistingGraphs = existingGraphMaps(assertedAdjacents);
         }
 
-        Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs = resolveRefs(assertedAdjacents,
-                adjacentsExistingGraphs);
+        Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs = resolveRefs(
+                assertedAdjacents,
+                adjacentsExistingGraphs
+        );
 
         Map<Id, Adjacents> updatedAdjacents = updateAdjacencies(subject,
-                subjGraph.getAdjacencyList().values(), assertedAdjacentGraphs, sources);
-        
+                subjGraph.getAdjacencyList().values(), assertedAdjacentGraphs, sources
+        );
+
         EquivalenceGraphUpdate update =
                 computeUpdate(subject, assertedAdjacentGraphs, updatedAdjacents);
 
-        if(changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
+        if (changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
             store(update.getAllGraphs());
-        }
-        else {
+        } else {
             log().debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
         }
 
@@ -205,7 +243,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private EquivalenceGraphUpdate computeUpdate(ResourceRef subject,
             Map<ResourceRef, EquivalenceGraph> assertedAdjacentGraphs,
-            Map<Id, Adjacents> updatedAdjacents)  {
+            Map<Id, Adjacents> updatedAdjacents) {
         Map<Id, EquivalenceGraph> updatedGraphs = computeUpdatedGraphs(updatedAdjacents);
         EquivalenceGraph updatedGraph = graphFor(subject, updatedGraphs);
         return new EquivalenceGraphUpdate(
@@ -221,7 +259,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         );
     }
 
-    private EquivalenceGraph graphFor(ResourceRef subject, Map<Id, EquivalenceGraph> updatedGraphs) {
+    private EquivalenceGraph graphFor(ResourceRef subject,
+            Map<Id, EquivalenceGraph> updatedGraphs) {
         for (EquivalenceGraph graph : updatedGraphs.values()) {
             if (graph.getEquivalenceSet().contains(subject.getId())) {
                 return graph;
@@ -230,7 +269,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         throw new IllegalStateException("Couldn't find updated graph for " + subject);
     }
 
-    private Map<Id, EquivalenceGraph> computeUpdatedGraphs(Map<Id, Adjacents> updatedAdjacents)  {
+    private Map<Id, EquivalenceGraph> computeUpdatedGraphs(Map<Id, Adjacents> updatedAdjacents) {
         Function<Identifiable, Adjacents> toAdjs =
                 Functions.compose(Functions.forMap(updatedAdjacents), Identifiables.toId());
         Set<Id> seen = Sets.newHashSetWithExpectedSize(updatedAdjacents.size());
@@ -252,7 +291,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
         Queue<Adjacents> work = Lists.newLinkedList();
         work.add(adj);
-        while(!work.isEmpty()) {
+        while (!work.isEmpty()) {
             Adjacents curr = work.poll();
             set.add(curr);
             work.addAll(Collections2.filter(
@@ -272,9 +311,19 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 .addAll(subjAdjacencies).build();
         for (Adjacents adj : allAdjacents) {
             if (updated.containsKey(adj.getId())) {
-                updated.put(adj.getId(), updateAdjacents(updated.get(adj.getId()), subject, adjacentGraphs.keySet(), sources));
+                updated.put(
+                        adj.getId(),
+                        updateAdjacents(updated.get(adj.getId()),
+                                subject,
+                                adjacentGraphs.keySet(),
+                                sources
+                        )
+                );
             } else {
-                updated.put(adj.getId(), updateAdjacents(adj, subject, adjacentGraphs.keySet(), sources));
+                updated.put(
+                        adj.getId(),
+                        updateAdjacents(adj, subject, adjacentGraphs.keySet(), sources)
+                );
             }
         }
         return ImmutableMap.copyOf(updated);
@@ -298,13 +347,17 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private Adjacents updateSubjectAdjacents(Adjacents subj,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
         ImmutableSet.Builder<ResourceRef> updatedEfferents = ImmutableSet.<ResourceRef>builder()
-            .add(subj.getRef())
-            .addAll(assertedAdjacents)
-            .addAll(Sets.filter(subj.getEfferent(), Predicates.not(Sourceds.sourceFilter(sources))));
+                .add(subj.getRef())
+                .addAll(assertedAdjacents)
+                .addAll(Sets.filter(
+                        subj.getEfferent(),
+                        Predicates.not(Sourceds.sourceFilter(sources))
+                ));
         return subj.copyWithEfferents(updatedEfferents.build());
     }
 
-    private ImmutableSet.Builder<Adjacents> currentTransitiveAdjacents(Map<ResourceRef, EquivalenceGraph> resolved)
+    private ImmutableSet.Builder<Adjacents> currentTransitiveAdjacents(
+            Map<ResourceRef, EquivalenceGraph> resolved)
             throws StoreException {
         ImmutableSet.Builder<Adjacents> result = ImmutableSet.<Adjacents>builder();
         for (EquivalenceGraph graph : resolved.values()) {
@@ -322,7 +375,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             Set<ResourceRef> assertedAdjacents) {
         return assertedAdjacents.stream()
                 .anyMatch(adjacent -> contentIsOrphaned(subjGraph, adjacentsExistingGraph,
-                        adjacent.getId()));
+                        adjacent.getId()
+                ));
     }
 
     private boolean contentIsOrphaned(EquivalenceGraph subjGraph,
@@ -344,7 +398,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private boolean changeInAdjacents(Adjacents subjAdjs,
             ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
         Set<ResourceRef> currentNeighbours
-            = Sets.filter(subjAdjs.getEfferent(), Sourceds.sourceFilter(sources));
+                = Sets.filter(subjAdjs.getEfferent(), Sourceds.sourceFilter(sources));
         Set<ResourceRef> subjectAndAsserted = MoreSets.add(assertedAdjacents, subjAdjs.getRef());
         boolean change = !currentNeighbours.equals(subjectAndAsserted);
         if (change) {

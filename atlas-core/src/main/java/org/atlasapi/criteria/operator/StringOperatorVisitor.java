@@ -14,11 +14,15 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.operator;
 
-import static org.atlasapi.criteria.operator.Operators.*;
+import static org.atlasapi.criteria.operator.Operators.Ascending;
+import static org.atlasapi.criteria.operator.Operators.Beginning;
+import static org.atlasapi.criteria.operator.Operators.Descending;
 
 public interface StringOperatorVisitor<V> extends EqualsOperatorVisitor<V> {
 
     V visit(Beginning beginning);
+
     V visit(Ascending ascending);
+
     V visit(Descending ascending);
 }

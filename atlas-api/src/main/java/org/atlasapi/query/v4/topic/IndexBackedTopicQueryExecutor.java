@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.topic;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.IndexQueryResult;
@@ -16,12 +14,15 @@ import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicIndex;
 import org.atlasapi.topic.TopicResolver;
 
+import com.metabroadcast.common.query.Selection;
+
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 
@@ -35,22 +36,35 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
 
     @Override
     public QueryResult<Topic> execute(Query<Topic> query) throws QueryExecutionException {
-        IndexQueryResult result = Futures.get(getResults(query), 1, TimeUnit.MINUTES, QueryExecutionException.class);
-        Resolved<Topic> resolved = Futures.get(resolve(result.getIds()), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        IndexQueryResult result = Futures.get(
+                getResults(query),
+                1,
+                TimeUnit.MINUTES,
+                QueryExecutionException.class
+        );
+        Resolved<Topic> resolved = Futures.get(
+                resolve(result.getIds()),
+                1,
+                TimeUnit.MINUTES,
+                QueryExecutionException.class
+        );
         /* We do to ensure the content resolved from the store is in the order
             specified by the index */
-        Resolved<Topic> orderedResolved = Resolved.valueOf(Ordering.explicit(result.getIds().toList())
+        Resolved<Topic> orderedResolved = Resolved.valueOf(Ordering.explicit(result.getIds()
+                .toList())
                 .onResultOf(Topic::getId)
                 .immutableSortedCopy(resolved.getResources()));
         return resultFor(orderedResolved, query, result.getTotalCount());
     }
 
-    private QueryResult<Topic> resultFor(Resolved<Topic> resolved, Query<Topic> query, Long totalCount) throws NotFoundException {
+    private QueryResult<Topic> resultFor(Resolved<Topic> resolved, Query<Topic> query,
+            Long totalCount) throws NotFoundException {
         return query.isListQuery() ? listResult(resolved, query, totalCount)
                                    : singleResult(resolved, query);
     }
 
-    private QueryResult<Topic> singleResult(Resolved<Topic> resolved, Query<Topic> query) throws NotFoundException {
+    private QueryResult<Topic> singleResult(Resolved<Topic> resolved, Query<Topic> query)
+            throws NotFoundException {
         Topic topic = Iterables.getOnlyElement(resolved.getResources(), null);
         if (topic == null) {
             throw new NotFoundException(query.getOnlyId());
@@ -58,7 +72,8 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
         return QueryResult.singleResult(topic, query.getContext());
     }
 
-    private QueryResult<Topic> listResult(Resolved<Topic> resolved, Query<Topic> query, Long totalCount) {
+    private QueryResult<Topic> listResult(Resolved<Topic> resolved, Query<Topic> query,
+            Long totalCount) {
         return QueryResult.listResult(resolved.getResources(), query.getContext(), totalCount);
     }
 
@@ -74,9 +89,9 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
     private ListenableFuture<IndexQueryResult> queryIndex(Query<Topic> query)
             throws QueryExecutionException {
         return index.query(
-            query.getOperands(), 
-            query.getContext().getApplicationSources().getEnabledReadSources(), 
-            query.getContext().getSelection().or(Selection.ALL)
+                query.getOperands(),
+                query.getContext().getApplicationSources().getEnabledReadSources(),
+                query.getContext().getSelection().or(Selection.ALL)
         );
     }
 

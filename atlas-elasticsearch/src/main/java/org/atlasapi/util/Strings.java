@@ -4,14 +4,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.util.Version;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 
 public class Strings {
 
@@ -21,10 +20,10 @@ public class Strings {
             TokenStream tokens;
             if (filterStopWords) {
                 tokens = new StandardAnalyzer(Version.LATEST)
-                    .tokenStream("", new StringReader(value));
+                        .tokenStream("", new StringReader(value));
             } else {
                 tokens = new StandardAnalyzer(Version.LATEST, CharArraySet.EMPTY_SET)
-                    .tokenStream("", new StringReader(value));
+                        .tokenStream("", new StringReader(value));
             }
             tokens.reset();
             while (tokens.incrementToken()) {
@@ -42,6 +41,9 @@ public class Strings {
     }
 
     public static String flatten(String value) {
-        return Joiner.on("").join(tokenize(value, true)).replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        return Joiner.on("")
+                .join(tokenize(value, true))
+                .replaceAll("[^a-zA-Z0-9]", "")
+                .toLowerCase();
     }
 }

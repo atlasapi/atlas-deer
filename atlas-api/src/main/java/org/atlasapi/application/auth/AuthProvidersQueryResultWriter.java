@@ -2,6 +2,8 @@ package org.atlasapi.application.auth;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.application.model.auth.OAuthProvider;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -12,11 +14,10 @@ import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
 
-import javax.servlet.http.HttpServletRequest;
-
 public class AuthProvidersQueryResultWriter extends QueryResultWriter<OAuthProvider> {
+
     private final EntityListWriter<OAuthProvider> authProvidersWriter;
-    
+
     public AuthProvidersQueryResultWriter(
             EntityListWriter<OAuthProvider> authProvidersWriter,
             EntityWriter<Object> licenseWriter,
@@ -25,7 +26,7 @@ public class AuthProvidersQueryResultWriter extends QueryResultWriter<OAuthProvi
         super(licenseWriter, requestWriter);
         this.authProvidersWriter = authProvidersWriter;
     }
-    
+
     @Override
     protected void writeResult(QueryResult<OAuthProvider> result, ResponseWriter writer)
             throws IOException {

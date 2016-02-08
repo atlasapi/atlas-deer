@@ -1,7 +1,5 @@
 package org.atlasapi.generation.parsing;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -16,28 +14,28 @@ import javax.lang.model.type.TypeMirror;
 import org.atlasapi.generation.model.EndpointMethodInfo;
 import org.atlasapi.generation.model.EndpointTypeInfo;
 import org.atlasapi.meta.annotations.ProducesType;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-
-import scala.actors.threadpool.Arrays;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import scala.actors.threadpool.Arrays;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 // TODO this class is still pretty chunky
 public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, EndpointMethodInfo> {
-    
+
     private final JavadocParser docParser;
 
     private ProcessingEnvironment processingEnv;
-    
+
     public EndpointTypeParser(JavadocParser docParser) {
         this.docParser = checkNotNull(docParser);
     }
-    
+
     @Override
     public void init(ProcessingEnvironment processingEnv) {
         this.processingEnv = checkNotNull(processingEnv);
@@ -57,7 +55,7 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
 
     private String keyFrom(String rootPath) {
         return rootPath.replaceAll("(/4/)", "");
-//        return addQuotesToString(typeToSimpleName(type));
+        //        return addQuotesToString(typeToSimpleName(type));
     }
 
     private String classNameFrom(TypeElement type) {
@@ -65,7 +63,8 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
     }
 
     private String descriptionFrom(TypeElement type) {
-        return addQuotesToString(docParser.parse(processingEnv.getElementUtils().getDocComment(type)));
+        return addQuotesToString(docParser.parse(processingEnv.getElementUtils()
+                .getDocComment(type)));
     }
 
     private String rootPathFrom(TypeElement type) {
@@ -87,33 +86,35 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
         TypeElement typeElem = (TypeElement) processingEnv.getTypeUtils().asElement(producedType);
         return addQuotesToString(typeToSimpleName(typeElem));
     }
-    
+
     private TypeMirror extractProducedType(TypeElement endpointType) {
         AnnotationMirror am = getAnnotationMirror(endpointType, ProducesType.class);
-        if(am == null) {
+        if (am == null) {
             return null;
         }
         AnnotationValue av = getAnnotationValue(am, "type");
-        if(av == null) {
+        if (av == null) {
             return null;
         } else {
-            return (TypeMirror)av.getValue();
+            return (TypeMirror) av.getValue();
         }
     }
-    
+
     private static AnnotationMirror getAnnotationMirror(TypeElement typeElement, Class<?> clazz) {
         String clazzName = clazz.getName();
-        for(AnnotationMirror m : typeElement.getAnnotationMirrors()) {
-            if(m.getAnnotationType().toString().equals(clazzName)) {
+        for (AnnotationMirror m : typeElement.getAnnotationMirrors()) {
+            if (m.getAnnotationType().toString().equals(clazzName)) {
                 return m;
             }
         }
         return null;
     }
-    
-    private static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, String key) {
-        for(Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror.getElementValues().entrySet() ) {
-            if(entry.getKey().getSimpleName().toString().equals(key)) {
+
+    private static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror,
+            String key) {
+        for (Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror.getElementValues()
+                .entrySet()) {
+            if (entry.getKey().getSimpleName().toString().equals(key)) {
                 return entry.getValue();
             }
         }
@@ -123,7 +124,7 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
     private String typeToSimpleName(TypeElement type) {
         return type.getSimpleName().toString();
     }
-    
+
     private static String addQuotesToString(String input) {
         return "\"" + input + "\"";
     }
@@ -132,27 +133,30 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
     @Override
     public Set<EndpointMethodInfo> parse(Iterable<ExecutableElement> methods) {
         return FluentIterable.from(methods)
-            .transformAndConcat(extractMethodInfo())
-            .toSet();
+                .transformAndConcat(extractMethodInfo())
+                .toSet();
     }
 
     private Function<ExecutableElement, Iterable<EndpointMethodInfo>> extractMethodInfo() {
         return new Function<ExecutableElement, Iterable<EndpointMethodInfo>>() {
+
             @Override
             public Iterable<EndpointMethodInfo> apply(ExecutableElement input) {
                 RequestMapping requestMappingAnnotation = input.getAnnotation(RequestMapping.class);
-                
+
                 Set<RequestMethod> methods = extractMethods(requestMappingAnnotation);
                 Set<String> paths = extractPaths(requestMappingAnnotation);
-    
+
                 return FluentIterable.from(methods)
                         .transformAndConcat(mapMethodToPaths(paths));
             }
         };
     }
-    
-    private Function<RequestMethod, Iterable<EndpointMethodInfo>> mapMethodToPaths(final Set<String> paths) {
+
+    private Function<RequestMethod, Iterable<EndpointMethodInfo>> mapMethodToPaths(
+            final Set<String> paths) {
         return new Function<RequestMethod, Iterable<EndpointMethodInfo>>() {
+
             @Override
             public Iterable<EndpointMethodInfo> apply(RequestMethod input) {
                 return FluentIterable.from(paths)
@@ -160,16 +164,17 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
             }
         };
     }
-    
+
     private Function<String, EndpointMethodInfo> createMethodInfo(final RequestMethod method) {
         return new Function<String, EndpointMethodInfo>() {
+
             @Override
             public EndpointMethodInfo apply(String input) {
                 return new EndpointMethodInfo(input, method);
             }
         };
     }
-    
+
     private Set<RequestMethod> extractMethods(RequestMapping requestMapping) {
         RequestMethod[] requestMethods = requestMapping.method();
         if (requestMethods.length == 0) {
@@ -177,7 +182,7 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
         }
         return ImmutableSet.copyOf(requestMethods);
     }
-    
+
     // TODO is there a way to avoid the unchecked conversion?
     private Set<String> extractPaths(RequestMapping requestMapping) {
         @SuppressWarnings("unchecked")
@@ -189,6 +194,7 @@ public class EndpointTypeParser implements TypeParser<EndpointTypeInfo, Endpoint
 
     private static Function<String, String> quoteString() {
         return new Function<String, String>() {
+
             @Override
             public String apply(String input) {
                 return addQuotesToString(input);

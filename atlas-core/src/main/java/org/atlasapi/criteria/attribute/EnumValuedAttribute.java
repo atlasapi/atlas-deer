@@ -14,19 +14,20 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.attribute;
 
-import org.atlasapi.entity.Identified;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.operator.EqualsOperator;
 import org.atlasapi.criteria.operator.Operator;
+import org.atlasapi.entity.Identified;
 
 public class EnumValuedAttribute<T extends Enum<T>> extends Attribute<T> {
 
-    public static final <T extends Enum<T>> EnumValuedAttribute<T> valueOf(String name, Class<T> type, Class<? extends Identified> target,
+    public static final <T extends Enum<T>> EnumValuedAttribute<T> valueOf(String name,
+            Class<T> type, Class<? extends Identified> target,
             boolean isCollection) {
         return new EnumValuedAttribute<T>(name, type, target, isCollection);
     }
-    
+
     private final Class<T> type;
 
     EnumValuedAttribute(String name, Class<T> type, Class<? extends Identified> target) {

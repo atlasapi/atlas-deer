@@ -26,13 +26,17 @@ public class HealthModule {
     private @Autowired MetricsModule metricsModule;
     private @Autowired AtlasPersistenceModule persistenceModule;
 
-    public @Bean HealthController healthController() {
+    public
+    @Bean
+    HealthController healthController() {
         return new HealthController(ImmutableList.of(
                 new MemoryInfoProbe()
         ));
     }
 
-    public @Bean org.atlasapi.system.HealthController threadController() {
+    public
+    @Bean
+    org.atlasapi.system.HealthController threadController() {
         return new org.atlasapi.system.HealthController(
                 persistenceModule.persistenceModule().getSession()
         );

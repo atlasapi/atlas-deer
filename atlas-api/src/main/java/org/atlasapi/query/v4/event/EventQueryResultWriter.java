@@ -1,16 +1,23 @@
 package org.atlasapi.query.v4.event;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.google.common.collect.FluentIterable;
-import org.atlasapi.event.Event;
-import org.atlasapi.output.*;
-import org.atlasapi.query.common.QueryResult;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.atlasapi.event.Event;
+import org.atlasapi.output.EntityListWriter;
+import org.atlasapi.output.EntityWriter;
+import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.QueryResultWriter;
+import org.atlasapi.output.ResponseWriter;
+import org.atlasapi.query.common.QueryResult;
+
+import com.google.common.collect.FluentIterable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class EventQueryResultWriter extends QueryResultWriter<Event> {
+
     private final EntityListWriter<Event> eventListWriter;
 
     public EventQueryResultWriter(

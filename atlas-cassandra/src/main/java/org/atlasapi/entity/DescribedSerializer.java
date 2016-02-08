@@ -14,8 +14,9 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.source.Sources;
 
-import com.google.common.base.Optional;
 import com.metabroadcast.common.base.Maybe;
+
+import com.google.common.base.Optional;
 
 public class DescribedSerializer<T extends Described> {
 
@@ -50,7 +51,8 @@ public class DescribedSerializer<T extends Described> {
             builder.setSynopses(synopsesSerializer.serialize(source.getSynopses()));
         }
         if (source.getDescription() != null) {
-            builder.setDescription(builder.getDescriptionBuilder().setValue(source.getDescription()));
+            builder.setDescription(builder.getDescriptionBuilder()
+                    .setValue(source.getDescription()));
         }
         if (source.getMediaType() != null) {
             builder.setMediaType(source.getMediaType().toKey());
@@ -59,7 +61,8 @@ public class DescribedSerializer<T extends Described> {
             builder.setSpecialization(source.getSpecialization().toString());
         }
         if (source.getGenres() != null) {
-            StreamSupport.stream(source.getGenres().spliterator(), false).forEach(builder::addGenre);
+            StreamSupport.stream(source.getGenres().spliterator(), false)
+                    .forEach(builder::addGenre);
         }
         if (source.getSource() != null) {
             builder.setSource(source.getSource().key());
@@ -92,7 +95,7 @@ public class DescribedSerializer<T extends Described> {
         if (source.getPriority() != null) {
             builder.setPriority(prioritySerializer.serialize(source.getPriority()));
         }
-        if(source.getRelatedLinks() != null) {
+        if (source.getRelatedLinks() != null) {
             StreamSupport.stream(source.getRelatedLinks().spliterator(), false)
                     .forEach(link -> builder.addRelatedLink(relatedLinkSerializer
                             .serialize(link)));
@@ -104,70 +107,71 @@ public class DescribedSerializer<T extends Described> {
     public T deserialize(CommonProtos.Described serialized, T target) {
         identifiedSerializer.deserialize(serialized.getIdentified(), target);
 
-        if(serialized.hasTitle() && serialized.getTitle().hasValue()) {
+        if (serialized.hasTitle() && serialized.getTitle().hasValue()) {
             target.setTitle(serialized.getTitle().getValue());
         }
-        if(serialized.hasShortDescription() && serialized.getShortDescription().hasValue()) {
+        if (serialized.hasShortDescription() && serialized.getShortDescription().hasValue()) {
             target.setShortDescription(serialized.getShortDescription().getValue());
         }
-        if(serialized.hasMediumDescription() && serialized.getMediumDescription().hasValue()) {
+        if (serialized.hasMediumDescription() && serialized.getMediumDescription().hasValue()) {
             target.setMediumDescription(serialized.getMediumDescription().getValue());
         }
-        if(serialized.hasLongDescription() && serialized.getMediumDescription().hasValue()) {
+        if (serialized.hasLongDescription() && serialized.getMediumDescription().hasValue()) {
             target.setLongDescription(serialized.getLongDescription().getValue());
         }
-        if(serialized.hasSynopses()) {
+        if (serialized.hasSynopses()) {
             target.setSynopses(synopsesSerializer.deserialize(serialized.getSynopses()
             ));
         }
-        if(serialized.hasDescription() && serialized.getDescription().hasValue()) {
+        if (serialized.hasDescription() && serialized.getDescription().hasValue()) {
             target.setDescription(serialized.getDescription().getValue());
         }
         Optional<MediaType> mediaTypeOptional =
                 MediaType.fromKey(serialized.getMediaType());
-        if(mediaTypeOptional.isPresent()) {
+        if (mediaTypeOptional.isPresent()) {
             target.setMediaType(mediaTypeOptional.get());
         }
         Maybe<Specialization> specializationMaybe =
                 Specialization.fromKey(serialized.getSpecialization());
-        if(specializationMaybe.hasValue()) {
+        if (specializationMaybe.hasValue()) {
             target.setSpecialization(specializationMaybe.requireValue());
         }
         target.setGenres(serialized.getGenreList());
         Optional<Publisher> publisherOptional =
                 Sources.fromPossibleKey(serialized.getSource());
-        if(publisherOptional.isPresent()) {
+        if (publisherOptional.isPresent()) {
             target.setPublisher(publisherOptional.get());
         }
-        if(serialized.hasImage()) {
+        if (serialized.hasImage()) {
             target.setImage(serialized.getImage());
         }
         target.setImages(serialized.getImagesList().stream()
                 .map(imageSerializer::deserialize)
                 .collect(Collectors.toList()));
-        if(serialized.hasThumbnail()) {
+        if (serialized.hasThumbnail()) {
             target.setThumbnail(serialized.getThumbnail());
         }
-        if(serialized.hasFirstSeen() && serialized.getFirstSeen().hasMillis()) {
+        if (serialized.hasFirstSeen() && serialized.getFirstSeen().hasMillis()) {
             target.setFirstSeen(dateTimeSerializer.deserialize(serialized.getFirstSeen()));
         }
-        if(serialized.hasLastFetched() && serialized.getLastFetched().hasMillis()) {
+        if (serialized.hasLastFetched() && serialized.getLastFetched().hasMillis()) {
             target.setLastFetched(dateTimeSerializer.deserialize(serialized.getLastFetched()));
         }
-        if(serialized.hasThisOrChildLastUpdated() && serialized.getThisOrChildLastUpdated().hasMillis()) {
+        if (serialized.hasThisOrChildLastUpdated() && serialized.getThisOrChildLastUpdated()
+                .hasMillis()) {
             target.setThisOrChildLastUpdated(dateTimeSerializer
                     .deserialize(serialized.getThisOrChildLastUpdated()));
         }
-        if(serialized.hasScheduleOnly()) {
+        if (serialized.hasScheduleOnly()) {
             target.setScheduleOnly(serialized.getScheduleOnly());
         }
-        if(serialized.hasActivelyPublished()) {
+        if (serialized.hasActivelyPublished()) {
             target.setActivelyPublished(serialized.getActivelyPublished());
         }
-        if(serialized.hasPresentationChannel()) {
+        if (serialized.hasPresentationChannel()) {
             target.setPresentationChannel(serialized.getPresentationChannel());
         }
-        if(serialized.hasPriority()) {
+        if (serialized.hasPriority()) {
             target.setPriority(prioritySerializer.deserialize(serialized.getPriority()
             ));
         }

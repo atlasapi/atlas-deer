@@ -1,12 +1,12 @@
 package org.atlasapi.content;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-
 import java.util.Optional;
 import java.util.function.Predicate;
 
-public class LocationSummary  {
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
+public class LocationSummary {
 
     private final Boolean available;
 
@@ -53,21 +53,30 @@ public class LocationSummary  {
         return l.getAvailable()
                 && (
                 now.isAfter(l.getAvailabilityStart().orElse(now.minus(1)))
-                && now.isBefore(l.getAvailabilityEnd().orElse(now.plus(1)))
+                        && now.isBefore(l.getAvailabilityEnd().orElse(now.plus(1)))
         );
     };
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         LocationSummary that = (LocationSummary) o;
 
-        if (available != null ? !available.equals(that.available) : that.available != null)
+        if (available != null ? !available.equals(that.available) : that.available != null) {
             return false;
-        if (uri != null ? !uri.equals(that.uri) : that.uri != null) return false;
-        if (!availabilityStart.equals(that.availabilityStart)) return false;
+        }
+        if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
+            return false;
+        }
+        if (!availabilityStart.equals(that.availabilityStart)) {
+            return false;
+        }
         return availabilityEnd.equals(that.availabilityEnd);
 
     }

@@ -1,9 +1,8 @@
 package org.atlasapi.schedule;
 
+import com.netflix.astyanax.model.ConsistencyLevel;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import com.netflix.astyanax.model.ConsistencyLevel;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AstyanaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {

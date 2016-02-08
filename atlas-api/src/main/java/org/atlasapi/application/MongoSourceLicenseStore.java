@@ -1,21 +1,22 @@
 package org.atlasapi.application;
 
-import static com.metabroadcast.common.persistence.mongo.MongoBuilders.where;
-
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.base.Optional;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+
+import com.google.common.base.Optional;
 import com.mongodb.DBCollection;
 
+import static com.metabroadcast.common.persistence.mongo.MongoBuilders.where;
 
 public class MongoSourceLicenseStore implements SourceLicenseStore {
+
     public static final String SOURCE_LICENSES_COLLECTION = "sourceLicenses";
-    
+
     private SourceLicenseTranslator translator = new SourceLicenseTranslator();
-    
+
     private final DBCollection sourceLicenses;
-    
+
     public MongoSourceLicenseStore(DatabasedMongo mongo) {
         this.sourceLicenses = mongo.collection(SOURCE_LICENSES_COLLECTION);
     }
@@ -23,7 +24,8 @@ public class MongoSourceLicenseStore implements SourceLicenseStore {
     @Override
     public Optional<SourceLicense> licenseFor(Publisher source) {
         return Optional.fromNullable(
-                translator.fromDBObject(sourceLicenses.findOne(where().idEquals(source.key()).build())));
+                translator.fromDBObject(sourceLicenses.findOne(where().idEquals(source.key())
+                        .build())));
     }
 
     @Override

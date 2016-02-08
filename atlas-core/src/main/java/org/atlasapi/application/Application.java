@@ -8,18 +8,18 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
-import org.joda.time.DateTime;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import org.joda.time.DateTime;
 
 public class Application implements Identifiable, Sourced {
 
     private final Id id;
     private final String slug; // Kept to enable creation of compatible entries
-                               // for 3.0
+    // for 3.0
     private final String title;
     private final String description;
     private final DateTime created;
@@ -27,12 +27,12 @@ public class Application implements Identifiable, Sourced {
     private final ApplicationSources sources;
     private final boolean revoked;
 
-    private Application(Id id, 
-            String slug, 
-            String title, 
+    private Application(Id id,
+            String slug,
+            String title,
             String description,
-            DateTime created, 
-            ApplicationCredentials credentials, 
+            DateTime created,
+            ApplicationCredentials credentials,
             ApplicationSources sources,
             boolean revoked) {
         this.id = id;
@@ -49,9 +49,9 @@ public class Application implements Identifiable, Sourced {
         return id;
     }
 
-    
     /**
      * Returns an Atlas 3.0 compatible identifier for applications
+     *
      * @return
      */
     @Deprecated
@@ -62,7 +62,7 @@ public class Application implements Identifiable, Sourced {
     public String getTitle() {
         return title;
     }
-    
+
     public String getDescription() {
         return description;
     }
@@ -78,44 +78,44 @@ public class Application implements Identifiable, Sourced {
     public ApplicationSources getSources() {
         return sources;
     }
-    
+
     @Override
     public Publisher getSource() {
         return Publisher.METABROADCAST;
     }
-    
+
     public boolean isRevoked() {
         return revoked;
     }
-    
+
     public Application copyWithPrecedenceDisabled() {
         ApplicationSources modifiedSources = this
-               .getSources().copy().withPrecedence(false).build();
+                .getSources().copy().withPrecedence(false).build();
         return this.copy().withSources(modifiedSources).build();
     }
-    
+
     public Application copyWithAddedWritingSource(Publisher source) {
         List<Publisher> writes = Lists.newArrayList(this.getSources().getWrites());
         if (!writes.contains(source)) {
             writes.add(source);
         }
         ApplicationSources modifiedSources = this
-                    .getSources().copy().withWritableSources(writes).build();
+                .getSources().copy().withWritableSources(writes).build();
         return this.copy().withSources(modifiedSources).build();
     }
-    
+
     public Application copyWithRemovedWritingSource(Publisher source) {
         List<Publisher> writes = Lists.newArrayList(this.getSources().getWrites());
         writes.remove(source);
         ApplicationSources modifiedSources = this
-                    .getSources().copy().withWritableSources(writes).build();
+                .getSources().copy().withWritableSources(writes).build();
         return this.copy().withSources(modifiedSources).build();
     }
-    
+
     public Application copyWithSources(ApplicationSources sources) {
         return this.copy().withSources(sources).build();
     }
-    
+
     public Application copyWithReadSourceState(Publisher source, SourceState sourceState) {
         SourceStatus status = findSourceStatusFor(source, this.getSources().getReads());
         SourceStatus newStatus = status.copyWithState(sourceState);
@@ -127,13 +127,13 @@ public class Application implements Identifiable, Sourced {
         status = status.enable();
         return copyWithStatusForSource(source, status);
     }
-    
+
     public Application copyWithSourceDisabled(Publisher source) {
         SourceStatus status = findSourceStatusFor(source, this.getSources().getReads());
         status = status.disable();
         return copyWithStatusForSource(source, status);
     }
-    
+
     private Application copyWithStatusForSource(Publisher source,
             SourceStatus status) {
         List<SourceReadEntry> modifiedReads = changeReadsPreservingOrder(
@@ -142,7 +142,7 @@ public class Application implements Identifiable, Sourced {
                 .withReadableSources(modifiedReads).build();
         return this.copy().withSources(modifiedSources).build();
     }
-    
+
     private SourceStatus findSourceStatusFor(Publisher source, List<SourceReadEntry> reads) {
         for (SourceReadEntry status : reads) {
             if (status.getPublisher().equals(source)) {
@@ -151,7 +151,7 @@ public class Application implements Identifiable, Sourced {
         }
         return SourceStatus.fromV3SourceStatus(source.getDefaultSourceStatus());
     }
-    
+
     private List<SourceReadEntry> changeReadsPreservingOrder(
             List<SourceReadEntry> original,
             Publisher sourceToChange,
@@ -166,7 +166,7 @@ public class Application implements Identifiable, Sourced {
         }
         return builder.build();
     }
-    
+
     public Application copyWithReadSourceOrder(List<Publisher> ordering) {
         Map<Publisher, SourceReadEntry> sourceMap = getSourceReadsAsKeyedMap();
         List<Publisher> seen = Lists.newArrayList();
@@ -176,20 +176,20 @@ public class Application implements Identifiable, Sourced {
             seen.add(source);
         }
         // add sources omitted from ordering
-        for (Publisher source: sourceMap.keySet()) {
+        for (Publisher source : sourceMap.keySet()) {
             if (!seen.contains(source)) {
-               readsWithNewOrder.add(sourceMap.get(source));
+                readsWithNewOrder.add(sourceMap.get(source));
             }
         }
         ApplicationSources modifiedSources = this
-                    .getSources().copy()
-                    .withPrecedence(true)
-                    .withReadableSources(readsWithNewOrder)
-                    .build();
-            
+                .getSources().copy()
+                .withPrecedence(true)
+                .withReadableSources(readsWithNewOrder)
+                .build();
+
         return this.copy().withSources(modifiedSources).build();
     }
-    
+
     private Map<Publisher, SourceReadEntry> getSourceReadsAsKeyedMap() {
         ImmutableMap.Builder<Publisher, SourceReadEntry> sourceMap = ImmutableMap.builder();
         for (SourceReadEntry read : this.getSources().getReads()) {
@@ -197,9 +197,7 @@ public class Application implements Identifiable, Sourced {
         }
         return sourceMap.build();
     }
-    
-    
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -230,7 +228,7 @@ public class Application implements Identifiable, Sourced {
                 .withSources(this.getSources())
                 .withRevoked(this.isRevoked());
     }
-    
+
     public static Builder builder() {
         return new Builder();
     }
@@ -257,6 +255,7 @@ public class Application implements Identifiable, Sourced {
 
         /**
          * Sets the Atlas 3.0 compatible identifier for the application
+         *
          * @param slug
          * @return
          */
@@ -270,9 +269,9 @@ public class Application implements Identifiable, Sourced {
             this.title = title;
             return this;
         }
-        
+
         public Builder withDescription(String description) {
-            this.description =  description;
+            this.description = description;
             return this;
         }
 
@@ -290,14 +289,23 @@ public class Application implements Identifiable, Sourced {
             this.sources = sources;
             return this;
         }
-        
+
         public Builder withRevoked(boolean revoked) {
             this.revoked = revoked;
             return this;
         }
 
         public Application build() {
-            return new Application(id, slug, title, description, created, credentials, sources, revoked);
+            return new Application(
+                    id,
+                    slug,
+                    title,
+                    description,
+                    created,
+                    credentials,
+                    sources,
+                    revoked
+            );
         }
     }
 

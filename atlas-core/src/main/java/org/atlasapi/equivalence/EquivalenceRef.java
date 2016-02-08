@@ -1,7 +1,5 @@
 package org.atlasapi.equivalence;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
@@ -11,8 +9,10 @@ import org.atlasapi.meta.annotations.FieldName;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class EquivalenceRef implements Identifiable, Sourced {
-    
+
     public static final <T extends Identifiable & Sourced> Function<T, EquivalenceRef> toEquivalenceRef() {
         return new Function<T, EquivalenceRef>() {
 
@@ -53,7 +53,7 @@ public class EquivalenceRef implements Identifiable, Sourced {
         if (that instanceof EquivalenceRef) {
             EquivalenceRef other = (EquivalenceRef) that;
             return this.id.equals(other.id)
-                && this.source.equals(other.source);
+                    && this.source.equals(other.source);
         }
         return false;
     }
@@ -62,7 +62,7 @@ public class EquivalenceRef implements Identifiable, Sourced {
     public int hashCode() {
         return id.hashCode() ^ source.hashCode();
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(this)

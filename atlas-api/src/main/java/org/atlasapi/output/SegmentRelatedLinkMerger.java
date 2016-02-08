@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 
 public interface SegmentRelatedLinkMerger {
+
     ImmutableList<RelatedLink> getLinks(Segment selectedSegment, SegmentEvent selectedSegmentEvent,
-                                        Multimap<Segment, SegmentEvent> segmentMap);
+            Multimap<Segment, SegmentEvent> segmentMap);
 }

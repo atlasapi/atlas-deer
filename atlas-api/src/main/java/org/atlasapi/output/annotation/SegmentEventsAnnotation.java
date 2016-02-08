@@ -1,8 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
@@ -14,9 +11,9 @@ import org.atlasapi.output.SegmentAndEventTuple;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
 import org.atlasapi.output.writers.SegmentEventWriter;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
 
@@ -39,7 +36,12 @@ public class SegmentEventsAnnotation extends OutputAnnotation<Content> {
         }
     }
 
-    private void writeSegmentEvents(FieldWriter writer, Item item, OutputContext ctxt) throws IOException {
-        writer.writeList(segmentWriter, linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents()), ctxt);
+    private void writeSegmentEvents(FieldWriter writer, Item item, OutputContext ctxt)
+            throws IOException {
+        writer.writeList(
+                segmentWriter,
+                linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents()),
+                ctxt
+        );
     }
 }

@@ -20,18 +20,19 @@ import org.atlasapi.criteria.operator.ComparableOperatorVisitor;
 
 public class FloatAttributeQuery extends AttributeQuery<Float> {
 
-	private final ComparableOperator op;
+    private final ComparableOperator op;
 
-	public FloatAttributeQuery(Attribute<Float> attribute, ComparableOperator op, Iterable<Float> values) {
-		super(attribute, op, values);
-		this.op = op;
-	}
+    public FloatAttributeQuery(Attribute<Float> attribute, ComparableOperator op,
+            Iterable<Float> values) {
+        super(attribute, op, values);
+        this.op = op;
+    }
 
-	public <V> V accept(QueryVisitor<V> visitor) {
-		return visitor.visit(this);
-	}
-	
-	public <V> V accept(ComparableOperatorVisitor<V> visitor) {
-		return op.accept(visitor);
-	}
+    public <V> V accept(QueryVisitor<V> visitor) {
+        return visitor.visit(this);
+    }
+
+    public <V> V accept(ComparableOperatorVisitor<V> visitor) {
+        return op.accept(visitor);
+    }
 }

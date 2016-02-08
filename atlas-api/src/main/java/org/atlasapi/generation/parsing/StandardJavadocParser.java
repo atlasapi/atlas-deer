@@ -4,12 +4,12 @@ import javax.annotation.Nullable;
 
 public class StandardJavadocParser implements JavadocParser {
 
-	@Override
-	public String parse(@Nullable String rawDocString) {
-		if (rawDocString == null) {
-			return "";
-		}
-		return rawDocString.replace("\n", "");
-	}
+    @Override
+    public String parse(@Nullable String rawDocString) {
+        if (rawDocString == null) {
+            return "";
+        }
+        return rawDocString.replace("\n", "");
+    }
 
 }

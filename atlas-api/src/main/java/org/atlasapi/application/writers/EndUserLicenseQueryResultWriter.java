@@ -2,6 +2,8 @@ package org.atlasapi.application.writers;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.application.EndUserLicense;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -12,12 +14,10 @@ import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
 
-import javax.servlet.http.HttpServletRequest;
-
-
 public class EndUserLicenseQueryResultWriter extends QueryResultWriter<EndUserLicense> {
+
     private final EntityListWriter<EndUserLicense> endUserLicenseListWriter;
-    
+
     public EndUserLicenseQueryResultWriter(
             EntityListWriter<EndUserLicense> endUserLicenseListWriter,
             EntityWriter<Object> licenseWriter,

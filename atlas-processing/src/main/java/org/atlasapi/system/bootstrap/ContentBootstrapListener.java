@@ -83,8 +83,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         if (legacyPersistenceModule != null) {
             this.legacySegmentMigrator = legacyPersistenceModule.legacySegmentMigrator();
             this.legacyContentResolver = legacyPersistenceModule.legacyContentResolver();
-        }
-        else {
+        } else {
             this.legacySegmentMigrator = null;
             this.legacyContentResolver = null;
         }
@@ -94,8 +93,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
         if (equivalenceGraphStore != null) {
             this.equivalenceGraphStore = checkNotNull(equivalenceGraphStore);
-        }
-        else {
+        } else {
             this.equivalenceGraphStore = null;
         }
     }
@@ -138,7 +136,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
         migrateContent(container, resultBuilder);
 
-        if(migrateHierarchy && resultBuilder.isSucceeded()) {
+        if (migrateHierarchy && resultBuilder.isSucceeded()) {
             migrateHierarchy(container, resultBuilder);
         }
 
@@ -179,8 +177,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
         if (result.isSucceeded()) {
             resultBuilder.addMessage("Successfully migrated parent " + parentType + " " + parentId);
-        }
-        else {
+        } else {
             resultBuilder.failure("Failed to migrate parent " + parentType + " " + parentId);
         }
     }
@@ -193,7 +190,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         try {
             WriteResult<Content, Content> writeResult = contentWriter.writeContent(content);
             Instant contentWriteEnd = Instant.now();
-            if(!writeResult.written()) {
+            if (!writeResult.written()) {
                 resultBuilder.failure("No write occurred when migrating content into C* store");
                 return;
             }
@@ -206,7 +203,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
             equivalentContentStore.updateContent(content.getId());
 
-            if(graphUpdate.isPresent()) {
+            if (graphUpdate.isPresent()) {
                 equivalentContentStore.updateEquivalences(graphUpdate.get());
             }
             Instant equivalentContentUpdateEnd = Instant.now();
@@ -242,12 +239,11 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         Instant start = Instant.now();
 
         List<SegmentEvent> segmentEvents = item.getSegmentEvents();
-        for(SegmentEvent segmentEvent : segmentEvents) {
+        for (SegmentEvent segmentEvent : segmentEvents) {
             Id segmentId = segmentEvent.getSegmentRef().getId();
-            if(migrateSegment(segmentId)) {
+            if (migrateSegment(segmentId)) {
                 successfullyMigrated.add(segmentId);
-            }
-            else {
+            } else {
                 unsuccessfullyMigrated.add(segmentId);
             }
         }
@@ -255,15 +251,17 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         Instant end = Instant.now();
 
         addMigrationResult(resultBuilder, "segment events", successfullyMigrated,
-                unsuccessfullyMigrated);
+                unsuccessfullyMigrated
+        );
 
-        if(unsuccessfullyMigrated.size() > 0) {
+        if (unsuccessfullyMigrated.size() > 0) {
             LOG.warn("Failed to migrate all segment events for item {}: {}ms",
-                    item.getId().longValue(), Duration.between(start, end).toMillis());
-        }
-        else {
+                    item.getId().longValue(), Duration.between(start, end).toMillis()
+            );
+        } else {
             LOG.info("Migrated segment events for item {}: {}ms",
-                    item.getId().longValue(), Duration.between(start, end).toMillis());
+                    item.getId().longValue(), Duration.between(start, end).toMillis()
+            );
         }
     }
 
@@ -279,20 +277,21 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
     private void migrateHierarchy(Container container, ResultBuilder resultBuilder) {
         Instant start = Instant.now();
-        if(container instanceof Brand) {
+        if (container instanceof Brand) {
             migrateSeries((Brand) container, resultBuilder);
         }
 
         migrateItemRefs(container, resultBuilder);
         Instant end = Instant.now();
 
-        if(resultBuilder.isSucceeded()) {
+        if (resultBuilder.isSucceeded()) {
             LOG.info("Migrated hierarchies for container {}: {}ms", container.getId().longValue(),
-                    Duration.between(start, end).toMillis());
-        }
-        else {
+                    Duration.between(start, end).toMillis()
+            );
+        } else {
             LOG.warn("Failed to migrate all hierarchies for container {}: {}ms",
-                    container.getId().longValue(), Duration.between(start, end).toMillis());
+                    container.getId().longValue(), Duration.between(start, end).toMillis()
+            );
         }
     }
 
@@ -307,20 +306,20 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             Content series = resolveLegacyContent(seriesRefId);
             migrateContent(series, seriesMigrationResultBuilder);
 
-            if(seriesMigrationResultBuilder.isSucceeded() && series instanceof Container) {
+            if (seriesMigrationResultBuilder.isSucceeded() && series instanceof Container) {
                 migrateHierarchy((Container) series, seriesMigrationResultBuilder);
             }
 
-            if(seriesMigrationResultBuilder.isSucceeded()) {
+            if (seriesMigrationResultBuilder.isSucceeded()) {
                 successfullyMigrated.add(seriesRefId);
-            }
-            else {
+            } else {
                 unsuccessfullyMigrated.add(seriesRefId);
             }
         }
 
         addMigrationResult(resultBuilder, "series refs", successfullyMigrated,
-                unsuccessfullyMigrated);
+                unsuccessfullyMigrated
+        );
     }
 
     private void migrateItemRefs(Container container, ResultBuilder resultBuilder) {
@@ -334,16 +333,16 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             Content content = resolveLegacyContent(itemRefId);
             migrateContent(content, itemRefMigrationResultBuilder);
 
-            if(itemRefMigrationResultBuilder.isSucceeded()) {
+            if (itemRefMigrationResultBuilder.isSucceeded()) {
                 successfullyMigrated.add(itemRefId);
-            }
-            else {
+            } else {
                 unsuccessfullyMigrated.add(itemRefId);
             }
         }
 
         addMigrationResult(resultBuilder, "item refs", successfullyMigrated,
-                unsuccessfullyMigrated);
+                unsuccessfullyMigrated
+        );
     }
 
     private void migrateEquivalents(Content content, ResultBuilder resultBuilder) {
@@ -360,8 +359,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                     );
 
             migrateEquivalents(equivalentIds, resultBuilder);
-        }
-        else {
+        } else {
             String message = "Failed to find equivalence graph for " + content.getId().longValue();
             LOG.warn(message);
             resultBuilder.failure(message);
@@ -379,14 +377,14 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
             if (equivalentResultBuilder.isSucceeded()) {
                 successfullyMigrated.add(equivalentId);
-            }
-            else {
+            } else {
                 unsuccessfullyMigrated.add(equivalentId);
             }
         }
 
         addMigrationResult(resultBuilder, "equivalents", successfullyMigrated,
-                unsuccessfullyMigrated);
+                unsuccessfullyMigrated
+        );
     }
 
     private Content resolveLegacyContent(Id id) {
@@ -398,11 +396,10 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
     private void addMigrationResult(ResultBuilder resultBuilder, String type,
             Set<Id> successfullyMigrated, Set<Id> unsuccessfullyMigrated) {
-        if(unsuccessfullyMigrated.size() > 0) {
+        if (unsuccessfullyMigrated.size() > 0) {
             resultBuilder.failure("Failed to migrate all " + type + ". " +
                     getMigrationResult(successfullyMigrated, unsuccessfullyMigrated));
-        }
-        else {
+        } else {
             resultBuilder.success("Successfully migrated " + type + ". " +
                     getMigrationResult(successfullyMigrated, unsuccessfullyMigrated));
         }
@@ -415,7 +412,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                         .map(Id::toString)
                         .collect(Collectors.joining(","));
 
-        if(unsuccessfullyMigrated.size() > 0) {
+        if (unsuccessfullyMigrated.size() > 0) {
             return successMessage +
                     " Unsuccessfully migrated: " +
                     unsuccessfullyMigrated.stream()
@@ -434,6 +431,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     }
 
     public static class Builder {
+
         private ContentWriter contentWriter;
         private DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
         private EquivalentContentStore equivalentContentStore;
@@ -445,7 +443,8 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         private boolean migrateEquivalents = false;
         private EquivalenceGraphStore equivalenceGraphStore = null;
 
-        private Builder() { }
+        private Builder() {
+        }
 
         public Builder withContentWriter(ContentWriter contentWriter) {
             this.contentWriter = contentWriter;
@@ -467,8 +466,9 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             this.contentIndex = contentIndex;
             return this;
         }
-        
-        public Builder withLegacyPersistenceModule(LegacyPersistenceModule legacyPersistenceModule) {
+
+        public Builder withLegacyPersistenceModule(
+                LegacyPersistenceModule legacyPersistenceModule) {
             this.legacyPersistenceModule = legacyPersistenceModule;
             return this;
         }
@@ -491,7 +491,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                     equivalenceMigrator,
                     equivalentContentStore,
                     contentIndex,
-                    migrateHierarchy,   
+                    migrateHierarchy,
                     legacyPersistenceModule,
                     migrateEquivalents,
                     equivalenceGraphStore
@@ -504,6 +504,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     }
 
     public static class Result {
+
         private final boolean succeeded;
         private final String message;
 
@@ -522,6 +523,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     }
 
     private static class ResultBuilder {
+
         private boolean succeeded = true;
         private StringBuilder message = new StringBuilder();
 
@@ -537,7 +539,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         }
 
         public ResultBuilder addMessage(String message) {
-            if(this.message.length() > 0) {
+            if (this.message.length() > 0) {
                 this.message.append("\n");
             }
             this.message.append(message);

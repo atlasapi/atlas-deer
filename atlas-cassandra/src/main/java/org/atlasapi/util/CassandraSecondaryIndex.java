@@ -1,11 +1,5 @@
 package org.atlasapi.util;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,10 +23,15 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
- * An SecondaryIndex is a surjective mapping from a set of keys to values,
- * stored in a separate table to the indexed content.
- * 
+ * An SecondaryIndex is a surjective mapping from a set of keys to values, stored in a separate
+ * table to the indexed content.
  */
 public class CassandraSecondaryIndex implements SecondaryIndex {
 
@@ -51,13 +50,13 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     private final ConsistencyLevel readConsistency;
 
     private final Function<Iterable<Row>, ImmutableMap<Long, Long>> toMap
-        = rows -> {
-            Builder<Long, Long> index = ImmutableMap.builder();
-            for (Row row : rows) {
-                index.put(row.getLong(KEY_KEY), row.getLong(VALUE_KEY));
-            }
-            return index.build();
-        };
+            = rows -> {
+        Builder<Long, Long> index = ImmutableMap.builder();
+        for (Row row : rows) {
+            index.put(row.getLong(KEY_KEY), row.getLong(VALUE_KEY));
+        }
+        return index.build();
+    };
 
     private final PreparedStatement insert;
     private final PreparedStatement select;
@@ -100,17 +99,23 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     }
 
     @Override
-    public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys, ConsistencyLevel level) {
+    public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys,
+            ConsistencyLevel level) {
         ImmutableList<Long> uniqueKeys = StreamSupport.stream(keys.spliterator(), false)
                 .distinct()
                 .collect(ImmutableCollectors.toList());
 
-        ListenableFuture<List<Row>> resultsFuture = Futures.transform(Futures.allAsList(
-                queriesFor(uniqueKeys, readConsistency).stream()
-                        .map(session::executeAsync)
-                        .map(rsFuture -> Futures.transform(rsFuture,
-                                (Function<ResultSet, Row>) input -> input != null ? input.one() : null))
-                        .collect(Collectors.toList())),
+        ListenableFuture<List<Row>> resultsFuture = Futures.transform(
+                Futures.allAsList(
+                        queriesFor(uniqueKeys, readConsistency).stream()
+                                .map(session::executeAsync)
+                                .map(rsFuture -> Futures.transform(
+                                        rsFuture,
+                                        (Function<ResultSet, Row>) input -> input != null
+                                                                            ? input.one()
+                                                                            : null
+                                ))
+                                .collect(Collectors.toList())),
                 (Function<List<Row>, List<Row>>) input -> input.stream()
                         .filter(Predicates.notNull()::apply).collect(Collectors.toList())
         );
@@ -130,7 +135,8 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
                     Futures.get(lookup(ImmutableList.of(id.longValue())), IOException.class);
 
             Long canonical = idToCanonical.get(id.longValue());
-            return Futures.transform(session.executeAsync(canonicalToSecondariesSelect.bind(canonical)), RESULT_TO_IDS);
+            return Futures.transform(session.executeAsync(canonicalToSecondariesSelect.bind(
+                    canonical)), RESULT_TO_IDS);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }

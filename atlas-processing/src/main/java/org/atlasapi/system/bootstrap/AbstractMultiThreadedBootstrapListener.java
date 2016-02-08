@@ -4,10 +4,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public abstract class AbstractMultiThreadedBootstrapListener<T> implements BootstrapListener<T> {
 
@@ -20,8 +19,10 @@ public abstract class AbstractMultiThreadedBootstrapListener<T> implements Boots
         this(new ThreadPoolExecutor(concurrencyLevel, concurrencyLevel,
                 NO_KEEP_ALIVE, TimeUnit.MICROSECONDS,
                 new ArrayBlockingQueue<Runnable>(100 * Runtime.getRuntime().availableProcessors()),
-                new ThreadFactoryBuilder().setNameFormat(AbstractMultiThreadedBootstrapListener.class + " Thread %d").build(),
-                new ThreadPoolExecutor.CallerRunsPolicy()));
+                new ThreadFactoryBuilder().setNameFormat(AbstractMultiThreadedBootstrapListener.class
+                        + " Thread %d").build(),
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        ));
     }
 
     public AbstractMultiThreadedBootstrapListener(ThreadPoolExecutor executor) {

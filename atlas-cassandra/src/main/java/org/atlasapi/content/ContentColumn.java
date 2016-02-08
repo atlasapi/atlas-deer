@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-
 public enum ContentColumn {
     TYPE,
     SOURCE,
@@ -26,4 +25,4 @@ public enum ContentColumn {
     CONTAINER_SUMMARY,
     CONTAINER_REF,
     SERIES_REF,
-    }
+}

@@ -1,8 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,11 +36,9 @@ import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleHierarchy;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.schedule.ScheduleWriter;
-import org.elasticsearch.common.base.Objects;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.scheduling.UpdateProgress;
 
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.api.client.util.Lists;
@@ -54,25 +49,31 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.scheduling.UpdateProgress;
+import org.elasticsearch.common.base.Objects;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
- * <p>Copies a schedule from a {@link ScheduleResolver} to a {@link ScheduleWriter}
- * for a given {@link Channel}/{@link LocalDate}/{@link Publisher} combo.</p>
- * 
- * <p>Items in the schedule are resolved via a {@link ContentResolver} to ensure
- * all broadcasts are found.</p>
+ * <p>Copies a schedule from a {@link ScheduleResolver} to a {@link ScheduleWriter} for a given
+ * {@link Channel}/{@link LocalDate}/{@link Publisher} combo.</p>
+ * <p>
+ * <p>Items in the schedule are resolved via a {@link ContentResolver} to ensure all broadcasts are
+ * found.</p>
  */
 public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProgress> {
 
     private static final Logger log =
-        LoggerFactory.getLogger(ChannelIntervalScheduleBootstrapTask.class);
+            LoggerFactory.getLogger(ChannelIntervalScheduleBootstrapTask.class);
 
     private final ScheduleResolver scheduleResolver;
     private final ScheduleWriter scheduleWriter;
     private final ContentStore contentStore;
-    
+
     private final Channel channel;
     private final Interval interval;
     private final Publisher source;
@@ -85,7 +86,8 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             Publisher source, Channel channel, Interval interval,
             Optional<ContentVisitor<?>> scheduleContentVisitor) {
         this(scheduleResolver, scheduleWriter, contentStore, source, channel, interval,
-                scheduleContentVisitor, Optional.absent(), Optional.absent());
+                scheduleContentVisitor, Optional.absent(), Optional.absent()
+        );
     }
 
     public ChannelIntervalScheduleBootstrapTask(ScheduleResolver scheduleResolver,
@@ -109,7 +111,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
     @Override
     public UpdateProgress call() throws Exception {
         ListenableFuture<Schedule> resolved =
-            scheduleResolver.resolve(ImmutableSet.of(channel), interval, source);
+                scheduleResolver.resolve(ImmutableSet.of(channel), interval, source);
         Schedule schedule = Futures.get(resolved, 1, TimeUnit.MINUTES, ResolveException.class);
         /* it's reasonable for there not to be a channel for a given source/channel combination
          * but there should be precisely one if any. 
@@ -123,10 +125,12 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
 
     private UpdateProgress writeItemsIn(ChannelSchedule channelSchedule) throws StoreException {
         checkState(channelSchedule.getChannel().equals(channel),
-                "got schedule for %s not %s", channelSchedule.getChannel(), channel);
+                "got schedule for %s not %s", channelSchedule.getChannel(), channel
+        );
         Map<Id, Optional<Content>> scheduleItems = resolveItems(channelSchedule);
-        Map<Id, Optional<Content>> containers = resolveContainers(Optional.presentInstances(scheduleItems.values()));
-        
+        Map<Id, Optional<Content>> containers = resolveContainers(Optional.presentInstances(
+                scheduleItems.values()));
+
         ImmutableList.Builder<ScheduleHierarchy> schedule = ImmutableList.builder();
         for (ItemAndBroadcast iab : channelSchedule.getEntries()) {
             Broadcast broadcast = iab.getBroadcast();
@@ -136,7 +140,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             }
             Container topLevelContainer = topLevelContainer(iab, containers);
             Series series = series(iab, containers);
-            iab = new ItemAndBroadcast(contentOrNull(possItem, Item.class),broadcast);
+            iab = new ItemAndBroadcast(contentOrNull(possItem, Item.class), broadcast);
             schedule.add(new ScheduleHierarchy(iab, topLevelContainer, series));
         }
         ImmutableList<ScheduleHierarchy> builtSchedule = schedule.build();
@@ -187,7 +191,7 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         if (!scheduleContentVisitor.isPresent()) {
             return;
         }
-        
+
         for (ScheduleHierarchy slot : schedule) {
             slot.getItemAndBroadcast().getItem().accept(scheduleContentVisitor.get());
             if (slot.getPossibleSeries().isPresent()) {
@@ -198,7 +202,9 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             }
         }
     }
-    private Container topLevelContainer(ItemAndBroadcast iab, Map<Id, Optional<Content>> containers) {
+
+    private Container topLevelContainer(ItemAndBroadcast iab,
+            Map<Id, Optional<Content>> containers) {
         ContainerRef containerRef = iab.getItem().getContainerRef();
         if (containerRef != null) {
             Id id = containerRef.getId();
@@ -206,17 +212,17 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         }
         return null;
     }
-    
+
     private Series series(ItemAndBroadcast iab, Map<Id, Optional<Content>> containers) {
         Item item = iab.getItem();
         if (item instanceof Episode) {
-            SeriesRef ref = ((Episode)item).getSeriesRef();
+            SeriesRef ref = ((Episode) item).getSeriesRef();
             if (ref != null) {
                 Id id = ref.getId();
                 return contentOrNull(containers.get(id), Series.class);
             }
         }
-        return null;    
+        return null;
     }
 
     private <T extends Content> T contentOrNull(Optional<Content> possContent, Class<T> cls) {
@@ -239,20 +245,21 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         }
     }
 
-    private OptionalMap<Id, Content> resolveContainers(Iterable<Content> items) throws StoreException {
+    private OptionalMap<Id, Content> resolveContainers(Iterable<Content> items)
+            throws StoreException {
         ImmutableSet<Id> ids = containerIds(items);
         ListenableFuture<Resolved<Content>> resolved = contentStore.resolveIds(ids);
         return Futures.get(resolved, 1, TimeUnit.MINUTES, ResolveException.class).toMap();
     }
 
     private ImmutableSet<Id> containerIds(Iterable<Content> items) {
-        ImmutableSet.Builder<Id> containerIds = ImmutableSet.builder(); 
+        ImmutableSet.Builder<Id> containerIds = ImmutableSet.builder();
         for (Item item : Iterables.filter(items, Item.class)) {
             if (item.getContainerRef() != null) {
                 containerIds.add(item.getContainerRef().getId());
             }
-            if (item instanceof Episode && ((Episode)item).getSeriesRef() != null) {
-                containerIds.add(((Episode)item).getSeriesRef().getId());
+            if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
+                containerIds.add(((Episode) item).getSeriesRef().getId());
             }
         }
         return containerIds.build();
@@ -268,13 +275,13 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         ListenableFuture<Resolved<Content>> resolved = contentStore.resolveIds(entryIds);
         return Futures.get(resolved, 1, TimeUnit.MINUTES, ResolveException.class).toMap();
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(getClass())
-            .add("src", source)
-            .add("channel", channel)
-            .add("day", interval)
-            .toString();
+                .add("src", source)
+                .add("channel", channel)
+                .add("day", interval)
+                .toString();
     }
 }

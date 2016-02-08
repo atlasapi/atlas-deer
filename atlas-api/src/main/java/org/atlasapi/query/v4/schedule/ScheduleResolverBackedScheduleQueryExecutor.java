@@ -1,13 +1,8 @@
 package org.atlasapi.query.v4.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.FluentIterable;
-import com.metabroadcast.common.base.Maybe;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
@@ -40,12 +35,15 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Interval;
 
-import javax.annotation.Nullable;
-
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQueryExecutor {
 
-    private static final Function<ItemAndBroadcast, Id> IAB_TO_ID = Functions.compose(Identifiables.toId(), ItemAndBroadcast.toItem());
+    private static final Function<ItemAndBroadcast, Id> IAB_TO_ID = Functions.compose(
+            Identifiables.toId(),
+            ItemAndBroadcast.toItem()
+    );
 
     private static final long QUERY_TIMEOUT = 60000;
 
@@ -54,7 +52,8 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
     private MergingEquivalentsResolver<Content> mergingContentResolver;
 
     public ScheduleResolverBackedScheduleQueryExecutor(ChannelResolver channelResolver,
-            ScheduleResolver scheduleResolver, MergingEquivalentsResolver<Content> mergingContentResolver) {
+            ScheduleResolver scheduleResolver,
+            MergingEquivalentsResolver<Content> mergingContentResolver) {
         this.channelResolver = checkNotNull(channelResolver);
         this.scheduleResolver = checkNotNull(scheduleResolver);
         this.mergingContentResolver = checkNotNull(mergingContentResolver);
@@ -63,22 +62,30 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
     @Override
     public QueryResult<ChannelSchedule> execute(ScheduleQuery query)
             throws QueryExecutionException {
-        
+
         Iterable<Channel> channels = resolveChannels(query);
-        if(!query.getEnd().isPresent()) {
-            throw new UnsupportedOperationException("'count' parameter not supported in non-equivalent schedule store. Please specify 'to' parameter in your request");
+        if (!query.getEnd().isPresent()) {
+            throw new UnsupportedOperationException(
+                    "'count' parameter not supported in non-equivalent schedule store. Please specify 'to' parameter in your request");
         }
         ListenableFuture<Schedule> schedule = scheduleResolver.resolve(
                 channels,
                 new Interval(query.getStart(), query.getEnd().get()),
                 query.getSource()
         );
-        
+
         if (query.isMultiChannel()) {
             List<ChannelSchedule> channelSchedules = channelSchedules(schedule, query);
-            return QueryResult.listResult(channelSchedules, query.getContext(), channelSchedules.size());
+            return QueryResult.listResult(
+                    channelSchedules,
+                    query.getContext(),
+                    channelSchedules.size()
+            );
         }
-        return QueryResult.singleResult(Iterables.getOnlyElement(channelSchedules(schedule, query)), query.getContext());
+        return QueryResult.singleResult(
+                Iterables.getOnlyElement(channelSchedules(schedule, query)),
+                query.getContext()
+        );
     }
 
     private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
@@ -88,26 +95,34 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
         } else {
             channelIds = ImmutableSet.of(query.getChannelId());
         }
-        Resolved<Channel> resolvedChannels = Futures.get(channelResolver.resolveIds(channelIds), 1, TimeUnit.MINUTES, QueryExecutionException.class);
+        Resolved<Channel> resolvedChannels = Futures.get(
+                channelResolver.resolveIds(channelIds),
+                1,
+                TimeUnit.MINUTES,
+                QueryExecutionException.class
+        );
         if (resolvedChannels.getResources().isEmpty()) {
             throw new NotFoundException(Iterables.getFirst(channelIds, null));
         }
         return resolvedChannels.getResources();
     }
 
-    private List<ChannelSchedule> channelSchedules(ListenableFuture<Schedule> schedule, ScheduleQuery query)
+    private List<ChannelSchedule> channelSchedules(ListenableFuture<Schedule> schedule,
+            ScheduleQuery query)
             throws ScheduleQueryExecutionException {
-        
+
         if (query.getContext().getApplicationSources().isPrecedenceEnabled()) {
             schedule = Futures.transform(schedule, toEquivalentEntries(query));
         }
-        
+
         return Futures.get(schedule,
-                QUERY_TIMEOUT, MILLISECONDS, ScheduleQueryExecutionException.class).channelSchedules(); 
+                QUERY_TIMEOUT, MILLISECONDS, ScheduleQueryExecutionException.class
+        ).channelSchedules();
     }
 
     private AsyncFunction<Schedule, Schedule> toEquivalentEntries(final ScheduleQuery query) {
         return new AsyncFunction<Schedule, Schedule>() {
+
             @Override
             public ListenableFuture<Schedule> apply(Schedule input) {
                 return resolveEquivalents(input, query.getContext());
@@ -120,21 +135,25 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
         ApplicationSources sources = context.getApplicationSources();
         ImmutableSet<Annotation> annotations = context.getAnnotations().all();
         ListenableFuture<ResolvedEquivalents<Content>> equivs
-            = mergingContentResolver.resolveIds(idsFrom(schedule), sources, annotations);
-        return Futures.transform(equivs, intoSchedule(schedule)); 
+                = mergingContentResolver.resolveIds(idsFrom(schedule), sources, annotations);
+        return Futures.transform(equivs, intoSchedule(schedule));
     }
 
     private Iterable<Id> idsFrom(Schedule schedule) {
         List<ChannelSchedule> channelSchedules = schedule.channelSchedules();
-        List<ImmutableList<ItemAndBroadcast>> entries = Lists.transform(channelSchedules, ChannelSchedule.toEntries());
+        List<ImmutableList<ItemAndBroadcast>> entries = Lists.transform(
+                channelSchedules,
+                ChannelSchedule.toEntries()
+        );
         return ImmutableSet.copyOf(Iterables.transform(Iterables.concat(entries), IAB_TO_ID));
     }
 
     private Function<ResolvedEquivalents<Content>, Schedule> intoSchedule(final Schedule schedule) {
-        return new Function<ResolvedEquivalents<Content>, Schedule>(){
+        return new Function<ResolvedEquivalents<Content>, Schedule>() {
+
             @Override
             public Schedule apply(ResolvedEquivalents<Content> input) {
-                ImmutableList.Builder<ChannelSchedule> transformed = ImmutableList.builder(); 
+                ImmutableList.Builder<ChannelSchedule> transformed = ImmutableList.builder();
                 for (ChannelSchedule cs : schedule.channelSchedules()) {
                     transformed.add(cs.copyWithEntries(replaceItems(cs.getEntries(), input)));
                 }
@@ -146,6 +165,7 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
     private List<ItemAndBroadcast> replaceItems(List<ItemAndBroadcast> entries,
             final ResolvedEquivalents<Content> equivs) {
         return Lists.transform(entries, new Function<ItemAndBroadcast, ItemAndBroadcast>() {
+
             @Override
             public ItemAndBroadcast apply(ItemAndBroadcast input) {
                 Item item = (Item) Iterables.getOnlyElement(equivs.get(input.getItem().getId()));

@@ -54,17 +54,7 @@ import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
 import org.atlasapi.util.CassandraSecondaryIndex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 
-import com.google.common.base.Predicates;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.primitives.Ints;
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -73,6 +63,12 @@ import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.properties.Parameter;
+
+import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.primitives.Ints;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
@@ -80,9 +76,14 @@ import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
-@Import({KafkaMessagingModule.class})
+@Import({ KafkaMessagingModule.class })
 public class AtlasPersistenceModule {
 
     private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
@@ -92,18 +93,23 @@ public class AtlasPersistenceModule {
     private final String mongoReadHost = Configurer.get("mongo.read.host").get();
     private final Integer mongoReadPort = Configurer.get("mongo.read.port").toInt();
     private final String mongoReadDbName = Configurer.get("mongo.read.name").get();
-    
+
     private final String cassandraCluster = Configurer.get("cassandra.cluster").get();
     private final String cassandraKeyspace = Configurer.get("cassandra.keyspace").get();
     private final String cassandraSeeds = Configurer.get("cassandra.seeds").get();
     private final String cassandraPort = Configurer.get("cassandra.port").get();
-    private final String cassandraConnectionTimeout = Configurer.get("cassandra.connectionTimeout").get();
+    private final String cassandraConnectionTimeout = Configurer.get("cassandra.connectionTimeout")
+            .get();
     private final String cassandraClientThreads = Configurer.get("cassandra.clientThreads").get();
-    private final Integer cassandraConnectionsPerHostLocal = Configurer.get("cassandra.connectionsPerHost.local").toInt();
-    private final Integer cassandraConnectionsPerHostRemote = Configurer.get("cassandra.connectionsPerHost.remote").toInt();
-    private final Integer cassandraDatastaxConnectionTimeout = Configurer.get("cassandra.datastax.timeouts.connections").toInt();
-    private final Integer cassandraDatastaxReadTimeout = Configurer.get("cassandra.datastax.timeouts.read").toInt();
- 
+    private final Integer cassandraConnectionsPerHostLocal = Configurer.get(
+            "cassandra.connectionsPerHost.local").toInt();
+    private final Integer cassandraConnectionsPerHostRemote = Configurer.get(
+            "cassandra.connectionsPerHost.remote").toInt();
+    private final Integer cassandraDatastaxConnectionTimeout = Configurer.get(
+            "cassandra.datastax.timeouts.connections").toInt();
+    private final Integer cassandraDatastaxReadTimeout = Configurer.get(
+            "cassandra.datastax.timeouts.read").toInt();
+
     private final String esSeeds = Configurer.get("elasticsearch.seeds").get();
     private final int port = Ints.saturatedCast(Configurer.get("elasticsearch.port").toLong());
     private final boolean ssl = Configurer.get("elasticsearch.ssl").toBoolean();
@@ -112,11 +118,11 @@ public class AtlasPersistenceModule {
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
 
-    private String equivalentContentChanges = Configurer.get("messaging.destination.equivalent.content.changes").get();
+    private String equivalentContentChanges = Configurer.get(
+            "messaging.destination.equivalent.content.changes").get();
 
     private @Autowired MessagingModule messaging;
     private @Autowired MetricsModule metricsModule;
-
 
     @PostConstruct
     public void init() {
@@ -126,10 +132,14 @@ public class AtlasPersistenceModule {
     @Bean
     public CassandraPersistenceModule persistenceModule() {
         Iterable<String> seeds = Splitter.on(",").split(cassandraSeeds);
-        ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster, cassandraKeyspace,
-                seeds, Integer.parseInt(cassandraPort),
-                Integer.parseInt(cassandraClientThreads), Integer.parseInt(cassandraConnectionTimeout),
-                metricsModule.metrics());
+        ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster,
+                cassandraKeyspace,
+                seeds,
+                Integer.parseInt(cassandraPort),
+                Integer.parseInt(cassandraClientThreads),
+                Integer.parseInt(cassandraConnectionTimeout),
+                metricsModule.metrics()
+        );
         AstyanaxContext<Keyspace> context = contextSupplier.get();
         context.start();
 
@@ -154,7 +164,7 @@ public class AtlasPersistenceModule {
                 metricsModule.metrics()
         );
     }
-    
+
     @Bean
     public ContentStore contentStore() {
         return persistenceModule().contentStore();
@@ -167,12 +177,12 @@ public class AtlasPersistenceModule {
     public EquivalenceGraphStore nullMessageSendingGraphStore() {
         return persistenceModule().nullMessageSendingGraphStore();
     }
-    
+
     @Bean
     public TopicStore topicStore() {
         return persistenceModule().topicStore();
     }
-    
+
     @Bean
     public ScheduleStore scheduleStore() {
         return persistenceModule().scheduleStore();
@@ -207,14 +217,17 @@ public class AtlasPersistenceModule {
     public EquivalenceGraphStore nullMessageSendingEquivalenceGraphStore() {
         return persistenceModule().nullMessageSendingEquivalenceGraphStore();
     }
-    
+
     @Bean
     public EquivalentContentStore getEquivalentContentStore() {
         return new CassandraEquivalentContentStore(
                 persistenceModule().contentStore(),
                 legacyContentResolver(),
                 persistenceModule().contentEquivalenceGraphStore(),
-                persistenceModule().sender(equivalentContentChanges, EquivalentContentUpdatedMessage.class),
+                persistenceModule().sender(
+                        equivalentContentChanges,
+                        EquivalentContentUpdatedMessage.class
+                ),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel()
@@ -262,7 +275,8 @@ public class AtlasPersistenceModule {
         return module;
     }
 
-    @Bean @Primary
+    @Bean
+    @Primary
     public DatabasedMongo databasedReadMongo() {
         return new DatabasedMongo(mongo(mongoReadHost, mongoReadPort), mongoReadDbName);
     }
@@ -287,7 +301,10 @@ public class AtlasPersistenceModule {
     }
 
     public IdGeneratorBuilder idGeneratorBuilder() {
-        return sequenceIdentifier -> new MongoSequentialIdGenerator(databasedWriteMongo(), sequenceIdentifier);
+        return sequenceIdentifier -> new MongoSequentialIdGenerator(
+                databasedWriteMongo(),
+                sequenceIdentifier
+        );
     }
 
     @Bean
@@ -301,6 +318,7 @@ public class AtlasPersistenceModule {
     public EsContentTranslator esContentTranslator() {
         return esContentIndexModule().translator();
     }
+
     @Bean
     @Primary
     public EsTopicIndex topicIndex() {
@@ -312,7 +330,7 @@ public class AtlasPersistenceModule {
     public EsPopularTopicIndex popularTopicIndex() {
         return esContentIndexModule().topicSearcher();
     }
-    
+
     @Bean
     @Primary
     public EsContentTitleSearcher contentSearcher() {
@@ -322,10 +340,14 @@ public class AtlasPersistenceModule {
     @Bean
     @Primary
     public ChannelStore channelStore() {
-        MongoChannelStore rawStore = new MongoChannelStore(databasedReadMongo(), channelGroupStore(), channelGroupStore());
+        MongoChannelStore rawStore = new MongoChannelStore(
+                databasedReadMongo(),
+                channelGroupStore(),
+                channelGroupStore()
+        );
         return new CachingChannelStore(rawStore);
     }
-    
+
     @Bean
     @Primary
     public ChannelGroupStore channelGroupStore() {
@@ -336,7 +358,8 @@ public class AtlasPersistenceModule {
 
     private List<ServerAddress> mongoHosts(String mongoHost, final Integer mongoPort) {
         Splitter splitter = Splitter.on(",").omitEmptyStrings().trimResults();
-        return ImmutableList.copyOf(Iterables.filter(Iterables.transform(splitter.split(mongoHost),
+        return ImmutableList.copyOf(Iterables.filter(Iterables.transform(
+                splitter.split(mongoHost),
                 input -> {
                     try {
                         return new ServerAddress(input, mongoPort);
@@ -346,7 +369,7 @@ public class AtlasPersistenceModule {
                 }
         ), Predicates.notNull()));
     }
-    
+
     @Bean
     HealthProbe mongoConnectionProbe() {
         return new MongoConnectionPoolProbe();
@@ -359,7 +382,10 @@ public class AtlasPersistenceModule {
 
     @Bean
     public ChannelGroupResolver channelGroupResolver() {
-        return new LegacyChannelGroupResolver(channelGroupStore(), new LegacyChannelGroupTransformer());
+        return new LegacyChannelGroupResolver(
+                channelGroupStore(),
+                new LegacyChannelGroupTransformer()
+        );
     }
 
     @Bean
@@ -374,15 +400,24 @@ public class AtlasPersistenceModule {
 
     public LegacyContentResolver legacyContentResolver() {
         DatabasedMongo mongoDb = databasedReadMongo();
-        KnownTypeContentResolver contentResolver = new MongoContentResolver(mongoDb, legacyEquivalenceStore());
-        return new LegacyContentResolver(legacyEquivalenceStore(), contentResolver, legacySegmentMigrator(), channelStore());
+        KnownTypeContentResolver contentResolver = new MongoContentResolver(
+                mongoDb,
+                legacyEquivalenceStore()
+        );
+        return new LegacyContentResolver(
+                legacyEquivalenceStore(),
+                contentResolver,
+                legacySegmentMigrator(),
+                channelStore()
+        );
     }
 
     public MongoLookupEntryStore legacyEquivalenceStore() {
         return new MongoLookupEntryStore(
                 databasedReadMongo().collection("lookup"),
                 new NoLoggingPersistenceAuditLog(),
-                ReadPreference.primaryPreferred());
+                ReadPreference.primaryPreferred()
+        );
     }
 
     public LegacySegmentMigrator legacySegmentMigrator() {

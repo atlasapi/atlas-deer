@@ -13,24 +13,26 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.ImageListWriter;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 public class ChannelSummaryWriter extends OutputAnnotation<Channel> {
 
     private final NumberToShortStringCodec codec;
-    
+
     private final EntityListWriter<Alias> aliasWriter = new AliasWriter();
     private final EntityListWriter<Image> imageWriter = new ImageListWriter();
 
     private static final Function<org.atlasapi.media.entity.Alias, Alias> toV4Alias =
-        new Function<org.atlasapi.media.entity.Alias, Alias>() {
-            @Override
-            public Alias apply(org.atlasapi.media.entity.Alias input) {
-                return new Alias(input.getNamespace(), input.getValue());
-            }
-        };
+            new Function<org.atlasapi.media.entity.Alias, Alias>() {
+
+                @Override
+                public Alias apply(org.atlasapi.media.entity.Alias input) {
+                    return new Alias(input.getNamespace(), input.getValue());
+                }
+            };
 
     public ChannelSummaryWriter(NumberToShortStringCodec codec) {
         super();
@@ -48,6 +50,7 @@ public class ChannelSummaryWriter extends OutputAnnotation<Channel> {
 
     private Iterable<Image> transform(Set<org.atlasapi.media.entity.Image> images) {
         return Iterables.transform(images, new Function<org.atlasapi.media.entity.Image, Image>() {
+
             @Override
             public Image apply(org.atlasapi.media.entity.Image input) {
                 Image image = new Image(input.getCanonicalUri());
@@ -56,7 +59,10 @@ public class ChannelSummaryWriter extends OutputAnnotation<Channel> {
                 image.setTheme(transformEnum(input.getTheme(), Image.Theme.class));
                 image.setHeight(input.getHeight());
                 image.setWidth(input.getWidth());
-                image.setAspectRatio(transformEnum(input.getAspectRatio(), Image.AspectRatio.class));
+                image.setAspectRatio(transformEnum(
+                        input.getAspectRatio(),
+                        Image.AspectRatio.class
+                ));
                 image.setMimeType(input.getMimeType());
                 image.setAvailabilityStart(input.getAvailabilityStart());
                 image.setAvailabilityEnd(input.getAvailabilityEnd());
@@ -64,7 +70,7 @@ public class ChannelSummaryWriter extends OutputAnnotation<Channel> {
             }
         });
     }
-    
+
     protected <E extends Enum<E>> E transformEnum(Enum<?> from, Class<E> to) {
         if (from == null) {
             return null;

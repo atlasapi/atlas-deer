@@ -1,9 +1,5 @@
 package org.atlasapi.entity;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
@@ -15,14 +11,18 @@ import org.atlasapi.content.Synopses;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.hamcrest.MatcherAssert;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 public class DescribedSerializerTest {
 
@@ -110,7 +110,10 @@ public class DescribedSerializerTest {
         MatcherAssert.assertThat(actual.getAliases(), is(expected.getAliases()));
         MatcherAssert.assertThat(actual.getEquivalentTo(), is(expected.getEquivalentTo()));
         MatcherAssert.assertThat(actual.getLastUpdated(), is(expected.getLastUpdated()));
-        MatcherAssert.assertThat(actual.getEquivalenceUpdate(), is(expected.getEquivalenceUpdate()));
+        MatcherAssert.assertThat(
+                actual.getEquivalenceUpdate(),
+                is(expected.getEquivalenceUpdate())
+        );
     }
 
     private void checkDescribed(Described actual, Described expected) {
@@ -119,12 +122,13 @@ public class DescribedSerializerTest {
         assertThat(actual.getMediumDescription(), is(expected.getMediumDescription()));
         assertThat(actual.getLongDescription(), is(expected.getLongDescription()));
 
-        if(expected.getSynopses() == null) {
+        if (expected.getSynopses() == null) {
             assertThat(actual.getSynopses(), nullValue());
-        }
-        else {
-            assertThat(actual.getSynopses().getShortDescription(),
-                    is(expected.getSynopses().getShortDescription()));
+        } else {
+            assertThat(
+                    actual.getSynopses().getShortDescription(),
+                    is(expected.getSynopses().getShortDescription())
+            );
         }
 
         assertThat(actual.getDescription(), is(expected.getDescription()));
@@ -142,11 +146,13 @@ public class DescribedSerializerTest {
         assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
         assertThat(actual.getPresentationChannel(), is(expected.getPresentationChannel()));
 
-        if(expected.getPriority() == null) {
+        if (expected.getPriority() == null) {
             assertThat(actual.getPriority(), nullValue());
-        }
-        else {
-            assertThat(actual.getPriority().getPriority(), is(expected.getPriority().getPriority()));
+        } else {
+            assertThat(
+                    actual.getPriority().getPriority(),
+                    is(expected.getPriority().getPriority())
+            );
         }
         assertThat(actual.getRelatedLinks(), is(expected.getRelatedLinks()));
     }

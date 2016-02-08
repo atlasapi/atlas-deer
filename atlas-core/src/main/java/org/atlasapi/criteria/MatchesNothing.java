@@ -14,49 +14,46 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria;
 
-
-
 /**
- * I represent a query that is never satisfied by any 
- * content.  Intermediate query processors may replace satisfiable 
- * queries (or subqueries) with me to indicate that they have determined
- * that no content matches a query.
- *   
+ * I represent a query that is never satisfied by any content.  Intermediate query processors may
+ * replace satisfiable queries (or subqueries) with me to indicate that they have determined that no
+ * content matches a query.
+ *
  * @author John Ayres (john@metabroadcast.com)
  */
 public class MatchesNothing extends AtomicQuery {
 
-	private static MatchesNothing INSTANCE = new MatchesNothing();
-	
-	public static MatchesNothing get() {
-		return INSTANCE;
-	}
-	
-//	public static ContentQuery asQuery() {
-//		return new ContentQuery(Collections.<AtomicQuery>singleton(INSTANCE));
-//	}
-	
-	private MatchesNothing() { /* SINGLETON */ }
+    private static MatchesNothing INSTANCE = new MatchesNothing();
 
-	public <V> V accept(QueryVisitor<V> visitor) {
-		return visitor.visit(this);
-	}
-	
-//	public static boolean isEquivalentTo(ContentQuery query) {
-//		
-//		 List<Boolean> result = query.accept(new QueryVisitorAdapter<Boolean>() {
-//			
-//			@Override
-//			public Boolean visit(MatchesNothing nothing) {
-//				return true;
-//			}
-//			
-//			@Override
-//			protected Boolean defaultValue(AtomicQuery query) {
-//				return false;
-//			}
-//		});
-//		 
-//		return result.contains(Boolean.TRUE);
-//	}
+    public static MatchesNothing get() {
+        return INSTANCE;
+    }
+
+    //	public static ContentQuery asQuery() {
+    //		return new ContentQuery(Collections.<AtomicQuery>singleton(INSTANCE));
+    //	}
+
+    private MatchesNothing() { /* SINGLETON */ }
+
+    public <V> V accept(QueryVisitor<V> visitor) {
+        return visitor.visit(this);
+    }
+
+    //	public static boolean isEquivalentTo(ContentQuery query) {
+    //
+    //		 List<Boolean> result = query.accept(new QueryVisitorAdapter<Boolean>() {
+    //
+    //			@Override
+    //			public Boolean visit(MatchesNothing nothing) {
+    //				return true;
+    //			}
+    //
+    //			@Override
+    //			protected Boolean defaultValue(AtomicQuery query) {
+    //				return false;
+    //			}
+    //		});
+    //
+    //		return result.contains(Boolean.TRUE);
+    //	}
 }

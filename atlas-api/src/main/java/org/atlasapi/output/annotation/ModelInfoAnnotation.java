@@ -14,7 +14,7 @@ public class ModelInfoAnnotation<T extends ModelClassInfo> extends
         OutputAnnotation<T> {
 
     private final EntityListWriter<? super FieldInfo> fieldInfoWriter;
-    
+
     public ModelInfoAnnotation(LinkCreator linkCreator) {
         this.fieldInfoWriter = new FieldInfoWriter("fields", linkCreator);
     }

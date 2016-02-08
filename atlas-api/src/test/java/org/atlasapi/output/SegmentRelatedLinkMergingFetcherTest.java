@@ -1,11 +1,5 @@
 package org.atlasapi.output;
 
-import static org.atlasapi.content.RelatedLink.LinkType.ARTICLE;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import org.atlasapi.content.Item;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.entity.Id;
@@ -14,14 +8,20 @@ import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.segment.SegmentResolver;
-import org.joda.time.Duration;
-import org.junit.Test;
-import org.mockito.Mock;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.joda.time.Duration;
+import org.junit.Test;
+import org.mockito.Mock;
+
+import static org.atlasapi.content.RelatedLink.LinkType.ARTICLE;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SegmentRelatedLinkMergingFetcherTest {
 
@@ -100,10 +100,17 @@ public class SegmentRelatedLinkMergingFetcherTest {
 
         Item item = new Item();
         item.setSegmentEvents(segmentEvents());
-        Iterable<SegmentAndEventTuple> segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(item.getSegmentEvents());
+        Iterable<SegmentAndEventTuple> segmentAndEventTuple = linkMergingFetcher.mergeSegmentLinks(
+                item.getSegmentEvents());
 
-        assertThat(Iterables.getOnlyElement(segmentAndEventTuple).getSegment().getRelatedLinks().size(), is(6));
-        assertThat(Sets.intersection(segmentFour().getRelatedLinks(), Iterables.getOnlyElement(segmentAndEventTuple).getSegment().getRelatedLinks()).size(), is(0));
+        assertThat(Iterables.getOnlyElement(segmentAndEventTuple)
+                .getSegment()
+                .getRelatedLinks()
+                .size(), is(6));
+        assertThat(Sets.intersection(
+                segmentFour().getRelatedLinks(),
+                Iterables.getOnlyElement(segmentAndEventTuple).getSegment().getRelatedLinks()
+        ).size(), is(0));
     }
 
     private ImmutableList<SegmentEvent> segmentEvents() {

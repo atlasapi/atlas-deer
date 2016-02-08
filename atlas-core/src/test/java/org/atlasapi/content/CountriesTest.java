@@ -14,30 +14,39 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
+import com.metabroadcast.common.intl.Countries;
+
+import com.google.common.collect.Sets;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import org.junit.Test;
-
-import com.google.common.collect.Sets;
-import com.metabroadcast.common.intl.Countries;
-
 public class CountriesTest {
 
-	@Test
-	public void testResolvingCodes() throws Exception {
-		assertEquals(Countries.GB, Countries.fromCode("gb"));
-		assertEquals(Countries.GB, Countries.fromCode("uk"));
-		assertEquals(Countries.GB, Countries.fromCode("GB"));
-		assertEquals(Countries.IE, Countries.fromCode("ie"));
-		assertNull(Countries.fromCode("5"));
-	}
-	
-	@Test
-	public void testFromList() throws Exception {
-		assertEquals(Sets.newHashSet(Countries.GB), Countries.fromDelimtedList("gb"));
-		assertEquals(Sets.newHashSet(Countries.GB, Countries.IE), Countries.fromDelimtedList("uk ie"));
-		assertEquals(Sets.newHashSet(Countries.GB, Countries.IE), Countries.fromDelimtedList("uk,  ie"));
-		assertEquals(Sets.newHashSet(Countries.GB, Countries.IE), Countries.fromDelimtedList("uk,  ; ie"));
-	}
+    @Test
+    public void testResolvingCodes() throws Exception {
+        assertEquals(Countries.GB, Countries.fromCode("gb"));
+        assertEquals(Countries.GB, Countries.fromCode("uk"));
+        assertEquals(Countries.GB, Countries.fromCode("GB"));
+        assertEquals(Countries.IE, Countries.fromCode("ie"));
+        assertNull(Countries.fromCode("5"));
+    }
+
+    @Test
+    public void testFromList() throws Exception {
+        assertEquals(Sets.newHashSet(Countries.GB), Countries.fromDelimtedList("gb"));
+        assertEquals(
+                Sets.newHashSet(Countries.GB, Countries.IE),
+                Countries.fromDelimtedList("uk ie")
+        );
+        assertEquals(
+                Sets.newHashSet(Countries.GB, Countries.IE),
+                Countries.fromDelimtedList("uk,  ie")
+        );
+        assertEquals(
+                Sets.newHashSet(Countries.GB, Countries.IE),
+                Countries.fromDelimtedList("uk,  ; ie")
+        );
+    }
 }

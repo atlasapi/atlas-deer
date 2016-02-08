@@ -10,7 +10,8 @@ public class ChannelWithChannelGroupMembership {
     private final Channel channel;
     private final ChannelGroupMembership channelGroupMembership;
 
-    public ChannelWithChannelGroupMembership(Channel channel, ChannelGroupMembership channelGroupMembership) {
+    public ChannelWithChannelGroupMembership(Channel channel,
+            ChannelGroupMembership channelGroupMembership) {
         this.channel = checkNotNull(channel);
         this.channelGroupMembership = checkNotNull(channelGroupMembership);
     }

@@ -13,55 +13,55 @@ public class Actor extends CrewMember {
         super();
         this.withRole(Role.ACTOR);
     }
-    
+
     private String character;
-    
+
     public Actor(String uri, String curie, Publisher publisher) {
-         super(uri, curie, publisher);
-         this.withRole(Role.ACTOR);
+        super(uri, curie, publisher);
+        this.withRole(Role.ACTOR);
     }
-    
+
     @FieldName("character")
     public String character() {
         return character;
     }
-    
+
     public Actor withCharacter(String character) {
         this.character = character;
         return this;
     }
-    
+
     @Override
     public Actor withName(String name) {
         this.name = name;
         return this;
     }
-    
+
     @Override
     public Actor withProfileLink(String profileLink) {
         this.addAliasUrl(profileLink);
         return this;
     }
-    
+
     public static Actor actorWithoutId(String name, String character, Publisher publisher) {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(name), "Name is null or blank");
         Preconditions.checkNotNull(publisher);
-        
+
         return new Actor(null, null, publisher)
-            .withCharacter(character)
-            .withName(name);
+                .withCharacter(character)
+                .withName(name);
     }
-    
+
     public static Actor actor(String id, String name, String character, Publisher publisher) {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(id), "ID is null or blank");
         Preconditions.checkNotNull(publisher);
         String uri = String.format(Person.BASE_URI, publisher.key(), id);
-        String curie = publisher.key()+':'+id;
+        String curie = publisher.key() + ':' + id;
         return new Actor(uri, curie, publisher)
-            .withCharacter(character)
-            .withName(name);
+                .withCharacter(character)
+                .withName(name);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Actor) {
@@ -70,17 +70,17 @@ public class Actor extends CrewMember {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return this.getCanonicalUri().hashCode();
     }
-    
+
     @Override
     public String toString() {
         return getCanonicalUri();//"Actor "+name+" plays "+character;
     }
-    
+
     @Override
     public CrewMember copy() {
         Actor actor = new Actor();

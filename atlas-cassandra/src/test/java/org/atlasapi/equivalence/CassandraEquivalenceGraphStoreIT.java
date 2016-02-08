@@ -48,11 +48,12 @@ public class CassandraEquivalenceGraphStoreIT {
     private static final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
     private static final String keyspace = "atlas_testing";
     private static DatastaxCassandraService service
-        = new DatastaxCassandraService(ImmutableList.of("localhost"), 8, 2);
+            = new DatastaxCassandraService(ImmutableList.of("localhost"), 8, 2);
     private static CassandraEquivalenceGraphStore store;
     private static Session session;
-    
+
     private static MessageSender<EquivalenceGraphUpdateMessage> messageSender = new MessageSender<EquivalenceGraphUpdateMessage>() {
+
         @Override
         public void sendMessage(EquivalenceGraphUpdateMessage message) {
             //no-op;
@@ -86,58 +87,83 @@ public class CassandraEquivalenceGraphStoreIT {
         session = service.getCluster().connect();
         tearDown();
         CassandraInit.createTables(session, context);
-        store = new CassandraEquivalenceGraphStore(messageSender, session , ConsistencyLevel.ONE, ConsistencyLevel.ONE);
+        store = new CassandraEquivalenceGraphStore(
+                messageSender,
+                session,
+                ConsistencyLevel.ONE,
+                ConsistencyLevel.ONE
+        );
     }
-    
+
     @AfterClass
     public static void tearDown() {
         CassandraInit.nukeIt(session);
     }
-    
+
     @After
     public void truncate() throws ConnectionException {
         CassandraInit.truncate(session, context);
     }
-    
+
     private static final Item bbcItem = new Item(Id.valueOf(1), Publisher.BBC);
     private static final Item paItem = new Item(Id.valueOf(2), Publisher.PA);
     private static final Item itvItem = new Item(Id.valueOf(3), Publisher.ITV);
     private static final Item c4Item = new Item(Id.valueOf(4), Publisher.C4);
     private static final Item fiveItem = new Item(Id.valueOf(5), Publisher.FIVE);
-             
+
     @Test
     public void testUpdatingEquivalences() throws Exception {
 
-        Set<Publisher> sources = ImmutableSet.of(bbcItem.getSource(), paItem.getSource(), c4Item.getSource());
-        store.updateEquivalences(bbcItem.toRef(), ImmutableSet.<ResourceRef>of(paItem.toRef(), c4Item.toRef()), sources);
-        
+        Set<Publisher> sources = ImmutableSet.of(
+                bbcItem.getSource(),
+                paItem.getSource(),
+                c4Item.getSource()
+        );
+        store.updateEquivalences(
+                bbcItem.toRef(),
+                ImmutableSet.<ResourceRef>of(paItem.toRef(), c4Item.toRef()),
+                sources
+        );
+
         sources = ImmutableSet.of(itvItem.getSource(), fiveItem.getSource());
-        store.updateEquivalences(itvItem.toRef(), ImmutableSet.<ResourceRef>of(fiveItem.toRef()), sources);
-        
+        store.updateEquivalences(
+                itvItem.toRef(),
+                ImmutableSet.<ResourceRef>of(fiveItem.toRef()),
+                sources
+        );
+
         sources = ImmutableSet.of(itvItem.getSource(), paItem.getSource());
-        store.updateEquivalences(itvItem.toRef(), ImmutableSet.<ResourceRef>of(paItem.toRef()), sources);
-        
+        store.updateEquivalences(
+                itvItem.toRef(),
+                ImmutableSet.<ResourceRef>of(paItem.toRef()),
+                sources
+        );
+
         sources = ImmutableSet.of(itvItem.getSource(), paItem.getSource(), fiveItem.getSource());
         store.updateEquivalences(itvItem.toRef(), ImmutableSet.<ResourceRef>of(), sources);
-        
-        ListenableFuture<OptionalMap<Id,EquivalenceGraph>> resolveIds = store.resolveIds(ImmutableList.of(Id.valueOf(3), Id.valueOf(1)));
+
+        ListenableFuture<OptionalMap<Id, EquivalenceGraph>> resolveIds = store.resolveIds(
+                ImmutableList.of(Id.valueOf(3), Id.valueOf(1)));
         OptionalMap<Id, EquivalenceGraph> graphs = Futures.get(resolveIds, ResolveException.class);
-        
+
         EquivalenceGraph graph = graphs.get(Id.valueOf(3)).get();
         assertThat(Iterables.getOnlyElement(graph.getEquivalenceSet()), is(Id.valueOf(3)));
-        
+
         graph = graphs.get(Id.valueOf(1)).get();
-        assertThat(graph.getEquivalenceSet(), is(ImmutableSet.of(Id.valueOf(1),Id.valueOf(2),Id.valueOf(4))));
-        
-        resolveIds = store.resolveIds(ImmutableList.of(Id.valueOf(1),Id.valueOf(2)));
+        assertThat(
+                graph.getEquivalenceSet(),
+                is(ImmutableSet.of(Id.valueOf(1), Id.valueOf(2), Id.valueOf(4)))
+        );
+
+        resolveIds = store.resolveIds(ImmutableList.of(Id.valueOf(1), Id.valueOf(2)));
         graphs = Futures.get(resolveIds, ResolveException.class);
-        
+
         EquivalenceGraph graph1 = graphs.get(Id.valueOf(1)).get();
         EquivalenceGraph graph2 = graphs.get(Id.valueOf(2)).get();
         assertEquals(graph1, graph2);
         assertTrue(graph1 == graph2);
     }
-    
+
     @Test
     public void testCreatingEquivalences() throws Exception {
 
@@ -146,9 +172,10 @@ public class CassandraEquivalenceGraphStoreIT {
         Set<ResourceRef> assertedAdjacents = ImmutableSet.<ResourceRef>of(equiv);
         Set<Publisher> sources = ImmutableSet.of(Publisher.BBC, Publisher.PA);
         store.updateEquivalences(subject, assertedAdjacents, sources);
-        
-        ListenableFuture<OptionalMap<Id,EquivalenceGraph>> resolveIds = store.resolveIds(ImmutableList.of(Id.valueOf(1)));
-        
+
+        ListenableFuture<OptionalMap<Id, EquivalenceGraph>> resolveIds = store.resolveIds(
+                ImmutableList.of(Id.valueOf(1)));
+
         OptionalMap<Id, EquivalenceGraph> graphs = Futures.get(resolveIds, ResolveException.class);
         EquivalenceGraph graph = graphs.get(Id.valueOf(1)).get();
         assertTrue(graph.getAdjacents(Id.valueOf(1)).getEfferent().contains(equiv));

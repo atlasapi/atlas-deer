@@ -1,6 +1,5 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import com.google.common.base.Optional;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
@@ -16,8 +15,10 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
+
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public final class DelegatingContentStore implements ContentStore {
 

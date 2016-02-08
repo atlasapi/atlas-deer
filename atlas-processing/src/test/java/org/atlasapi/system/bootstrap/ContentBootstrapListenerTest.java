@@ -1,11 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Content;
@@ -30,6 +24,14 @@ import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
+
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,12 +39,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ContentBootstrapListenerTest {
@@ -108,7 +109,10 @@ public class ContentBootstrapListenerTest {
     public void testMigrateBrand() throws Exception {
         EquivalenceGraphUpdate brandGraphUpdate = mockContentMigration(brand, brandRef);
         EquivalenceGraphUpdate seriesGraphUpdate = mockContentMigration(series, seriesRef);
-        EquivalenceGraphUpdate seriesItemGraphUpdate = mockContentMigration(seriesItem, seriesItemRef);
+        EquivalenceGraphUpdate seriesItemGraphUpdate = mockContentMigration(
+                seriesItem,
+                seriesItemRef
+        );
         EquivalenceGraphUpdate itemGraphUpdate = mockContentMigration(item, itemRef);
 
         mockBrandSeries();
@@ -136,7 +140,10 @@ public class ContentBootstrapListenerTest {
                 .build();
 
         mockContentMigration(item, itemRef);
-        EquivalenceGraphUpdate seriesItemGraphUpdate = mockContentMigration(seriesItem, seriesItemRef);
+        EquivalenceGraphUpdate seriesItemGraphUpdate = mockContentMigration(
+                seriesItem,
+                seriesItemRef
+        );
 
         when(item.getSegmentEvents()).thenReturn(ImmutableList.of());
         EquivalenceGraph equivalenceGraph = new EquivalenceGraph(

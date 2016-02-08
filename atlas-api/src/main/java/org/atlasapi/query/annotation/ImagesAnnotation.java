@@ -10,11 +10,10 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.output.writers.ImageListWriter;
 
-
 public class ImagesAnnotation extends OutputAnnotation<Described> {
 
     private final EntityListWriter<Image> imageWriter = new ImageListWriter();
-    
+
     @Override
     public void write(Described entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeList(imageWriter, entity.getImages(), ctxt);

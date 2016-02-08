@@ -1,12 +1,13 @@
 package org.atlasapi.entity;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
+import com.metabroadcast.common.time.DateTimeZones;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import com.metabroadcast.common.time.DateTimeZones;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DateTimeSerializer {
 

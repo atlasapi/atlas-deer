@@ -1,18 +1,17 @@
 package org.atlasapi.query.common;
 
-
 public class QueryExecutionException extends Exception {
-    
+
     private static final long serialVersionUID = 1L;
 
     public QueryExecutionException() {
         super();
     }
-    
+
     public QueryExecutionException(String message) {
         super(message);
     }
-    
+
     public QueryExecutionException(Throwable cause) {
         super(cause);
     }
@@ -20,5 +19,5 @@ public class QueryExecutionException extends Exception {
     public QueryExecutionException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
 }

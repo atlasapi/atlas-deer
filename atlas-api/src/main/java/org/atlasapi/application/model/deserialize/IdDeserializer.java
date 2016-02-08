@@ -4,16 +4,17 @@ import java.lang.reflect.Type;
 
 import org.atlasapi.entity.Id;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-
 
 public class IdDeserializer implements JsonDeserializer<Id> {
+
     private final NumberToShortStringCodec idCodec;
-    
+
     public IdDeserializer(NumberToShortStringCodec idCodec) {
         this.idCodec = idCodec;
     }

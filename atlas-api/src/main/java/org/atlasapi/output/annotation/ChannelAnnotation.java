@@ -1,12 +1,11 @@
 package org.atlasapi.output.annotation;
 
+import java.io.IOException;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.v4.channel.ChannelWriter;
-
-
-import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

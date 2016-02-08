@@ -1,15 +1,16 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Objects;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-public class ContentGroup extends Described implements MutableContentList, Equivalable<ContentGroup> {
+public class ContentGroup extends Described
+        implements MutableContentList, Equivalable<ContentGroup> {
 
     private transient String readHash;
     //
@@ -25,7 +26,7 @@ public class ContentGroup extends Described implements MutableContentList, Equiv
         super(uri, null, publisher);
         this.type = Type.PLAYLIST;
     }
-    
+
     protected ContentGroup(Type type, String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
         this.type = type;
@@ -54,17 +55,21 @@ public class ContentGroup extends Described implements MutableContentList, Equiv
     }
 
     public void addContent(ContentRef childRef) {
-        this.contents = ImmutableSet.<ContentRef>builder().addAll(this.getContents()).add(childRef).build();
+        this.contents = ImmutableSet.<ContentRef>builder().addAll(this.getContents())
+                .add(childRef)
+                .build();
     }
 
     public void addContents(Iterable<ContentRef> childRef) {
-        this.contents = ImmutableSet.<ContentRef>builder().addAll(this.getContents()).addAll(childRef).build();
+        this.contents = ImmutableSet.<ContentRef>builder().addAll(this.getContents())
+                .addAll(childRef)
+                .build();
     }
-    
+
     public void setReadHash(String readHash) {
         this.readHash = readHash;
     }
-    
+
     public boolean hashChanged(String newHash) {
         return readHash == null || !this.readHash.equals(newHash);
     }
@@ -74,15 +79,19 @@ public class ContentGroup extends Described implements MutableContentList, Equiv
         copyTo(this, copy);
         return copy;
     }
-    
+
     public ContentGroupRef contentGroupRef() {
         return new ContentGroupRef(getId(), getCanonicalUri());
     }
 
     public enum Type {
-        FRANCHISE, SEASON, PLAYLIST, PERSON, ORGANISATION;
+        FRANCHISE,
+        SEASON,
+        PLAYLIST,
+        PERSON,
+        ORGANISATION
     }
-    
+
     @Override
     public ContentGroup copyWithEquivalentTo(Iterable<EquivalenceRef> refs) {
         super.copyWithEquivalentTo(refs);

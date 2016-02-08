@@ -1,18 +1,19 @@
 package org.atlasapi.messaging;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.util.ImmutableCollectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceGraphUpdateMessage> {
 
@@ -24,7 +25,8 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
     private final ContentIndex contentIndex;
     private final Timer timer;
 
-    public EquivalentContentIndexingGraphWorker(ContentIndex contentIndex, MetricRegistry metricRegistry) {
+    public EquivalentContentIndexingGraphWorker(ContentIndex contentIndex,
+            MetricRegistry metricRegistry) {
         this.contentIndex = checkNotNull(contentIndex);
         this.timer = checkNotNull(metricRegistry.timer(METRICS_TIMER));
     }
@@ -46,7 +48,8 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
             }
             time.stop();
         } catch (Exception e) {
-            throw new RecoverableException("Failed to update canonical IDs for set" + message.getGraphUpdate().getUpdated().getId(), e);
+            throw new RecoverableException("Failed to update canonical IDs for set"
+                    + message.getGraphUpdate().getUpdated().getId(), e);
         }
     }
 }

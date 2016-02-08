@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
+
 import org.joda.time.DateTime;
 
 public class EpisodeRef extends ItemRef {
@@ -25,8 +26,8 @@ public class EpisodeRef extends ItemRef {
         if (that instanceof EpisodeRef) {
             EpisodeRef other = (EpisodeRef) that;
             return id.equals(other.id)
-                && source.equals(other.source)
-                && getContentType().equals(other.getContentType());
+                    && source.equals(other.source)
+                    && getContentType().equals(other.getContentType());
         }
         return false;
     }

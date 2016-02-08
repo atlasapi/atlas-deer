@@ -24,12 +24,12 @@ final class Index {
         this.bindings = bindings;
         this.replacementSuggestion = replacements(bindings.keySet());
     }
-    
+
     private ReplacementSuggestion replacements(Set<String> valid) {
         return new ReplacementSuggestion(
                 valid, "Invalid annotations: ", " (did you mean %s?)");
     }
-    
+
     ActiveAnnotations resolve(Iterable<String> keys)
             throws InvalidAnnotationException {
         ImmutableSetMultimap.Builder<List<Resource>, Annotation> annotations = ImmutableSetMultimap.builder();
@@ -45,7 +45,10 @@ final class Index {
             }
         }
         if (!invalid.isEmpty()) {
-            throw new InvalidAnnotationException(replacementSuggestion.forInvalid(invalid), invalid);
+            throw new InvalidAnnotationException(
+                    replacementSuggestion.forInvalid(invalid),
+                    invalid
+            );
         }
         return new ActiveAnnotations(annotations.build());
     }
@@ -56,6 +59,7 @@ final class Index {
 
     private Predicate<? super String> startsWith(final String prefix) {
         return new Predicate<String>() {
+
             @Override
             public boolean apply(String input) {
                 return input.startsWith(prefix);

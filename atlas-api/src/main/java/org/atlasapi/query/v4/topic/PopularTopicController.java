@@ -21,20 +21,21 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
-import org.joda.time.Interval;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
+import org.joda.time.Interval;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class PopularTopicController {
@@ -49,26 +50,43 @@ public class PopularTopicController {
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    public PopularTopicController(TopicResolver resolver, PopularTopicIndex index, QueryResultWriter<Topic> resultWriter, ApplicationSourcesFetcher configurationFetcher) {
+    public PopularTopicController(TopicResolver resolver, PopularTopicIndex index,
+            QueryResultWriter<Topic> resultWriter, ApplicationSourcesFetcher configurationFetcher) {
         this.resolver = resolver;
         this.index = index;
         this.resultWriter = resultWriter;
         this.sourcesFetcher = configurationFetcher;
     }
 
-    @RequestMapping({"/4/topics/popular.*", "/4/topics/popular"})
-    public void popularTopics(@RequestParam(required = true) String from, @RequestParam(required = true) String to, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    @RequestMapping({ "/4/topics/popular.*", "/4/topics/popular" })
+    public void popularTopics(@RequestParam(required = true) String from,
+            @RequestParam(required = true) String to, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
         if (Strings.isNullOrEmpty(from) || Strings.isNullOrEmpty(to)) {
             throw new IllegalArgumentException("Request parameters 'from' and 'to' are required!");
         }
-        Selection selection = Selection.builder().withDefaultLimit(Integer.MAX_VALUE).withMaxLimit(Integer.MAX_VALUE).build(request);
+        Selection selection = Selection.builder()
+                .withDefaultLimit(Integer.MAX_VALUE)
+                .withMaxLimit(Integer.MAX_VALUE)
+                .build(request);
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            ApplicationSources sources = sourcesFetcher.sourcesFor(request).or(ApplicationSources.defaults());
-            Interval interval = new Interval(dateTimeInQueryParser.parse(from), dateTimeInQueryParser.parse(to));
-            ListenableFuture<FluentIterable<Id>> topicIds = index.popularTopics(interval, selection);
-            resultWriter.write(QueryResult.listResult(resolve(topicIds), new QueryContext(sources, ActiveAnnotations.standard(), request), Long.valueOf(topicIds.get().size())), writer);
+            ApplicationSources sources = sourcesFetcher.sourcesFor(request)
+                    .or(ApplicationSources.defaults());
+            Interval interval = new Interval(
+                    dateTimeInQueryParser.parse(from),
+                    dateTimeInQueryParser.parse(to)
+            );
+            ListenableFuture<FluentIterable<Id>> topicIds = index.popularTopics(
+                    interval,
+                    selection
+            );
+            resultWriter.write(QueryResult.listResult(
+                    resolve(topicIds),
+                    new QueryContext(sources, ActiveAnnotations.standard(), request),
+                    Long.valueOf(topicIds.get().size())
+            ), writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
             ErrorSummary summary = ErrorSummary.forException(e);
@@ -76,13 +94,17 @@ public class PopularTopicController {
         }
     }
 
-    private Iterable<Topic> resolve(ListenableFuture<FluentIterable<Id>> topicIds) throws Exception {
-        return Futures.get(Futures.transform(topicIds,
-            new AsyncFunction<FluentIterable<Id>, Resolved<Topic>>() {
-                @Override
-                public ListenableFuture<Resolved<Topic>> apply(FluentIterable<Id> input) {
-                    return resolver.resolveIds(input);
+    private Iterable<Topic> resolve(ListenableFuture<FluentIterable<Id>> topicIds)
+            throws Exception {
+        return Futures.get(Futures.transform(
+                topicIds,
+                new AsyncFunction<FluentIterable<Id>, Resolved<Topic>>() {
+
+                    @Override
+                    public ListenableFuture<Resolved<Topic>> apply(FluentIterable<Id> input) {
+                        return resolver.resolveIds(input);
+                    }
                 }
-            }), 60, TimeUnit.SECONDS, Exception.class).getResources();
+        ), 60, TimeUnit.SECONDS, Exception.class).getResources();
     }
 }

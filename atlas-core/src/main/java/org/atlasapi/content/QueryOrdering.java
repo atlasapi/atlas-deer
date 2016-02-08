@@ -1,13 +1,13 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Arrays;
 
 import org.atlasapi.util.ImmutableCollectors;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class QueryOrdering {
 
@@ -17,6 +17,7 @@ public class QueryOrdering {
     }
 
     public static class Clause {
+
         private final String path;
         private final Direction direction;
 
@@ -61,7 +62,10 @@ public class QueryOrdering {
                     }
 
                     String path = clause.substring(0, lastDot);
-                    Direction direction = Direction.valueOf(clause.substring(lastDot + 1, clause.length()).toUpperCase());
+                    Direction direction = Direction.valueOf(clause.substring(
+                            lastDot + 1,
+                            clause.length()
+                    ).toUpperCase());
 
                     return new Clause(path, direction);
                 })

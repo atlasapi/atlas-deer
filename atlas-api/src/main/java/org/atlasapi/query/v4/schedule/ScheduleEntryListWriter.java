@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.content.Broadcast;
@@ -12,13 +10,15 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScheduleEntryListWriter implements EntityListWriter<ItemAndBroadcast> {
-    
+
     private EntityWriter<Content> contentWriter;
     private EntityWriter<Broadcast> broadcastWriter;
 
-    public ScheduleEntryListWriter(EntityWriter<Content> contentWriter, EntityWriter<Broadcast> broadcastWriter) {
+    public ScheduleEntryListWriter(EntityWriter<Content> contentWriter,
+            EntityWriter<Broadcast> broadcastWriter) {
         this.contentWriter = checkNotNull(contentWriter);
         this.broadcastWriter = checkNotNull(broadcastWriter);
     }

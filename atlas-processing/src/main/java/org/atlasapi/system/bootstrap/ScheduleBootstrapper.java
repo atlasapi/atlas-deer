@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -9,9 +7,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
-import org.joda.time.Interval;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.scheduling.UpdateProgress;
 
 import com.google.api.client.util.Sets;
 import com.google.common.collect.Iterables;
@@ -19,7 +16,11 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
-import com.metabroadcast.common.scheduling.UpdateProgress;
+import org.joda.time.Interval;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScheduleBootstrapper {
 
@@ -68,7 +69,13 @@ public class ScheduleBootstrapper {
         );
         try {
             for (Channel channel : channels) {
-                futures.add(bootstrapChannel(channel, interval, source, migrateContent, writeEquivalences));
+                futures.add(bootstrapChannel(
+                        channel,
+                        interval,
+                        source,
+                        migrateContent,
+                        writeEquivalences
+                ));
             }
             Futures.get(Futures.allAsList(futures), Exception.class);
         } catch (Exception e) {
@@ -80,11 +87,13 @@ public class ScheduleBootstrapper {
         return true;
     }
 
-    public boolean bootstrapSchedules(Iterable<Channel> channels, Interval interval, Publisher source, boolean migrateContent) {
+    public boolean bootstrapSchedules(Iterable<Channel> channels, Interval interval,
+            Publisher source, boolean migrateContent) {
         return bootstrapSchedules(channels, interval, source, migrateContent, false);
     }
 
-    private ListenableFuture<UpdateProgress> bootstrapChannel(final Channel channel, Interval interval, 
+    private ListenableFuture<UpdateProgress> bootstrapChannel(final Channel channel,
+            Interval interval,
             Publisher source, boolean migrateContent, boolean writeEquivalences) {
         log.info("Bootstrapping channel {}/{}", channel.getId(), channel.getTitle());
         ChannelIntervalScheduleBootstrapTask task;
@@ -97,6 +106,7 @@ public class ScheduleBootstrapper {
         }
         ListenableFuture<UpdateProgress> updateFuture = executor.submit(task);
         Futures.addCallback(updateFuture, new FutureCallback<UpdateProgress>() {
+
             @Override
             public void onSuccess(UpdateProgress result) {
                 log.info(
@@ -114,7 +124,8 @@ public class ScheduleBootstrapper {
 
             @Override
             public void onFailure(Throwable t) {
-                log.error("Error while processing schedules for channel {}/{}, bootstrap progress: {}/{}, success: {}, failure: {}\"",
+                log.error(
+                        "Error while processing schedules for channel {}/{}, bootstrap progress: {}/{}, success: {}, failure: {}\"",
                         channel.getId(),
                         channel.getTitle(),
                         progress.incrementAndGet(),

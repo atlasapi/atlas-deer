@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ContentIndex;
@@ -11,19 +9,19 @@ import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.schedule.ScheduleWriter;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
-import org.joda.time.Interval;
 
 import com.google.common.base.Optional;
+import org.joda.time.Interval;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A schedule bootstrapper that also migrates schedule content, including its
- * equivalent set. This is generally not required in normal operations, but useful
- * to force consistency between Owl and Deer content in the schedule.
- *
+ * A schedule bootstrapper that also migrates schedule content, including its equivalent set. This
+ * is generally not required in normal operations, but useful to force consistency between Owl and
+ * Deer content in the schedule.
  */
-public class ScheduleBootstrapWithContentMigrationTaskFactory 
-            implements SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> {
+public class ScheduleBootstrapWithContentMigrationTaskFactory
+        implements SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> {
 
     private final ScheduleResolver scheduleResolver;
     private final ScheduleWriter scheduleWriter;
@@ -32,7 +30,8 @@ public class ScheduleBootstrapWithContentMigrationTaskFactory
 
     public ScheduleBootstrapWithContentMigrationTaskFactory(ScheduleResolver scheduleResolver,
             ScheduleWriter scheduleWriter, ContentStore contentStore, ContentIndex contentIndex,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, AtlasPersistenceModule persistence,
+            DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
+            AtlasPersistenceModule persistence,
             LegacyPersistenceModule legacyPersistenceModule) {
         this.scheduleResolver = checkNotNull(scheduleResolver);
         this.scheduleWriter = checkNotNull(scheduleWriter);

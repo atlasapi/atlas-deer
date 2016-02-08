@@ -1,16 +1,18 @@
 package org.atlasapi.system.legacy;
 
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.persistence.mongo.MongoConstants;
-import com.metabroadcast.common.persistence.mongo.MongoUpdateBuilder;
-import com.metabroadcast.common.persistence.translator.TranslatorUtils;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
+import java.util.Optional;
+
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.ContentCategory;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 
-import java.util.Optional;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.persistence.mongo.MongoConstants;
+import com.metabroadcast.common.persistence.mongo.MongoUpdateBuilder;
+import com.metabroadcast.common.persistence.translator.TranslatorUtils;
+
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 
 import static com.metabroadcast.common.persistence.mongo.MongoBuilders.where;
 
@@ -40,7 +42,7 @@ public class MongoProgressStore implements ProgressStore {
     private ContentListingProgress fromDbo(DBObject progress) {
         String lastId = TranslatorUtils.toString(progress, LAST_ID);
 
-        if(START.equals(lastId)) {
+        if (START.equals(lastId)) {
             return ContentListingProgress.START;
         }
 
@@ -55,15 +57,18 @@ public class MongoProgressStore implements ProgressStore {
 
     @Override
     public void storeProgress(String taskName, ContentListingProgress progress) {
-        MongoUpdateBuilder update = new MongoUpdateBuilder().setField(LAST_ID, progress.getUri() == null ? START : progress.getUri());
+        MongoUpdateBuilder update = new MongoUpdateBuilder().setField(
+                LAST_ID,
+                progress.getUri() == null ? START : progress.getUri()
+        );
 
-        if(progress.getCategory() != null) {
+        if (progress.getCategory() != null) {
             update.setField(CATEGORY, progress.getCategory().toString());
         } else {
             update.unsetField(CATEGORY);
         }
 
-        if(progress.getPublisher() != null) {
+        if (progress.getPublisher() != null) {
             update.setField(PUBLISHER, progress.getPublisher().key());
         } else {
             update.unsetField(PUBLISHER);

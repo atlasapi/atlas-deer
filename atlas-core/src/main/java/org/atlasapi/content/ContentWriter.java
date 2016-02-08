@@ -1,9 +1,9 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Optional;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 
+import com.google.common.base.Optional;
 
 public interface ContentWriter {
 
@@ -15,5 +15,5 @@ public interface ContentWriter {
             Optional<SeriesRef> seriesRef,
             Broadcast broadcast
     );
-    
+
 }

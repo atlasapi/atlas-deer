@@ -4,11 +4,10 @@ import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.source.Sources;
-import org.joda.time.DateTime;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
-
+import org.joda.time.DateTime;
 
 public class IdentifiedSerializer<T extends Identified> {
 
@@ -16,7 +15,7 @@ public class IdentifiedSerializer<T extends Identified> {
 
     public CommonProtos.Identification serialize(T identified) {
         CommonProtos.Identification.Builder id = CommonProtos.Identification.newBuilder()
-            .setType(identified.getClass().getSimpleName().toLowerCase());
+                .setType(identified.getClass().getSimpleName().toLowerCase());
         if (identified.getId() != null) {
             id.setId(identified.getId().longValue());
         }
@@ -36,8 +35,8 @@ public class IdentifiedSerializer<T extends Identified> {
         }
         for (EquivalenceRef equivRef : identified.getEquivalentTo()) {
             id.addEquivs(CommonProtos.Reference.newBuilder()
-                .setId(equivRef.getId().longValue())
-                .setSource(equivRef.getSource().key())
+                    .setId(equivRef.getId().longValue())
+                    .setSource(equivRef.getSource().key())
             );
         }
         if (identified.getEquivalenceUpdate() != null) {
@@ -67,10 +66,11 @@ public class IdentifiedSerializer<T extends Identified> {
             aliases.add(new Alias(alias.getNamespace(), alias.getValue()));
         }
         identified.setAliases(aliases.build());
-        
+
         ImmutableSet.Builder<EquivalenceRef> equivRefs = ImmutableSet.builder();
         for (Reference equivRef : msg.getEquivsList()) {
-            equivRefs.add(new EquivalenceRef(Id.valueOf(equivRef.getId()),
+            equivRefs.add(new EquivalenceRef(
+                    Id.valueOf(equivRef.getId()),
                     Sources.fromPossibleKey(equivRef.getSource()).get()
             ));
         }
@@ -81,7 +81,8 @@ public class IdentifiedSerializer<T extends Identified> {
         return identified;
     }
 
-    public <I extends Identified.Builder> I deserialize(CommonProtos.Identification msg, I builder) {
+    public <I extends Identified.Builder> I deserialize(CommonProtos.Identification msg,
+            I builder) {
         if (msg.hasId()) {
             builder.withId(Id.valueOf(msg.getId()));
         }
@@ -104,7 +105,8 @@ public class IdentifiedSerializer<T extends Identified> {
 
         ImmutableSet.Builder<EquivalenceRef> equivRefs = ImmutableSet.builder();
         for (Reference equivRef : msg.getEquivsList()) {
-            equivRefs.add(new EquivalenceRef(Id.valueOf(equivRef.getId()),
+            equivRefs.add(new EquivalenceRef(
+                    Id.valueOf(equivRef.getId()),
                     Sources.fromPossibleKey(equivRef.getSource()).get()
             ));
         }

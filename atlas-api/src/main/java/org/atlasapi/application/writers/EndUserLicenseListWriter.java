@@ -10,8 +10,8 @@ import org.atlasapi.query.common.Resource;
 
 public class EndUserLicenseListWriter implements EntityListWriter<EndUserLicense> {
 
-    
-    public EndUserLicenseListWriter() {}
+    public EndUserLicenseListWriter() {
+    }
 
     @Override
     public void write(EndUserLicense entity, FieldWriter writer, OutputContext ctxt)

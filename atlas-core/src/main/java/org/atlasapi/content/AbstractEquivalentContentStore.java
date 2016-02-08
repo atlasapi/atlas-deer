@@ -1,7 +1,5 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -14,10 +12,11 @@ import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.util.GroupLock;
 import org.atlasapi.util.ImmutableCollectors;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -30,10 +29,12 @@ import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
-import com.metabroadcast.common.time.Timestamp;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class AbstractEquivalentContentStore implements EquivalentContentStore {
 
@@ -52,7 +53,8 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.graphStore = checkNotNull(graphStore);
-        this.equivalentContentUpdatedMessageSender = checkNotNull(equivalentContentUpdatedMessageSender);
+        this.equivalentContentUpdatedMessageSender = checkNotNull(
+                equivalentContentUpdatedMessageSender);
     }
 
     @Override
@@ -62,7 +64,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             lock.lock(ids);
 
             ImmutableSetMultimap.Builder<EquivalenceGraph, Content> graphsAndContentBuilder
-                = ImmutableSetMultimap.builder();
+                    = ImmutableSetMultimap.builder();
             Function<Id, Optional<Content>> toContent = Functions.forMap(resolveIds(ids));
 
             for (EquivalenceGraph graph : graphsOf(update)) {
@@ -137,7 +139,8 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     private ImmutableSet<Id> idsOf(EquivalenceGraphUpdate update) {
         return ImmutableSet.<Id>builder()
                 .addAll(update.getUpdated().getEquivalenceSet())
-                .addAll(Iterables.concat(Iterables.transform(update.getCreated(),
+                .addAll(Iterables.concat(Iterables.transform(
+                        update.getCreated(),
                         EquivalenceGraph::getEquivalenceSet
                 )))
                 .addAll(update.getDeleted())
@@ -206,10 +209,10 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             ImmutableSet<Id> contentIdsToBeUpdated) {
         try {
             return get(resolveEquivalentSetIncludingStaleContent(deletedGraphId.longValue()))
-                            .stream()
-                            .map(Content::getId)
-                            .filter(id -> !contentIdsToBeUpdated.contains(id))
-                            .collect(ImmutableCollectors.toSet());
+                    .stream()
+                    .map(Content::getId)
+                    .filter(id -> !contentIdsToBeUpdated.contains(id))
+                    .collect(ImmutableCollectors.toSet());
 
         } catch (WriteException e) {
             LOG.warn("Failed to resolve equivalent set {}", deletedGraphId, e);

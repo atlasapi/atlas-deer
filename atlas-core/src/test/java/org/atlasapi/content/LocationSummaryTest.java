@@ -65,7 +65,12 @@ public class LocationSummaryTest {
     public void testAvailableWhenNowBetweenStartAndEndOnPolicy() {
         DateTime now = DateTime.now(DateTimeZone.UTC);
 
-        LocationSummary locationSummary = new LocationSummary(true, null, now.minusHours(1), now.plusHours(1));
+        LocationSummary locationSummary = new LocationSummary(
+                true,
+                null,
+                now.minusHours(1),
+                now.plusHours(1)
+        );
 
         assertThat(LocationSummary.AVAILABLE.test(locationSummary), is(true));
     }
@@ -74,7 +79,12 @@ public class LocationSummaryTest {
     public void testAvailableWhenNowBeforeStartOnPolicy() {
         DateTime now = DateTime.now(DateTimeZone.UTC);
 
-        LocationSummary locationSummary = new LocationSummary(true, null, now.plusHours(1), now.plusHours(2));
+        LocationSummary locationSummary = new LocationSummary(
+                true,
+                null,
+                now.plusHours(1),
+                now.plusHours(2)
+        );
 
         assertThat(LocationSummary.AVAILABLE.test(locationSummary), is(false));
     }
@@ -83,7 +93,12 @@ public class LocationSummaryTest {
     public void testAvailableWhenNowAfterEndOnPolicy() {
         DateTime now = DateTime.now(DateTimeZone.UTC);
 
-        LocationSummary locationSummary = new LocationSummary(true, null, now.minusHours(2), now.minusHours(1));
+        LocationSummary locationSummary = new LocationSummary(
+                true,
+                null,
+                now.minusHours(2),
+                now.minusHours(1)
+        );
 
         assertThat(LocationSummary.AVAILABLE.test(locationSummary), is(false));
     }

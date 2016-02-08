@@ -1,15 +1,15 @@
 package org.atlasapi.system.legacy;
 
+import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.media.entity.Publisher;
+
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.junit.Test;
-
-import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -61,7 +61,10 @@ public class LegacyChannelTransformerTest {
         assertThat(transformed.getParent().getId().longValue(), is(parentId));
         assertThat(transformed.getStartDate(), is(startDate));
         assertThat(transformed.getEndDate(), is(endDate));
-        assertThat(transformed.getGenres(), containsInAnyOrder("comedy", "drama", Channel.ADULT_GENRE));
+        assertThat(
+                transformed.getGenres(),
+                containsInAnyOrder("comedy", "drama", Channel.ADULT_GENRE)
+        );
         assertThat(transformed.getMediaType(), is(MediaType.valueOf(mediaType.toString())));
         assertThat(transformed.getAvailableFrom(), is(availableFrom));
         assertThat(transformed.getAdvertiseFrom(), is(advertiseFrom));

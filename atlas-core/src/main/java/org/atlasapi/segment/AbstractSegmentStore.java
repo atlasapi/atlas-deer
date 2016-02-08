@@ -1,7 +1,5 @@
 package org.atlasapi.segment;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.UUID;
 
@@ -10,21 +8,23 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Equivalence;
-import com.google.common.base.Optional;
-import com.google.common.primitives.Longs;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
-abstract public class AbstractSegmentStore implements SegmentStore {
+import com.google.common.base.Equivalence;
+import com.google.common.base.Optional;
+import com.google.common.primitives.Longs;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+abstract public class AbstractSegmentStore implements SegmentStore {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final IdGenerator idGen;
@@ -33,7 +33,7 @@ abstract public class AbstractSegmentStore implements SegmentStore {
     private final Clock clock;
 
     public AbstractSegmentStore(IdGenerator idGen, Equivalence<? super Segment> equivalence,
-                                MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
+            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
         this.idGen = checkNotNull(idGen);
         this.equivalence = checkNotNull(equivalence);
         this.sender = checkNotNull(sender);
@@ -78,7 +78,8 @@ abstract public class AbstractSegmentStore implements SegmentStore {
             sender.sendMessage(msg, Longs.toByteArray(resourceId.longValue()));
         } catch (MessagingException e) {
             log.error("Failed to send resource update message [{}] - {}",
-                    msg.getUpdatedResource().toString(), e.toString());
+                    msg.getUpdatedResource().toString(), e.toString()
+            );
         }
     }
 
@@ -88,7 +89,8 @@ abstract public class AbstractSegmentStore implements SegmentStore {
         return new ResourceUpdatedMessage(
                 UUID.randomUUID().toString(),
                 Timestamp.of(result.getWriteTime().getMillis()),
-                result.getResource().toRef());
+                result.getResource().toRef()
+        );
 
     }
 
@@ -104,5 +106,6 @@ abstract public class AbstractSegmentStore implements SegmentStore {
         return resolvePrevious(segment.getId(), segment.getSource(), segment.getAliases()).orNull();
     }
 
-    protected abstract Optional<Segment> resolvePrevious(Id id, Publisher source, Set<Alias> aliases);
+    protected abstract Optional<Segment> resolvePrevious(Id id, Publisher source,
+            Set<Alias> aliases);
 }

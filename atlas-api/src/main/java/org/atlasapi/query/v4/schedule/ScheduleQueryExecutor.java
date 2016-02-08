@@ -7,6 +7,6 @@ import org.atlasapi.schedule.ChannelSchedule;
 public interface ScheduleQueryExecutor {
 
     QueryResult<ChannelSchedule> execute(ScheduleQuery scheduleQuery)
-        throws QueryExecutionException;
+            throws QueryExecutionException;
 
 }

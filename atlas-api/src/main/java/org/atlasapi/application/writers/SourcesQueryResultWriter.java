@@ -12,10 +12,10 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.FluentIterable;
 
-
 public class SourcesQueryResultWriter implements UserAwareQueryResultWriter<Publisher> {
+
     private final EntityListWriter<Publisher> sourcesWriter;
-    
+
     public SourcesQueryResultWriter(EntityListWriter<Publisher> sourcesWriter) {
         this.sourcesWriter = sourcesWriter;
     }
@@ -27,7 +27,7 @@ public class SourcesQueryResultWriter implements UserAwareQueryResultWriter<Publ
         writeResult(result, responseWriter);
         responseWriter.finishResponse();
     }
-    
+
     private void writeResult(UserAwareQueryResult<Publisher> result, ResponseWriter writer)
             throws IOException {
         OutputContext ctxt = outputContext(result.getContext());
@@ -40,7 +40,7 @@ public class SourcesQueryResultWriter implements UserAwareQueryResultWriter<Publ
         }
 
     }
-    
+
     private OutputContext outputContext(UserAwareQueryContext queryContext) {
         return OutputContext.valueOf(queryContext);
     }

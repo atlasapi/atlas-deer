@@ -13,5 +13,5 @@ public final class AttributeLookupTree extends PrefixInTree<Attribute<?>> {
     public void put(Attribute<?> attribute) {
         put(attribute.externalName(), Optional.<Attribute<?>>of(attribute));
     }
-    
+
 }

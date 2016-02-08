@@ -1,7 +1,5 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.query.annotation.ActiveAnnotations;
@@ -10,6 +8,8 @@ import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexContextualAnnotationsExtractor implements ContextualAnnotationsExtractor {
 
@@ -24,7 +24,8 @@ public class IndexContextualAnnotationsExtractor implements ContextualAnnotation
         this(DEFAULT_PARAMETER_NAME, lookup);
     }
 
-    public IndexContextualAnnotationsExtractor(String parameterName, ContextualAnnotationIndex lookup) {
+    public IndexContextualAnnotationsExtractor(String parameterName,
+            ContextualAnnotationIndex lookup) {
         this.parameterName = checkNotNull(parameterName);
         this.lookup = checkNotNull(lookup);
     }

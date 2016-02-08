@@ -14,46 +14,49 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.attribute;
 
-import org.atlasapi.entity.Identified;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.FloatAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
 import org.atlasapi.criteria.operator.Operator;
+import org.atlasapi.entity.Identified;
 
 public class FloatValuedAttribute extends Attribute<Float> {
 
-	FloatValuedAttribute(String name, Class<? extends Identified> target) {
-		super(name, target);
-	}
+    FloatValuedAttribute(String name, Class<? extends Identified> target) {
+        super(name, target);
+    }
 
-	public FloatValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
-		super(name, javaAttributeName, target);
-	}
+    public FloatValuedAttribute(String name, String javaAttributeName,
+            Class<? extends Identified> target) {
+        super(name, javaAttributeName, target);
+    }
 
-	public FloatValuedAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
-		super(name, target, isCollection);
-	}
+    public FloatValuedAttribute(String name, Class<? extends Identified> target,
+            boolean isCollection) {
+        super(name, target, isCollection);
+    }
 
-	public FloatValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
-		super(name, javaAttributeName, target, isCollectionOfValues);
-	}
+    public FloatValuedAttribute(String name, String javaAttributeName,
+            Class<? extends Identified> target, boolean isCollectionOfValues) {
+        super(name, javaAttributeName, target, isCollectionOfValues);
+    }
 
-	@Override
-	public String toString() {
-		return "Float valued attribute: " + name;
-	}
+    @Override
+    public String toString() {
+        return "Float valued attribute: " + name;
+    }
 
-	@Override
-	public AttributeQuery<Float> createQuery(Operator op, Iterable<Float> values) {
-		if (!(op instanceof ComparableOperator)) {
-			throw new IllegalArgumentException();
-		}
-		return new FloatAttributeQuery(this, (ComparableOperator) op, values);
-	}
+    @Override
+    public AttributeQuery<Float> createQuery(Operator op, Iterable<Float> values) {
+        if (!(op instanceof ComparableOperator)) {
+            throw new IllegalArgumentException();
+        }
+        return new FloatAttributeQuery(this, (ComparableOperator) op, values);
+    }
 
-	@Override
-	public Class<Float> requiresOperandOfType() {
-		return Float.class;
-	}
-	
+    @Override
+    public Class<Float> requiresOperandOfType() {
+        return Float.class;
+    }
+
 }

@@ -13,8 +13,8 @@ import org.atlasapi.media.entity.Publisher;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 
-public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.atlasapi.media.channel.Channel, Channel> {
-
+public class LegacyChannelTransformer
+        extends BaseLegacyResourceTransformer<org.atlasapi.media.channel.Channel, Channel> {
 
     @Nullable
     @Override
@@ -72,27 +72,34 @@ public class LegacyChannelTransformer extends BaseLegacyResourceTransformer<org.
             Iterable<ChannelNumbering> channelNumbers,
             final Publisher publisher
     ) {
-        return Iterables.transform(channelNumbers, new Function<ChannelNumbering, ChannelGroupMembership>() {
-            @Override
-            public ChannelGroupMembership apply(ChannelNumbering channelNumbering) {
-                return ChannelGroupMembership.builder(publisher)
-                        .withChannelGroupId(channelNumbering.getChannelGroup())
-                        .withChannelId(channelNumbering.getChannel())
-                        .withChannelNumber(channelNumbering.getChannelNumber())
-                        .withStartDate(channelNumbering.getStartDate())
-                        .withEndDate(channelNumbering.getEndDate())
-                        .build();
-            }
-        });
+        return Iterables.transform(
+                channelNumbers,
+                new Function<ChannelNumbering, ChannelGroupMembership>() {
+
+                    @Override
+                    public ChannelGroupMembership apply(ChannelNumbering channelNumbering) {
+                        return ChannelGroupMembership.builder(publisher)
+                                .withChannelGroupId(channelNumbering.getChannelGroup())
+                                .withChannelId(channelNumbering.getChannel())
+                                .withChannelNumber(channelNumbering.getChannelNumber())
+                                .withStartDate(channelNumbering.getStartDate())
+                                .withEndDate(channelNumbering.getEndDate())
+                                .build();
+                    }
+                }
+        );
 
     }
 
-    private Iterable<TemporalField<Image>> transformImages(Iterable<TemporalField<org.atlasapi.media.entity.Image>> legacyImages) {
+    private Iterable<TemporalField<Image>> transformImages(
+            Iterable<TemporalField<org.atlasapi.media.entity.Image>> legacyImages) {
         return Iterables.transform(
                 legacyImages,
                 new Function<TemporalField<org.atlasapi.media.entity.Image>, TemporalField<Image>>() {
+
                     @Override
-                    public TemporalField<Image> apply(TemporalField<org.atlasapi.media.entity.Image> input) {
+                    public TemporalField<Image> apply(
+                            TemporalField<org.atlasapi.media.entity.Image> input) {
                         return new TemporalField<>(
                                 transformImage(input.getValue()),
                                 input.getStartDate(),

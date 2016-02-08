@@ -3,6 +3,7 @@ package org.atlasapi.users.videosource.model.translators;
 import org.atlasapi.users.videosource.model.OauthToken;
 
 import com.metabroadcast.common.persistence.translator.TranslatorUtils;
+
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 

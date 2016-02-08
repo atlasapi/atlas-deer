@@ -12,7 +12,8 @@ import org.atlasapi.output.OutputContext;
 public class AliasWriter implements EntityListWriter<Alias> {
 
     @Override
-    public void write(@Nonnull Alias entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(@Nonnull Alias entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
         writer.writeField("namespace", entity.getNamespace());
         writer.writeField("value", entity.getValue());
     }

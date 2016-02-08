@@ -4,6 +4,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.atlasapi.util.Strings;
+
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FuzzyQueryBuilder;
@@ -12,16 +17,14 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-
 public class TitleQueryBuilder {
 
     private static final Joiner JOINER = Joiner.on("");
     private static final int USE_PREFIX_SEARCH_UP_TO = 2;
-    private static final Map<String, String> EXPANSIONS = ImmutableMap.<String, String>builder().put("dr", "doctor").put("rd", "road").build();
+    private static final Map<String, String> EXPANSIONS = ImmutableMap.<String, String>builder().put(
+            "dr",
+            "doctor"
+    ).put("rd", "road").build();
     private static final Function<String, String> TOKEN_EXPANDER = token -> {
         String expanded = EXPANSIONS.get(token);
         if (expanded != null) {
@@ -42,7 +45,8 @@ public class TitleQueryBuilder {
     }
 
     private static boolean shouldUsePrefixSearch(List<String> tokens) {
-        return tokens.size() == 1 && Iterables.getOnlyElement(tokens).length() <= USE_PREFIX_SEARCH_UP_TO;
+        return tokens.size() == 1
+                && Iterables.getOnlyElement(tokens).length() <= USE_PREFIX_SEARCH_UP_TO;
     }
 
     private static QueryBuilder prefixSearch(String token) {
@@ -67,7 +71,10 @@ public class TitleQueryBuilder {
             BoolQueryBuilder queryForThisTerm = new BoolQueryBuilder();
             queryForThisTerm.minimumNumberShouldMatch(1);
 
-            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(EsContent.PARENT_TITLE, token)).boost(50);
+            QueryBuilder prefix = QueryBuilders.functionScoreQuery(new PrefixQueryBuilder(
+                    EsContent.PARENT_TITLE,
+                    token
+            )).boost(50);
             queryForThisTerm.should(prefix);
 
             QueryBuilder fuzzy = new FuzzyQueryBuilder(EsContent.PARENT_TITLE, token)
@@ -80,13 +87,13 @@ public class TitleQueryBuilder {
 
         BoolQueryBuilder either = new BoolQueryBuilder();
         either.minimumNumberShouldMatch(1);
-        
+
         either.should(queryForTerms);
         either.should(fuzzyWithoutSpaces(value));
 
         QueryBuilder prefix = QueryBuilders.functionScoreQuery(prefixSearch(value)).boost(50);
         either.should(prefix);
-        
+
         QueryBuilder exact = QueryBuilders.functionScoreQuery(exactMatch(value, tokens)).boost(200);
         either.should(exact);
 
@@ -103,7 +110,10 @@ public class TitleQueryBuilder {
         String flattenedAndExpanded = JOINER.join(transformed);
 
         if (!flattenedAndExpanded.equals(value)) {
-            exactMatch.should(new TermQueryBuilder(EsContent.PARENT_FLATTENED_TITLE, flattenedAndExpanded));
+            exactMatch.should(new TermQueryBuilder(
+                    EsContent.PARENT_FLATTENED_TITLE,
+                    flattenedAndExpanded
+            ));
         }
         return exactMatch;
     }

@@ -8,9 +8,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-@JsonDeserialize(builder=ScheduleUpdate.Builder.class)
+@JsonDeserialize(builder = ScheduleUpdate.Builder.class)
 public class ScheduleUpdateConfiguration {
-    
+
     public static class Builder {
 
         @JsonCreator
@@ -18,7 +18,7 @@ public class ScheduleUpdateConfiguration {
                 @JsonProperty("source") Publisher source,
                 @JsonProperty("schedule") ScheduleRef schedule) {
         }
-        
+
     }
-    
+
 }

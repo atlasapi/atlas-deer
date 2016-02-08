@@ -28,34 +28,47 @@ public class OrganisationQueryExecutor implements QueryExecutor<Organisation> {
     }
 
     @Override
-    public QueryResult<Organisation> execute(Query<Organisation> query) throws QueryExecutionException {
+    public QueryResult<Organisation> execute(Query<Organisation> query)
+            throws QueryExecutionException {
         try {
-            return Futures.get(executeQuery(query),1, TimeUnit.MINUTES, QueryExecutionException.class);
+            return Futures.get(
+                    executeQuery(query),
+                    1,
+                    TimeUnit.MINUTES,
+                    QueryExecutionException.class
+            );
         } catch (UncheckedQueryExecutionException ex) {
             throw Throwables.propagate(ex);
         }
     }
 
-    private ListenableFuture<QueryResult<Organisation>> executeQuery(final Query<Organisation> query) {
+    private ListenableFuture<QueryResult<Organisation>> executeQuery(
+            final Query<Organisation> query) {
         return query.isListQuery() ? executeListQuery(query) : executeSingleQuery(query);
     }
-    private ListenableFuture<QueryResult<Organisation>> executeSingleQuery(final Query<Organisation> query) {
-        Id id =  query.getOnlyId();
-        return Futures.transform(resolve(id),
+
+    private ListenableFuture<QueryResult<Organisation>> executeSingleQuery(
+            final Query<Organisation> query) {
+        Id id = query.getOnlyId();
+        return Futures.transform(
+                resolve(id),
                 (Resolved<Organisation> input) -> {
                     List<Organisation> organisationList = input.getResources().toList();
-                    if(organisationList.isEmpty()) {
+                    if (organisationList.isEmpty()) {
                         throw new UncheckedQueryExecutionException(new NotFoundException(id));
                     }
                     Organisation resource = organisationList.get(0);
-                    return QueryResult.singleResult(resource,query.getContext());
-                });
+                    return QueryResult.singleResult(resource, query.getContext());
+                }
+        );
 
     }
 
-    private ListenableFuture<QueryResult<Organisation>> executeListQuery(final Query<Organisation> query) {
+    private ListenableFuture<QueryResult<Organisation>> executeListQuery(
+            final Query<Organisation> query) {
         throw new UnsupportedOperationException();
     }
+
     private ListenableFuture<Resolved<Organisation>> resolve(Id id) {
         return resolver.resolveIds(ImmutableSet.of(id));
     }

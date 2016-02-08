@@ -8,5 +8,5 @@ import org.atlasapi.entity.Identified;
 public interface SearchResolver {
 
     List<Identified> search(SearchQuery query, ApplicationSources sources);
-    
+
 }

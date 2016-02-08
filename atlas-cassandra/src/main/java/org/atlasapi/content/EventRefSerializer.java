@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.media.entity.Publisher;
@@ -16,8 +15,10 @@ public class EventRefSerializer {
     }
 
     public EventRef deserialize(ContentProtos.EventRef eventRef) {
-        return new EventRef(Id.valueOf(eventRef.getId()),
-                Publisher.fromKey(eventRef.getSource()).valueOrNull());
+        return new EventRef(
+                Id.valueOf(eventRef.getId()),
+                Publisher.fromKey(eventRef.getSource()).valueOrNull()
+        );
     }
 
 }

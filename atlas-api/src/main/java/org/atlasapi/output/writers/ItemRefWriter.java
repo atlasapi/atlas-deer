@@ -1,9 +1,9 @@
 package org.atlasapi.output.writers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.output.EntityListWriter;
@@ -12,7 +12,7 @@ import org.atlasapi.output.OutputContext;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-import javax.annotation.Nullable;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ItemRefWriter implements EntityListWriter<ItemRef> {
 
@@ -24,7 +24,8 @@ public final class ItemRefWriter implements EntityListWriter<ItemRef> {
         this(idCodec, listName, null);
     }
 
-    public ItemRefWriter(NumberToShortStringCodec idCodec, String listName, @Nullable String fieldName) {
+    public ItemRefWriter(NumberToShortStringCodec idCodec, String listName,
+            @Nullable String fieldName) {
         this.idCodec = checkNotNull(idCodec);
         this.listName = checkNotNull(listName);
         this.fieldName = Optional.ofNullable(fieldName);

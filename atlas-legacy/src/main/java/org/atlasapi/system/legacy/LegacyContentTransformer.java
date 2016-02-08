@@ -1,7 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -56,8 +54,9 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
 import org.atlasapi.util.ImmutableCollectors;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
+import com.metabroadcast.common.base.Maybe;
+import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -67,38 +66,42 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.time.DateTimeZones;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
-public class LegacyContentTransformer extends DescribedLegacyResourceTransformer<Content, org.atlasapi.content.Content> {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public class LegacyContentTransformer
+        extends DescribedLegacyResourceTransformer<Content, org.atlasapi.content.Content> {
 
     private final ChannelResolver channelResolver;
     private final LegacySegmentMigrator legacySegmentMigrator;
 
-    public LegacyContentTransformer(ChannelResolver channelResolver, LegacySegmentMigrator segmentMigrator) {
+    public LegacyContentTransformer(ChannelResolver channelResolver,
+            LegacySegmentMigrator segmentMigrator) {
         this.channelResolver = checkNotNull(channelResolver);
         this.legacySegmentMigrator = checkNotNull(segmentMigrator);
     }
-    
+
     @Override
     protected org.atlasapi.content.Content createDescribed(Content input) {
         org.atlasapi.content.Content c = null;
         if (input instanceof Episode) {
-            c = createEpisode((Episode)input);
+            c = createEpisode((Episode) input);
         } else if (input instanceof Film) {
-            c = createFilm((Film)input);
+            c = createFilm((Film) input);
         } else if (input instanceof Song) {
-            c = createSong((Song)input);
+            c = createSong((Song) input);
         } else if (input instanceof Clip) {
-            c = createClip((Clip)input);
+            c = createClip((Clip) input);
         } else if (input instanceof Item) {
-            c = createItem((Item)input);
+            c = createItem((Item) input);
         } else if (input instanceof Brand) {
-            c = createBrand((Brand)input);
+            c = createBrand((Brand) input);
         } else if (input instanceof Series) {
-            c = createSeries((Series)input);
+            c = createSeries((Series) input);
         } else if (input instanceof Container) {
-            c = createBrand((Container)input);
+            c = createBrand((Container) input);
         }
         return setContentFields(c, input);
     }
@@ -120,20 +123,30 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
 
     private org.atlasapi.content.Content createBrand(final Brand brand) {
         org.atlasapi.content.Brand b = new org.atlasapi.content.Brand();
-        b.setSeriesRefs(Iterables.transform(brand.getSeriesRefs(),
+        b.setSeriesRefs(Iterables.transform(
+                brand.getSeriesRefs(),
                 new Function<org.atlasapi.media.entity.SeriesRef, SeriesRef>() {
+
                     @Override
                     public SeriesRef apply(org.atlasapi.media.entity.SeriesRef input) {
-                        return new SeriesRef(Id.valueOf(input.getId()), brand.getPublisher(),
-                                input.getTitle(), input.getSeriesNumber(), input.getUpdated(), null, null);
+                        return new SeriesRef(Id.valueOf(input.getId()),
+                                brand.getPublisher(),
+                                input.getTitle(),
+                                input.getSeriesNumber(),
+                                input.getUpdated(),
+                                null,
+                                null
+                        );
                     }
                 }
         ));
         return setContainerFields(b, brand);
     }
 
-    private <C extends org.atlasapi.content.Container> C setContainerFields(C c, final Container container) {
-        c.setItemRefs(Iterables.filter(Iterables.transform(container.getChildRefs(),
+    private <C extends org.atlasapi.content.Container> C setContainerFields(C c,
+            final Container container) {
+        c.setItemRefs(Iterables.filter(Iterables.transform(
+                container.getChildRefs(),
                 input -> {
                     if (input.getId() == null) {
                         log.warn("no id in ref for {} in {}", input, container);
@@ -152,35 +165,38 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         }
 
         Id id = Id.valueOf(input.getId());
-        DateTime updated = Objects.firstNonNull(input.getUpdated(), new DateTime(DateTimeZones.UTC));
+        DateTime updated = Objects.firstNonNull(
+                input.getUpdated(),
+                new DateTime(DateTimeZones.UTC)
+        );
 
         org.atlasapi.media.entity.EntityType type = transformEnum(
                 input.getType(), org.atlasapi.media.entity.EntityType.class
         );
 
         switch (type) {
-            case ITEM:
-                return new ItemRef(id, source, input.getSortKey(), updated);
-            case CLIP:
-                return new ClipRef(id, source, input.getSortKey(), updated);
-            case EPISODE:
-                return new EpisodeRef(id, source, input.getSortKey(), updated);
-            case FILM:
-                return new FilmRef(id, source, input.getSortKey(), updated);
-            case SONG:
-                return new SongRef(id, source, input.getSortKey(), updated);
-            case CONTAINER:
-            case BRAND:
-            case SERIES:
-            case PERSON:
-            case CONTENT_GROUP:
-            default:
-                return null;
+        case ITEM:
+            return new ItemRef(id, source, input.getSortKey(), updated);
+        case CLIP:
+            return new ClipRef(id, source, input.getSortKey(), updated);
+        case EPISODE:
+            return new EpisodeRef(id, source, input.getSortKey(), updated);
+        case FILM:
+            return new FilmRef(id, source, input.getSortKey(), updated);
+        case SONG:
+            return new SongRef(id, source, input.getSortKey(), updated);
+        case CONTAINER:
+        case BRAND:
+        case SERIES:
+        case PERSON:
+        case CONTENT_GROUP:
+        default:
+            return null;
         }
     }
 
     private org.atlasapi.content.Content createClip(Clip input) {
-        org.atlasapi.content.Clip c= new org.atlasapi.content.Clip();
+        org.atlasapi.content.Clip c = new org.atlasapi.content.Clip();
         return setItemFields(c, input);
     }
 
@@ -190,7 +206,10 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
 
     private <I extends org.atlasapi.content.Item> I setItemFields(I i, Item input) {
         if (input.getContainer() != null) {
-            i.setContainerRef(new BrandRef(Id.valueOf(input.getContainer().getId()), input.getPublisher()));
+            i.setContainerRef(new BrandRef(
+                    Id.valueOf(input.getContainer().getId()),
+                    input.getPublisher()
+            ));
         }
         transformVersions(i, input.getVersions());
         i.setIsLongForm(input.getIsLongForm());
@@ -200,18 +219,21 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         return i;
     }
 
-    private <I extends org.atlasapi.content.Item> void transformVersions(I i, Set<org.atlasapi.media.entity.Version> versions) {
+    private <I extends org.atlasapi.content.Item> void transformVersions(I i,
+            Set<org.atlasapi.media.entity.Version> versions) {
         i.setRestrictions(getRestrictions(versions));
         i.setBroadcasts(getBroadcasts(versions));
         i.setSegmentEvents(getSegmentEvents(versions));
     }
 
-    private <I extends org.atlasapi.content.Content> void transformEncodings(I i, Set<org.atlasapi.media.entity.Version> versions) {
+    private <I extends org.atlasapi.content.Content> void transformEncodings(I i,
+            Set<org.atlasapi.media.entity.Version> versions) {
         i.setManifestedAs(getEncodings(versions));
     }
 
     private Set<Restriction> getRestrictions(Set<Version> versions) {
-        return Sets.newHashSet(Iterables.transform(versions, new Function<Version, Restriction>(){
+        return Sets.newHashSet(Iterables.transform(versions, new Function<Version, Restriction>() {
+
             @Override
             public Restriction apply(Version version) {
                 return transformRestriction(version.getRestriction());
@@ -264,17 +286,20 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
 
     private Set<org.atlasapi.media.entity.Broadcast> broadcastsWithIds(
             org.atlasapi.media.entity.Version input) {
-        return Sets.filter(input.getBroadcasts(),
-            new Predicate<org.atlasapi.media.entity.Broadcast>() {
-                @Override
-                public boolean apply(org.atlasapi.media.entity.Broadcast input) {
-                    return input.getSourceId() != null;
+        return Sets.filter(
+                input.getBroadcasts(),
+                new Predicate<org.atlasapi.media.entity.Broadcast>() {
+
+                    @Override
+                    public boolean apply(org.atlasapi.media.entity.Broadcast input) {
+                        return input.getSourceId() != null;
+                    }
                 }
-            }
         );
     }
 
-    private SegmentEvent transformSegmentEvent(org.atlasapi.media.segment.SegmentEvent input, Version version)
+    private SegmentEvent transformSegmentEvent(org.atlasapi.media.segment.SegmentEvent input,
+            Version version)
             throws UnresolvedLegacySegmentException {
 
         SegmentEvent se = new SegmentEvent();
@@ -282,10 +307,16 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         se.setOffset(input.getOffset());
         se.setIsChapter(input.getIsChapter());
         org.atlasapi.media.entity.Description d = input.getDescription();
-        se.setDescription(new Description(d.getTitle(), d.getSynopsis(), d.getImage(), d.getThumbnail()));
+        se.setDescription(new Description(
+                d.getTitle(),
+                d.getSynopsis(),
+                d.getImage(),
+                d.getThumbnail()
+        ));
         org.atlasapi.media.segment.SegmentRef sr = input.getSegment();
         Id segmentId = Id.valueOf(sr.identifier());
-        WriteResult<Segment, Segment> legacyMigrationResult = legacySegmentMigrator.migrateLegacySegment(segmentId);
+        WriteResult<Segment, Segment> legacyMigrationResult = legacySegmentMigrator.migrateLegacySegment(
+                segmentId);
         se.setSegment(new SegmentRef(segmentId, legacyMigrationResult.getResource().getSource()));
         se.setVersionId(version.getCanonicalUri());
         return se;
@@ -330,16 +361,18 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     }
 
     private ImmutableSet<Location> transformLocations(org.atlasapi.media.entity.Encoding input) {
-        return ImmutableSet.copyOf(Iterables.transform(input.getAvailableAt(),
-            new Function<org.atlasapi.media.entity.Location, Location>() {
-                @Override
-                public Location apply(org.atlasapi.media.entity.Location input) {
-                    return transformLocation(input);
+        return ImmutableSet.copyOf(Iterables.transform(
+                input.getAvailableAt(),
+                new Function<org.atlasapi.media.entity.Location, Location>() {
+
+                    @Override
+                    public Location apply(org.atlasapi.media.entity.Location input) {
+                        return transformLocation(input);
+                    }
                 }
-            }
         ));
     }
-    
+
     private Location transformLocation(org.atlasapi.media.entity.Location input) {
         Location l = new Location();
         setIdentifiedFields(l, input);
@@ -362,7 +395,10 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setDrmPlayableFrom(input.getDrmPlayableFrom());
         p.setAvailableCountries(input.getAvailableCountries());
         p.setAvailabilityLength(input.getAvailabilityLength());
-        p.setRevenueContract(transformEnum(input.getRevenueContract(), Policy.RevenueContract.class));
+        p.setRevenueContract(transformEnum(
+                input.getRevenueContract(),
+                Policy.RevenueContract.class
+        ));
         p.setPrice(input.getPrice());
         p.setPlatform(transformEnum(input.getPlatform(), Policy.Platform.class));
         p.setSubscriptionPackages(input.getSubscriptionPackages());
@@ -377,15 +413,21 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         p.setPricing(
                 input.getPricing()
                         .stream()
-                        .map(legacy -> new Pricing(legacy.getStartTime(), legacy.getEndTime(), legacy.getPrice()))
+                        .map(legacy -> new Pricing(
+                                legacy.getStartTime(),
+                                legacy.getEndTime(),
+                                legacy.getPrice()
+                        ))
                         .collect(ImmutableCollectors.toList())
         );
         return p;
     }
 
-    private Broadcast transformBroadcast(org.atlasapi.media.entity.Broadcast input, Version version) {
-        Broadcast b = new Broadcast(channelId(input.getBroadcastOn()), 
-                input.getTransmissionTime(), input.getTransmissionEndTime());
+    private Broadcast transformBroadcast(org.atlasapi.media.entity.Broadcast input,
+            Version version) {
+        Broadcast b = new Broadcast(channelId(input.getBroadcastOn()),
+                input.getTransmissionTime(), input.getTransmissionEndTime()
+        );
         setIdentifiedFields(b, input);
         b.setScheduleDate(input.getScheduleDate());
         b.setIsActivelyPublished(input.isActivelyPublished());
@@ -407,7 +449,8 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         return b;
     }
 
-    private BlackoutRestriction transformBlackoutRestriction(org.atlasapi.media.entity.BlackoutRestriction legacy) {
+    private BlackoutRestriction transformBlackoutRestriction(
+            org.atlasapi.media.entity.BlackoutRestriction legacy) {
         if (legacy == null) {
             return null;
         }
@@ -443,20 +486,28 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private org.atlasapi.content.Content createFilm(Film input) {
         org.atlasapi.content.Film f = new org.atlasapi.content.Film();
         f.setWebsiteUrl(input.getWebsiteUrl());
-        f.setSubtitles(Iterables.transform(input.getSubtitles(),
+        f.setSubtitles(Iterables.transform(
+                input.getSubtitles(),
                 new Function<Subtitles, org.atlasapi.content.Subtitles>() {
+
                     @Override
                     public org.atlasapi.content.Subtitles apply(Subtitles input) {
                         return new org.atlasapi.content.Subtitles(input.code());
                     }
                 }
         ));
-        f.setReleaseDates(Iterables.transform(input.getReleaseDates(),
+        f.setReleaseDates(Iterables.transform(
+                input.getReleaseDates(),
                 new Function<ReleaseDate, org.atlasapi.content.ReleaseDate>() {
+
                     @Override
                     public org.atlasapi.content.ReleaseDate apply(ReleaseDate input) {
                         ReleaseType type = transformEnum(input.type(), ReleaseType.class);
-                        return new org.atlasapi.content.ReleaseDate(input.date(), input.country(), type);
+                        return new org.atlasapi.content.ReleaseDate(
+                                input.date(),
+                                input.country(),
+                                type
+                        );
                     }
                 }
         ));
@@ -475,11 +526,21 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         return setItemFields(e, input);
     }
 
-    private SeriesRef transformToSeriesRef(org.atlasapi.media.entity.ParentRef seriesRef, Publisher publisher) {
-        return new SeriesRef(Id.valueOf(seriesRef.getId()), publisher, null, null, null, null, null);
+    private SeriesRef transformToSeriesRef(org.atlasapi.media.entity.ParentRef seriesRef,
+            Publisher publisher) {
+        return new SeriesRef(
+                Id.valueOf(seriesRef.getId()),
+                publisher,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
-    private BrandRef transformToBrandRef(org.atlasapi.media.entity.ParentRef ref, Publisher publisher) {
+    private BrandRef transformToBrandRef(org.atlasapi.media.entity.ParentRef ref,
+            Publisher publisher) {
         return new BrandRef(Id.valueOf(ref.getId()), publisher);
     }
 
@@ -489,14 +550,21 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
         c.setTags(translateTopicRefs(input.getTopicRefs()));
         c.setGenericDescription(input.getGenericDescription());
         c.setEventRefs(translateEventRefs(input.events()));
-        c.setCertificates(Iterables.transform(input.getCertificates(), new Function<Certificate, org.atlasapi.content.Certificate>() {
-            @Override
-            public org.atlasapi.content.Certificate apply(Certificate input) {
-                return new org.atlasapi.content.Certificate(input.classification(), input.country());
-            }
+        c.setCertificates(Iterables.transform(
+                input.getCertificates(),
+                new Function<Certificate, org.atlasapi.content.Certificate>() {
 
-        }));
-    
+                    @Override
+                    public org.atlasapi.content.Certificate apply(Certificate input) {
+                        return new org.atlasapi.content.Certificate(
+                                input.classification(),
+                                input.country()
+                        );
+                    }
+
+                }
+        ));
+
         c.setClips(
                 Optional.ofNullable(input.getClips()).orElse(ImmutableList.of()).stream().map(
                         legacyClip -> {
@@ -517,16 +585,17 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     private Iterable<Tag> translateTopicRefs(List<TopicRef> topicRefs) {
         return topicRefs.stream()
                 .map(tr -> Tag.valueOf(
-                                Id.valueOf(tr.getTopic()),
-                                tr.getWeighting(),
-                                tr.isSupervised(),
-                                Tag.Relationship.valueOf(tr.getRelationship().name())
+                        Id.valueOf(tr.getTopic()),
+                        tr.getWeighting(),
+                        tr.isSupervised(),
+                        Tag.Relationship.valueOf(tr.getRelationship().name())
                         )
                 )
                 .collect(ImmutableCollectors.toList());
     }
 
-    private Iterable<EventRef> translateEventRefs(List<org.atlasapi.media.entity.EventRef> eventRefs) {
+    private Iterable<EventRef> translateEventRefs(
+            List<org.atlasapi.media.entity.EventRef> eventRefs) {
         return eventRefs.stream().map(eventRef ->
                 new EventRef(Id.valueOf(eventRef.id()), eventRef.getPublisher()))
                 .collect(ImmutableCollectors.toList());
@@ -536,5 +605,5 @@ public class LegacyContentTransformer extends DescribedLegacyResourceTransformer
     protected Iterable<Alias> moreAliases(Content input) {
         return ImmutableList.of();
     }
-    
+
 }

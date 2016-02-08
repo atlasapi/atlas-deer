@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
@@ -14,11 +12,14 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.system.legacy.LegacyContentResolver;
 
+import com.metabroadcast.common.collect.OptionalMap;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.OptionalMap;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LegacyRetryingContentResolver implements ContentResolver {
 

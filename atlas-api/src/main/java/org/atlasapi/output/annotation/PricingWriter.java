@@ -1,13 +1,14 @@
 package org.atlasapi.output.annotation;
 
+import java.io.IOException;
+
 import org.atlasapi.content.Pricing;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-import java.io.IOException;
-
 public class PricingWriter implements EntityListWriter<Pricing> {
+
     @Override
     public String listName() {
         return "pricing";

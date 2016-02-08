@@ -1,7 +1,8 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Objects;
 import com.metabroadcast.common.currency.Price;
+
+import com.google.common.base.Objects;
 import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -18,7 +19,6 @@ public class Pricing {
         this.price = checkNotNull(price);
     }
 
-
     public DateTime getStartTime() {
         return startTime;
     }
@@ -33,8 +33,12 @@ public class Pricing {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Pricing pricing = (Pricing) o;
         return Objects.equal(startTime, pricing.startTime) &&
                 Objects.equal(endTime, pricing.endTime) &&

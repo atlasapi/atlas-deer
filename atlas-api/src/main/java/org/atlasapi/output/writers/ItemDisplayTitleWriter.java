@@ -39,11 +39,13 @@ public final class ItemDisplayTitleWriter implements EntityWriter<Item> {
         return episodeTitle(item, item.getContainerSummary());
     }
 
-    private String seriesEpisodeTitle(String episodeTitle, ContainerSummary containerSummary, SeriesRef seriesRef) {
+    private String seriesEpisodeTitle(String episodeTitle, ContainerSummary containerSummary,
+            SeriesRef seriesRef) {
         if (episodeTitle == null) {
             return null;
         }
-        if (seriesRef.getTitle() != null && !seriesRef.getTitle().equals(containerSummary.getTitle())) {
+        if (seriesRef.getTitle() != null && !seriesRef.getTitle()
+                .equals(containerSummary.getTitle())) {
             return String.format("%s, %s", seriesRef.getTitle(), episodeTitle);
         }
         if (seriesRef.getSeriesNumber() != null) {
@@ -53,11 +55,11 @@ public final class ItemDisplayTitleWriter implements EntityWriter<Item> {
     }
 
     private SeriesRef seriesRef(Item item) {
-        return ((Episode)item).getSeriesRef();
+        return ((Episode) item).getSeriesRef();
     }
 
     private boolean hasSeriesSummary(Item item) {
-        return item instanceof Episode && ((Episode)item).getSeriesRef() != null;
+        return item instanceof Episode && ((Episode) item).getSeriesRef() != null;
     }
 
     private String episodeTitle(Item item, ContainerSummary containerSummary) {
@@ -93,7 +95,7 @@ public final class ItemDisplayTitleWriter implements EntityWriter<Item> {
 
     private Integer episodeNumber(Item item) {
         if (item instanceof Episode) {
-            return ((Episode)item).getEpisodeNumber();
+            return ((Episode) item).getEpisodeNumber();
         }
         return null;
     }
@@ -107,7 +109,10 @@ public final class ItemDisplayTitleWriter implements EntityWriter<Item> {
     }
 
     private boolean isSpecial(Item item) {
-        return item instanceof Episode && Objects.firstNonNull(((Episode)item).getSpecial(), Boolean.FALSE);
+        return item instanceof Episode && Objects.firstNonNull(
+                ((Episode) item).getSpecial(),
+                Boolean.FALSE
+        );
     }
 
     @Override

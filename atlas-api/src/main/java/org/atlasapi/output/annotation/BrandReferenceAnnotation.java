@@ -1,7 +1,5 @@
 package org.atlasapi.output.annotation;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
@@ -10,6 +8,8 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class BrandReferenceAnnotation extends OutputAnnotation<Content> {
 

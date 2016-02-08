@@ -1,22 +1,21 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import org.atlasapi.entity.Id;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.meta.annotations.FieldName;
-
-import com.google.common.collect.ImmutableList;
-import org.atlasapi.util.ImmutableCollectors;
-
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
+
+import org.atlasapi.entity.Id;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
+import org.atlasapi.util.ImmutableCollectors;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 
 public abstract class Container extends Content {
 
@@ -25,36 +24,37 @@ public abstract class Container extends Content {
     private Map<ItemRef, Iterable<LocationSummary>> availableContent = ImmutableMap.of();
     private List<ItemSummary> itemSummaries = ImmutableList.of();
 
-	public Container(String uri, String curie, Publisher publisher) {
-		super(uri, curie, publisher);
-	}
-	
+    public Container(String uri, String curie, Publisher publisher) {
+        super(uri, curie, publisher);
+    }
+
     public Container(Id id, Publisher source) {
         super(id, source);
     }
-    
-    public Container() {}
-    
+
+    public Container() {
+    }
+
     @FieldName("item_refs")
     public ImmutableList<ItemRef> getItemRefs() {
         return itemRefs;
     }
-    
+
     public void setItemRefs(Iterable<ItemRef> itemRefs) {
         this.itemRefs = ImmutableList.copyOf(itemRefs);
     }
-    
+
     public final static <T extends Item> void copyTo(Container from, Container to) {
         Content.copyTo(from, to);
         to.itemRefs = ImmutableList.copyOf(from.itemRefs);
     }
 
     public abstract <V> V accept(ContainerVisitor<V> visitor);
-    
+
     public abstract ContainerRef toRef();
 
     public abstract ContainerSummary toSummary();
-    
+
     @Override
     public <V> V accept(ContentVisitor<V> visitor) {
         return accept((ContainerVisitor<V>) visitor);
@@ -70,9 +70,11 @@ public abstract class Container extends Content {
                         Maps.transformValues(
                                 upcomingContent,
                                 new Function<Iterable<BroadcastRef>, Iterable<BroadcastRef>>() {
+
                                     @Nullable
                                     @Override
-                                    public Iterable<BroadcastRef> apply(Iterable<BroadcastRef> input) {
+                                    public Iterable<BroadcastRef> apply(
+                                            Iterable<BroadcastRef> input) {
                                         return ImmutableList.copyOf(input)
                                                 .stream()
                                                 .filter(BroadcastRef.IS_UPCOMING)
@@ -96,9 +98,11 @@ public abstract class Container extends Content {
                         Maps.transformValues(
                                 availableContent,
                                 new Function<Iterable<LocationSummary>, Iterable<LocationSummary>>() {
+
                                     @Nullable
                                     @Override
-                                    public Iterable<LocationSummary> apply(Iterable<LocationSummary> input) {
+                                    public Iterable<LocationSummary> apply(
+                                            Iterable<LocationSummary> input) {
                                         return ImmutableList.copyOf(input)
                                                 .stream()
                                                 .filter(LocationSummary::isAvailable)

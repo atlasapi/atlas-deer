@@ -16,6 +16,7 @@ import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.topic.Topic;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -35,7 +36,7 @@ public class TopicController {
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public TopicController(QueryParser<Topic> queryParser,
-        QueryExecutor<Topic> queryExecutor, QueryResultWriter<Topic> resultWriter) {
+            QueryExecutor<Topic> queryExecutor, QueryResultWriter<Topic> resultWriter) {
         this.requestParser = queryParser;
         this.queryExecutor = queryExecutor;
         this.resultWriter = resultWriter;
@@ -43,7 +44,7 @@ public class TopicController {
 
     @RequestMapping({ "/{id}.*", "/{id}", ".*", "" })
     public void writeSingleTopic(HttpServletRequest request, HttpServletResponse response)
-        throws IOException {
+            throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);

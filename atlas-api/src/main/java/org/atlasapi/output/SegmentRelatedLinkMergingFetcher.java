@@ -1,27 +1,27 @@
 package org.atlasapi.output;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SegmentRelatedLinkMergingFetcher {
 
@@ -43,45 +43,56 @@ public class SegmentRelatedLinkMergingFetcher {
     private final SegmentResolver segmentResolver;
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public SegmentRelatedLinkMergingFetcher(SegmentResolver segmentResolver, ScrubbablesSegmentRelatedLinkMerger segmentRelatedLinkMerger) {
+    public SegmentRelatedLinkMergingFetcher(SegmentResolver segmentResolver,
+            ScrubbablesSegmentRelatedLinkMerger segmentRelatedLinkMerger) {
         this.segmentResolver = checkNotNull(segmentResolver);
         this.segmentRelatedLinkMerger = checkNotNull(segmentRelatedLinkMerger);
     }
 
     /**
      * Returns a {@link org.atlasapi.output.SegmentAndEventTuple} containing the first SegmentEvent
-     * that exists on the Item passed in, and the Segment it references. With the overlapping RelatedLinks
-     * from all other Segments referenced by other SegmentEvents merged in and in descending order of their
-     * overlap duration.
+     * that exists on the Item passed in, and the Segment it references. With the overlapping
+     * RelatedLinks from all other Segments referenced by other SegmentEvents merged in and in
+     * descending order of their overlap duration.
      *
-     * @param segmentEvents - List of SegmentEvents - the first of which will be used as the reference point for comparing
-     *             and merging all others.
-     * @return A tuple containing the SegmentEvent and referenced SegmentEvent, with all RelatedLinks
-     * from other merged Segments into the contained Segment. Or null if the list was empty.
+     * @param segmentEvents - List of SegmentEvents - the first of which will be used as the
+     *                      reference point for comparing and merging all others.
+     * @return A tuple containing the SegmentEvent and referenced SegmentEvent, with all
+     * RelatedLinks from other merged Segments into the contained Segment. Or null if the list was
+     * empty.
      */
     public Iterable<SegmentAndEventTuple> mergeSegmentLinks(List<SegmentEvent> segmentEvents) {
         if (segmentEvents.isEmpty()) {
             return null;
         }
         final Publisher chosenPublisher = Iterables.getFirst(segmentEvents, null).getSource();
-        Iterable<SegmentEvent> publisherSegments = Iterables.filter(segmentEvents, new Predicate<SegmentEvent>() {
-            @Override
-            public boolean apply(SegmentEvent input) {
-                return input.getSource().equals(chosenPublisher);
-            }
-        });
+        Iterable<SegmentEvent> publisherSegments = Iterables.filter(
+                segmentEvents,
+                new Predicate<SegmentEvent>() {
 
-        Iterable<SegmentEvent> otherPublisherSegments = Iterables.filter(segmentEvents, new Predicate<SegmentEvent>() {
-            @Override
-            public boolean apply(SegmentEvent input) {
-                return !input.getSource().equals(chosenPublisher);
-            }
-        });
+                    @Override
+                    public boolean apply(SegmentEvent input) {
+                        return input.getSource().equals(chosenPublisher);
+                    }
+                }
+        );
+
+        Iterable<SegmentEvent> otherPublisherSegments = Iterables.filter(
+                segmentEvents,
+                new Predicate<SegmentEvent>() {
+
+                    @Override
+                    public boolean apply(SegmentEvent input) {
+                        return !input.getSource().equals(chosenPublisher);
+                    }
+                }
+        );
 
         ImmutableList.Builder<SegmentAndEventTuple> segmentAndEvents = ImmutableList.builder();
         ImmutableMultimap<Segment, SegmentEvent> segmentMap = resolveSegments(segmentEvents);
         for (SegmentEvent selectedSegmentEvent : publisherSegments) {
-            Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse().get(selectedSegmentEvent));
+            Segment selectedSegment = Iterables.getOnlyElement(segmentMap.inverse()
+                    .get(selectedSegmentEvent));
             ImmutableList.Builder<SegmentEvent> segmentsToResolve = ImmutableList.builder();
             segmentsToResolve.add(selectedSegmentEvent);
             segmentsToResolve.addAll(otherPublisherSegments);
@@ -99,7 +110,8 @@ public class SegmentRelatedLinkMergingFetcher {
 
     }
 
-    private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(final Iterable<SegmentEvent> segmentEvents) {
+    private ImmutableMultimap<Segment, SegmentEvent> resolveSegments(
+            final Iterable<SegmentEvent> segmentEvents) {
         final ImmutableListMultimap<Id, SegmentEvent> segmentEventToSegmentIds = Multimaps.index(
                 segmentEvents,
                 SEG_EVENT_TO_SEG_ID

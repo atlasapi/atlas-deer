@@ -9,10 +9,10 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
 import org.atlasapi.generation.model.ModelTypeInfo;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
 
 public class JavaxSourceFileWriterTest {
 
@@ -21,23 +21,23 @@ public class JavaxSourceFileWriterTest {
     private JavaFileObject jfo = Mockito.mock(JavaFileObject.class);
     private Writer javaWriter = Mockito.mock(Writer.class);
     private final JavaxSourceFileWriter<ModelTypeInfo> writer = new JavaxSourceFileWriter<>();
-    
+
     @Before
     public void setup() throws IOException {
         writer.init(filer, messager);
         Mockito.when(filer.createSourceFile(Mockito.anyString())).thenReturn(jfo);
         Mockito.when(jfo.openWriter()).thenReturn(javaWriter);
     }
-    
+
     @Test
     public void testWritingOfSourceWritesFileAndLogsSource() throws IOException {
         ModelTypeInfo typeInfo = createTypeInfo();
         String source = "source";
         writer.writeFile(typeInfo, source);
-        
+
         Mockito.verify(filer).createSourceFile(typeInfo.fullPackage() + "." + typeInfo.className());
         Mockito.verify(messager).printMessage(Kind.NOTE, source);
-        
+
         Mockito.verify(jfo).openWriter();
         Mockito.verify(javaWriter).write(source);
         Mockito.verify(javaWriter).close();

@@ -1,19 +1,5 @@
 package org.atlasapi.schedule;
 
-import static org.hamcrest.Matchers.any;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isA;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +20,24 @@ import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraInit;
+
+import com.metabroadcast.common.ids.SequenceGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.DateTimeZones;
+import com.metabroadcast.common.time.TimeMachine;
+
+import com.datastax.driver.core.Session;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.netflix.astyanax.AstyanaxContext;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import com.netflix.astyanax.model.ConsistencyLevel;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.After;
@@ -46,22 +50,19 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 
-import com.datastax.driver.core.Session;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.ids.SequenceGenerator;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.DateTimeZones;
-import com.metabroadcast.common.time.TimeMachine;
-import com.netflix.astyanax.AstyanaxContext;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
-import com.netflix.astyanax.model.ConsistencyLevel;
+import static org.hamcrest.Matchers.any;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public abstract class CassandraScheduleStoreIT {
 
@@ -78,13 +79,14 @@ public abstract class CassandraScheduleStoreIT {
     @Mock protected ContentHasher hasher;
     @Mock protected MessageSender<ResourceUpdatedMessage> contentUpdateSender;
     @Mock protected MessageSender<ScheduleUpdateMessage> scheduleUpdateSender;
-    
+
     protected final Clock clock = new TimeMachine();
-    
+
     protected AstyanaxCassandraContentStore contentStore;
     private ScheduleStore store;
 
     protected abstract ScheduleStore provideScheduleStore();
+
     protected abstract String provideScheduleCfName();
 
     private final Publisher source = Publisher.METABROADCAST;
@@ -108,13 +110,19 @@ public abstract class CassandraScheduleStoreIT {
         CassandraInit.nukeIt(session);
         cassandraService.stopAsync().awaitTerminated();
     }
-    
+
     @Before
     public void setUp() {
         channel.setCanonicalUri("channel");
         channel.setId(1234L);
         contentStore = AstyanaxCassandraContentStore
-                .builder(context, CONTENT_CF_NAME, hasher, contentUpdateSender, new SequenceGenerator())
+                .builder(
+                        context,
+                        CONTENT_CF_NAME,
+                        hasher,
+                        contentUpdateSender,
+                        new SequenceGenerator()
+                )
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)
@@ -129,28 +137,50 @@ public abstract class CassandraScheduleStoreIT {
 
     @Test
     public void testWritingAndResolvingANewSchedule() throws Exception {
-        
-        DateTime start = new DateTime(2013,05,31,14,0,0,0,DateTimeZones.LONDON);
-        DateTime middle = new DateTime(2013,05,31,23,0,0,0,DateTimeZones.LONDON);
-        DateTime end = new DateTime(2013,06,01,14,0,0,0,DateTimeZones.LONDON);
-        
+
+        DateTime start = new DateTime(2013, 05, 31, 14, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime middle = new DateTime(2013, 05, 31, 23, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime end = new DateTime(2013, 06, 01, 14, 0, 0, 0, DateTimeZones.LONDON);
+
         ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(itemAndBroadcast(null, "one", source, channel, start, middle)), 
-            ScheduleHierarchy.itemOnly(itemAndBroadcast(null, "two", source, channel, middle, end))
+                ScheduleHierarchy.itemOnly(itemAndBroadcast(
+                        null,
+                        "one",
+                        source,
+                        channel,
+                        start,
+                        middle
+                )),
+                ScheduleHierarchy.itemOnly(itemAndBroadcast(
+                        null,
+                        "two",
+                        source,
+                        channel,
+                        middle,
+                        end
+                ))
         );
-        
+
         Interval writtenInterval = new Interval(start, end);
-        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(hiers, channel, writtenInterval);
-        
-        assertThat(results.size(), is(2));
-        
-        Interval requestedInterval = new Interval(
-            new DateTime(2013,05,31,10,0,0,0,DateTimeZones.UTC), 
-            new DateTime(2013,05,31,22,30,0,0,DateTimeZones.UTC) 
+        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(
+                hiers,
+                channel,
+                writtenInterval
         );
-        Schedule schedule = future(store.resolve(ImmutableList.of(channel), requestedInterval, source));
+
+        assertThat(results.size(), is(2));
+
+        Interval requestedInterval = new Interval(
+                new DateTime(2013, 05, 31, 10, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2013, 05, 31, 22, 30, 0, 0, DateTimeZones.UTC)
+        );
+        Schedule schedule = future(store.resolve(
+                ImmutableList.of(channel),
+                requestedInterval,
+                source
+        ));
         ChannelSchedule channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
-        
+
         assertThat(channelSchedule.getChannel(), is(channel));
         assertThat(channelSchedule.getInterval(), is(requestedInterval));
         assertThat(channelSchedule.getEntries().size(), is(2));
@@ -161,47 +191,62 @@ public abstract class CassandraScheduleStoreIT {
     @Test
     public void testReWritingASchedule() throws Exception {
 
-        DateTime start = new DateTime(2013,05,31,14,0,0,0,DateTimeZones.LONDON);
-        DateTime middle = new DateTime(2013,05,31,23,0,0,0,DateTimeZones.LONDON);
-        DateTime end = new DateTime(2013,06,01,14,0,0,0,DateTimeZones.LONDON);
+        DateTime start = new DateTime(2013, 05, 31, 14, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime middle = new DateTime(2013, 05, 31, 23, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime end = new DateTime(2013, 06, 01, 14, 0, 0, 0, DateTimeZones.LONDON);
 
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
 
         ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(episode1),
-            ScheduleHierarchy.itemOnly(episode2)
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode2)
         );
 
         Interval writtenInterval = new Interval(start, end);
-        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(hiers, channel, writtenInterval);
+        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(
+                hiers,
+                channel,
+                writtenInterval
+        );
         assertThat(results.size(), is(2));
 
-        DateTime newMiddle = new DateTime(2013,05,31,23,30,0,0,DateTimeZones.LONDON);
+        DateTime newMiddle = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.LONDON);
 
         //items 1 and 2 change 
         when(hasher.hash(argThat(isA(Content.class))))
-            .thenReturn("differentOne")
-            .thenReturn("oneDifferent")
-            .thenReturn("differentTwo")
-            .thenReturn("twoDifferent");
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
 
         episode1 = itemAndBroadcast(null, "one", source, channel, start, newMiddle);
-        ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, newMiddle, end);
+        ItemAndBroadcast episode3 = itemAndBroadcast(
+                null,
+                "three",
+                source,
+                channel,
+                newMiddle,
+                end
+        );
         hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(episode1),
-            ScheduleHierarchy.itemOnly(episode3)
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode3)
         );
 
         results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.<Content,Content>writtenFilter()));
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
 
         Interval requestedInterval = new Interval(
-            new DateTime(2013,05,31,10,0,0,0,DateTimeZones.UTC),
-            new DateTime(2013,05,31,22,40,0,0,DateTimeZones.UTC)
+                new DateTime(2013, 05, 31, 10, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2013, 05, 31, 22, 40, 0, 0, DateTimeZones.UTC)
         );
-        Schedule schedule = future(store.resolve(ImmutableList.of(channel), requestedInterval, source));
+        Schedule schedule = future(store.resolve(
+                ImmutableList.of(channel),
+                requestedInterval,
+                source
+        ));
         ChannelSchedule channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
 
         assertThat(channelSchedule.getChannel(), is(channel));
@@ -215,13 +260,12 @@ public abstract class CassandraScheduleStoreIT {
         assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
     }
 
-
     @Test
     public void testSendAllStaleBroadcastsSchedule() throws Exception {
 
-        DateTime start = new DateTime(2013,5,31,14,0,0,0,DateTimeZones.UTC);
-        DateTime middle = new DateTime(2013,5,31,23,0,0,0,DateTimeZones.UTC);
-        DateTime end = new DateTime(2013,6,1,14,0,0,0,DateTimeZones.UTC);
+        DateTime start = new DateTime(2013, 5, 31, 14, 0, 0, 0, DateTimeZones.UTC);
+        DateTime middle = new DateTime(2013, 5, 31, 23, 0, 0, 0, DateTimeZones.UTC);
+        DateTime end = new DateTime(2013, 6, 1, 14, 0, 0, 0, DateTimeZones.UTC);
 
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
@@ -232,10 +276,14 @@ public abstract class CassandraScheduleStoreIT {
         );
 
         Interval writtenInterval = new Interval(start, end);
-        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(hiers, channel, writtenInterval);
+        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(
+                hiers,
+                channel,
+                writtenInterval
+        );
         assertThat(results.size(), is(2));
 
-        DateTime newMiddle = new DateTime(2013,05,31,23,30,0,0,DateTimeZones.UTC);
+        DateTime newMiddle = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.UTC);
 
         //items 1 and 2 change
         when(hasher.hash(argThat(isA(Content.class))))
@@ -245,7 +293,14 @@ public abstract class CassandraScheduleStoreIT {
                 .thenReturn("twoDifferent");
 
         episode1 = itemAndBroadcast(null, "one", source, channel, start, newMiddle);
-        ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, newMiddle, end);
+        ItemAndBroadcast episode3 = itemAndBroadcast(
+                null,
+                "three",
+                source,
+                channel,
+                newMiddle,
+                end
+        );
         hiers = ImmutableList.of(
                 ScheduleHierarchy.itemOnly(episode1),
                 ScheduleHierarchy.itemOnly(episode3)
@@ -253,8 +308,7 @@ public abstract class CassandraScheduleStoreIT {
 
         results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.<Content,Content>writtenFilter()));
-
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
 
         ItemAndBroadcast episode4 = itemAndBroadcast(null, "four", source, channel, newMiddle, end);
         hiers = ImmutableList.of(
@@ -276,18 +330,24 @@ public abstract class CassandraScheduleStoreIT {
 
     }
 
-
     @Test
     public void testBroadcastMovedToAnotherBlockAndBack() throws Exception {
 
-        DateTime start = new DateTime(2015,5,30,22,30,0,0,DateTimeZones.UTC);
-        DateTime end = new DateTime(2015,5,30,23,0,0,0,DateTimeZones.UTC);
+        DateTime start = new DateTime(2015, 5, 30, 22, 30, 0, 0, DateTimeZones.UTC);
+        DateTime end = new DateTime(2015, 5, 30, 23, 0, 0, 0, DateTimeZones.UTC);
 
-        DateTime newStart = new DateTime(2015,6,1,0,00,0,0,DateTimeZones.UTC);
-        DateTime newEnd = new DateTime(2015,6,1,0,30,0,0,DateTimeZones.UTC);
+        DateTime newStart = new DateTime(2015, 6, 1, 0, 00, 0, 0, DateTimeZones.UTC);
+        DateTime newEnd = new DateTime(2015, 6, 1, 0, 30, 0, 0, DateTimeZones.UTC);
 
         ItemAndBroadcast episode1Slot1 = itemAndBroadcast(1, "one", source, channel, start, end);
-        ItemAndBroadcast episode1Slot2 = itemAndBroadcast(1, "one", source, channel, newStart, newEnd);
+        ItemAndBroadcast episode1Slot2 = itemAndBroadcast(
+                1,
+                "one",
+                source,
+                channel,
+                newStart,
+                newEnd
+        );
         ItemAndBroadcast episode2Slot1 = itemAndBroadcast(2, "two", source, channel, start, end);
 
         ImmutableList<ScheduleHierarchy> hiers1 = ImmutableList.of(
@@ -325,128 +385,163 @@ public abstract class CassandraScheduleStoreIT {
         //write it again
         store.writeSchedule(hiers1, channel, writtenInterval);
 
-        Item content = (Item)Iterables.getOnlyElement(Futures.get(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))), Exception.class).getResources());
-        Schedule schedule = Futures.get(store.resolve(ImmutableSet.of(channel), writtenInterval, source), Exception.class);
+        Item content = (Item) Iterables.getOnlyElement(Futures.get(contentStore.resolveIds(
+                ImmutableList.of(Id.valueOf(1))), Exception.class).getResources());
+        Schedule schedule = Futures.get(store.resolve(
+                ImmutableSet.of(channel),
+                writtenInterval,
+                source
+        ), Exception.class);
 
-        ItemAndBroadcast itemAndBroadcast = Iterables.getOnlyElement(Iterables.getOnlyElement(schedule.channelSchedules()).getEntries());
+        ItemAndBroadcast itemAndBroadcast = Iterables.getOnlyElement(Iterables.getOnlyElement(
+                schedule.channelSchedules()).getEntries());
 
         assertThat(itemAndBroadcast.getBroadcast().getSourceId(), is("one"));
         assertThat(itemAndBroadcast.getItem().getId(), is(Id.valueOf(1)));
-        assertThat(Iterables.getOnlyElement(content.getBroadcasts()).isActivelyPublished(), is(true));
+        assertThat(
+                Iterables.getOnlyElement(content.getBroadcasts()).isActivelyPublished(),
+                is(true)
+        );
     }
-    
-    @Test
-    public void testReWritingScheduleUpdatesOverlappingBroadcastsInDifferentSegment() throws Exception {
 
-        DateTime start = new DateTime(2013,05,31,14,0,0,0,DateTimeZones.LONDON);
-        DateTime middle = new DateTime(2013,05,31,20,0,0,0,DateTimeZones.LONDON);
-        DateTime end = new DateTime(2013,06,01,14,0,0,0,DateTimeZones.LONDON);
-        
+    @Test
+    public void testReWritingScheduleUpdatesOverlappingBroadcastsInDifferentSegment()
+            throws Exception {
+
+        DateTime start = new DateTime(2013, 05, 31, 14, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime middle = new DateTime(2013, 05, 31, 20, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime end = new DateTime(2013, 06, 01, 14, 0, 0, 0, DateTimeZones.LONDON);
+
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
-        
+
         ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(episode1), 
-            ScheduleHierarchy.itemOnly(episode2)
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode2)
         );
-        
+
         Interval writtenInterval = new Interval(start, end);
-        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(hiers, channel, writtenInterval);
+        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(
+                hiers,
+                channel,
+                writtenInterval
+        );
         assertThat(results.size(), is(2));
 
-        DateTime newEnd = new DateTime(2013,05,31,23,30,0,0,DateTimeZones.LONDON);
-        
+        DateTime newEnd = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.LONDON);
+
         //items 1 and 2 change 
         when(hasher.hash(argThat(isA(Content.class))))
-            .thenReturn("differentOne")
-            .thenReturn("oneDifferent")
-            .thenReturn("differentTwo")
-            .thenReturn("twoDifferent");
-        
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
+
         episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
-        ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, middle, newEnd);
-        hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(episode1), 
-            ScheduleHierarchy.itemOnly(episode3)
+        ItemAndBroadcast episode3 = itemAndBroadcast(
+                null,
+                "three",
+                source,
+                channel,
+                middle,
+                newEnd
         );
-        
+        hiers = ImmutableList.of(
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode3)
+        );
+
         results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.<Content,Content>writtenFilter()));
-        
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
+
         Interval requestedInterval = new Interval(
-            new DateTime(2013,05,31,10,0,0,0,DateTimeZones.UTC), 
-            new DateTime(2013,05,31,22,40,0,0,DateTimeZones.UTC) 
+                new DateTime(2013, 05, 31, 10, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2013, 05, 31, 22, 40, 0, 0, DateTimeZones.UTC)
         );
-        Schedule schedule = future(store.resolve(ImmutableList.of(channel), requestedInterval, source));
+        Schedule schedule = future(store.resolve(
+                ImmutableList.of(channel),
+                requestedInterval,
+                source
+        ));
         ChannelSchedule channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
-        
+
         assertThat(channelSchedule.getChannel(), is(channel));
         assertThat(channelSchedule.getInterval(), is(requestedInterval));
         assertThat(channelSchedule.getEntries().size(), is(2));
         assertThat(channelSchedule.getEntries().get(0).getItem().getId().longValue(), is(2L));
         assertThat(channelSchedule.getEntries().get(1).getItem().getId().longValue(), is(3L));
-        
+
         requestedInterval = new Interval(
-            new DateTime(2013,05,31,23,0,0,0,DateTimeZones.UTC), 
-            new DateTime(2013,06,01,22,40,0,0,DateTimeZones.UTC) 
+                new DateTime(2013, 05, 31, 23, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2013, 06, 01, 22, 40, 0, 0, DateTimeZones.UTC)
         );
         schedule = future(store.resolve(ImmutableList.of(channel), requestedInterval, source));
         channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
-        
+
         assertThat(channelSchedule.getChannel(), is(channel));
         assertThat(channelSchedule.getInterval(), is(requestedInterval));
         assertThat(channelSchedule.getEntries().size(), is(0));
-        
+
         Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))));
         Item two = (Item) resolved.getResources().first().get();
         assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
     }
-    
+
     @Test
-    public void testWritingAnItemWithManyBroadcastsOnlyHasTheRelevantBroadcastInTheResolvedSchedule() throws Exception {
-        
-        DateTime start = new DateTime(2013,05,31,14,0,0,0,DateTimeZones.LONDON);
-        DateTime middle = new DateTime(2013,05,31,20,0,0,0,DateTimeZones.LONDON);
-        DateTime end = new DateTime(2013,06,01,14,0,0,0,DateTimeZones.LONDON);
-        
+    public void testWritingAnItemWithManyBroadcastsOnlyHasTheRelevantBroadcastInTheResolvedSchedule()
+            throws Exception {
+
+        DateTime start = new DateTime(2013, 05, 31, 14, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime middle = new DateTime(2013, 05, 31, 20, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime end = new DateTime(2013, 06, 01, 14, 0, 0, 0, DateTimeZones.LONDON);
+
         Item item1 = item(1, source, "item");
         Broadcast broadcast1 = broadcast("one", channel, start, middle);
         Broadcast broadcast2 = broadcast("two", channel, middle, end);
-        Broadcast broadcast3 = broadcast("three", channel, new DateTime(DateTimeZones.LONDON), new DateTime(DateTimeZones.LONDON));
-        
+        Broadcast broadcast3 = broadcast(
+                "three",
+                channel,
+                new DateTime(DateTimeZones.LONDON),
+                new DateTime(DateTimeZones.LONDON)
+        );
+
         item1.addBroadcast(broadcast1);
         item1.addBroadcast(broadcast2);
         item1.addBroadcast(broadcast3);
-        
+
         ItemAndBroadcast iab1 = new ItemAndBroadcast(item1, broadcast1);
         ItemAndBroadcast iab2 = new ItemAndBroadcast(item1.copy(), broadcast2);
         ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(iab1), 
-            ScheduleHierarchy.itemOnly(iab2)
+                ScheduleHierarchy.itemOnly(iab1),
+                ScheduleHierarchy.itemOnly(iab2)
         );
         Interval writtenInterval = new Interval(start, end);
-        
+
         when(hasher.hash(argThat(any(Content.class)))).thenReturn("one", "two", "three");
-        
+
         List<WriteResult<? extends Content, Content>> results
-            = store.writeSchedule(hiers, channel, writtenInterval);
+                = store.writeSchedule(hiers, channel, writtenInterval);
 
         verify(hasher, never()).hash(argThat(is(any(Content.class))));
         assertThat(results.size(), is(1));
 
-        Schedule schedule = future(store.resolve(ImmutableList.of(channel), writtenInterval, source));
+        Schedule schedule = future(store.resolve(
+                ImmutableList.of(channel),
+                writtenInterval,
+                source
+        ));
         ChannelSchedule channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
         assertThat(channelSchedule.getEntries().size(), is(2));
         ItemAndBroadcast fst = channelSchedule.getEntries().get(0);
         ItemAndBroadcast snd = channelSchedule.getEntries().get(1);
-        
+
         Item resolved1 = fst.getItem();
         assertThat(Iterables.getOnlyElement(resolved1.getBroadcasts()), is(fst.getBroadcast()));
 
         Item resolved2 = snd.getItem();
         assertThat(Iterables.getOnlyElement(resolved2.getBroadcasts()), is(snd.getBroadcast()));
-        
+
         Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(1))));
         Item item = (Item) resolved.toMap().get(Id.valueOf(1)).get();
         assertThat(item.getBroadcasts().size(), is(3));
@@ -458,68 +553,84 @@ public abstract class CassandraScheduleStoreIT {
     // TODO Known issue: if the update interval doesn't cover a now stale broadcast
     // in a subsequent segment then that broadcast won't be updated in the
     // subsequent segment, it will be updated in the store though.
-    public void testReWritingScheduleUpdatesOverlappingBroadcastsInDifferentSegmentEvenWhenUpdateIntervalDoesntCoverSegment() throws Exception {
-        
-        DateTime start = new DateTime(2013,05,31,14,0,0,0,DateTimeZones.LONDON);
-        DateTime middle = new DateTime(2013,05,31,20,0,0,0,DateTimeZones.LONDON);
-        DateTime end = new DateTime(2013,06,01,14,0,0,0,DateTimeZones.LONDON);
-        
+    public void testReWritingScheduleUpdatesOverlappingBroadcastsInDifferentSegmentEvenWhenUpdateIntervalDoesntCoverSegment()
+            throws Exception {
+
+        DateTime start = new DateTime(2013, 05, 31, 14, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime middle = new DateTime(2013, 05, 31, 20, 0, 0, 0, DateTimeZones.LONDON);
+        DateTime end = new DateTime(2013, 06, 01, 14, 0, 0, 0, DateTimeZones.LONDON);
+
         ItemAndBroadcast episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
         ItemAndBroadcast episode2 = itemAndBroadcast(null, "two", source, channel, middle, end);
-        
+
         ImmutableList<ScheduleHierarchy> hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(episode1), 
-            ScheduleHierarchy.itemOnly(episode2)
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode2)
         );
-        
+
         Interval writtenInterval = new Interval(start, end);
-        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(hiers, channel, writtenInterval);
+        List<WriteResult<? extends Content, Content>> results = store.writeSchedule(
+                hiers,
+                channel,
+                writtenInterval
+        );
         assertThat(results.size(), is(2));
-        
-        DateTime newEnd = new DateTime(2013,05,31,23,30,0,0,DateTimeZones.LONDON);
-        
+
+        DateTime newEnd = new DateTime(2013, 05, 31, 23, 30, 0, 0, DateTimeZones.LONDON);
+
         //items 1 and 2 change 
         when(hasher.hash(argThat(isA(Content.class))))
-            .thenReturn("differentOne")
-            .thenReturn("oneDifferent")
-            .thenReturn("differentTwo")
-            .thenReturn("twoDifferent");
-        
+                .thenReturn("differentOne")
+                .thenReturn("oneDifferent")
+                .thenReturn("differentTwo")
+                .thenReturn("twoDifferent");
+
         episode1 = itemAndBroadcast(null, "one", source, channel, start, middle);
-        ItemAndBroadcast episode3 = itemAndBroadcast(null, "three", source, channel, middle, newEnd);
-        hiers = ImmutableList.of(
-            ScheduleHierarchy.itemOnly(episode1), 
-            ScheduleHierarchy.itemOnly(episode3)
+        ItemAndBroadcast episode3 = itemAndBroadcast(
+                null,
+                "three",
+                source,
+                channel,
+                middle,
+                newEnd
         );
-        
+        hiers = ImmutableList.of(
+                ScheduleHierarchy.itemOnly(episode1),
+                ScheduleHierarchy.itemOnly(episode3)
+        );
+
         results = store.writeSchedule(hiers, channel, new Interval(start, newEnd));
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.<Content,Content>writtenFilter()));
-        
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
+
         Interval requestedInterval = new Interval(
-            new DateTime(2013,05,31,10,0,0,0,DateTimeZones.UTC), 
-            new DateTime(2013,05,31,22,40,0,0,DateTimeZones.UTC) 
+                new DateTime(2013, 05, 31, 10, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2013, 05, 31, 22, 40, 0, 0, DateTimeZones.UTC)
         );
-        Schedule schedule = future(store.resolve(ImmutableList.of(channel), requestedInterval, source));
+        Schedule schedule = future(store.resolve(
+                ImmutableList.of(channel),
+                requestedInterval,
+                source
+        ));
         ChannelSchedule channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
-        
+
         assertThat(channelSchedule.getChannel(), is(channel));
         assertThat(channelSchedule.getInterval(), is(requestedInterval));
         assertThat(channelSchedule.getEntries().size(), is(2));
         assertThat(channelSchedule.getEntries().get(0).getItem().getId().longValue(), is(1L));
         assertThat(channelSchedule.getEntries().get(1).getItem().getId().longValue(), is(3L));
-        
+
         requestedInterval = new Interval(
-            new DateTime(2013,05,31,23,0,0,0,DateTimeZones.UTC), 
-            new DateTime(2013,06,01,22,40,0,0,DateTimeZones.UTC) 
+                new DateTime(2013, 05, 31, 23, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2013, 06, 01, 22, 40, 0, 0, DateTimeZones.UTC)
         );
         schedule = future(store.resolve(ImmutableList.of(channel), requestedInterval, source));
         channelSchedule = Iterables.getOnlyElement(schedule.channelSchedules());
-        
+
         assertThat(channelSchedule.getChannel(), is(channel));
         assertThat(channelSchedule.getInterval(), is(requestedInterval));
         assertThat(channelSchedule.getEntries().size(), is(0));
-        
+
         Resolved<Content> resolved = future(contentStore.resolveIds(ImmutableList.of(Id.valueOf(2))));
         Item two = (Item) resolved.getResources().first().get();
         assertFalse(Iterables.getOnlyElement(two.getBroadcasts()).isActivelyPublished());
@@ -529,7 +640,8 @@ public abstract class CassandraScheduleStoreIT {
         return Futures.get(resolve, 1, TimeUnit.SECONDS, Exception.class);
     }
 
-    private ItemAndBroadcast itemAndBroadcast(Integer id, String alias, Publisher source, Channel channel, DateTime start, DateTime end) {
+    private ItemAndBroadcast itemAndBroadcast(Integer id, String alias, Publisher source,
+            Channel channel, DateTime start, DateTime end) {
         Item item = item(id, source, alias);
         Broadcast broadcast = broadcast(alias, channel, start, end);
         item.addBroadcast(broadcast);
@@ -551,5 +663,5 @@ public abstract class CassandraScheduleStoreIT {
         item.setPublisher(source);
         return item;
     }
-    
+
 }

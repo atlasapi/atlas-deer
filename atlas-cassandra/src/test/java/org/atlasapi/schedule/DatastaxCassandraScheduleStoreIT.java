@@ -2,10 +2,10 @@ package org.atlasapi.schedule;
 
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import com.datastax.driver.core.ConsistencyLevel;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DatastaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {
@@ -27,7 +27,8 @@ public class DatastaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {
                 readConsistency,
                 writeConsistency,
                 session,
-                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(contentStore))),
+                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
+                        contentStore))),
                 CASSANDRA_TIMEOUT_SECONDS
         );
     }

@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.meta.endpoint;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -13,6 +11,8 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.common.Resource;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class EndpointInfoListWriter implements EntityListWriter<EndpointClassInfo> {
 
     private final AnnotationRegistry<EndpointClassInfo> annotationRegistry;
@@ -20,9 +20,10 @@ public class EndpointInfoListWriter implements EntityListWriter<EndpointClassInf
     public EndpointInfoListWriter(AnnotationRegistry<EndpointClassInfo> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
-    
+
     @Override
-    public void write(EndpointClassInfo entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(EndpointClassInfo entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
         ctxt.startResource(Resource.ENDPOINT_INFO);
         List<OutputAnnotation<? super EndpointClassInfo>> annotations = ctxt
                 .getAnnotations(annotationRegistry);

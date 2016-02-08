@@ -2,10 +2,9 @@ package org.atlasapi.util;
 
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Throwables;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
-
-import com.google.common.base.Throwables;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeFieldType;
 

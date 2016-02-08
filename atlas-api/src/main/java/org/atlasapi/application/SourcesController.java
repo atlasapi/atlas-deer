@@ -10,6 +10,7 @@ import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.ErrorResultWriter;
@@ -21,21 +22,22 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
 import org.atlasapi.query.common.QueryExecutionException;
-import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryParser;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
+import com.google.common.base.Optional;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.google.common.base.Optional;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-
 @Controller
 public class SourcesController {
+
     private final UserAwareQueryParser<Publisher> queryParser;
     private final UserAwareQueryExecutor<Publisher> queryExecutor;
     private final UserAwareQueryResultWriter<Publisher> resultWriter;
@@ -44,7 +46,7 @@ public class SourcesController {
     private final SourceIdCodec sourceIdCodec;
     private final ApplicationStore applicationStore;
     private final UserFetcher userFetcher;
-    
+
     public SourcesController(UserAwareQueryParser<Publisher> queryParser,
             UserAwareQueryExecutor<Publisher> queryExecutor,
             UserAwareQueryResultWriter<Publisher> resultWriter,
@@ -62,14 +64,14 @@ public class SourcesController {
     }
 
     /**
-     * POST /4/sources/:sourceId/applications Updates permission for a source.
-     * Post with app id and permission (read/write) required Params: "id":
-     * "abc", "permission": "read"
-     * @throws NotFoundException 
+     * POST /4/sources/:sourceId/applications Updates permission for a source. Post with app id and
+     * permission (read/write) required Params: "id": "abc", "permission": "read"
+     *
+     * @throws NotFoundException
      * @throws ResourceForbiddenException if user does not manage source
      */
     @RequestMapping(value = "/4/sources/{sourceId}/applications", method = RequestMethod.POST)
-    public void writeSourceForApplication(HttpServletRequest request, 
+    public void writeSourceForApplication(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String sourceId,
             @RequestParam String id,
@@ -104,14 +106,14 @@ public class SourcesController {
     }
 
     /**
-     * DELETE /4/sources/:sourceId/applications Removes a permission
-     * (read/write) from an app on a source. Post with app id and permission
-     * needed.
-     * @throws QueryExecutionException 
-     * @throws ResourceForbiddenException 
+     * DELETE /4/sources/:sourceId/applications Removes a permission (read/write) from an app on a
+     * source. Post with app id and permission needed.
+     *
+     * @throws QueryExecutionException
+     * @throws ResourceForbiddenException
      */
     @RequestMapping(value = "/4/sources/{sourceId}/applications", method = RequestMethod.DELETE)
-    public void deleteSourceForApplication(HttpServletRequest request, 
+    public void deleteSourceForApplication(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String sourceId,
             @RequestParam String id,
@@ -146,13 +148,14 @@ public class SourcesController {
     }
 
     /**
-     * POST /4/sources/:sourceId/applications/readers/:appId/state Changes
-     * state of app for source, e.g. "available", "requested". Params: "state":
-     * "available"
-     * @throws ResourceForbiddenException 
-     * @throws Exception 
+     * POST /4/sources/:sourceId/applications/readers/:appId/state Changes state of app for source,
+     * e.g. "available", "requested". Params: "state": "available"
+     *
+     * @throws ResourceForbiddenException
+     * @throws Exception
      */
-    @RequestMapping(value = "/4/sources/{sourceId}/applications/readers/{id}/state", method = RequestMethod.POST)
+    @RequestMapping(value = "/4/sources/{sourceId}/applications/readers/{id}/state",
+            method = RequestMethod.POST)
     public void changeSourceStateForApplication(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String sourceId,
@@ -170,7 +173,7 @@ public class SourcesController {
                 SourceState requestedState = SourceState.valueOf(state.toUpperCase());
                 Application existing = applicationStore.applicationFor(applicationId).get();
                 applicationStore.updateApplication(
-                    existing.copyWithReadSourceState(source.get(), requestedState));
+                        existing.copyWithReadSourceState(source.get(), requestedState));
             } else {
                 throw new QueryExecutionException("No source with id " + sourceId);
             }
@@ -179,10 +182,11 @@ public class SourcesController {
             new ErrorResultWriter().write(summary, null, request, response);
         }
     }
-    
-    @RequestMapping({"/4/sources/{sid}.*", "/4/sources.*"})
+
+    @RequestMapping({ "/4/sources/{sid}.*", "/4/sources.*" })
     public void listSources(HttpServletRequest request,
-            HttpServletResponse response) throws QueryParseException, QueryExecutionException, IOException {
+            HttpServletResponse response)
+            throws QueryParseException, QueryExecutionException, IOException {
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
             UserAwareQuery<Publisher> sourcesQuery = queryParser.parse(request);
@@ -193,7 +197,7 @@ public class SourcesController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
+
     private boolean userMangesSource(Publisher source, HttpServletRequest request) {
         Optional<User> user = userFetcher.userFor(request);
         if (!user.isPresent()) {

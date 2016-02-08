@@ -1,8 +1,10 @@
 package org.atlasapi.output.annotation;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
+import java.io.IOException;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
@@ -16,10 +18,9 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -66,10 +67,10 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
         Iterable<Item> items = contentIds.stream()
                 .flatMap(id -> {
                     ImmutableList<Content> equivs = resolvedEquivalents.get(id).asList();
-                    if(equivs.isEmpty()) {
+                    if (equivs.isEmpty()) {
                         return Stream.empty();
                     }
-                    Item item = (Item)equivs.get(0);
+                    Item item = (Item) equivs.get(0);
                     Iterable<Broadcast> upcomingBroadcasts = item.getBroadcasts()
                             .stream()
                             .filter(Broadcast.IS_UPCOMING)

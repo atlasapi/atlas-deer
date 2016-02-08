@@ -1,54 +1,55 @@
 package org.atlasapi.generation.generated.model;
 
 import java.util.Set;
-import com.google.common.collect.ImmutableSet;
-import org.atlasapi.generation.model.ModelClassInfo;
+
 import org.atlasapi.generation.model.FieldInfo;
 import org.atlasapi.generation.model.JsonType;
+import org.atlasapi.generation.model.ModelClassInfo;
 
+import com.google.common.collect.ImmutableSet;
 
 public class AliasInfo implements ModelClassInfo {
 
     private static final Set<FieldInfo> fields = ImmutableSet.<FieldInfo>builder()
             .add(
-                FieldInfo.builder()
-                    .withName("namespace")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
+                    FieldInfo.builder()
+                            .withName("namespace")
+                            .withDescription("")
+                            .withType("String")
+                            .withIsMultiple(false)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.STRING)
+                            .build()
             )
             .add(
-                FieldInfo.builder()
-                    .withName("value")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
+                    FieldInfo.builder()
+                            .withName("value")
+                            .withDescription("")
+                            .withType("String")
+                            .withIsMultiple(false)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.STRING)
+                            .build()
             )
             .add(
-                FieldInfo.builder()
-                    .withName("namespace")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
+                    FieldInfo.builder()
+                            .withName("namespace")
+                            .withDescription("")
+                            .withType("String")
+                            .withIsMultiple(false)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.STRING)
+                            .build()
             )
             .add(
-                FieldInfo.builder()
-                    .withName("value")
-                    .withDescription("")
-                    .withType("String")
-                    .withIsMultiple(false)
-                    .withIsModelType(false)
-                    .withJsonType(JsonType.STRING)
-                    .build()
+                    FieldInfo.builder()
+                            .withName("value")
+                            .withDescription("")
+                            .withType("String")
+                            .withIsMultiple(false)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.STRING)
+                            .build()
             )
             .build();
 

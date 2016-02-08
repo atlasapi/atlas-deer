@@ -15,7 +15,7 @@ public final class BrandRef extends ContainerRef {
     public ContentType getContentType() {
         return ContentType.BRAND;
     }
-    
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -24,7 +24,7 @@ public final class BrandRef extends ContainerRef {
         if (that instanceof BrandRef) {
             BrandRef other = (BrandRef) that;
             return id.equals(other.id)
-                && source.equals(other.source);
+                    && source.equals(other.source);
         }
         return false;
     }

@@ -19,21 +19,7 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.UnsupportedFormatException;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import twitter4j.ResponseList;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
-import twitter4j.auth.AccessToken;
-import twitter4j.auth.RequestToken;
-import twitter4j.conf.ConfigurationBuilder;
-
-import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.social.auth.credentials.AuthToken;
 import com.metabroadcast.common.social.model.TwitterUserDetails;
@@ -44,23 +30,37 @@ import com.metabroadcast.common.social.user.AccessTokenProcessor;
 import com.metabroadcast.common.url.UrlEncoding;
 import com.metabroadcast.common.webapp.http.CacheHeaderWriter;
 
+import com.google.common.base.Optional;
+import com.google.common.base.Strings;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import twitter4j.ResponseList;
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
+import twitter4j.TwitterFactory;
+import twitter4j.auth.AccessToken;
+import twitter4j.auth.RequestToken;
+import twitter4j.conf.ConfigurationBuilder;
+
 @Controller
 public class TwitterAuthController {
-    
+
     private static final CacheHeaderWriter NO_CACHE_HEADER_WRITER = CacheHeaderWriter.neverCache();
-    
+
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final TwitterFactory twitterFactory;
-    private UserStore userStore; 
+    private UserStore userStore;
     private NewUserSupplier userSupplier;
     private QueryResultWriter<OAuthRequest> oauthRequestResultWriter;
     private QueryResultWriter<OAuthResult> oauthResultResultWriter;
     private AccessTokenProcessor accessTokenProcessor;
     private TokenRequestStore tokenRequestStore;
-    
-    public TwitterAuthController(TwitterApplication twitterApplication, 
+
+    public TwitterAuthController(TwitterApplication twitterApplication,
             AccessTokenProcessor accessTokenProcessor,
-            UserStore userStore, 
+            UserStore userStore,
             NewUserSupplier userSupplier,
             TokenRequestStore tokenRequestStore,
             QueryResultWriter<OAuthRequest> oauthRequestResultWriter,
@@ -68,10 +68,10 @@ public class TwitterAuthController {
         super();
         this.accessTokenProcessor = accessTokenProcessor;
         this.twitterFactory = new TwitterFactory(
-            new ConfigurationBuilder()
-                .setOAuthConsumerKey(twitterApplication.getConsumerKey())
-                .setOAuthConsumerSecret(twitterApplication.getConsumerSecret())
-            .build()
+                new ConfigurationBuilder()
+                        .setOAuthConsumerKey(twitterApplication.getConsumerKey())
+                        .setOAuthConsumerSecret(twitterApplication.getConsumerSecret())
+                        .build()
         );
         this.userStore = userStore;
         this.userSupplier = userSupplier;
@@ -84,7 +84,8 @@ public class TwitterAuthController {
     public void getTwitterLogin(HttpServletRequest request,
             HttpServletResponse response,
             @RequestParam(required = true) String callbackUrl,
-            @RequestParam(required = false) String targetUri) throws UnsupportedFormatException, NotAcceptableException, IOException {
+            @RequestParam(required = false) String targetUri)
+            throws UnsupportedFormatException, NotAcceptableException, IOException {
         NO_CACHE_HEADER_WRITER.writeHeaders(request, response);
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
@@ -102,33 +103,48 @@ public class TwitterAuthController {
                     .withSecret(requestToken.getTokenSecret())
                     .build();
             tokenRequestStore.store(oauthRequest);
-            QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest, QueryContext.standard(request));
+            QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(
+                    oauthRequest,
+                    QueryContext.standard(request)
+            );
             oauthRequestResultWriter.write(queryResult, writer);
         } catch (TwitterException e) {
             throw new RuntimeException(e);
         }
     }
-    
+
     @RequestMapping(value = { "/4/auth/twitter/token.*" }, method = RequestMethod.GET)
-    public void getAccessToken(HttpServletResponse response, HttpServletRequest request, 
+    public void getAccessToken(HttpServletResponse response, HttpServletRequest request,
             @RequestParam String oauthToken,
             @RequestParam String oauthVerifier,
-            @RequestParam(required = false) String targetUri) throws UnsupportedFormatException, NotAcceptableException, IOException {
+            @RequestParam(required = false) String targetUri)
+            throws UnsupportedFormatException, NotAcceptableException, IOException {
         NO_CACHE_HEADER_WRITER.writeHeaders(request, response);
         Twitter twitter = twitterFactory.getInstance();
-        Optional<OAuthRequest> storedOAuthRequest = tokenRequestStore.lookupAndRemove(UserNamespace.TWITTER, oauthToken);
+        Optional<OAuthRequest> storedOAuthRequest = tokenRequestStore.lookupAndRemove(
+                UserNamespace.TWITTER,
+                oauthToken
+        );
         if (!storedOAuthRequest.isPresent()) {
             response.setStatus(401);
             return;
         }
-        RequestToken requestToken = new RequestToken(oauthToken, storedOAuthRequest.get().getSecret());
+        RequestToken requestToken = new RequestToken(
+                oauthToken,
+                storedOAuthRequest.get().getSecret()
+        );
         ResponseWriter responseWriter = writerResolver.writerFor(request, response);
-        
+
         try {
             AccessToken token = twitter.getOAuthAccessToken(requestToken, oauthVerifier);
-           
+
             // Twitter oauth tokens do not expire so null gets passed as expiry date see: https://dev.twitter.com/docs/faq
-            Maybe<UserRef> userRef = accessTokenProcessor.process(new AuthToken(token.getToken(), token.getTokenSecret(), UserNamespace.TWITTER, null));
+            Maybe<UserRef> userRef = accessTokenProcessor.process(new AuthToken(
+                    token.getToken(),
+                    token.getTokenSecret(),
+                    UserNamespace.TWITTER,
+                    null
+            ));
             OAuthResult oauthResult;
             if (userRef.hasValue()) {
                 // Make sure we have a user 
@@ -145,14 +161,17 @@ public class TwitterAuthController {
                         .withToken("")
                         .build();
             }
-            
-            QueryResult<OAuthResult> queryResult = QueryResult.singleResult(oauthResult, QueryContext.standard(request));
+
+            QueryResult<OAuthResult> queryResult = QueryResult.singleResult(
+                    oauthResult,
+                    QueryContext.standard(request)
+            );
             oauthResultResultWriter.write(queryResult, responseWriter);
         } catch (TwitterException e) {
             throw new RuntimeException(e);
-        } 
+        }
     }
-    
+
     private void updateUser(Twitter twitter, UserRef userRef) throws TwitterException {
         TwitterUserDetails twitterUserDetails = getUserDetails(twitter, userRef);
         User user = userStore.userForRef(userRef).or(userSupplier);
@@ -171,11 +190,12 @@ public class TwitterAuthController {
             userStore.store(user);
         }
     }
-    
-    private TwitterUserDetails getUserDetails(Twitter twitter, UserRef userRef) throws TwitterException {
+
+    private TwitterUserDetails getUserDetails(Twitter twitter, UserRef userRef)
+            throws TwitterException {
         TwitterUserDetails userDetails = new TwitterUserDetails(userRef);
-      
-        long userIds[] = new long[]{ Long.valueOf(userRef.getUserId()) };
+
+        long userIds[] = new long[] { Long.valueOf(userRef.getUserId()) };
         ResponseList<twitter4j.User> lookupResult = twitter.lookupUsers(userIds);
         if (!lookupResult.isEmpty()) {
             twitter4j.User twUser = lookupResult.get(0);

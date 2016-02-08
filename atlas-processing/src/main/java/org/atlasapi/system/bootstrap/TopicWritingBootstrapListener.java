@@ -16,6 +16,7 @@ public class TopicWritingBootstrapListener extends AbstractMultiThreadedBootstra
 
     private final TopicStore topicStore;
     private Function<Alias, Alias> cleanNamespaces = new Function<Alias, Alias>() {
+
         @Override
         public Alias apply(@Nullable Alias input) {
             return new Alias(clean(input.getNamespace()), input.getValue());
@@ -38,9 +39,9 @@ public class TopicWritingBootstrapListener extends AbstractMultiThreadedBootstra
             return;
         }
         topic.setAliases(ImmutableSet.<Alias>builder()
-            .add(alias(topic))
-            .addAll(Iterables.transform(topic.getAliases(), cleanNamespaces))
-            .build());
+                .add(alias(topic))
+                .addAll(Iterables.transform(topic.getAliases(), cleanNamespaces))
+                .build());
         topicStore.writeTopic(topic);
     }
 

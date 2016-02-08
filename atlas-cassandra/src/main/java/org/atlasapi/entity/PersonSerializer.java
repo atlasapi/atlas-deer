@@ -54,7 +54,7 @@ public class PersonSerializer implements Serializer<Person, CommonProtos.Person>
         if (msg.hasBirthDate()) {
             person.setBirthDate(dateTimeSerializer.deserialize(msg.getBirthDate()));
         }
-        if(msg.hasBirthPlace()) {
+        if (msg.hasBirthPlace()) {
             person.setBirthPlace(msg.getBirthPlace());
         }
         person.setQuotes(msg.getQuoteList());

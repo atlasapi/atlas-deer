@@ -1,38 +1,36 @@
 package org.atlasapi.output.writers;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
-import com.google.common.base.Optional;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.v4.channel.ChannelWriter;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import org.atlasapi.query.common.QueryExecutionException;
-import org.atlasapi.query.v4.channel.ChannelWriter;
+import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public final class BroadcastWriter implements EntityListWriter<Broadcast> {
-    
+
     private static final Logger log = LoggerFactory.getLogger(BroadcastWriter.class);
 
     private static final String ELEMENT_NAME = "broadcast";
-    
+
     private final AliasWriter aliasWriter = new AliasWriter();
     private final BroadcastIdAliasMapping aliasMapping = new BroadcastIdAliasMapping();
     private final BlackoutRestrictionWriter blackoutRestrictionWriter = new BlackoutRestrictionWriter();
@@ -42,12 +40,16 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     private final NumberToShortStringCodec codec;
     private final ChannelResolver channelResolver;
 
-    public BroadcastWriter(String listName, NumberToShortStringCodec codec, ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
+    public BroadcastWriter(String listName, NumberToShortStringCodec codec,
+            ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
         this.listName = checkNotNull(listName);
         this.codec = checkNotNull(codec);
         this.channelResolver = checkNotNull(channelResolver);
         this.channelWriter = new ChannelWriter(
-                channelGroupResolver, "channels", "channel", new ChannelGroupSummaryWriter(new SubstitutionTableNumberCodec())
+                channelGroupResolver,
+                "channels",
+                "channel",
+                new ChannelGroupSummaryWriter(new SubstitutionTableNumberCodec())
         );
     }
 
@@ -62,11 +64,15 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeList(aliasWriter, aliases.build(), ctxt);
         writer.writeField("transmission_time", entity.getTransmissionTime());
         writer.writeField("transmission_end_time", entity.getTransmissionEndTime());
-        writer.writeField("broadcast_duration", Ints.saturatedCast(entity.getBroadcastDuration().getStandardSeconds()));
+        writer.writeField(
+                "broadcast_duration",
+                Ints.saturatedCast(entity.getBroadcastDuration().getStandardSeconds())
+        );
         writer.writeField("broadcast_on", codec.encode(entity.getChannelId().toBigInteger()));
         Channel channel = null;
         if (entity.getChannelId() != null) {
-            Optional<Channel> maybeChannel = Futures.get(channelResolver.resolveIds(ImmutableList.of(entity.getChannelId())), IOException.class)
+            Optional<Channel> maybeChannel = Futures.get(channelResolver.resolveIds(ImmutableList.of(
+                    entity.getChannelId())), IOException.class)
                     .getResources().first();
             if (maybeChannel.isPresent()) {
                 channel = maybeChannel.get();
@@ -78,18 +84,22 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeField("schedule_date", entity.getScheduleDate());
         writer.writeField("repeat", entity.getRepeat());
         writer.writeField("subtitled", entity.getSubtitled());
-        writer.writeField("signed",entity.getSigned());
-        writer.writeField("audio_described",entity.getAudioDescribed());
-        writer.writeField("high_definition",entity.getHighDefinition());
-        writer.writeField("widescreen",entity.getWidescreen());
-        writer.writeField("surround",entity.getSurround());
-        writer.writeField("live",entity.getLive());
-        writer.writeField("premiere",entity.getPremiere());
-        writer.writeField("new_series",entity.getNewSeries());
-        if(!entity.getBlackoutRestriction().isPresent()) {
+        writer.writeField("signed", entity.getSigned());
+        writer.writeField("audio_described", entity.getAudioDescribed());
+        writer.writeField("high_definition", entity.getHighDefinition());
+        writer.writeField("widescreen", entity.getWidescreen());
+        writer.writeField("surround", entity.getSurround());
+        writer.writeField("live", entity.getLive());
+        writer.writeField("premiere", entity.getPremiere());
+        writer.writeField("new_series", entity.getNewSeries());
+        if (!entity.getBlackoutRestriction().isPresent()) {
             writer.writeField("blackout_restriction", null);
         } else {
-            writer.writeObject(blackoutRestrictionWriter, entity.getBlackoutRestriction().get(), ctxt);
+            writer.writeObject(
+                    blackoutRestrictionWriter,
+                    entity.getBlackoutRestriction().get(),
+                    ctxt
+            );
         }
     }
 

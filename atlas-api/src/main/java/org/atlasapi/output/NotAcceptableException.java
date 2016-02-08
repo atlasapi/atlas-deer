@@ -2,7 +2,6 @@ package org.atlasapi.output;
 
 import org.atlasapi.query.common.QueryExecutionException;
 
-
 public class NotAcceptableException extends QueryExecutionException {
 
     public NotAcceptableException() {
@@ -20,5 +19,5 @@ public class NotAcceptableException extends QueryExecutionException {
     public NotAcceptableException(Throwable cause) {
         super(cause);
     }
-    
+
 }

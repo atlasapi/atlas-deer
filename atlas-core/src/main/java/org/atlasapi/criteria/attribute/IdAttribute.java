@@ -14,47 +14,48 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.attribute;
 
-import org.atlasapi.entity.Identified;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 
 public class IdAttribute extends Attribute<Id> {
-	
-	public IdAttribute(String name, Class<? extends Identified> target) {
-		super(name, target);
-	}
 
-	public IdAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
-		super(name, javaAttributeName, target);
-	}
+    public IdAttribute(String name, Class<? extends Identified> target) {
+        super(name, target);
+    }
 
-	public IdAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
-		super(name, target, isCollection);
-	}
+    public IdAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
+        super(name, javaAttributeName, target);
+    }
 
-	public IdAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
-		super(name, javaAttributeName, target, isCollectionOfValues);
-	}
+    public IdAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
+        super(name, target, isCollection);
+    }
 
-	@Override
-	public String toString() {
-		return "id attribute: " + name;
-	}
+    public IdAttribute(String name, String javaAttributeName, Class<? extends Identified> target,
+            boolean isCollectionOfValues) {
+        super(name, javaAttributeName, target, isCollectionOfValues);
+    }
 
-	@Override
-	public Class<Id> requiresOperandOfType() {
-		return Id.class;
-	}
+    @Override
+    public String toString() {
+        return "id attribute: " + name;
+    }
 
-	@Override
-	public AttributeQuery<Id> createQuery(Operator op, Iterable<Id> values) {
-		if (!(op instanceof StringOperator)) {
-			throw new IllegalArgumentException();
-		}
-		return new IdAttributeQuery(this, (ComparableOperator) op, values);
-	}
+    @Override
+    public Class<Id> requiresOperandOfType() {
+        return Id.class;
+    }
+
+    @Override
+    public AttributeQuery<Id> createQuery(Operator op, Iterable<Id> values) {
+        if (!(op instanceof StringOperator)) {
+            throw new IllegalArgumentException();
+        }
+        return new IdAttributeQuery(this, (ComparableOperator) op, values);
+    }
 }

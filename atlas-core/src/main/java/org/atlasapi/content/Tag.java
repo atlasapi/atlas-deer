@@ -19,32 +19,35 @@ public class Tag {
 
     private Id topic;
     private Publisher publisher;
-	private Boolean supervised;
+    private Boolean supervised;
     private Float weighting;
     private Relationship relationship;
     private Integer offset;
 
-    public static Tag valueOf(Id topicId, Float weighting, Boolean supervised, Relationship relationship) {
-        return new Tag(topicId, weighting, supervised,relationship);
+    public static Tag valueOf(Id topicId, Float weighting, Boolean supervised,
+            Relationship relationship) {
+        return new Tag(topicId, weighting, supervised, relationship);
     }
 
     public Tag(Topic topic, Float weighting, Boolean supervised, Relationship relationship) {
         this(topic, weighting, supervised, relationship, null);
     }
 
-    public Tag(Topic topic, Float weighting, Boolean supervised, Relationship relationship, Integer offset) {
+    public Tag(Topic topic, Float weighting, Boolean supervised, Relationship relationship,
+            Integer offset) {
         this(topic.getId(), weighting, supervised, relationship, offset);
     }
 
     public Tag(long topicId, Float weighting, Boolean supervised, Relationship relationship) {
         this(Id.valueOf(topicId), weighting, supervised, relationship, null);
     }
-    
+
     public Tag(Id topicId, Float weighting, Boolean supervised, Relationship relationship) {
         this(topicId, weighting, supervised, relationship, null);
     }
 
-    public Tag(Id topicId, Float weighting, Boolean supervised, Relationship relationship, Integer offset) {
+    public Tag(Id topicId, Float weighting, Boolean supervised, Relationship relationship,
+            Integer offset) {
         this.topic = topicId;
         this.weighting = weighting;
         this.supervised = supervised;
@@ -91,11 +94,11 @@ public class Tag {
     public Relationship getRelationship() {
         return relationship;
     }
-    
+
     public void setOffset(Integer offset) {
         this.offset = offset;
     }
-    
+
     @FieldName("offset")
     public Integer getOffset() {
         return this.offset;
@@ -123,16 +126,22 @@ public class Tag {
         if (that instanceof Tag) {
             Tag other = (Tag) that;
             return Objects.equal(supervised, other.supervised)
-                && Objects.equal(weighting, other.weighting)
-                && Objects.equal(topic, other.topic)
-                && Objects.equal(relationship, other.relationship);
+                    && Objects.equal(weighting, other.weighting)
+                    && Objects.equal(topic, other.topic)
+                    && Objects.equal(relationship, other.relationship);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return String.format("Ref topic %s, %+.2f, %s supervised, with relationship %s", topic, weighting, supervised ? "" : "not", relationship);
+        return String.format(
+                "Ref topic %s, %+.2f, %s supervised, with relationship %s",
+                topic,
+                weighting,
+                supervised ? "" : "not",
+                relationship
+        );
     }
 
     public static enum Relationship {
@@ -154,23 +163,25 @@ public class Tag {
         public String toString() {
             return name;
         }
-        
+
         private static ImmutableSet<Relationship> ALL = ImmutableSet.copyOf(values());
-        
+
         public static ImmutableSet<Relationship> all() {
             return ALL;
         }
-        
+
         private static ImmutableMap<String, Optional<Relationship>> LOOKUP = ImmutableMap.copyOf(
-            Maps.transformValues(Maps.uniqueIndex(all(), Functions.toStringFunction()),
-                new Function<Relationship, Optional<Relationship>>() {
-                    @Override
-                    public Optional<Relationship> apply(@Nullable Relationship input) {
-                        return Optional.fromNullable(input);
-                    }
-            }
-        ));
-        
+                Maps.transformValues(
+                        Maps.uniqueIndex(all(), Functions.toStringFunction()),
+                        new Function<Relationship, Optional<Relationship>>() {
+
+                            @Override
+                            public Optional<Relationship> apply(@Nullable Relationship input) {
+                                return Optional.fromNullable(input);
+                            }
+                        }
+                ));
+
         public static Optional<Relationship> fromString(String relationship) {
             Optional<Relationship> possibleRelationship = LOOKUP.get(relationship);
             return possibleRelationship != null ? possibleRelationship

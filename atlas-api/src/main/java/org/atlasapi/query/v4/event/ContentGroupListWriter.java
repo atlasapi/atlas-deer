@@ -1,5 +1,7 @@
 package org.atlasapi.query.v4.event;
 
+import java.io.IOException;
+
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
@@ -8,9 +10,8 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SourceWriter;
 
-import java.io.IOException;
-
 public class ContentGroupListWriter<V extends ContentGroup> implements EntityListWriter<V> {
+
     private final EntityWriter<Publisher> publisherWriter = SourceWriter.sourceWriter("source");
 
     @Override

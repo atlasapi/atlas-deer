@@ -19,9 +19,8 @@ import com.netflix.astyanax.connectionpool.impl.CountingConnectionPoolMonitor;
 import com.netflix.astyanax.impl.AstyanaxConfigurationImpl;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 
+public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keyspace>> {
 
-public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keyspace>>{
-    
     private final String cluster;
     private final String keyspace;
     private final Iterable<String> seeds;
@@ -29,7 +28,7 @@ public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keysp
     private final int clientThreads;
     private final int connectionTimeout;
     @Nullable MetricRegistry metrics;
-    
+
     public ConfiguredAstyanaxContext(String cluster, String keyspace, Iterable<String> seeds,
             int port, int clientThreads, int connectionTimeout) {
         this.cluster = cluster;
@@ -47,7 +46,8 @@ public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keysp
     }
 
     public AstyanaxContext<Keyspace> get() {
-        ExecutorService executor = Executors.newFixedThreadPool(clientThreads,
+        ExecutorService executor = Executors.newFixedThreadPool(
+                clientThreads,
                 new ThreadFactoryBuilder().setDaemon(true)
                         .setNameFormat("astyanax-%d")
                         .build()
@@ -58,23 +58,23 @@ public class ConfiguredAstyanaxContext implements Supplier<AstyanaxContext<Keysp
         }
 
         return new AstyanaxContext.Builder()
-            .forCluster(cluster)
-            .forKeyspace(keyspace)
-            .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
-                .setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE)
-                .setConnectionPoolType(ConnectionPoolType.ROUND_ROBIN)
-                .setAsyncExecutor(executor)
-            )
-            .withConnectionPoolConfiguration(new ConnectionPoolConfigurationImpl("altas")
-                            .setSeeds(Joiner.on(",").join(seeds))
-                            .setPort(port)
-                            .setConnectTimeout(connectionTimeout)
-                            .setMaxBlockedThreadsPerHost(clientThreads)
-                            .setMaxConnsPerHost(clientThreads)
-                            .setMaxConns(clientThreads * 5)
-            )
-            .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
-            .buildKeyspace(ThriftFamilyFactory.getInstance());
+                .forCluster(cluster)
+                .forKeyspace(keyspace)
+                .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
+                        .setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE)
+                        .setConnectionPoolType(ConnectionPoolType.ROUND_ROBIN)
+                        .setAsyncExecutor(executor)
+                )
+                .withConnectionPoolConfiguration(new ConnectionPoolConfigurationImpl("altas")
+                        .setSeeds(Joiner.on(",").join(seeds))
+                        .setPort(port)
+                        .setConnectTimeout(connectionTimeout)
+                        .setMaxBlockedThreadsPerHost(clientThreads)
+                        .setMaxConnsPerHost(clientThreads)
+                        .setMaxConns(clientThreads * 5)
+                )
+                .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
+                .buildKeyspace(ThriftFamilyFactory.getInstance());
     }
 
 }

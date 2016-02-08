@@ -22,6 +22,7 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -39,7 +40,7 @@ public class EndUserLicenseController {
     private final ModelReader reader;
     private final EndUserLicenseStore licenseStore;
     private final UserFetcher userFetcher;
-    
+
     public EndUserLicenseController(QueryResultWriter<EndUserLicense> resultWriter,
             ModelReader reader, EndUserLicenseStore licenseStore, UserFetcher userFetcher) {
         super();
@@ -48,14 +49,18 @@ public class EndUserLicenseController {
         this.licenseStore = licenseStore;
         this.userFetcher = userFetcher;
     }
-    
+
     @RequestMapping({ "/4/eula.*" })
-    public void outputLicense(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void outputLicense(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
             EndUserLicense license = licenseStore.getById(LICENSE_ID);
-            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(license, QueryContext.standard(request));
+            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(
+                    license,
+                    QueryContext.standard(request)
+            );
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
@@ -63,9 +68,9 @@ public class EndUserLicenseController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
+
     @RequestMapping(value = "/4/eula.*", method = RequestMethod.POST)
-    public void updatelicense(HttpServletRequest request, 
+    public void updatelicense(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         ResponseWriter writer = null;
         try {
@@ -73,12 +78,18 @@ public class EndUserLicenseController {
             if (!editingUser.is(Role.ADMIN)) {
                 throw new ResourceForbiddenException();
             }
-            
+
             writer = writerResolver.writerFor(request, response);
-            EndUserLicense posted = deserialize(new InputStreamReader(request.getInputStream()), EndUserLicense.class);
+            EndUserLicense posted = deserialize(
+                    new InputStreamReader(request.getInputStream()),
+                    EndUserLicense.class
+            );
             // set to the EULA id
             licenseStore.store(posted.copy().withId(LICENSE_ID).build());
-            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(posted, QueryContext.standard(request));
+            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(
+                    posted,
+                    QueryContext.standard(request)
+            );
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
@@ -86,7 +97,7 @@ public class EndUserLicenseController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
+
     private <T> T deserialize(Reader input, Class<T> cls) throws IOException, ReadException {
         return reader.read(new BufferedReader(input), cls);
     }

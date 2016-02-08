@@ -17,11 +17,11 @@ package org.atlasapi.content;
 
 import org.atlasapi.entity.Identified;
 import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -36,83 +36,83 @@ public class Location extends Identified {
     private TransportSubType transportSubType;
 
     private TransportType transportType;
-    
+
     private String uri;
 
     private String embedCode;
-    
+
     private String embedId;
-    
+
     private Policy policy;
-    
+
     @FieldName("policy")
-    public Policy getPolicy() { 
-        return this.policy; 
+    public Policy getPolicy() {
+        return this.policy;
     }
 
     @FieldName("transport_is_live")
     public Boolean getTransportIsLive() {
         return this.transportIsLive;
     }
-    
+
     @FieldName("transport_sub_type")
-    public TransportSubType getTransportSubType() { 
-        return this.transportSubType; 
+    public TransportSubType getTransportSubType() {
+        return this.transportSubType;
     }
 
     @FieldName("transport_type")
-    public TransportType getTransportType() { 
-        return this.transportType; 
+    public TransportType getTransportType() {
+        return this.transportType;
     }
 
     @FieldName("available")
     public boolean getAvailable() {
-    	return available;
+        return available;
     }
-    
+
     public void setAvailable(boolean available) {
-    	this.available = available;
-	}
-    
-    public void setPolicy(Policy policy) { 
-        this.policy = policy; 
+        this.available = available;
+    }
+
+    public void setPolicy(Policy policy) {
+        this.policy = policy;
     }
 
     public void setTransportIsLive(Boolean transportIsLive) {
         this.transportIsLive = transportIsLive;
     }
-    
+
     public void setTransportSubType(TransportSubType transportSubType) {
-		this.transportSubType = transportSubType; 
+        this.transportSubType = transportSubType;
     }
 
     public void setTransportType(TransportType transportType) {
-		this.transportType = transportType; 
+        this.transportType = transportType;
     }
 
     @FieldName("uri")
     public String getUri() {
-		return uri;
-	}
-    
+        return uri;
+    }
+
     public void setUri(String uri) {
-		this.uri = uri;
-	}
-    
+        this.uri = uri;
+    }
+
     @FieldName("embed_code")
     public String getEmbedCode() {
-		return embedCode;
-	}
-    
-    @FieldName("embed_id") 
+        return embedCode;
+    }
+
+    @FieldName("embed_id")
     public String getEmbedId() {
         return embedId;
     }
-    
+
     public void setEmbedCode(String embedCode) {
-		this.embedCode = embedCode;
-	}
-    
+        this.embedCode = embedCode;
+    }
+
     public void setEmbedId(String embedId) {
         this.embedId = embedId;
     }
@@ -126,10 +126,10 @@ public class Location extends Identified {
                 available,
                 uri,
                 policy != null ? policy.getAvailabilityStart() : null,
-                policy != null ? policy.getAvailabilityEnd(): null
+                policy != null ? policy.getAvailabilityEnd() : null
         );
     }
-    
+
     public Location copy() {
         Location copy = new Location();
         Identified.copyTo(this, copy);
@@ -145,8 +145,9 @@ public class Location extends Identified {
         copy.uri = uri;
         return copy;
     }
-    
+
     public static final Function<Location, Location> COPY = new Function<Location, Location>() {
+
         @Override
         public Location apply(Location input) {
             return input.copy();
@@ -158,9 +159,11 @@ public class Location extends Identified {
         return l.getAvailable()
                 && (
                 l.getPolicy() == null
-                || (
-                        (l.getPolicy().getAvailabilityStart() == null || now.isAfter(l.getPolicy().getAvailabilityStart())))
-                        && (l.getPolicy().getAvailabilityEnd() == null || now.isBefore(l.getPolicy().getAvailabilityEnd()))
-                );
+                        || (
+                        (l.getPolicy().getAvailabilityStart() == null || now.isAfter(l.getPolicy()
+                                .getAvailabilityStart())))
+                        && (l.getPolicy().getAvailabilityEnd() == null || now.isBefore(l.getPolicy()
+                        .getAvailabilityEnd()))
+        );
     };
 }

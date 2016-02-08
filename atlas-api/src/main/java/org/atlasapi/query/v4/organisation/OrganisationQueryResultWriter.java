@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.organisation;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +13,8 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OrganisationQueryResultWriter extends QueryResultWriter<Organisation> {
 

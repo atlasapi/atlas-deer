@@ -10,17 +10,17 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.schedule.ChannelSchedule;
 
-
 public class ScheduleListWriter implements EntityListWriter<ChannelSchedule> {
 
     private final EntityWriter<Channel> channelWriter;
     private final EntityListWriter<ItemAndBroadcast> entryWriter;
 
-    public ScheduleListWriter(EntityWriter<Channel> channelWriter, EntityListWriter<ItemAndBroadcast> contentWriter) {
+    public ScheduleListWriter(EntityWriter<Channel> channelWriter,
+            EntityListWriter<ItemAndBroadcast> contentWriter) {
         this.channelWriter = channelWriter;
         this.entryWriter = contentWriter;
     }
-    
+
     @Override
     public void write(ChannelSchedule entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {

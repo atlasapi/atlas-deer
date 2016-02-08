@@ -1,30 +1,29 @@
 package org.atlasapi.generation.output;
 
+import org.atlasapi.generation.model.EndpointMethodInfo;
+import org.atlasapi.generation.model.EndpointTypeInfo;
+
+import com.google.common.collect.ImmutableList;
+import org.junit.Test;
+import org.springframework.web.bind.annotation.RequestMethod;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 
-import org.atlasapi.generation.model.EndpointMethodInfo;
-import org.atlasapi.generation.model.EndpointTypeInfo;
-import org.junit.Test;
-import org.springframework.web.bind.annotation.RequestMethod;
-
-import com.google.common.collect.ImmutableList;
-
-
 public class EndpointInfoClassSourceGeneratorTest {
-    
+
     private final EndpointClassInfoSourceGenerator generator = new EndpointClassInfoSourceGenerator();
 
     @Test
     public void testCreationOfSetElementCreatesCorrectFieldInfoInstantiation() {
         EndpointMethodInfo methodInfo = new EndpointMethodInfo("path", RequestMethod.GET);
-        
+
         String setElement = generator.setElementFromMethod(methodInfo, "");
-        
+
         assertEquals(expected(methodInfo), setElement);
     }
-    
+
     @Test
     public void testCreationOfModelTypeBasedFields() {
         EndpointTypeInfo typeInfo = EndpointTypeInfo.builder()
@@ -34,12 +33,12 @@ public class EndpointInfoClassSourceGeneratorTest {
                 .withProducedType("ProducedType")
                 .withRootPath("rootPath")
                 .build();
-        
+
         String typeBasedFields = generator.generateTypeBasedFields(typeInfo);
-        
+
         assertThat(typeBasedFields, is(expected(typeInfo)));
     }
-    
+
     @Test
     public void testFullClassCreation() {
         EndpointTypeInfo typeInfo = EndpointTypeInfo.builder()
@@ -49,11 +48,11 @@ public class EndpointInfoClassSourceGeneratorTest {
                 .withProducedType("ProducedType")
                 .withRootPath("rootPath")
                 .build();
-        
+
         EndpointMethodInfo methodInfo = new EndpointMethodInfo("path", RequestMethod.GET);
-        
+
         String classString = generator.processType(typeInfo, ImmutableList.of(methodInfo));
-        
+
         assertThat(classString, is(expectedClassString(typeInfo, methodInfo)));
     }
 
@@ -74,7 +73,7 @@ public class EndpointInfoClassSourceGeneratorTest {
                 .append("        return %s;\n")
                 .append("    }\n")
                 .toString();
-        
+
         return String.format(
                 expectedPattern,
                 typeInfo.key(),
@@ -85,8 +84,8 @@ public class EndpointInfoClassSourceGeneratorTest {
 
     private String expected(EndpointMethodInfo methodInfo) {
         return String.format(
-                "new Operation(RequestMethod.%s, %s)", 
-                methodInfo.method(), 
+                "new Operation(RequestMethod.%s, %s)",
+                methodInfo.method(),
                 methodInfo.path()
         );
     }
@@ -132,9 +131,9 @@ public class EndpointInfoClassSourceGeneratorTest {
                 .append("\n")
                 .append("}\n")
                 .toString();
-        
+
         return String.format(
-                expectedClassPattern, 
+                expectedClassPattern,
                 typeInfo.className(),
                 methodInfo.method(),
                 methodInfo.path(),

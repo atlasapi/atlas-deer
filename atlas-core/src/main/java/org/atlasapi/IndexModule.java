@@ -9,7 +9,7 @@ public interface IndexModule {
     ContentIndex equivContentIndex();
 
     PopularTopicIndex topicSearcher();
-    
+
     ContentTitleSearcher contentTitleSearcher();
-    
+
 }

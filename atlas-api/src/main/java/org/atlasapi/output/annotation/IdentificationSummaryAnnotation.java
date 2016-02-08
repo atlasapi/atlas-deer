@@ -18,8 +18,9 @@ public class IdentificationSummaryAnnotation extends OutputAnnotation<Identified
     }
 
     @Override
-    public void write(Identified entity, FieldWriter formatter, OutputContext ctxt) throws IOException {
-        formatter.writeField("id", encodedIdOrNull(entity));        
+    public void write(Identified entity, FieldWriter formatter, OutputContext ctxt)
+            throws IOException {
+        formatter.writeField("id", encodedIdOrNull(entity));
     }
 
     private String encodedIdOrNull(Identified entity) {

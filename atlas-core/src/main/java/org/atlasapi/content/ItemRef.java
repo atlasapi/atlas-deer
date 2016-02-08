@@ -1,13 +1,13 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.DateTime;
 
 import com.google.common.collect.ComparisonChain;
+import org.joda.time.DateTime;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ItemRef extends ContentRef implements Comparable<ItemRef> {
 
@@ -24,17 +24,17 @@ public class ItemRef extends ContentRef implements Comparable<ItemRef> {
     public ContentType getContentType() {
         return ContentType.ITEM;
     }
-    
+
     @FieldName("sort_key")
     public String getSortKey() {
         return sortKey;
     }
-    
+
     @FieldName("updated")
     public DateTime getUpdated() {
         return updated;
     }
-    
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -43,18 +43,18 @@ public class ItemRef extends ContentRef implements Comparable<ItemRef> {
         if (that instanceof ItemRef) {
             ItemRef other = (ItemRef) that;
             return id.equals(other.id)
-                && source.equals(other.source)
-                && getContentType().equals(other.getContentType());
+                    && source.equals(other.source)
+                    && getContentType().equals(other.getContentType());
         }
         return false;
     }
 
     @Override
     public int compareTo(ItemRef other) {
-          return ComparisonChain.start()
-              .compare(sortKey, other.sortKey)
-              .compare(id, other.id)
-              .result();
+        return ComparisonChain.start()
+                .compare(sortKey, other.sortKey)
+                .compare(id, other.id)
+                .result();
     }
 
     public ItemRef copy() {

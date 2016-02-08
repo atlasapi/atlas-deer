@@ -1,19 +1,18 @@
 package org.atlasapi.system;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+
 import com.datastax.driver.core.Session;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class HealthController {
@@ -34,7 +33,10 @@ public class HealthController {
         out.print("<html><body>");
         final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
         for (Entry<Thread, StackTraceElement[]> entry : traces.entrySet()) {
-            out.print(String.format("<font color='blue'>Stack trace for thread '%s'</font>:<br/>", entry.getKey().getName()));
+            out.print(String.format(
+                    "<font color='blue'>Stack trace for thread '%s'</font>:<br/>",
+                    entry.getKey().getName()
+            ));
             for (StackTraceElement e : entry.getValue()) {
                 out.print(e.toString() + "<br/>");
             }
@@ -46,7 +48,10 @@ public class HealthController {
 
     @RequestMapping("/system/cassandra")
     public void showCassandraMetrics(HttpServletResponse response) throws IOException {
-        JsonElement json = gson.toJsonTree(cassandra.getCluster().getMetrics().getRegistry().getMetrics());
+        JsonElement json = gson.toJsonTree(cassandra.getCluster()
+                .getMetrics()
+                .getRegistry()
+                .getMetrics());
         response.getWriter().write(gson.toJson(json));
         response.setStatus(200);
         response.flushBuffer();

@@ -1,14 +1,15 @@
 package org.atlasapi.system.legacy;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-
 import org.atlasapi.media.SegmentType;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.Segment;
+
 import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 
 public class LegacySegmentTransformerTest {
 

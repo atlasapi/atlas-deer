@@ -1,20 +1,20 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.serialization.protobuf.ContentProtos;
+
+import com.metabroadcast.common.media.MimeType;
+
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.Duration;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.media.MimeType;
-
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class EncodingSerializerTest {
 
     private final EncodingSerializer serializer = new EncodingSerializer();
-    
+
     @Test
     public void testDeSerializeEncoding() {
         Encoding encoding = new Encoding();
@@ -42,10 +42,10 @@ public class EncodingSerializerTest {
         encoding.setQuality(Quality.SD);
         encoding.setQualityDetail("quality_detail");
         encoding.setDuration(Duration.standardHours(1));
-        
+
         ContentProtos.Encoding serialized = serializer.serialize(encoding).build();
         Encoding deserialized = serializer.deserialize(serialized);
-        
+
         assertThat(deserialized.getAvailableAt().size(), is(1));
         assertThat(deserialized.getAdvertisingDuration(), is(encoding.getAdvertisingDuration()));
         assertThat(deserialized.getAudioBitRate(), is(encoding.getAudioBitRate()));
@@ -70,7 +70,7 @@ public class EncodingSerializerTest {
         assertThat(deserialized.getQuality(), is(encoding.getQuality()));
         assertThat(deserialized.getQualityDetail(), is(encoding.getQualityDetail()));
         assertThat(deserialized.getDuration(), is(encoding.getDuration()));
-        
+
     }
 
 }

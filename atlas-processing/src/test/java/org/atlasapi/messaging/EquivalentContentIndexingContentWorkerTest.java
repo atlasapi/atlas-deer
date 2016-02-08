@@ -1,9 +1,5 @@
 package org.atlasapi.messaging;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.when;
-
 import java.util.List;
 
 import org.atlasapi.content.Content;
@@ -13,6 +9,13 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
+
+import com.metabroadcast.common.time.Timestamp;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
@@ -22,11 +25,9 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.time.Timestamp;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EquivalentContentIndexingContentWorkerTest {
@@ -45,7 +46,11 @@ public class EquivalentContentIndexingContentWorkerTest {
         when(metricRegistry.timer(anyString())).thenReturn(timer);
         when(timer.time()).thenReturn(timerContext);
 
-        worker = new EquivalentContentIndexingContentWorker(contentResolver, contentIndex, metricRegistry);
+        worker = new EquivalentContentIndexingContentWorker(
+                contentResolver,
+                contentIndex,
+                metricRegistry
+        );
     }
 
     @Test
@@ -54,7 +59,12 @@ public class EquivalentContentIndexingContentWorkerTest {
                 "messageId",
                 Timestamp.of(DateTime.now(DateTimeZone.UTC)),
                 111L,
-                new ItemRef(Id.valueOf(222L), Publisher.BBC, "sortKey", DateTime.now(DateTimeZone.UTC))
+                new ItemRef(
+                        Id.valueOf(222L),
+                        Publisher.BBC,
+                        "sortKey",
+                        DateTime.now(DateTimeZone.UTC)
+                )
         );
 
         List<Id> ids = Lists.newArrayList(message.getContentRef().getId());

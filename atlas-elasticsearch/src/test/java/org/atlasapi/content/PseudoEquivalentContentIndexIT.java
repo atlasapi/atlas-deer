@@ -62,13 +62,13 @@ public class PseudoEquivalentContentIndexIT {
                 .thenReturn(Futures.immediateFuture(ImmutableMap.of(3l, 3l)))
                 .thenReturn(
                         Futures.immediateFuture(
-                            ImmutableMap.of(
-                                    1l, 2l,
-                                    2l, 2l,
-                                    3l, 3l
-                            )
-                )
-        );
+                                ImmutableMap.of(
+                                        1l, 2l,
+                                        2l, 2l,
+                                        3l, 3l
+                                )
+                        )
+                );
 
         indexAndRefresh(item1, item2, item3);
 
@@ -79,13 +79,15 @@ public class PseudoEquivalentContentIndexIT {
                 Optional.empty()
         );
 
-        ImmutableList<Id> ids = ImmutableList.copyOf(Futures.get(result, IOException.class).getIds());
+        ImmutableList<Id> ids = ImmutableList.copyOf(Futures.get(result, IOException.class)
+                .getIds());
 
         assertThat(ids, is(ImmutableList.of(Id.valueOf(2l), Id.valueOf(3l))));
     }
 
     @Test
-    public void testRemovesNonActivelyPublishedContent() throws IndexException, ExecutionException, InterruptedException {
+    public void testRemovesNonActivelyPublishedContent()
+            throws IndexException, ExecutionException, InterruptedException {
         when(equivIndex.lookup(anyList()))
                 .thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)))
                 .thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l)))

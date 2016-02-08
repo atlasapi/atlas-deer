@@ -1,11 +1,5 @@
 package org.atlasapi.content;
 
-import static org.elasticsearch.index.query.FilterBuilders.andFilter;
-import static org.elasticsearch.index.query.FilterBuilders.termFilter;
-import static org.elasticsearch.index.query.FilterBuilders.typeFilter;
-import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
-import static org.elasticsearch.index.query.QueryBuilders.topChildrenQuery;
-
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +8,13 @@ import org.atlasapi.EsSchema;
 import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;
 import org.atlasapi.util.FiltersBuilder;
+
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -22,17 +23,15 @@ import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermsFilterBuilder;
-import org.elasticsearch.node.Node;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
+import static org.elasticsearch.index.query.FilterBuilders.andFilter;
+import static org.elasticsearch.index.query.FilterBuilders.termFilter;
+import static org.elasticsearch.index.query.FilterBuilders.typeFilter;
+import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
+import static org.elasticsearch.index.query.QueryBuilders.topChildrenQuery;
 
 public class EsContentTitleSearcher implements ContentTitleSearcher {
 
@@ -49,34 +48,45 @@ public class EsContentTitleSearcher implements ContentTitleSearcher {
         QueryBuilder broadcastQuery = null;
         QueryBuilder contentQuery = null;
 
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(search.getTerm()),
-            "query term null or empty");
+        Preconditions.checkArgument(
+                !Strings.isNullOrEmpty(search.getTerm()),
+                "query term null or empty"
+        );
 
         titleQuery = TitleQueryBuilder.build(search.getTerm(), search.getTitleWeighting());
 
         List<TermsFilterBuilder> filters = new LinkedList<TermsFilterBuilder>();
         if (search.getIncludedPublishers() != null && !search.getIncludedPublishers().isEmpty()) {
-            filters.add(FiltersBuilder.buildForPublishers(EsContent.SOURCE, search.getIncludedPublishers()));
+            filters.add(FiltersBuilder.buildForPublishers(
+                    EsContent.SOURCE,
+                    search.getIncludedPublishers()
+            ));
         }
         if (search.getIncludedSpecializations() != null
-            && !search.getIncludedSpecializations().isEmpty()) {
+                && !search.getIncludedSpecializations().isEmpty()) {
             filters.add(FiltersBuilder.buildForSpecializations(search.getIncludedSpecializations()));
         }
         if (!filters.isEmpty()) {
-            titleQuery = QueryBuilders.filteredQuery(titleQuery,
-                FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()])));
+            titleQuery = QueryBuilders.filteredQuery(
+                    titleQuery,
+                    FilterBuilders.andFilter(filters.toArray(new FilterBuilder[filters.size()]))
+            );
         }
 
         if (search.getBroadcastWeighting() != 0.0f) {
-            broadcastQuery = BroadcastQueryBuilder.build(titleQuery,
-                1f);
+            broadcastQuery = BroadcastQueryBuilder.build(
+                    titleQuery,
+                    1f
+            );
         } else {
             broadcastQuery = titleQuery;
         }
 
         if (search.getCatchupWeighting() != 0.0f) {
-            availabilityQuery = AvailabilityQueryBuilder.build(new Date(),
-                search.getCatchupWeighting());
+            availabilityQuery = AvailabilityQueryBuilder.build(
+                    new Date(),
+                    search.getCatchupWeighting()
+            );
         }
 
         if (availabilityQuery != null) {
@@ -86,27 +96,28 @@ public class EsContentTitleSearcher implements ContentTitleSearcher {
         }
 
         QueryBuilder finalQuery = QueryBuilders.boolQuery()
-            .should(
-                filteredQuery(contentQuery,
-                    andFilter(
-                        typeFilter(EsContent.TOP_LEVEL_ITEM),
-                        termFilter(EsContent.HAS_CHILDREN, Boolean.FALSE)
-                    )
+                .should(
+                        filteredQuery(
+                                contentQuery,
+                                andFilter(
+                                        typeFilter(EsContent.TOP_LEVEL_ITEM),
+                                        termFilter(EsContent.HAS_CHILDREN, Boolean.FALSE)
+                                )
+                        )
                 )
-            )
-            .should(
-                topChildrenQuery(EsContent.CHILD_ITEM, contentQuery)
-                    .score("sum")
-            );
+                .should(
+                        topChildrenQuery(EsContent.CHILD_ITEM, contentQuery)
+                                .score("sum")
+                );
 
         final SettableFuture<SearchResults> result = SettableFuture.create();
         index.prepareSearch(EsSchema.CONTENT_INDEX)
-            .setQuery(finalQuery)
-            .addField(EsContent.ID)
-            .addSort(SortBuilders.scoreSort().order(SortOrder.DESC))
-            .setFrom(search.getSelection().getOffset())
-            .setSize(search.getSelection().limitOrDefaultValue(10))
-            .execute(new SearchResponseListener(result));
+                .setQuery(finalQuery)
+                .addField(EsContent.ID)
+                .addSort(SortBuilders.scoreSort().order(SortOrder.DESC))
+                .setFrom(search.getSelection().getOffset())
+                .setSize(search.getSelection().limitOrDefaultValue(10))
+                .execute(new SearchResponseListener(result));
         return result;
     }
 

@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 import argparse
-import dateutil.parser
 import datetime
+import dateutil.parser
 import httplib
-import sys
 import json
+import sys
 from tabulate import tabulate
 
 arg_parser = argparse.ArgumentParser(description='Compare Atlas schedules.')

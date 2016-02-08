@@ -1,7 +1,5 @@
 package org.atlasapi.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -19,9 +17,12 @@ import org.atlasapi.entity.util.ResolveException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraUtil;
-import org.joda.time.DateTime;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
+
+import com.metabroadcast.common.base.MorePredicates;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.DateTimeZones;
+import com.metabroadcast.common.time.SystemClock;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -36,11 +37,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.base.MorePredicates;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.DateTimeZones;
-import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.Keyspace;
@@ -54,29 +50,33 @@ import com.netflix.astyanax.model.Row;
 import com.netflix.astyanax.model.Rows;
 import com.netflix.astyanax.query.RowSliceQuery;
 import com.netflix.astyanax.serializers.StringSerializer;
+import org.joda.time.DateTime;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Cassandra-based implementation of ScheduleStore.
- * 
- * Schedules are stored in day-long rows. Each row has a column containing all
- * the currently valid broadcast IDs for that day. The entries for a row are
- * stored one per column, identified by broadcast ID.
- * 
- * To update a row the "ids" column is updated and all entries are serialized
- * into their own column. To read a row the "ids" column is de-serialized and
- * used to lookup the relevant columns from the rest of the row. It follows that
- * stale schedule entries remain in their rows but are not read.
- * 
+ * <p>
+ * Schedules are stored in day-long rows. Each row has a column containing all the currently valid
+ * broadcast IDs for that day. The entries for a row are stored one per column, identified by
+ * broadcast ID.
+ * <p>
+ * To update a row the "ids" column is updated and all entries are serialized into their own column.
+ * To read a row the "ids" column is de-serialized and used to lookup the relevant columns from the
+ * rest of the row. It follows that stale schedule entries remain in their rows but are not read.
  */
 public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
 
     private static final String UPDATED_COL = "updated";
     private static final String IDS_COL = "ids";
 
-    public static final Builder builder(AstyanaxContext<Keyspace> context, String name, ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender) {
+    public static final Builder builder(AstyanaxContext<Keyspace> context, String name,
+            ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender) {
         return new Builder(context, name, contentStore, messageSender);
     }
-    
+
     public static final class Builder {
 
         private final AstyanaxContext<Keyspace> context;
@@ -87,14 +87,15 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
         private ConsistencyLevel readCl = ConsistencyLevel.CL_QUORUM;
         private ConsistencyLevel writeCl = ConsistencyLevel.CL_QUORUM;
         private Clock clock = new SystemClock();
-        
-        public Builder(AstyanaxContext<Keyspace> context, String name, ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender) {
+
+        public Builder(AstyanaxContext<Keyspace> context, String name, ContentStore contentStore,
+                MessageSender<ScheduleUpdateMessage> messageSender) {
             this.context = checkNotNull(context);
             this.name = checkNotNull(name);
             this.contentStore = checkNotNull(contentStore);
             this.messageSender = checkNotNull(messageSender);
         }
-        
+
         public Builder withReadConsistency(ConsistencyLevel readLevel) {
             this.readCl = checkNotNull(readLevel);
             return this;
@@ -104,16 +105,24 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
             this.writeCl = checkNotNull(writeLevel);
             return this;
         }
-        
+
         public Builder withClock(Clock clock) {
             this.clock = checkNotNull(clock);
             return this;
         }
-        
+
         public AstyanaxCassandraScheduleStore build() {
-            return new AstyanaxCassandraScheduleStore(context, name, contentStore, messageSender, clock, readCl, writeCl);
+            return new AstyanaxCassandraScheduleStore(
+                    context,
+                    name,
+                    contentStore,
+                    messageSender,
+                    clock,
+                    readCl,
+                    writeCl
+            );
         }
-        
+
     }
 
     private final Keyspace keyspace;
@@ -121,24 +130,30 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
     private final Clock clock;
     private final ConsistencyLevel readCl;
     private final ConsistencyLevel writeCl;
-    
+
     private final ItemAndBroadcastSerializer serializer;
     private final Function<ItemAndBroadcast, String> toBroadacstId = Functions.compose(
             new Function<Broadcast, String>() {
+
                 @Override
                 public String apply(Broadcast input) {
                     return input.getSourceId();
                 }
             }, ItemAndBroadcast.toBroadcast());
 
-
     private AstyanaxCassandraScheduleStore(AstyanaxContext<Keyspace> context, String name,
-                                           ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender, Clock clock,
-                                           ConsistencyLevel readCl, ConsistencyLevel writeCl) {
+            ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender,
+            Clock clock,
+            ConsistencyLevel readCl, ConsistencyLevel writeCl) {
         super(contentStore, messageSender);
-        this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(contentStore)));
+        this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
+                contentStore)));
         this.keyspace = context.getClient();
-        this.cf = ColumnFamily.newColumnFamily(name, StringSerializer.get(), StringSerializer.get());
+        this.cf = ColumnFamily.newColumnFamily(
+                name,
+                StringSerializer.get(),
+                StringSerializer.get()
+        );
         this.clock = clock;
         this.readCl = readCl;
         this.writeCl = writeCl;
@@ -161,11 +176,15 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
     private ListenableFuture<Schedule> resolveSchedule(Publisher source, List<Channel> chans,
             Interval interval) {
         Multimap<Channel, String> channelKeys = keys(chans, interval, source);
-        return Futures.transform(scheduleRows(channelKeys.values()), toChannelSchedules(channelKeys,interval));
+        return Futures.transform(
+                scheduleRows(channelKeys.values()),
+                toChannelSchedules(channelKeys, interval)
+        );
     }
-    
+
     //Expect a maximum of 2 keys per channel as each row is a day and the max interval is one day.
-    private Multimap<Channel, String> keys(List<Channel> channels, Interval interval, Publisher source) {
+    private Multimap<Channel, String> keys(List<Channel> channels, Interval interval,
+            Publisher source) {
         HashMultimap<Channel, String> keys = HashMultimap.create(channels.size(), 2);
         for (final Channel channel : channels) {
             keys.putAll(channel, rowKeys(channel, interval, source));
@@ -175,7 +194,8 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
 
     private Function<Rows<String, String>, Schedule> toChannelSchedules(
             final Multimap<Channel, String> channelKeys, final Interval interval) {
-        return new Function<Rows<String, String>, Schedule>(){
+        return new Function<Rows<String, String>, Schedule>() {
+
             @Override
             public Schedule apply(Rows<String, String> input) {
                 return transformRowsToChannelSchedules(channelKeys, interval, input);
@@ -189,28 +209,39 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
     // have to be filtered.
     private Schedule transformRowsToChannelSchedules(Multimap<Channel, String> channelKeys,
             final Interval interval, final Rows<String, String> rows) {
-        ImmutableList.Builder<ChannelSchedule> schedules = ImmutableList.builder(); 
+        ImmutableList.Builder<ChannelSchedule> schedules = ImmutableList.builder();
         Predicate<Broadcast> filter = Broadcast.intervalFilter(interval);
         for (Entry<Channel, Collection<String>> channelAndKeys : channelKeys.asMap().entrySet()) {
             Channel channel = channelAndKeys.getKey();
             Iterable<ItemAndBroadcast> entries = entries(rows, channelAndKeys.getValue());
-            schedules.add(new ChannelSchedule(channel, interval, ImmutableSet.copyOf(trim(filter, entries))));
+            schedules.add(new ChannelSchedule(
+                    channel,
+                    interval,
+                    ImmutableSet.copyOf(trim(filter, entries))
+            ));
         }
-        return new Schedule(schedules.build(),interval);
+        return new Schedule(schedules.build(), interval);
     }
 
-    private Iterable<ItemAndBroadcast> trim(final Predicate<Broadcast> filter, Iterable<ItemAndBroadcast> entries) {
-        return Iterables.filter(entries, MorePredicates.transformingPredicate(ItemAndBroadcast.toBroadcast(), filter));
+    private Iterable<ItemAndBroadcast> trim(final Predicate<Broadcast> filter,
+            Iterable<ItemAndBroadcast> entries) {
+        return Iterables.filter(
+                entries,
+                MorePredicates.transformingPredicate(ItemAndBroadcast.toBroadcast(), filter)
+        );
     }
 
-    private Iterable<ItemAndBroadcast> entries(final Rows<String, String> rows, Collection<String> keys) {
-        return Iterables.concat(Iterables.transform(keys,
-            new Function<String, Iterable<ItemAndBroadcast>>() {
-                @Override
-                public Iterable<ItemAndBroadcast> apply(String key) {
-                    return deserialize(rows.getRow(key));
+    private Iterable<ItemAndBroadcast> entries(final Rows<String, String> rows,
+            Collection<String> keys) {
+        return Iterables.concat(Iterables.transform(
+                keys,
+                new Function<String, Iterable<ItemAndBroadcast>>() {
+
+                    @Override
+                    public Iterable<ItemAndBroadcast> apply(String key) {
+                        return deserialize(rows.getRow(key));
+                    }
                 }
-            }
         ));
     }
 
@@ -240,8 +271,10 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
                     .prepareQuery(cf)
                     .setConsistencyLevel(readCl)
                     .getKeySlice(keys);
-            return Futures.transform(query.executeAsync(),
-                    CassandraUtil.<Rows<String, String>> toResult());
+            return Futures.transform(
+                    query.executeAsync(),
+                    CassandraUtil.<Rows<String, String>>toResult()
+            );
         } catch (ConnectionException ce) {
             return Futures.immediateFailedCheckedFuture(new ResolveException(ce));
         }
@@ -253,7 +286,10 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
         for (ChannelSchedule block : blocks) {
             ColumnListMutation<String> rowMutation = batch.withRow(cf, key(source, block));
             for (ItemAndBroadcast entry : block.getEntries()) {
-                rowMutation.putColumn(entry.getBroadcast().getSourceId(), serializer.serialize(entry));
+                rowMutation.putColumn(
+                        entry.getBroadcast().getSourceId(),
+                        serializer.serialize(entry)
+                );
             }
             rowMutation.putColumn(IDS_COL, Joiner.on(',').join(broadcastIds(block)));
             rowMutation.putColumn(UPDATED_COL, clock.now().toDate());
@@ -277,13 +313,18 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
         for (LocalDate date : new ScheduleIntervalDates(interval)) {
             DateTime start = date.toDateTimeAtStartOfDay(DateTimeZones.UTC);
             Interval dayInterval = new Interval(start, start.plusDays(1));
-            channelSchedules.add(schedule(channel, dayInterval, rows.getRow(keyFor(source, channel.getId().longValue(), date))));
+            channelSchedules.add(schedule(
+                    channel,
+                    dayInterval,
+                    rows.getRow(keyFor(source, channel.getId().longValue(), date))
+            ));
         }
         return channelSchedules;
     }
 
     @Override
-    protected List<ChannelSchedule> resolveStaleScheduleBlocks(Publisher source, Channel channel, Interval interval) throws WriteException {
+    protected List<ChannelSchedule> resolveStaleScheduleBlocks(Publisher source, Channel channel,
+            Interval interval) throws WriteException {
         Rows<String, String> rows = fetchRows(source, channel, interval);
         List<ChannelSchedule> channelSchedules = Lists.newArrayList();
         for (LocalDate date : new ScheduleIntervalDates(interval)) {
@@ -317,12 +358,16 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
         if (idColumn == null) {
             ids = ImmutableSet.of();
         } else {
-            ids = ImmutableSet.copyOf(Splitter.on(',').omitEmptyStrings().split(idColumn.getStringValue()));
+            ids = ImmutableSet.copyOf(Splitter.on(',')
+                    .omitEmptyStrings()
+                    .split(idColumn.getStringValue()));
         }
 
         ArrayList<ItemAndBroadcast> iabs = Lists.newArrayListWithCapacity(columns.size());
         for (Column<String> column : columns) {
-            if (IDS_COL.equals(column.getName()) || UPDATED_COL.equals(column.getName()) || ids.contains(column.getName())) {
+            if (IDS_COL.equals(column.getName())
+                    || UPDATED_COL.equals(column.getName())
+                    || ids.contains(column.getName())) {
                 continue;
             }
             iabs.add(serializer.deserialize(column.getByteArrayValue()));
@@ -347,22 +392,31 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
     private ChannelSchedule schedule(Channel channel, Interval interval, Row<String, String> row) {
         return new ChannelSchedule(channel, interval, deserialize(row));
     }
-    
+
     private String key(Publisher source, ChannelSchedule block) {
-        return keyFor(source, block.getChannel().getId().longValue(), block.getInterval().getStart().toLocalDate());
+        return keyFor(
+                source,
+                block.getChannel().getId().longValue(),
+                block.getInterval().getStart().toLocalDate()
+        );
     }
-    
+
     private String keyFor(Publisher source, Long channelId, LocalDate day) {
         return String.format("%s-%s-%s", source.key(), channelId, day.toString());
     }
 
-    private Iterable<String> rowKeys(final Channel channel, Interval interval, final Publisher source) {
-        return Iterables.transform(new ScheduleIntervalDates(interval), new Function<LocalDate, String>() {
-            @Override
-            public String apply(LocalDate input) {
-                return keyFor(source, channel.getId().longValue(), input);
-            }
-        });
+    private Iterable<String> rowKeys(final Channel channel, Interval interval,
+            final Publisher source) {
+        return Iterables.transform(
+                new ScheduleIntervalDates(interval),
+                new Function<LocalDate, String>() {
+
+                    @Override
+                    public String apply(LocalDate input) {
+                        return keyFor(source, channel.getId().longValue(), input);
+                    }
+                }
+        );
     }
-    
+
 }

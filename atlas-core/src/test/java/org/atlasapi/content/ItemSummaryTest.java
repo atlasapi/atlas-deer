@@ -1,21 +1,24 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.metabroadcast.common.intl.Countries;
+import java.util.List;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.intl.Countries;
+
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.junit.Test;
-
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 public class ItemSummaryTest {
+
     @Test
     public void testItemSummaryOrdering() {
         ItemSummary itemSummary1 = new ItemSummary(
@@ -63,8 +66,13 @@ public class ItemSummaryTest {
                 ImmutableList.of(new Certificate("PG", Countries.GB))
         );
 
-        List<ItemSummary> itemSummaries = ImmutableList.of(itemSummary1, itemSummary2, itemSummary3, itemSummary4, itemSummary5);
-
+        List<ItemSummary> itemSummaries = ImmutableList.of(
+                itemSummary1,
+                itemSummary2,
+                itemSummary3,
+                itemSummary4,
+                itemSummary5
+        );
 
         for (List<ItemSummary> summaries : Collections2.permutations(itemSummaries)) {
             ImmutableList<ItemSummary> sortedSummaries = summaries
@@ -74,9 +82,11 @@ public class ItemSummaryTest {
             assertThat(sortedSummaries.get(0), sameInstance(itemSummary3));
             assertThat(sortedSummaries.get(1), sameInstance(itemSummary4));
             assertThat(sortedSummaries.get(2), sameInstance(itemSummary5));
-            assertThat(sortedSummaries.subList(3,5), containsInAnyOrder(itemSummary1, itemSummary2));
+            assertThat(
+                    sortedSummaries.subList(3, 5),
+                    containsInAnyOrder(itemSummary1, itemSummary2)
+            );
         }
-
 
     }
 }

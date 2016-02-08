@@ -2,12 +2,11 @@
 
 # ./generate-load-test-urls.py  --number-of-urls=100 --atlas-url=stage.atlas.metabroadcast.com --target-host=host-to-test --api-key=api-key --source=pressassociation.com --num-channels-source=100 --num-channels=10 --platform=hkyn --start-date=2015-02-01 --end-date=2015-02-10
 import argparse
-import dateutil.parser
 import datetime
+import dateutil.parser
 import httplib
 import json
 import random
-
 
 arg_parser = argparse.ArgumentParser(description='Generate URL for load testing')
 

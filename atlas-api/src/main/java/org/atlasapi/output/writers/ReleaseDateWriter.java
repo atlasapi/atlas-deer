@@ -10,7 +10,8 @@ import org.atlasapi.output.OutputContext;
 public final class ReleaseDateWriter implements EntityListWriter<ReleaseDate> {
 
     @Override
-    public void write(ReleaseDate entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ReleaseDate entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
         writer.writeField("release_date", entity.date());
         writer.writeField("country", entity.country());
         writer.writeField("type", entity.type().toString().toLowerCase());

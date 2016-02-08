@@ -1,8 +1,7 @@
 package org.atlasapi.util;
 
-import org.elasticsearch.action.ActionListener;
-
 import com.google.common.util.concurrent.SettableFuture;
+import org.elasticsearch.action.ActionListener;
 
 public final class FutureSettingActionListener<T> implements ActionListener<T> {
 

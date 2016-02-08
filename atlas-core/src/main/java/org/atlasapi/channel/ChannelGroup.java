@@ -1,7 +1,5 @@
 package org.atlasapi.channel;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 
 import org.atlasapi.entity.Id;
@@ -11,11 +9,13 @@ import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.util.ImmutableCollectors;
-import org.joda.time.LocalDate;
 
-import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.intl.Country;
 
+import com.google.common.collect.ImmutableSet;
+import org.joda.time.LocalDate;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelGroup<T extends ChannelGroupMembership> extends Identified implements Sourced {
 

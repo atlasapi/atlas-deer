@@ -11,8 +11,8 @@ public interface DateTimeOperatorVisitor<V> extends EqualsOperatorVisitor<V> {
 
     V visit(After after);
 
-    V visit (Ascending asc);
+    V visit(Ascending asc);
 
-    V visit (Descending desc);
+    V visit(Descending desc);
 
 }

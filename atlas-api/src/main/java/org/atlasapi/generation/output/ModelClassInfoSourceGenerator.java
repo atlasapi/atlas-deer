@@ -10,7 +10,8 @@ import org.atlasapi.generation.model.ModelTypeInfo;
 
 import com.google.common.collect.ImmutableSet;
 
-public class ModelClassInfoSourceGenerator extends AbstractSourceGenerator<ModelTypeInfo, ModelMethodInfo> {
+public class ModelClassInfoSourceGenerator
+        extends AbstractSourceGenerator<ModelTypeInfo, ModelMethodInfo> {
 
     @Override
     public Set<Class<?>> importedClasses() {
@@ -49,12 +50,36 @@ public class ModelClassInfoSourceGenerator extends AbstractSourceGenerator<Model
         setElement.append(indent);
         setElement.append("FieldInfo.builder()\n");
 
-        setElement.append(createBuilderMethod(indent + TAB, "withName", addQuotesToString(method.name())));
-        setElement.append(createBuilderMethod(indent + TAB, "withDescription", addQuotesToString(method.description())));
-        setElement.append(createBuilderMethod(indent + TAB, "withType", addQuotesToString(method.type())));
-        setElement.append(createBuilderMethod(indent + TAB, "withIsMultiple", method.isMultiple().toString()));
-        setElement.append(createBuilderMethod(indent + TAB, "withIsModelType", method.isModelType().toString()));
-        setElement.append(createBuilderMethod(indent + TAB, "withJsonType", "JsonType." + method.jsonType().name()));
+        setElement.append(createBuilderMethod(
+                indent + TAB,
+                "withName",
+                addQuotesToString(method.name())
+        ));
+        setElement.append(createBuilderMethod(
+                indent + TAB,
+                "withDescription",
+                addQuotesToString(method.description())
+        ));
+        setElement.append(createBuilderMethod(
+                indent + TAB,
+                "withType",
+                addQuotesToString(method.type())
+        ));
+        setElement.append(createBuilderMethod(
+                indent + TAB,
+                "withIsMultiple",
+                method.isMultiple().toString()
+        ));
+        setElement.append(createBuilderMethod(
+                indent + TAB,
+                "withIsModelType",
+                method.isModelType().toString()
+        ));
+        setElement.append(createBuilderMethod(
+                indent + TAB,
+                "withJsonType",
+                "JsonType." + method.jsonType().name()
+        ));
 
         setElement.append(indent + TAB);
         setElement.append(".build()");

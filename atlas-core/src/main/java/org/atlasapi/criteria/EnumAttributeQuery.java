@@ -20,18 +20,18 @@ import org.atlasapi.criteria.operator.EqualsOperatorVisitor;
 
 public class EnumAttributeQuery<T extends Enum<T>> extends AttributeQuery<T> {
 
-	private final EqualsOperator op;
+    private final EqualsOperator op;
 
-	public EnumAttributeQuery(Attribute<T> attribute, EqualsOperator op,  Iterable<T> values) {
-		super(attribute, op, values);
-		this.op = op;
-	}
+    public EnumAttributeQuery(Attribute<T> attribute, EqualsOperator op, Iterable<T> values) {
+        super(attribute, op, values);
+        this.op = op;
+    }
 
-	public <V> V accept(QueryVisitor<V> v) {
-		return v.visit(this);
-	}
-	
-	public <V> V accept(EqualsOperatorVisitor<V> v) {
-		return op.accept(v);
-	}
+    public <V> V accept(QueryVisitor<V> v) {
+        return v.visit(this);
+    }
+
+    public <V> V accept(EqualsOperatorVisitor<V> v) {
+        return op.accept(v);
+    }
 }

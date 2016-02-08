@@ -1,15 +1,16 @@
 package org.atlasapi.output.writers;
 
+import java.io.IOException;
+
+import javax.annotation.Nonnull;
+
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.License;
 import org.atlasapi.output.OutputContext;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-
 public class LicenseWriter implements EntityWriter<Object> {
-    
+
     private final License license;
 
     public LicenseWriter(License license) {
@@ -17,7 +18,8 @@ public class LicenseWriter implements EntityWriter<Object> {
     }
 
     @Override
-    public void write(@Nonnull Object object, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull Object object, @Nonnull FieldWriter writer,
+            @Nonnull OutputContext ctxt) throws IOException {
         writer.writeField("text", license.getText());
     }
 
