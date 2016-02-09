@@ -85,13 +85,14 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(
-                METABROADCAST,
-                start,
-                end,
-                QueryContext.standard(mock(HttpServletRequest.class)),
-                channel.getId()
-        );
+
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withId(channel.getId())
+                .build();
 
         ChannelSchedule channelSchedule = new ChannelSchedule(
                 channel,
@@ -131,13 +132,14 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
         List<Id> cids = ImmutableList.of(channelOne.getId(), channelTwo.getId());
-        ScheduleQuery query = ScheduleQuery.multi(
-                METABROADCAST,
-                start,
-                end,
-                QueryContext.standard(mock(HttpServletRequest.class)),
-                cids
-        );
+
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withIds(cids)
+                .build();
 
         ChannelSchedule cs1 = new ChannelSchedule(
                 channelOne,
@@ -179,13 +181,14 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(
-                METABROADCAST,
-                start,
-                end,
-                QueryContext.standard(mock(HttpServletRequest.class)),
-                Id.valueOf(1)
-        );
+
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withId(Id.valueOf(1))
+                .build();
 
         try {
             executor.execute(query);
@@ -233,13 +236,13 @@ public class ScheduleResolverBackedScheduleQueryExecutorTest {
                 )
         ));
 
-        ScheduleQuery query = ScheduleQuery.single(
-                METABROADCAST,
-                start,
-                end,
-                context,
-                channel.getId()
-        );
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(context)
+                .withId(channel.getId())
+                .build();
 
         Item equivalentItem = new Item(itemId, METABROADCAST);
         when(channelResolver.resolveIds(argThat(org.hamcrest.Matchers.<Id>iterableWithSize(1))))

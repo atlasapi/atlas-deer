@@ -93,13 +93,14 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(
-                METABROADCAST,
-                start,
-                end,
-                QueryContext.standard(mock(HttpServletRequest.class)),
-                channel.getId()
-        );
+
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withId(channel.getId())
+                .build();
 
         EquivalentChannelSchedule channelSchedule = new EquivalentChannelSchedule(
                 channel,
@@ -140,13 +141,14 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
         List<Id> cids = ImmutableList.of(channelOne.getId(), channelTwo.getId());
-        ScheduleQuery query = ScheduleQuery.multi(
-                METABROADCAST,
-                start,
-                end,
-                QueryContext.standard(mock(HttpServletRequest.class)),
-                cids
-        );
+
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withIds(cids)
+                .build();
 
         EquivalentChannelSchedule cs1 = new EquivalentChannelSchedule(
                 channelOne,
@@ -191,13 +193,14 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        ScheduleQuery query = ScheduleQuery.single(
-                METABROADCAST,
-                start,
-                end,
-                QueryContext.standard(mock(HttpServletRequest.class)),
-                Id.valueOf(1)
-        );
+
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withId(Id.valueOf(1))
+                .build();
 
         try {
             executor.execute(query);
@@ -257,7 +260,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
                 ImmutableList.of(
                         new EquivalentScheduleEntry(
                                 originalBroadcast,
-                                new Equivalent<Item>(
+                                new Equivalent<>(
                                         EquivalenceGraph.valueOf(scheduleItem.toRef()),
                                         ImmutableList.of(scheduleItem, equivalentItem)
                                 )
@@ -265,15 +268,15 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
                 )
         );
 
-        ScheduleQuery query = ScheduleQuery.single(
-                METABROADCAST,
-                start,
-                end,
-                context,
-                channel.getId()
-        );
+        ScheduleQuery query = ScheduleQuery.builder()
+                .withSource(METABROADCAST)
+                .withStart(start)
+                .withEnd(end)
+                .withContext(context)
+                .withId(channel.getId())
+                .build();
 
-        when(channelResolver.resolveIds(argThat(org.hamcrest.Matchers.<Id>iterableWithSize(1))))
+        when(channelResolver.resolveIds(argThat(org.hamcrest.Matchers.iterableWithSize(1))))
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(channel))));
         when(scheduleResolver.resolveSchedules(argThat(hasItems(channel)),
                 eq(interval),
@@ -283,7 +286,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutorTest {
                 .thenReturn(Futures.immediateFuture(new EquivalentSchedule(ImmutableList.of(
                         channelSchedule), interval)));
         when(equivalentsMerger.merge(
-                Optional.<Id>absent(),
+                Optional.absent(),
                 ImmutableSet.of(scheduleItem, equivalentItem),
                 appSources
         ))
