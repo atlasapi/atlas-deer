@@ -10,8 +10,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 
-
 public interface SecondaryIndex {
+
     Statement insertStatement(Long key, Long value);
 
     List<Statement> insertStatements(Iterable<Long> keys, Long value);

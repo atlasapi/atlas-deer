@@ -4,14 +4,16 @@ import java.util.Collection;
 
 import org.atlasapi.media.entity.Publisher;
 
+import com.metabroadcast.common.base.MorePredicates;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.metabroadcast.common.base.MorePredicates;
 
 public final class Sourceds {
 
-    private Sourceds() { }
+    private Sourceds() {
+    }
 
     public static final Function<Sourced, Publisher> toPublisher() {
         return ToSourceFunction.INSTANCE;
@@ -32,9 +34,9 @@ public final class Sourceds {
         }
 
     }
-    
+
     public static <S extends Sourced> Predicate<S> sourceFilter(Collection<Publisher> sources) {
         return MorePredicates.transformingPredicate(toPublisher(), Predicates.in(sources));
     }
-    
+
 }

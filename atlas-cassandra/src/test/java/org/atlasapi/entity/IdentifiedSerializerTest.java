@@ -1,28 +1,28 @@
 package org.atlasapi.entity;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
+import com.metabroadcast.common.time.DateTimeZones;
+
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.time.DateTimeZones;
-
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class IdentifiedSerializerTest {
 
     private final IdentifiedSerializer<Identified> serializer = new IdentifiedSerializer<>();
-    
+
     @Test
     public void testDeSerializeIdentified() {
         Identified identified = getIdentified();
-        
+
         CommonProtos.Identification serialized = serializer.serialize(identified);
-        
+
         Identified deserialized = serializer.deserialize(serialized, new Identified());
 
         checkIdentified(identified, deserialized);

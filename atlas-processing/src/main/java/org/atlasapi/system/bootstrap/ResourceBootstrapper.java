@@ -1,19 +1,18 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Predicates.notNull;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.ResourceLister;
-import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Predicates.notNull;
 
 public class ResourceBootstrapper<T extends Identifiable> {
 
@@ -31,12 +30,12 @@ public class ResourceBootstrapper<T extends Identifiable> {
 
     private ResourceLister<T> lister;
     private final int batchSize;
-    
+
     public ResourceBootstrapper(ResourceLister<T> lister) {
         this.lister = lister;
         batchSize = 100;
     }
-    
+
     public boolean loadAllIntoListener(BootstrapListener<? super T> listener) {
         if (bootstrapLock.tryLock()) {
             try {
@@ -70,7 +69,7 @@ public class ResourceBootstrapper<T extends Identifiable> {
             return false;
         }
     }
-    
+
     public boolean isBootstrapping() {
         return bootstrapping;
     }
@@ -82,7 +81,7 @@ public class ResourceBootstrapper<T extends Identifiable> {
     public String getLastStatus() {
         return lastStatus.get();
     }
-    
+
     private int bootstrapResource(final BootstrapListener<? super T> listener) {
         int processed = 0;
         Iterable<List<T>> partitioned = Iterables.partition(lister.list(), batchSize);
@@ -101,5 +100,5 @@ public class ResourceBootstrapper<T extends Identifiable> {
     public Exception getLastException() {
         return lastException.get();
     }
-    
+
 }

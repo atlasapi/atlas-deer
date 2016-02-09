@@ -1,28 +1,26 @@
 package org.atlasapi.output.writers;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import org.atlasapi.content.Content;
+import java.io.IOException;
+
+import javax.annotation.Nonnull;
+
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.util.ImmutableCollectors;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SeriesWriter implements EntityListWriter<SeriesRef> {
-
 
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ContentResolver contentResolver;
@@ -39,11 +37,11 @@ public class SeriesWriter implements EntityListWriter<SeriesRef> {
         writer.writeField("series_number", entity.getSeriesNumber());
         writer.writeField("type", entity.getContentType());
 
-//        Resolved<Content> resolved =
-//                Futures.get(contentResolver.resolveIds(ImmutableList.of(entity.getId())), IOException.class);
-//        Series series = (Series) resolved.getResources().first().get();
-//
-//        writer.writeList("release_years", "release_year", aggregateReleaseYears(series), ctxt);
+        //        Resolved<Content> resolved =
+        //                Futures.get(contentResolver.resolveIds(ImmutableList.of(entity.getId())), IOException.class);
+        //        Series series = (Series) resolved.getResources().first().get();
+        //
+        //        writer.writeList("release_years", "release_year", aggregateReleaseYears(series), ctxt);
     }
 
     private Iterable<Integer> aggregateReleaseYears(Series series) {
@@ -54,8 +52,8 @@ public class SeriesWriter implements EntityListWriter<SeriesRef> {
 
         return Sets.union(
                 childReleaseYears, series.getYear() != null ?
-                        ImmutableSet.of(series.getYear()) :
-                        ImmutableSet.of()
+                                   ImmutableSet.of(series.getYear()) :
+                                   ImmutableSet.of()
         );
     }
 

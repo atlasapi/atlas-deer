@@ -1,11 +1,5 @@
 package org.atlasapi.event;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.nio.ByteBuffer;
 
 import org.atlasapi.entity.Id;
@@ -16,6 +10,12 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class DatastaxProtobufEventMarshaller implements EventMarshaller<BatchStatement, Row> {
 
     private static final String TABLE = "event";
@@ -25,7 +25,8 @@ public class DatastaxProtobufEventMarshaller implements EventMarshaller<BatchSta
     private final Serializer<Event, byte[]> serializer;
     private final PreparedStatement dataUpdate;
 
-    protected DatastaxProtobufEventMarshaller(Serializer<Event, byte[]> serialiser, Session session) {
+    protected DatastaxProtobufEventMarshaller(Serializer<Event, byte[]> serialiser,
+            Session session) {
         this.serializer = checkNotNull(serialiser);
         this.dataUpdate = session.prepare(update(TABLE)
                 .where(eq(PRIMARY_KEY_COLUMN, bindMarker("id")))
@@ -44,8 +45,10 @@ public class DatastaxProtobufEventMarshaller implements EventMarshaller<BatchSta
     }
 
     protected void addDataToBatch(BatchStatement mutation, Id id, byte[] data) {
-        mutation.add(dataUpdate.bind().setLong("id", id.longValue()).setBytes("data",
-                ByteBuffer.wrap(data)));
+        mutation.add(dataUpdate.bind().setLong("id", id.longValue()).setBytes(
+                "data",
+                ByteBuffer.wrap(data)
+        ));
     }
 
     protected byte[] toByteArrayValues(Row row) {

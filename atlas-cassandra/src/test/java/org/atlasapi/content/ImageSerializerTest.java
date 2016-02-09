@@ -1,26 +1,26 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.content.Image.AspectRatio;
 import org.atlasapi.content.Image.Builder;
 import org.atlasapi.content.Image.Color;
 import org.atlasapi.content.Image.Theme;
 import org.atlasapi.content.Image.Type;
+
+import com.metabroadcast.common.media.MimeType;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
-import com.metabroadcast.common.media.MimeType;
-
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class ImageSerializerTest {
 
     private final ImageSerializer serializer = new ImageSerializer();
-    
+
     @Test
     public void testImageSerializationAndDeserialization() {
         Image image = getImage();
@@ -33,9 +33,25 @@ public class ImageSerializerTest {
     public Image getImage() {
         Builder builder = Image.builder("http://example.org/");
         builder.withAspectRatio(AspectRatio.FOUR_BY_THREE);
-        builder.withAvailabilityEnd(new DateTime(2014, DateTimeConstants.JANUARY, 1, 0, 0, 0, 0).withZone(
+        builder.withAvailabilityEnd(new DateTime(
+                2014,
+                DateTimeConstants.JANUARY,
+                1,
+                0,
+                0,
+                0,
+                0
+        ).withZone(
                 DateTimeZone.UTC));
-        builder.withAvailabilityStart(new DateTime(2013, DateTimeConstants.JANUARY, 1, 0, 0, 0, 0).withZone(DateTimeZone.UTC));
+        builder.withAvailabilityStart(new DateTime(
+                2013,
+                DateTimeConstants.JANUARY,
+                1,
+                0,
+                0,
+                0,
+                0
+        ).withZone(DateTimeZone.UTC));
         builder.withColor(Color.BLACK_AND_WHITE);
         builder.withHasTitleArt(false);
         builder.withHeight(123);

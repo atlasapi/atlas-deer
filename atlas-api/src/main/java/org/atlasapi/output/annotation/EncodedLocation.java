@@ -1,10 +1,9 @@
 package org.atlasapi.output.annotation;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Location;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EncodedLocation {
 
@@ -19,7 +18,7 @@ public class EncodedLocation {
     public Encoding getEncoding() {
         return this.encoding;
     }
-    
+
     public Location getLocation() {
         return this.location;
     }

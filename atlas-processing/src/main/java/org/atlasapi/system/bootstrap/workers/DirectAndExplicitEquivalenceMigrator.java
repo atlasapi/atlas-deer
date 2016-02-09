@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -17,8 +15,6 @@ import org.atlasapi.media.entity.LookupRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -29,6 +25,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DirectAndExplicitEquivalenceMigrator {
 
@@ -40,7 +40,7 @@ public class DirectAndExplicitEquivalenceMigrator {
     private final EquivalenceGraphStore graphStore;
 
     public DirectAndExplicitEquivalenceMigrator(ContentResolver legacyResolver,
-                                                LookupEntryStore legacyEquivalenceStore, EquivalenceGraphStore graphStore) {
+            LookupEntryStore legacyEquivalenceStore, EquivalenceGraphStore graphStore) {
         this.legacyResolver = checkNotNull(legacyResolver);
         this.legacyEquivalenceStore = checkNotNull(legacyEquivalenceStore);
         this.graphStore = checkNotNull(graphStore);
@@ -50,14 +50,19 @@ public class DirectAndExplicitEquivalenceMigrator {
         try {
             Id contentId = ref.getId();
             LookupEntry legacyLookupEntry = resolveLegacyEquivalents(contentId);
-            Set<LookupRef> legacyEquivRefs = Sets.union(legacyLookupEntry.explicitEquivalents(), legacyLookupEntry.directEquivalents());
+            Set<LookupRef> legacyEquivRefs = Sets.union(
+                    legacyLookupEntry.explicitEquivalents(),
+                    legacyLookupEntry.directEquivalents()
+            );
             if (!legacyEquivRefs.isEmpty()) {
                 log.debug("Resolved {} legacy explicit equiv refs for {}",
-                        legacyEquivRefs.size(), contentId);
+                        legacyEquivRefs.size(), contentId
+                );
                 log.trace("Legacy explicit refs for {} resolved as {}", contentId, legacyEquivRefs);
                 Set<ResourceRef> equivRefs = resolveLegacyContent(legacyEquivRefs);
                 log.debug("Dereferenced {} of {} explicit equivalents for {}",
-                        equivRefs.size(), legacyEquivRefs.size(), contentId);
+                        equivRefs.size(), legacyEquivRefs.size(), contentId
+                );
                 Optional<EquivalenceGraphUpdate> graphUpdate = updateGraphStore(ref, equivRefs);
                 log.debug("Updated graph store for {}? {}", contentId, graphUpdate.isPresent());
                 if (graphUpdate.isPresent()) {
@@ -79,11 +84,15 @@ public class DirectAndExplicitEquivalenceMigrator {
                 .transform(LookupRef.TO_ID)
                 .transform(Id.fromLongValue())
                 .toSet();
-        Resolved<Content> contentResolved = Futures.get(legacyResolver.resolveIds(ids), ExecutionException.class);
+        Resolved<Content> contentResolved = Futures.get(
+                legacyResolver.resolveIds(ids),
+                ExecutionException.class
+        );
         return contentResolved.getResources().transform(TO_RESOURCE_REF).toSet();
     }
 
-    private Optional<EquivalenceGraphUpdate> updateGraphStore(ResourceRef ref, Set<ResourceRef> refs)
+    private Optional<EquivalenceGraphUpdate> updateGraphStore(ResourceRef ref,
+            Set<ResourceRef> refs)
             throws WriteException {
         return graphStore.updateEquivalences(ref, refs, Publisher.all());
     }

@@ -1,7 +1,5 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,6 +12,8 @@ import org.atlasapi.entity.Id;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class StandardQueryParser<T> implements QueryParser<T> {
 
     private final NumberToShortStringCodec idCodec;
@@ -24,9 +24,12 @@ public class StandardQueryParser<T> implements QueryParser<T> {
     private final AbstractRequestParameterValidator parameterValidator;
 
     public StandardQueryParser(Resource resource, QueryAttributeParser attributeParser,
-                            NumberToShortStringCodec idCodec,
-                            QueryContextParser contextParser) {
-        this.parameterValidator = new QueryRequestParameterValidator(attributeParser, contextParser);
+            NumberToShortStringCodec idCodec,
+            QueryContextParser contextParser) {
+        this.parameterValidator = new QueryRequestParameterValidator(
+                attributeParser,
+                contextParser
+        );
         this.attributeParser = checkNotNull(attributeParser);
         this.contextParser = checkNotNull(contextParser);
         this.idCodec = checkNotNull(idCodec);
@@ -34,10 +37,11 @@ public class StandardQueryParser<T> implements QueryParser<T> {
     }
 
     @Override
-    public Query<T> parse(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public Query<T> parse(HttpServletRequest request)
+            throws QueryParseException, InvalidApiKeyException {
         parameterValidator.validateParameters(request);
         Id singleId = tryExtractSingleId(request);
-        return singleId != null ? singleQuery(request, singleId) 
+        return singleId != null ? singleQuery(request, singleId)
                                 : listQuery(request);
     }
 
@@ -45,20 +49,24 @@ public class StandardQueryParser<T> implements QueryParser<T> {
         Matcher matcher = singleResourcePattern.matcher(request.getRequestURI());
         try {
             return matcher.find() ? Id.valueOf(idCodec.decode(matcher.group(1)))
-                    : null;
+                                  : null;
         } catch (IllegalArgumentException e) {
             throw new InvalidIdentifierException(e.getMessage(), e);
         }
     }
-    
-    private Query<T> singleQuery(HttpServletRequest request, Id singleId) throws QueryParseException, InvalidApiKeyException {
+
+    private Query<T> singleQuery(HttpServletRequest request, Id singleId)
+            throws QueryParseException, InvalidApiKeyException {
         return Query.singleQuery(singleId, contextParser.parseSingleContext(request));
     }
 
-    private Query<T> listQuery(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    private Query<T> listQuery(HttpServletRequest request)
+            throws QueryParseException, InvalidApiKeyException {
         AttributeQuerySet querySet = attributeParser.parse(request);
-        return Query.listQuery(querySet,
-            contextParser.parseListContext(request));
+        return Query.listQuery(
+                querySet,
+                contextParser.parseListContext(request)
+        );
     }
-    
+
 }

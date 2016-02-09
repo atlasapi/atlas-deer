@@ -15,7 +15,7 @@ public abstract class ContentRef extends ResourceRef {
     }
 
     public abstract ContentType getContentType();
-    
+
     @FieldName("resource_type")
     @Override
     public final ResourceType getResourceType() {
@@ -25,5 +25,5 @@ public abstract class ContentRef extends ResourceRef {
     protected ToStringHelper toStringHelper() {
         return super.toStringHelper().add("type", getContentType());
     }
-    
+
 }

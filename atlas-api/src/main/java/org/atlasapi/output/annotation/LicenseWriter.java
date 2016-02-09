@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-
 public class LicenseWriter extends OutputAnnotation<Object> {
 
     public LicenseWriter() {

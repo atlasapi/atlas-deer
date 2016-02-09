@@ -1,15 +1,17 @@
 package org.atlasapi.channel;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.metabroadcast.common.intl.Country;
+import java.util.Set;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
-import java.util.Set;
+import com.metabroadcast.common.intl.Country;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,10 +45,11 @@ public class Region extends NumberedChannelGroup {
     }
 
     public static class Builder {
+
         private Id id;
         private Publisher publisher;
         private Set<ChannelNumbering> channels = Sets.newHashSet();
-        private Set<Country> availableCountries= Sets.newHashSet();
+        private Set<Country> availableCountries = Sets.newHashSet();
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private ChannelGroupRef platformRef;
         private Set<Alias> aliases = Sets.newHashSet();
@@ -54,6 +57,7 @@ public class Region extends NumberedChannelGroup {
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
         }
+
         public Builder withId(Long id) {
             this.id = Id.valueOf(id);
             return this;
@@ -75,7 +79,7 @@ public class Region extends NumberedChannelGroup {
         }
 
         public Builder withPlaformId(Long platformId) {
-            if(platformId != null) {
+            if (platformId != null) {
                 this.platformRef = new ChannelGroupRef(
                         Id.valueOf(platformId),
                         publisher
@@ -88,7 +92,6 @@ public class Region extends NumberedChannelGroup {
             Iterables.addAll(this.aliases, aliases);
             return this;
         }
-
 
         public Region build() {
             Region region = new Region(

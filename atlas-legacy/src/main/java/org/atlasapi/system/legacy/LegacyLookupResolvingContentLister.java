@@ -1,7 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Iterator;
 
 import org.atlasapi.media.entity.Content;
@@ -13,9 +11,12 @@ import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
+import com.metabroadcast.common.base.Maybe;
+
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.metabroadcast.common.base.Maybe;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LegacyLookupResolvingContentLister implements LegacyContentLister {
 

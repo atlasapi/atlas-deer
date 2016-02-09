@@ -4,6 +4,6 @@ import org.atlasapi.entity.util.WriteResult;
 
 public interface TopicWriter {
 
-    WriteResult<Topic,Topic> writeTopic(Topic topic);
+    WriteResult<Topic, Topic> writeTopic(Topic topic);
 
 }

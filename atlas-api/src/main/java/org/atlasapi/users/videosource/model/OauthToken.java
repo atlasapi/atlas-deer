@@ -94,7 +94,8 @@ public class OauthToken {
             Preconditions.checkNotNull(idToken);
             Preconditions.checkNotNull(refreshToken);
             return new OauthToken(accessToken, tokenType,
-                    expiresIn, idToken, refreshToken);
+                    expiresIn, idToken, refreshToken
+            );
         }
     }
 

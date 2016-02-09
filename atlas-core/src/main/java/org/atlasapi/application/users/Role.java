@@ -5,5 +5,5 @@ public enum Role {
     ADMIN,
     SOURCE,
     REGULAR
-    
+
 }

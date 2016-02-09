@@ -2,20 +2,14 @@ package org.atlasapi.channel;
 
 import com.google.common.collect.Ordering;
 
-import javax.annotation.Nullable;
-
 /**
- *
  * @author Oliver Hall
- *
- * Ordering for Channel Numbering Objects in the simple model.
- * This is required due to channel numbers being represented as Strings, and
- * orders non-zero prefixed numerical strings first (in numerical order),
- * followed by zero prefixed numerical strings (in numerical order), followed
- * by Numberings with a null channel number.
- * This is needed for Platforms such as Sky, which includes both channel
- * numbers '101' and '0101'.
- *
+ *         <p>
+ *         Ordering for Channel Numbering Objects in the simple model. This is required due to
+ *         channel numbers being represented as Strings, and orders non-zero prefixed numerical
+ *         strings first (in numerical order), followed by zero prefixed numerical strings (in
+ *         numerical order), followed by Numberings with a null channel number. This is needed for
+ *         Platforms such as Sky, which includes both channel numbers '101' and '0101'.
  */
 public class ChannelNumberingOrdering extends Ordering<ChannelNumbering> {
 

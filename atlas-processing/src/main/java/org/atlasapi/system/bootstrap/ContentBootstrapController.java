@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -30,13 +28,8 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.ProgressStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+
+import com.metabroadcast.common.base.Maybe;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -48,7 +41,15 @@ import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.base.Maybe;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class ContentBootstrapController {
@@ -111,11 +112,12 @@ public class ContentBootstrapController {
         Runnable listener;
         if (Boolean.TRUE.equals(migrateEquivalents)) {
             listener = bootstrappingRunnable(contentAndEquivalentsBootstrapListener,
-                    source, progress);
-        }
-        else {
+                    source, progress
+            );
+        } else {
             listener = bootstrappingRunnable(contentBootstrapListener,
-                    source, progress);
+                    source, progress
+            );
         }
         executorService.execute(listener);
 
@@ -132,7 +134,7 @@ public class ContentBootstrapController {
             HttpServletResponse resp) {
         Set<Publisher> excludedSources = ImmutableSet.of();
 
-        if(excludedSourcesString != null && !excludedSourcesString.trim().isEmpty()) {
+        if (excludedSourcesString != null && !excludedSourcesString.trim().isEmpty()) {
             excludedSources = ImmutableSet.copyOf(Publisher.fromCsv(excludedSourcesString));
         }
 
@@ -149,7 +151,8 @@ public class ContentBootstrapController {
     }
 
     @RequestMapping(value = "/system/count/nonGenerics", method = RequestMethod.POST)
-    public void countContent(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
+    public void countContent(@RequestParam("source") final String sourceString,
+            HttpServletResponse resp) {
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
         java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
@@ -158,9 +161,13 @@ public class ContentBootstrapController {
     }
 
     @RequestMapping(value = "/system/bootstrap/content", method = RequestMethod.POST)
-    public void bootstrapContent(@RequestParam("id") final String id, final HttpServletResponse resp) throws IOException {
+    public void bootstrapContent(@RequestParam("id") final String id,
+            final HttpServletResponse resp) throws IOException {
         log.info("Bootstrapping: {}", id);
-        Identified identified = Iterables.getOnlyElement(resolve(ImmutableList.of(Id.valueOf(id))), null);
+        Identified identified = Iterables.getOnlyElement(
+                resolve(ImmutableList.of(Id.valueOf(id))),
+                null
+        );
         log.info("Bootstrapping: {} {}", id, identified);
         if (!(identified instanceof Content)) {
             resp.sendError(500, "Resolved not content");
@@ -168,13 +175,11 @@ public class ContentBootstrapController {
         }
         Content content = (Content) identified;
 
-
         ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
 
-        if(result.isSucceeded()) {
+        if (result.isSucceeded()) {
             resp.setStatus(HttpStatus.OK.value());
-        }
-        else {
+        } else {
             resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
 
@@ -183,7 +188,8 @@ public class ContentBootstrapController {
     }
 
     @RequestMapping(value = "/system/index/source", method = RequestMethod.POST)
-    public void indexSource(@RequestParam("source") final String sourceString, HttpServletResponse resp) {
+    public void indexSource(@RequestParam("source") final String sourceString,
+            HttpServletResponse resp) {
         ContentVisitorAdapter<Class<Void>> visitor = contentIndexingVisitor();
         log.info("Bootstrapping source: {}", sourceString);
         Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
@@ -201,13 +207,21 @@ public class ContentBootstrapController {
         }
     }
 
-    private Runnable bootstrappingRunnable(ContentVisitorAdapter<?> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress) {
+    private Runnable bootstrappingRunnable(ContentVisitorAdapter<?> visitor, Publisher source,
+            java.util.Optional<ContentListingProgress> progress) {
         FluentIterable<Content> contentIterator;
         if (progress.isPresent()) {
-            log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
+            log.info(
+                    "Starting bootstrap of {} from Content {}",
+                    source.toString(),
+                    progress.get().getUri()
+            );
             contentIterator = contentLister.list(ImmutableList.of(source), progress.get());
         } else {
-            log.info("Starting bootstrap of {} the start, no existing progress found", source.toString());
+            log.info(
+                    "Starting bootstrap of {} the start, no existing progress found",
+                    source.toString()
+            );
             contentIterator = contentLister.list(ImmutableList.of(source));
         }
         return () ->
@@ -236,7 +250,10 @@ public class ContentBootstrapController {
                             );
                             c.accept(visitor);
                             if (count % 10000 == 0) {
-                                progressStore.storeProgress(source.toString(), progressFrom(c, source));
+                                progressStore.storeProgress(
+                                        source.toString(),
+                                        progressFrom(c, source)
+                                );
                             }
                             time.stop();
                         }
@@ -247,13 +264,21 @@ public class ContentBootstrapController {
         };
     }
 
-    private Runnable contentCountingRunnable(Publisher source, java.util.Optional<ContentListingProgress> progress) {
+    private Runnable contentCountingRunnable(Publisher source,
+            java.util.Optional<ContentListingProgress> progress) {
         FluentIterable<Content> contentIterator;
         if (progress.isPresent()) {
-            log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
+            log.info(
+                    "Starting bootstrap of {} from Content {}",
+                    source.toString(),
+                    progress.get().getUri()
+            );
             contentIterator = contentLister.list(ImmutableList.of(source), progress.get());
         } else {
-            log.info("Starting bootstrap of {} the start, no existing progress found", source.toString());
+            log.info(
+                    "Starting bootstrap of {} the start, no existing progress found",
+                    source.toString()
+            );
             contentIterator = contentLister.list(ImmutableList.of(source));
         }
         return () -> {
@@ -271,22 +296,31 @@ public class ContentBootstrapController {
                 executor.execute(() -> {
                     if (content.isGenericDescription() != null && content.isGenericDescription()) {
                         if (genericCount.incrementAndGet() % 1000 == 0) {
-                            log.info("Found {} PA items with generic descriptions", Integer.valueOf(genericCount.get()));
+                            log.info(
+                                    "Found {} PA items with generic descriptions",
+                                    Integer.valueOf(genericCount.get())
+                            );
                         }
                     }
                     if (progressCount.incrementAndGet() % 1000 == 0) {
                         log.info("Processed {} PA items", Integer.valueOf(progressCount.get()));
-                        progressStore.storeProgress(source.toString(), progressFrom(content, source));
+                        progressStore.storeProgress(
+                                source.toString(),
+                                progressFrom(content, source)
+                        );
                     }
                 });
             }
-            log.info("Found a total of {} PA items with generic descriptions", Integer.valueOf(genericCount.get()));
+            log.info(
+                    "Found a total of {} PA items with generic descriptions",
+                    Integer.valueOf(genericCount.get())
+            );
         };
     }
 
-
     public ContentVisitorAdapter<Class<Void>> contentIndexingVisitor() {
         return new ContentVisitorAdapter<Class<Void>>() {
+
             @Override
             protected Class<Void> visitItem(Item item) {
                 try {
@@ -309,13 +343,21 @@ public class ContentBootstrapController {
         };
     }
 
-    private Runnable indexingRunnable(ContentVisitorAdapter<Class<Void>> visitor, Publisher source, java.util.Optional<ContentListingProgress> progress) {
+    private Runnable indexingRunnable(ContentVisitorAdapter<Class<Void>> visitor, Publisher source,
+            java.util.Optional<ContentListingProgress> progress) {
         FluentIterable<Content> contentIterator;
         if (progress.isPresent()) {
-            log.info("Starting bootstrap of {} from Content {}", source.toString(), progress.get().getUri());
+            log.info(
+                    "Starting bootstrap of {} from Content {}",
+                    source.toString(),
+                    progress.get().getUri()
+            );
             contentIterator = contentLister.list(ImmutableList.of(source), progress.get());
         } else {
-            log.info("Starting bootstrap of {} the start, no existing progress found", source.toString());
+            log.info(
+                    "Starting bootstrap of {} the start, no existing progress found",
+                    source.toString()
+            );
             contentIterator = contentLister.list(ImmutableList.of(source));
         }
         return () ->
@@ -344,7 +386,10 @@ public class ContentBootstrapController {
                             );
                             c.accept(visitor);
                             if (count % 10000 == 0) {
-                                progressStore.storeProgress(source.toString(), progressFrom(c, source));
+                                progressStore.storeProgress(
+                                        source.toString(),
+                                        progressFrom(c, source)
+                                );
                             }
                             time.stop();
                         }

@@ -10,16 +10,16 @@ import org.atlasapi.persistence.topic.TopicStore;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 
+import com.metabroadcast.common.base.Maybe;
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-
 
 public class LegacyTopicResolver implements TopicResolver {
 
@@ -42,20 +42,25 @@ public class LegacyTopicResolver implements TopicResolver {
     }
 
     @Override
-    public OptionalMap<Alias, Topic> resolveAliases(Iterable<Alias> aliases, final Publisher source) {
-        return ImmutableOptionalMap.copyOf(Maps.toMap(aliases,
-            new Function<Alias, Optional<Topic>>() {
-                @Override
-                public Optional<Topic> apply(Alias input) {
-                    Maybe<org.atlasapi.media.entity.Topic> topic = resolve(source, input);
-                    return topic.hasValue() ? Optional.of(transformer.apply(topic.valueOrNull()))
-                                            : Optional.<Topic>absent();
-                }
+    public OptionalMap<Alias, Topic> resolveAliases(Iterable<Alias> aliases,
+            final Publisher source) {
+        return ImmutableOptionalMap.copyOf(Maps.toMap(
+                aliases,
+                new Function<Alias, Optional<Topic>>() {
 
-                private Maybe<org.atlasapi.media.entity.Topic> resolve(final Publisher source, Alias input) {
-                    return topicStore.topicFor(source, input.getNamespace(), input.getValue());
+                    @Override
+                    public Optional<Topic> apply(Alias input) {
+                        Maybe<org.atlasapi.media.entity.Topic> topic = resolve(source, input);
+                        return topic.hasValue()
+                               ? Optional.of(transformer.apply(topic.valueOrNull()))
+                               : Optional.<Topic>absent();
+                    }
+
+                    private Maybe<org.atlasapi.media.entity.Topic> resolve(final Publisher source,
+                            Alias input) {
+                        return topicStore.topicFor(source, input.getNamespace(), input.getValue());
+                    }
                 }
-            }
         ));
     }
 

@@ -1,12 +1,5 @@
 package org.atlasapi.query.v4.schedule;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -18,25 +11,33 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.common.QueryContext;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+
+import com.metabroadcast.common.servlet.StubHttpServletRequest;
+import com.metabroadcast.common.servlet.StubHttpServletResponse;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.metabroadcast.common.servlet.StubHttpServletRequest;
-import com.metabroadcast.common.servlet.StubHttpServletResponse;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class JsonResponseWriterTest {
 
     private ObjectMapper mapper;
     private HttpServletRequest request;
     private StubHttpServletResponse response;
-    
+
     private JsonResponseWriter formatter;
-    private OutputContext ctxt; 
-            
+    private OutputContext ctxt;
+
     @Before
     public void setup() throws IOException {
         mapper = new ObjectMapper();
@@ -46,7 +47,7 @@ public class JsonResponseWriterTest {
         formatter = new JsonResponseWriter(request, response);
         formatter.startResponse();
     }
-    
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> asMap(StubHttpServletResponse response) throws IOException {
         return mapper.readValue(response.getResponseAsString(), Map.class);
@@ -54,29 +55,27 @@ public class JsonResponseWriterTest {
 
     @Test
     public void testWritingSingleField() throws Exception {
-        
+
         formatter.writeField("hello", "world");
         formatter.finishResponse();
-       
+
         assertEquals("world", asMap(response).get("hello"));
     }
 
-
     @Test
     public void testWritingManyFields() throws Exception {
-        
+
         formatter.writeField("hello", "world");
         formatter.writeField("bonjour", "monde");
         formatter.writeField("halt", "hammerzeit");
         formatter.finishResponse();
-        
+
         Map<String, Object> deser = asMap(response);
-        
+
         assertEquals("world", deser.get("hello"));
         assertEquals("monde", deser.get("bonjour"));
         assertEquals("hammerzeit", deser.get("halt"));
     }
-
 
     @Test
     public void testWritingPrimitiveFields() throws Exception {
@@ -104,19 +103,21 @@ public class JsonResponseWriterTest {
 
     @Test
     public void testWritingNullFields() throws Exception {
-        
+
         formatter.writeField("null", null);
         formatter.finishResponse();
-        
+
         assertNull(null, asMap(response).get("null"));
     }
 
     @Test
     public void testWritingNestedObjects() throws Exception {
-        
+
         formatter.writeObject(new EntityWriter<String>() {
+
             @Override
-            public void write(String entity, FieldWriter formatter, OutputContext ctxt) throws IOException {
+            public void write(String entity, FieldWriter formatter, OutputContext ctxt)
+                    throws IOException {
                 formatter.writeField("nested_field", entity);
                 formatter.writeField("nested_again", entity);
             }
@@ -127,48 +128,49 @@ public class JsonResponseWriterTest {
             }
         }, "value", ctxt);
         formatter.finishResponse();
-        
+
         ImmutableMap<String, String> expectedMap = ImmutableMap.of(
-            "nested_field","value",
-            "nested_again","value"
+                "nested_field", "value",
+                "nested_again", "value"
         );
         assertEquals(expectedMap, asMap(response).get("nested"));
     }
 
     @Test
     public void testWritingEmptyArray() throws Exception {
-        
+
         formatter.writeList("elems", "elem", ImmutableList.of(), ctxt);
         formatter.finishResponse();
-        
+
         assertEquals(ImmutableList.of(), asMap(response).get("elems"));
     }
-    
+
     @Test
     public void testWritingSingletonArray() throws Exception {
-        
+
         formatter.writeList("elems", "elem", ImmutableList.of("elem"), ctxt);
         formatter.finishResponse();
-        
+
         assertEquals(ImmutableList.of("elem"), asMap(response).get("elems"));
     }
-    
+
     @Test
     public void testWritingRegularArray() throws Exception {
-        
+
         formatter.writeList("elems", "elem", ImmutableList.of("elem", "elen", "eleo"), ctxt);
         formatter.finishResponse();
-        
+
         assertEquals(ImmutableList.of("elem", "elen", "eleo"), asMap(response).get("elems"));
     }
 
     @Test
     public void testWritingObjectArray() throws Exception {
-        
+
         formatter.writeList(new EntityListWriter<String>() {
 
             @Override
-            public void write(String entity, FieldWriter formatter, OutputContext ctxt) throws IOException {
+            public void write(String entity, FieldWriter formatter, OutputContext ctxt)
+                    throws IOException {
                 formatter.writeField("prop", entity);
             }
 
@@ -181,16 +183,16 @@ public class JsonResponseWriterTest {
             public String fieldName(String entity) {
                 return "elem";
             }
-            
+
         }, ImmutableList.of("elem", "elen", "eleo"), ctxt);
         formatter.finishResponse();
-        
+
         ImmutableList<ImmutableMap<String, String>> expectedList = ImmutableList.of(
-            ImmutableMap.of("prop","elem"), 
-            ImmutableMap.of("prop","elen"), 
-            ImmutableMap.of("prop","eleo")
+                ImmutableMap.of("prop", "elem"),
+                ImmutableMap.of("prop", "elen"),
+                ImmutableMap.of("prop", "eleo")
         );
-        
+
         assertEquals(expectedList, asMap(response).get("elems"));
     }
 
@@ -211,7 +213,7 @@ public class JsonResponseWriterTest {
         String testString = "\t\r\n\b\f\\/";
         formatter.writeField("hello", testString);
         formatter.finishResponse();
-        
+
         assertEquals(testString, asMap(response).get("hello"));
     }
 
@@ -222,7 +224,7 @@ public class JsonResponseWriterTest {
 
                 @Override
                 public void write(Integer entity, FieldWriter writer, OutputContext ctxt)
-                    throws IOException {
+                        throws IOException {
                     writer.writeField("error", 100 / entity);
                 }
 
@@ -236,14 +238,14 @@ public class JsonResponseWriterTest {
         }
         assertTrue(Strings.isNullOrEmpty(response.getResponseAsString()));
     }
-    
+
     @Test
     public void testWritingEmptyArrayFollowedByField() throws Exception {
-        
+
         formatter.writeList("elems", "elem", ImmutableList.<String>of(), ctxt);
         formatter.writeField("hello", "world");
         formatter.finishResponse();
-        
+
         Map<String, Object> results = asMap(response);
         assertEquals(ImmutableList.<String>of(), results.get("elems"));
         assertEquals("world", results.get("hello"));

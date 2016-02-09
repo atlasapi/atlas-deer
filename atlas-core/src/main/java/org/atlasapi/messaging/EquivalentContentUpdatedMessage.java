@@ -2,9 +2,10 @@ package org.atlasapi.messaging;
 
 import org.atlasapi.content.ContentRef;
 
-import com.google.common.base.Objects;
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.time.Timestamp;
+
+import com.google.common.base.Objects;
 
 public class EquivalentContentUpdatedMessage extends AbstractMessage {
 

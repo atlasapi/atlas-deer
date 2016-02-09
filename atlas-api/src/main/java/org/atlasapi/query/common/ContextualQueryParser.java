@@ -1,7 +1,5 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,8 +15,11 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.Query.ListQuery;
 import org.atlasapi.query.common.Query.SingleQuery;
 
-import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
+import com.google.common.collect.ImmutableList;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContextualQueryParser<C, R> {
 
@@ -31,32 +32,36 @@ public class ContextualQueryParser<C, R> {
     private final Pattern contextResourcePattern;
 
     public ContextualQueryParser(Resource context,
-        Attribute<Id> contextResouceAttribute,
-        Resource query,
-        NumberToShortStringCodec idCodec,
-        QueryAttributeParser attributeParser, ContextualQueryContextParser contextParser) {
+            Attribute<Id> contextResouceAttribute,
+            Resource query,
+            NumberToShortStringCodec idCodec,
+            QueryAttributeParser attributeParser, ContextualQueryContextParser contextParser) {
         this.attributeParser = checkNotNull(attributeParser);
         this.queryContextParser = checkNotNull(contextParser);
         this.contextResouceAttribute = checkNotNull(contextResouceAttribute);
         this.idCodec = checkNotNull(idCodec);
-        this.parameterValidator = new QueryRequestParameterValidator(attributeParser, contextParser);
+        this.parameterValidator = new QueryRequestParameterValidator(
+                attributeParser,
+                contextParser
+        );
         this.contextResourcePattern = contextResourcePattern(query, context);
     }
 
     private Pattern contextResourcePattern(Resource query, Resource context) {
         return Pattern.compile(context.getPlural() + "/([^/]+)/" + query.getPlural() + "(\\..*)?$");
     }
-    
+
     public ContextualQuery<C, R> parse(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
         parameterValidator.validateParameters(request);
         QueryContext context = queryContextParser.parseContext(request);
         SingleQuery<C> contextQuery = contextQuery(request, context);
         return new ContextualQuery<C, R>(
-            contextQuery, resourceQuery(request, contextQuery.getOnlyId(), context), context);
+                contextQuery, resourceQuery(request, contextQuery.getOnlyId(), context), context);
     }
 
-    private ListQuery<R> resourceQuery(HttpServletRequest request, Id contextId, QueryContext context)
+    private ListQuery<R> resourceQuery(HttpServletRequest request, Id contextId,
+            QueryContext context)
             throws QueryParseException {
         AttributeQuerySet querySet = attributeParser.parse(request);
         querySet = querySet.copyWith(contextAttributeQuery(contextId));
@@ -70,14 +75,14 @@ public class ContextualQueryParser<C, R> {
     private SingleQuery<C> contextQuery(HttpServletRequest request, QueryContext context) {
         return Query.singleQuery(contextId(request), context);
     }
-    
+
     private Id contextId(HttpServletRequest request) {
         Matcher matcher = contextResourcePattern.matcher(request.getRequestURI());
         if (matcher.find()) {
             return Id.valueOf(idCodec.decode(matcher.group(1)));
         }
         throw new IllegalArgumentException(contextResourcePattern
-            + " couldn't extract context ID from " + request.getRequestURI());
+                + " couldn't extract context ID from " + request.getRequestURI());
     }
 
 }

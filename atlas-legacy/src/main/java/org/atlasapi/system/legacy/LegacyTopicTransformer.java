@@ -5,7 +5,8 @@ import org.atlasapi.media.entity.Topic;
 
 import com.google.common.collect.ImmutableList;
 
-public class LegacyTopicTransformer extends DescribedLegacyResourceTransformer<Topic, org.atlasapi.topic.Topic> {
+public class LegacyTopicTransformer
+        extends DescribedLegacyResourceTransformer<Topic, org.atlasapi.topic.Topic> {
 
     @Override
     protected org.atlasapi.topic.Topic createDescribed(Topic input) {

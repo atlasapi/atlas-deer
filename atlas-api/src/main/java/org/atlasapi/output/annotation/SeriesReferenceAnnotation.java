@@ -1,7 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
-
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
@@ -14,7 +12,7 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 public class SeriesReferenceAnnotation extends OutputAnnotation<Content> {
 
     private static final String SERIES_FIELD = "series";
-    
+
     private final ResourceRefWriter seriesRefWriter;
 
     public SeriesReferenceAnnotation(NumberToShortStringCodec idCodec) {

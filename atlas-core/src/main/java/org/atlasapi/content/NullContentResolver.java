@@ -5,11 +5,11 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class NullContentResolver implements ContentResolver {
 
@@ -18,9 +18,10 @@ public class NullContentResolver implements ContentResolver {
     public static ContentResolver get() {
         return INSTANCE;
     }
-    
-    private NullContentResolver() { }
-    
+
+    private NullContentResolver() {
+    }
+
     @Override
     public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
         return Futures.immediateFuture(Resolved.<Content>empty());

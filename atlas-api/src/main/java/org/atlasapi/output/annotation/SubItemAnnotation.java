@@ -1,10 +1,7 @@
 package org.atlasapi.output.annotation;
 
+import java.io.IOException;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ItemRef;
@@ -13,8 +10,11 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.util.ImmutableCollectors;
 
-import java.io.IOException;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
 
 public class SubItemAnnotation extends OutputAnnotation<Content> {
 
@@ -63,7 +63,6 @@ public class SubItemAnnotation extends OutputAnnotation<Content> {
                     .skip(offset)
                     .limit(limit)
                     .collect(ImmutableCollectors.toList());
-
 
             writer.writeList(childRefWriter, orderedRefs, ctxt);
         }

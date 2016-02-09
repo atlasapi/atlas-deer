@@ -15,18 +15,19 @@ import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.serialization.protobuf.EquivProtos;
 import org.atlasapi.serialization.protobuf.EquivProtos.Adjacency;
 import org.atlasapi.serialization.protobuf.EquivProtos.EquivGraph;
-import org.joda.time.DateTime;
+
+import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.metabroadcast.common.time.DateTimeZones;
+import org.joda.time.DateTime;
 
 public class EquivalenceGraphSerializer implements Serializer<EquivalenceGraph, ByteBuffer> {
 
     ResourceRefSerializer serializer = new ResourceRefSerializer();
-    
+
     @Override
     public ByteBuffer serialize(EquivalenceGraph src) {
         EquivProtos.EquivGraph.Builder dest = EquivProtos.EquivGraph.newBuilder();
@@ -36,7 +37,7 @@ public class EquivalenceGraphSerializer implements Serializer<EquivalenceGraph, 
         }
         return ByteBuffer.wrap(dest.build().toByteArray());
     }
-    
+
     private Adjacency.Builder serialize(Adjacents adjs) {
         Adjacency.Builder dest = Adjacency.newBuilder();
         dest.setRef(serializer.serialize(adjs.getRef()));
@@ -51,7 +52,8 @@ public class EquivalenceGraphSerializer implements Serializer<EquivalenceGraph, 
     }
 
     private CommonProtos.DateTime.Builder serialize(DateTime dateTime) {
-        return CommonProtos.DateTime.newBuilder().setMillis(dateTime.toDateTime(DateTimeZones.UTC).getMillis());
+        return CommonProtos.DateTime.newBuilder()
+                .setMillis(dateTime.toDateTime(DateTimeZones.UTC).getMillis());
     }
 
     @Override
@@ -59,7 +61,10 @@ public class EquivalenceGraphSerializer implements Serializer<EquivalenceGraph, 
         try {
             ByteString bytes = ByteString.copyFrom(dest);
             EquivGraph buffer = EquivProtos.EquivGraph.parseFrom(bytes);
-            return new EquivalenceGraph(deserialize(buffer.getAdjacencyList()), deserialize(buffer.getUpdated()));
+            return new EquivalenceGraph(
+                    deserialize(buffer.getAdjacencyList()),
+                    deserialize(buffer.getUpdated())
+            );
         } catch (InvalidProtocolBufferException e) {
             throw new RuntimeException(e);
         }

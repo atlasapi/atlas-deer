@@ -88,7 +88,8 @@ public class EsUnequivalentContentIndexTest {
     public void setup() {
         index = new EsUnequivalentContentIndex(
                 esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(),
-                channelGroupResolver, equivIdIndex, 60_000);
+                channelGroupResolver, equivIdIndex, 60_000
+        );
         index.startAsync().awaitRunning();
     }
 
@@ -100,7 +101,10 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testGenreQuery() throws Exception {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                10l,
+                10l
+        )));
         Item item = complexItem().withId(10l).build();
         item.setGenres(ImmutableSet.of("horror", "action"));
         indexAndRefresh(item);
@@ -114,7 +118,8 @@ public class EsUnequivalentContentIndexTest {
                         querySet,
                         ImmutableList.of(Publisher.BBC),
                         Selection.all(),
-                        Optional.empty()),
+                        Optional.empty()
+                ),
                 Exception.class
         );
         assertThat(result.getIds().first().get(), is(Id.valueOf(10l)));
@@ -247,7 +252,8 @@ public class EsUnequivalentContentIndexTest {
         Item nonAvailableItem = new Item(Id.valueOf(2L), publisher);
         nonAvailableItem.setBroadcasts(ImmutableSet.of(
                 new Broadcast(Id.valueOf(2L), DateTime.now().plusHours(10),
-                        DateTime.now().plusHours(11))
+                        DateTime.now().plusHours(11)
+                )
         ));
 
         indexAndRefresh(availableItem, nonAvailableItem);
@@ -275,8 +281,10 @@ public class EsUnequivalentContentIndexTest {
                                 false,
                                 Optional.empty(),
                                 Optional.of(ImmutableMap.of(
-                                        "broadcast.time.gt", DateTime.now().minusHours(2).toString(),
-                                        "broadcast.time.lt", DateTime.now().plusHours(2).toString()
+                                        "broadcast.time.gt",
+                                        DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt",
+                                        DateTime.now().plusHours(2).toString()
                                 )),
                                 Optional.empty()
                         )
@@ -356,7 +364,7 @@ public class EsUnequivalentContentIndexTest {
 
         Item availableItem = new Item(Id.valueOf(1L), publisher);
         availableItem.setBroadcasts(ImmutableSet.of(
-                  new Broadcast(Id.valueOf(1L), DateTime.now(), DateTime.now().plusHours(1))
+                new Broadcast(Id.valueOf(1L), DateTime.now(), DateTime.now().plusHours(1))
         ));
 
         Brand availableBrand = new Brand(Id.valueOf(2L), publisher);
@@ -391,8 +399,10 @@ public class EsUnequivalentContentIndexTest {
                                 false,
                                 Optional.empty(),
                                 Optional.of(ImmutableMap.of(
-                                        "broadcast.time.gt", DateTime.now().minusHours(2).toString(),
-                                        "broadcast.time.lt", DateTime.now().plusHours(2).toString()
+                                        "broadcast.time.gt",
+                                        DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt",
+                                        DateTime.now().plusHours(2).toString()
                                 )),
                                 Optional.empty()
                         )
@@ -480,8 +490,10 @@ public class EsUnequivalentContentIndexTest {
                                 false,
                                 Optional.empty(),
                                 Optional.of(ImmutableMap.of(
-                                        "broadcast.time.gt", DateTime.now().minusHours(2).toString(),
-                                        "broadcast.time.lt", DateTime.now().plusHours(2).toString()
+                                        "broadcast.time.gt",
+                                        DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt",
+                                        DateTime.now().plusHours(2).toString()
                                 )),
                                 Optional.empty()
                         )
@@ -520,7 +532,12 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTitlePrefixQuery() throws Exception {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l, 30l, 30l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                20l,
+                20l,
+                30l,
+                30l
+        )));
         Item item1 = complexItem().withTitle("test!").withId(30l).build();
         Item item2 = complexItem().withTitle("not!").withId(20l).build();
 
@@ -533,7 +550,8 @@ public class EsUnequivalentContentIndexTest {
                         new AttributeQuerySet(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
                         Selection.all(),
-                        Optional.empty()),
+                        Optional.empty()
+                ),
                 Exception.class
         );
         assertThat(result.getIds().size(), is(1));
@@ -542,7 +560,12 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTitlePrefixQueryWithNonLetterCharacter() throws Exception {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l, 30l, 30l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                20l,
+                20l,
+                30l,
+                30l
+        )));
         Item item1 = complexItem().withTitle("1test").withId(30l).build();
         Item item2 = complexItem().withTitle("not!").withId(20l).build();
 
@@ -555,7 +578,8 @@ public class EsUnequivalentContentIndexTest {
                         new AttributeQuerySet(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
                         Selection.all(),
-                        Optional.empty()),
+                        Optional.empty()
+                ),
                 Exception.class
         );
         assertThat(result.getIds().size(), is(1));
@@ -564,7 +588,10 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testSourceQuery() throws Exception {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 1l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                1l,
+                1l
+        )));
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
@@ -577,7 +604,8 @@ public class EsUnequivalentContentIndexTest {
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
         ListenableFuture<IndexQueryResult> result = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all(), Optional.empty());
+                Selection.all(), Optional.empty()
+        );
 
         IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
@@ -587,7 +615,8 @@ public class EsUnequivalentContentIndexTest {
 
         querySet = new AttributeQuerySet(ImmutableList.of(query));
         result = index.query(querySet, ImmutableList.of(Publisher.METABROADCAST), Selection.all(),
-                Optional.empty());
+                Optional.empty()
+        );
 
         ids = result.get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().isEmpty(), is(true));
@@ -596,26 +625,34 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTopicQuery() throws Exception {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 1l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                1l,
+                1l
+        )));
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
-        content.setTags(ImmutableList.of(new Tag(2L,
+        content.setTags(ImmutableList.of(new Tag(
+                2L,
                 1.0f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
 
         indexAndRefresh(content);
 
-        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(Operators.EQUALS,
-                ImmutableList.of(Id.valueOf(2)));
+        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(
+                Operators.EQUALS,
+                ImmutableList.of(Id.valueOf(2))
+        );
 
         AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
         ListenableFuture<IndexQueryResult> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(),
-                Optional.empty());
+                Optional.empty()
+        );
 
         IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
@@ -629,20 +666,26 @@ public class EsUnequivalentContentIndexTest {
         }
 
         Content episode1 = episode(1);
-        episode1.setTags(ImmutableList.of(new Tag(4L,
+        episode1.setTags(ImmutableList.of(new Tag(
+                4L,
                 1.0f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
         Content episode2 = episode(2);
-        episode2.setTags(ImmutableList.of(new Tag(4L,
+        episode2.setTags(ImmutableList.of(new Tag(
+                4L,
                 1.5f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
         Content episode3 = episode(3);
-        episode3.setTags(ImmutableList.of(new Tag(4L,
+        episode3.setTags(ImmutableList.of(new Tag(
+                4L,
                 2.0f,
                 false,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
 
         indexAndRefresh(episode1, episode2, episode3);
 
@@ -657,18 +700,19 @@ public class EsUnequivalentContentIndexTest {
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(),
                 Optional.of(new IndexQueryParams(
-                        Optional.empty(),
-                        Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc")),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Boolean.TRUE,
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()
+                                Optional.empty(),
+                                Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc")),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Boolean.TRUE,
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
                 )
-        ));
+        );
 
         IndexQueryResult ids = result.get();
         assertThat(ids.getIds().get(0), is(Id.valueOf(3)));
@@ -684,15 +728,19 @@ public class EsUnequivalentContentIndexTest {
         }
 
         Content episode1 = episode(1);
-        episode1.setTags(ImmutableList.of(new Tag(4L,
+        episode1.setTags(ImmutableList.of(new Tag(
+                4L,
                 1.0f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
         Content episode2 = episode(2);
-        episode2.setTags(ImmutableList.of(new Tag(4L,
+        episode2.setTags(ImmutableList.of(new Tag(
+                4L,
                 1.5f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
         Content episode3 = episode(3);
 
         indexAndRefresh(episode1, episode2, episode3);
@@ -719,7 +767,8 @@ public class EsUnequivalentContentIndexTest {
                                 Optional.empty(),
                                 Optional.empty()
                         )
-                ));
+                )
+        );
 
         IndexQueryResult ids = result.get();
         assertThat(ids.getIds().get(0), is(Id.valueOf(2)));
@@ -735,20 +784,26 @@ public class EsUnequivalentContentIndexTest {
         }
 
         Content episode1 = episode(1);
-        episode1.setTags(ImmutableList.of(new Tag(4L,
+        episode1.setTags(ImmutableList.of(new Tag(
+                4L,
                 1.0f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
         Content episode2 = episode(2);
-        episode2.setTags(ImmutableList.of(new Tag(4L,
+        episode2.setTags(ImmutableList.of(new Tag(
+                4L,
                 1.0f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
         Content episode3 = episode(3);
-        episode3.setTags(ImmutableList.of(new Tag(4L,
+        episode3.setTags(ImmutableList.of(new Tag(
+                4L,
                 2.0f,
                 false,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
 
         indexAndRefresh(episode1, episode2, episode3);
 
@@ -774,7 +829,8 @@ public class EsUnequivalentContentIndexTest {
                                 Optional.empty(),
                                 Optional.empty()
                         )
-                ));
+                )
+        );
 
         IndexQueryResult ids = result.get();
         assertThat(ids.getIds().get(0), is(Id.valueOf(3)));
@@ -791,14 +847,19 @@ public class EsUnequivalentContentIndexTest {
 
     @Test
     public void testTopicWeightingQuery() throws Exception {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 1l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                1l,
+                1l
+        )));
         Content content = new Episode();
         content.setId(1);
         content.setPublisher(Publisher.METABROADCAST);
-        content.setTags(ImmutableList.of(new Tag(2L,
+        content.setTags(ImmutableList.of(new Tag(
+                2L,
                 1.0f,
                 true,
-                Tag.Relationship.ABOUT)));
+                Tag.Relationship.ABOUT
+        )));
 
         indexAndRefresh(content);
 
@@ -807,7 +868,8 @@ public class EsUnequivalentContentIndexTest {
 
         IndexQueryResult ids = index.query(
                 new AttributeQuerySet(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty()
+        )
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
 
@@ -816,7 +878,8 @@ public class EsUnequivalentContentIndexTest {
 
         ids = index.query(
                 new AttributeQuerySet(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty()
+        )
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().isPresent(), is(false));
 
@@ -825,7 +888,8 @@ public class EsUnequivalentContentIndexTest {
 
         ids = index.query(
                 new AttributeQuerySet(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty())
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty()
+        )
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
 
@@ -841,7 +905,10 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testUnindexingOfContentThatIsNoLongerPublished()
             throws IndexException, ExecutionException, InterruptedException {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                10l,
+                10l
+        )));
         Item item = complexItem().withId(20l).build();
         item.setPublisher(Publisher.METABROADCAST);
         item.setActivelyPublished(true);
@@ -849,31 +916,43 @@ public class EsUnequivalentContentIndexTest {
 
         AttributeQuerySet querySet = new AttributeQuerySet(
                 ImmutableList.of(
-                        Attributes.ID.createQuery(Operators.EQUALS,
-                                ImmutableList.of(Id.valueOf(20l)))
+                        Attributes.ID.createQuery(
+                                Operators.EQUALS,
+                                ImmutableList.of(Id.valueOf(20l))
+                        )
                 )
         );
-        IndexQueryResult resultWithItemPresent = index.query(querySet,
+        IndexQueryResult resultWithItemPresent = index.query(
+                querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(),
-                Optional.empty())
+                Optional.empty()
+        )
                 .get();
         assertThat(resultWithItemPresent.getIds().first().get(), is(Id.valueOf(20l)));
 
         item.setActivelyPublished(false);
         indexAndRefresh(item);
 
-        IndexQueryResult resultWithItemAbsent = index.query(querySet,
+        IndexQueryResult resultWithItemAbsent = index.query(
+                querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
                 Selection.all(),
-                Optional.empty())
+                Optional.empty()
+        )
                 .get();
-        assertThat(resultWithItemAbsent.getIds().first(), is(com.google.common.base.Optional.absent()));
+        assertThat(
+                resultWithItemAbsent.getIds().first(),
+                is(com.google.common.base.Optional.absent())
+        );
     }
 
     @Test
     public void testUpdatesCanonicalIdsCorrectly() throws IndexException {
-        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)));
+        when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                10l,
+                10l
+        )));
         Item item = new Item(Id.valueOf(10l), Publisher.METABROADCAST);
         item.setTitle("Test title!");
         indexAndRefresh(item);

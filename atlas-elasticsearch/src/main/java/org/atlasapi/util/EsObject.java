@@ -9,7 +9,8 @@ public class EsObject {
 
     public final static FromEsObjectToMap TO_MAP = new FromEsObjectToMap();
 
-    protected Map<String, Object> properties = new HashMap<String,Object>() {
+    protected Map<String, Object> properties = new HashMap<String, Object>() {
+
         @Override
         public Object put(String k, Object v) {
             if (k != null && v != null) {

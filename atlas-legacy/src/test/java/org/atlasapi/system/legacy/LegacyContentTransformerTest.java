@@ -1,10 +1,5 @@
 package org.atlasapi.system.legacy;
 
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.base.Maybe;
-import org.atlasapi.content.Content;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Alias;
@@ -16,6 +11,11 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.media.entity.Restriction;
 import org.atlasapi.media.entity.Series;
 import org.atlasapi.media.entity.Version;
+
+import com.metabroadcast.common.base.Maybe;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,7 +39,6 @@ public class LegacyContentTransformerTest {
 
     @InjectMocks
     private LegacyContentTransformer objectUnderTest;
-
 
     @Test
     public void testTransformSeriesWithParentRefWithNullId() {
@@ -68,11 +67,14 @@ public class LegacyContentTransformerTest {
         Channel channel = mock(Channel.class);
         when(channelResolver.fromUri(channelId)).thenReturn(Maybe.just(channel));
 
-        org.atlasapi.content.Item transformed = (org.atlasapi.content.Item) objectUnderTest.apply(legacy);
+        org.atlasapi.content.Item transformed = (org.atlasapi.content.Item) objectUnderTest.apply(
+                legacy);
 
-        assertThat(Iterables.getOnlyElement(transformed.getBroadcasts()).getBlackoutRestriction().get().getAll(), is(true));
+        assertThat(Iterables.getOnlyElement(transformed.getBroadcasts())
+                .getBlackoutRestriction()
+                .get()
+                .getAll(), is(true));
     }
-
 
     @Test
     public void testIgnoreBroadcastsWithUnknownChannel() {
@@ -90,7 +92,8 @@ public class LegacyContentTransformerTest {
         legacy.setAliases(ImmutableSet.<Alias>of());
         when(channelResolver.fromUri(channelId)).thenReturn(Maybe.<Channel>nothing());
 
-        org.atlasapi.content.Item transformed = (org.atlasapi.content.Item) objectUnderTest.apply(legacy);
+        org.atlasapi.content.Item transformed = (org.atlasapi.content.Item) objectUnderTest.apply(
+                legacy);
 
         assertThat(transformed.getBroadcasts().size(), is(0));
     }

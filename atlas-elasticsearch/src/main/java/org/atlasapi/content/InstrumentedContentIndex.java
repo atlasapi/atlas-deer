@@ -1,17 +1,18 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Optional;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
+import com.metabroadcast.common.query.Selection;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class InstrumentedContentIndex implements ContentIndex {
 
@@ -38,9 +39,16 @@ public class InstrumentedContentIndex implements ContentIndex {
     }
 
     @Override
-    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query, Iterable<Publisher> publishers, Selection selection, Optional<IndexQueryParams> queryParams) {
+    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams) {
         Timer.Context time = queryTimer.time();
-        ListenableFuture<IndexQueryResult> result = delegate.query(query, publishers, selection, queryParams);
+        ListenableFuture<IndexQueryResult> result = delegate.query(
+                query,
+                publishers,
+                selection,
+                queryParams
+        );
         time.stop();
         return result;
     }

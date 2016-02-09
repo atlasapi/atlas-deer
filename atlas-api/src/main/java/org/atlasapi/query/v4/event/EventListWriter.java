@@ -1,6 +1,9 @@
 package org.atlasapi.query.v4.event;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.io.IOException;
+import java.util.List;
+
+import javax.annotation.Nonnull;
 
 import org.atlasapi.event.Event;
 import org.atlasapi.output.AnnotationRegistry;
@@ -10,11 +13,10 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.common.Resource;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.List;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EventListWriter implements EntityListWriter<Event> {
+
     private final AnnotationRegistry<Event> annotationRegistry;
 
     public EventListWriter(AnnotationRegistry<Event> annotationRegistry) {

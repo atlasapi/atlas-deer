@@ -2,8 +2,8 @@ package org.atlasapi.application.auth.github;
 
 import com.google.api.client.util.Key;
 
-
 public class GitHubUser {
+
     @Key("login")
     private String login;
     @Key("id")
@@ -20,35 +20,35 @@ public class GitHubUser {
     private String company;
     @Key("blog")
     private String blog;
-    
+
     public String getLogin() {
         return login;
     }
-    
+
     public Integer getId() {
         return id;
     }
-    
+
     public String getAvatarUrl() {
         return avatarUrl;
     }
-    
+
     public String getUrl() {
         return url;
     }
-    
+
     public String getHtmlUrl() {
         return htmlUrl;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public String getCompany() {
         return company;
     }
-    
+
     public String getBlog() {
         return blog;
     }

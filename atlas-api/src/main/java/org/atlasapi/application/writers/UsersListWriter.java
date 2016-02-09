@@ -12,36 +12,36 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.common.Resource;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.social.model.UserRef;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 
 public class UsersListWriter implements EntityListWriter<User> {
+
     private final EntityWriter<UserRef> userRefWriter = UserRefWriter.userRefWriter("userRef");
     private final EntityListWriter<Publisher> sourcesWriter;
     private final NumberToShortStringCodec idCodec;
-    
+
     private final Function<Id, String> ENCODE_APP_IDS = new Function<Id, String>() {
 
         @Override
         public String apply(Id input) {
             return idCodec.encode(input.toBigInteger());
         }
-        
+
     };
-    
+
     public UsersListWriter(NumberToShortStringCodec idCodec,
             SourceIdCodec sourceIdCodec) {
         this.idCodec = idCodec;
         this.sourcesWriter = new SourceWithIdWriter(sourceIdCodec, "sources", "sources");
     }
-    
+
     private Iterable<String> getStringAppIds(User user) {
         return Iterables.transform(user.getApplicationIds(), ENCODE_APP_IDS);
     }
-    
 
     @Override
     public void write(User entity, FieldWriter writer, OutputContext ctxt) throws IOException {

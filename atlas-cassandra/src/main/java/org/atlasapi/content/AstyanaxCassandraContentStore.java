@@ -1,11 +1,5 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.content.ContentColumn.DESCRIPTION;
-import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
-import static org.atlasapi.content.ContentColumn.SOURCE;
-import static org.atlasapi.content.ContentColumn.TYPE;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,8 +14,13 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.SystemClock;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -37,12 +36,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.Keyspace;
@@ -55,14 +48,23 @@ import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.query.RowQuery;
 import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.content.ContentColumn.DESCRIPTION;
+import static org.atlasapi.content.ContentColumn.IDENTIFICATION;
+import static org.atlasapi.content.ContentColumn.SOURCE;
+import static org.atlasapi.content.ContentColumn.TYPE;
 
 public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     private static final int RESOLVE_TIMEOUT = 10;
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    public static final Builder builder(AstyanaxContext<Keyspace> context, 
-            String name, ContentHasher hasher, MessageSender<ResourceUpdatedMessage> sender, IdGenerator idGenerator) {
+    public static final Builder builder(AstyanaxContext<Keyspace> context,
+            String name, ContentHasher hasher, MessageSender<ResourceUpdatedMessage> sender,
+            IdGenerator idGenerator) {
         return new Builder(context, name, hasher, sender, idGenerator);
     }
 
@@ -79,7 +81,8 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         private Clock clock = new SystemClock();
 
         public Builder(AstyanaxContext<Keyspace> context, String name,
-                       ContentHasher hasher, MessageSender<ResourceUpdatedMessage> sender, IdGenerator idGenerator) {
+                ContentHasher hasher, MessageSender<ResourceUpdatedMessage> sender,
+                IdGenerator idGenerator) {
             this.context = context;
             this.name = name;
             this.hasher = hasher;
@@ -104,11 +107,11 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
         public AstyanaxCassandraContentStore build() {
             return new AstyanaxCassandraContentStore(context, name, readCl, writeCl,
-                hasher, idGenerator, sender, clock);
+                    hasher, idGenerator, sender, clock
+            );
         }
 
     }
-
 
     private final Keyspace keyspace;
     private final ConsistencyLevel readConsistency;
@@ -116,7 +119,8 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Content> aliasIndex;
 
-    private final ContentMarshaller<ColumnListMutation<String>,ColumnList<String>> marshaller = new AstyanaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(this)));
+    private final ContentMarshaller<ColumnListMutation<String>, ColumnList<String>> marshaller = new AstyanaxProtobufContentMarshaller(
+            new ContentSerializer(new ContentSerializationVisitor(this)));
     private final Function<Map.Entry<Long, ColumnList<String>>, Content> rowToContent =
             input -> {
                 if (!input.getValue().isEmpty()) {
@@ -128,7 +132,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     private void verifyRequiredColumns(Long id, ColumnList<String> columns) {
         for (ContentColumn requiredColumn : ProtobufContentMarshaller.REQUIRED_CONTENT_COLUMNS) {
-            if(columns.getColumnByName(requiredColumn.toString()) == null) {
+            if (columns.getColumnByName(requiredColumn.toString()) == null) {
                 throw new CorruptContentException(
                         String.format(
                                 "Missing required column '%s' in row with ID %s in CassandraContentStore.",
@@ -142,20 +146,24 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     }
 
     private final Function<Map<Long, ColumnList<String>>, Resolved<Content>> toResolvedContent =
-            rows -> Resolved.valueOf(FluentIterable.from(rows.entrySet()).transform(rowToContent).filter(Predicates.notNull()));
+            rows -> Resolved.valueOf(FluentIterable.from(rows.entrySet())
+                    .transform(rowToContent)
+                    .filter(Predicates.notNull()));
 
     public AstyanaxCassandraContentStore(AstyanaxContext<Keyspace> context,
-        String cfName, ConsistencyLevel readConsistency, ConsistencyLevel writeConsistency, 
-        ContentHasher hasher, IdGenerator idGenerator, MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
+            String cfName, ConsistencyLevel readConsistency, ConsistencyLevel writeConsistency,
+            ContentHasher hasher, IdGenerator idGenerator,
+            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
         super(hasher, idGenerator, sender, clock);
         this.keyspace = checkNotNull(context.getClient());
         this.readConsistency = checkNotNull(readConsistency);
         this.writeConsistency = checkNotNull(writeConsistency);
         this.mainCf = ColumnFamily.newColumnFamily(checkNotNull(cfName),
-            LongSerializer.get(), StringSerializer.get());
-        this.aliasIndex = AliasIndex.create(keyspace,cfName+"_aliases");
+                LongSerializer.get(), StringSerializer.get()
+        );
+        this.aliasIndex = AliasIndex.create(keyspace, cfName + "_aliases");
     }
-    
+
     @Override
     public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
         try {
@@ -166,26 +174,31 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         }
     }
 
-    private ListenableFuture<Map<Long, ColumnList<String>>> resolveLongs(Iterable<Long> longIds) throws ConnectionException {
-        return Futures.transform(Futures.allAsList(StreamSupport.stream(longIds.spliterator(), false)
-                .map(id -> {
-                    try {
-                        return Futures.transform(
-                                keyspace
-                                        .prepareQuery(mainCf)
-                                        .setConsistencyLevel(readConsistency)
-                                        .getKey(id)
-                                        .executeAsync(),
-                                (Function<OperationResult<ColumnList<String>>, KeyValue<Long, ColumnList<String>>>)
-                                        input -> new KeyValue<>(id, input.getResult()));
-                    } catch (ConnectionException e) {
-                        throw new CassandraPersistenceException(id.toString(), e);
-                    }
-                }).collect(Collectors.toList())),
+    private ListenableFuture<Map<Long, ColumnList<String>>> resolveLongs(Iterable<Long> longIds)
+            throws ConnectionException {
+        return Futures.transform(
+                Futures.allAsList(StreamSupport.stream(longIds.spliterator(), false)
+                        .map(id -> {
+                            try {
+                                return Futures.transform(
+                                        keyspace
+                                                .prepareQuery(mainCf)
+                                                .setConsistencyLevel(readConsistency)
+                                                .getKey(id)
+                                                .executeAsync(),
+                                        (Function<OperationResult<ColumnList<String>>, KeyValue<Long, ColumnList<String>>>)
+                                                input -> new KeyValue<>(id, input.getResult())
+                                );
+                            } catch (ConnectionException e) {
+                                throw new CassandraPersistenceException(id.toString(), e);
+                            }
+                        }).collect(Collectors.toList())),
                 (Function<List<KeyValue<Long, ColumnList<String>>>, Map<Long, ColumnList<String>>>)
-                        input -> input.stream().collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue)));
+                        input -> input.stream()
+                                .collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue))
+        );
     }
-    
+
     @Override
     public OptionalMap<Alias, Content> resolveAliases(Iterable<Alias> aliases, Publisher source) {
         try {
@@ -195,12 +208,16 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 return ImmutableOptionalMap.of();
             }
             // TODO: move timeout to config
-            Map<Long, ColumnList<String>> resolved = resolveLongs(ids).get(RESOLVE_TIMEOUT, TimeUnit.SECONDS);
+            Map<Long, ColumnList<String>> resolved = resolveLongs(ids).get(
+                    RESOLVE_TIMEOUT,
+                    TimeUnit.SECONDS
+            );
             Iterable<Content> contents = resolved.entrySet()
                     .stream()
                     .map(rowToContent::apply)
                     .collect(Collectors.toList());
-            ImmutableMap.Builder<Alias, com.google.common.base.Optional<Content>> aliasMap = ImmutableMap.builder();
+            ImmutableMap.Builder<Alias, com.google.common.base.Optional<Content>> aliasMap = ImmutableMap
+                    .builder();
             for (Content content : contents) {
                 content.getAliases()
                         .stream()
@@ -227,18 +244,19 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             throw new CassandraPersistenceException(content.toString(), e);
         }
     }
-    
+
     @Override
-    protected Optional<Content> resolvePrevious(Optional<Id> id, Publisher source, Set<Alias> aliases) {
+    protected Optional<Content> resolvePrevious(Optional<Id> id, Publisher source,
+            Set<Alias> aliases) {
         try {
             if (id.isPresent()) {
                 return Optional.fromNullable(resolve(id.get().longValue(), null));
             } else {
-                    Set<Long> ids = aliasIndex.readAliases(source, aliases);
-                    Long aliasId = Iterables.getFirst(ids, null);
-                    if (aliasId != null) {
-                        return Optional.fromNullable(resolve(aliasId, null));
-                    }
+                Set<Long> ids = aliasIndex.readAliases(source, aliases);
+                Long aliasId = Iterables.getFirst(ids, null);
+                if (aliasId != null) {
+                    return Optional.fromNullable(resolve(aliasId, null));
+                }
                 return Optional.absent();
             }
         } catch (ConnectionException e) {
@@ -252,12 +270,15 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     private Content resolve(long longId, Set<ContentColumn> colNames) {
         try {
             RowQuery<Long, String> query = keyspace.prepareQuery(mainCf)
-                .getKey(longId);
+                    .getKey(longId);
             if (colNames != null && colNames.size() > 0) {
-                query = query.withColumnSlice(Collections2.transform(colNames, Functions.toStringFunction()));
+                query = query.withColumnSlice(Collections2.transform(
+                        colNames,
+                        Functions.toStringFunction()
+                ));
             }
             ColumnList<String> cols = query.execute().getResult();
-            if(cols.isEmpty()) {
+            if (cols.isEmpty()) {
                 return null;
             }
             verifyRequiredColumns(longId, cols);
@@ -269,14 +290,19 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     @Override
     protected ContainerSummary summarize(ContainerRef id) {
-        Content resolved = resolve(id.getId().longValue(),
-            ImmutableSet.of(TYPE, SOURCE, IDENTIFICATION, DESCRIPTION));
+        Content resolved = resolve(
+                id.getId().longValue(),
+                ImmutableSet.of(TYPE, SOURCE, IDENTIFICATION, DESCRIPTION)
+        );
         if (resolved instanceof Container) {
-            return summarize((Container)resolved);
-        } else  if (resolved == null) {
+            return summarize((Container) resolved);
+        } else if (resolved == null) {
             return null;
         } else {
-            throw new IllegalStateException(String.format("Content for parent %s not Container", id));
+            throw new IllegalStateException(String.format(
+                    "Content for parent %s not Container",
+                    id
+            ));
         }
     }
 
@@ -304,16 +330,17 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                             series.getSeriesNumber()
                     );
                 }
-                
+
             });
         }
         return summary;
     }
 
     @Override
-    protected void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef, Boolean activelyPublished) {
+    protected void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef,
+            Boolean activelyPublished) {
         try {
-            if(!activelyPublished) {
+            if (!activelyPublished) {
                 MutationBatch batch = keyspace.prepareMutationBatch();
                 batch.setConsistencyLevel(writeConsistency);
                 removeContentRef(primary, seriesRef, batch);
@@ -324,7 +351,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             Brand container = new Brand();
             container.setSeriesRefs(ImmutableList.of(seriesRef));
             container.setThisOrChildLastUpdated(seriesRef.getUpdated());
-            
+
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
             ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
@@ -335,31 +362,37 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         }
     }
 
-    private void removeContentRef(ContainerRef containerRef, ContentRef contentRef, MutationBatch batch)  {
+    private void removeContentRef(ContainerRef containerRef, ContentRef contentRef,
+            MutationBatch batch) {
         Long rowId = containerRef.getId().longValue();
         String columnId = contentRef.getId().toString();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
         mutation.deleteColumn(columnId);
     }
 
-    private void removeItemSummaries(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch)  {
+    private void removeItemSummaries(ContainerRef containerRef, ItemRef itemRef,
+            MutationBatch batch) {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-        mutation.deleteColumn(ProtobufContentMarshaller.buildItemSummaryKey(itemRef.getId().longValue()));
+        mutation.deleteColumn(ProtobufContentMarshaller.buildItemSummaryKey(itemRef.getId()
+                .longValue()));
     }
 
-    private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch)  {
+    private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef,
+            MutationBatch batch) {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-        mutation.deleteColumn(ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId().longValue()));
+        mutation.deleteColumn(ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId()
+                .longValue()));
     }
 
-    private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef, MutationBatch batch) {
+    private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef,
+            MutationBatch batch) {
         Long rowId = brancontainerRefRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-        mutation.deleteColumn(ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId().longValue()));
+        mutation.deleteColumn(ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId()
+                .longValue()));
     }
-
 
     @Override
     protected void writeItemRefs(
@@ -367,7 +400,8 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     ) {
         try {
             ensureId(item);
-            if(!item.isActivelyPublished() || (item.isGenericDescription() != null && item.isGenericDescription())) {
+            if (!item.isActivelyPublished() || (item.isGenericDescription() != null
+                    && item.isGenericDescription())) {
                 removeItemRefsFromContainers(item);
                 return;
             }
@@ -416,7 +450,8 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void doWriteBroadcast(ItemRef itemRef, Optional<ContainerRef> containerRef, Optional<SeriesRef> seriesRef, Broadcast broadcast) {
+    protected void doWriteBroadcast(ItemRef itemRef, Optional<ContainerRef> containerRef,
+            Optional<SeriesRef> seriesRef, Broadcast broadcast) {
         Item item = new Item();
         item.setId(itemRef.getId());
         item.setThisOrChildLastUpdated(itemRef.getUpdated());
@@ -424,11 +459,16 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         item.addBroadcast(broadcast);
         MutationBatch batch = keyspace.prepareMutationBatch();
         batch.setConsistencyLevel(writeConsistency);
-        ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
+        ColumnListMutation<String> itemMutation = batch.withRow(
+                mainCf,
+                itemRef.getId().longValue()
+        );
         marshaller.marshallInto(item.getId(), itemMutation, item, false);
 
         try {
-            if (!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs().iterator().hasNext()) {
+            if (!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs()
+                    .iterator()
+                    .hasNext()) {
                 batch.execute();
                 return;
             }
@@ -440,7 +480,10 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 Container container = new Brand();
                 container.setThisOrChildLastUpdated(itemRef.getUpdated());
                 container.setUpcomingContent(upcomingBroadcasts);
-                ColumnListMutation<String> containerMutation = batch.withRow(mainCf, containerRef.get().getId().longValue());
+                ColumnListMutation<String> containerMutation = batch.withRow(
+                        mainCf,
+                        containerRef.get().getId().longValue()
+                );
                 marshaller.marshallInto(containerId, containerMutation, container, false);
             }
 
@@ -450,10 +493,12 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 container.setItemRefs(ImmutableList.of(itemRef));
                 container.setThisOrChildLastUpdated(itemRef.getUpdated());
                 container.setUpcomingContent(upcomingBroadcasts);
-                ColumnListMutation<String> seriesMutation = batch.withRow(mainCf, seriesRef.get().getId().longValue());
+                ColumnListMutation<String> seriesMutation = batch.withRow(
+                        mainCf,
+                        seriesRef.get().getId().longValue()
+                );
                 marshaller.marshallInto(containerId, seriesMutation, container, false);
             }
-
 
             batch.execute();
         } catch (ConnectionException e) {
@@ -468,7 +513,10 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         for (ItemRef itemRef : items) {
             Item item = itemFromRef(itemRef);
             item.setContainerSummary(summary);
-            ColumnListMutation<String> itemMutation = batch.withRow(mainCf, itemRef.getId().longValue());
+            ColumnListMutation<String> itemMutation = batch.withRow(
+                    mainCf,
+                    itemRef.getId().longValue()
+            );
             marshaller.marshallInto(itemRef.getId(), itemMutation, item, false);
         }
 
@@ -498,25 +546,26 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         if (item.getContainerRef() != null) {
             removeAllReferencesToItem(item.getContainerRef(), item.toRef(), batch);
         }
-        if(item instanceof Episode && ((Episode) item).getSeriesRef() != null){
+        if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
             Episode episode = (Episode) item;
             removeAllReferencesToItem(episode.getSeriesRef(), episode.toRef(), batch);
         }
         batch.execute();
     }
 
-    private void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef, MutationBatch batch) {
+    private void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef,
+            MutationBatch batch) {
         removeContentRef(containerRef, itemRef, batch);
         removeItemSummaries(containerRef, itemRef, batch);
         removeAvailableContent(containerRef, itemRef, batch);
         removeUpcomingContent(containerRef, itemRef, batch);
     }
 
-    private Item itemFromRef(ItemRef itemRef){
+    private Item itemFromRef(ItemRef itemRef) {
         Item item;
-        if(itemRef instanceof EpisodeRef) {
+        if (itemRef instanceof EpisodeRef) {
             item = new Episode();
-        } else{
+        } else {
             item = new Item();
         }
         item.setId(itemRef.getId());
@@ -526,6 +575,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     }
 
     private static class KeyValue<K, V> {
+
         private final K key;
         private final V value;
 

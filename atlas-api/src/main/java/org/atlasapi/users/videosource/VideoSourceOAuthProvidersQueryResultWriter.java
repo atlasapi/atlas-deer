@@ -2,6 +2,8 @@ package org.atlasapi.users.videosource;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
@@ -12,11 +14,11 @@ import org.atlasapi.users.videosource.model.VideoSourceOAuthProvider;
 
 import com.google.common.collect.FluentIterable;
 
-import javax.servlet.http.HttpServletRequest;
+public class VideoSourceOAuthProvidersQueryResultWriter
+        extends QueryResultWriter<VideoSourceOAuthProvider> {
 
-public class VideoSourceOAuthProvidersQueryResultWriter extends QueryResultWriter<VideoSourceOAuthProvider> {
     private final EntityListWriter<VideoSourceOAuthProvider> linkedServiceProvidersWriter;
-    
+
     public VideoSourceOAuthProvidersQueryResultWriter(
             EntityListWriter<VideoSourceOAuthProvider> linkedServiceProvidersWriter,
             EntityWriter<Object> licenseWriter,
@@ -25,7 +27,7 @@ public class VideoSourceOAuthProvidersQueryResultWriter extends QueryResultWrite
         super(licenseWriter, requestWriter);
         this.linkedServiceProvidersWriter = linkedServiceProvidersWriter;
     }
-    
+
     @Override
     protected void writeResult(QueryResult<VideoSourceOAuthProvider> result, ResponseWriter writer)
             throws IOException {

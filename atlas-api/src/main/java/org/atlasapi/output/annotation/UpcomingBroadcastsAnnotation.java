@@ -1,6 +1,8 @@
 package org.atlasapi.output.annotation;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import java.io.IOException;
+import java.util.stream.Stream;
+
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
@@ -11,11 +13,11 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-
-import java.io.IOException;
-import java.util.stream.Stream;
 
 import static org.atlasapi.content.Broadcast.ACTIVELY_PUBLISHED;
 
@@ -27,8 +29,14 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
 
-    public UpcomingBroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
-        this.broadcastWriter = new BroadcastWriter("broadcasts", codec, channelResolver, channelGroupResolver);
+    public UpcomingBroadcastsAnnotation(NumberToShortStringCodec codec,
+            ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
+        this.broadcastWriter = new BroadcastWriter(
+                "broadcasts",
+                codec,
+                channelResolver,
+                channelGroupResolver
+        );
     }
 
     @Override
@@ -39,7 +47,7 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
                     .filter(b -> ACTIVELY_PUBLISHED.apply(b))
                     .filter(b -> b.getTransmissionTime().isAfter(DateTime.now(DateTimeZone.UTC)));
 
-            if(ctxt.getRegion().isPresent()) {
+            if (ctxt.getRegion().isPresent()) {
                 writer.writeList(
                         broadcastWriter,
                         channelsBroadcastFilter.sortAndFilter(
@@ -49,7 +57,11 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
                         ctxt
                 );
             } else {
-                writer.writeList(broadcastWriter, broadcastStream.collect(ImmutableCollectors.toList()), ctxt);
+                writer.writeList(
+                        broadcastWriter,
+                        broadcastStream.collect(ImmutableCollectors.toList()),
+                        ctxt
+                );
             }
         }
     }

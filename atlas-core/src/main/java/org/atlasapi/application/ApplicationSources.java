@@ -29,46 +29,53 @@ public class ApplicationSources {
     private final Optional<List<Publisher>> contentHierarchyPrecedence;
     private final ImmutableSet<Publisher> enabledReadSources;
     private final Boolean imagePrecedenceEnabled;
-    
+
     private static final Predicate<SourceReadEntry> ENABLED_READS_FILTER = new Predicate<SourceReadEntry>() {
+
         @Override
-         public boolean apply(@Nullable SourceReadEntry input) {
-             return input.getSourceStatus().isEnabled();
-         }
-        };
-    
+        public boolean apply(@Nullable SourceReadEntry input) {
+            return input.getSourceStatus().isEnabled();
+        }
+    };
+
     private static final Function<SourceReadEntry, Publisher> SOURCEREADS_TO_PUBLISHER = new Function<SourceReadEntry, Publisher>() {
-            @Override
-            public Publisher apply(@Nullable SourceReadEntry input) {
-                return input.getPublisher();
-            }
-           };
-    
-    private static final Function<SourceReadEntry, Publisher> READ_TO_PUBLISHER =  new Function<SourceReadEntry, Publisher>() {
 
         @Override
         public Publisher apply(@Nullable SourceReadEntry input) {
             return input.getPublisher();
-        }};
-        
+        }
+    };
+
+    private static final Function<SourceReadEntry, Publisher> READ_TO_PUBLISHER = new Function<SourceReadEntry, Publisher>() {
+
+        @Override
+        public Publisher apply(@Nullable SourceReadEntry input) {
+            return input.getPublisher();
+        }
+    };
+
     private static final Comparator<SourceReadEntry> SORT_READS_BY_PUBLISHER = new Comparator<SourceReadEntry>() {
+
         @Override
         public int compare(SourceReadEntry a, SourceReadEntry b) {
             return a.getPublisher().compareTo(b.getPublisher());
-        }};
+        }
+    };
 
     private ApplicationSources(Builder builder) {
         this.precedence = builder.precedence;
         this.reads = ImmutableList.copyOf(builder.reads);
         this.writes = ImmutableList.copyOf(builder.writes);
-        this.contentHierarchyPrecedence = builder.contentHierarchyPrecedence == null 
-                                            ? Optional.absent() : builder.contentHierarchyPrecedence;
+        this.contentHierarchyPrecedence = builder.contentHierarchyPrecedence == null
+                                          ? Optional.absent() : builder.contentHierarchyPrecedence;
         this.imagePrecedenceEnabled = builder.imagePrecedenceEnabled;
         this.enabledReadSources = ImmutableSet.copyOf(
-                                    Iterables.transform(
-                                      Iterables.filter(this.getReads(), ENABLED_READS_FILTER), 
-                                      SOURCEREADS_TO_PUBLISHER)
-                                  );;
+                Iterables.transform(
+                        Iterables.filter(this.getReads(), ENABLED_READS_FILTER),
+                        SOURCEREADS_TO_PUBLISHER
+                )
+        );
+        ;
     }
 
     public boolean isPrecedenceEnabled() {
@@ -82,11 +89,11 @@ public class ApplicationSources {
     public List<Publisher> getWrites() {
         return writes;
     }
-    
+
     public Ordering<Publisher> publisherPrecedenceOrdering() {
         return Ordering.explicit(Lists.transform(reads, READ_TO_PUBLISHER));
     }
-    
+
     private Optional<Ordering<Publisher>> contentHierarchyPrecedenceOrdering() {
         if (contentHierarchyPrecedence.isPresent()) {
             return Optional.of(Ordering.explicit(contentHierarchyPrecedence.get()));
@@ -94,24 +101,30 @@ public class ApplicationSources {
             return Optional.absent();
         }
     }
-    
+
     public Optional<List<Publisher>> contentHierarchyPrecedence() {
         return contentHierarchyPrecedence == null ? Optional.absent() : contentHierarchyPrecedence;
     }
-    
+
     private ImmutableList<Publisher> peoplePrecedence() {
-        return ImmutableList.of(Publisher.RADIO_TIMES, Publisher.PA, Publisher.BBC, Publisher.C4, Publisher.ITV);
+        return ImmutableList.of(
+                Publisher.RADIO_TIMES,
+                Publisher.PA,
+                Publisher.BBC,
+                Publisher.C4,
+                Publisher.ITV
+        );
     }
-    
+
     public boolean peoplePrecedenceEnabled() {
         return peoplePrecedence() != null;
     }
-    
+
     public Ordering<Publisher> peoplePrecedenceOrdering() {
         // Add missing publishers
         return orderingIncludingMissingPublishers(peoplePrecedence());
     }
-    
+
     private Ordering<Publisher> orderingIncludingMissingPublishers(List<Publisher> publishers) {
         List<Publisher> fullListOfPublishers = Lists.newArrayList(publishers);
         for (Publisher publisher : Publisher.values()) {
@@ -121,27 +134,27 @@ public class ApplicationSources {
         }
         return Ordering.explicit(fullListOfPublishers);
     }
-    
+
     public Ordering<Sourced> getSourcedPeoplePrecedenceOrdering() {
         return peoplePrecedenceOrdering().onResultOf(Sourceds.toPublisher());
     }
-    
+
     /**
      * Temporary: these should be persisted and not hardcoded
      */
     private ImmutableList<Publisher> imagePrecedence() {
         return ImmutableList.of(Publisher.PA, Publisher.BBC, Publisher.C4);
     }
-    
+
     public boolean imagePrecedenceEnabled() {
         // The default behaviour should be enabled if not specified
         return imagePrecedenceEnabled == null || imagePrecedenceEnabled;
     }
-    
+
     public Ordering<Publisher> imagePrecedenceOrdering() {
         return publisherPrecedenceOrdering();
     }
-    
+
     public Ordering<Sourced> getSourcedImagePrecedenceOrdering() {
         return imagePrecedenceOrdering().onResultOf(Sourceds.toPublisher());
     }
@@ -153,11 +166,11 @@ public class ApplicationSources {
     public boolean isReadEnabled(Publisher source) {
         return this.getEnabledReadSources().contains(source);
     }
-    
+
     public boolean isWriteEnabled(Publisher source) {
         return this.getWrites().contains(source);
     }
-    
+
     public SourceStatus readStatusOrDefault(Publisher source) {
         for (SourceReadEntry entry : this.getReads()) {
             if (entry.getPublisher().equals(source)) {
@@ -166,40 +179,43 @@ public class ApplicationSources {
         }
         return SourceStatus.fromV3SourceStatus(source.getDefaultSourceStatus());
     }
-    
+
     public Ordering<Sourced> getSourcedReadOrdering() {
         Ordering<Publisher> ordering = this.publisherPrecedenceOrdering();
         return ordering.onResultOf(Sourceds.toPublisher());
     }
-    
+
     public Optional<Ordering<Sourced>> getSourcedContentHierarchyOrdering() {
         if (!contentHierarchyPrecedence.isPresent()) {
             return Optional.absent();
         }
-        Ordering<Publisher> ordering = orderingIncludingMissingPublishers(this.contentHierarchyPrecedence.get());
+        Ordering<Publisher> ordering = orderingIncludingMissingPublishers(this.contentHierarchyPrecedence
+                .get());
         return Optional.of(ordering.onResultOf(Sourceds.toPublisher()));
     }
-    
+
     private static final ApplicationSources dflts = createDefaults();
-    
+
     private static final ApplicationSources createDefaults() {
         ApplicationSources dflts = ApplicationSources.builder()
                 .build()
                 .copyWithMissingSourcesPopulated();
-       for (Publisher source : Publisher.all()) {
-           if (source.enabledWithNoApiKey()) {
-               dflts = dflts.copyWithChangedReadableSourceStatus(source, SourceStatus.AVAILABLE_ENABLED);
-           }
-       }
-       return dflts;
+        for (Publisher source : Publisher.all()) {
+            if (source.enabledWithNoApiKey()) {
+                dflts = dflts.copyWithChangedReadableSourceStatus(
+                        source,
+                        SourceStatus.AVAILABLE_ENABLED
+                );
+            }
+        }
+        return dflts;
     }
-    
+
     // Build a default configuration, this will get popualated with publishers 
     // with default source status
     public static ApplicationSources defaults() {
         return dflts;
     }
-    
 
     @Override
     public boolean equals(Object obj) {
@@ -217,8 +233,9 @@ public class ApplicationSources {
         }
         return false;
     }
-    
-    public ApplicationSources copyWithChangedReadableSourceStatus(Publisher source, SourceStatus status) {
+
+    public ApplicationSources copyWithChangedReadableSourceStatus(Publisher source,
+            SourceStatus status) {
         List<SourceReadEntry> reads = Lists.newLinkedList();
         for (SourceReadEntry entry : this.getReads()) {
             if (entry.getPublisher().equals(source)) {
@@ -229,7 +246,7 @@ public class ApplicationSources {
         }
         return this.copy().withReadableSources(reads).build();
     }
-    
+
     /*
      * Adds any missing sources to the application. 
      */
@@ -239,7 +256,7 @@ public class ApplicationSources {
         for (SourceReadEntry read : this.getReads()) {
             readsAll.add(read);
             publishersSeen.add(read.getPublisher());
-        }            
+        }
         for (Publisher source : Publisher.values()) {
             if (!publishersSeen.contains(source)) {
                 SourceStatus status = SourceStatus.fromV3SourceStatus(source.getDefaultSourceStatus());
@@ -274,10 +291,11 @@ public class ApplicationSources {
             this.precedence = precedence;
             return this;
         }
-        
+
         public Builder withContentHierarchyPrecedence(List<Publisher> contentHierarchyPrecedence) {
             if (contentHierarchyPrecedence != null) {
-                this.contentHierarchyPrecedence = Optional.of(ImmutableList.copyOf(contentHierarchyPrecedence));
+                this.contentHierarchyPrecedence = Optional.of(ImmutableList.copyOf(
+                        contentHierarchyPrecedence));
             } else {
                 this.contentHierarchyPrecedence = Optional.absent();
             }
@@ -293,7 +311,7 @@ public class ApplicationSources {
             this.writes = writes;
             return this;
         }
-        
+
         public Builder withImagePrecedenceEnabled(Boolean imagePrecedenceEnabled) {
             this.imagePrecedenceEnabled = imagePrecedenceEnabled;
             return this;

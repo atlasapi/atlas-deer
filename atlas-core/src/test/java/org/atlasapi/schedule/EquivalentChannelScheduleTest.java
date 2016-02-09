@@ -1,7 +1,5 @@
 package org.atlasapi.schedule;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
@@ -11,6 +9,9 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.Test;
@@ -19,7 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
-
 
 public class EquivalentChannelScheduleTest {
 
@@ -64,9 +64,18 @@ public class EquivalentChannelScheduleTest {
         Equivalent<Item> equivalentItem2 = new Equivalent<>(graph2, ImmutableList.of(item2));
         Equivalent<Item> equivalentItem3 = new Equivalent<>(graph3, ImmutableList.of(item3));
 
-        EquivalentScheduleEntry scheduleEntry1 = new EquivalentScheduleEntry(broadcast1, equivalentItem1);
-        EquivalentScheduleEntry scheduleEntry2 = new EquivalentScheduleEntry(broadcast2, equivalentItem2);
-        EquivalentScheduleEntry scheduleEntry3 = new EquivalentScheduleEntry(broadcast3, equivalentItem3);
+        EquivalentScheduleEntry scheduleEntry1 = new EquivalentScheduleEntry(
+                broadcast1,
+                equivalentItem1
+        );
+        EquivalentScheduleEntry scheduleEntry2 = new EquivalentScheduleEntry(
+                broadcast2,
+                equivalentItem2
+        );
+        EquivalentScheduleEntry scheduleEntry3 = new EquivalentScheduleEntry(
+                broadcast3,
+                equivalentItem3
+        );
 
         EquivalentChannelSchedule objectUnderTest = new EquivalentChannelSchedule(
                 channel,
@@ -76,18 +85,23 @@ public class EquivalentChannelScheduleTest {
 
         EquivalentChannelSchedule scheduleWith1Broadcast = objectUnderTest.withLimitedBroadcasts(1);
         EquivalentChannelSchedule scheduleWith2Broadcasts = objectUnderTest.withLimitedBroadcasts(2);
-        EquivalentChannelSchedule scheduleWithAllBroadcasts = objectUnderTest.withLimitedBroadcasts(5);
+        EquivalentChannelSchedule scheduleWithAllBroadcasts = objectUnderTest.withLimitedBroadcasts(
+                5);
 
-        assertThat(Iterables.getOnlyElement(scheduleWith1Broadcast.getEntries()), is(scheduleEntry1));
+        assertThat(
+                Iterables.getOnlyElement(scheduleWith1Broadcast.getEntries()),
+                is(scheduleEntry1)
+        );
         assertThat(scheduleWith1Broadcast.getInterval().getEnd(), is(broadcast1EndTime));
 
         assertThat(scheduleWith2Broadcasts.getEntries(), contains(scheduleEntry1, scheduleEntry2));
         assertThat(scheduleWith2Broadcasts.getInterval().getEnd(), is(broadcast2EndTime));
 
-
-        assertThat(scheduleWithAllBroadcasts.getEntries(), contains(scheduleEntry1, scheduleEntry2, scheduleEntry3));
+        assertThat(
+                scheduleWithAllBroadcasts.getEntries(),
+                contains(scheduleEntry1, scheduleEntry2, scheduleEntry3)
+        );
         assertThat(scheduleWithAllBroadcasts.getInterval().getEnd(), is(broadcast3EndTime));
-
 
     }
 }

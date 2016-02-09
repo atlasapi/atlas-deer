@@ -29,14 +29,12 @@ import org.atlasapi.users.videosource.model.UserVideoSource;
 import org.atlasapi.users.videosource.model.VideoSourceChannel;
 import org.atlasapi.users.videosource.model.VideoSourceChannelResults;
 import org.atlasapi.users.videosource.remote.RemoteSourceUpdaterClient;
-import org.elasticsearch.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.social.model.UserRef;
+import com.metabroadcast.common.social.model.UserRef.UserNamespace;
+import com.metabroadcast.common.url.QueryStringParameters;
+import com.metabroadcast.common.url.Urls;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
 import com.google.api.client.auth.oauth2.Credential;
@@ -58,11 +56,14 @@ import com.google.api.services.youtube.model.ChannelListResponse;
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.social.model.UserRef;
-import com.metabroadcast.common.social.model.UserRef.UserNamespace;
-import com.metabroadcast.common.url.QueryStringParameters;
-import com.metabroadcast.common.url.Urls;
+import org.elasticsearch.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class YouTubeLinkedServiceController {
@@ -74,7 +75,8 @@ public class YouTubeLinkedServiceController {
     private static final Splitter STATE_SPLITTER = Splitter.on(STATE_BOUNDARY);
     private static final List<String> SCOPES_REQUIRED = Arrays.asList(
             "https://www.googleapis.com/auth/youtube.readonly",
-            "https://www.googleapis.com/auth/userinfo.profile");
+            "https://www.googleapis.com/auth/userinfo.profile"
+    );
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final String youTubeClientId;
     private final String youTubeClientSecret;
@@ -87,7 +89,7 @@ public class YouTubeLinkedServiceController {
     private final UserVideoSourceStore store;
     private final RemoteSourceUpdaterClient sourceUpdaterClient;
     private final QueryResultWriter<VideoSourceChannelResults> resultWriter;
-    
+
     private static final Function<Channel, VideoSourceChannel> YT_CHANNELS_TRANSLATOR = new Function<Channel, VideoSourceChannel>() {
 
         @Override
@@ -97,7 +99,8 @@ public class YouTubeLinkedServiceController {
                     .withTitle(input.getSnippet().getTitle())
                     .withImageUrl(input.getSnippet().getThumbnails().getDefault().getUrl())
                     .build();
-        }};
+        }
+    };
 
     public YouTubeLinkedServiceController(String youTubeClientId,
             String youTubeClientSecret,
@@ -118,7 +121,7 @@ public class YouTubeLinkedServiceController {
         Preconditions.checkNotNull(store);
         Preconditions.checkNotNull(sourceUpdaterClient);
         Preconditions.checkNotNull(resultWriter);
-        
+
         this.youTubeClientId = youTubeClientId;
         this.youTubeClientSecret = youTubeClientSecret;
         this.oauthRequestResultWriter = oauthRequestResultWriter;
@@ -143,7 +146,8 @@ public class YouTubeLinkedServiceController {
         // Put original callback uri into state so that we can redirect to it
         String state = STATE_JOINER.join(userId, redirectUri);
         String authUrl = new GoogleAuthorizationCodeRequestUrl(youTubeClientId,
-                atlasCallbackUri, SCOPES_REQUIRED)
+                atlasCallbackUri, SCOPES_REQUIRED
+        )
                 .setAccessType("offline")
                 .setState(state)
                 .setApprovalPrompt("force")
@@ -156,8 +160,10 @@ public class YouTubeLinkedServiceController {
                 .withToken("")
                 .withSecret("")
                 .build();
-        QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(oauthRequest,
-                QueryContext.standard(request));
+        QueryResult<OAuthRequest> queryResult = QueryResult.singleResult(
+                oauthRequest,
+                QueryContext.standard(request)
+        );
         oauthRequestResultWriter.write(queryResult, writer);
     }
 
@@ -172,17 +178,21 @@ public class YouTubeLinkedServiceController {
         List<String> stateParts = STATE_SPLITTER.splitToList(request.getParameter("state"));
         String userId = stateParts.get(0);
         String callbackUri = stateParts.get(1);
-        
+
         try {
             AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(
                     fullUrlBuf.toString());
             if (authResponse.getError() != null) {
-                String errorMsg = String.format("Error received from remote Oauth server: %s",
-                        authResponse.getError());
+                String errorMsg = String.format(
+                        "Error received from remote Oauth server: %s",
+                        authResponse.getError()
+                );
                 throw new NotAcceptableException(errorMsg);
             }
-            GoogleTokenResponse googleTokenResponse = getGoogleTokenResponse(authResponse,
-                    request.getRequestURL().toString());
+            GoogleTokenResponse googleTokenResponse = getGoogleTokenResponse(
+                    authResponse,
+                    request.getRequestURL().toString()
+            );
             OauthToken token = getOauthTokenFromTokenResponse(googleTokenResponse);
             // get the youtube user info
             Userinfo userinfo = getUserInfo(googleTokenResponse);
@@ -208,17 +218,21 @@ public class YouTubeLinkedServiceController {
             response.sendRedirect(Urls.appendParameters(callbackUri, errorParams));
         }
     }
-    
+
     @RequestMapping(value = { "/4/videosource/youtube/channels.*" }, method = RequestMethod.GET)
     public void getChannels(HttpServletResponse response, HttpServletRequest request)
             throws IOException {
         ResponseWriter writer = null;
         try {
             User user = userFetcher.userFor(request).get();
-            writer =  writerResolver.writerFor(request, response);
+            writer = writerResolver.writerFor(request, response);
             List<VideoSourceChannelResults> channels = getChannelsForUser(user);
             QueryResult<VideoSourceChannelResults> queryResult =
-            QueryResult.listResult(channels, QueryContext.standard(request), channels.size());
+                    QueryResult.listResult(
+                            channels,
+                            QueryContext.standard(request),
+                            channels.size()
+                    );
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
@@ -226,19 +240,25 @@ public class YouTubeLinkedServiceController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
-    @RequestMapping(value = { "/4/videosource/youtube/{youtubeId}/source/add/{sourceId}.*" }, method = RequestMethod.POST)
-    public void addSource(HttpServletResponse response, HttpServletRequest request, 
-            @PathVariable String youtubeId, 
+
+    @RequestMapping(value = { "/4/videosource/youtube/{youtubeId}/source/add/{sourceId}.*" },
+            method = RequestMethod.POST)
+    public void addSource(HttpServletResponse response, HttpServletRequest request,
+            @PathVariable String youtubeId,
             @PathVariable String sourceId) throws IOException {
         // Once we have the source we can post the user details to the remote service
         ResponseWriter writer = null;
         try {
             Publisher source = sourceIdCodec.decode(sourceId).get();
             User user = userFetcher.userFor(request).get();
-            UserVideoSource userVideoSource = store.sourceForRemoteuserRef(new UserRef(youtubeId, UserNamespace.YOUTUBE));
+            UserVideoSource userVideoSource = store.sourceForRemoteuserRef(new UserRef(
+                    youtubeId,
+                    UserNamespace.YOUTUBE
+            ));
             if (userVideoSource.getAtlasUser().equals(user.getId())) {
-                UserVideoSource sourceWithPublisher = userVideoSource.copy().withPublisher(source).build();
+                UserVideoSource sourceWithPublisher = userVideoSource.copy()
+                        .withPublisher(source)
+                        .build();
                 store.store(sourceWithPublisher);
                 sourceUpdaterClient.register(sourceWithPublisher);
                 sourceUpdaterClient.addToken(sourceWithPublisher, userVideoSource.getToken());
@@ -251,15 +271,19 @@ public class YouTubeLinkedServiceController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
-    @RequestMapping(value = { "/4/videosource/youtube/{youtubeId}/channels/add/{channelId}.*" }, method = RequestMethod.POST) 
-    public void addChannel(HttpServletResponse response, HttpServletRequest request, 
-            @PathVariable String youtubeId, 
+
+    @RequestMapping(value = { "/4/videosource/youtube/{youtubeId}/channels/add/{channelId}.*" },
+            method = RequestMethod.POST)
+    public void addChannel(HttpServletResponse response, HttpServletRequest request,
+            @PathVariable String youtubeId,
             @PathVariable String channelId) throws IOException {
         ResponseWriter writer = null;
         try {
             User user = userFetcher.userFor(request).get();
-            UserVideoSource userVideoSource = store.sourceForRemoteuserRef(new UserRef(youtubeId, UserNamespace.YOUTUBE));
+            UserVideoSource userVideoSource = store.sourceForRemoteuserRef(new UserRef(
+                    youtubeId,
+                    UserNamespace.YOUTUBE
+            ));
             if (userVideoSource.getAtlasUser().equals(user.getId())) {
                 sourceUpdaterClient.addChannelId(userVideoSource, channelId);
                 store.store(userVideoSource.copy().addChannelId(channelId).build());
@@ -273,7 +297,6 @@ public class YouTubeLinkedServiceController {
         }
     }
 
-
     private Credential getCredentialForToken(GoogleTokenResponse tokenResponse) {
         return new GoogleCredential.Builder()
                 .setJsonFactory(jsonFactory)
@@ -284,12 +307,14 @@ public class YouTubeLinkedServiceController {
 
     private GoogleTokenResponse getGoogleTokenResponse(AuthorizationCodeResponseUrl authResponse,
             String redirectUri) throws IOException {
-        return new GoogleAuthorizationCodeTokenRequest(httpTransport,
+        return new GoogleAuthorizationCodeTokenRequest(
+                httpTransport,
                 jsonFactory,
                 youTubeClientId,
                 youTubeClientSecret,
                 authResponse.getCode(),
-                redirectUri)
+                redirectUri
+        )
                 .execute();
     }
 
@@ -305,23 +330,34 @@ public class YouTubeLinkedServiceController {
 
     private Userinfo getUserInfo(GoogleTokenResponse tokenResponse) throws IOException {
         Credential credential = getCredentialForToken(tokenResponse);
-        Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credential).setApplicationName(
+        Oauth2 oauth2 = new Oauth2.Builder(
+                httpTransport,
+                jsonFactory,
+                credential
+        ).setApplicationName(
                 YT_APP_NAME)
                 .build();
         return oauth2.userinfo().get().execute();
     }
-    
+
     private List<VideoSourceChannelResults> getChannelsForUser(User user) throws IOException {
-        Iterable<UserVideoSource> userVideoSources = store.userVideoSourcesFor(user, UserNamespace.YOUTUBE);
+        Iterable<UserVideoSource> userVideoSources = store.userVideoSourcesFor(
+                user,
+                UserNamespace.YOUTUBE
+        );
         List<VideoSourceChannelResults> channelResults = Lists.newArrayList();
         for (UserVideoSource userVideoSource : userVideoSources) {
             YouTube youtube = new YouTube.Builder(httpTransport,
-                    jsonFactory, null).setApplicationName(YT_APP_NAME).build();
+                    jsonFactory, null
+            ).setApplicationName(YT_APP_NAME).build();
             YouTube.Channels.List channelRequest = youtube.channels().list("id,snippet");
             channelRequest.setOauthToken(userVideoSource.getToken().getAccessToken());
             channelRequest.setMine(true);
             ChannelListResponse channelResponse = channelRequest.execute();
-            Iterable<VideoSourceChannel> channels = Iterables.transform(channelResponse.getItems(), YT_CHANNELS_TRANSLATOR);
+            Iterable<VideoSourceChannel> channels = Iterables.transform(
+                    channelResponse.getItems(),
+                    YT_CHANNELS_TRANSLATOR
+            );
             VideoSourceChannelResults results = VideoSourceChannelResults.builder()
                     .withId(userVideoSource.getUserRef().getUserId())
                     .withChannels(channels)

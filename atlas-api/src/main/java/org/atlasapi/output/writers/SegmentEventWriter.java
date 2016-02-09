@@ -28,11 +28,15 @@ public class SegmentEventWriter implements EntityListWriter<SegmentAndEventTuple
     }
 
     @Override
-    public void write(@Nonnull SegmentAndEventTuple entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull SegmentAndEventTuple entity, @Nonnull FieldWriter writer,
+            @Nonnull OutputContext ctxt) throws IOException {
         final Segment segment = entity.getSegment();
         SegmentEvent segmentEvent = entity.getSegmentEvent();
         writer.writeField("position", segmentEvent.getPosition());
-        writer.writeField("offset", Ints.saturatedCast(segmentEvent.getOffset().getStandardSeconds()));
+        writer.writeField(
+                "offset",
+                Ints.saturatedCast(segmentEvent.getOffset().getStandardSeconds())
+        );
         writer.writeField("is_chapter", segmentEvent.getIsChapter());
         writer.writeObject(segmentWriter, segment, ctxt);
     }
@@ -45,11 +49,16 @@ public class SegmentEventWriter implements EntityListWriter<SegmentAndEventTuple
 
     private EntityWriter<Segment> segmentWriter() {
         return new EntityWriter<Segment>() {
+
             @Override
-            public void write(@Nonnull Segment entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+            public void write(@Nonnull Segment entity, @Nonnull FieldWriter writer,
+                    @Nonnull OutputContext ctxt) throws IOException {
                 writer.writeField("title", entity.getTitle());
                 writer.writeField("description", entity.getDescription());
-                writer.writeField("duration", Ints.saturatedCast(entity.getDuration().getStandardSeconds()));
+                writer.writeField(
+                        "duration",
+                        Ints.saturatedCast(entity.getDuration().getStandardSeconds())
+                );
                 writer.writeField("segment_type", entity.getType().name().toLowerCase());
                 writer.writeList(relatedLinkWriter, entity.getRelatedLinks(), ctxt);
             }

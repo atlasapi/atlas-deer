@@ -6,12 +6,13 @@ import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.EndpointMethodInfo;
 import org.atlasapi.generation.model.EndpointTypeInfo;
 import org.atlasapi.generation.model.Operation;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.google.common.collect.ImmutableSet;
+import org.springframework.web.bind.annotation.RequestMethod;
 
-public class EndpointClassInfoSourceGenerator extends AbstractSourceGenerator<EndpointTypeInfo, EndpointMethodInfo> {
-	
+public class EndpointClassInfoSourceGenerator
+        extends AbstractSourceGenerator<EndpointTypeInfo, EndpointMethodInfo> {
+
     @Override
     public String setName() {
         return "operations";
@@ -24,7 +25,12 @@ public class EndpointClassInfoSourceGenerator extends AbstractSourceGenerator<En
 
     @Override
     public String setElementFromMethod(EndpointMethodInfo method, String indent) {
-        return String.format("%snew Operation(RequestMethod.%s, %s)", indent, method.method(), method.path());
+        return String.format(
+                "%snew Operation(RequestMethod.%s, %s)",
+                indent,
+                method.method(),
+                method.path()
+        );
     }
 
     @Override
@@ -46,11 +52,11 @@ public class EndpointClassInfoSourceGenerator extends AbstractSourceGenerator<En
     @Override
     public String generateTypeBasedFields(EndpointTypeInfo typeInfo) {
         return new StringBuilder()
-        .append(formatOverriddenMethod("name", "String", typeInfo.key()))
-        .append(NEWLINE)
-        .append(formatOverriddenMethod("description", "String", typeInfo.description()))
-        .append(NEWLINE)
-        .append(formatOverriddenMethod("rootPath", "String", typeInfo.rootPath()))
-        .toString();
+                .append(formatOverriddenMethod("name", "String", typeInfo.key()))
+                .append(NEWLINE)
+                .append(formatOverriddenMethod("description", "String", typeInfo.description()))
+                .append(NEWLINE)
+                .append(formatOverriddenMethod("rootPath", "String", typeInfo.rootPath()))
+                .toString();
     }
 }

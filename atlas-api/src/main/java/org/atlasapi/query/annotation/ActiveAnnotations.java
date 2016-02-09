@@ -22,21 +22,26 @@ import com.google.common.collect.SetMultimap;
 public final class ActiveAnnotations extends ForwardingSetMultimap<List<Resource>, Annotation> {
 
     private static final ActiveAnnotations STANDARD = new ActiveAnnotations(
-        toMultimap(Maps.toMap(Lists.transform(Resource.all().asList(), new Function<Resource, List<Resource>>(){
-            @Override
-            public List<Resource> apply(@Nullable Resource input) {
-                return ImmutableList.of(input);
-            }}), Functions.constant(Annotation.standard())))
+            toMultimap(Maps.toMap(Lists.transform(
+                    Resource.all().asList(),
+                    new Function<Resource, List<Resource>>() {
+
+                        @Override
+                        public List<Resource> apply(@Nullable Resource input) {
+                            return ImmutableList.of(input);
+                        }
+                    }
+            ), Functions.constant(Annotation.standard())))
     );
 
     public static final ActiveAnnotations standard() {
         return STANDARD;
     }
-    
+
     private static SetMultimap<List<Resource>, Annotation> toMultimap(
             ImmutableMap<List<Resource>, ImmutableSet<Annotation>> standard) {
         ImmutableSetMultimap.Builder<List<Resource>, Annotation> std
-            = ImmutableSetMultimap.builder();
+                = ImmutableSetMultimap.builder();
         for (Entry<List<Resource>, ImmutableSet<Annotation>> entry : standard.entrySet()) {
             std.putAll(entry.getKey(), entry.getValue());
         }

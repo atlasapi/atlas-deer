@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 import argparse
-import dateutil.parser
 import datetime
+import dateutil.parser
 import httplib
-import sys
 import json
+import sys
 
 arg_parser = argparse.ArgumentParser(description='bootstrap schedules.')
 

@@ -1,8 +1,5 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.UUID;
 
@@ -14,19 +11,23 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Longs;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.Timestamp;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class AbstractContentStore implements ContentStore {
 
@@ -34,7 +35,8 @@ public abstract class AbstractContentStore implements ContentStore {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final class ContentWritingVisitor implements ContentVisitor<WriteResult<? extends Content, Content>> {
+    private final class ContentWritingVisitor
+            implements ContentVisitor<WriteResult<? extends Content, Content>> {
 
         private boolean hashChanged(Content writing, Content previous) {
             return !hasher.hash(writing).equals(hasher.hash(previous));
@@ -89,8 +91,7 @@ public abstract class AbstractContentStore implements ContentStore {
                     brand.setSeriesRefs(prev.getSeriesRefs());
                 }
                 handleContainer(brand, Optional.of(container));
-            }
-            else {
+            } else {
                 handleContainer(brand, Optional.absent());
             }
             return WriteResult.<Brand, Content>result(brand, written)
@@ -113,7 +114,8 @@ public abstract class AbstractContentStore implements ContentStore {
             return WriteResult.<Series, Content>written(series).build();
         }
 
-        private WriteResult<Series, Content> writeSeriesWithPrevious(Series series, Content previous) {
+        private WriteResult<Series, Content> writeSeriesWithPrevious(Series series,
+                Content previous) {
             boolean written = false;
             if (hashChanged(series, previous)) {
                 updateWithPevious(series, previous);
@@ -175,8 +177,10 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Episode, Content> visit(Episode episode) {
-            checkArgument(episode.getContainerRef() != null,
-                    "can't write episode with null container");
+            checkArgument(
+                    episode.getContainerRef() != null,
+                    "can't write episode with null container"
+            );
 
             episode.setContainerSummary(getSummary(episode.getContainerRef()));
             if (episode.getSeriesRef() != null) {
@@ -194,7 +198,8 @@ public abstract class AbstractContentStore implements ContentStore {
             return WriteResult.<Episode, Content>written(episode).build();
         }
 
-        private WriteResult<Episode, Content> writeEpisodeWithExising(Episode episode, Content previous) {
+        private WriteResult<Episode, Content> writeEpisodeWithExising(Episode episode,
+                Content previous) {
             boolean written = false;
             if (hashChanged(episode, previous)) {
                 updateWithPreviousItem(episode, previous);
@@ -208,18 +213,18 @@ public abstract class AbstractContentStore implements ContentStore {
                     .build();
         }
 
-
         private void updateWithPreviousItem(Item item, Content previous) {
-            if(!(previous instanceof Item)) {
+            if (!(previous instanceof Item)) {
                 return;
             }
-            Item previousItem = (Item)previous;
-            if(previousItem.getContainerRef() != null) {
+            Item previousItem = (Item) previous;
+            if (previousItem.getContainerRef() != null) {
                 if (!previousItem.getContainerRef().equals(item.getContainerRef())) {
                     removeAllReferencesToItem(previousItem.getContainerRef(), item.toRef());
                 }
             }
         }
+
         @Override
         public WriteResult<Film, Content> visit(Film film) {
             Optional<Content> previous = getPreviousContent(film);
@@ -282,7 +287,8 @@ public abstract class AbstractContentStore implements ContentStore {
 
     private final ContentWritingVisitor writingVisitor;
 
-    public AbstractContentStore(ContentHasher hasher, IdGenerator idGenerator, MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
+    public AbstractContentStore(ContentHasher hasher, IdGenerator idGenerator,
+            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
         this.hasher = checkNotNull(hasher);
         this.idGenerator = checkNotNull(idGenerator);
         this.clock = checkNotNull(clock);
@@ -292,7 +298,8 @@ public abstract class AbstractContentStore implements ContentStore {
 
     @Override
     @SuppressWarnings("unchecked")
-    public final <C extends Content> WriteResult<C, Content> writeContent(C content) throws WriteException {
+    public final <C extends Content> WriteResult<C, Content> writeContent(C content)
+            throws WriteException {
         checkNotNull(content, "write null content");
         checkNotNull(content.getSource(), "write unsourced content");
         try {
@@ -339,7 +346,8 @@ public abstract class AbstractContentStore implements ContentStore {
         }
     }
 
-    private <C extends Content> Iterable<ResourceUpdatedMessage> createEntityUpdatedMessages(WriteResult<C, Content> result) {
+    private <C extends Content> Iterable<ResourceUpdatedMessage> createEntityUpdatedMessages(
+            WriteResult<C, Content> result) {
         C writtenResource = result.getResource();
         ImmutableList.Builder<ResourceUpdatedMessage> messages = ImmutableList.builder();
         messages.add(
@@ -350,29 +358,31 @@ public abstract class AbstractContentStore implements ContentStore {
                 )
         );
 
-        if (writtenResource instanceof Container && containerSummaryChanged((Container)writtenResource, result.getPrevious())) {
-            for (ItemRef itemRef : ((Container)writtenResource).getItemRefs()) {
-                    messages.add(
-                            new ResourceUpdatedMessage(
-                                    UUID.randomUUID().toString(),
-                                    Timestamp.of(DateTime.now(DateTimeZone.UTC)),
-                                    itemRef
-                            )
-                    );
+        if (writtenResource instanceof Container
+                && containerSummaryChanged((Container) writtenResource, result.getPrevious())) {
+            for (ItemRef itemRef : ((Container) writtenResource).getItemRefs()) {
+                messages.add(
+                        new ResourceUpdatedMessage(
+                                UUID.randomUUID().toString(),
+                                Timestamp.of(DateTime.now(DateTimeZone.UTC)),
+                                itemRef
+                        )
+                );
             }
         }
 
-        if (writtenResource instanceof Item && ((Item)writtenResource).getContainerRef() != null) {
+        if (writtenResource instanceof Item && ((Item) writtenResource).getContainerRef() != null) {
             messages.add(
                     new ResourceUpdatedMessage(
                             UUID.randomUUID().toString(),
                             Timestamp.of(result.getWriteTime().getMillis()),
-                            ((Item)writtenResource).getContainerRef()
+                            ((Item) writtenResource).getContainerRef()
                     )
             );
         }
 
-        if (writtenResource instanceof Episode && ((Episode)writtenResource).getSeriesRef() != null) {
+        if (writtenResource instanceof Episode
+                && ((Episode) writtenResource).getSeriesRef() != null) {
             messages.add(
                     new ResourceUpdatedMessage(
                             UUID.randomUUID().toString(),
@@ -386,7 +396,8 @@ public abstract class AbstractContentStore implements ContentStore {
     }
 
     private boolean containerSummaryChanged(Container container, Optional<Content> previous) {
-        return !previous.isPresent() || (previous.get() instanceof Container && !((Container)previous.get()).toSummary().equals(container.toSummary())) ;
+        return !previous.isPresent() || (previous.get() instanceof Container
+                && !((Container) previous.get()).toSummary().equals(container.toSummary()));
     }
 
     private Optional<Content> getPreviousContent(Content c) {
@@ -394,12 +405,13 @@ public abstract class AbstractContentStore implements ContentStore {
     }
 
     private void handleContainer(Container container, Optional<Content> previous) {
-        if(containerSummaryChanged(container, previous)) {
+        if (containerSummaryChanged(container, previous)) {
             writeContainerSummary(container.toSummary(), container.getItemRefs());
         }
     }
 
-    protected abstract Optional<Content> resolvePrevious(Optional<Id> id, Publisher source, Set<Alias> aliases);
+    protected abstract Optional<Content> resolvePrevious(Optional<Id> id, Publisher source,
+            Set<Alias> aliases);
 
     private void write(Content content, Content previous) {
         ensureId(content);
@@ -425,8 +437,7 @@ public abstract class AbstractContentStore implements ContentStore {
     protected abstract ContainerSummary summarize(ContainerRef primary);
 
     /**
-     * Add a ref to the series in the primary container and update its
-     * thisOrChildLastUpdated time.
+     * Add a ref to the series in the primary container and update its thisOrChildLastUpdated time.
      *
      * @param primary
      * @param seriesRef
@@ -438,8 +449,7 @@ public abstract class AbstractContentStore implements ContentStore {
     );
 
     /**
-     * Add a ref to the child in the container and update its
-     * thisOrChildLastUpdated time.
+     * Add a ref to the child in the container and update its thisOrChildLastUpdated time.
      *
      * @param item
      */
@@ -454,7 +464,8 @@ public abstract class AbstractContentStore implements ContentStore {
             Broadcast broadcast
     );
 
-    protected abstract void writeContainerSummary(ContainerSummary summary, Iterable<ItemRef> items);
+    protected abstract void writeContainerSummary(ContainerSummary summary,
+            Iterable<ItemRef> items);
 
     protected abstract void removeAllReferencesToItem(ContainerRef containerRef, ItemRef itemRef);
 }

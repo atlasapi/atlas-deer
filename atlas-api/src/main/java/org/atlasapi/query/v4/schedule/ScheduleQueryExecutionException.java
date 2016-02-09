@@ -9,11 +9,11 @@ public class ScheduleQueryExecutionException extends QueryExecutionException {
     public ScheduleQueryExecutionException() {
         super();
     }
-    
+
     public ScheduleQueryExecutionException(String message) {
         super(message);
     }
-    
+
     public ScheduleQueryExecutionException(Throwable cause) {
         super(cause);
     }

@@ -16,6 +16,7 @@ import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.QueryResult;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -23,11 +24,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * An endpoint for serving pieces of Content. Content can be fetched either by
- * unique ID or by adding filter parameters to the endpoint. 
- * 
+ * An endpoint for serving pieces of Content. Content can be fetched either by unique ID or by
+ * adding filter parameters to the endpoint.
  */
-@ProducesType(type=Content.class)
+@ProducesType(type = Content.class)
 @Controller
 @RequestMapping("/4/content")
 public class ContentController {
@@ -41,15 +41,16 @@ public class ContentController {
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public ContentController(QueryParser<Content> queryParser,
-        QueryExecutor<Content> queryExecutor, QueryResultWriter<Content> resultWriter) {
+            QueryExecutor<Content> queryExecutor, QueryResultWriter<Content> resultWriter) {
         this.requestParser = queryParser;
         this.queryExecutor = queryExecutor;
         this.resultWriter = resultWriter;
     }
 
     @RequestMapping({ "/{id}.*", "/{id}", ".*", "" })
-    public void fetchContent(HttpServletRequest request, HttpServletResponse response, @RequestParam(value = "order_by", required = false) String orderBy)
-        throws IOException {
+    public void fetchContent(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(value = "order_by", required = false) String orderBy)
+            throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -58,7 +59,9 @@ public class ContentController {
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             String queryString = request.getQueryString();
-            log.error("Request exception " + request.getRequestURI() + (queryString != null ? queryString : ""), e);
+            log.error("Request exception " + request.getRequestURI() + (queryString != null
+                                                                        ? queryString
+                                                                        : ""), e);
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
         }

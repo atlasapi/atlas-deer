@@ -14,45 +14,46 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.channel.Channel;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.schedule.ScheduleBroadcastFilter;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
+
+import com.metabroadcast.common.time.IntervalOrdering;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Ordering;
-import com.metabroadcast.common.time.IntervalOrdering;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A time and channel at which a Version is/was receivable.
- * 
+ *
  * @author Robert Chatley (robert@metabroadcast.com)
  */
 public class Broadcast extends Identified {
-    
+
     private final Id channelId;
     private final Interval transmissionInterval;
     private final Duration broadcastDuration;
-    
+
     private LocalDate scheduleDate;
     private Boolean activelyPublished;
-    
+
     //Should probably be called sourceAlias.
-    private String sourceId;  
+    private String sourceId;
 
     private String versionId;
-    
+
     private Boolean repeat;
     private Boolean subtitled;
     private Boolean signed;
@@ -66,15 +67,15 @@ public class Broadcast extends Identified {
     private Boolean premiere;
     private Boolean is3d;
     private Optional<BlackoutRestriction> blackoutRestriction = Optional.absent();
-    
+
     public Broadcast(Id channelId, DateTime start, DateTime end, Boolean activelyPublished) {
-		this(channelId, new Interval(start, end), activelyPublished);
-	}
-    
+        this(channelId, new Interval(start, end), activelyPublished);
+    }
+
     public Broadcast(Id channelId, DateTime start, DateTime end) {
         this(channelId, start, end, true);
     }
-    
+
     public Broadcast(Id channelId, DateTime start, Duration duration) {
         this(channelId, start, duration, true);
     }
@@ -82,31 +83,32 @@ public class Broadcast extends Identified {
     public Broadcast(Id channelId, Interval interval) {
         this(channelId, interval, true);
     }
-    
+
     public Broadcast(Id channelId, DateTime start, Duration duration, Boolean activelyPublished) {
-		this(channelId, new Interval(start, start.plus(duration)), activelyPublished);
-	}
+        this(channelId, new Interval(start, start.plus(duration)), activelyPublished);
+    }
 
     public Broadcast(Channel channel, DateTime start, DateTime end, Boolean activelyPublished) {
         this(channel.getId(), new Interval(start, end), activelyPublished);
     }
-    
+
     public Broadcast(Channel channel, DateTime start, DateTime end) {
         this(channel.getId(), start, end, true);
     }
-    
+
     public Broadcast(Channel channel, DateTime start, Duration duration) {
         this(channel.getId(), start, duration, true);
     }
-    
+
     public Broadcast(Channel channel, Interval interval) {
         this(channel.getId(), interval, true);
     }
-    
-    public Broadcast(Channel channel, DateTime start, Duration duration, Boolean activelyPublished) {
+
+    public Broadcast(Channel channel, DateTime start, Duration duration,
+            Boolean activelyPublished) {
         this(channel.getId(), new Interval(start, start.plus(duration)), activelyPublished);
     }
-    
+
     public Broadcast(Id channelId, Interval interval, Boolean activelyPublished) {
         this.channelId = checkNotNull(channelId);
         this.transmissionInterval = checkNotNull(interval);
@@ -121,9 +123,9 @@ public class Broadcast extends Identified {
 
     @FieldName("transmission_end_time")
     public DateTime getTransmissionEndTime() {
-		return transmissionInterval.getEnd();
-	}
-    
+        return transmissionInterval.getEnd();
+    }
+
     @FieldName("transmission_interval")
     public Interval getTransmissionInterval() {
         return transmissionInterval;
@@ -143,7 +145,7 @@ public class Broadcast extends Identified {
     public LocalDate getScheduleDate() {
         return scheduleDate;
     }
-    
+
     @FieldName("source_id")
     public String getSourceId() {
         return sourceId;
@@ -152,30 +154,30 @@ public class Broadcast extends Identified {
     public void setScheduleDate(LocalDate scheduleDate) {
         this.scheduleDate = scheduleDate;
     }
-    
+
     public Broadcast withId(String id) {
         this.sourceId = id;
         return this;
     }
-    
+
     @FieldName("actively_published")
     public Boolean isActivelyPublished() {
         return activelyPublished;
     }
-    
+
     public void setIsActivelyPublished(Boolean activelyPublished) {
         this.activelyPublished = activelyPublished;
     }
-    
+
     @FieldName("repeat")
     public Boolean getRepeat() {
         return repeat;
     }
-    
+
     public void setRepeat(Boolean repeat) {
         this.repeat = repeat;
     }
-    
+
     public void setSubtitled(Boolean subtitled) {
         this.subtitled = subtitled;
     }
@@ -220,7 +222,7 @@ public class Broadcast extends Identified {
     public Boolean getWidescreen() {
         return widescreen;
     }
-    
+
     public void setSurround(Boolean surround) {
         this.surround = surround;
     }
@@ -238,7 +240,7 @@ public class Broadcast extends Identified {
     public Boolean getLive() {
         return live;
     }
-    
+
     public void setPremiere(Boolean premiere) {
         this.premiere = premiere;
     }
@@ -247,47 +249,47 @@ public class Broadcast extends Identified {
     public Boolean getPremiere() {
         return premiere;
     }
-    
+
     public void setNewSeries(Boolean newSeries) {
         this.newSeries = newSeries;
     }
-    
+
     @FieldName("new_series")
     public Boolean getNewSeries() {
         return newSeries;
     }
-    
+
     public void setNewEpisode(Boolean newEpisode) {
         this.newEpisode = newEpisode;
     }
-    
+
     @FieldName("new_episode")
     public Boolean getNewEpisode() {
         return newEpisode;
     }
-    
+
     @FieldName("three_d")
     public Boolean is3d() {
         return is3d;
     }
-    
+
     public void set3d(Boolean is3d) {
         this.is3d = is3d;
     }
-    
+
     @FieldName("version_id")
     public String getVersionId() {
         return versionId;
     }
-    
+
     public void setVersionId(String versionId) {
         this.versionId = versionId;
     }
-    
+
     public BroadcastRef toRef() {
         return new BroadcastRef(sourceId, channelId, getTransmissionInterval());
     }
-    
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -303,7 +305,7 @@ public class Broadcast extends Identified {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         // Currently publishers either have ids for all broadcasts or all broadcasts don't have ids 
@@ -313,7 +315,7 @@ public class Broadcast extends Identified {
         }
         return transmissionInterval.hashCode();
     }
-    
+
     public Broadcast copy() {
         Broadcast copy = new Broadcast(channelId, transmissionInterval);
         Identified.copyTo(this, copy);
@@ -333,7 +335,7 @@ public class Broadcast extends Identified {
         copy.versionId = versionId;
         return copy;
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(getClass())
@@ -343,8 +345,9 @@ public class Broadcast extends Identified {
                 .add("interval", transmissionInterval)
                 .toString();
     }
-    
+
     public final static Function<Broadcast, Broadcast> COPY = new Function<Broadcast, Broadcast>() {
+
         @Override
         public Broadcast apply(Broadcast input) {
             return input.copy();
@@ -352,13 +355,15 @@ public class Broadcast extends Identified {
     };
 
     public static final Predicate<Broadcast> IS_REPEAT = new Predicate<Broadcast>() {
+
         @Override
         public boolean apply(Broadcast input) {
             return input.repeat != null && input.repeat;
         }
     };
-    
+
     public static final Function<Broadcast, DateTime> TO_TRANSMISSION_TIME = new Function<Broadcast, DateTime>() {
+
         @Override
         public DateTime apply(Broadcast input) {
             return input.getTransmissionTime();
@@ -366,16 +371,18 @@ public class Broadcast extends Identified {
     };
 
     public static final Predicate<Broadcast> ACTIVELY_PUBLISHED = new Predicate<Broadcast>() {
+
         @Override
         public boolean apply(Broadcast input) {
             return input.isActivelyPublished();
         }
     };
 
-    public static final java.util.function.Predicate<Broadcast> IS_UPCOMING = b -> b.getTransmissionEndTime().isAfter(DateTime.now(DateTimeZone.UTC));
+    public static final java.util.function.Predicate<Broadcast> IS_UPCOMING = b -> b.getTransmissionEndTime()
+            .isAfter(DateTime.now(DateTimeZone.UTC));
 
     public final static java.util.function.Function<Broadcast, BroadcastRef> TO_REF = b -> b.toRef();
-    
+
     public static final Predicate<Broadcast> channelFilter(final Channel channel) {
         return new BroadcastChannelFilter(channel);
     }
@@ -398,10 +405,10 @@ public class Broadcast extends Identified {
 
         @Override
         public boolean apply(Broadcast input) {
-            return input.getChannelId() != null 
-                && input.getChannelId().longValue() == channel.getId().longValue();
+            return input.getChannelId() != null
+                    && input.getChannelId().longValue() == channel.getId().longValue();
         }
-        
+
         @Override
         public String toString() {
             return "broadcasts on " + channel;
@@ -411,7 +418,7 @@ public class Broadcast extends Identified {
     public static final Predicate<Broadcast> intervalFilter(final Interval interval) {
         return new BroadcastIntervalFilter(interval);
     }
-    
+
     private static final class BroadcastIntervalFilter implements Predicate<Broadcast> {
 
         private final Predicate<Interval> scheduleFilter;
@@ -424,7 +431,7 @@ public class Broadcast extends Identified {
         public boolean apply(Broadcast input) {
             return scheduleFilter.apply(input.getTransmissionInterval());
         }
-        
+
         @Override
         public String toString() {
             return "broadcasts with " + scheduleFilter;
@@ -438,9 +445,9 @@ public class Broadcast extends Identified {
             return IntervalOrdering.byStartShortestFirst()
                     .compare(left.transmissionInterval, right.transmissionInterval);
         }
-        
+
     }
-    
+
     private static final Ordering<Broadcast> START_TIME_ORDERING = new BroadcastStartTimeOrdering();
 
     public static final Ordering<Broadcast> startTimeOrdering() {

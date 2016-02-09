@@ -1,15 +1,17 @@
 package org.atlasapi.content;
 
+import org.atlasapi.entity.AliasIndex;
+
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
-import org.atlasapi.entity.AliasIndex;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DatastaxCassandraContentStoreIT extends CassandraContentStoreIT{
+public class DatastaxCassandraContentStoreIT extends CassandraContentStoreIT {
 
     private final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
     private final String keyspace = "atlas_testing";
@@ -26,6 +28,10 @@ public class DatastaxCassandraContentStoreIT extends CassandraContentStoreIT{
                 idGenerator,
                 sender,
                 clock,
-                session, writeConsistency, readConsistency, AliasIndex.create(context.getClient(), "content" + "_aliases"));
+                session,
+                writeConsistency,
+                readConsistency,
+                AliasIndex.create(context.getClient(), "content" + "_aliases")
+        );
     }
 }

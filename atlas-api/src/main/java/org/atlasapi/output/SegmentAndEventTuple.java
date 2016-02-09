@@ -1,10 +1,10 @@
 package org.atlasapi.output;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SegmentAndEventTuple {
 
@@ -12,8 +12,10 @@ public class SegmentAndEventTuple {
     private final SegmentEvent segmentEvent;
 
     public SegmentAndEventTuple(Segment segment, SegmentEvent segmentEvent) {
-        checkArgument(segment.getId().equals(segmentEvent.getSegmentRef().getId()),
-                "Segment Event must reference Segment");
+        checkArgument(
+                segment.getId().equals(segmentEvent.getSegmentRef().getId()),
+                "Segment Event must reference Segment"
+        );
         this.segment = checkNotNull(segment);
         this.segmentEvent = checkNotNull(segmentEvent);
     }

@@ -1,7 +1,5 @@
 package org.atlasapi.messaging;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -11,16 +9,20 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.util.ImmutableCollectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<EquivalentContentUpdatedMessage> {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public class EquivalentScheduleStoreContentUpdateWorker
+        implements Worker<EquivalentContentUpdatedMessage> {
 
     private static final Logger LOG =
             LoggerFactory.getLogger(EquivalentScheduleStoreContentUpdateWorker.class);
@@ -42,7 +44,8 @@ public class EquivalentScheduleStoreContentUpdateWorker  implements Worker<Equiv
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
         LOG.debug("Processing message on id {}, message: {}",
-                message.getEquivalentSetId(), message);
+                message.getEquivalentSetId(), message
+        );
 
         Set<Content> content = Futures.get(
                 contentStore.resolveEquivalentSet(message.getEquivalentSetId()),

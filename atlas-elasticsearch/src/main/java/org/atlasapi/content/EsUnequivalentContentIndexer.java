@@ -1,7 +1,5 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Map;
 
 import org.atlasapi.EsSchema;
@@ -9,6 +7,8 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.SecondaryIndex;
+
+import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -22,7 +22,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableSet;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EsUnequivalentContentIndexer {
 
@@ -91,12 +91,10 @@ public class EsUnequivalentContentIndexer {
         if (content instanceof Container) {
             deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
-        }
-        else if (content instanceof Episode) {
+        } else if (content instanceof Episode) {
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
-        }
-        else if (content instanceof Item) {
+        } else if (content instanceof Item) {
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
             deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
         }
@@ -106,11 +104,9 @@ public class EsUnequivalentContentIndexer {
         long id = content.getId().longValue();
         if (content instanceof Container) {
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_CONTAINER);
-        }
-        else if (content instanceof Episode) {
+        } else if (content instanceof Episode) {
             deleteFromIndexIfExists(id, EsContent.CHILD_ITEM);
-        }
-        else if (content instanceof Item) {
+        } else if (content instanceof Item) {
             deleteFromIndexIfExists(id, EsContent.TOP_LEVEL_ITEM);
         }
     }
@@ -172,14 +168,15 @@ public class EsUnequivalentContentIndexer {
             }
 
             requests.add(mainIndexRequest);
-            BulkResponse resp = ElasticsearchUtils.getWithTimeout(esClient.bulk(requests), requestTimeout);
+            BulkResponse resp = ElasticsearchUtils.getWithTimeout(
+                    esClient.bulk(requests),
+                    requestTimeout
+            );
             log.debug("indexed {} ({}ms)", item, resp.getTookInMillis());
         } catch (Exception e) {
             throw new RuntimeIndexException("Error indexing " + item, e);
         }
     }
-
-
 
     private String getDocId(Content content) {
         return String.valueOf(content.getId());
@@ -207,9 +204,13 @@ public class EsUnequivalentContentIndexer {
             }
         }
         if (bulkReq.numberOfActions() > 0) {
-            BulkResponse resp = ElasticsearchUtils.getWithTimeout(esClient.bulk(bulkReq), requestTimeout);
+            BulkResponse resp = ElasticsearchUtils.getWithTimeout(
+                    esClient.bulk(bulkReq),
+                    requestTimeout
+            );
             if (resp.hasFailures()) {
-                throw new IndexException("Failures occurred while bulk updating canonical IDs: " + resp.buildFailureMessage());
+                throw new IndexException("Failures occurred while bulk updating canonical IDs: "
+                        + resp.buildFailureMessage());
             }
         }
     }

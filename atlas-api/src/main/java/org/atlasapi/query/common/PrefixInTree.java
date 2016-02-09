@@ -1,7 +1,5 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 
 import com.google.common.base.Optional;
@@ -10,18 +8,20 @@ import com.googlecode.concurrenttrees.radix.ConcurrentRadixTree;
 import com.googlecode.concurrenttrees.radix.node.Node;
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharArrayNodeFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class PrefixInTree<T> extends ConcurrentRadixTree<Optional<T>> {
 
     public PrefixInTree() {
         super(new DefaultCharArrayNodeFactory());
     }
-    
+
     public Optional<T> valueForKeyPrefixOf(String superString) {
         checkNotNull(superString, "can't lookup null key");
         if (superString.isEmpty()) {
             return Optional.absent();
         }
-        
+
         int matchLen = 0;
         int nodeMatchLen = 0;
         Node prev = null;
@@ -39,17 +39,18 @@ public class PrefixInTree<T> extends ConcurrentRadixTree<Optional<T>> {
                 matchLen++;
                 nodeMatchLen++;
             }
-            
-            node = matchLen < superString.length() ? node.getOutgoingEdge(superString.charAt(matchLen))
+
+            node = matchLen < superString.length() ? node.getOutgoingEdge(superString.charAt(
+                    matchLen))
                                                    : null;
         }
-        
+
         return processResult(superString, prev, matchLen, nodeMatchLen);
     }
 
     @SuppressWarnings("unchecked")
     private Optional<T> processResult(String key, Node curNode, int matchLen,
-                                                 int curNodeMatch) {
+            int curNodeMatch) {
         int incomingEdgeLength = curNode.getIncomingEdge().length();
         Optional<T> value = Optional.absent();
         if (matchLen > 0 && matchLen <= key.length()
@@ -62,10 +63,11 @@ public class PrefixInTree<T> extends ConcurrentRadixTree<Optional<T>> {
     private boolean leafNode(Node curNode) {
         return curNode.getValue() != null;
     }
-    
+
     public Set<String> allKeys() {
         final ImmutableSet.Builder<String> keys = ImmutableSet.builder();
         traverseDescendants("", root, new NodeKeyPairHandler() {
+
             @Override
             public boolean handle(ConcurrentRadixTree.NodeKeyPair nodeKeyPair) {
                 if (nodeKeyPair.node.getOutgoingEdges().isEmpty()) {
@@ -76,10 +78,10 @@ public class PrefixInTree<T> extends ConcurrentRadixTree<Optional<T>> {
         });
         return keys.build();
     }
-    
+
     public PrefixInTree<T> put(String key, T value) {
         put(key, Optional.fromNullable(value));
         return this;
     }
-    
+
 }

@@ -14,45 +14,48 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.attribute;
 
-import org.atlasapi.entity.Identified;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.IntegerAttributeQuery;
 import org.atlasapi.criteria.operator.ComparableOperator;
 import org.atlasapi.criteria.operator.Operator;
+import org.atlasapi.entity.Identified;
 
 public class IntegerValuedAttribute extends Attribute<Integer> {
 
-	IntegerValuedAttribute(String name, Class<? extends Identified> target) {
-		super(name, target);
-	}
+    IntegerValuedAttribute(String name, Class<? extends Identified> target) {
+        super(name, target);
+    }
 
-	public IntegerValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
-		super(name, javaAttributeName, target);
-	}
+    public IntegerValuedAttribute(String name, String javaAttributeName,
+            Class<? extends Identified> target) {
+        super(name, javaAttributeName, target);
+    }
 
-	public IntegerValuedAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
-		super(name, target, isCollection);
-	}
+    public IntegerValuedAttribute(String name, Class<? extends Identified> target,
+            boolean isCollection) {
+        super(name, target, isCollection);
+    }
 
-	public IntegerValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
-		super(name, javaAttributeName, target, isCollectionOfValues);
-	}
+    public IntegerValuedAttribute(String name, String javaAttributeName,
+            Class<? extends Identified> target, boolean isCollectionOfValues) {
+        super(name, javaAttributeName, target, isCollectionOfValues);
+    }
 
-	@Override
-	public String toString() {
-		return "Integer valued attribute: " + name;
-	}
+    @Override
+    public String toString() {
+        return "Integer valued attribute: " + name;
+    }
 
-	@Override
-	public AttributeQuery<Integer> createQuery(Operator op, Iterable<Integer> values) {
-		if (!(op instanceof ComparableOperator)) {
-			throw new IllegalArgumentException();
-		}
-		return new IntegerAttributeQuery(this, (ComparableOperator) op, values);
-	}
+    @Override
+    public AttributeQuery<Integer> createQuery(Operator op, Iterable<Integer> values) {
+        if (!(op instanceof ComparableOperator)) {
+            throw new IllegalArgumentException();
+        }
+        return new IntegerAttributeQuery(this, (ComparableOperator) op, values);
+    }
 
-	@Override
-	public Class<Integer> requiresOperandOfType() {
-		return Integer.class;
-	}
+    @Override
+    public Class<Integer> requiresOperandOfType() {
+        return Integer.class;
+    }
 }

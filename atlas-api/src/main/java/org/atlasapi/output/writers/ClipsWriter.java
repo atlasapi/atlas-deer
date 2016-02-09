@@ -1,12 +1,13 @@
 package org.atlasapi.output.writers;
 
+import java.io.IOException;
+
+import javax.annotation.Nonnull;
+
 import org.atlasapi.content.Clip;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-
-import javax.annotation.Nonnull;
-import java.io.IOException;
 
 public class ClipsWriter implements EntityListWriter<Clip> {
 
@@ -17,7 +18,8 @@ public class ClipsWriter implements EntityListWriter<Clip> {
     }
 
     @Override
-    public void write(@Nonnull Clip entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull Clip entity, @Nonnull FieldWriter writer,
+            @Nonnull OutputContext ctxt) throws IOException {
         writer.writeField("uri", entity.getCanonicalUri());
         writer.writeField("title", entity.getTitle());
         writer.writeField("clipOf", entity.getClipOf());

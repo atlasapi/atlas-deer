@@ -17,6 +17,10 @@ import org.atlasapi.persistence.content.ResolvedContent;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
+import com.metabroadcast.common.base.MorePredicates;
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -29,10 +33,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.base.MorePredicates;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
-
 
 public class LegacyContentResolver implements ContentResolver {
 
@@ -40,8 +40,9 @@ public class LegacyContentResolver implements ContentResolver {
     private KnownTypeContentResolver contentResolver;
     private LegacyContentTransformer transformer;
 
-    public LegacyContentResolver(LookupEntryStore lookupStore, KnownTypeContentResolver contentResolver, LegacySegmentMigrator legacySegmentMigrator,
-                                 ChannelResolver channelResolver) {
+    public LegacyContentResolver(LookupEntryStore lookupStore,
+            KnownTypeContentResolver contentResolver, LegacySegmentMigrator legacySegmentMigrator,
+            ChannelResolver channelResolver) {
         this.lookupStore = lookupStore;
         this.contentResolver = contentResolver;
         this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
@@ -71,17 +72,23 @@ public class LegacyContentResolver implements ContentResolver {
     public OptionalMap<Alias, Content> resolveAliases(Iterable<Alias> aliases, Publisher source) {
         ImmutableSet<Alias> uniqueAliases = ImmutableSet.copyOf(aliases);
         Multimap<String, String> aliasMap = index(uniqueAliases);
-        Iterable<Iterable<LookupEntry>> entries = Iterables.transform(aliasMap.asMap().entrySet(),
-            new Function<Entry<String, Collection<String>>,Iterable<LookupEntry>>(){
-                @Override
-                public Iterable<LookupEntry> apply(Entry<String, Collection<String>> input) {
-                    Optional<String> namspace = Optional.of(input.getKey());
-                    return lookupStore.entriesForAliases(namspace, input.getValue());
+        Iterable<Iterable<LookupEntry>> entries = Iterables.transform(
+                aliasMap.asMap().entrySet(),
+                new Function<Entry<String, Collection<String>>, Iterable<LookupEntry>>() {
+
+                    @Override
+                    public Iterable<LookupEntry> apply(Entry<String, Collection<String>> input) {
+                        Optional<String> namspace = Optional.of(input.getKey());
+                        return lookupStore.entriesForAliases(namspace, input.getValue());
+                    }
                 }
-            });
+        );
         Iterable<LookupEntry> allEntries = Iterables.concat(entries);
         Iterable<LookupRef> refs = Iterables.transform(allEntries, LookupEntry.TO_SELF);
-        Predicate<LookupRef> filter = MorePredicates.transformingPredicate(LookupRef.TO_SOURCE, Predicates.equalTo(source));
+        Predicate<LookupRef> filter = MorePredicates.transformingPredicate(
+                LookupRef.TO_SOURCE,
+                Predicates.equalTo(source)
+        );
         Iterable<LookupRef> filtered = Iterables.filter(refs, filter);
         ResolvedContent resolved = contentResolver.findByLookupRefs(filtered);
         Iterable<org.atlasapi.media.entity.Content> content = filterContent(resolved);
@@ -97,7 +104,7 @@ public class LegacyContentResolver implements ContentResolver {
     }
 
     private Multimap<String, String> index(Iterable<Alias> aliases) {
-        Builder<String,String> index = ImmutableSetMultimap.builder();
+        Builder<String, String> index = ImmutableSetMultimap.builder();
         for (Alias alias : aliases) {
             index.put(alias.getNamespace(), alias.getValue());
         }

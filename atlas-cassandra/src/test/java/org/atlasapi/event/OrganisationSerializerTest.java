@@ -1,18 +1,18 @@
 package org.atlasapi.event;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationSerializer;
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class OrganisationSerializerTest {
 
@@ -43,7 +43,9 @@ public class OrganisationSerializerTest {
 
     private void checkOrganisation(Organisation expected, Organisation actual) {
         assertThat(actual.members().size(), is(expected.members().size()));
-        assertThat(actual.members().get(0).getCanonicalUri(),
-                is(expected.members().get(0).getCanonicalUri()));
+        assertThat(
+                actual.members().get(0).getCanonicalUri(),
+                is(expected.members().get(0).getCanonicalUri())
+        );
     }
 }

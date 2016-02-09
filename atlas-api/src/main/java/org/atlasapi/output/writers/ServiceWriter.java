@@ -1,15 +1,16 @@
 package org.atlasapi.output.writers;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import java.io.IOException;
+
+import javax.annotation.Nonnull;
+
 import org.atlasapi.content.Service;
-import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 public class ServiceWriter implements EntityWriter<Service> {
 
@@ -18,7 +19,8 @@ public class ServiceWriter implements EntityWriter<Service> {
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
     @Override
-    public void write(@Nonnull Service entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull Service entity, @Nonnull FieldWriter writer,
+            @Nonnull OutputContext ctxt) throws IOException {
         writer.writeField("title", entity.getTitle());
         writer.writeField("description", entity.getDescription());
         writer.writeField("image", entity.getImage());

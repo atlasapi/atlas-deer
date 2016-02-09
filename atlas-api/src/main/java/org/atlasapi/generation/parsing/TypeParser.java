@@ -10,8 +10,10 @@ import org.atlasapi.generation.model.MethodInfo;
 import org.atlasapi.generation.model.TypeInfo;
 
 public interface TypeParser<TI extends TypeInfo, MI extends MethodInfo> {
-	
-	void init(ProcessingEnvironment processingEnv);
-	TI parse(TypeElement type);
-	Set<MI> parse(Iterable<ExecutableElement> methods);
+
+    void init(ProcessingEnvironment processingEnv);
+
+    TI parse(TypeElement type);
+
+    Set<MI> parse(Iterable<ExecutableElement> methods);
 }

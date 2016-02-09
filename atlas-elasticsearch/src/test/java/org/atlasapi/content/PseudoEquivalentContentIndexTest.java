@@ -50,7 +50,7 @@ public class PseudoEquivalentContentIndexTest {
                 Publisher.METABROADCAST,
                 Publisher.BBC
         );
-        
+
         setupMocks(delegateResult, publishers);
 
         IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
@@ -125,7 +125,8 @@ public class PseudoEquivalentContentIndexTest {
                 eq(new AttributeQuerySet(Lists.newArrayList())),
                 eq(publishers),
                 any(Selection.class),
-                eq(indexQueryParams))
+                eq(indexQueryParams)
+                )
         )
                 .thenReturn(Futures.immediateFuture(queryResult));
     }

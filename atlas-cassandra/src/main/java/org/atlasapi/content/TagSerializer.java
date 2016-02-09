@@ -28,13 +28,16 @@ public class TagSerializer {
     private Builder serialize(Id topic) {
         return TopicProtos.Topic.newBuilder().setId(topic.longValue());
     }
-    
+
     public Tag deserialize(ContentProtos.TopicRef ref) {
         return new Tag(
-            Id.valueOf(ref.getTopic().getId()),
-            ref.hasWeighting() ? ref.getWeighting() : null,
-            ref.hasSupervised() ? ref.getSupervised() : null,
-            ref.hasRelationship() ? Tag.Relationship.fromString(ref.getRelationship()).get() : null,
-            ref.hasOffset() ? ref.getOffset() : null);
+                Id.valueOf(ref.getTopic().getId()),
+                ref.hasWeighting() ? ref.getWeighting() : null,
+                ref.hasSupervised() ? ref.getSupervised() : null,
+                ref.hasRelationship()
+                ? Tag.Relationship.fromString(ref.getRelationship()).get()
+                : null,
+                ref.hasOffset() ? ref.getOffset() : null
+        );
     }
 }

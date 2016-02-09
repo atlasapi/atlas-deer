@@ -12,19 +12,19 @@ public class Organisation extends ContentGroup {
     private ImmutableList<Person> members;
 
     private ImmutableSet<String> alternativeTitles;
-    
+
     public Organisation() {
         this(ImmutableList.<Person>of());
     }
-    
+
     public Organisation(Iterable<Person> members) {
         this.members = ImmutableList.copyOf(members);
     }
-    
+
     public ImmutableList<Person> members() {
         return members;
     }
-    
+
     public void setMembers(Iterable<Person> members) {
         this.members = ImmutableList.copyOf(members);
     }
@@ -36,7 +36,7 @@ public class Organisation extends ContentGroup {
     public ImmutableSet<String> getAlternativeTitles() {
         return alternativeTitles;
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(Organisation.class)
@@ -45,7 +45,7 @@ public class Organisation extends ContentGroup {
                 .add("uri", getCanonicalUri())
                 .toString();
     }
-    
+
     @Override
     public Organisation copy() {
         Organisation copy = new Organisation(this.members);

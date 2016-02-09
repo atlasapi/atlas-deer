@@ -1,16 +1,5 @@
 package org.atlasapi.topic;
 
-import static org.atlasapi.util.ElasticSearchHelper.refresh;
-import static org.hamcrest.Matchers.hasItems;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.Broadcast;
@@ -23,6 +12,17 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.atlasapi.util.NoOpSecondaryIndex;
+
+import com.metabroadcast.common.query.Selection;
+
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -31,24 +31,30 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
+import static org.atlasapi.util.ElasticSearchHelper.refresh;
+import static org.hamcrest.Matchers.hasItems;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class EsPopularTopicsIndexTest {
 
     private final Node esClient = ElasticSearchHelper.testNode();
     private final EsUnequivalentContentIndex index = new EsUnequivalentContentIndex(
-            esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60
+            esClient.client(),
+            EsSchema.CONTENT_INDEX,
+            new NoOpContentResolver(),
+            mock(ChannelGroupResolver.class),
+            new NoOpSecondaryIndex(),
+            60
     );
 
     @BeforeClass
     public static void before() throws Exception {
         Logger root = Logger.getRootLogger();
         root.addAppender(new ConsoleAppender(
-            new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
+                new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
         root.setLevel(Level.WARN);
     }
 
@@ -65,8 +71,16 @@ public class EsPopularTopicsIndexTest {
 
     @Test
     public void testPopularTopics() throws Exception {
-        Broadcast broadcast1 = new Broadcast(Id.valueOf(1), new DateTime(), new DateTime().plusHours(1));
-        Broadcast broadcast2 = new Broadcast(Id.valueOf(1), new DateTime().plusHours(2), new DateTime().plusHours(3));
+        Broadcast broadcast1 = new Broadcast(
+                Id.valueOf(1),
+                new DateTime(),
+                new DateTime().plusHours(1)
+        );
+        Broadcast broadcast2 = new Broadcast(
+                Id.valueOf(1),
+                new DateTime().plusHours(2),
+                new DateTime().plusHours(3)
+        );
 
         Tag topic1 = new Tag(Id.valueOf(1), 1.0f, Boolean.TRUE, Tag.Relationship.ABOUT);
         Tag topic2 = new Tag(Id.valueOf(2), 1.0f, Boolean.TRUE, Tag.Relationship.ABOUT);
@@ -101,15 +115,19 @@ public class EsPopularTopicsIndexTest {
         refresh(esClient.client());
 
         TopicResolver resolver = mock(TopicResolver.class);
-        when(resolver.resolveIds(argThat(hasItems(Id.valueOf(1),Id.valueOf(2)))))
-            .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(new Topic(Id.valueOf(
-                    1)), new Topic(Id.valueOf(2))))));
+        when(resolver.resolveIds(argThat(hasItems(Id.valueOf(1), Id.valueOf(2)))))
+                .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(new Topic(Id.valueOf(
+                        1)), new Topic(Id.valueOf(2))))));
 
         PopularTopicIndex searcher = new EsPopularTopicIndex(esClient.client());
 
         Interval interval = new Interval(new DateTime().minusHours(1), new DateTime().plusHours(1));
 
-        FluentIterable<Id> topicIds = queryIndex(searcher, interval, Selection.offsetBy(0).withLimit(Integer.MAX_VALUE));
+        FluentIterable<Id> topicIds = queryIndex(
+                searcher,
+                interval,
+                Selection.offsetBy(0).withLimit(Integer.MAX_VALUE)
+        );
 
         assertEquals(2, topicIds.size());
         assertEquals(1l, topicIds.get(0).longValue());
@@ -125,8 +143,11 @@ public class EsPopularTopicsIndexTest {
     }
 
     private FluentIterable<Id> queryIndex(PopularTopicIndex searcher, Interval interval,
-                                          Selection selection) {
-        ListenableFuture<FluentIterable<Id>> futureIds = searcher.popularTopics(interval, selection);
+            Selection selection) {
+        ListenableFuture<FluentIterable<Id>> futureIds = searcher.popularTopics(
+                interval,
+                selection
+        );
         FluentIterable<Id> topicIds = Futures.getUnchecked(futureIds);
         return topicIds;
     }

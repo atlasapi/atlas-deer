@@ -12,7 +12,7 @@ import org.atlasapi.topic.TopicStore;
 public interface PersistenceModule {
 
     ContentStore contentStore();
-    
+
     TopicStore topicStore();
 
     ScheduleStore scheduleStore();

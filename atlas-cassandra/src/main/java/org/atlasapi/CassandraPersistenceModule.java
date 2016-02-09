@@ -1,7 +1,5 @@
 package org.atlasapi;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentSerializationVisitor;
@@ -31,12 +29,6 @@ import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.CassandraTopicStore;
 import org.atlasapi.topic.Topic;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.datastax.driver.core.Session;
-import com.google.common.base.Equivalence;
-import com.google.common.base.Objects;
-import com.google.common.util.concurrent.AbstractIdleService;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
@@ -47,20 +39,36 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenderFactory;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.SystemClock;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.datastax.driver.core.Session;
+import com.google.common.base.Equivalence;
+import com.google.common.base.Objects;
+import com.google.common.util.concurrent.AbstractIdleService;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
     private static final int CQL_PORT = 9042;
-    private String contentEquivalenceGraphChanges = Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
+    private String contentEquivalenceGraphChanges = Configurer.get(
+            "messaging.destination.equivalence.content.graph.changes").get();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
     private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
-    private Integer cassandraTimeoutSeconds = Configurer.get("cassandra.schedule.timeout.seconds", "60").toInt();
+    private Integer cassandraTimeoutSeconds = Configurer.get(
+            "cassandra.schedule.timeout.seconds",
+            "60"
+    ).toInt();
 
-    private Boolean processing = Objects.firstNonNull(Configurer.get("processing.config"), Parameter.valueOf("false")).toBoolean();
+    private Boolean processing = Objects.firstNonNull(
+            Configurer.get("processing.config"),
+            Parameter.valueOf("false")
+    ).toBoolean();
 
     private final String keyspace;
     private final Session session;
@@ -90,16 +98,15 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private MessageSenderFactory messageSenderFactory;
 
-
     public CassandraPersistenceModule(
             MessageSenderFactory messageSenderFactory,
-            AstyanaxContext<Keyspace> context, 
+            AstyanaxContext<Keyspace> context,
             DatastaxCassandraService datastaxCassandraService,
-            String keyspace, 
-            IdGeneratorBuilder idGeneratorBuilder, 
+            String keyspace,
+            IdGeneratorBuilder idGeneratorBuilder,
             ContentHasher contentHasher,
-            EventHasher eventHasher, 
-            Iterable<String> cassNodes, 
+            EventHasher eventHasher,
+            Iterable<String> cassNodes,
             MetricRegistry metrics) {
         this.contentHasher = contentHasher;
         this.eventHasher = checkNotNull(eventHasher);
@@ -115,6 +122,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private Equivalence<Segment> segmentEquivalence() {
         return new Equivalence<Segment>() {
+
             @Override
             protected boolean doEquivalent(Segment target, Segment candidate) {
                 return target.getId().equals(candidate.getId());
@@ -129,14 +137,18 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public <T extends Message> MessageSender<T> nullMessageSender(Class<T> msgType) {
         return new MessageSender<T>() {
-            @Override
-            public void sendMessage(T resourceUpdatedMessage) throws MessagingException { }
 
             @Override
-            public void sendMessage(T message, byte[] partitionKey) throws MessagingException { }
+            public void sendMessage(T resourceUpdatedMessage) throws MessagingException {
+            }
 
             @Override
-            public void close() throws Exception { }
+            public void sendMessage(T message, byte[] partitionKey) throws MessagingException {
+            }
+
+            @Override
+            public void close() throws Exception {
+            }
         };
     }
 
@@ -145,14 +157,21 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         Session session = dataStaxService.getSession(keyspace);
         com.datastax.driver.core.ConsistencyLevel read = getReadConsistencyLevel();
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
-        ConsistencyLevel readConsistency = processing ? ConsistencyLevel.CL_QUORUM : ConsistencyLevel.CL_ONE;
-        this.contentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                contentHasher, sender(contentChanges, ResourceUpdatedMessage.class), contentIdGenerator)
+        ConsistencyLevel readConsistency = processing
+                                           ? ConsistencyLevel.CL_QUORUM
+                                           : ConsistencyLevel.CL_ONE;
+        this.contentStore = AstyanaxCassandraContentStore.builder(context,
+                "content",
+                contentHasher,
+                sender(contentChanges, ResourceUpdatedMessage.class),
+                contentIdGenerator
+        )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
         this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                contentHasher, nullMessageSender(ResourceUpdatedMessage.class), contentIdGenerator)
+                contentHasher, nullMessageSender(ResourceUpdatedMessage.class), contentIdGenerator
+        )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
@@ -165,9 +184,21 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 nullMessageSender(EquivalenceGraphUpdateMessage.class),
                 session, read, write
         );
-        this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(contentEquivalenceGraphStore, contentStore, session, read, write, new SystemClock());
-        this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(nullMessageSender(
-                EquivalenceGraphUpdateMessage.class), session, read, write);
+        this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(
+                contentEquivalenceGraphStore,
+                contentStore,
+                session,
+                read,
+                write,
+                new SystemClock()
+        );
+        this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(
+                nullMessageSender(
+                        EquivalenceGraphUpdateMessage.class),
+                session,
+                read,
+                write
+        );
         this.v2ScheduleStore = new DatastaxCassandraScheduleStore(
                 "schedule_v2",
                 contentStore,
@@ -176,17 +207,23 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 getReadConsistencyLevel(),
                 getWriteConsistencyLevel(),
                 session,
-                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(contentStore))),
+                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
+                        contentStore))),
                 cassandraTimeoutSeconds
         );
-        this.topicStore = CassandraTopicStore.builder(context, "topics",
-                topicEquivalence(), sender(topicChanges, ResourceUpdatedMessage.class), idGeneratorBuilder.generator(
-                "topic"))
+        this.topicStore = CassandraTopicStore.builder(context,
+                "topics",
+                topicEquivalence(),
+                sender(topicChanges, ResourceUpdatedMessage.class),
+                idGeneratorBuilder.generator(
+                        "topic")
+        )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
-        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule", 
-                contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class))
+        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule",
+                contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class)
+        )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
@@ -208,11 +245,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return nullMessageSendingEquivGraphStore;
     }
 
-    public  <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
+    public <M extends Message> MessageSender<M> sender(String dest, Class<M> type) {
         return new MessageSender<M>() {
 
             private final MessageSender<M> delegate =
-                    messageSenderFactory.makeMessageSender(dest, JacksonMessageSerializer.forType(type));
+                    messageSenderFactory.makeMessageSender(
+                            dest,
+                            JacksonMessageSerializer.forType(type)
+                    );
             private final Timer timer = metrics.timer(dest);
 
             @Override
@@ -313,18 +353,18 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     public com.datastax.driver.core.ConsistencyLevel getReadConsistencyLevel() {
-       return  processing ? com.datastax.driver.core.ConsistencyLevel.QUORUM
-                : com.datastax.driver.core.ConsistencyLevel.ONE;
+        return processing ? com.datastax.driver.core.ConsistencyLevel.QUORUM
+                          : com.datastax.driver.core.ConsistencyLevel.ONE;
     }
 
     public com.datastax.driver.core.ConsistencyLevel getWriteConsistencyLevel() {
-        return  com.datastax.driver.core.ConsistencyLevel.QUORUM;
+        return com.datastax.driver.core.ConsistencyLevel.QUORUM;
     }
 
     public EquivalentScheduleStore equivalentScheduleStore() {
         return this.equivalentScheduleStore;
     }
-    
+
     private EventStore getEventStore(Session session) {
         EventPersistenceStore eventPersistenceStore = DatastaxCassandraEventStore.builder()
                 .withAliasIndex(AliasIndex.create(context.getClient(), "event_aliases"))

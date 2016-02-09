@@ -1,7 +1,8 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Objects;
 import org.atlasapi.meta.annotations.FieldName;
+
+import com.google.common.base.Objects;
 
 public class ContainerSummary {
 
@@ -40,8 +41,12 @@ public class ContainerSummary {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ContainerSummary)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ContainerSummary)) {
+            return false;
+        }
         ContainerSummary that = (ContainerSummary) o;
         return Objects.equal(type, that.type) &&
                 Objects.equal(title, that.title) &&

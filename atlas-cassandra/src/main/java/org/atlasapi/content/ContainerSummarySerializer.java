@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Summary;
 
-
 public class ContainerSummarySerializer {
 
     public ContentProtos.Summary serialize(ContainerSummary containerSummary) {
@@ -22,14 +21,14 @@ public class ContainerSummarySerializer {
         }
         return summary.build();
     }
-    
+
     public ContainerSummary deserialize(Summary summary) {
         return new ContainerSummary(
-            summary.hasType() ? summary.getType() : null,
-            summary.hasTitle() ? summary.getTitle() : null,
-            summary.hasDescription() ? summary.getDescription() : null,
-            summary.hasPosition() ? summary.getPosition() : null
+                summary.hasType() ? summary.getType() : null,
+                summary.hasTitle() ? summary.getTitle() : null,
+                summary.hasDescription() ? summary.getDescription() : null,
+                summary.hasPosition() ? summary.getPosition() : null
         );
     }
-    
+
 }

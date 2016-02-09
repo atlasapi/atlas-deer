@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -15,6 +13,8 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.common.Resource;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public final class LegacyChannelListWriter implements EntityListWriter<Channel> {
 
     private AnnotationRegistry<Channel> annotationRegistry;
@@ -22,7 +22,7 @@ public final class LegacyChannelListWriter implements EntityListWriter<Channel> 
     public LegacyChannelListWriter(AnnotationRegistry<Channel> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
-    
+
     @Override
     public void write(Channel entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
@@ -39,11 +39,11 @@ public final class LegacyChannelListWriter implements EntityListWriter<Channel> 
     public String fieldName(Channel entity) {
         return "channel";
     }
-    
+
     @Override
     @Nonnull
     public String listName() {
         return "channels";
     }
-    
+
 }

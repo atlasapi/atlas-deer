@@ -1,8 +1,8 @@
 package org.atlasapi.output.annotation;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.Region;
@@ -12,15 +12,17 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class RegionsAnnotation extends OutputAnnotation<ChannelGroup<?>> {
 
-    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter("regions", "region");
+    private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
+            "regions",
+            "region"
+    );
 
     private final ChannelGroupResolver channelGroupResolver;
 
@@ -30,17 +32,17 @@ public class RegionsAnnotation extends OutputAnnotation<ChannelGroup<?>> {
     }
 
     @Override
-    public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-        if(!(entity instanceof Region)) {
+    public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
+        if (!(entity instanceof Region)) {
             return;
         }
         Region region = (Region) entity;
-        if(region.getPlatform() == null) {
+        if (region.getPlatform() == null) {
             writer.writeField("parent", null);
             return;
         }
         Id platformId = region.getPlatform().getId();
-
 
         ChannelGroup channelGroup = Futures.get(
                 Futures.transform(

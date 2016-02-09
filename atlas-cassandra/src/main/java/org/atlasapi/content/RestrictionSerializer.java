@@ -23,7 +23,7 @@ public final class RestrictionSerializer {
         }
         return message;
     }
-    
+
     public Restriction deserialize(ContentProtos.Restriction msg) {
         Restriction restriction = new Restriction();
         restriction.setMinimumAge(msg.hasMinimumAge() ? msg.getMinimumAge() : null);
@@ -33,5 +33,5 @@ public final class RestrictionSerializer {
         restriction.setRating(msg.hasRating() ? msg.getRating() : null);
         return restriction;
     }
-    
+
 }

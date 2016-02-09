@@ -5,5 +5,5 @@ public class UncheckedQueryExecutionException extends RuntimeException {
     public UncheckedQueryExecutionException(QueryExecutionException wrapped) {
         super(wrapped);
     }
-    
+
 }

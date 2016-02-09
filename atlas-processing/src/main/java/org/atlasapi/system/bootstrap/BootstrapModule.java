@@ -22,10 +22,12 @@ import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
 import org.atlasapi.topic.Topic;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+
+import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.scheduling.RepetitionRules;
+import com.metabroadcast.common.scheduling.UpdateProgress;
+import com.metabroadcast.common.time.DayRangeGenerator;
+import com.metabroadcast.common.time.SystemClock;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Supplier;
@@ -33,21 +35,23 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.metabroadcast.common.properties.Configurer;
-import com.metabroadcast.common.scheduling.RepetitionRules;
-import com.metabroadcast.common.scheduling.UpdateProgress;
-import com.metabroadcast.common.time.DayRangeGenerator;
-import com.metabroadcast.common.time.SystemClock;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, BootstrapWorkersModule.class, LegacyPersistenceModule.class,
-    SchedulerModule.class, ProcessingHealthModule.class})
+@Import({
+        AtlasPersistenceModule.class, BootstrapWorkersModule.class, LegacyPersistenceModule.class,
+        SchedulerModule.class, ProcessingHealthModule.class })
 public class BootstrapModule {
 
     //we only need 2 here, on to run the bootstrap and one to be able to return quickly when it's running
     private static final Integer NUMBER_OF_SCHECHULE_CONTROLLER_THREADS = 2;
-    private static final Integer NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS = Configurer.get("boootstrap.schedule.numThreads").toInt();
-    private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS = Configurer.get("boootstrap.source.numThreads").toInt();
+    private static final Integer NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS = Configurer.get(
+            "boootstrap.schedule.numThreads").toInt();
+    private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS = Configurer.get(
+            "boootstrap.source.numThreads").toInt();
 
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private LegacyPersistenceModule legacy;
@@ -60,22 +64,32 @@ public class BootstrapModule {
     @Bean
     BootstrapController bootstrapController() {
         BootstrapController bootstrapController = new BootstrapController();
-        
-        bootstrapController.addBootstrapPair("legacy-content", new ResourceBootstrapper<Content>(legacy.legacyContentLister()),
-            new BootstrapListenerFactory<Content>() {
-                @Override
-                public BootstrapListener<Content> buildWithConcurrency(int concurrencyLevel) {
-                    return new ContentWritingBootstrapListener(concurrencyLevel, persistence.contentStore());
+
+        bootstrapController.addBootstrapPair("legacy-content",
+                new ResourceBootstrapper<Content>(legacy.legacyContentLister()),
+                new BootstrapListenerFactory<Content>() {
+
+                    @Override
+                    public BootstrapListener<Content> buildWithConcurrency(int concurrencyLevel) {
+                        return new ContentWritingBootstrapListener(
+                                concurrencyLevel,
+                                persistence.contentStore()
+                        );
+                    }
                 }
-            }
         );
-        bootstrapController.addBootstrapPair("legacy-topics", new ResourceBootstrapper<Topic>(legacy.legacyTopicLister()),
-            new BootstrapListenerFactory<Topic>() {
-                @Override
-                public BootstrapListener<Topic> buildWithConcurrency(int concurrencyLevel) {
-                    return new TopicWritingBootstrapListener(concurrencyLevel, persistence.topicStore());
+        bootstrapController.addBootstrapPair("legacy-topics",
+                new ResourceBootstrapper<Topic>(legacy.legacyTopicLister()),
+                new BootstrapListenerFactory<Topic>() {
+
+                    @Override
+                    public BootstrapListener<Topic> buildWithConcurrency(int concurrencyLevel) {
+                        return new TopicWritingBootstrapListener(
+                                concurrencyLevel,
+                                persistence.topicStore()
+                        );
+                    }
                 }
-            }
         );
         return bootstrapController;
     }
@@ -102,37 +116,65 @@ public class BootstrapModule {
 
     @Bean
     IndividualTopicBootstrapController topicBootstrapController() {
-        return new IndividualTopicBootstrapController(legacy.legacyTopicResolver(), persistence.topicStore());
+        return new IndividualTopicBootstrapController(
+                legacy.legacyTopicResolver(),
+                persistence.topicStore()
+        );
     }
-    
+
     @Bean
     ExecutorServiceScheduledTask<UpdateProgress> scheduleBootstrapTask() {
         ChannelIntervalScheduleBootstrapTaskFactory taskFactory = workers.scheduleBootstrapTaskFactory();
-        DayRangeGenerator dayRangeGenerator = new DayRangeGenerator().withLookAhead(7).withLookBack(7);
+        DayRangeGenerator dayRangeGenerator = new DayRangeGenerator().withLookAhead(7)
+                .withLookBack(7);
         Set<Publisher> sources = ImmutableSet.of(Publisher.PA);
         Supplier<Iterable<ChannelIntervalScheduleBootstrapTask>> supplier =
-            new SourceChannelIntervalTaskSupplier<ChannelIntervalScheduleBootstrapTask>(taskFactory, persistence.channelResolver(), dayRangeGenerator, sources, new SystemClock());
-        ExecutorService executor = Executors.newFixedThreadPool(10, 
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("schedule-bootstrap-%d").build());
-        return new ExecutorServiceScheduledTask<UpdateProgress>(executor, supplier, 10, 1, TimeUnit.MINUTES);
+                new SourceChannelIntervalTaskSupplier<ChannelIntervalScheduleBootstrapTask>(
+                        taskFactory,
+                        persistence.channelResolver(),
+                        dayRangeGenerator,
+                        sources,
+                        new SystemClock()
+                );
+        ExecutorService executor = Executors.newFixedThreadPool(
+                10,
+                new ThreadFactoryBuilder().setDaemon(true)
+                        .setNameFormat("schedule-bootstrap-%d")
+                        .build()
+        );
+        return new ExecutorServiceScheduledTask<UpdateProgress>(
+                executor,
+                supplier,
+                10,
+                1,
+                TimeUnit.MINUTES
+        );
     }
-    
+
     @Bean
     ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
-        return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(), persistence.scheduleStore(), 
-            new DelegatingContentStore(legacy.legacyContentResolver(), persistence.contentStore()));
+        return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(),
+                persistence.scheduleStore(),
+                new DelegatingContentStore(
+                        legacy.legacyContentResolver(),
+                        persistence.contentStore()
+                )
+        );
     }
-    
+
     @PostConstruct
     public void schedule() {
         scheduler.scheduler().schedule(scheduleBootstrapTask(), RepetitionRules.NEVER);
     }
-    
+
     @Bean
     public ScheduleBootstrapController scheduleBootstrapController() {
         return new ScheduleBootstrapController(
                 persistence.channelResolver(),
-                executorService(NUMBER_OF_SCHECHULE_CONTROLLER_THREADS, "ScheduleBootstrapController"),
+                executorService(
+                        NUMBER_OF_SCHECHULE_CONTROLLER_THREADS,
+                        "ScheduleBootstrapController"
+                ),
                 scheduleBootstrapper()
         );
     }
@@ -149,7 +191,10 @@ public class BootstrapModule {
 
     @Bean
     public EventBootstrapController eventBootstrapController() {
-        return new EventBootstrapController(legacy.legacyEventResolver(), persistence.eventWriter());
+        return new EventBootstrapController(
+                legacy.legacyEventResolver(),
+                persistence.eventWriter()
+        );
     }
 
     private ListeningExecutorService executorService(Integer concurrencyLevel, String namePrefix) {
@@ -158,7 +203,8 @@ public class BootstrapModule {
                         concurrencyLevel,
                         concurrencyLevel,
                         0, TimeUnit.MICROSECONDS,
-                        new ArrayBlockingQueue<Runnable>(100 * Runtime.getRuntime().availableProcessors()),
+                        new ArrayBlockingQueue<Runnable>(100 * Runtime.getRuntime()
+                                .availableProcessors()),
                         new ThreadFactoryBuilder().setNameFormat(namePrefix + " Thread %d").build(),
                         new ThreadPoolExecutor.CallerRunsPolicy()
                 )

@@ -23,66 +23,71 @@ import com.google.common.collect.ImmutableList;
 
 public abstract class AttributeQuery<T> extends AtomicQuery {
 
-	private Attribute<T> attribute;
-	private List<T> values;
-	private final Operator op;
-	
-	public AttributeQuery(Attribute<T> attribute, Operator op,  Iterable<T> values) {
-		this.op = op;
-		for (Object value : values) {
-			Class<?> lhs = attribute.requiresOperandOfType();
-			Class<?> rhs = value.getClass();
-			if (!op.canBeAppliedTo(lhs, rhs)) {
-				throw new IllegalArgumentException("Wrong types for operator, lhs " + lhs.getSimpleName() + " found " + rhs.getSimpleName());
-			}
-		}
-		this.attribute = attribute;
-		this.values = ImmutableList.copyOf(values);
-	}
+    private Attribute<T> attribute;
+    private List<T> values;
+    private final Operator op;
 
-	public Attribute<T> getAttribute() {
-		return attribute;
-	}
-	
-	public void setAttribute(Attribute<T> attribute) {
-		this.attribute = attribute;
-	}
-	
-	public String getAttributeName() {
-		return attribute.externalName();
-	}
-	
-	public List<T> getValue() {
-		return values;
-	}
-	
-	public void setValue(List<T> value) {
-		this.values = value;
-	}
-	
-    @Override
-	public boolean equals(Object obj) {
-    	if (this == obj) {
-    		return true;
-    	}
-    	if (obj instanceof AttributeQuery<?>) {
-    		AttributeQuery<?> other = (AttributeQuery<?>) obj;
-    		return attribute.equals(other.attribute) && op.equals(other.op) && values.equals(other.values);
-    	}
-    	return false;
+    public AttributeQuery(Attribute<T> attribute, Operator op, Iterable<T> values) {
+        this.op = op;
+        for (Object value : values) {
+            Class<?> lhs = attribute.requiresOperandOfType();
+            Class<?> rhs = value.getClass();
+            if (!op.canBeAppliedTo(lhs, rhs)) {
+                throw new IllegalArgumentException("Wrong types for operator, lhs "
+                        + lhs.getSimpleName()
+                        + " found "
+                        + rhs.getSimpleName());
+            }
+        }
+        this.attribute = attribute;
+        this.values = ImmutableList.copyOf(values);
     }
-	
-	@Override
-	public int hashCode() {
-	    return attribute.hashCode() ^ op.hashCode() ^ values.hashCode();
-	}
-	
-	@Override
-	public String toString() {
-		return "(" + getAttributeName() + " " + op.toString() + " " + values  + ")";
-	}
-	
-	public Operator getOperator() {
-		return op;
-	}
+
+    public Attribute<T> getAttribute() {
+        return attribute;
+    }
+
+    public void setAttribute(Attribute<T> attribute) {
+        this.attribute = attribute;
+    }
+
+    public String getAttributeName() {
+        return attribute.externalName();
+    }
+
+    public List<T> getValue() {
+        return values;
+    }
+
+    public void setValue(List<T> value) {
+        this.values = value;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof AttributeQuery<?>) {
+            AttributeQuery<?> other = (AttributeQuery<?>) obj;
+            return attribute.equals(other.attribute)
+                    && op.equals(other.op)
+                    && values.equals(other.values);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return attribute.hashCode() ^ op.hashCode() ^ values.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "(" + getAttributeName() + " " + op.toString() + " " + values + ")";
+    }
+
+    public Operator getOperator() {
+        return op;
+    }
 }

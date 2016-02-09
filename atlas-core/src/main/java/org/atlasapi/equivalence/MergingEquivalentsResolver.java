@@ -10,6 +10,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 public interface MergingEquivalentsResolver<E extends Equivalable<E>> {
 
-    ListenableFuture<ResolvedEquivalents<E>> resolveIds(Iterable<Id> ids, ApplicationSources sources, Set<Annotation> activeAnnotations);
-    
+    ListenableFuture<ResolvedEquivalents<E>> resolveIds(Iterable<Id> ids,
+            ApplicationSources sources, Set<Annotation> activeAnnotations);
+
 }

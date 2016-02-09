@@ -7,6 +7,7 @@ import org.atlasapi.content.QueryParseException;
 
 public interface UserAwareQueryParser<T> {
 
-    UserAwareQuery<T> parse(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException;
-    
+    UserAwareQuery<T> parse(HttpServletRequest request)
+            throws QueryParseException, InvalidApiKeyException;
+
 }

@@ -14,6 +14,7 @@ import com.metabroadcast.common.intl.Country;
 
 public class SourceWithIdWriter implements
         EntityListWriter<Publisher> {
+
     private final SourceIdCodec sourceIdCodec;
     private final String fieldName;
     private final String listName;

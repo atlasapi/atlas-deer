@@ -1,5 +1,29 @@
 package org.atlasapi.application;
 
+import org.atlasapi.application.SourceStatus.SourceState;
+import org.atlasapi.application.v3.ApplicationTranslator;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.model.translators.ApplicationModelTranslator;
+
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.persistence.translator.TranslatorUtils;
+import com.metabroadcast.common.text.MoreStrings;
+
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+
 import static com.metabroadcast.common.persistence.mongo.MongoBuilders.select;
 import static com.metabroadcast.common.persistence.mongo.MongoBuilders.where;
 import static org.atlasapi.application.v3.ApplicationConfigurationTranslator.PUBLISHER_KEY;
@@ -9,31 +33,8 @@ import static org.atlasapi.application.v3.ApplicationConfigurationTranslator.WRI
 import static org.atlasapi.application.v3.ApplicationTranslator.APPLICATION_CONFIG_KEY;
 import static org.atlasapi.application.v3.ApplicationTranslator.DEER_ID_KEY;
 
-import org.atlasapi.application.SourceStatus.SourceState;
-import org.atlasapi.application.v3.ApplicationTranslator;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.model.translators.ApplicationModelTranslator;
-
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.persistence.translator.TranslatorUtils;
-import com.metabroadcast.common.text.MoreStrings;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-
 public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
-    implements LegacyApplicationStore {
+        implements LegacyApplicationStore {
 
     private final ApplicationModelTranslator transformer;
     private final org.atlasapi.application.v3.ApplicationStore legacyStore;
@@ -41,12 +42,13 @@ public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
     private final ApplicationTranslator legacyTranslator;
 
     private final Function<DBObject, Application> legacyTranslatorFunction
-        = new Function<DBObject, Application>() {
-            @Override
-            public Application apply(DBObject input) {
-                return transformer.apply(legacyTranslator.fromDBObject(input));
-            }
-        };
+            = new Function<DBObject, Application>() {
+
+        @Override
+        public Application apply(DBObject input) {
+            return transformer.apply(legacyTranslator.fromDBObject(input));
+        }
+    };
 
     public LegacyAdaptingApplicationStore(org.atlasapi.application.v3.ApplicationStore legacyStore,
             DatabasedMongo db,
@@ -81,8 +83,8 @@ public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
     public Optional<Application> applicationFor(Id id) {
         DBObject q = where().fieldEquals(DEER_ID_KEY, id.longValue()).build();
         DBObject dbo = collection.findOne(q);
-        return dbo == null ? Optional.<Application> absent()
-                          : Optional.of(legacyTranslatorFunction.apply(dbo));
+        return dbo == null ? Optional.<Application>absent()
+                           : Optional.of(legacyTranslatorFunction.apply(dbo));
     }
 
     @Override
@@ -92,14 +94,18 @@ public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
 
     @Override
     public Iterable<Application> readersFor(Publisher source) {
-        String sourceField = String.format("%s.%s.%s",
+        String sourceField = String.format(
+                "%s.%s.%s",
                 APPLICATION_CONFIG_KEY,
                 SOURCES_KEY,
-                PUBLISHER_KEY);
-        String stateField = String.format("%s.%s.%s",
+                PUBLISHER_KEY
+        );
+        String stateField = String.format(
+                "%s.%s.%s",
                 APPLICATION_CONFIG_KEY,
                 SOURCES_KEY,
-                STATE_KEY);
+                STATE_KEY
+        );
         DBObject q = where().fieldEquals(sourceField, source.key())
                 .fieldIn(stateField, states())
                 .build();
@@ -107,8 +113,10 @@ public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
     }
 
     private Iterable<String> states() {
-        return Iterables.transform(ImmutableSet.of(SourceState.AVAILABLE, SourceState.REQUESTED),
-                Functions.compose(MoreStrings.toLower(), Functions.toStringFunction()));
+        return Iterables.transform(
+                ImmutableSet.of(SourceState.AVAILABLE, SourceState.REQUESTED),
+                Functions.compose(MoreStrings.toLower(), Functions.toStringFunction())
+        );
     }
 
     @Override
@@ -128,19 +136,22 @@ public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
         DBObject query = where().idEquals(slug).build();
         DBObject select = select().field(DEER_ID_KEY).build();
         DBObject dbo = collection.findOne(query, select);
-        return Optional.fromNullable(dbo).transform(new Function<DBObject, Id>(){
+        return Optional.fromNullable(dbo).transform(new Function<DBObject, Id>() {
+
             @Override
             public Id apply(DBObject input) {
                 return Id.valueOf(TranslatorUtils.toLong(input, DEER_ID_KEY));
             }
         });
     }
+
     @Override
     public Iterable<Id> applicationIdsForSlugs(Iterable<String> slugs) {
         DBObject query = where().idIn(slugs).build();
         DBObject select = select().field(DEER_ID_KEY).build();
-        DBCursor dbos = collection.find(query,  select);
-        return Iterables.transform(dbos, new Function<DBObject, Id>(){
+        DBCursor dbos = collection.find(query, select);
+        return Iterables.transform(dbos, new Function<DBObject, Id>() {
+
             @Override
             public Id apply(DBObject input) {
                 return Id.valueOf(TranslatorUtils.toLong(input, DEER_ID_KEY));

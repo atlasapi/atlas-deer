@@ -12,17 +12,17 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
-
 public class ElasticSearchHelper {
-    
-    private ElasticSearchHelper() {}
-    
+
+    private ElasticSearchHelper() {
+    }
+
     public static Node testNode() {
         return NodeBuilder.nodeBuilder()
-            .local(true).clusterName(UUID.randomUUID().toString())
-            .build().start();
+                .local(true).clusterName(UUID.randomUUID().toString())
+                .build().start();
     }
-    
+
     public static void clearIndices(Client esClient) {
         IndicesStatusRequest req = Requests.indicesStatusRequest((String[]) null);
         IndicesStatusResponse statuses = indicesAdmin(esClient).status(req).actionGet();
@@ -34,16 +34,16 @@ public class ElasticSearchHelper {
     private static IndicesAdminClient indicesAdmin(Client esClient) {
         return esClient.admin().indices();
     }
-    
+
     public static void refresh(Client esClient) {
         Map<String, IndexStatus> indices = indicesAdmin(esClient)
-            .status(Requests.indicesStatusRequest((String[]) null))
-            .actionGet()
-            .getIndices();
+                .status(Requests.indicesStatusRequest((String[]) null))
+                .actionGet()
+                .getIndices();
         indicesAdmin(esClient)
-            .prepareRefresh(indices.keySet().toArray(new String[]{}))
-            .execute()
-            .actionGet();
+                .prepareRefresh(indices.keySet().toArray(new String[] {}))
+                .execute()
+                .actionGet();
     }
-    
+
 }

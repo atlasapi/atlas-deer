@@ -7,26 +7,26 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.Duration;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
+import org.joda.time.Duration;
 
-public class SegmentEvent extends Identified implements Sourced{
+public class SegmentEvent extends Identified implements Sourced {
 
     private Integer position;
     private Duration offset;
     private Boolean isChapter;
-    
+
     private Description description = Description.EMPTY;
-    
+
     private SegmentRef segment;
-    
+
     private String versionId;
 
     private Publisher publisher;
-    
+
     @FieldName("position")
     public Integer getPosition() {
         return this.position;
@@ -82,6 +82,7 @@ public class SegmentEvent extends Identified implements Sourced{
     }
 
     public static final Ordering<SegmentEvent> ORDERING = Ordering.from(new Comparator<SegmentEvent>() {
+
         @Override
         public int compare(SegmentEvent s1, SegmentEvent s2) {
             if (s1.position == null || s2.position == null) {
@@ -97,7 +98,7 @@ public class SegmentEvent extends Identified implements Sourced{
         public SegmentRef apply(SegmentEvent input) {
             return input.getSegmentRef();
         }
-        
+
     };
 
     @Override

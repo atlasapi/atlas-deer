@@ -1,27 +1,29 @@
 package org.atlasapi.channel;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.intl.Country;
+import java.util.Set;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
+
+import com.metabroadcast.common.intl.Country;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.LocalDate;
 import org.junit.Test;
 
-import java.util.Set;
-
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class NumberedChannelGroupTest {
 
-
     private static class TestNumberedChannelGroup extends NumberedChannelGroup {
 
-        protected TestNumberedChannelGroup(Id id, Publisher publisher, Set<ChannelNumbering> channels, Set<Country> availableCountries, Set<TemporalField<String>> titles) {
+        protected TestNumberedChannelGroup(Id id, Publisher publisher,
+                Set<ChannelNumbering> channels, Set<Country> availableCountries,
+                Set<TemporalField<String>> titles) {
             super(id, publisher, channels, availableCountries, titles);
         }
     }
@@ -71,11 +73,16 @@ public class NumberedChannelGroupTest {
                 "111"
         );
 
-
         TestNumberedChannelGroup objectUnderTest = new TestNumberedChannelGroup(
                 channelGroup.getId(),
                 channelGroup.getSource(),
-                ImmutableSet.of(channelNumbering5, channelNumbering3, channelNumbering2, channelNumbering4, channelNumbering1),
+                ImmutableSet.of(
+                        channelNumbering5,
+                        channelNumbering3,
+                        channelNumbering2,
+                        channelNumbering4,
+                        channelNumbering1
+                ),
                 ImmutableSet.of(),
                 ImmutableSet.of()
         );
@@ -87,9 +94,7 @@ public class NumberedChannelGroupTest {
                 )
         );
 
-
     }
-
 
     @Test
     public void testGetChannelsAvailableOnIfChannelHasNullNumbering() throws Exception {
@@ -160,30 +165,36 @@ public class NumberedChannelGroupTest {
                 null
         );
 
-
         TestNumberedChannelGroup objectUnderTest = new TestNumberedChannelGroup(
                 channelGroup.getId(),
                 channelGroup.getSource(),
-                ImmutableSet.of(channelNumbering5, channelNumbering3, channelNumbering2, channelNumbering4, channelNumbering8, channelNumbering1, channelNumbering6, channelNumbering7),
+                ImmutableSet.of(
+                        channelNumbering5,
+                        channelNumbering3,
+                        channelNumbering2,
+                        channelNumbering4,
+                        channelNumbering8,
+                        channelNumbering1,
+                        channelNumbering6,
+                        channelNumbering7
+                ),
                 ImmutableSet.of(),
                 ImmutableSet.of()
         );
 
-
-        ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(objectUnderTest.getChannelsAvailable(today));
+        ImmutableList<ChannelNumbering> channels = ImmutableList.copyOf(objectUnderTest.getChannelsAvailable(
+                today));
         assertThat(
-                channels.subList(0,2),
+                channels.subList(0, 2),
                 is(
                         ImmutableList.of(channelNumbering1, channelNumbering2)
                 )
         );
 
         assertThat(
-                channels.subList(2,4),
+                channels.subList(2, 4),
                 containsInAnyOrder(channelNumbering6, channelNumbering7)
         );
-
-
 
     }
 }

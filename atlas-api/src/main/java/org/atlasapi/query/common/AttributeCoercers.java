@@ -1,7 +1,5 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +10,9 @@ import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.text.MoreStrings;
+
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
@@ -20,22 +21,23 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.text.MoreStrings;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class AttributeCoercers {
 
-    private AttributeCoercers() { }
-    
+    private AttributeCoercers() {
+    }
+
     public static final AttributeCoercer<String, Id> idCoercer(NumberToShortStringCodec idCodec) {
         return new IdStringCoercer(idCodec);
     }
-    
-    public static final AttributeCoercer<String, Publisher> sourceIdCoercer(SourceIdCodec sourceIdCodec) {
+
+    public static final AttributeCoercer<String, Publisher> sourceIdCoercer(
+            SourceIdCodec sourceIdCodec) {
         return new SourceIdStringCoercer(sourceIdCodec);
     }
-    
+
     private static class IdStringCoercer extends AbstractAttributeCoercer<String, Id> {
 
         private final NumberToShortStringCodec idCodec;
@@ -43,17 +45,18 @@ public final class AttributeCoercers {
         public IdStringCoercer(NumberToShortStringCodec idCodec) {
             this.idCodec = checkNotNull(idCodec);
         }
-        
+
         @Override
         protected Id coerce(String input) {
             return Id.valueOf(idCodec.decode(input));
         }
 
     }
-    
+
     private static class SourceIdStringCoercer extends AbstractAttributeCoercer<String, Publisher> {
+
         private final SourceIdCodec sourceIdCodec;
-        
+
         public SourceIdStringCoercer(SourceIdCodec sourceIdCodec) {
             this.sourceIdCodec = sourceIdCodec;
         }
@@ -67,35 +70,36 @@ public final class AttributeCoercers {
                 return null;
             }
         }
-        
+
     }
 
     public static final AttributeCoercer<String, String> stringCoercer() {
         return StringStringCoercer.INSTANCE;
     }
-    
+
     private enum StringStringCoercer implements AttributeCoercer<String, String> {
         INSTANCE;
-        
+
         @Override
         public List<String> apply(Iterable<String> input) {
             return ImmutableList.copyOf(input);
         }
     }
-    
+
     public static final AttributeCoercer<String, Boolean> booleanCoercer() {
         return StringBooleanCoercer.INSTANCE;
     }
-    
+
     private enum StringBooleanCoercer implements AttributeCoercer<String, Boolean> {
         INSTANCE;
-        
-        private final ImmutableSet<String> validInput = 
+
+        private final ImmutableSet<String> validInput =
                 ImmutableSet.copyOf(Lists.transform(
-                    ImmutableList.of(Boolean.TRUE, Boolean.FALSE),
-                    Functions.compose(MoreStrings.toLower(), Functions.toStringFunction()))
+                        ImmutableList.of(Boolean.TRUE, Boolean.FALSE),
+                        Functions.compose(MoreStrings.toLower(), Functions.toStringFunction())
+                        )
                 );
-        
+
         @Override
         public List<Boolean> apply(@Nullable Iterable<String> input)
                 throws InvalidAttributeValueException {
@@ -110,11 +114,11 @@ public final class AttributeCoercers {
             return ImmutableSet.copyOf(values).asList();
         }
     }
-    
+
     public static final AttributeCoercer<String, Float> floatCoercer() {
         return FloatCoercer.INSTANCE;
     }
-    
+
     private enum FloatCoercer implements AttributeCoercer<String, Float> {
         INSTANCE;
 
@@ -135,7 +139,7 @@ public final class AttributeCoercers {
     public static final <E extends Enum<E>> AttributeCoercer<String, E> enumCoercer(
             final Function<String, Optional<E>> translator) {
         return new AttributeCoercer<String, E>() {
-            
+
             @Override
             public List<E> apply(Iterable<String> values) throws InvalidAttributeValueException {
                 ImmutableList.Builder<E> enums = ImmutableList.builder();
@@ -155,5 +159,5 @@ public final class AttributeCoercers {
             }
         };
     }
-    
+
 }

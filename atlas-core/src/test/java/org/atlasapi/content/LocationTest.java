@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;

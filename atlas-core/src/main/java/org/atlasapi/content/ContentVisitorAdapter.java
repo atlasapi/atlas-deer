@@ -1,8 +1,6 @@
 package org.atlasapi.content;
 
 /**
- * 
- *
  * @param <VALUE> - the type of the result of visiting a {@link Content}
  */
 public abstract class ContentVisitorAdapter<VALUE> implements ContentVisitor<VALUE> {
@@ -43,14 +41,14 @@ public abstract class ContentVisitorAdapter<VALUE> implements ContentVisitor<VAL
     }
 
     /**
-     * @param item  
+     * @param item
      */
     protected VALUE visitItem(Item item) {
         return null;
     }
-    
+
     /**
-     * @param container  
+     * @param container
      */
     protected VALUE visitContainer(Container container) {
         return null;

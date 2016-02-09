@@ -1,8 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.media.entity.ChildRef;
@@ -11,12 +8,15 @@ import org.atlasapi.media.entity.EntityType;
 import org.atlasapi.media.entity.Organisation;
 import org.atlasapi.media.entity.Person;
 import org.atlasapi.media.entity.Publisher;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class LegacyOrganisationTransformerTest {
 
@@ -46,7 +46,7 @@ public class LegacyOrganisationTransformerTest {
         organisation.setContents(ImmutableList.of(
                 new ChildRef(1111L, "uri", "sort", DateTime.now(), EntityType.ITEM)
         ));
-        organisation.setAlternativeTitles(ImmutableSet.of("title1","title2"));
+        organisation.setAlternativeTitles(ImmutableSet.of("title1", "title2"));
 
         Person person = new Person();
         person.setId(2222L);
@@ -55,16 +55,24 @@ public class LegacyOrganisationTransformerTest {
         return organisation;
     }
 
-    private void checkOrganisation(org.atlasapi.organisation.Organisation organisation, Organisation input) {
+    private void checkOrganisation(org.atlasapi.organisation.Organisation organisation,
+            Organisation input) {
         assertThat(organisation.getTitle(), is(input.getTitle()));
         assertThat(organisation.getType(), is(org.atlasapi.content.ContentGroup.Type.ORGANISATION));
         checkContent(organisation, input);
         assertThat(organisation.members().size(), is(input.members().size()));
-        assertThat(organisation.members().get(0).getId().longValue(), is(input.members().get(0).getId()));
-        assertThat(organisation.getAlternativeTitles().size(), is(input.getAlternativeTitles().size()));
+        assertThat(
+                organisation.members().get(0).getId().longValue(),
+                is(input.members().get(0).getId())
+        );
+        assertThat(
+                organisation.getAlternativeTitles().size(),
+                is(input.getAlternativeTitles().size())
+        );
     }
 
-    private void checkContent(org.atlasapi.organisation.Organisation organisation, Organisation input) {
+    private void checkContent(org.atlasapi.organisation.Organisation organisation,
+            Organisation input) {
         ContentRef content = organisation.getContents().get(0);
         ChildRef inputContent = input.getContents().get(0);
 

@@ -1,11 +1,11 @@
 package org.atlasapi.entity;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Objects.ToStringHelper;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class ResourceRef implements Identifiable, Sourced {
 
@@ -16,9 +16,9 @@ public abstract class ResourceRef implements Identifiable, Sourced {
         this.id = checkNotNull(id);
         this.source = checkNotNull(source);
     }
-    
+
     public abstract ResourceType getResourceType();
-    
+
     public Id getId() {
         return id;
     }
@@ -29,8 +29,12 @@ public abstract class ResourceRef implements Identifiable, Sourced {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ResourceRef)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ResourceRef)) {
+            return false;
+        }
         ResourceRef that = (ResourceRef) o;
         return Objects.equal(id, that.id);
     }
@@ -42,16 +46,14 @@ public abstract class ResourceRef implements Identifiable, Sourced {
 
     protected ToStringHelper toStringHelper() {
         return Objects.toStringHelper(getClass())
-            .omitNullValues()
-            .add("id", id)
-            .add("source", source);
+                .omitNullValues()
+                .add("id", id)
+                .add("source", source);
     }
-    
+
     @Override
     public final String toString() {
         return toStringHelper().toString();
     }
 
-    
-    
 }

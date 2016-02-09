@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -13,9 +11,11 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTask;
 import org.atlasapi.system.bootstrap.SourceChannelIntervalFactory;
-import org.joda.time.Interval;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.base.Maybe;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.scheduling.UpdateProgress;
 
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
@@ -23,10 +23,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.base.Maybe;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.queue.Worker;
-import com.metabroadcast.common.scheduling.UpdateProgress;
+import org.joda.time.Interval;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
 
@@ -50,12 +51,13 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.ignoredSources = ImmutableSet.copyOf(ignoredSources);
         this.metricsTimer = checkNotNull(metricsTimer);
     }
-    
+
     @Override
     public void process(ScheduleUpdateMessage msg) {
         String updateMsg = String.format("update %s %s %s-%s",
-                msg.getSource(), msg.getChannel(), msg.getUpdateStart(), msg.getUpdateEnd());
-        
+                msg.getSource(), msg.getChannel(), msg.getUpdateStart(), msg.getUpdateEnd()
+        );
+
         Maybe<Publisher> source = Publisher.fromKey(msg.getSource());
         if (!source.hasValue()) {
             LOG.warn("{}: unknown source {}", updateMsg, msg.getSource());
@@ -66,21 +68,31 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             LOG.debug("{}: ignoring source {}", updateMsg, src.key());
             return;
         }
-        
+
         Id cid = Id.valueOf(idCodec.decode(msg.getChannel()));
 
         LOG.debug("Processing message on id {}, message: {}", cid, msg);
 
         Timer.Context time = metricsTimer.time();
-        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList.of(cid));
+        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList
+                .of(cid));
         try {
-            Resolved<Channel> resolvedChannel = Futures.get(channelFuture, 1, TimeUnit.MINUTES, Exception.class);
+            Resolved<Channel> resolvedChannel = Futures.get(
+                    channelFuture,
+                    1,
+                    TimeUnit.MINUTES,
+                    Exception.class
+            );
 
             if (resolvedChannel.getResources().isEmpty()) {
                 LOG.warn("{}: unknown channel {} ({})", updateMsg, msg.getChannel(), cid);
             }
             Interval interval = new Interval(msg.getUpdateStart(), msg.getUpdateEnd());
-            UpdateProgress result = taskFactory.create(src, Iterables.getOnlyElement(resolvedChannel.getResources()), interval).call();
+            UpdateProgress result = taskFactory.create(
+                    src,
+                    Iterables.getOnlyElement(resolvedChannel.getResources()),
+                    interval
+            ).call();
             LOG.debug("{}: processed: {}", updateMsg, result);
             if (!Publisher.PA.equals(src)) {
                 updatePaSchedule(updateMsg, resolvedChannel, interval);
@@ -93,12 +105,16 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     }
 
     /**
-     * Force an update of the PA schedule. This is ahead of full equivalent
-     * schedule store maintenance
+     * Force an update of the PA schedule. This is ahead of full equivalent schedule store
+     * maintenance
      */
     private void updatePaSchedule(String updateMsg, Resolved<Channel> resolvedChannel,
             Interval interval) throws Exception {
-        UpdateProgress paResult = taskFactory.create(Publisher.PA, Iterables.getOnlyElement(resolvedChannel.getResources()), interval).call();
+        UpdateProgress paResult = taskFactory.create(
+                Publisher.PA,
+                Iterables.getOnlyElement(resolvedChannel.getResources()),
+                interval
+        ).call();
         LOG.debug("{}: processed: {}", updateMsg, paResult);
     }
 

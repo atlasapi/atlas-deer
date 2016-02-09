@@ -32,18 +32,18 @@ import org.atlasapi.criteria.operator.Operators.GreaterThan;
 import org.atlasapi.criteria.operator.Operators.LessThan;
 import org.atlasapi.criteria.operator.StringOperatorVisitor;
 import org.atlasapi.entity.Id;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.NestedQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.joda.time.DateTime;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.NestedQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.joda.time.DateTime;
 
 public class EsQueryBuilder {
 
@@ -88,7 +88,10 @@ public class EsQueryBuilder {
                 AttributeQuery<?> query = node.getQuery();
                 QueryBuilder builder = queryForTerminal(node);
                 if (node.pathSegments().size() > 1) {
-                    builder = QueryBuilders.nestedQuery(query.getAttribute().getPathPrefix(), builder);
+                    builder = QueryBuilders.nestedQuery(
+                            query.getAttribute().getPathPrefix(),
+                            builder
+                    );
                 }
                 return builder;
             }
@@ -109,7 +112,8 @@ public class EsQueryBuilder {
             public QueryBuilder visit(StringAttributeQuery query) {
                 final List<String> values = query.getValue();
                 final String name = query.getAttribute().javaAttributeName();
-                return query.accept(new EsStringOperatorVisitor(query.getAttribute().javaAttributeName(), values));
+                return query.accept(new EsStringOperatorVisitor(query.getAttribute()
+                        .javaAttributeName(), values));
             }
 
             @Override
@@ -131,8 +135,10 @@ public class EsQueryBuilder {
                             )
                     );
                 }
-                final List<String> values = Lists.transform(query.getValue(),
-                        Functions.toStringFunction());
+                final List<String> values = Lists.transform(
+                        query.getValue(),
+                        Functions.toStringFunction()
+                );
                 return query.accept(new EsEqualsOperatorVisitor<String>(name, values));
             }
 
@@ -173,7 +179,8 @@ public class EsQueryBuilder {
                 return query.accept(new EsComparableOperatorVisitor<Float>(name, value));
             }
 
-            @Override public QueryBuilder visit(SortAttributeQuery query) {
+            @Override
+            public QueryBuilder visit(SortAttributeQuery query) {
                 return null;
             }
         });
@@ -214,11 +221,13 @@ public class EsQueryBuilder {
             return QueryBuilders.prefixQuery(name, prefix);
         }
 
-        @Override public QueryBuilder visit(Operators.Ascending ascending) {
+        @Override
+        public QueryBuilder visit(Operators.Ascending ascending) {
             return null;
         }
 
-        @Override public QueryBuilder visit(Operators.Descending ascending) {
+        @Override
+        public QueryBuilder visit(Operators.Descending ascending) {
             return null;
         }
     }
@@ -252,11 +261,13 @@ public class EsQueryBuilder {
             return rangeMoreThan(name, value);
         }
 
-        @Override public QueryBuilder visit(Operators.Ascending ascending) {
+        @Override
+        public QueryBuilder visit(Operators.Ascending ascending) {
             return null;
         }
 
-        @Override public QueryBuilder visit(Operators.Descending ascending) {
+        @Override
+        public QueryBuilder visit(Operators.Descending ascending) {
             return null;
         }
 

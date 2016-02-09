@@ -1,7 +1,10 @@
 package org.atlasapi.output.annotation;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
+import java.io.IOException;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -14,10 +17,8 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemDetailWriter;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 
 public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> {
 
@@ -60,7 +61,8 @@ public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> 
                 IOException.class
         );
 
-        Iterable<Item> items = StreamSupport.stream(resolvedEquivalents.getFirstElems().spliterator(), false)
+        Iterable<Item> items = StreamSupport.stream(resolvedEquivalents.getFirstElems()
+                .spliterator(), false)
                 .map(c -> (Item) c)
                 .collect(Collectors.toList());
 

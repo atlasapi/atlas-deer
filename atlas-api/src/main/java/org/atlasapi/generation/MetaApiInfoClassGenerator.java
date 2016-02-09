@@ -43,12 +43,10 @@ import org.atlasapi.content.Description;
 import org.atlasapi.content.Encoding;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Film;
-import org.atlasapi.entity.Identified;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.KeyPhrase;
 import org.atlasapi.content.MediaType;
-import org.atlasapi.entity.Person;
 import org.atlasapi.content.Policy;
 import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.ReleaseDate;
@@ -60,6 +58,8 @@ import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Identifiable;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -97,44 +97,45 @@ import com.google.common.io.Resources;
 
 public class MetaApiInfoClassGenerator {
 
-	private static final Function<Class<?>, File> CLASS_TO_FILE = new Function<Class<?>, File>() {
-		@Override
-		public File apply(Class<?> input) {
-			String path = input.getName().replace(".", "/") + JAVA;
-			System.out.println(path);
-			try {
-				return new File(Resources.getResource(path).toURI());
-			} catch (URISyntaxException e) {
-				throw new RuntimeException(e);
-			}
-		}
-	};
+    private static final Function<Class<?>, File> CLASS_TO_FILE = new Function<Class<?>, File>() {
 
-	private static final String JAVA = ".java";
-	private static final Locale DEFAULT_LOCALE = null;
-	private static final Charset DEFAULT_CHARSET = null;
+        @Override
+        public File apply(Class<?> input) {
+            String path = input.getName().replace(".", "/") + JAVA;
+            System.out.println(path);
+            try {
+                return new File(Resources.getResource(path).toURI());
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
 
-	public MetaApiInfoClassGenerator() {
-	}
+    private static final String JAVA = ".java";
+    private static final Locale DEFAULT_LOCALE = null;
+    private static final Charset DEFAULT_CHARSET = null;
+
+    public MetaApiInfoClassGenerator() {
+    }
 
     public static void main(String[] args) throws Exception {
-    	MetaApiInfoClassGenerator classGenerator = new MetaApiInfoClassGenerator();
+        MetaApiInfoClassGenerator classGenerator = new MetaApiInfoClassGenerator();
 
-    	// TODO can this be taken from packages instead?
-    	ImmutableList<Class<?>> sourceClasses = ImmutableList.<Class<?>>of(
-    			Content.class,
-    			Described.class,
-    			Identified.class,
-    			Identifiable.class,
-    			Aliased.class,
-    			Sourced.class,
-    			Equivalable.class,
-    			ContentController.class,
-    			TopicController.class,
-    			ScheduleController.class,
+        // TODO can this be taken from packages instead?
+        ImmutableList<Class<?>> sourceClasses = ImmutableList.of(
+                Content.class,
+                Described.class,
+                Identified.class,
+                Identifiable.class,
+                Aliased.class,
+                Sourced.class,
+                Equivalable.class,
+                ContentController.class,
+                TopicController.class,
+                ScheduleController.class,
                 ChannelController.class,
                 ChannelGroupController.class,
-    			Clip.class,
+                Clip.class,
                 Tag.class,
                 ContainerRef.class,
                 Item.class,
@@ -142,7 +143,7 @@ public class MetaApiInfoClassGenerator {
                 Actor.class,
                 Brand.class,
                 ContentGroup.class,
-                Description.class,  
+                Description.class,
                 Encoding.class,
                 Policy.class,
                 Episode.class,
@@ -171,13 +172,13 @@ public class MetaApiInfoClassGenerator {
                 ChannelGroup.class,
                 ChannelGroupMembership.class,
                 SeriesRef.class
-		);
-    	ImmutableList<Class<?>> outputModelClasses = ImmutableList.<Class<?>>of(
-    			Content.class,
-    			Described.class,
-    			Identified.class,
-    			Clip.class,
-    			Tag.class,
+        );
+        ImmutableList<Class<?>> outputModelClasses = ImmutableList.of(
+                Content.class,
+                Described.class,
+                Identified.class,
+                Clip.class,
+                Tag.class,
                 ContainerRef.class,
                 Item.class,
                 Certificate.class,
@@ -213,104 +214,133 @@ public class MetaApiInfoClassGenerator {
                 Channel.class,
                 ChannelGroup.class,
                 ChannelGroupMembership.class
-		);
-    	
-    	SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();
-		JavadocParser docParser = new StandardJavadocParser();
-		TypeParser<ModelTypeInfo, ModelMethodInfo> typeParser = new ModelTypeParser(docParser, outputModelClasses);
-		SourceGenerator<ModelTypeInfo, ModelMethodInfo> modelGenerator = new ModelClassInfoSourceGenerator();
-		HierarchyExtractor hierarchyExtractor = new ReflectionBasedHierarchyExtractor();
-		
-		// TODO try running as single run with two processors rather than two runs with one processor each
-		
-        AbstractProcessor processor = new FieldNameProcessor(modelGenerator, hierarchyExtractor, modelWriter, typeParser, outputModelClasses);
-    	boolean modelGenerationFailed = classGenerator.generateInfoClasses(processor, sourceClasses);
-    	if (modelGenerationFailed) {
-    		System.err.println("model info class generation failed");
-    		System.exit(-1);
-    	}
+        );
 
-    	SourceFileWriter<EndpointTypeInfo> endpointWriter = new JavaxSourceFileWriter<EndpointTypeInfo>();
-    	TypeParser<EndpointTypeInfo, EndpointMethodInfo> endpointTypeParser = new EndpointTypeParser(docParser);
-    	SourceGenerator<EndpointTypeInfo, EndpointMethodInfo> endpointGenerator = new EndpointClassInfoSourceGenerator();
-    	processor = new ControllerAnnotationProcessor(endpointGenerator, endpointWriter, endpointTypeParser, sourceClasses);
-    	boolean endpointGenerationFailed = classGenerator.generateInfoClasses(processor, sourceClasses);
-    	if (endpointGenerationFailed) {
-    		System.err.println("endpoint info class generation failed");
-    		System.exit(-1);
-    	}
+        SourceFileWriter<ModelTypeInfo> modelWriter = new JavaxSourceFileWriter<ModelTypeInfo>();
+        JavadocParser docParser = new StandardJavadocParser();
+        TypeParser<ModelTypeInfo, ModelMethodInfo> typeParser = new ModelTypeParser(
+                docParser,
+                outputModelClasses
+        );
+        SourceGenerator<ModelTypeInfo, ModelMethodInfo> modelGenerator = new ModelClassInfoSourceGenerator();
+        HierarchyExtractor hierarchyExtractor = new ReflectionBasedHierarchyExtractor();
+
+        // TODO try running as single run with two processors rather than two runs with one processor each
+
+        AbstractProcessor processor = new FieldNameProcessor(
+                modelGenerator,
+                hierarchyExtractor,
+                modelWriter,
+                typeParser,
+                outputModelClasses
+        );
+        boolean modelGenerationFailed = classGenerator.generateInfoClasses(
+                processor,
+                sourceClasses
+        );
+        if (modelGenerationFailed) {
+            System.err.println("model info class generation failed");
+            System.exit(-1);
+        }
+
+        SourceFileWriter<EndpointTypeInfo> endpointWriter = new JavaxSourceFileWriter<EndpointTypeInfo>();
+        TypeParser<EndpointTypeInfo, EndpointMethodInfo> endpointTypeParser = new EndpointTypeParser(
+                docParser);
+        SourceGenerator<EndpointTypeInfo, EndpointMethodInfo> endpointGenerator = new EndpointClassInfoSourceGenerator();
+        processor = new ControllerAnnotationProcessor(
+                endpointGenerator,
+                endpointWriter,
+                endpointTypeParser,
+                sourceClasses
+        );
+        boolean endpointGenerationFailed = classGenerator.generateInfoClasses(
+                processor,
+                sourceClasses
+        );
+        if (endpointGenerationFailed) {
+            System.err.println("endpoint info class generation failed");
+            System.exit(-1);
+        }
     }
-    
-	public boolean generateInfoClasses(AbstractProcessor processor, List<Class<?>> sourceClasses) throws Exception {
-		ImmutableSet<? extends AbstractProcessor> processors = ImmutableSet.of(processor);
 
-		List<Diagnostic<? extends JavaFileObject>> diagnostics = compileWithProcessors(sourceClasses, processors);
+    public boolean generateInfoClasses(AbstractProcessor processor, List<Class<?>> sourceClasses)
+            throws Exception {
+        ImmutableSet<? extends AbstractProcessor> processors = ImmutableSet.of(processor);
 
-		boolean failed = false;
-		for (Diagnostic<?> diagnostic : diagnostics) {
-			failed = failed | (diagnostic.getKind().equals(Kind.ERROR));
-			System.out.println(String.format("[%s] %s [%s,%s]", 
-					diagnostic.getKind(), diagnostic.getMessage(Locale.getDefault()), 
-					diagnostic.getLineNumber(), diagnostic.getColumnNumber()));
-		}
-		return failed;
-	}
+        List<Diagnostic<? extends JavaFileObject>> diagnostics = compileWithProcessors(
+                sourceClasses,
+                processors
+        );
 
-	private List<Diagnostic<? extends JavaFileObject>> compileWithProcessors(Iterable<Class<?>> classes, 
-			ImmutableSet<? extends AbstractProcessor> processors) throws Exception {
+        boolean failed = false;
+        for (Diagnostic<?> diagnostic : diagnostics) {
+            failed = failed | (diagnostic.getKind().equals(Kind.ERROR));
+            System.out.println(String.format("[%s] %s [%s,%s]",
+                    diagnostic.getKind(), diagnostic.getMessage(Locale.getDefault()),
+                    diagnostic.getLineNumber(), diagnostic.getColumnNumber()
+            ));
+        }
+        return failed;
+    }
 
-		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-		
-		DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
+    private List<Diagnostic<? extends JavaFileObject>> compileWithProcessors(
+            Iterable<Class<?>> classes,
+            ImmutableSet<? extends AbstractProcessor> processors) throws Exception {
 
-		StandardJavaFileManager fileManager = compiler.getStandardFileManager(
-				diagnosticCollector, 
-				DEFAULT_LOCALE, 
-				DEFAULT_CHARSET
-		);
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-		Iterable<? extends JavaFileObject> sourceCompilationUnits = transformToCompilationUnits(classes, 
-				fileManager);
+        DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
 
-		CompilationTask task = compiler.getTask(new OutputStreamWriter(System.out), 
-				fileManager, diagnosticCollector, 
-				Arrays.asList(
-						"-proc:only", 
-						"-s", "./src/main/java"
-				), 
-				null, 
-				sourceCompilationUnits
-		);
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(
+                diagnosticCollector,
+                DEFAULT_LOCALE,
+                DEFAULT_CHARSET
+        );
 
-		task.setProcessors(processors);
-		task.call();
+        Iterable<? extends JavaFileObject> sourceCompilationUnits = transformToCompilationUnits(
+                classes,
+                fileManager
+        );
 
-		try {
-			fileManager.close();
-		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
-		}
+        CompilationTask task = compiler.getTask(new OutputStreamWriter(System.out),
+                fileManager, diagnosticCollector,
+                Arrays.asList(
+                        "-proc:only",
+                        "-s", "./src/main/java"
+                ),
+                null,
+                sourceCompilationUnits
+        );
 
-		return diagnosticCollector.getDiagnostics();
-	}
+        task.setProcessors(processors);
+        task.call();
 
+        try {
+            fileManager.close();
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
 
-	private Iterable<? extends JavaFileObject> transformToCompilationUnits(Iterable<Class<?>> classes, 
-			StandardJavaFileManager fileManager) throws Exception {
-		addPath("./../atlas-core/src/main/java/");
-		addPath("./src/main/java/");
-		Iterable<File> sourceCompilationFiles = Iterables.transform(classes, CLASS_TO_FILE);
-		
-		return fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);
-	}
-	
-	public static void addPath(String s) throws Exception {
-	    File f = new File(s);
-	    URI u = f.toURI();
-	    URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-	    Class<URLClassLoader> urlClass = URLClassLoader.class;
-	    Method method = urlClass.getDeclaredMethod("addURL", new Class[]{URL.class});
-	    method.setAccessible(true);
-	    method.invoke(urlClassLoader, new Object[]{u.toURL()});
-	}
+        return diagnosticCollector.getDiagnostics();
+    }
+
+    private Iterable<? extends JavaFileObject> transformToCompilationUnits(
+            Iterable<Class<?>> classes,
+            StandardJavaFileManager fileManager) throws Exception {
+        addPath("./../atlas-core/src/main/java/");
+        addPath("./src/main/java/");
+        Iterable<File> sourceCompilationFiles = Iterables.transform(classes, CLASS_TO_FILE);
+
+        return fileManager.getJavaFileObjectsFromFiles(sourceCompilationFiles);
+    }
+
+    public static void addPath(String s) throws Exception {
+        File f = new File(s);
+        URI u = f.toURI();
+        URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+        Class<URLClassLoader> urlClass = URLClassLoader.class;
+        Method method = urlClass.getDeclaredMethod("addURL", URL.class);
+        method.setAccessible(true);
+        method.invoke(urlClassLoader, u.toURL());
+    }
 }

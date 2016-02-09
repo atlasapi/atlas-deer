@@ -1,16 +1,16 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import javax.servlet.http.HttpServletRequest;
 
-import com.google.common.collect.ImmutableList;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class IndexAnnotationsExtractor implements AnnotationsExtractor {
 
@@ -36,8 +36,9 @@ public class IndexAnnotationsExtractor implements AnnotationsExtractor {
 
         String serialisedAnnotations = request.getParameter(parameterName);
 
-
-        Iterable<String> annotations = serialisedAnnotations == null ? ImmutableList.<String>of() : csvSplitter.split(serialisedAnnotations);
+        Iterable<String> annotations = serialisedAnnotations == null
+                                       ? ImmutableList.<String>of()
+                                       : csvSplitter.split(serialisedAnnotations);
 
         return lookup.resolveSingleContext(annotations);
     }
@@ -45,13 +46,13 @@ public class IndexAnnotationsExtractor implements AnnotationsExtractor {
     @Override
     public ActiveAnnotations extractFromListRequest(HttpServletRequest request)
             throws InvalidAnnotationException {
-        
+
         String serialisedAnnotations = request.getParameter(parameterName);
-        
+
         if (serialisedAnnotations == null) {
             return ActiveAnnotations.standard();
         }
-        
+
         return lookup.resolveListContext(csvSplitter.split(serialisedAnnotations));
     }
 

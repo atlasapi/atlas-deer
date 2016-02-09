@@ -9,15 +9,15 @@ public class SynopsesSerializer implements Serializer<Synopses, CommonProtos.Syn
     public CommonProtos.Synopses serialize(Synopses source) {
         CommonProtos.Synopses.Builder builder = CommonProtos.Synopses.newBuilder();
 
-        if(source.getShortDescription() != null) {
+        if (source.getShortDescription() != null) {
             builder.setShortDescription(builder.getShortDescriptionBuilder()
                     .setValue(source.getShortDescription()));
         }
-        if(source.getMediumDescription() != null) {
+        if (source.getMediumDescription() != null) {
             builder.setMediumDescription(builder.getMediumDescriptionBuilder()
                     .setValue(source.getMediumDescription()));
         }
-        if(source.getLongDescription() != null) {
+        if (source.getLongDescription() != null) {
             builder.setLongDescription(builder.getLongDescriptionBuilder()
                     .setValue(source.getLongDescription()));
         }
@@ -29,13 +29,13 @@ public class SynopsesSerializer implements Serializer<Synopses, CommonProtos.Syn
     public Synopses deserialize(CommonProtos.Synopses serialized) {
         Synopses synopses = new Synopses();
 
-        if(serialized.hasShortDescription()) {
+        if (serialized.hasShortDescription()) {
             synopses.setShortDescription(serialized.getShortDescription().getValue());
         }
-        if(serialized.hasMediumDescription()) {
+        if (serialized.hasMediumDescription()) {
             synopses.setMediumDescription(serialized.getMediumDescription().getValue());
         }
-        if(serialized.hasLongDescription()) {
+        if (serialized.hasLongDescription()) {
             synopses.setLongDescription(serialized.getLongDescription().getValue());
         }
 

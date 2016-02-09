@@ -1,10 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
-
 import java.util.Iterator;
 
 import org.atlasapi.media.entity.Content;
@@ -16,13 +11,18 @@ import org.atlasapi.persistence.content.ResolvedContent;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
+
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.collect.ImmutableList;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LegacyLookupResolvingContentListerTest {
@@ -43,7 +43,7 @@ public class LegacyLookupResolvingContentListerTest {
 
     @Before
     public void setUp() throws Exception {
-        contentLister = new LegacyLookupResolvingContentLister(lookupEntryStore,  contentResolver);
+        contentLister = new LegacyLookupResolvingContentLister(lookupEntryStore, contentResolver);
 
         Publisher publisher = Publisher.BBC;
 

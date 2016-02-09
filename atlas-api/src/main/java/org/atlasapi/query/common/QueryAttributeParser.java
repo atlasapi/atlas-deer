@@ -19,9 +19,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
 public class QueryAttributeParser implements ParameterNameProvider {
-    
+
     private final Splitter valueSplitter = Splitter.on(',').omitEmptyStrings().trimResults();
-    
+
     private final AttributeLookupTree attributesLookup;
     private final Map<Attribute<?>, ? extends QueryAtomParser<String, ?>> parsers;
     private final Set<String> parameterNames;
@@ -47,7 +47,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
     private Iterable<? extends AttributeQuery<?>> parseListQuery(HttpServletRequest request)
             throws QueryParseException {
         ImmutableSet.Builder<AttributeQuery<?>> operands = ImmutableSet.builder();
-        for(Entry<String, String[]> param : getParameterMap(request).entrySet()) {
+        for (Entry<String, String[]> param : getParameterMap(request).entrySet()) {
             Optional<Attribute<?>> attribute = attributesLookup.attributeFor(param.getKey());
             if (attribute.isPresent()) {
                 QueryAtomParser<String, ?> parser = parsers.get(attribute.get());
@@ -61,7 +61,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
 
     private Iterable<String> splitVals(String value) {
         return FluentIterable.from(Arrays.asList(value))
-            .transformAndConcat(valueSplitter::split);
+                .transformAndConcat(valueSplitter::split);
     }
 
     @SuppressWarnings("unchecked")
@@ -73,7 +73,7 @@ public class QueryAttributeParser implements ParameterNameProvider {
     public Set<String> getOptionalParameters() {
         return parameterNames;
     }
-    
+
     @Override
     public Set<String> getRequiredParameters() {
         return ImmutableSet.of();

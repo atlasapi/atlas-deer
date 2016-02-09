@@ -1,9 +1,5 @@
 package org.atlasapi.messaging;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.util.UUID;
 
 import org.atlasapi.content.Brand;
@@ -12,6 +8,13 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
+
+import com.metabroadcast.common.time.Timestamp;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,15 +22,12 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.time.Timestamp;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EquivalentScheduleStoreContentUpdateWorkerTest {
-
 
     @Mock
     private EquivalentContentStore contentStore;
@@ -55,7 +55,6 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
         when(timer.time()).thenReturn(context);
     }
 
-
     @Test
     public void testProcess() throws Exception {
         Long equivalentSetId = 1L;
@@ -80,7 +79,6 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
         verify(scheduleWriter).updateContent(ImmutableSet.of(item1, item2));
 
     }
-
 
     @Test
     public void testFiltersOutNonItems() throws Exception {

@@ -17,22 +17,24 @@ package org.atlasapi.criteria;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.DateTimeOperator;
 import org.atlasapi.criteria.operator.DateTimeOperatorVisitor;
+
 import org.joda.time.DateTime;
 
 public class DateTimeAttributeQuery extends AttributeQuery<DateTime> {
 
-	private final DateTimeOperator op;
+    private final DateTimeOperator op;
 
-	public DateTimeAttributeQuery(Attribute<DateTime> attribute, DateTimeOperator op, Iterable<DateTime> values) {
-		super(attribute, op, values);
-		this.op = op;
-	}
+    public DateTimeAttributeQuery(Attribute<DateTime> attribute, DateTimeOperator op,
+            Iterable<DateTime> values) {
+        super(attribute, op, values);
+        this.op = op;
+    }
 
-	public <V> V accept(QueryVisitor<V> visitor) {
-		return visitor.visit(this);
-	}
-	
-	public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
-		return op.accept(visitor);
-	}
+    public <V> V accept(QueryVisitor<V> visitor) {
+        return visitor.visit(this);
+    }
+
+    public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
+        return op.accept(visitor);
+    }
 }

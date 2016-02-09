@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.topic;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,35 +17,37 @@ import org.atlasapi.query.common.ContextualQueryParser;
 import org.atlasapi.query.common.ContextualQueryResult;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.topic.Topic;
+
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.google.common.base.Objects;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class TopicContentController {
 
     private static Logger log = LoggerFactory.getLogger(TopicContentController.class);
-    
+
     private final ContextualQueryParser<Topic, Content> parser;
     private final ContextualQueryExecutor<Topic, Content> queryExecutor;
     private final ContextualResultWriter<Topic, Content> resultWriter;
-    
+
     private ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public TopicContentController(ContextualQueryParser<Topic, Content> parser,
-        ContextualQueryExecutor<Topic, Content> queryExecutor,
-        ContextualResultWriter<Topic, Content> resultWriter) {
-            this.parser = checkNotNull(parser);
-            this.queryExecutor = checkNotNull(queryExecutor);
-            this.resultWriter = checkNotNull(resultWriter);
+            ContextualQueryExecutor<Topic, Content> queryExecutor,
+            ContextualResultWriter<Topic, Content> resultWriter) {
+        this.parser = checkNotNull(parser);
+        this.queryExecutor = checkNotNull(queryExecutor);
+        this.resultWriter = checkNotNull(resultWriter);
     }
 
     @RequestMapping({ "/4/topics/{id}/content.*", "/4/topics/{id}/content" })
     public void writeSingleTopic(HttpServletRequest request, HttpServletResponse response)
-        throws IOException {
+            throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -58,7 +58,10 @@ public class TopicContentController {
             log.error("Query execution exception " + request.getRequestURI(), qee.getCause());
             handleException(request, response, writer, qee);
         } catch (Exception e) {
-            log.error("Request exception " + request.getRequestURI(), Objects.firstNonNull(e.getCause(), e));
+            log.error(
+                    "Request exception " + request.getRequestURI(),
+                    Objects.firstNonNull(e.getCause(), e)
+            );
             handleException(request, response, writer, e);
         }
     }
@@ -68,5 +71,5 @@ public class TopicContentController {
         ErrorSummary summary = ErrorSummary.forException(e);
         new ErrorResultWriter().write(summary, writer, request, response);
     }
-    
+
 }

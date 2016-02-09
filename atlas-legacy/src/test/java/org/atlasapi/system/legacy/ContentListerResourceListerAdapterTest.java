@@ -1,23 +1,23 @@
 package org.atlasapi.system.legacy;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import org.atlasapi.content.Content;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
+
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableSet;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ContentListerResourceListerAdapterTest {
@@ -31,7 +31,6 @@ public class ContentListerResourceListerAdapterTest {
     @InjectMocks
     private ContentListerResourceListerAdapter objectUnderTest;
 
-
     @Test
     public void testListReturnNullOnException() throws Exception {
 
@@ -43,7 +42,8 @@ public class ContentListerResourceListerAdapterTest {
         Content content3 = mock(Content.class);
 
         when(transformer.createDescribed(legacyContent1)).thenReturn(content1);
-        when(transformer.createDescribed(legacyContent2)).thenThrow(new RuntimeException("Exception while transforming content"));
+        when(transformer.createDescribed(legacyContent2)).thenThrow(new RuntimeException(
+                "Exception while transforming content"));
         when(transformer.createDescribed(legacyContent3)).thenReturn(content3);
 
         when(
@@ -54,10 +54,8 @@ public class ContentListerResourceListerAdapterTest {
 
         FluentIterable<Content> transformedContent = objectUnderTest.list();
 
-
         assertThat(transformedContent, containsInAnyOrder(content1, null, content3));
 
     }
-
 
 }

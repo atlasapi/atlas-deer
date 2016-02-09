@@ -1,7 +1,5 @@
 package org.atlasapi.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -9,20 +7,27 @@ import java.util.Map.Entry;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.joda.time.Interval;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import org.joda.time.Interval;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class Schedule {
 
     private final Interval interval;
     private final List<ChannelSchedule> channelSchedules;
-    
-    public static Schedule fromChannelMap(Map<Channel, Collection<ItemAndBroadcast>> channelMap, Interval interval) {
+
+    public static Schedule fromChannelMap(Map<Channel, Collection<ItemAndBroadcast>> channelMap,
+            Interval interval) {
         ImmutableList.Builder<ChannelSchedule> scheduleChannels = ImmutableList.builder();
-        for (Entry<Channel, Collection<ItemAndBroadcast>> channel: channelMap.entrySet()) {
-            scheduleChannels.add(new ChannelSchedule(channel.getKey(), interval, channel.getValue()));
+        for (Entry<Channel, Collection<ItemAndBroadcast>> channel : channelMap.entrySet()) {
+            scheduleChannels.add(new ChannelSchedule(
+                    channel.getKey(),
+                    interval,
+                    channel.getValue()
+            ));
         }
         return new Schedule(scheduleChannels.build(), interval);
     }
@@ -31,7 +36,7 @@ public final class Schedule {
         this.channelSchedules = ImmutableList.copyOf(channelSchedules);
         this.interval = checkNotNull(interval);
     }
-    
+
     public Interval interval() {
         return interval;
     }
@@ -56,11 +61,11 @@ public final class Schedule {
         }
         return false;
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-            .addValue(channelSchedules)
-            .toString();
+                .addValue(channelSchedules)
+                .toString();
     }
 }

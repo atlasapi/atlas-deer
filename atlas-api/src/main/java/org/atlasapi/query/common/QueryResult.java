@@ -1,8 +1,8 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.collect.FluentIterable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class QueryResult<T> {
 
@@ -10,14 +10,16 @@ public abstract class QueryResult<T> {
         return new SingleQueryResult<T>(resource, context);
     }
 
-    public static final <T> ListQueryResult<T> listResult(Iterable<T> resource, QueryContext context, Long resultCount) {
+    public static final <T> ListQueryResult<T> listResult(Iterable<T> resource,
+            QueryContext context, Long resultCount) {
         return new ListQueryResult<T>(resource, context, resultCount);
     }
 
-    public static final <T> ListQueryResult<T> listResult(Iterable<T> resource, QueryContext context, Integer resultCount) {
+    public static final <T> ListQueryResult<T> listResult(Iterable<T> resource,
+            QueryContext context, Integer resultCount) {
         return new ListQueryResult<T>(resource, context, Long.valueOf(resultCount));
     }
-    
+
     private final QueryContext context;
 
     protected QueryResult(QueryContext context) {
@@ -58,7 +60,7 @@ public abstract class QueryResult<T> {
         @Override
         public FluentIterable<T> getResources() {
             throw new IllegalStateException(
-                "QueryResult.getResources() cannot be called on single result");
+                    "QueryResult.getResources() cannot be called on single result");
         }
 
         public T getOnlyResource() {
@@ -77,7 +79,7 @@ public abstract class QueryResult<T> {
             this.resultCount = checkNotNull(resultCount);
             this.resources = FluentIterable.from(resources);
         }
-        
+
         @Override
         public boolean isListResult() {
             return true;
@@ -89,7 +91,7 @@ public abstract class QueryResult<T> {
 
         public T getOnlyResource() {
             throw new IllegalStateException(
-                "QueryResult.getOnlyResource() cannot be called on single result");
+                    "QueryResult.getOnlyResource() cannot be called on single result");
         }
 
         @Override

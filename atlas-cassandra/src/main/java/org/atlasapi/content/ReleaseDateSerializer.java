@@ -21,9 +21,10 @@ public class ReleaseDateSerializer {
 
     public ReleaseDate deserialize(ContentProtos.ReleaseDate date) {
         return new ReleaseDate(
-            dateTimeSerializer.deserialize(date.getDate()).toLocalDate(),
-            Countries.fromCode(date.getCountry()),
-            ReleaseDate.ReleaseType.valueOf(date.getType()));
+                dateTimeSerializer.deserialize(date.getDate()).toLocalDate(),
+                Countries.fromCode(date.getCountry()),
+                ReleaseDate.ReleaseType.valueOf(date.getType())
+        );
     }
-    
+
 }

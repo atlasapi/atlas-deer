@@ -1,12 +1,10 @@
 package org.atlasapi.output.annotation;
 
-
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-
 
 public class FilteringResourceAnnotation extends OutputAnnotation<Content> {
 

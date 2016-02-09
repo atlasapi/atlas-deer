@@ -1,7 +1,5 @@
 package org.atlasapi.topic;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 import java.util.UUID;
 
@@ -12,17 +10,19 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Equivalence;
-import com.google.common.primitives.Longs;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.google.common.base.Equivalence;
+import com.google.common.primitives.Longs;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class AbstractTopicStore implements TopicStore {
 
@@ -33,29 +33,30 @@ public abstract class AbstractTopicStore implements TopicStore {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    public AbstractTopicStore(IdGenerator idGenerator, Equivalence<? super Topic> equivalence, MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
+    public AbstractTopicStore(IdGenerator idGenerator, Equivalence<? super Topic> equivalence,
+            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
         this.idGenerator = checkNotNull(idGenerator);
         this.equivalence = checkNotNull(equivalence);
         this.sender = checkNotNull(sender);
         this.clock = checkNotNull(clock);
     }
-    
+
     @Override
     public WriteResult<Topic, Topic> writeTopic(Topic topic) {
         checkNotNull(topic, "write null topic");
         checkNotNull(topic.getSource(), "write unsourced topic");
-        
+
         Topic previous = getPreviousTopic(topic);
         if (previous != null) {
             if (equivalence.equivalent(topic, previous)) {
                 return WriteResult.<Topic, Topic>unwritten(topic)
-                    .withPrevious(previous)
-                    .build();
+                        .withPrevious(previous)
+                        .build();
             }
             topic.setId(previous.getId());
             topic.setFirstSeen(previous.getFirstSeen());
         }
-        
+
         DateTime now = clock.now();
         if (topic.getFirstSeen() == null) {
             topic.setFirstSeen(now);
@@ -70,7 +71,7 @@ public abstract class AbstractTopicStore implements TopicStore {
         }
         return result;
     }
-    
+
     private void writeMessage(final WriteResult<Topic, Topic> result) {
         ResourceUpdatedMessage message = createEntityUpdatedMessage(result);
         try {
@@ -86,7 +87,8 @@ public abstract class AbstractTopicStore implements TopicStore {
         return new ResourceUpdatedMessage(
                 UUID.randomUUID().toString(),
                 Timestamp.of(result.getWriteTime().getMillis()),
-                result.getResource().toRef());
+                result.getResource().toRef()
+        );
     }
 
     private Topic ensureId(Topic topic) {
@@ -100,8 +102,8 @@ public abstract class AbstractTopicStore implements TopicStore {
     private Topic getPreviousTopic(Topic topic) {
         return resolvePrevious(topic.getId(), topic.getSource(), topic.getAliases());
     }
-    
+
     @Nullable
     protected abstract Topic resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases);
-    
+
 }

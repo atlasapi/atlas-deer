@@ -1,10 +1,11 @@
 package org.atlasapi.channel;
 
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 
-import java.util.Set;
+import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -14,7 +15,6 @@ public class ChannelGroupSummary {
     private final Set<Alias> aliases;
     private final String title;
     private final String type;
-
 
     public ChannelGroupSummary(Id id, Set<Alias> aliases, String title, String type) {
         this.id = checkNotNull(id);

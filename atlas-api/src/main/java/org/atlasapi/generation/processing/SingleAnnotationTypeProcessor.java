@@ -1,7 +1,5 @@
 package org.atlasapi.generation.processing;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.Set;
@@ -24,24 +22,27 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
-public abstract class SingleAnnotationTypeProcessor<TI extends TypeInfo, MI extends MethodInfo> extends AbstractProcessor {
-	
-	private final Class<? extends Annotation> annotationType;
-	private final ImmutableList<Class<?>> classesToOutput;
-	private final TypeParser<TI, MI> typeParser;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public abstract class SingleAnnotationTypeProcessor<TI extends TypeInfo, MI extends MethodInfo>
+        extends AbstractProcessor {
+
+    private final Class<? extends Annotation> annotationType;
+    private final ImmutableList<Class<?>> classesToOutput;
+    private final TypeParser<TI, MI> typeParser;
     private final SourceGenerator<TI, MI> generator;
     private final SourceFileWriter<TI> writer;
-	
-	public SingleAnnotationTypeProcessor(Class<? extends Annotation> annotationType,
-    		Iterable<Class<?>> classesToOutput, TypeParser<TI, MI> typeParser, 
-    		SourceGenerator<TI, MI> generator, SourceFileWriter<TI> writer) {
-		this.annotationType = checkNotNull(annotationType);
-		this.classesToOutput = ImmutableList.copyOf(classesToOutput);
+
+    public SingleAnnotationTypeProcessor(Class<? extends Annotation> annotationType,
+            Iterable<Class<?>> classesToOutput, TypeParser<TI, MI> typeParser,
+            SourceGenerator<TI, MI> generator, SourceFileWriter<TI> writer) {
+        this.annotationType = checkNotNull(annotationType);
+        this.classesToOutput = ImmutableList.copyOf(classesToOutput);
         this.typeParser = checkNotNull(typeParser);
         this.generator = checkNotNull(generator);
         this.writer = checkNotNull(writer);
-	}
-	
+    }
+
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
@@ -58,13 +59,14 @@ public abstract class SingleAnnotationTypeProcessor<TI extends TypeInfo, MI exte
     public final Set<String> getSupportedAnnotationTypes() {
         return Collections.singleton(annotationType.getName());
     }
-    
+
     public Class<? extends Annotation> annotationType() {
-    	return annotationType;
+        return annotationType;
     }
 
     @Override
-    public final boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    public final boolean process(Set<? extends TypeElement> annotations,
+            RoundEnvironment roundEnv) {
         if (isClaimed(annotations)) {
             process(roundEnv);
             return true;
@@ -74,33 +76,42 @@ public abstract class SingleAnnotationTypeProcessor<TI extends TypeInfo, MI exte
     }
 
     // TODO does this miss explicitly overridden methods?
-	private boolean isClaimed(Set<? extends TypeElement> annotations) {
-		return annotations.size() == 1
-            && annotations.iterator().next().getQualifiedName().toString().equals(annotationType().getName());
-	}
-	
-	protected boolean shouldProcess(TypeElement type) {
-		return Iterables.contains(Iterables.transform(classesToOutput, new Function<Class<?>, String>() {
-			@Override
-			public String apply(Class<?> input) {
-				return input.getCanonicalName();
-			}
-		}), type.getQualifiedName().toString());
-	}
-    
+    private boolean isClaimed(Set<? extends TypeElement> annotations) {
+        return annotations.size() == 1
+                && annotations.iterator()
+                .next()
+                .getQualifiedName()
+                .toString()
+                .equals(annotationType().getName());
+    }
+
+    protected boolean shouldProcess(TypeElement type) {
+        return Iterables.contains(Iterables.transform(
+                classesToOutput,
+                new Function<Class<?>, String>() {
+
+                    @Override
+                    public String apply(Class<?> input) {
+                        return input.getCanonicalName();
+                    }
+                }
+        ), type.getQualifiedName().toString());
+    }
+
     public abstract void process(RoundEnvironment roundEnv);
-    
+
     protected void processTypeAndMethods(TypeElement type, Iterable<ExecutableElement> methods) {
         try {
             if (!shouldProcess(type)) {
-                processingEnv.getMessager().printMessage(Kind.NOTE, "No source generated for " + type.toString());
+                processingEnv.getMessager()
+                        .printMessage(Kind.NOTE, "No source generated for " + type.toString());
                 return;
             }
 
             TI typeInfo = typeParser.parse(type);
             String generatedSource = generator.processType(typeInfo, typeParser.parse(methods));
             writer.writeFile(typeInfo, generatedSource);
-            
+
         } catch (RuntimeException e) {
             processingEnv.getMessager().printMessage(
                     Kind.ERROR,
@@ -109,7 +120,8 @@ public abstract class SingleAnnotationTypeProcessor<TI extends TypeInfo, MI exte
                             e,
                             type
                     )
-                    , type);
+                    , type
+            );
         }
     }
 }

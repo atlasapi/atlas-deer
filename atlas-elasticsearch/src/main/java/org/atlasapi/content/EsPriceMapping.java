@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Currency;
 
 import org.atlasapi.util.EsObject;
+
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
@@ -15,14 +16,14 @@ public class EsPriceMapping extends EsObject {
     public static final XContentBuilder getMapping() throws IOException {
         return XContentFactory.jsonBuilder()
                 .startObject()
-                    .startObject(EsPriceMapping.CURRENCY)
-                        .field("type").value("string")
-                        .field("index").value("not_analyzed")
-                    .endObject()
-                    .startObject(EsPriceMapping.VALUE)
-                        .field("type").value("integer")
-                        .field("index").value("not_analyzed")
-                    .endObject()
+                .startObject(EsPriceMapping.CURRENCY)
+                .field("type").value("string")
+                .field("index").value("not_analyzed")
+                .endObject()
+                .startObject(EsPriceMapping.VALUE)
+                .field("type").value("integer")
+                .field("index").value("not_analyzed")
+                .endObject()
                 .endObject();
     }
 

@@ -13,18 +13,18 @@ import org.atlasapi.output.OutputContext;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-
 public class SourceRequestListWriter implements EntityListWriter<SourceRequest> {
-    private final EntityListWriter<Publisher> sourcesWriter; 
+
+    private final EntityListWriter<Publisher> sourcesWriter;
     private final EntityWriter<UsageType> usageTypeWriter;
     private final NumberToShortStringCodec idCodec;
-    
+
     public SourceRequestListWriter(SourceIdCodec sourceIdCodec, NumberToShortStringCodec idCodec) {
         this.sourcesWriter = new SourceWithIdWriter(sourceIdCodec, "source", "sources");
         this.usageTypeWriter = new UsageTypeWriter();
         this.idCodec = idCodec;
     }
-    
+
     @Override
     public void write(SourceRequest entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
@@ -35,7 +35,7 @@ public class SourceRequestListWriter implements EntityListWriter<SourceRequest> 
         writer.writeObject(sourcesWriter, entity.getSource(), ctxt);
         writer.writeField("reason", entity.getReason());
         writer.writeObject(usageTypeWriter, entity.getUsageType(), ctxt);
-        writer.writeField("approved",entity.isApproved());
+        writer.writeField("approved", entity.isApproved());
         writer.writeField("licenseAccepted", entity.isLicenseAccepted());
         writer.writeField("requestedAt", entity.getRequestedAt());
         writer.writeField("approvedAt", entity.getApprovedAt().orNull());

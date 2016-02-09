@@ -9,10 +9,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public final class AttributeQuerySet extends ForwardingSet<AttributeQuery<?>> {
-    
+
     private final IntermediateNode root;
     private final ImmutableSet<AttributeQuery<?>> delegate;
-    
+
     public AttributeQuerySet(Iterable<? extends AttributeQuery<?>> queries) {
         this.delegate = ImmutableSet.copyOf(queries);
         this.root = new IntermediateNode(ImmutableList.<String>of());
@@ -26,16 +26,16 @@ public final class AttributeQuerySet extends ForwardingSet<AttributeQuery<?>> {
     protected ImmutableSet<AttributeQuery<?>> delegate() {
         return delegate;
     }
-    
+
     @Override
     public String toString() {
         return root.toString();
     }
-    
+
     public <V> V accept(QueryNodeVisitor<V> visitor) {
         return root.accept(visitor);
     }
-    
+
     public <V> List<V> accept(QueryVisitor<V> visitor) {
         ImmutableList.Builder<V> result = ImmutableList.builder();
         for (AttributeQuery<?> query : delegate) {
@@ -49,7 +49,7 @@ public final class AttributeQuerySet extends ForwardingSet<AttributeQuery<?>> {
 
     public AttributeQuerySet copyWith(AttributeQuery<?> query) {
         return new AttributeQuerySet(
-            ImmutableList.<AttributeQuery<?>>builder()
-                .addAll(delegate).add(query).build());
+                ImmutableList.<AttributeQuery<?>>builder()
+                        .addAll(delegate).add(query).build());
     }
 }

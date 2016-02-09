@@ -16,6 +16,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemDisplayTitleWriter;
+
 import org.joda.time.Duration;
 
 public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content> {
@@ -26,8 +27,9 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
     }
 
     @Override
-    public void write(Content content, final FieldWriter writer, final OutputContext ctxt) throws IOException {
-        content.accept(new ContentVisitor<Void>(){
+    public void write(Content content, final FieldWriter writer, final OutputContext ctxt)
+            throws IOException {
+        content.accept(new ContentVisitor<Void>() {
 
             public void writeField(String field, Object value) {
                 try {
@@ -44,7 +46,7 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
                     throw new RuntimeException(ioe);
                 }
             }
-            
+
             @Override
             public Void visit(Brand brand) {
                 return null;
@@ -95,10 +97,10 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
                 return null;
             }
         });
-        
+
         writer.writeField("media_type", content.getMediaType());
         writer.writeField("specialization", content.getSpecialization());
-        
+
         super.write(content, writer, ctxt);
     }
 

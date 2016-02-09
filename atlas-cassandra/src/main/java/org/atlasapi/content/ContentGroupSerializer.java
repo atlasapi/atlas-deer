@@ -33,7 +33,7 @@ public class ContentGroupSerializer<T extends ContentGroup> {
     public T deserialize(CommonProtos.ContentGroup msg, T target) {
         describedSerializer.deserialize(msg.getDescribed(), target);
 
-        if(msg.hasType()) {
+        if (msg.hasType()) {
             target.setType(ContentGroup.Type.valueOf(msg.getType()));
         }
         target.setContents(msg.getContentList().stream()

@@ -1,7 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Iterator;
 
 import org.atlasapi.content.Content;
@@ -9,12 +7,14 @@ import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.source.Sources;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentListerResourceListerAdapter implements ResourceLister<Content> {
 
@@ -34,7 +34,7 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
     public FluentIterable<Content> list(Iterable<Publisher> sources) {
         return list(sources, ContentListingProgress.START);
     }
-    
+
     @Override
     public FluentIterable<Content> list() {
         return list(Sources.all().asList());
@@ -46,8 +46,10 @@ public class ContentListerResourceListerAdapter implements ResourceLister<Conten
     }
 
     @Override
-    public FluentIterable<Content> list(Iterable<Publisher> sources, ContentListingProgress progress) {
+    public FluentIterable<Content> list(Iterable<Publisher> sources,
+            ContentListingProgress progress) {
         return new FluentIterable<Content>() {
+
             @Override
             public Iterator<Content> iterator() {
                 return Iterators.transform(

@@ -1,21 +1,23 @@
 package org.atlasapi.output.useraware;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.FluentIterable;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public abstract class UserAwareQueryResult<T> {
 
-    public static final <T> SingleQueryResult<T> singleResult(T resource, UserAwareQueryContext context) {
+    public static final <T> SingleQueryResult<T> singleResult(T resource,
+            UserAwareQueryContext context) {
         return new SingleQueryResult<T>(resource, context);
     }
 
-    public static final <T> ListQueryResult<T> listResult(Iterable<T> resource, UserAwareQueryContext context) {
+    public static final <T> ListQueryResult<T> listResult(Iterable<T> resource,
+            UserAwareQueryContext context) {
         return new ListQueryResult<T>(resource, context);
     }
-    
+
     private final UserAwareQueryContext context;
 
     protected UserAwareQueryResult(UserAwareQueryContext context) {
@@ -49,7 +51,7 @@ public abstract class UserAwareQueryResult<T> {
         @Override
         public FluentIterable<T> getResources() {
             throw new IllegalStateException(
-                "QueryResult.getResources() cannot be called on single result");
+                    "QueryResult.getResources() cannot be called on single result");
         }
 
         public T getOnlyResource() {
@@ -66,7 +68,7 @@ public abstract class UserAwareQueryResult<T> {
             super(context);
             this.resources = FluentIterable.from(resources);
         }
-        
+
         @Override
         public boolean isListResult() {
             return true;
@@ -78,7 +80,7 @@ public abstract class UserAwareQueryResult<T> {
 
         public T getOnlyResource() {
             throw new IllegalStateException(
-                "QueryResult.getOnlyResource() cannot be called on single result");
+                    "QueryResult.getOnlyResource() cannot be called on single result");
         }
 
     }

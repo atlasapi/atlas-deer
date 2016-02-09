@@ -2,6 +2,8 @@ package org.atlasapi.query.v4.meta.model;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.generation.model.ModelClassInfo;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -13,12 +15,10 @@ import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
 
-import javax.servlet.http.HttpServletRequest;
-
 public class ModelInfoQueryResultWriter extends QueryResultWriter<ModelClassInfo> {
 
     private final EntityListWriter<ModelClassInfo> modelListWriter;
-    
+
     public ModelInfoQueryResultWriter(
             EntityListWriter<ModelClassInfo> modelListWriter,
             EntityWriter<Object> licenseWriter,
@@ -30,7 +30,7 @@ public class ModelInfoQueryResultWriter extends QueryResultWriter<ModelClassInfo
 
     @Override
     protected void writeResult(QueryResult<ModelClassInfo> result, ResponseWriter writer)
-        throws IOException {
+            throws IOException {
 
         OutputContext ctxt = outputContext(result.getContext());
 
@@ -41,9 +41,9 @@ public class ModelInfoQueryResultWriter extends QueryResultWriter<ModelClassInfo
             writer.writeObject(modelListWriter, result.getOnlyResource(), ctxt);
         }
     }
-    
+
     private OutputContext outputContext(QueryContext queryContext) {
         return OutputContext.valueOf(queryContext);
     }
-    
+
 }

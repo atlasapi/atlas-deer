@@ -6,7 +6,9 @@ import java.util.Optional;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.Query;
-import org.elasticsearch.common.lang3.StringUtils;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.annotations.VisibleForTesting;
@@ -14,14 +16,12 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-
+import org.elasticsearch.common.lang3.StringUtils;
 
 /***
-    This is more or less a hack to allow parsing simple query params off of a HTTP request param map,
-    found on a {@link Query}. It should be removed and replaced once a refactor of Deer's query
-    parsing allows this sort of thing to be done easier and in a more general fashion.
+ * This is more or less a hack to allow parsing simple query params off of a HTTP request param map,
+ * found on a {@link Query}. It should be removed and replaced once a refactor of Deer's query
+ * parsing allows this sort of thing to be done easier and in a more general fashion.
  */
 public class IndexQueryParser {
 
@@ -54,7 +54,10 @@ public class IndexQueryParser {
 
     @VisibleForTesting
     public Optional<Map<String, String>> actionableFilterParamsFrom(Query<?> query) {
-        String[] params = (String[]) query.getContext().getRequest().getParameterMap().get("actionableFilterParameters");
+        String[] params = (String[]) query.getContext()
+                .getRequest()
+                .getParameterMap()
+                .get("actionableFilterParameters");
         if (params == null || params.length == 0) {
             return Optional.empty();
         }
@@ -84,7 +87,9 @@ public class IndexQueryParser {
 
     private Boolean availabilityFilterFrom(Query<?> query) {
         String available = query.getContext().getRequest().getParameter("available");
-        String brandSeriesAvailable = query.getContext().getRequest().getParameter("brand.series.available");
+        String brandSeriesAvailable = query.getContext()
+                .getRequest()
+                .getParameter("brand.series.available");
         return !Strings.isNullOrEmpty(available) || !Strings.isNullOrEmpty(brandSeriesAvailable);
     }
 
@@ -97,7 +102,10 @@ public class IndexQueryParser {
         Splitter commaSplitter = Splitter.on(",");
         Splitter carretSplitter = Splitter.on("^");
         for (String idCsv : commaSplitter.splitToList(topicIds)) {
-            builder.add(Lists.transform(carretSplitter.splitToList(idCsv), this::parseInclusiveExclusiveId));
+            builder.add(Lists.transform(
+                    carretSplitter.splitToList(idCsv),
+                    this::parseInclusiveExclusiveId
+            ));
         }
         return Optional.of(builder.build());
     }
@@ -105,7 +113,8 @@ public class IndexQueryParser {
     private InclusionExclusionId parseInclusiveExclusiveId(String id) {
         if (StringUtils.startsWith(id, NOT_OPERATOR)) {
             return InclusionExclusionId.valueOf(
-                    Id.valueOf(codec.decode(StringUtils.removeStart(id, NOT_OPERATOR))), Boolean.FALSE
+                    Id.valueOf(codec.decode(StringUtils.removeStart(id, NOT_OPERATOR))),
+                    Boolean.FALSE
             );
         }
         return InclusionExclusionId.valueOf(Id.valueOf(codec.decode(id)), Boolean.TRUE);
@@ -155,7 +164,10 @@ public class IndexQueryParser {
         if (!fuzzySearchString.isPresent()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(new FuzzyQueryParams(fuzzySearchString.get(), getTitleBoostFrom(query)));
+        return Optional.ofNullable(new FuzzyQueryParams(
+                fuzzySearchString.get(),
+                getTitleBoostFrom(query)
+        ));
     }
 
     private Optional<Float> getTitleBoostFrom(Query<?> query) {
@@ -166,7 +178,8 @@ public class IndexQueryParser {
         }
         String[] titleBoost = (String[]) param;
         if (titleBoost.length > 1) {
-            throw new IllegalArgumentException("Title boost param (titleBoost) has been specified more than once");
+            throw new IllegalArgumentException(
+                    "Title boost param (titleBoost) has been specified more than once");
         }
         if (titleBoost.length == 0) {
             return Optional.empty();

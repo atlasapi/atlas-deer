@@ -1,14 +1,14 @@
 package org.atlasapi.channel;
 
-import org.atlasapi.entity.Id;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
+import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-import java.util.Optional;
+import org.atlasapi.entity.Id;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.meta.annotations.FieldName;
+
+import org.joda.time.LocalDate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -32,12 +32,12 @@ public class ChannelGroupMembership {
         this.endDate = Optional.ofNullable(endDate);
     }
 
-
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
     }
 
     public static class Builder {
+
         private Long channelId;
         private Long channelGroupId;
 
@@ -49,22 +49,27 @@ public class ChannelGroupMembership {
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
         }
+
         public Builder withChannelId(Long channelId) {
             this.channelId = channelId;
             return this;
         }
+
         public Builder withChannelGroupId(Long channelGroupId) {
             this.channelGroupId = channelGroupId;
             return this;
         }
+
         public Builder withStartDate(LocalDate startDate) {
             this.startDate = startDate;
             return this;
         }
+
         public Builder withEndDate(LocalDate endDate) {
             this.endDate = endDate;
             return this;
         }
+
         public Builder withChannelNumber(String channelNumber) {
             this.channelNumber = channelNumber;
             return this;
@@ -80,7 +85,7 @@ public class ChannelGroupMembership {
                     Id.valueOf(channelId),
                     publisher
             );
-            if(isNullOrEmpty(this.channelNumber)) {
+            if (isNullOrEmpty(this.channelNumber)) {
                 return new ChannelGroupMembership(
                         channelGroupRef,
                         channelRef,
@@ -139,6 +144,7 @@ public class ChannelGroupMembership {
     }
 
     public boolean isAvailable(LocalDate date) {
-        return startDate.orElse(date.minusDays(1)).isBefore(date) && endDate.orElse(date.plusDays(1)).isAfter(date);
+        return startDate.orElse(date.minusDays(1)).isBefore(date)
+                && endDate.orElse(date.plusDays(1)).isAfter(date);
     }
 }

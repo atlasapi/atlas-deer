@@ -1,7 +1,7 @@
 package org.atlasapi.output.writers;
 
-import com.google.common.base.Optional;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import java.io.IOException;
+
 import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.ContainerSummaryResolver;
@@ -10,7 +10,9 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-import java.io.IOException;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
+import com.google.common.base.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -20,7 +22,8 @@ public class ContainerSummaryWriter implements EntityWriter<Item> {
     private final NumberToShortStringCodec idCodec;
     private final ContainerSummaryResolver containerSummaryResolver;
 
-    public ContainerSummaryWriter(NumberToShortStringCodec idCodec, String containerField, ContainerSummaryResolver containerSummaryResolver) {
+    public ContainerSummaryWriter(NumberToShortStringCodec idCodec, String containerField,
+            ContainerSummaryResolver containerSummaryResolver) {
         this.containerField = checkNotNull(containerField);
         this.idCodec = checkNotNull(idCodec);
         this.containerSummaryResolver = checkNotNull(containerSummaryResolver);
@@ -32,8 +35,12 @@ public class ContainerSummaryWriter implements EntityWriter<Item> {
         writer.writeField("id", idCodec.encode(container.getId().toBigInteger()));
 
         Optional<ContainerSummary> summary = Optional.fromNullable(entity.getContainerSummary());
-        if(!summary.isPresent()) {
-            summary = containerSummaryResolver.resolveContainerSummary(container.getId(), ctxt.getApplicationSources(), ctxt.getActiveAnnotations());
+        if (!summary.isPresent()) {
+            summary = containerSummaryResolver.resolveContainerSummary(
+                    container.getId(),
+                    ctxt.getApplicationSources(),
+                    ctxt.getActiveAnnotations()
+            );
         }
         if (summary.isPresent()) {
             writer.writeField("type", summary.get().getType().toLowerCase());

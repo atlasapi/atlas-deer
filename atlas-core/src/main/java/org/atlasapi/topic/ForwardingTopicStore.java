@@ -6,15 +6,17 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.collect.OptionalMap;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 public abstract class ForwardingTopicStore implements TopicStore {
 
-    protected ForwardingTopicStore() { }
-    
+    protected ForwardingTopicStore() {
+    }
+
     protected abstract TopicStore delegate();
-    
+
     @Override
     public ListenableFuture<Resolved<Topic>> resolveIds(Iterable<Id> ids) {
         return delegate().resolveIds(ids);

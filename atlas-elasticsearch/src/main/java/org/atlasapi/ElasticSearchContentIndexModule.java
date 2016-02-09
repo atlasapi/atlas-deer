@@ -118,7 +118,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
     public EsPopularTopicIndex topicSearcher() {
         return popularTopicsIndex;
     }
-    
+
     public EsContentTitleSearcher contentTitleSearcher() {
         return contentSearcher;
     }

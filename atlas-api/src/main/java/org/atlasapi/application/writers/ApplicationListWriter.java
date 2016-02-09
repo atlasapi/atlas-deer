@@ -21,11 +21,11 @@ public class ApplicationListWriter implements EntityListWriter<Application> {
     private final EntityListWriter<ApplicationSources> sourcesWriter;
     private final EntityWriter<Publisher> publisherWriter = SourceWriter.sourceWriter("publisher");
     private final NumberToShortStringCodec idCodec;
-    
+
     public ApplicationListWriter(NumberToShortStringCodec idCodec,
             SourceIdCodec sourceIdCodec) {
         this.idCodec = idCodec;
-        this.credentialsWriter =  new ApplicationCredentialsWriter();
+        this.credentialsWriter = new ApplicationCredentialsWriter();
         this.sourcesWriter = new ApplicationSourcesWriter(sourceIdCodec);
     }
 

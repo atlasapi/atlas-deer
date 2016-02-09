@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.Futures;
 public class TopicsAnnotation extends OutputAnnotation<Content> {
 
     private static final Function<Tag, Id> TAG_TO_ID = new Function<Tag, Id>() {
+
         @Override
         public Id apply(Tag input) {
             return input.getTopic();
@@ -39,7 +40,7 @@ public class TopicsAnnotation extends OutputAnnotation<Content> {
 
     private final TopicResolver topicResolver;
     private final EntityWriter<Topic> topicWriter;
-    
+
     public TopicsAnnotation(TopicResolver topicResolver, EntityWriter<Topic> topicListWriter) {
         super();
         this.topicResolver = topicResolver;
@@ -52,7 +53,8 @@ public class TopicsAnnotation extends OutputAnnotation<Content> {
         }
         //TODO: more specific exception, probably, please?
         return Futures.get(topicResolver.resolveIds(topicIds),
-                1, TimeUnit.MINUTES, IOException.class).getResources();
+                1, TimeUnit.MINUTES, IOException.class
+        ).getResources();
     }
 
     @Override
@@ -60,11 +62,12 @@ public class TopicsAnnotation extends OutputAnnotation<Content> {
         List<Tag> tags = entity.getTags();
         Iterable<Topic> topics = resolve(Lists.transform(tags, TAG_TO_ID));
         final Map<Id, Topic> topicsMap = Maps.uniqueIndex(topics, TOPIC_ID);
-        
+
         writer.writeList(new EntityListWriter<Tag>() {
 
             @Override
-            public void write(Tag entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+            public void write(Tag entity, FieldWriter writer, OutputContext ctxt)
+                    throws IOException {
                 writer.writeObject(topicWriter, topicsMap.get(entity.getTopic()), ctxt);
                 writer.writeField("supervised", entity.isSupervised());
                 writer.writeField("weighting", entity.getWeighting());

@@ -1,7 +1,5 @@
 package org.atlasapi.generation.processing;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -25,13 +23,17 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimaps;
 
-public final class FieldNameProcessor extends SingleAnnotationTypeProcessor<ModelTypeInfo, ModelMethodInfo> {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public final class FieldNameProcessor
+        extends SingleAnnotationTypeProcessor<ModelTypeInfo, ModelMethodInfo> {
 
     private final HierarchyExtractor hierarchyExtractor;
 
-    public FieldNameProcessor(SourceGenerator<ModelTypeInfo, ModelMethodInfo> generator, 
-            HierarchyExtractor hierarchyExtractor, SourceFileWriter<ModelTypeInfo> writer, 
-            TypeParser<ModelTypeInfo, ModelMethodInfo> typeParser, Iterable<Class<?>> classesToOutput) {
+    public FieldNameProcessor(SourceGenerator<ModelTypeInfo, ModelMethodInfo> generator,
+            HierarchyExtractor hierarchyExtractor, SourceFileWriter<ModelTypeInfo> writer,
+            TypeParser<ModelTypeInfo, ModelMethodInfo> typeParser,
+            Iterable<Class<?>> classesToOutput) {
         super(FieldName.class, classesToOutput, typeParser, generator, writer);
         this.hierarchyExtractor = checkNotNull(hierarchyExtractor);
     }
@@ -47,8 +49,9 @@ public final class FieldNameProcessor extends SingleAnnotationTypeProcessor<Mode
         Collection<ExecutableElement> types = annotatedMethods(roundEnv);
 
         ImmutableListMultimap<TypeElement, ExecutableElement> typeMethodMapping = Multimaps.index(
-                types, 
+                types,
                 new Function<ExecutableElement, TypeElement>() {
+
                     @Override
                     public TypeElement apply(ExecutableElement input) {
                         return (TypeElement) input.getEnclosingElement();
@@ -56,21 +59,25 @@ public final class FieldNameProcessor extends SingleAnnotationTypeProcessor<Mode
                 }
         );
 
-        typeMethodMapping = collectSuperTypeMethods(typeMethodMapping); 
-        for (Entry<TypeElement, Collection<ExecutableElement>> typeMethods : typeMethodMapping.asMap().entrySet()) {
+        typeMethodMapping = collectSuperTypeMethods(typeMethodMapping);
+        for (Entry<TypeElement, Collection<ExecutableElement>> typeMethods : typeMethodMapping.asMap()
+                .entrySet()) {
             processTypeAndMethods(typeMethods.getKey(), typeMethods.getValue());
         }
     }
 
     private Collection<ExecutableElement> annotatedMethods(RoundEnvironment roundEnv) {
-        Collection<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotationType());
+        Collection<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(
+                annotationType());
         return ElementFilter.methodsIn(annotatedElements);
     }
 
     private ImmutableListMultimap<TypeElement, ExecutableElement> collectSuperTypeMethods(
             ImmutableListMultimap<TypeElement, ExecutableElement> typeMethodIndex) {
-        ImmutableListMultimap.Builder<TypeElement, ExecutableElement> builder = ImmutableListMultimap.builder();
-        for (Entry<TypeElement, Collection<ExecutableElement>> typeAndMethods : typeMethodIndex.asMap().entrySet()) {
+        ImmutableListMultimap.Builder<TypeElement, ExecutableElement> builder = ImmutableListMultimap
+                .builder();
+        for (Entry<TypeElement, Collection<ExecutableElement>> typeAndMethods : typeMethodIndex.asMap()
+                .entrySet()) {
             builder.putAll(typeAndMethods.getKey(), typeAndMethods.getValue());
             Set<TypeElement> fullUpwardHierarchy = hierarchyExtractor.fullHierarchy(typeAndMethods.getKey());
             for (TypeElement superType : fullUpwardHierarchy) {

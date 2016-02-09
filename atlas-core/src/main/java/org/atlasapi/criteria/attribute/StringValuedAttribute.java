@@ -14,45 +14,48 @@ permissions and limitations under the License. */
 
 package org.atlasapi.criteria.attribute;
 
-import org.atlasapi.entity.Identified;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.criteria.operator.StringOperator;
+import org.atlasapi.entity.Identified;
 
 public class StringValuedAttribute extends Attribute<String> {
-	
-	public StringValuedAttribute(String name, Class<? extends Identified> target) {
-		super(name, target);
-	}
 
-	public StringValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target) {
-		super(name, javaAttributeName, target);
-	}
+    public StringValuedAttribute(String name, Class<? extends Identified> target) {
+        super(name, target);
+    }
 
-	public StringValuedAttribute(String name, Class<? extends Identified> target, boolean isCollection) {
-		super(name, target, isCollection);
-	}
+    public StringValuedAttribute(String name, String javaAttributeName,
+            Class<? extends Identified> target) {
+        super(name, javaAttributeName, target);
+    }
 
-	public StringValuedAttribute(String name, String javaAttributeName, Class<? extends Identified> target, boolean isCollectionOfValues) {
-		super(name, javaAttributeName, target, isCollectionOfValues);
-	}
+    public StringValuedAttribute(String name, Class<? extends Identified> target,
+            boolean isCollection) {
+        super(name, target, isCollection);
+    }
 
-	@Override
-	public String toString() {
-		return "String valued attribute: " + name;
-	}
+    public StringValuedAttribute(String name, String javaAttributeName,
+            Class<? extends Identified> target, boolean isCollectionOfValues) {
+        super(name, javaAttributeName, target, isCollectionOfValues);
+    }
 
-	@Override
-	public Class<String> requiresOperandOfType() {
-		return String.class;
-	}
+    @Override
+    public String toString() {
+        return "String valued attribute: " + name;
+    }
 
-	@Override
-	public AttributeQuery<String> createQuery(Operator op, Iterable<String> values) {
-		if (!(op instanceof StringOperator)) {
-			throw new IllegalArgumentException();
-		}
-		return new StringAttributeQuery(this, (StringOperator) op, values);
-	}
+    @Override
+    public Class<String> requiresOperandOfType() {
+        return String.class;
+    }
+
+    @Override
+    public AttributeQuery<String> createQuery(Operator op, Iterable<String> values) {
+        if (!(op instanceof StringOperator)) {
+            throw new IllegalArgumentException();
+        }
+        return new StringAttributeQuery(this, (StringOperator) op, values);
+    }
 }

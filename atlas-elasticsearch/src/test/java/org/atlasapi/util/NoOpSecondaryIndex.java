@@ -29,7 +29,8 @@ public class NoOpSecondaryIndex implements SecondaryIndex {
     }
 
     @Override
-    public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys, ConsistencyLevel level) {
+    public ListenableFuture<ImmutableMap<Long, Long>> lookup(Iterable<Long> keys,
+            ConsistencyLevel level) {
         return Futures.immediateFuture(ImmutableMap.of());
     }
 

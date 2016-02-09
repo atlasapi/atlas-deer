@@ -5,7 +5,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentWriter;
 
-public class ContentWritingBootstrapListener extends AbstractMultiThreadedBootstrapListener<Content> {
+public class ContentWritingBootstrapListener
+        extends AbstractMultiThreadedBootstrapListener<Content> {
 
     private final ContentWriter writer;
 
@@ -14,7 +15,8 @@ public class ContentWritingBootstrapListener extends AbstractMultiThreadedBootst
         this.writer = writer;
     }
 
-    public ContentWritingBootstrapListener(ThreadPoolExecutor executor, ContentWriter contentWriter) {
+    public ContentWritingBootstrapListener(ThreadPoolExecutor executor,
+            ContentWriter contentWriter) {
         super(executor);
         this.writer = contentWriter;
     }

@@ -16,9 +16,8 @@ package org.atlasapi.criteria.operator;
 
 import java.util.Map;
 
-import org.joda.time.DateTime;
-
 import com.google.common.collect.Maps;
+import org.joda.time.DateTime;
 
 public class Operators {
 
@@ -189,48 +188,58 @@ public class Operators {
         }
     }
 
-    public static class Ascending extends BaseOperator implements StringOperator, ComparableOperator, DateTimeOperator {
+    public static class Ascending extends BaseOperator
+            implements StringOperator, ComparableOperator, DateTimeOperator {
 
         private Ascending() {
             super("asc");
         }
 
-        @Override public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
+        @Override
+        public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
             return true;
         }
 
-        @Override public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
+        @Override
+        public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
             return visitor.visit(this);
         }
 
-        @Override public <V> V accept(StringOperatorVisitor<V> visitor) {
+        @Override
+        public <V> V accept(StringOperatorVisitor<V> visitor) {
             return visitor.visit(this);
         }
 
-        @Override public <V> V accept(ComparableOperatorVisitor<V> v) {
+        @Override
+        public <V> V accept(ComparableOperatorVisitor<V> v) {
             return v.visit(this);
         }
     }
 
-    public static class Descending extends BaseOperator implements StringOperator, ComparableOperator, DateTimeOperator {
+    public static class Descending extends BaseOperator
+            implements StringOperator, ComparableOperator, DateTimeOperator {
 
         private Descending() {
             super("desc");
         }
 
-        @Override public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
+        @Override
+        public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs) {
             return true;
         }
 
-        @Override public <V> V accept(StringOperatorVisitor<V> visitor) {
+        @Override
+        public <V> V accept(StringOperatorVisitor<V> visitor) {
             return visitor.visit(this);
         }
 
-        @Override public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
+        @Override
+        public <V> V accept(DateTimeOperatorVisitor<V> visitor) {
             return visitor.visit(this);
         }
 
-        @Override public <V> V accept(ComparableOperatorVisitor<V> visitor) {
+        @Override
+        public <V> V accept(ComparableOperatorVisitor<V> visitor) {
             return visitor.visit(this);
         }
     }

@@ -15,48 +15,57 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-
 public class CacheBackedApplicationStore implements ApplicationStore, LegacyApplicationStore {
-    
+
     private final ApplicationStore delegate;
     private LoadingCache<Id, Optional<Application>> idCache;
     private LoadingCache<String, Optional<Application>> apiKeyCache;
     private LoadingCache<String, Optional<Id>> slugCache;
-    
+
     public CacheBackedApplicationStore(final LegacyApplicationStore delegate, int timeoutMinutes) {
         this.delegate = delegate;
-        this.idCache = CacheBuilder.newBuilder().expireAfterWrite(timeoutMinutes, TimeUnit.MINUTES).build(new CacheLoader<Id, Optional<Application>>() {
+        this.idCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(timeoutMinutes, TimeUnit.MINUTES)
+                .build(new CacheLoader<Id, Optional<Application>>() {
 
-            @Override
-            public Optional<Application> load(Id id) throws Exception {
-                return delegate.applicationFor(id);
-            }
-        });
-        this.apiKeyCache = CacheBuilder.newBuilder().expireAfterWrite(timeoutMinutes, TimeUnit.MINUTES).build(new CacheLoader<String, Optional<Application>>() {
+                    @Override
+                    public Optional<Application> load(Id id) throws Exception {
+                        return delegate.applicationFor(id);
+                    }
+                });
+        this.apiKeyCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(timeoutMinutes, TimeUnit.MINUTES)
+                .build(new CacheLoader<String, Optional<Application>>() {
 
-            @Override
-            public Optional<Application> load(String key) throws Exception {
-                return delegate.applicationForKey(key);
-            }
-        });
-        this.slugCache = CacheBuilder.newBuilder().expireAfterWrite(timeoutMinutes, TimeUnit.MINUTES).build(new CacheLoader<String, Optional<Id>>() {
+                    @Override
+                    public Optional<Application> load(String key) throws Exception {
+                        return delegate.applicationForKey(key);
+                    }
+                });
+        this.slugCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(timeoutMinutes, TimeUnit.MINUTES)
+                .build(new CacheLoader<String, Optional<Id>>() {
 
-            @Override
-            public Optional<Id> load(String key) throws Exception {
-                return delegate.applicationIdForSlug(key);
-            }
-          
-        });
+                    @Override
+                    public Optional<Id> load(String key) throws Exception {
+                        return delegate.applicationIdForSlug(key);
+                    }
+
+                });
     }
 
     @Override
     public ListenableFuture<Resolved<Application>> resolveIds(Iterable<Id> ids) {
-        return Futures.immediateFuture(Resolved.valueOf(Iterables.transform(ids, new Function<Id, Application>() {
+        return Futures.immediateFuture(Resolved.valueOf(Iterables.transform(
+                ids,
+                new Function<Id, Application>() {
 
-            @Override
-            public Application apply(Id input) {
-                return idCache.getUnchecked(input).get();
-            }})));
+                    @Override
+                    public Application apply(Id input) {
+                        return idCache.getUnchecked(input).get();
+                    }
+                }
+        )));
     }
 
     @Override
@@ -106,6 +115,7 @@ public class CacheBackedApplicationStore implements ApplicationStore, LegacyAppl
     @Deprecated
     public Iterable<Id> applicationIdsForSlugs(Iterable<String> slugs) {
         return Iterables.transform(slugs, new Function<String, Id>() {
+
             @Override
             public Id apply(String input) {
                 return slugCache.getUnchecked(input).get();

@@ -1,17 +1,18 @@
 package org.atlasapi.application;
 
-import static org.junit.Assert.assertEquals;
-
 import org.atlasapi.entity.Id;
-import org.junit.Test;
 
 import com.metabroadcast.common.persistence.MongoTestHelper;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class EndUserLicenseStoreTest {
+
     private final DatabasedMongo mongo = MongoTestHelper.anEmptyTestDatabase();
-    
+
     @Test
     public void test() {
         final Id id = Id.valueOf(5000);

@@ -1,7 +1,5 @@
 package org.atlasapi.output;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -20,9 +18,10 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
- * Contains state required during the output of a response.
- * Not thread-safe 
+ * Contains state required during the output of a response. Not thread-safe
  */
 public class OutputContext {
 
@@ -43,7 +42,7 @@ public class OutputContext {
                 region
         );
     }
-    
+
     public static OutputContext valueOf(UserAwareQueryContext standard) {
         return new OutputContext(
                 standard.getAnnotations(),
@@ -52,7 +51,7 @@ public class OutputContext {
                 null
         );
     }
-    
+
     private final ActiveAnnotations annotations;
     private final ApplicationSources applicationSources;
     private final List<Resource> resources;
@@ -76,16 +75,16 @@ public class OutputContext {
         resources.add(resource);
         return this;
     }
-    
+
     public final OutputContext endResource() {
-        resources.remove(resources.size()-1);
+        resources.remove(resources.size() - 1);
         return this;
     }
 
     public ImmutableSet<Annotation> getActiveAnnotations() {
         return annotations.forPath(resources);
     }
-    
+
     public <T> List<OutputAnnotation<? super T>> getAnnotations(AnnotationRegistry<T> registry) {
         ImmutableSet<Annotation> active = annotations.forPath(resources);
         if (active == null || active.isEmpty()) {
@@ -93,7 +92,7 @@ public class OutputContext {
         }
         return registry.activeAnnotations(active);
     }
-    
+
     public ApplicationSources getApplicationSources() {
         return this.applicationSources;
     }

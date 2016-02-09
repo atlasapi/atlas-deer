@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Sets;
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
@@ -32,6 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -49,7 +49,6 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
     private Boolean genericDescription = Boolean.FALSE;
     private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
-
 
     public Content(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
@@ -87,7 +86,9 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     }
 
     public void addContentGroup(ContentGroupRef contentGroupRef) {
-        contentGroupRefs = ImmutableList.<ContentGroupRef>builder().add(contentGroupRef).addAll(contentGroupRefs).build();
+        contentGroupRefs = ImmutableList.<ContentGroupRef>builder().add(contentGroupRef)
+                .addAll(contentGroupRefs)
+                .build();
     }
 
     @FieldName("content_group_refs")
@@ -128,7 +129,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
 
     @FieldName("actors")
     public List<Actor> actors() {
-        return Lists.<Actor>newArrayList(Iterables.filter(people, Actor.class));
+        return Lists.newArrayList(Iterables.filter(people, Actor.class));
     }
 
     public void addPerson(CrewMember person) {
@@ -146,7 +147,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     }
 
     @FieldName("event_refs")
-    public Set<EventRef> getEventRefs(){
+    public Set<EventRef> getEventRefs() {
         return eventRefs;
     }
 
@@ -189,7 +190,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     protected String getSortKey() {
         return SortKey.DEFAULT.name();
     }
-    
+
     @FieldName("languages")
     public Set<String> getLanguages() {
         return languages;
@@ -218,9 +219,9 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
     }
 
     public abstract <V> V accept(ContentVisitor<V> visitor);
-    
+
     public abstract ContentRef toRef();
-    
+
     public static final Function<Content, ContentRef> toContentRef() {
         return ToContentRefFunction.INSTANCE;
     }
@@ -238,7 +239,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         checkNotNull(encoding);
         manifestedAs.add(encoding);
     }
-    
+
     private enum ToContentRefFunction implements Function<Content, ContentRef> {
         INSTANCE;
 
@@ -246,9 +247,9 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         public ContentRef apply(Content input) {
             return input.toRef();
         }
-        
+
     }
-    
+
     @Override
     public Content copyWithEquivalentTo(Iterable<EquivalenceRef> refs) {
         super.copyWithEquivalentTo(refs);

@@ -36,8 +36,8 @@ public class CrewMemberSerializer {
             member = new CrewMember();
         }
         member.withName(crewMember.getName())
-            .withRole(role)
-            .withProfileLinks(ImmutableSet.copyOf(crewMember.getProfileLinksList()));
+                .withRole(role)
+                .withProfileLinks(ImmutableSet.copyOf(crewMember.getProfileLinksList()));
         member.setCanonicalUri(crewMember.getUri());
         return member;
     }

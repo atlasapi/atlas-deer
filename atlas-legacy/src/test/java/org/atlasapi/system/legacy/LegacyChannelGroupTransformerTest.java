@@ -1,10 +1,7 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.intl.Country;
+import java.util.Set;
+
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelNumbering;
@@ -12,11 +9,15 @@ import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.media.entity.Publisher;
+
+import com.metabroadcast.common.intl.Country;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.hamcrest.core.Is;
 import org.joda.time.LocalDate;
 import org.junit.Test;
-
-import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -25,7 +26,6 @@ import static org.mockito.Mockito.mock;
 public class LegacyChannelGroupTransformerTest {
 
     private LegacyChannelGroupTransformer objectUnderTest = new LegacyChannelGroupTransformer();
-
 
     @Test
     public void testApplyPlatform() throws Exception {
@@ -84,6 +84,7 @@ public class LegacyChannelGroupTransformerTest {
                 Iterables.any(
                         ((Platform) transformed).getRegions(),
                         new Predicate<ChannelGroupRef>() {
+
                             @Override
                             public boolean apply(ChannelGroupRef input) {
                                 return input.getId().longValue() == region1Id;
@@ -98,6 +99,7 @@ public class LegacyChannelGroupTransformerTest {
                 Iterables.any(
                         ((Platform) transformed).getRegions(),
                         new Predicate<ChannelGroupRef>() {
+
                             @Override
                             public boolean apply(ChannelGroupRef input) {
                                 return input.getId().longValue() == region2Id;
@@ -124,6 +126,7 @@ public class LegacyChannelGroupTransformerTest {
                 Iterables.any(
                         ((Platform) transformed).getChannels(),
                         new Predicate<ChannelNumbering>() {
+
                             @Override
                             public boolean apply(ChannelNumbering input) {
                                 return input.getChannelNumber().get().equals(channel2Number)
@@ -149,9 +152,6 @@ public class LegacyChannelGroupTransformerTest {
                 )
         );
     }
-
-
-
 
     @Test
     public void testApplyRegion() throws Exception {
@@ -210,6 +210,7 @@ public class LegacyChannelGroupTransformerTest {
                 Iterables.any(
                         ((Region) transformed).getChannels(),
                         new Predicate<ChannelNumbering>() {
+
                             @Override
                             public boolean apply(ChannelNumbering input) {
                                 return input.getChannelNumber().get().equals(channel1Number)
@@ -228,6 +229,7 @@ public class LegacyChannelGroupTransformerTest {
                 Iterables.any(
                         ((Region) transformed).getChannels(),
                         new Predicate<ChannelNumbering>() {
+
                             @Override
                             public boolean apply(ChannelNumbering input) {
                                 return input.getChannelNumber().get().equals(channel2Number)

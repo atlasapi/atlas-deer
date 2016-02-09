@@ -1,8 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.Set;
 
@@ -24,16 +21,17 @@ import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.system.legacy.LegacyPlayerTransformer;
 import org.atlasapi.system.legacy.LegacyServiceTransformer;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Ints;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LocationsAnnotation extends OutputAnnotation<Content> {
 
@@ -55,7 +53,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
     }
 
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
-        return Iterables.concat(Iterables.transform(manifestedAs,
+        return Iterables.concat(Iterables.transform(
+                manifestedAs,
                 encoding -> {
                     Builder<EncodedLocation> builder = ImmutableList.builder();
                     for (Location location : encoding.getAvailableAt()) {
@@ -82,7 +81,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
 
         private final UnixMillenniumBugFixer unixMillenniumBugFixer = new UnixMillenniumBugFixer();
 
-        public EncodedLocationWriter(String listName, PlayerResolver playerResolver, ServiceResolver serviceResolver) {
+        public EncodedLocationWriter(String listName, PlayerResolver playerResolver,
+                ServiceResolver serviceResolver) {
             this.listName = checkNotNull(listName);
             this.serviceResolver = checkNotNull(serviceResolver);
             this.playerResolver = checkNotNull(playerResolver);
@@ -90,8 +90,10 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         }
 
         private Boolean isAvailable(Policy input) {
-            return (input.getAvailabilityStart() == null || !(new DateTime(input.getAvailabilityStart()).isAfterNow()))
-                    && (input.getAvailabilityEnd() == null || new DateTime(input.getAvailabilityEnd()).isAfterNow());
+            return (input.getAvailabilityStart() == null
+                    || !(new DateTime(input.getAvailabilityStart()).isAfterNow()))
+                    && (input.getAvailabilityEnd() == null
+                    || new DateTime(input.getAvailabilityEnd()).isAfterNow());
         }
 
         @Override
@@ -100,7 +102,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writeLocation(entity, writer, ctxt);
         }
 
-        private void writeLocation(EncodedLocation entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        private void writeLocation(EncodedLocation entity, FieldWriter writer, OutputContext ctxt)
+                throws IOException {
             Encoding encoding = entity.getEncoding();
             Location location = entity.getLocation();
             Policy policy = location.getPolicy();
@@ -108,21 +111,33 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("uri", location.getUri());
             writer.writeList(aliasWriter, location.getAliases(), ctxt);
             writer.writeField("available", isAvailable(policy));
-            writer.writeField("duration", 
-                                encoding.getDuration() == null ? null 
-                                                               : Ints.saturatedCast(encoding.getDuration().getStandardSeconds()));
+            writer.writeField(
+                    "duration",
+                    encoding.getDuration() == null ? null
+                                                   : Ints.saturatedCast(encoding.getDuration()
+                                                           .getStandardSeconds())
+            );
             writer.writeField("transport_is_live", location.getTransportIsLive());
             writer.writeField("transport_type", location.getTransportType());
             writer.writeField("transport_sub_type", location.getTransportSubType());
             writer.writeField("embed_id", location.getEmbedId());
             writer.writeField("embed_code", location.getEmbedCode());
 
-            writer.writeField("availability_start",
-                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityStart()));
-            writer.writeField("availability_end",
-                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityEnd()));
+            writer.writeField(
+                    "availability_start",
+                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityStart())
+            );
+            writer.writeField(
+                    "availability_end",
+                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityEnd())
+            );
 
-            writer.writeList("available_countries", "country", policy.getAvailableCountries(), ctxt);
+            writer.writeList(
+                    "available_countries",
+                    "country",
+                    policy.getAvailableCountries(),
+                    ctxt
+            );
             if (policy.getServiceRef() != null) {
                 writeService(writer, ctxt, policy);
             }
@@ -136,7 +151,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             }
             writer.writeField("revenue_contract", policy.getRevenueContract());
             writer.writeList("subscription_packages", "subscription_package",
-                    policy.getSubscriptionPackages(), ctxt);
+                    policy.getSubscriptionPackages(), ctxt
+            );
             writer.writeList(pricingWriter, policy.getPricing(), ctxt);
 
             writer.writeField("data_container_format", encoding.getDataContainerFormat());
@@ -161,7 +177,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("video_vertical_size", encoding.getVideoVerticalSize());
         }
 
-        private void writePlayer(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
+        private void writePlayer(FieldWriter writer, OutputContext ctxt, Policy policy)
+                throws IOException {
             Optional<org.atlasapi.media.entity.Player> maybePlayer
                     = playerResolver.playerFor(policy.getPlayerRef().longValue());
             if (maybePlayer.isPresent()) {
@@ -172,7 +189,8 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             }
         }
 
-        private void writeService(FieldWriter writer, OutputContext ctxt, Policy policy) throws IOException {
+        private void writeService(FieldWriter writer, OutputContext ctxt, Policy policy)
+                throws IOException {
             Optional<org.atlasapi.media.entity.Service> maybeService =
                     serviceResolver.serviceFor(policy.getServiceRef().longValue());
             if (maybeService.isPresent()) {

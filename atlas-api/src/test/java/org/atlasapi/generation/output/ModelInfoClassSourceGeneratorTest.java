@@ -1,17 +1,16 @@
 package org.atlasapi.generation.output;
 
-import static org.junit.Assert.assertEquals;
-
 import org.atlasapi.generation.model.JsonType;
 import org.atlasapi.generation.model.ModelMethodInfo;
 import org.atlasapi.generation.model.ModelTypeInfo;
-import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 
 public class ModelInfoClassSourceGeneratorTest {
-    
+
     private final ModelClassInfoSourceGenerator generator = new ModelClassInfoSourceGenerator();
 
     @Test
@@ -24,12 +23,12 @@ public class ModelInfoClassSourceGeneratorTest {
                 .withJsonType(JsonType.NUMBER)
                 .withType("type")
                 .build();
-        
+
         String setElement = generator.setElementFromMethod(methodInfo, "");
-        
+
         assertEquals(expected(methodInfo), setElement);
     }
-    
+
     @Test
     public void testCreationOfModelTypeBasedFields() {
         ModelTypeInfo typeInfo = ModelTypeInfo.builder()
@@ -38,12 +37,12 @@ public class ModelInfoClassSourceGeneratorTest {
                 .withOutputClassName("outputClass")
                 .withParsedClass("parsedClass")
                 .build();
-        
+
         String typeBasedFields = generator.generateTypeBasedFields(typeInfo);
-        
+
         assertEquals(expected(typeInfo), typeBasedFields);
     }
-    
+
     @Test
     public void testFullClassCreation() {
         ModelTypeInfo typeInfo = ModelTypeInfo.builder()
@@ -52,7 +51,7 @@ public class ModelInfoClassSourceGeneratorTest {
                 .withOutputClassName("outputClass")
                 .withParsedClass("parsedClass")
                 .build();
-        
+
         ModelMethodInfo methodInfo = ModelMethodInfo.builder()
                 .withName("name")
                 .withDescription("description")
@@ -61,9 +60,9 @@ public class ModelInfoClassSourceGeneratorTest {
                 .withJsonType(JsonType.NUMBER)
                 .withType("type")
                 .build();
-        
+
         String classString = generator.processType(typeInfo, ImmutableList.of(methodInfo));
-        
+
         assertEquals(expectedClassString(typeInfo, methodInfo), classString);
     }
 
@@ -84,7 +83,7 @@ public class ModelInfoClassSourceGeneratorTest {
                 .append("        return %s;\n")
                 .append("    }\n")
                 .toString();
-        
+
         return String.format(
                 expectedPattern,
                 typeInfo.key(),
@@ -104,14 +103,14 @@ public class ModelInfoClassSourceGeneratorTest {
                 .append("    .withJsonType(JsonType.%s)\n")
                 .append("    .build()")
                 .toString();
-        
+
         return String.format(
-                expectedPattern, 
-                methodInfo.name(), 
-                methodInfo.description(), 
+                expectedPattern,
+                methodInfo.name(),
+                methodInfo.description(),
                 methodInfo.type(),
-                methodInfo.isMultiple().toString(), 
-                methodInfo.isModelType().toString(), 
+                methodInfo.isMultiple().toString(),
+                methodInfo.isModelType().toString(),
                 methodInfo.jsonType().name()
         );
     }
@@ -164,15 +163,15 @@ public class ModelInfoClassSourceGeneratorTest {
                 .append("\n")
                 .append("}\n")
                 .toString();
-        
+
         return String.format(
-                expectedClassPattern, 
+                expectedClassPattern,
                 typeInfo.className(),
-                methodInfo.name(), 
-                methodInfo.description(), 
+                methodInfo.name(),
+                methodInfo.description(),
                 methodInfo.type(),
-                methodInfo.isMultiple().toString(), 
-                methodInfo.isModelType().toString(), 
+                methodInfo.isMultiple().toString(),
+                methodInfo.isModelType().toString(),
                 methodInfo.jsonType().name(),
                 typeInfo.key(),
                 typeInfo.description(),

@@ -10,15 +10,14 @@ import org.atlasapi.serialization.protobuf.CommonProtos.Image.Builder;
 
 import com.metabroadcast.common.media.MimeType;
 
-
 public class ImageSerializer {
 
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
 
     public CommonProtos.Image serialize(Image image) {
-        
+
         Builder builder = CommonProtos.Image.newBuilder();
-        
+
         if (image.getAspectRatio() != null) {
             builder.setAspectRatio(image.getAspectRatio().toString());
         }
@@ -54,7 +53,7 @@ public class ImageSerializer {
         }
         return builder.build();
     }
-    
+
     public Image deserialize(CommonProtos.Image msg) {
         Image.Builder builder = Image.builder(msg.getUri());
         if (msg.hasAspectRatio()) {

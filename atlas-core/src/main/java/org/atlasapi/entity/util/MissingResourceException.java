@@ -2,7 +2,6 @@ package org.atlasapi.entity.util;
 
 import org.atlasapi.entity.Id;
 
-
 public class MissingResourceException extends WriteException {
 
     private Id missingId;
@@ -14,10 +13,10 @@ public class MissingResourceException extends WriteException {
     public Id getMissingId() {
         return missingId;
     }
-    
+
     @Override
     public String getMessage() {
         return "missing " + getMissingId().toString();
     }
-    
+
 }

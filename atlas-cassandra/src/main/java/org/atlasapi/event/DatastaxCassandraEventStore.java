@@ -1,10 +1,5 @@
 package org.atlasapi.event;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -20,8 +15,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.ImmutableCollectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -38,6 +31,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatastaxCassandraEventStore implements EventPersistenceStore {
 
@@ -76,8 +76,12 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
                         .map(Id::longValue)
                         .map(idSelect::bind)
                         .map(session::executeAsync)
-                        .map(rsFuture -> Futures.transform(rsFuture,
-                                (Function<ResultSet, Row>) input -> input != null ? input.one() : null))
+                        .map(rsFuture -> Futures.transform(
+                                rsFuture,
+                                (Function<ResultSet, Row>) input -> input != null
+                                                                    ? input.one()
+                                                                    : null
+                        ))
                         .collect(Collectors.toList())),
                 (Function<List<Row>, List<Row>>) input -> input.stream()
                         .filter(Predicates.notNull()::apply)
@@ -144,22 +148,27 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
     }
 
     public interface AliasIndexStep {
+
         SessionStep withAliasIndex(AliasIndex<Event> aliasIndex);
     }
 
     public interface SessionStep {
+
         WriteConsistencyStep withSession(Session session);
     }
 
     public interface WriteConsistencyStep {
+
         ReadConsistencyStep withWriteConsistency(ConsistencyLevel writeConsistency);
     }
 
     public interface ReadConsistencyStep {
+
         BuildStep withReadConsistency(ConsistencyLevel readConsistency);
     }
 
     public interface BuildStep {
+
         DatastaxCassandraEventStore build();
     }
 
@@ -171,7 +180,8 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
         private ConsistencyLevel writeConsistency;
         private ConsistencyLevel readConsistency;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         @Override
         public SessionStep withAliasIndex(AliasIndex<Event> aliasIndex) {

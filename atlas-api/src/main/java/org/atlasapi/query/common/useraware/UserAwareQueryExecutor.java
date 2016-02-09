@@ -6,5 +6,5 @@ import org.atlasapi.query.common.QueryExecutionException;
 public interface UserAwareQueryExecutor<T> {
 
     UserAwareQueryResult<T> execute(UserAwareQuery<T> query) throws QueryExecutionException;
-    
+
 }

@@ -6,11 +6,11 @@ import java.util.Map.Entry;
 import javax.servlet.ServletContext;
 
 import org.atlasapi.AtlasServer;
-import org.springframework.web.context.ServletContextAware;
 
 import com.metabroadcast.common.health.HealthProbe;
 import com.metabroadcast.common.health.ProbeResult;
 
+import org.springframework.web.context.ServletContextAware;
 
 public class JettyHealthProbe implements HealthProbe, ServletContextAware {
 
@@ -21,7 +21,7 @@ public class JettyHealthProbe implements HealthProbe, ServletContextAware {
         ProbeResult probeResult = new ProbeResult("Requests");
         Map<String, String> metrics = AtlasServer.getMetrics(
                 servletContext.getAttribute(AtlasServer.CONTEXT_ATTRIBUTE));
-        
+
         for (Entry<String, String> entry : metrics.entrySet()) {
             probeResult.addInfo(entry.getKey(), entry.getValue());
         }

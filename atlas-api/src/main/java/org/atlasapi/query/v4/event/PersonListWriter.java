@@ -1,10 +1,10 @@
 package org.atlasapi.query.v4.event;
 
+import java.io.IOException;
+
 import org.atlasapi.entity.Person;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-
-import java.io.IOException;
 
 public class PersonListWriter extends ContentGroupListWriter<Person> {
 

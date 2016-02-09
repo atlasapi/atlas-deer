@@ -1,8 +1,8 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Strings;
-
 import java.util.Optional;
+
+import com.google.common.base.Strings;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

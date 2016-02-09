@@ -10,7 +10,8 @@ import org.atlasapi.output.OutputContext;
 public final class CertificateWriter implements EntityListWriter<Certificate> {
 
     @Override
-    public void write(Certificate entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(Certificate entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
         writer.writeField("classification", entity.classification());
         writer.writeField("code", entity.country().code());
     }

@@ -7,11 +7,12 @@ public class EquivalenceGraphUpdateMessage extends AbstractMessage {
 
     private final EquivalenceGraphUpdate update;
 
-    public EquivalenceGraphUpdateMessage(String messageId, Timestamp timestamp, EquivalenceGraphUpdate updatedGraphs) {
+    public EquivalenceGraphUpdateMessage(String messageId, Timestamp timestamp,
+            EquivalenceGraphUpdate updatedGraphs) {
         super(messageId, timestamp);
         this.update = updatedGraphs;
     }
-    
+
     public EquivalenceGraphUpdate getGraphUpdate() {
         return update;
     }

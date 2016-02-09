@@ -9,8 +9,8 @@ import com.google.common.collect.ImmutableSet;
 public interface ContextualAnnotationsExtractor {
 
     ActiveAnnotations extractFromRequest(HttpServletRequest request)
-        throws InvalidAnnotationException;
-    
+            throws InvalidAnnotationException;
+
     ImmutableSet<String> getParameterNames();
 
 }

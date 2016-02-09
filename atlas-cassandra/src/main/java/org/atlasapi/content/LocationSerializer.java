@@ -11,10 +11,10 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
 import org.atlasapi.util.ImmutableCollectors;
 
-import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Countries;
 
+import com.google.common.collect.ImmutableSet;
 
 public class LocationSerializer {
 
@@ -23,27 +23,35 @@ public class LocationSerializer {
 
     public ContentProtos.Location.Builder serialize(Location location) {
         Builder builder = ContentProtos.Location.newBuilder();
-        if (location.getEmbedCode() != null) { builder.setEmbedCode(location.getEmbedCode()); }
-        if (location.getEmbedId() != null) { builder.setEmbedId(location.getEmbedId()); }
-        if (location.getTransportIsLive() != null) { builder.setTransportIsLive(location.getTransportIsLive()); }
+        if (location.getEmbedCode() != null) {
+            builder.setEmbedCode(location.getEmbedCode());
+        }
+        if (location.getEmbedId() != null) {
+            builder.setEmbedId(location.getEmbedId());
+        }
+        if (location.getTransportIsLive() != null) {
+            builder.setTransportIsLive(location.getTransportIsLive());
+        }
         if (location.getTransportSubType() != null) {
             builder.setTransportSubType(location.getTransportSubType().toString());
         }
         if (location.getTransportType() != null) {
             builder.setTransportType(location.getTransportType().toString());
         }
-        if (location.getUri() != null) { builder.setUri(location.getUri()); }
+        if (location.getUri() != null) {
+            builder.setUri(location.getUri());
+        }
         for (Alias alias : location.getAliases()) {
             builder.addAliases(CommonProtos.Alias.newBuilder()
                     .setNamespace(alias.getNamespace())
                     .setValue(alias.getValue()));
         }
-        
+
         Policy policy = location.getPolicy();
         if (policy == null) {
             return builder;
         }
-        
+
         if (policy.getActualAvailabilityStart() != null) {
             builder.setActualAvailabilityStart(dateTimeSerializer.serialize(policy.getActualAvailabilityStart()));
         }
@@ -53,7 +61,9 @@ public class LocationSerializer {
         if (policy.getAvailabilityEnd() != null) {
             builder.setAvailabilityEnd(dateTimeSerializer.serialize(policy.getAvailabilityEnd()));
         }
-        if (policy.getAvailabilityLength() != null) { builder.setAvailabilityLength(policy.getAvailabilityLength()); }
+        if (policy.getAvailabilityLength() != null) {
+            builder.setAvailabilityLength(policy.getAvailabilityLength());
+        }
         builder.addAllAvailableCountries(Countries.toCodes(policy.getAvailableCountries()));
 
         if (policy.getDrmPlayableFrom() != null) {
@@ -81,7 +91,7 @@ public class LocationSerializer {
         if (policy.getSubscriptionPackages() != null) {
             builder.addAllSubscriptionPackages(policy.getSubscriptionPackages());
         }
-        if(!policy.getPricing().isEmpty()) {
+        if (!policy.getPricing().isEmpty()) {
             builder.addAllPricing(
                     policy.getPricing().stream()
                             .map(pricingSerializer::serialize)
@@ -91,7 +101,7 @@ public class LocationSerializer {
 
         return builder;
     }
-    
+
     public Location deserialize(ContentProtos.Location msg) {
         Location location = new Location();
         location.setEmbedCode(msg.hasEmbedCode() ? msg.getEmbedCode() : null);
@@ -104,9 +114,9 @@ public class LocationSerializer {
         if (msg.hasTransportSubType()) {
             location.setTransportSubType(TransportSubType.fromString(msg.getTransportSubType()));
         }
-        
+
         Policy policy = new Policy();
-        
+
         if (msg.hasActualAvailabilityStart()) {
             policy.setActualAvailabilityStart(dateTimeSerializer.deserialize(msg.getActualAvailabilityStart()));
         }
@@ -116,7 +126,9 @@ public class LocationSerializer {
         if (msg.hasAvailabilityEnd()) {
             policy.setAvailabilityEnd(dateTimeSerializer.deserialize(msg.getAvailabilityEnd()));
         }
-        policy.setAvailabilityLength(msg.hasAvailabilityLength() ? msg.getAvailabilityLength() : null);
+        policy.setAvailabilityLength(msg.hasAvailabilityLength()
+                                     ? msg.getAvailabilityLength()
+                                     : null);
         policy.setAvailableCountries(Countries.fromCodes(msg.getAvailableCountriesList()));
 
         if (msg.hasDrmPlayableFrom()) {
@@ -136,15 +148,15 @@ public class LocationSerializer {
         }
         if (msg.hasAmount() && msg.hasCurrency()) {
             policy.setPrice(new Price(
-                Currency.getInstance(msg.getCurrency()), 
-                msg.getAmount()
+                    Currency.getInstance(msg.getCurrency()),
+                    msg.getAmount()
             ));
         }
         if (msg.hasRevenueContract()) {
             policy.setRevenueContract(RevenueContract.fromKey(msg.getRevenueContract()));
         }
         policy.setSubscriptionPackages(msg.getSubscriptionPackagesList());
-        if(msg.getPricingCount() > 0) {
+        if (msg.getPricingCount() > 0) {
             policy.setPricing(
                     msg.getPricingList()
                             .stream()
@@ -153,7 +165,7 @@ public class LocationSerializer {
             );
         }
         location.setPolicy(policy);
-        
+
         ImmutableSet.Builder<Alias> aliases = ImmutableSet.builder();
         for (CommonProtos.Alias alias : msg.getAliasesList()) {
             aliases.add(new Alias(alias.getNamespace(), alias.getValue()));
@@ -161,5 +173,5 @@ public class LocationSerializer {
         location.setAliases(aliases.build());
         return location;
     }
-    
+
 }

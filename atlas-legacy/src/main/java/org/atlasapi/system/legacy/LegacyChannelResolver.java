@@ -1,17 +1,19 @@
 package org.atlasapi.system.legacy;
 
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
 
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LegacyChannelResolver implements ChannelResolver {
+
     private final org.atlasapi.media.channel.ChannelResolver legacyResolver;
     private final LegacyChannelTransformer transformer;
 
@@ -40,7 +42,8 @@ public class LegacyChannelResolver implements ChannelResolver {
 
     @Override
     public ListenableFuture<Resolved<Channel>> resolveChannels(ChannelQuery channelQuery) {
-        Iterable<org.atlasapi.media.channel.Channel> resolvedChannels = legacyResolver.allChannels(channelQuery);
+        Iterable<org.atlasapi.media.channel.Channel> resolvedChannels = legacyResolver.allChannels(
+                channelQuery);
         Iterable<Channel> transformed = transformer.transform(resolvedChannels);
         return Futures.immediateFuture(Resolved.valueOf(transformed));
     }

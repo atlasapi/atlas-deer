@@ -15,9 +15,9 @@ permissions and limitations under the License. */
 package org.atlasapi.criteria.operator;
 
 public interface Operator {
-	
-	public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs);
-	
-	public String name();
-	
+
+    public boolean canBeAppliedTo(Class<?> lhs, Class<?> rhs);
+
+    public String name();
+
 }

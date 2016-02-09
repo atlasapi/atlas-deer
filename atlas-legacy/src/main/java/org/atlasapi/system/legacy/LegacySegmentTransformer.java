@@ -1,11 +1,11 @@
 package org.atlasapi.system.legacy;
 
 import org.atlasapi.entity.Alias;
-import org.atlasapi.segment.SegmentType;
 import org.atlasapi.segment.Segment;
+import org.atlasapi.segment.SegmentType;
 
-
-public class LegacySegmentTransformer extends DescribedLegacyResourceTransformer<org.atlasapi.media.segment.Segment, Segment> {
+public class LegacySegmentTransformer
+        extends DescribedLegacyResourceTransformer<org.atlasapi.media.segment.Segment, Segment> {
 
     @Override
     protected Segment createDescribed(org.atlasapi.media.segment.Segment input) {

@@ -1,14 +1,15 @@
 package org.atlasapi.entity;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class PersonSerializerTest {
 

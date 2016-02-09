@@ -13,13 +13,14 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Subtitle;
 import org.atlasapi.serialization.protobuf.ContentProtos.Synopsis;
 import org.atlasapi.source.Sources;
-import org.joda.time.Duration;
+
+import com.metabroadcast.common.intl.Countries;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
-import com.metabroadcast.common.intl.Countries;
+import org.joda.time.Duration;
 
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
@@ -46,7 +47,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     public ContentDeserializationVisitor(ContentProtos.Content msg) {
         this.msg = msg;
     }
-    
+
     private <I extends Identified> I visitIdentified(I identified) {
         if (msg.hasId()) {
             identified.setId(Id.valueOf(msg.getId()));
@@ -63,11 +64,12 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             aliases.add(new Alias(alias.getNamespace(), alias.getValue()));
         }
         identified.setAliases(aliases.build());
-        
+
         ImmutableSet.Builder<EquivalenceRef> equivRefs = ImmutableSet.builder();
         for (Reference equivRef : msg.getEquivsList()) {
-            equivRefs.add(new EquivalenceRef(Id.valueOf(equivRef.getId()),
-                Sources.fromPossibleKey(equivRef.getSource()).get()
+            equivRefs.add(new EquivalenceRef(
+                    Id.valueOf(equivRef.getId()),
+                    Sources.fromPossibleKey(equivRef.getSource()).get()
             ));
         }
         identified.setEquivalentTo(equivRefs.build());
@@ -110,7 +112,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
                 described.setLongDescription(synopsis.getLong());
             }
         }
-        
+
         ImmutableSet.Builder<Image> images = ImmutableSet.builder();
         for (CommonProtos.Image image : msg.getImagesList()) {
             images.add(imageSerializer.deserialize(image));
@@ -122,7 +124,8 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             described.setScheduleOnly(msg.getScheduleOnly());
         }
         if (msg.hasSpecialization()) {
-            described.setSpecialization(Specialization.valueOf(msg.getSpecialization().toUpperCase()));
+            described.setSpecialization(Specialization.valueOf(msg.getSpecialization()
+                    .toUpperCase()));
         }
         if (msg.hasPriority()) {
             Priority priority = new Priority(msg.getPriority(), new PriorityScoreReasons(
@@ -139,12 +142,12 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             ));
             described.setPriority(priority);
         }
-        if(msg.hasActivelyPublished()) {
+        if (msg.hasActivelyPublished()) {
             described.setActivelyPublished(msg.getActivelyPublished());
         }
         return described;
     }
-    
+
     private <C extends Content> C visitContent(C content) {
         content = visitDescribed(content);
         ImmutableSet.Builder<Certificate> certificates = ImmutableSet.builder();
@@ -158,35 +161,35 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             crew.add(crewMemberSerializer.deserialize(crewMember));
         }
         content.setPeople(crew.build().asList());
-        
+
         ImmutableSet.Builder<Clip> clips = ImmutableSet.builder();
         for (ContentProtos.Content clipPb : msg.getClipsList()) {
             clips.add((Clip) new Clip().accept(new ContentDeserializationVisitor(clipPb)));
         }
         content.setClips(clips.build());
-        
+
         ImmutableSet.Builder<ContentGroupRef> groupRefs = ImmutableSet.builder();
         for (Reference groupRef : msg.getContentGroupsList()) {
             groupRefs.add(new ContentGroupRef(
-                Id.valueOf(groupRef.getId()),""
+                    Id.valueOf(groupRef.getId()), ""
             ));
         }
         content.setContentGroupRefs(groupRefs.build());
-        
+
         ImmutableSet.Builder<KeyPhrase> phrases = ImmutableSet.builder();
         for (ContentProtos.KeyPhrase phrase : msg.getKeyPhrasesList()) {
             phrases.add(keyPhraseSerializer.deserialize(phrase));
         }
         content.setKeyPhrases(phrases.build());
-        
+
         content.setLanguages(msg.getLanguageList());
-        
+
         ImmutableSet.Builder<RelatedLink> links = ImmutableSet.builder();
         for (int i = 0; i < msg.getRelatedLinkCount(); i++) {
             links.add(relatedLinkSerializer.deserialize(msg.getRelatedLink(i)));
         }
         content.setRelatedLinks(links.build());
-        
+
         ImmutableSet.Builder<Tag> topicRefs = ImmutableSet.builder();
         for (int i = 0; i < msg.getTopicRefsCount(); i++) {
             topicRefs.add(tagSerializer.deserialize(msg.getTopicRefs(i)));
@@ -194,7 +197,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         content.setTags(topicRefs.build());
 
         ImmutableSet.Builder<EventRef> eventRefs = ImmutableSet.builder();
-        for(ContentProtos.EventRef eventRef : msg.getEventRefsList()) {
+        for (ContentProtos.EventRef eventRef : msg.getEventRefsList()) {
             eventRefs.add(eventRefSerializer.deserialize(eventRef));
         }
         content.setEventRefs(eventRefs.build());
@@ -214,7 +217,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         ContentRefSerializer refSerializer = new ContentRefSerializer(container.getSource());
         ImmutableSet.Builder<ItemRef> childRefs = ImmutableSet.builder();
         for (int i = 0; i < msg.getChildrenCount(); i++) {
-            childRefs.add((ItemRef)refSerializer.deserialize(msg.getChildren(i)));
+            childRefs.add((ItemRef) refSerializer.deserialize(msg.getChildren(i)));
         }
         container.setItemRefs(Ordering.natural().immutableSortedCopy(childRefs.build()));
         ImmutableList.Builder<ContentProtos.ItemAndBroadcastRef> itemAndBroadcastRefBuilder = ImmutableList.<ContentProtos.ItemAndBroadcastRef>builder();
@@ -227,7 +230,8 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
                 )
         );
 
-        ImmutableList.Builder<ContentProtos.ItemAndLocationSummary> itemAndBroadcastSummaries = ImmutableList.builder();
+        ImmutableList.Builder<ContentProtos.ItemAndLocationSummary> itemAndBroadcastSummaries = ImmutableList
+                .builder();
         for (int i = 0; i < msg.getAvailableContentCount(); i++) {
             itemAndBroadcastSummaries.add(msg.getAvailableContent(i));
         }
@@ -254,7 +258,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         ImmutableSet.Builder<SeriesRef> seriesRefs = ImmutableSet.builder();
         ContentRefSerializer refSerializer = new ContentRefSerializer(brand.getSource());
         for (int i = 0; i < msg.getSecondariesCount(); i++) {
-            seriesRefs.add((SeriesRef)refSerializer.deserialize(msg.getSecondaries(i)));
+            seriesRefs.add((SeriesRef) refSerializer.deserialize(msg.getSecondaries(i)));
         }
         brand.setSeriesRefs(SeriesRef.dedupeAndSort(seriesRefs.build()));
         return brand;
@@ -265,8 +269,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         series = visitContainer(series);
         if (msg.hasContainerRef()) {
             series.setBrandRef(new BrandRef(
-                Id.valueOf(msg.getContainerRef().getId()),
-                Sources.fromPossibleKey(msg.getContainerRef().getSource()).or(series.getSource())
+                    Id.valueOf(msg.getContainerRef().getId()),
+                    Sources.fromPossibleKey(msg.getContainerRef().getSource())
+                            .or(series.getSource())
             ));
         }
         series.withSeriesNumber(msg.hasSeriesNumber() ? msg.getSeriesNumber() : null);
@@ -279,8 +284,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         episode = visitItem(episode);
         if (msg.hasSeriesRef()) {
             episode.setSeriesRef(new SeriesRef(
-                Id.valueOf(msg.getSeriesRef().getId()),
-                Sources.fromPossibleKey(msg.getContainerRef().getSource()).or(episode.getSource())
+                    Id.valueOf(msg.getSeriesRef().getId()),
+                    Sources.fromPossibleKey(msg.getContainerRef().getSource())
+                            .or(episode.getSource())
             ));
         }
         episode.setSeriesNumber(msg.hasSeriesNumber() ? msg.getSeriesNumber() : null);
@@ -340,7 +346,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         item.setRestrictions(getRestrictions());
         return item;
     }
-    
+
     private ImmutableSet<Broadcast> getBroadcasts() {
         ImmutableSet.Builder<Broadcast> broadcasts = ImmutableSet.builder();
         for (int i = 0; i < msg.getBroadcastsCount(); i++) {
@@ -358,7 +364,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         return encodings.build();
     }
-    
+
     private ImmutableSet<SegmentEvent> getSegmentEvents() {
         ImmutableSet.Builder<SegmentEvent> segmentEvents = ImmutableSet.builder();
         for (int i = 0; i < msg.getSegmentEventsCount(); i++) {
@@ -367,7 +373,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         return segmentEvents.build();
     }
-    
+
     private ImmutableSet<Restriction> getRestrictions() {
         ImmutableSet.Builder<Restriction> restrictions = ImmutableSet.builder();
         for (int i = 0; i < msg.getRestrictionsCount(); i++) {

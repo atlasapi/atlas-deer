@@ -1,7 +1,5 @@
 package org.atlasapi.event;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.UUID;
 
 import org.atlasapi.entity.Id;
@@ -9,18 +7,21 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.time.Timestamp;
+
+import com.google.common.base.Optional;
+import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
-import com.google.common.primitives.Longs;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.time.Timestamp;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ConcreteEventStore implements EventStore {
 
@@ -144,26 +145,32 @@ public class ConcreteEventStore implements EventStore {
     }
 
     public interface ClockStep {
+
         IdGeneratorStep withClock(Clock clock);
     }
 
     public interface IdGeneratorStep {
+
         EventHasherStep withIdGenerator(IdGenerator idGenerator);
     }
 
     public interface EventHasherStep {
+
         SenderStep withEventHasher(EventHasher eventHasher);
     }
 
     public interface SenderStep {
+
         PersistenceStoreStep withSender(MessageSender<ResourceUpdatedMessage> sender);
     }
 
     public interface PersistenceStoreStep {
+
         BuildStep withPersistenceStore(EventPersistenceStore persistenceStore);
     }
 
     public interface BuildStep {
+
         ConcreteEventStore build();
     }
 
@@ -176,7 +183,8 @@ public class ConcreteEventStore implements EventStore {
         private MessageSender<ResourceUpdatedMessage> sender;
         private EventPersistenceStore persistenceStore;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         @Override
         public IdGeneratorStep withClock(Clock clock) {

@@ -45,17 +45,19 @@ public class ApplicationQueryExecutor implements UserAwareQueryExecutor<Applicat
         return query.isListQuery() ? multipleQuery(query) : singleQuery(query);
     }
 
-    private UserAwareQueryResult<Application> singleQuery(UserAwareQuery<Application> query) throws QueryExecutionException {
+    private UserAwareQueryResult<Application> singleQuery(UserAwareQuery<Application> query)
+            throws QueryExecutionException {
         Id id = query.getOnlyId();
         if (!userCanAccessApplication(id, query)) {
             throw new ResourceForbiddenException();
         }
-        
+
         Optional<Application> application = applicationStore.applicationFor(id);
         if (application.isPresent() && query.getContext().isAdminUser()) {
             return UserAwareQueryResult.singleResult(application.get(), query.getContext());
         } else if (application.isPresent() && !query.getContext().isAdminUser()) {
-            return UserAwareQueryResult.singleResult(copyApplicationWithAdminOnlySourcesRemoved(application.get()), query.getContext());
+            return UserAwareQueryResult.singleResult(copyApplicationWithAdminOnlySourcesRemoved(
+                    application.get()), query.getContext());
         } else {
             throw new NotFoundException(id);
         }
@@ -68,24 +70,26 @@ public class ApplicationQueryExecutor implements UserAwareQueryExecutor<Applicat
         User user = query.getContext().getUser().get();
 
         Iterable<Id> ids = Iterables.concat(operands.accept(new QueryVisitorAdapter<List<Id>>() {
-           @Override
+
+            @Override
             public List<Id> visit(IdAttributeQuery query) {
                 return query.getValue();
-            }}));
+            }
+        }));
         Publisher reads = null;
-            
+
         Publisher writes = null;
 
         for (AttributeQuery<?> operand : operands) {
-             if (operand.getAttributeName().equals(Attributes.SOURCE_READS.externalName())) {
+            if (operand.getAttributeName().equals(Attributes.SOURCE_READS.externalName())) {
                 reads = (Publisher) Iterables.getOnlyElement(operand.getValue());
             } else if (operand.getAttributeName().equals(Attributes.SOURCE_WRITES.externalName())) {
                 writes = (Publisher) Iterables.getOnlyElement(operand.getValue());
             }
         }
-        
+
         Iterable<Application> results = null;
-        
+
         if (!Iterables.isEmpty(ids)) {
             results = resolve(ids);
         } else if (reads != null) {
@@ -99,12 +103,13 @@ public class ApplicationQueryExecutor implements UserAwareQueryExecutor<Applicat
                 results = resolve(user.getApplicationIds());
             }
         }
-        
+
         if (query.getContext().isAdminUser()) {
             return UserAwareQueryResult.listResult(results, query.getContext());
         } else {
-        	Iterable<Application> userApplications = filterByUserViewable(results, user);
-            return UserAwareQueryResult.listResult(copyApplicationsWithAdminOnlySourcesRemoved(userApplications), query.getContext());
+            Iterable<Application> userApplications = filterByUserViewable(results, user);
+            return UserAwareQueryResult.listResult(copyApplicationsWithAdminOnlySourcesRemoved(
+                    userApplications), query.getContext());
         }
     }
 
@@ -113,43 +118,51 @@ public class ApplicationQueryExecutor implements UserAwareQueryExecutor<Applicat
         Resolved<Application> resolved = Futures.get(futureApps, QueryExecutionException.class);
         return resolved.getResources();
     }
-    
+
     private boolean userCanAccessApplication(Id id, UserAwareQuery<Application> query) {
         Optional<User> user = query.getContext().getUser();
-        return user.isPresent() && (user.get().is(Role.ADMIN) || user.get().getApplicationIds().contains(id));
+        return user.isPresent() && (user.get().is(Role.ADMIN) || user.get()
+                .getApplicationIds()
+                .contains(id));
     }
-    
-    private Iterable<Application> filterByUserViewable(Iterable<Application> applications, final User user) {
+
+    private Iterable<Application> filterByUserViewable(Iterable<Application> applications,
+            final User user) {
         return Iterables.filter(applications, new Predicate<Application>() {
 
             @Override
             public boolean apply(@Nullable Application input) {
                 return user.getApplicationIds().contains(input.getId());
-            }});
+            }
+        });
     }
-    
-    private Iterable<Application> copyApplicationsWithAdminOnlySourcesRemoved(Iterable<Application> applications) {
-    	return Iterables.transform(applications, new Function<Application, Application>() {
 
-			@Override
-			public Application apply(Application input) {
-				return copyApplicationWithAdminOnlySourcesRemoved(input);
-			}});
+    private Iterable<Application> copyApplicationsWithAdminOnlySourcesRemoved(
+            Iterable<Application> applications) {
+        return Iterables.transform(applications, new Function<Application, Application>() {
+
+            @Override
+            public Application apply(Application input) {
+                return copyApplicationWithAdminOnlySourcesRemoved(input);
+            }
+        });
     }
-    
+
     private Application copyApplicationWithAdminOnlySourcesRemoved(Application application) {
-    	List<SourceReadEntry> reads = filterSourcesReadsForNonAdmins(
-    			application.getSources().getReads());
-		return application.copy().withSources(application.getSources()
-				.copy().withReadableSources(reads).build())
-				.build();
+        List<SourceReadEntry> reads = filterSourcesReadsForNonAdmins(
+                application.getSources().getReads());
+        return application.copy().withSources(application.getSources()
+                .copy().withReadableSources(reads).build())
+                .build();
     }
-    
+
     private List<SourceReadEntry> filterSourcesReadsForNonAdmins(List<SourceReadEntry> reads) {
-    	return ImmutableList.copyOf(Iterables.filter(reads, new Predicate<SourceReadEntry>() {
-			@Override
-			public boolean apply(SourceReadEntry input) {
-				return !Sources.isAdminOnlySource(input.getPublisher());
-			}}));
+        return ImmutableList.copyOf(Iterables.filter(reads, new Predicate<SourceReadEntry>() {
+
+            @Override
+            public boolean apply(SourceReadEntry input) {
+                return !Sources.isAdminOnlySource(input.getPublisher());
+            }
+        }));
     }
 }

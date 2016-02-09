@@ -1,7 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentGroupResolver;
 import org.atlasapi.entity.Id;
@@ -13,6 +11,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LegacyContentGroupResolver implements ContentGroupResolver {
 
@@ -26,7 +26,10 @@ public class LegacyContentGroupResolver implements ContentGroupResolver {
     @Override
     public ListenableFuture<Resolved<ContentGroup>> resolveIds(Iterable<Id> ids) {
         SettableFuture<Resolved<ContentGroup>> future = SettableFuture.create();
-        ResolvedContent resolved = legacyResolver.findByIds(Iterables.transform(ids, Id::longValue));
+        ResolvedContent resolved = legacyResolver.findByIds(Iterables.transform(
+                ids,
+                Id::longValue
+        ));
         org.atlasapi.media.entity.ContentGroup legacyGroup =
                 (org.atlasapi.media.entity.ContentGroup) resolved.getFirstValue().requireValue();
         future.set(Resolved.valueOf(ImmutableList.of(transformer.createDescribed(legacyGroup))));

@@ -11,10 +11,11 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 public class SourceLicenseWithIdWriter implements EntityListWriter<SourceLicense> {
+
     private final EntityWriter<Publisher> sourceWriter;
 
     public SourceLicenseWithIdWriter(SourceIdCodec sourceIdCodec) {
-        this.sourceWriter =  new SourceWithIdWriter(sourceIdCodec, "source", "source");
+        this.sourceWriter = new SourceWithIdWriter(sourceIdCodec, "source", "source");
     }
 
     @Override

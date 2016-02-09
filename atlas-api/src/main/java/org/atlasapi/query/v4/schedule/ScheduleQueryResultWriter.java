@@ -2,6 +2,8 @@ package org.atlasapi.query.v4.schedule;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
@@ -11,8 +13,6 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
 
 import com.google.common.collect.FluentIterable;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class ScheduleQueryResultWriter extends QueryResultWriter<ChannelSchedule> {
 
@@ -29,7 +29,7 @@ public class ScheduleQueryResultWriter extends QueryResultWriter<ChannelSchedule
 
     @Override
     protected void writeResult(QueryResult<ChannelSchedule> result, ResponseWriter writer)
-        throws IOException {
+            throws IOException {
 
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 

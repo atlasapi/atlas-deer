@@ -1,11 +1,12 @@
 package org.atlasapi.query.v4.channel;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nonnull;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
@@ -23,19 +24,22 @@ import org.atlasapi.output.writers.ImageListWriter;
 import org.atlasapi.output.writers.RelatedLinkWriter;
 import org.atlasapi.util.ImmutableCollectors;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+
+import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;
 import static org.elasticsearch.common.base.Preconditions.checkNotNull;
 
-public class ChannelWriter implements EntityListWriter<Channel>{
+public class ChannelWriter implements EntityListWriter<Channel> {
 
-    private static final EntityListWriter<Publisher> AVAILABLE_FROM_WRITER = sourceListWriter("available_from");
+    private static final EntityListWriter<Publisher> AVAILABLE_FROM_WRITER = sourceListWriter(
+            "available_from");
     private static final EntityWriter<Publisher> BROADCASTER_WRITER = sourceWriter("broadcaster");
     private static final AliasWriter ALIAS_WRITER = new AliasWriter();
     private static final ImageListWriter IMAGE_WRITER = new ImageListWriter();
@@ -59,8 +63,6 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         this.channelGroupSummaryWriter = checkNotNull(channelGroupSummaryWriter);
     }
 
-
-
     @Nonnull
     @Override
     public String listName() {
@@ -68,7 +70,8 @@ public class ChannelWriter implements EntityListWriter<Channel>{
     }
 
     @Override
-    public void write(@Nonnull Channel entity, @Nonnull FieldWriter format, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull Channel entity, @Nonnull FieldWriter format,
+            @Nonnull OutputContext ctxt) throws IOException {
         format.writeField("title", entity.getTitle());
         format.writeField("id", idCode.encode(entity.getId().toBigInteger()));
         format.writeField("uri", entity.getCanonicalUri());
@@ -85,7 +88,7 @@ public class ChannelWriter implements EntityListWriter<Channel>{
         format.writeField("start_date", entity.getStartDate());
         format.writeField("advertised_from", entity.getAdvertiseFrom());
 
-        if(hasChannelGroupSummaryAnnotation(ctxt)) {
+        if (hasChannelGroupSummaryAnnotation(ctxt)) {
 
             ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
                     .stream()
@@ -103,7 +106,6 @@ public class ChannelWriter implements EntityListWriter<Channel>{
                     .collect(ImmutableCollectors.toList());
 
             format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
-
 
         }
 

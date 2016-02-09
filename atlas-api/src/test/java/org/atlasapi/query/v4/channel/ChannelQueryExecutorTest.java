@@ -1,10 +1,5 @@
 package org.atlasapi.query.v4.channel;
 
-import com.google.api.client.util.Sets;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.query.Selection;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -17,6 +12,13 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+
+import com.metabroadcast.common.query.Selection;
+
+import com.google.api.client.util.Sets;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -37,9 +39,9 @@ public class ChannelQueryExecutorTest {
     @Mock
     private ChannelResolver channelResolver;
 
-
     @InjectMocks
     private ChannelQueryExecutor objectUnderTest;
+
     @Test
     public void testExecuteSingle() throws Exception {
         Id channelId = Id.valueOf(1L);
@@ -56,15 +58,11 @@ public class ChannelQueryExecutorTest {
                         )
                 );
 
-
         QueryResult<Channel> queryResult = objectUnderTest.execute(channelQuery);
-
 
         assertThat(queryResult.getOnlyResource(), is(result));
 
-
     }
-
 
     @Test
     public void testExecuteMulti() throws Exception {
@@ -92,9 +90,7 @@ public class ChannelQueryExecutorTest {
                         )
                 );
 
-
         QueryResult<Channel> queryResult = objectUnderTest.execute(channelQuery);
-
 
         assertThat(queryResult.getResources(), containsInAnyOrder(result, result2));
     }

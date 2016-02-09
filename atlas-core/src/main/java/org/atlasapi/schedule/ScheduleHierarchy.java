@@ -1,8 +1,5 @@
 package org.atlasapi.schedule;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -22,12 +19,15 @@ import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ScheduleHierarchy {
 
     public static final ScheduleHierarchy itemOnly(ItemAndBroadcast item) {
-        return new ScheduleHierarchy(item, (Container)null, null);
+        return new ScheduleHierarchy(item, (Container) null, null);
     }
-    
+
     public static final ScheduleHierarchy seriesAndItem(Series series, ItemAndBroadcast item) {
         if (item.getItem() instanceof Episode) {
             return new ScheduleHierarchy(item, series, series);
@@ -38,29 +38,37 @@ public class ScheduleHierarchy {
     public static final ScheduleHierarchy brandAndItem(Brand brand, ItemAndBroadcast item) {
         return new ScheduleHierarchy(item, brand, null);
     }
-    
-    public static final ScheduleHierarchy brandSeriesAndItem(Brand brand, Series series, ItemAndBroadcast item) {
+
+    public static final ScheduleHierarchy brandSeriesAndItem(Brand brand, Series series,
+            ItemAndBroadcast item) {
         return new ScheduleHierarchy(item, brand, series);
     }
-    
+
     private final ItemAndBroadcast itemAndBroadcast;
     private final Optional<Container> primaryContainer;
     private final Optional<Series> possibleSeries;
 
-    public ScheduleHierarchy(ItemAndBroadcast itemAndBroadcast, @Nullable Container primaryContainer,
+    public ScheduleHierarchy(ItemAndBroadcast itemAndBroadcast,
+            @Nullable Container primaryContainer,
             @Nullable Series secondaryContainer) {
-        this(checkNotNull(itemAndBroadcast), Optional.fromNullable(primaryContainer), Optional.fromNullable(secondaryContainer));
+        this(
+                checkNotNull(itemAndBroadcast),
+                Optional.fromNullable(primaryContainer),
+                Optional.fromNullable(secondaryContainer)
+        );
     }
-    
+
     @SuppressWarnings("unchecked")
     // http://stackoverflow.com/questions/7848789/how-to-use-guava-optional-as-naturally-covariant-object
-    public ScheduleHierarchy(ItemAndBroadcast itemAndBroadcast, Optional<? extends Container> primaryContainer, Optional<Series> secondaryContainer) {
-        checkArgument(!secondaryContainer.isPresent() || itemAndBroadcast.getItem() instanceof Episode,
+    public ScheduleHierarchy(ItemAndBroadcast itemAndBroadcast,
+            Optional<? extends Container> primaryContainer, Optional<Series> secondaryContainer) {
+        checkArgument(
+                !secondaryContainer.isPresent() || itemAndBroadcast.getItem() instanceof Episode,
                 "Only an Episode can have a secondary container"
-            );
+        );
         this.itemAndBroadcast = checkNotNull(itemAndBroadcast);
-        this.primaryContainer = checkNotNull((Optional<Container>)primaryContainer);
-        this.possibleSeries = checkNotNull((Optional<Series>)secondaryContainer);
+        this.primaryContainer = checkNotNull((Optional<Container>) primaryContainer);
+        this.possibleSeries = checkNotNull(secondaryContainer);
     }
 
     public ItemAndBroadcast getItemAndBroadcast() {
@@ -74,8 +82,9 @@ public class ScheduleHierarchy {
     public Optional<Series> getPossibleSeries() {
         return this.possibleSeries;
     }
-    
-    List<WriteResult<? extends Content, Content>> writeTo(ContentStore store) throws WriteException {
+
+    List<WriteResult<? extends Content, Content>> writeTo(ContentStore store)
+            throws WriteException {
         List<WriteResult<? extends Content, Content>> results = Lists.newArrayListWithCapacity(3);
         WriteResult<Container, Content> primaryContainerResult = null;
         if (primaryContainer.isPresent()) {
@@ -84,8 +93,9 @@ public class ScheduleHierarchy {
         }
         WriteResult<Series, Content> secondaryContainerResult = null;
         if (possibleSeries.isPresent()) {
-            if (primaryContainerResult != null && primaryContainerResult.getResource() instanceof Brand) {
-                possibleSeries.get().setBrand((Brand)primaryContainer.get());
+            if (primaryContainerResult != null
+                    && primaryContainerResult.getResource() instanceof Brand) {
+                possibleSeries.get().setBrand((Brand) primaryContainer.get());
             }
             secondaryContainerResult = store.writeContent(possibleSeries.get());
             results.add(secondaryContainerResult);
@@ -95,12 +105,12 @@ public class ScheduleHierarchy {
             item.setContainer(primaryContainerResult.getResource());
         }
         if (secondaryContainerResult != null && item instanceof Episode) {
-            ((Episode)item).setSeries(secondaryContainerResult.getResource());
+            ((Episode) item).setSeries(secondaryContainerResult.getResource());
         }
         results.add(store.writeContent(item));
         return results;
     }
- 
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -109,17 +119,17 @@ public class ScheduleHierarchy {
         if (that instanceof ScheduleHierarchy) {
             ScheduleHierarchy other = (ScheduleHierarchy) that;
             return itemAndBroadcast.equals(other.itemAndBroadcast)
-                && primaryContainer.equals(other.primaryContainer)
-                && possibleSeries.equals(other.possibleSeries);
+                    && primaryContainer.equals(other.primaryContainer)
+                    && possibleSeries.equals(other.possibleSeries);
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return itemAndBroadcast.hashCode();
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(getClass()).omitNullValues()
