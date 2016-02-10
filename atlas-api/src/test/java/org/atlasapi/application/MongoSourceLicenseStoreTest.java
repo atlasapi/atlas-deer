@@ -1,17 +1,18 @@
 package org.atlasapi.application;
 
-import static org.junit.Assert.assertEquals;
-
 import org.atlasapi.media.entity.Publisher;
-import org.junit.Test;
 
 import com.metabroadcast.common.persistence.MongoTestHelper;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class MongoSourceLicenseStoreTest {
+
     private final DatabasedMongo mongo = MongoTestHelper.anEmptyTestDatabase();
-    
+
     @Test
     public void test() {
         SourceLicenseStore store = new MongoSourceLicenseStore(mongo);

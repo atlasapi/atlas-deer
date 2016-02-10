@@ -1,21 +1,19 @@
 package org.atlasapi.event;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.util.List;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
+
+import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
+import com.google.common.primitives.Longs;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
@@ -28,12 +26,15 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
-import com.google.common.primitives.Longs;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConcreteEventStoreTest {

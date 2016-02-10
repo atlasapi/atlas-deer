@@ -6,6 +6,8 @@ import java.util.concurrent.TimeUnit;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 
+import com.metabroadcast.common.social.model.UserRef;
+
 import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -13,7 +15,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.social.model.UserRef;
 
 public class CacheBackedUserStore implements UserStore {
 
@@ -26,6 +27,7 @@ public class CacheBackedUserStore implements UserStore {
         this.userRefCache = CacheBuilder.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)
                 .build(new CacheLoader<UserRef, Optional<User>>() {
+
                     @Override
                     public Optional<User> load(UserRef key) throws Exception {
                         return delegate.userForRef(key);
@@ -34,13 +36,14 @@ public class CacheBackedUserStore implements UserStore {
         this.idCache = CacheBuilder.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)
                 .build(new CacheLoader<Id, Optional<User>>() {
+
                     @Override
                     public Optional<User> load(Id key) throws Exception {
                         return delegate.userForId(key);
                     }
                 });
     }
-    
+
     @Override
     public Optional<User> userForRef(UserRef ref) {
         return userRefCache.getUnchecked(ref);

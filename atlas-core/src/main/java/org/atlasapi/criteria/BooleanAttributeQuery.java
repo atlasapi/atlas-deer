@@ -20,23 +20,24 @@ import org.atlasapi.criteria.operator.EqualsOperatorVisitor;
 
 public class BooleanAttributeQuery extends AttributeQuery<Boolean> {
 
-	private final EqualsOperator op;
+    private final EqualsOperator op;
 
-	public BooleanAttributeQuery(Attribute<Boolean> attribute, EqualsOperator op, Iterable<Boolean> values) {
-		super(attribute, op, values);
-		this.op = op;
-	}
+    public BooleanAttributeQuery(Attribute<Boolean> attribute, EqualsOperator op,
+            Iterable<Boolean> values) {
+        super(attribute, op, values);
+        this.op = op;
+    }
 
-	public <V> V accept(QueryVisitor<V> v) {
-		return v.visit(this);
-	}
-	
-	public <V> V accept(EqualsOperatorVisitor<V> v) {
-		return op.accept(v);
-	}
-	
-	public boolean isUnconditionallyTrue() {
-		return getValue().contains(Boolean.TRUE)
-		    && getValue().contains(Boolean.FALSE);
-	}
+    public <V> V accept(QueryVisitor<V> v) {
+        return v.visit(this);
+    }
+
+    public <V> V accept(EqualsOperatorVisitor<V> v) {
+        return op.accept(v);
+    }
+
+    public boolean isUnconditionallyTrue() {
+        return getValue().contains(Boolean.TRUE)
+                && getValue().contains(Boolean.FALSE);
+    }
 }

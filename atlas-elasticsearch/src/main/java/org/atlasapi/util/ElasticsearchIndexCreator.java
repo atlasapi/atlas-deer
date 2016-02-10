@@ -1,10 +1,10 @@
 package org.atlasapi.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.EsContent;
+
+import com.google.common.base.Throwables;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
@@ -16,7 +16,7 @@ import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Throwables;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ElasticsearchIndexCreator {
 

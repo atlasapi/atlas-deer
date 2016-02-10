@@ -1,8 +1,5 @@
 package org.atlasapi.event;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
@@ -12,13 +9,16 @@ import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.topic.Topic;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class EventSerializerTest {
 
@@ -66,7 +66,8 @@ public class EventSerializerTest {
                 .withOrganisations(Lists.newArrayList(new Organisation()))
                 .withEventGroups(Lists.newArrayList(new Topic(Id.valueOf(2L))))
                 .withContent(Lists.newArrayList(new ItemRef(Id.valueOf(21L),
-                        Publisher.BBC, "sort", DateTime.now().withZone(DateTimeZone.UTC))));
+                        Publisher.BBC, "sort", DateTime.now().withZone(DateTimeZone.UTC)
+                )));
     }
 
     private void checkIdentified(Identified expected, Identified actual) {
@@ -86,8 +87,10 @@ public class EventSerializerTest {
         assertThat(actual.getStartTime(), is(expected.getStartTime()));
         assertThat(actual.getEndTime(), is(expected.getEndTime()));
         assertThat(actual.getParticipants().size(), is(expected.getParticipants().size()));
-        assertThat(actual.getParticipants().get(0).getCanonicalUri(),
-                is(expected.getParticipants().get(0).getCanonicalUri()));
+        assertThat(
+                actual.getParticipants().get(0).getCanonicalUri(),
+                is(expected.getParticipants().get(0).getCanonicalUri())
+        );
         assertThat(actual.getOrganisations().size(), is(expected.getOrganisations().size()));
         assertThat(actual.getEventGroups(), is(expected.getEventGroups()));
         assertThat(actual.getContent(), is(expected.getContent()));

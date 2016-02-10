@@ -16,9 +16,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserModelTranslator implements Function<org.atlasapi.application.users.v3.User, User> {
-    
+
     private final LegacyApplicationStore store;
-    
+
     public UserModelTranslator(LegacyApplicationStore store) {
         this.store = store;
     }
@@ -41,11 +41,11 @@ public class UserModelTranslator implements Function<org.atlasapi.application.us
                 .withProfileDeactivated(input.isProfileDeactivated())
                 .build();
     }
-    
+
     public Set<Id> transformApplicationSlugs(Set<String> input) {
         return Sets.newHashSet(store.applicationIdsForSlugs(input));
     }
-    
+
     public org.atlasapi.application.users.v3.User transform4to3(User input) {
         return org.atlasapi.application.users.v3.User.builder()
                 .withId(input.getId().longValue())
@@ -64,15 +64,17 @@ public class UserModelTranslator implements Function<org.atlasapi.application.us
                 .withProfileDeactivated(input.isProfileDeactivated())
                 .build();
     }
-    
+
     public Set<String> transformApplicationIds(Set<Id> input) {
         ListenableFuture<Resolved<Application>> resolved = store.resolveIds(input);
         return ImmutableSet.copyOf(Futures.getUnchecked(resolved)
                 .getResources().transform(new Function<Application, String>() {
-            @Override
-            public String apply(Application input) {
-               return input.getSlug();
-            }}
-        ));
+
+                                              @Override
+                                              public String apply(Application input) {
+                                                  return input.getSlug();
+                                              }
+                                          }
+                ));
     }
 }

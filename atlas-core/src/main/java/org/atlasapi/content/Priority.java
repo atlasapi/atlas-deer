@@ -7,8 +7,8 @@ public class Priority {
     private PriorityScoreReasons reasons;
     private Double priority;
 
-    public Priority () {
-        
+    public Priority() {
+
     }
 
     public Priority(Double priority, PriorityScoreReasons reasons) {

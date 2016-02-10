@@ -1,19 +1,20 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.meta.annotations.FieldName;
+
+import com.google.common.base.Objects;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 
-import com.google.common.base.Objects;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class BroadcastRef {
 
-    public static final java.util.function.Predicate<BroadcastRef> IS_UPCOMING = b -> b.getTransmissionInterval().getEnd().isAfter(DateTime.now(DateTimeZone.UTC));
-
+    public static final java.util.function.Predicate<BroadcastRef> IS_UPCOMING = b -> b.getTransmissionInterval()
+            .getEnd()
+            .isAfter(DateTime.now(DateTimeZone.UTC));
 
     private final String sourceId;
     private final Id channelId;
@@ -29,12 +30,12 @@ public final class BroadcastRef {
     public String getSourceId() {
         return sourceId;
     }
-    
+
     @FieldName("transmission_interval")
     public Interval getTransmissionInterval() {
         return transmissionInterval;
     }
-    
+
     @FieldName("channel_id")
     public Id getChannelId() {
         return channelId;
@@ -48,25 +49,24 @@ public final class BroadcastRef {
         if (that instanceof BroadcastRef) {
             BroadcastRef other = (BroadcastRef) that;
             return sourceId.equals(other.sourceId)
-                && channelId.equals(other.channelId)
-                && transmissionInterval.equals(other.transmissionInterval);
+                    && channelId.equals(other.channelId)
+                    && transmissionInterval.equals(other.transmissionInterval);
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return sourceId.hashCode();
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(getClass())
-            .add("id", sourceId)
-            .add("channel", channelId)
-            .add("interval", transmissionInterval)
-            .toString();
+                .add("id", sourceId)
+                .add("channel", channelId)
+                .add("interval", transmissionInterval)
+                .toString();
     }
-    
-    
+
 }

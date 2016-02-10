@@ -1,7 +1,5 @@
 package org.atlasapi.equivalence;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Sourced;
@@ -9,6 +7,8 @@ import org.atlasapi.entity.Sourced;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A set of equivalent resources and their graph, defining the links between them.
@@ -32,7 +32,7 @@ public final class Equivalent<T extends Identifiable & Sourced> {
     public ImmutableSet<T> getResources() {
         return resources;
     }
- 
+
     @Override
     public String toString() {
         return Objects.toStringHelper(getClass())

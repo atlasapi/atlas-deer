@@ -16,16 +16,19 @@ import org.atlasapi.generation.output.SourceGenerator;
 import org.atlasapi.generation.output.writers.SourceFileWriter;
 import org.atlasapi.generation.parsing.TypeParser;
 import org.atlasapi.meta.annotations.ProducesType;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-public final class ControllerAnnotationProcessor extends SingleAnnotationTypeProcessor<EndpointTypeInfo, EndpointMethodInfo> {
+public final class ControllerAnnotationProcessor
+        extends SingleAnnotationTypeProcessor<EndpointTypeInfo, EndpointMethodInfo> {
 
-    public ControllerAnnotationProcessor(SourceGenerator<EndpointTypeInfo, EndpointMethodInfo> generator, 
-            SourceFileWriter<EndpointTypeInfo> writer, TypeParser<EndpointTypeInfo, EndpointMethodInfo> typeParser, 
+    public ControllerAnnotationProcessor(
+            SourceGenerator<EndpointTypeInfo, EndpointMethodInfo> generator,
+            SourceFileWriter<EndpointTypeInfo> writer,
+            TypeParser<EndpointTypeInfo, EndpointMethodInfo> typeParser,
             Iterable<Class<?>> classesToOutput) {
         super(ProducesType.class, classesToOutput, typeParser, generator, writer);
     }
@@ -37,25 +40,30 @@ public final class ControllerAnnotationProcessor extends SingleAnnotationTypePro
 
     @Override
     public void process(RoundEnvironment roundEnv) {
-    	Set<TypeElement> annotatedTypes = ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(annotationType()));
-        Iterable<TypeElement> controllerTypes = filterByAnnotation(annotatedTypes, Controller.class);
-    	
-    	for (TypeElement controller : controllerTypes) {
-    		Iterable<ExecutableElement> requestMethods = filterByAnnotation(
-    		        ElementFilter.methodsIn(controller.getEnclosedElements()), 
-    		        RequestMapping.class
-	        );
-    		processTypeAndMethods(controller, requestMethods);
-    	}
+        Set<TypeElement> annotatedTypes = ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(
+                annotationType()));
+        Iterable<TypeElement> controllerTypes = filterByAnnotation(
+                annotatedTypes,
+                Controller.class
+        );
+
+        for (TypeElement controller : controllerTypes) {
+            Iterable<ExecutableElement> requestMethods = filterByAnnotation(
+                    ElementFilter.methodsIn(controller.getEnclosedElements()),
+                    RequestMapping.class
+            );
+            processTypeAndMethods(controller, requestMethods);
+        }
     }
 
-    private <E extends Element> Iterable<E> filterByAnnotation(Iterable<E> elements, 
+    private <E extends Element> Iterable<E> filterByAnnotation(Iterable<E> elements,
             final Class<? extends Annotation> annotationType) {
         return Iterables.filter(elements, new Predicate<E>() {
-        	@Override
-        	public boolean apply(E input) {
-        		return input.getAnnotation(annotationType) != null;
-        	}
+
+            @Override
+            public boolean apply(E input) {
+                return input.getAnnotation(annotationType) != null;
+            }
         });
     }
 }

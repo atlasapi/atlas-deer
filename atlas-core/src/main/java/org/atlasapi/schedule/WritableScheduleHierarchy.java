@@ -23,7 +23,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**
- * Convenience class to transform a number of schedule hierarchies into unique groups for writing.  
+ * Convenience class to transform a number of schedule hierarchies into unique groups for writing.
  */
 class WritableScheduleHierarchy {
 
@@ -35,7 +35,7 @@ class WritableScheduleHierarchy {
         ImmutableSet.Builder<Item> unidentified = ImmutableSet.builder();
         Map<Item, Container> itemPrimaryContainerIndex = Maps.newHashMap();
         Map<Item, Series> itemSeriesIndex = Maps.newHashMap();
-        
+
         for (ScheduleHierarchy hierarchy : Lists.reverse(hierarchies)) {
             Optional<Container> tlc = hierarchy.getPrimaryContainer();
             if (tlc.isPresent()) {
@@ -65,9 +65,10 @@ class WritableScheduleHierarchy {
                 itemSeriesIndex.put(item, possibleSeries.get());
             }
         }
-        return new WritableScheduleHierarchy(topLevelContainers.build(), series.build(), 
-            unidentified.addAll(itemsIndex.values()).build(), 
-            seriesBrandIndex, itemPrimaryContainerIndex, itemSeriesIndex);
+        return new WritableScheduleHierarchy(topLevelContainers.build(), series.build(),
+                unidentified.addAll(itemsIndex.values()).build(),
+                seriesBrandIndex, itemPrimaryContainerIndex, itemSeriesIndex
+        );
     }
 
     private static Item addBroadcast(Item existing, ItemAndBroadcast itemAndBroadcast) {
@@ -93,28 +94,30 @@ class WritableScheduleHierarchy {
         this.itemSeriesIndex = itemSeriesIndex;
     }
 
-    List<WriteResult<? extends Content,Content>> writeTo(ContentStore contentStore) throws WriteException {
-        ImmutableList.Builder<WriteResult<? extends Content,Content>> results = ImmutableList.builder();
+    List<WriteResult<? extends Content, Content>> writeTo(ContentStore contentStore)
+            throws WriteException {
+        ImmutableList.Builder<WriteResult<? extends Content, Content>> results = ImmutableList.builder();
         Map<Container, Container> tlcWritten = writePrimaryContainers(contentStore, results);
         Map<Series, Series> seriesWritten
-            = writeSecondaryContainers(contentStore, results, tlcWritten);
+                = writeSecondaryContainers(contentStore, results, tlcWritten);
         writeItems(contentStore, results, tlcWritten, seriesWritten);
         return results.build();
     }
-    
+
     private Map<Container, Container> writePrimaryContainers(ContentStore contentStore,
-            ImmutableList.Builder<WriteResult<? extends Content,Content>> results) throws WriteException {
+            ImmutableList.Builder<WriteResult<? extends Content, Content>> results)
+            throws WriteException {
         Map<Container, Container> tlcWritten = Maps.newHashMap();
         for (Container container : topLevelContainers) {
-            WriteResult<Container,Content> written = contentStore.writeContent(container);
+            WriteResult<Container, Content> written = contentStore.writeContent(container);
             results.add(written);
             tlcWritten.put(container, written.getResource());
         }
         return tlcWritten;
     }
-    
+
     private Map<Series, Series> writeSecondaryContainers(ContentStore contentStore,
-            ImmutableList.Builder<WriteResult<? extends Content,Content>> results,
+            ImmutableList.Builder<WriteResult<? extends Content, Content>> results,
             Map<Container, Container> tlcWritten) throws WriteException {
         Map<Series, Series> seriesWritten = Maps.newHashMap();
         for (Series sery : series) {
@@ -122,17 +125,17 @@ class WritableScheduleHierarchy {
             if (tlc != null) {
                 sery.setBrand((Brand) tlcWritten.get(tlc));
             }
-            WriteResult<Series,Content> written = contentStore.writeContent(sery);
+            WriteResult<Series, Content> written = contentStore.writeContent(sery);
             results.add(written);
             seriesWritten.put(sery, written.getResource());
         }
         return seriesWritten;
     }
-    
 
     private void writeItems(ContentStore contentStore,
-            ImmutableList.Builder<WriteResult<? extends Content,Content>> results,
-            Map<Container, Container> tlcWritten, Map<Series, Series> seriesWritten) throws WriteException {
+            ImmutableList.Builder<WriteResult<? extends Content, Content>> results,
+            Map<Container, Container> tlcWritten, Map<Series, Series> seriesWritten)
+            throws WriteException {
         for (Item item : items) {
             Container tlc = itemPrimaryContainerIndex.get(item);
             if (tlc != null) {
@@ -146,7 +149,7 @@ class WritableScheduleHierarchy {
                         writtenSeries = seriesWritten.get(series);
                     }
                     if (writtenSeries instanceof Series) {
-                        ((Episode)item).setSeries((Series)writtenSeries);
+                        ((Episode) item).setSeries((Series) writtenSeries);
                     }
                 }
             }

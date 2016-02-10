@@ -1,9 +1,9 @@
 package org.atlasapi.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.time.Timestamp;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ScheduleUpdateMessage extends AbstractMessage {
 
@@ -13,9 +13,9 @@ public class ScheduleUpdateMessage extends AbstractMessage {
         super(mid, ts);
         this.update = checkNotNull(update);
     }
-    
+
     public ScheduleUpdate getScheduleUpdate() {
         return update;
     }
-    
+
 }

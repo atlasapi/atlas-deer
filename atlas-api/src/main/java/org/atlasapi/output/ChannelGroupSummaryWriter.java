@@ -1,14 +1,16 @@
 package org.atlasapi.output;
 
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import java.io.IOException;
+
 import org.atlasapi.channel.ChannelGroupSummary;
 import org.atlasapi.output.writers.AliasWriter;
 
-import java.io.IOException;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelGroupSummaryWriter implements EntityListWriter<ChannelGroupSummary> {
+
     private static final AliasWriter ALIAS_WRITER = new AliasWriter();
     private final NumberToShortStringCodec codec;
 
@@ -16,16 +18,14 @@ public class ChannelGroupSummaryWriter implements EntityListWriter<ChannelGroupS
         this.codec = checkNotNull(codec);
     }
 
-
-
-
     @Override
     public String listName() {
         return "channel_groups";
     }
 
     @Override
-    public void write(ChannelGroupSummary entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(ChannelGroupSummary entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
         writer.writeField("id", codec.encode(entity.getId().toBigInteger()));
         writer.writeField("title", entity.getTitle());
         writer.writeField("type", entity.getType());

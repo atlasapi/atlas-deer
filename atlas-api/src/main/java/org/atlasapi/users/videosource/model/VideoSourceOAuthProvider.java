@@ -1,13 +1,16 @@
 package org.atlasapi.users.videosource.model;
 
-import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.social.model.UserRef.UserNamespace;
 
+import com.google.common.collect.ImmutableSet;
+
 public enum VideoSourceOAuthProvider {
-    YOUTUBE(UserNamespace.YOUTUBE,
+    YOUTUBE(
+            UserNamespace.YOUTUBE,
             "Link your YouTube account",
             "/4/videosource/youtube/login",
-            "youtube.png");
+            "youtube.png"
+    );
 
     private final UserNamespace namespace;
     private final String loginPromptMessage;

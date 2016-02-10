@@ -1,11 +1,12 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class SynopsesSerializerTest {
 

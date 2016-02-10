@@ -1,7 +1,5 @@
 package org.atlasapi.messaging;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -11,8 +9,9 @@ import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.IndexException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -20,10 +19,13 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.queue.RecoverableException;
-import com.metabroadcast.common.queue.Worker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class EquivalentContentIndexingContentWorker implements Worker<EquivalentContentUpdatedMessage> {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public class EquivalentContentIndexingContentWorker
+        implements Worker<EquivalentContentUpdatedMessage> {
 
     private static final String METRICS_TIMER = "EquivalentContentIndexingContentWorker";
 
@@ -35,7 +37,7 @@ public class EquivalentContentIndexingContentWorker implements Worker<Equivalent
     private final Timer timer;
 
     public EquivalentContentIndexingContentWorker(ContentResolver contentResolver,
-                                                  ContentIndex contentIndex, MetricRegistry metricRegistry) {
+            ContentIndex contentIndex, MetricRegistry metricRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.contentIndex = checkNotNull(contentIndex);
         this.timer = checkNotNull(metricRegistry.timer(METRICS_TIMER));

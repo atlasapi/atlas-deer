@@ -1,15 +1,15 @@
 package org.atlasapi.output.writers.time;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.atlasapi.output.writers.time.UnixMillenniumBugFixer.FIX_DISABLE_DATE_TIME;
 import static org.atlasapi.output.writers.time.UnixMillenniumBugFixer.MAX_ALLOWED_DATE_TIME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.junit.Before;
-import org.junit.Test;
 
 public class UnixMillenniumBugFixerTest {
 

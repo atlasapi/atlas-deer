@@ -3,8 +3,9 @@ package org.atlasapi.content;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Encoding.Builder;
 
-import com.google.common.collect.ImmutableSet;
 import com.metabroadcast.common.media.MimeType;
+
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.Duration;
 
 public class EncodingSerializer {
@@ -40,11 +41,11 @@ public class EncodingSerializer {
         if (encoding.getDataSize() != null) {
             builder.setDataSize(encoding.getDataSize());
         }
-        
+
         if (encoding.getDuration() != null) {
             builder.setDuration(encoding.getDuration().getStandardSeconds());
         }
-        
+
         if (encoding.getDistributor() != null) {
             builder.setDistributor(encoding.getDistributor());
         }
@@ -98,7 +99,7 @@ public class EncodingSerializer {
         }
         encoding.setAvailableAt(locations.build());
         encoding.setAdvertisingDuration(msg.hasAdvertisingDuration() ? msg.getAdvertisingDuration()
-                                                                    : null);
+                                                                     : null);
         encoding.setAudioBitRate(msg.hasAudioBitRate() ? msg.getAudioBitRate() : null);
         encoding.setAudioChannels(msg.hasAudioChannels() ? msg.getAudioChannels() : null);
         if (msg.hasAudioCoding()) {
@@ -106,7 +107,7 @@ public class EncodingSerializer {
         }
         encoding.setBitRate(msg.hasBitRate() ? msg.getBitRate() : null);
         encoding.setContainsAdvertising(msg.hasContainsAdvertising() ? msg.getContainsAdvertising()
-                                                                    : null);
+                                                                     : null);
         if (msg.hasDataContainerFormat()) {
             encoding.setDataContainerFormat(MimeType.fromString(msg.getDataContainerFormat()));
         }
@@ -121,16 +122,19 @@ public class EncodingSerializer {
         }
         encoding.setVideoFrameRate(msg.hasVideoFrameRate() ? msg.getVideoFrameRate() : null);
         encoding.setVideoHorizontalSize(msg.hasVideoHorizontalSize() ? msg.getVideoHorizontalSize()
-                                                                    : null);
-        encoding.setVideoProgressiveScan(msg.hasVideoProgressiveScan() ? msg.getVideoProgressiveScan()
-                                                                      : null);
+                                                                     : null);
+        encoding.setVideoProgressiveScan(msg.hasVideoProgressiveScan()
+                                         ? msg.getVideoProgressiveScan()
+                                         : null);
         encoding.setVideoVerticalSize(msg.hasVideoVerticalSize() ? msg.getVideoVerticalSize()
-                                                                : null);
+                                                                 : null);
         encoding.set3d(msg.hasIsThreeD() ? msg.getIsThreeD() : null);
         encoding.setVersionId(msg.hasVersion() ? msg.getVersion() : null);
         encoding.setQuality(msg.hasQuality() ? Quality.valueOf(msg.getQuality()) : null);
         encoding.setQualityDetail(msg.hasQualityDetail() ? msg.getQualityDetail() : null);
-        encoding.setDuration(msg.hasDuration() ? Duration.standardSeconds(msg.getDuration()) : null);
+        encoding.setDuration(msg.hasDuration()
+                             ? Duration.standardSeconds(msg.getDuration())
+                             : null);
         return encoding;
     }
 

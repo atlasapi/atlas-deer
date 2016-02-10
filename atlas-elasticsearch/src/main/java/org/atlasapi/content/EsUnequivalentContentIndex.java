@@ -163,7 +163,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
 
         SearchRequestBuilder reqBuilder = esClient
                 .prepareSearch(index)
-                .setTypes(EsContent.CHILD_ITEM, EsContent.TOP_LEVEL_CONTAINER, EsContent.TOP_LEVEL_ITEM)
+                .setTypes(
+                        EsContent.CHILD_ITEM,
+                        EsContent.TOP_LEVEL_CONTAINER,
+                        EsContent.TOP_LEVEL_ITEM
+                )
                 .addField(EsContent.CANONICAL_ID)
                 .addField(EsContent.ID)
                 .addField(EsContent.SOURCE)
@@ -284,12 +288,15 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         return orderField;
     }
 
-
-    private QueryBuilder addTitleQuery(Optional<IndexQueryParams> queryParams, QueryBuilder queryBuilder) {
+    private QueryBuilder addTitleQuery(Optional<IndexQueryParams> queryParams,
+            QueryBuilder queryBuilder) {
         FuzzyQueryParams searchParams = queryParams.get().getFuzzyQueryParams().get();
         queryBuilder = QueryBuilders.boolQuery()
                 .must(queryBuilder)
-                .must(TitleQueryBuilder.build(searchParams.getSearchTerm(), searchParams.getBoost().orElse(5F)));
+                .must(TitleQueryBuilder.build(
+                        searchParams.getSearchTerm(),
+                        searchParams.getBoost().orElse(5F)
+                ));
         return queryBuilder;
     }
 

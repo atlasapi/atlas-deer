@@ -7,19 +7,21 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-import org.joda.time.DateTime;
+
+import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.metabroadcast.common.time.DateTimeZones;
+import org.joda.time.DateTime;
 
 public class ComplexItemTestDataBuilder {
+
     private static Long uniqueId = 1000L;
-    
+
     private String uri;
     private String curie;
-    
+
     private Set<String> aliasUrls;
     private Set<Alias> aliases;
     private Container brand;
@@ -35,22 +37,22 @@ public class ComplexItemTestDataBuilder {
     private String title;
     private Long id;
     private Set<Encoding> manifestedAs;
-    private Set<Broadcast> broadcasts; 
-    private List<SegmentEvent> segmentEvents; 
-    private Set<Restriction> restrictions; 
-    
+    private Set<Broadcast> broadcasts;
+    private List<SegmentEvent> segmentEvents;
+    private Set<Restriction> restrictions;
+
     public static ComplexItemTestDataBuilder complexItem() {
         return new ComplexItemTestDataBuilder();
     }
-    
+
     private ComplexItemTestDataBuilder() {
         uri = "http://test.metabroadcast.com/item/default";
         curie = "mbtest:i-default";
-        
+
         id = uniqueId++;
         uri = "http://test.metabroadcast.com/unique/items/" + id;
         curie = "mbtest:i-" + id;
-        
+
         aliasUrls = ImmutableSet.of();
         aliases = ImmutableSet.of();
         brand = null;
@@ -64,14 +66,14 @@ public class ComplexItemTestDataBuilder {
         title = "Default Test Item";
         manifestedAs = Sets.newLinkedHashSet();
         broadcasts = Sets.newLinkedHashSet();
-        segmentEvents = ImmutableList.of(); 
+        segmentEvents = ImmutableList.of();
         restrictions = Sets.newHashSet();
     }
-    
+
     public Item build() {
         return buildItemAttributes(new Item());
     }
-    
+
     private Item buildItemAttributes(Item item) {
         item.setAliasUrls(aliasUrls);
         item.setAliases(aliases);
@@ -97,65 +99,67 @@ public class ComplexItemTestDataBuilder {
         item.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
         return item;
     }
-    
+
     public ComplexItemTestDataBuilder withClips(Clip... clips) {
         this.clips = ImmutableList.copyOf(clips);
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withTitle(String title) {
         this.title = title;
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withUri(String uri) {
         this.uri = uri;
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withId(Long id) {
         this.id = id;
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withAliasUrls(String... aliases) {
         this.aliasUrls = ImmutableSet.copyOf(aliases);
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withAliases(Alias... aliases) {
         this.aliases = ImmutableSet.copyOf(aliases);
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withBrand(Container brand) {
         this.brand = brand;
-        
-        brand.setItemRefs(ImmutableSet.<ItemRef>builder().addAll(brand.getItemRefs()).add(this.build().toRef()).build());
-        
+
+        brand.setItemRefs(ImmutableSet.<ItemRef>builder().addAll(brand.getItemRefs())
+                .add(this.build().toRef())
+                .build());
+
         return this;
     }
-    
-    public ComplexItemTestDataBuilder withBroadcasts(Broadcast...broadcasts) {
+
+    public ComplexItemTestDataBuilder withBroadcasts(Broadcast... broadcasts) {
         this.broadcasts = ImmutableSet.copyOf(broadcasts);
         return this;
     }
-    
-    public ComplexItemTestDataBuilder withManifestedAs(Encoding...encodings) {
+
+    public ComplexItemTestDataBuilder withManifestedAs(Encoding... encodings) {
         this.manifestedAs = ImmutableSet.copyOf(encodings);
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withSegmentEvents(SegmentEvent... segmentEvents) {
         this.segmentEvents = ImmutableList.copyOf(segmentEvents);
         return this;
     }
-    
-    public ComplexItemTestDataBuilder withRestrictions(Restriction...restrictions) {
+
+    public ComplexItemTestDataBuilder withRestrictions(Restriction... restrictions) {
         this.restrictions = ImmutableSet.copyOf(restrictions);
         return this;
     }
-    
+
     public ComplexItemTestDataBuilder withDescription(String desciption) {
         this.description = desciption;
         return this;

@@ -1,15 +1,7 @@
 package org.atlasapi.content;
 
-import static org.atlasapi.util.ElasticSearchHelper.refresh;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-
 import java.util.Arrays;
 
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
@@ -18,16 +10,25 @@ import org.atlasapi.search.SearchQuery;
 import org.atlasapi.search.SearchResults;
 import org.atlasapi.util.ElasticSearchHelper;
 import org.atlasapi.util.NoOpSecondaryIndex;
+
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.time.DateTimeZones;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.elasticsearch.node.Node;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.time.DateTimeZones;
+import static org.atlasapi.util.ElasticSearchHelper.refresh;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 public class EsContentTitleSearcherTest {
 
@@ -37,7 +38,7 @@ public class EsContentTitleSearcherTest {
     public static void before() throws Exception {
         Logger root = Logger.getRootLogger();
         root.addAppender(new ConsoleAppender(
-            new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
+                new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
         root.setLevel(Level.WARN);
     }
 
@@ -46,11 +47,19 @@ public class EsContentTitleSearcherTest {
         ElasticSearchHelper.clearIndices(esClient.client());
         esClient.close();
     }
-    
+
     @Test
     public void testSearch() throws Exception {
-        Broadcast broadcast1 = new Broadcast(Id.valueOf(1), new DateTime(), new DateTime().plusHours(1));
-        Broadcast broadcast2 = new Broadcast(Id.valueOf(1), new DateTime().plusHours(3), new DateTime().plusHours(4));
+        Broadcast broadcast1 = new Broadcast(
+                Id.valueOf(1),
+                new DateTime(),
+                new DateTime().plusHours(1)
+        );
+        Broadcast broadcast2 = new Broadcast(
+                Id.valueOf(1),
+                new DateTime().plusHours(3),
+                new DateTime().plusHours(4)
+        );
 
         Item item1 = new Item("uri1", "curie1", Publisher.METABROADCAST);
         item1.setTitle("title1");
@@ -72,7 +81,7 @@ public class EsContentTitleSearcherTest {
         item4.setId(Id.valueOf(4));
         item4.addBroadcast(broadcast2);
         item4.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
-        
+
         Brand brand1 = new Brand("buri1", "buri1", Publisher.METABROADCAST);
         brand1.setTitle("title");
         brand1.setId(Id.valueOf(5));
@@ -86,7 +95,14 @@ public class EsContentTitleSearcherTest {
         item2.setContainerRef(brand1.toRef());
         item3.setContainerRef(brand2.toRef());
 
-        EsUnequivalentContentIndex contentIndex = new EsUnequivalentContentIndex(esClient.client(), EsSchema.CONTENT_INDEX, new NoOpContentResolver(), mock(ChannelGroupResolver.class), new NoOpSecondaryIndex(), 60000);
+        EsUnequivalentContentIndex contentIndex = new EsUnequivalentContentIndex(
+                esClient.client(),
+                EsSchema.CONTENT_INDEX,
+                new NoOpContentResolver(),
+                mock(ChannelGroupResolver.class),
+                new NoOpSecondaryIndex(),
+                60000
+        );
         contentIndex.startAsync().awaitRunning();
 
         EsContentTitleSearcher contentSearcher = new EsContentTitleSearcher(esClient.client());
@@ -101,17 +117,17 @@ public class EsContentTitleSearcherTest {
         refresh(esClient.client());
 
         SearchQuery query = SearchQuery.builder("title")
-            .withSelection(Selection.offsetBy(0))
-            .withSpecializations(ImmutableSet.<Specialization>of())
-            .withPublishers(ImmutableSet.<Publisher>of())
-            .withTitleWeighting(1)
-            .withBroadcastWeighting(0)
-            .withCatchupWeighting(0)
-            .withPriorityChannelWeighting(0)
-            .build();
-            
+                .withSelection(Selection.offsetBy(0))
+                .withSpecializations(ImmutableSet.<Specialization>of())
+                .withPublishers(ImmutableSet.<Publisher>of())
+                .withTitleWeighting(1)
+                .withBroadcastWeighting(0)
+                .withCatchupWeighting(0)
+                .withPriorityChannelWeighting(0)
+                .build();
+
         ListenableFuture<SearchResults> future = contentSearcher.search(query);
-        
+
         SearchResults results = future.get();
         assertEquals(2, results.getIds().size());
         assertEquals(brand1.getId(), results.getIds().get(0));

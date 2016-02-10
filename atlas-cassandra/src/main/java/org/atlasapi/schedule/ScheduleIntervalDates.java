@@ -1,18 +1,16 @@
 package org.atlasapi.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Iterator;
 
+import com.google.common.collect.AbstractIterator;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 
-import com.google.common.collect.AbstractIterator;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Provides the relevant {@link LocalDate}s for an {@link Interval} in terms of a schedule. 
- *
+ * Provides the relevant {@link LocalDate}s for an {@link Interval} in terms of a schedule.
  */
 public class ScheduleIntervalDates implements Iterable<LocalDate> {
 
@@ -21,14 +19,14 @@ public class ScheduleIntervalDates implements Iterable<LocalDate> {
     public ScheduleIntervalDates(Interval interval) {
         this.interval = checkNotNull(interval);
     }
-    
+
     @Override
     public Iterator<LocalDate> iterator() {
         return new AbstractIterator<LocalDate>() {
-            
+
             private LocalDate next = interval.getStart().toLocalDate();
             private final LocalDate end = computeEnd(interval);
-            
+
             private LocalDate computeEnd(Interval interval) {
                 DateTime end = interval.getEnd();
                 LocalDate endDay = end.toLocalDate();
@@ -39,7 +37,7 @@ public class ScheduleIntervalDates implements Iterable<LocalDate> {
                 }
                 return endDay;
             }
-            
+
             @Override
             protected LocalDate computeNext() {
                 LocalDate next = this.next;

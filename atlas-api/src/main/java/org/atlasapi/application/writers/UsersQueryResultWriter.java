@@ -12,8 +12,8 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.FluentIterable;
 
-
 public class UsersQueryResultWriter implements UserAwareQueryResultWriter<User> {
+
     private final EntityListWriter<User> usersListWriter;
 
     public UsersQueryResultWriter(EntityListWriter<User> usersListWriter) {
@@ -21,12 +21,13 @@ public class UsersQueryResultWriter implements UserAwareQueryResultWriter<User> 
     }
 
     @Override
-    public void write(UserAwareQueryResult<User> result, ResponseWriter responseWriter) throws IOException {
+    public void write(UserAwareQueryResult<User> result, ResponseWriter responseWriter)
+            throws IOException {
         responseWriter.startResponse();
         writeResult(result, responseWriter);
-        responseWriter.finishResponse();       
+        responseWriter.finishResponse();
     }
-    
+
     private void writeResult(UserAwareQueryResult<User> result, ResponseWriter writer)
             throws IOException {
         OutputContext ctxt = outputContext(result.getContext());

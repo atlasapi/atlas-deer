@@ -8,9 +8,11 @@ import org.atlasapi.util.MorePredicates;
 
 import com.google.common.collect.ImmutableList;
 
-public class LegacyContentGroupTransformer extends DescribedLegacyResourceTransformer<org.atlasapi.media.entity.ContentGroup, ContentGroup> {
+public class LegacyContentGroupTransformer extends
+        DescribedLegacyResourceTransformer<org.atlasapi.media.entity.ContentGroup, ContentGroup> {
 
-    @Override protected ContentGroup createDescribed(org.atlasapi.media.entity.ContentGroup legacyGroup) {
+    @Override
+    protected ContentGroup createDescribed(org.atlasapi.media.entity.ContentGroup legacyGroup) {
 
         ContentGroup contentGroup = new ContentGroup(
                 legacyGroup.getCanonicalUri(),
@@ -23,7 +25,8 @@ public class LegacyContentGroupTransformer extends DescribedLegacyResourceTransf
         return contentGroup;
     }
 
-    @Override protected Iterable<Alias> moreAliases(org.atlasapi.media.entity.ContentGroup input) {
+    @Override
+    protected Iterable<Alias> moreAliases(org.atlasapi.media.entity.ContentGroup input) {
         return ImmutableList.of();
     }
 

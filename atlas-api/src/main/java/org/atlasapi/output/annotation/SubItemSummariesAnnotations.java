@@ -1,8 +1,7 @@
 package org.atlasapi.output.annotation;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
+import java.io.IOException;
+
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ItemSummary;
@@ -11,7 +10,9 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SubItemSummaryListWriter;
 import org.atlasapi.util.ImmutableCollectors;
 
-import java.io.IOException;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

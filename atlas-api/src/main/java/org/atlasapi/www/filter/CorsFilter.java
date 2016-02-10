@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.web.filter.OncePerRequestFilter;
 
-
 public class CorsFilter extends OncePerRequestFilter {
 
     @Override

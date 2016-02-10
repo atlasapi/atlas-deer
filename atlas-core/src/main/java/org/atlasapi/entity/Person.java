@@ -5,22 +5,23 @@ import java.util.Set;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.DateTime;
 
-import com.google.common.collect.Sets;
 import com.metabroadcast.common.url.UrlEncoding;
 
+import com.google.common.collect.Sets;
+import org.joda.time.DateTime;
+
 public class Person extends ContentGroup {
-    
+
     public static final String BASE_URI = "http://people.atlasapi.org/%s/%s";
-    
+
     private String givenName;
     private String familyName;
     private String gender;
     private DateTime birthDate;
     private String birthPlace;
     private Set<String> quotes = Sets.newHashSet();
-    
+
     @FieldName("given_name")
     public String getGivenName() {
         return givenName;
@@ -74,56 +75,56 @@ public class Person extends ContentGroup {
     public void setQuotes(Iterable<String> quotes) {
         this.quotes = Sets.newHashSet(quotes);
     }
-    
+
     public void addQuote(String quote) {
         this.quotes.add(quote);
     }
 
-	public Person() { /* required for legacy code */ }
-	
-	public Person(String uri, String curie, Publisher publisher) {
-         super(ContentGroup.Type.PERSON, uri, curie, publisher);
+    public Person() { /* required for legacy code */ }
+
+    public Person(String uri, String curie, Publisher publisher) {
+        super(ContentGroup.Type.PERSON, uri, curie, publisher);
     }
-	
-	@FieldName("name")
-	public String name() {
-		return this.getTitle();
-	}
-	
-	@FieldName("profile_links")
-	public Set<String> profileLinks() {
-	    return this.getAliasUrls();
-	}
-	
-	public Person withProfileLink(String profileLink) {
-	    this.addAliasUrl(profileLink);
-	    return this;
-	}
-	
-	public Person withProfileLinks(Set<String> profileLinks) {
+
+    @FieldName("name")
+    public String name() {
+        return this.getTitle();
+    }
+
+    @FieldName("profile_links")
+    public Set<String> profileLinks() {
+        return this.getAliasUrls();
+    }
+
+    public Person withProfileLink(String profileLink) {
+        this.addAliasUrl(profileLink);
+        return this;
+    }
+
+    public Person withProfileLinks(Set<String> profileLinks) {
         this.setAliasUrls(profileLinks);
         return this;
     }
-	
-	public Person withName(String name) {
-	    this.setTitle(name);
-	    return this;
-	}
-	
-	public static String formatForUri(String key) {
+
+    public Person withName(String name) {
+        this.setTitle(name);
+        return this;
+    }
+
+    public static String formatForUri(String key) {
         return UrlEncoding.encode(key.toLowerCase().replace(' ', '_'));
     }
-	
-	@Override
-	public Person copy() {
-	    Person copy = new Person();
-	    ContentGroup.copyTo(this, copy);
-	    copy.setGivenName(givenName);
-	    copy.setFamilyName(familyName);
-	    copy.setGender(gender);
-	    copy.setBirthDate(birthDate);
-	    copy.setBirthPlace(birthPlace);
-	    copy.setQuotes(quotes);
-	    return copy;
-	}
+
+    @Override
+    public Person copy() {
+        Person copy = new Person();
+        ContentGroup.copyTo(this, copy);
+        copy.setGivenName(givenName);
+        copy.setFamilyName(familyName);
+        copy.setGender(gender);
+        copy.setBirthDate(birthDate);
+        copy.setBirthPlace(birthPlace);
+        copy.setQuotes(quotes);
+        return copy;
+    }
 }

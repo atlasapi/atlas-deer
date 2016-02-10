@@ -1,7 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -16,6 +14,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class LegacyEventResolver implements EventResolver {
 

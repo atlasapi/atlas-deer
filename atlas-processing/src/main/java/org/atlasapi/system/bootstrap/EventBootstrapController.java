@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletResponse;
@@ -12,19 +10,22 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class EventBootstrapController {
@@ -45,7 +46,7 @@ public class EventBootstrapController {
         this.idCodec = checkNotNull(idCodec);
     }
 
-    @RequestMapping(value="/system/bootstrap/event/{id}", method= RequestMethod.POST)
+    @RequestMapping(value = "/system/bootstrap/event/{id}", method = RequestMethod.POST)
     public void bootstrapEvent(@PathVariable("id") String encodedId, HttpServletResponse resp)
             throws IOException {
         Id id = Id.valueOf(idCodec.decode(encodedId).longValue());

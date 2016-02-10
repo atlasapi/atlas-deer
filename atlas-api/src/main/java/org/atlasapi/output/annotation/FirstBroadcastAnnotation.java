@@ -1,6 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
 import java.io.IOException;
 
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -11,19 +10,26 @@ import org.atlasapi.content.Item;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.BroadcastWriter;
-import org.joda.time.DateTime;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Iterables;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import org.joda.time.DateTime;
 
 public class FirstBroadcastAnnotation extends OutputAnnotation<Content> {
 
     private final BroadcastWriter broadcastWriter;
 
-    public FirstBroadcastAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
-        broadcastWriter = new BroadcastWriter("first_broadcasts", codec, channelResolver, channelGroupResolver);
+    public FirstBroadcastAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver,
+            ChannelGroupResolver channelGroupResolver) {
+        broadcastWriter = new BroadcastWriter(
+                "first_broadcasts",
+                codec,
+                channelResolver,
+                channelGroupResolver
+        );
     }
 
     @Override
@@ -33,8 +39,16 @@ public class FirstBroadcastAnnotation extends OutputAnnotation<Content> {
         }
     }
 
-    private void writeBroadcasts(FieldWriter writer, Item item, OutputContext ctxt) throws IOException {
-        writer.writeList(broadcastWriter, firstBroadcasts(Iterables.filter(item.getBroadcasts(), Broadcast.ACTIVELY_PUBLISHED)), ctxt);
+    private void writeBroadcasts(FieldWriter writer, Item item, OutputContext ctxt)
+            throws IOException {
+        writer.writeList(
+                broadcastWriter,
+                firstBroadcasts(Iterables.filter(
+                        item.getBroadcasts(),
+                        Broadcast.ACTIVELY_PUBLISHED
+                )),
+                ctxt
+        );
     }
 
     private Iterable<Broadcast> firstBroadcasts(Iterable<Broadcast> broadcasts) {

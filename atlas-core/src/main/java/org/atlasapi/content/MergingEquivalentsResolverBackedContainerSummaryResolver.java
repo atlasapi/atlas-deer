@@ -1,39 +1,47 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
+
+import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class MergingEquivalentsResolverBackedContainerSummaryResolver implements ContainerSummaryResolver {
+public class MergingEquivalentsResolverBackedContainerSummaryResolver
+        implements ContainerSummaryResolver {
 
-    private static final Logger log = LoggerFactory.getLogger(MergingEquivalentsResolverBackedContainerSummaryResolver.class);
+    private static final Logger log = LoggerFactory.getLogger(
+            MergingEquivalentsResolverBackedContainerSummaryResolver.class);
     private final MergingEquivalentsResolver<Content> contentResolver;
 
-    public MergingEquivalentsResolverBackedContainerSummaryResolver(MergingEquivalentsResolver<Content> contentResolver) {
+    public MergingEquivalentsResolverBackedContainerSummaryResolver(
+            MergingEquivalentsResolver<Content> contentResolver) {
         this.contentResolver = checkNotNull(contentResolver);
     }
 
     @Override
-    public Optional<ContainerSummary> resolveContainerSummary(Id id, ApplicationSources applicationSources, Set<Annotation> annotations) {
+    public Optional<ContainerSummary> resolveContainerSummary(Id id,
+            ApplicationSources applicationSources, Set<Annotation> annotations) {
         ResolvedEquivalents<Content> contentResolved = null;
         try {
             contentResolved = Futures.get(
-                    contentResolver.resolveIds(ImmutableSet.of(id), applicationSources, annotations),
+                    contentResolver.resolveIds(
+                            ImmutableSet.of(id),
+                            applicationSources,
+                            annotations
+                    ),
                     1, TimeUnit.MINUTES,
                     Exception.class
             );
@@ -41,13 +49,13 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolver implements
             Throwables.propagate(e);
         }
         Set<Content> equivalentContent = contentResolved.get(id);
-        if(equivalentContent.isEmpty()) {
+        if (equivalentContent.isEmpty()) {
             log.warn("Reference to non-existent container with ID {}", id);
             return Optional.absent();
         }
 
         Content content = Iterables.getFirst(equivalentContent, null);
-        if(content instanceof Container) {
+        if (content instanceof Container) {
             return Optional.of((((Container) content).toSummary()));
         }
 

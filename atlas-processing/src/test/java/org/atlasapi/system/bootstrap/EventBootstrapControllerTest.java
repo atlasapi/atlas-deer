@@ -1,10 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.math.BigInteger;
 
 import javax.servlet.http.HttpServletResponse;
@@ -14,6 +9,11 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,9 +21,10 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EventBootstrapControllerTest {

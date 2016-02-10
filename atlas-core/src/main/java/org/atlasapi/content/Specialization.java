@@ -2,11 +2,12 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
+import com.metabroadcast.common.base.Maybe;
+
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
-import com.metabroadcast.common.base.Maybe;
 
 public enum Specialization {
 

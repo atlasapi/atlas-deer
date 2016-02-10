@@ -5,7 +5,6 @@ import java.util.Set;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Encoding;
-import org.atlasapi.content.Item;
 import org.atlasapi.content.Location;
 import org.atlasapi.content.Policy;
 import org.atlasapi.output.FieldWriter;
@@ -13,18 +12,18 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.LocationsAnnotation.EncodedLocationWriter;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
-import org.joda.time.DateTime;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
+import org.joda.time.DateTime;
 
 public class AvailableLocationsAnnotation extends OutputAnnotation<Content> {
 
     private final EncodedLocationWriter encodedLocationWriter;
 
-    public AvailableLocationsAnnotation(PlayerResolver playerResolver, ServiceResolver serviceResolver) {
+    public AvailableLocationsAnnotation(PlayerResolver playerResolver,
+            ServiceResolver serviceResolver) {
         this.encodedLocationWriter = new EncodedLocationWriter(
                 "available_locations", playerResolver, serviceResolver
         );
@@ -36,16 +35,19 @@ public class AvailableLocationsAnnotation extends OutputAnnotation<Content> {
     }
 
     private Boolean isAvailable(Policy input) {
-        return (input.getAvailabilityStart() == null || ! (new DateTime(input.getAvailabilityStart()).isAfterNow()))
-            && (input.getAvailabilityEnd() == null || new DateTime(input.getAvailabilityEnd()).isAfterNow());
+        return (input.getAvailabilityStart() == null || !(new DateTime(input.getAvailabilityStart())
+                .isAfterNow()))
+                && (input.getAvailabilityEnd() == null
+                || new DateTime(input.getAvailabilityEnd()).isAfterNow());
     }
-    
+
     private Iterable<EncodedLocation> encodedLocations(Content content) {
         return encodedLocations(content.getManifestedAs());
     }
 
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
-        return Iterables.concat(Iterables.transform(manifestedAs,
+        return Iterables.concat(Iterables.transform(
+                manifestedAs,
                 encoding -> {
                     Builder<EncodedLocation> builder = ImmutableList.builder();
                     for (Location location : encoding.getAvailableAt()) {

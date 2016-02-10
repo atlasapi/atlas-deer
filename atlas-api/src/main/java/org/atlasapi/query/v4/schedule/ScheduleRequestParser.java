@@ -1,46 +1,47 @@
 package org.atlasapi.query.v4.schedule;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.metabroadcast.common.webapp.query.DateTimeInQueryParser.queryDateTimeParser;
-
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.google.common.collect.Range;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
 import org.atlasapi.query.common.InvalidAnnotationException;
 import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.SetBasedRequestParameterValidator;
 import org.atlasapi.source.Sources;
-import org.elasticsearch.common.collect.ImmutableList;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.time.Clock;
+import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.time.Clock;
-import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
+import com.google.common.collect.Range;
+import org.elasticsearch.common.collect.ImmutableList;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.Interval;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.metabroadcast.common.webapp.query.DateTimeInQueryParser.queryDateTimeParser;
 
 class ScheduleRequestParser {
-    
+
     private static final Pattern CHANNEL_ID_PATTERN = Pattern.compile(
-        ".*schedules/([^.]+)(.[\\w\\d.]+)?$"
+            ".*schedules/([^.]+)(.[\\w\\d.]+)?$"
     );
     private static final Splitter commaSplitter = Splitter.on(",").omitEmptyStrings().trimResults();
 
@@ -53,19 +54,20 @@ class ScheduleRequestParser {
     private static final String ANNOTATIONS_PARAM = "annotations";
     private static final String CALLBACK_PARAM = "callback";
     private static final String ID_PARAM = "id";
-    
+
     private final ApplicationSourcesFetcher applicationFetcher;
 
     private final SetBasedRequestParameterValidator singleValidator;
     private final SetBasedRequestParameterValidator multiValidator;
-    
+
     private final NumberToShortStringCodec idCodec;
     private final DateTimeInQueryParser dateTimeParser;
     private final ContextualAnnotationsExtractor annotationExtractor;
     private final Duration maxQueryDuration;
     private final Clock clock;
 
-    public ScheduleRequestParser(ApplicationSourcesFetcher appFetcher, Duration maxQueryDuration, Clock clock, ContextualAnnotationsExtractor annotationsExtractor) {
+    public ScheduleRequestParser(ApplicationSourcesFetcher appFetcher, Duration maxQueryDuration,
+            Clock clock, ContextualAnnotationsExtractor annotationsExtractor) {
         this.applicationFetcher = appFetcher;
         this.maxQueryDuration = maxQueryDuration;
         this.idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -81,31 +83,34 @@ class ScheduleRequestParser {
         this.multiValidator = multiRequestValidator(applicationFetcher);
     }
 
-    private SetBasedRequestParameterValidator singleRequestValidator(ApplicationSourcesFetcher fetcher) {
+    private SetBasedRequestParameterValidator singleRequestValidator(
+            ApplicationSourcesFetcher fetcher) {
         ImmutableList<String> required = ImmutableList.<String>builder()
-            .add(FROM_PARAM, SOURCE_PARAM)
-            .addAll(fetcher.getParameterNames())
-            .build();
+                .add(FROM_PARAM, SOURCE_PARAM)
+                .addAll(fetcher.getParameterNames())
+                .build();
         return SetBasedRequestParameterValidator.builder()
-            .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
-            .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
-            .build();
+                .withRequiredParameters(required.toArray(new String[required.size()]))
+                .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
+                .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
+                .build();
     }
 
-    private SetBasedRequestParameterValidator multiRequestValidator(ApplicationSourcesFetcher fetcher) {
+    private SetBasedRequestParameterValidator multiRequestValidator(
+            ApplicationSourcesFetcher fetcher) {
         ImmutableList<String> required = ImmutableList.<String>builder()
-            .add(ID_PARAM, FROM_PARAM, SOURCE_PARAM)
-            .addAll(fetcher.getParameterNames())
-            .build();
+                .add(ID_PARAM, FROM_PARAM, SOURCE_PARAM)
+                .addAll(fetcher.getParameterNames())
+                .build();
         return SetBasedRequestParameterValidator.builder()
-            .withRequiredParameters(required.toArray(new String[required.size()]))
-            .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
-            .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
-            .build();
+                .withRequiredParameters(required.toArray(new String[required.size()]))
+                .withOptionalParameters(ANNOTATIONS_PARAM, CALLBACK_PARAM, "order_by")
+                .withRequiredAlternativeParameters(TO_PARAM, COUNT_PARAM)
+                .build();
     }
 
-    public ScheduleQuery queryFrom(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public ScheduleQuery queryFrom(HttpServletRequest request)
+            throws QueryParseException, InvalidApiKeyException {
         Matcher matcher = CHANNEL_ID_PATTERN.matcher(request.getRequestURI());
         return matcher.matches() ? parseSingleRequest(request)
                                  : parseMultiRequest(request);
@@ -132,9 +137,9 @@ class ScheduleRequestParser {
 
     private ScheduleQuery parseMultiRequest(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        
+
         multiValidator.validateParameters(request);
-        
+
         Publisher publisher = extractPublisher(request);
         QueryContext context = parseContext(request, publisher);
         List<Id> channels = extractChannels(request);
@@ -150,13 +155,12 @@ class ScheduleRequestParser {
         return ScheduleQuery.multi(publisher, from, count, context, channels);
     }
 
-
     private QueryContext parseContext(HttpServletRequest request, Publisher publisher)
             throws InvalidApiKeyException, InvalidAnnotationException {
         ApplicationSources appSources = getConfiguration(request);
-        
+
         checkArgument(appSources.isReadEnabled(publisher), "Source %s not enabled", publisher);
-        
+
         ActiveAnnotations annotations = annotationExtractor.extractFromRequest(request);
         QueryContext context = new QueryContext(appSources, annotations, request);
         return context;
@@ -175,12 +179,13 @@ class ScheduleRequestParser {
             }
         }
         if (!invalidIds.isEmpty()) {
-            throw new QueryParseException(String.format("Invalid id%s %s", 
-                    invalidIds.size()>1 ? "s" : "" , Joiner.on(", ").join(invalidIds)));
+            throw new QueryParseException(String.format("Invalid id%s %s",
+                    invalidIds.size() > 1 ? "s" : "", Joiner.on(", ").join(invalidIds)
+            ));
         }
         return ids.build();
     }
-    
+
     private Id extractChannel(HttpServletRequest request) throws QueryParseException {
         Matcher matcher = CHANNEL_ID_PATTERN.matcher(request.getRequestURI());
         // we already know that this matches so we'll never get null
@@ -214,13 +219,23 @@ class ScheduleRequestParser {
 
     private void checkInterval(DateTime from, DateTime to) {
         Interval queryInterval = new Interval(from, to);
-        checkArgument(!queryInterval.toDuration().isLongerThan(maxQueryDuration), "Query interval cannot be longer than %s", maxQueryDuration);
+        checkArgument(
+                !queryInterval.toDuration().isLongerThan(maxQueryDuration),
+                "Query interval cannot be longer than %s",
+                maxQueryDuration
+        );
     }
 
     private Integer extractCount(HttpServletRequest request) {
         Integer count = Integer.valueOf(getParameter(request, COUNT_PARAM));
 
-        checkArgument(COUNT_RANGE.contains(count),  "'count' must be between %s and %s, was %s", COUNT_RANGE.lowerEndpoint(), COUNT_RANGE.upperEndpoint(), count);
+        checkArgument(
+                COUNT_RANGE.contains(count),
+                "'count' must be between %s and %s, was %s",
+                COUNT_RANGE.lowerEndpoint(),
+                COUNT_RANGE.upperEndpoint(),
+                count
+        );
         return count;
     }
 
@@ -231,7 +246,8 @@ class ScheduleRequestParser {
         return publisher.get();
     }
 
-    private ApplicationSources getConfiguration(HttpServletRequest request) throws InvalidApiKeyException {
+    private ApplicationSources getConfiguration(HttpServletRequest request)
+            throws InvalidApiKeyException {
         Optional<ApplicationSources> config = applicationFetcher.sourcesFor(request);
         if (config.isPresent()) {
             return config.get();

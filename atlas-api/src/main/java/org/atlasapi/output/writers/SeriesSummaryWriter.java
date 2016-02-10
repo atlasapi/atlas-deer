@@ -1,7 +1,5 @@
 package org.atlasapi.output.writers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.content.ContainerSummary;
@@ -13,8 +11,11 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
 
-import com.google.common.base.Optional;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
+import com.google.common.base.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SeriesSummaryWriter implements EntityWriter<Episode> {
 

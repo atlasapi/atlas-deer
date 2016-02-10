@@ -1,7 +1,5 @@
 package org.atlasapi.event;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
@@ -9,10 +7,12 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.topic.Topic;
-import org.joda.time.DateTime;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import org.joda.time.DateTime;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Event extends Identified implements Sourced {
 
@@ -126,7 +126,8 @@ public class Event extends Identified implements Sourced {
         private ImmutableList<Topic> eventGroups = ImmutableList.of();
         private ImmutableList<ItemRef> content = ImmutableList.of();
 
-        protected Builder() {}
+        protected Builder() {
+        }
 
         public B withTitle(String title) {
             this.title = title;
@@ -176,7 +177,8 @@ public class Event extends Identified implements Sourced {
 
     public static class EventBuilder extends Builder<Event, EventBuilder> {
 
-        private EventBuilder() {}
+        private EventBuilder() {
+        }
 
         @Override
         public Event build() {

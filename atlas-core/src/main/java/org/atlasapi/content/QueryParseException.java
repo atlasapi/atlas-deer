@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-
 public class QueryParseException extends Exception {
 
     public QueryParseException() {

@@ -3,16 +3,16 @@ package org.atlasapi.query.annotation;
 import com.google.common.collect.ImmutableSetMultimap;
 
 public final class IndexCombination {
-    
+
     private static final boolean EXPLICIT = true;
     private static final boolean IMPLICIT = false;
-    
+
     private static final boolean SINGLE = true;
     private static final boolean LIST = false;
 
     private final ImmutableSetMultimap.Builder<String, PathAnnotation> bindings
-        = ImmutableSetMultimap.builder();
-    
+            = ImmutableSetMultimap.builder();
+
     public IndexCombination() {
     }
 

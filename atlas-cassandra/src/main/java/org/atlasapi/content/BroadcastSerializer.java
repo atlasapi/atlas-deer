@@ -18,7 +18,8 @@ public class BroadcastSerializer {
     public ContentProtos.Broadcast.Builder serialize(Broadcast broadcast) {
         Builder builder = ContentProtos.Broadcast.newBuilder();
         builder.setIdentification(identifiedSerializer.serialize(broadcast));
-        builder.setChannel(CommonProtos.Reference.newBuilder().setId(broadcast.getChannelId().longValue()));
+        builder.setChannel(CommonProtos.Reference.newBuilder()
+                .setId(broadcast.getChannelId().longValue()));
         builder.setTransmissionTime(serializer.serialize(broadcast.getTransmissionTime()));
         builder.setTransmissionEndTime(serializer.serialize(broadcast.getTransmissionEndTime()));
         if (broadcast.getScheduleDate() != null) {
@@ -68,22 +69,27 @@ public class BroadcastSerializer {
             builder.setVersion(broadcast.getVersionId());
         }
         if (broadcast.getBlackoutRestriction().isPresent()) {
-            builder.setBlackoutRestriction(blackoutRestrictionSerializer.serialize(broadcast.getBlackoutRestriction().get()));
+            builder.setBlackoutRestriction(blackoutRestrictionSerializer.serialize(broadcast.getBlackoutRestriction()
+                    .get()));
         }
         return builder;
     }
 
     public Broadcast deserialize(ContentProtos.Broadcast msg) {
-        Broadcast broadcast = new Broadcast(Id.valueOf(msg.getChannel().getId()),
+        Broadcast broadcast = new Broadcast(
+                Id.valueOf(msg.getChannel().getId()),
                 serializer.deserialize(msg.getTransmissionTime()),
-                serializer.deserialize(msg.getTransmissionEndTime()));
+                serializer.deserialize(msg.getTransmissionEndTime())
+        );
         identifiedSerializer.deserialize(msg.getIdentification(), broadcast);
         if (msg.hasScheduleDate()) {
             broadcast.setScheduleDate(serializer.deserialize(msg.getScheduleDate())
                     .toLocalDate());
         }
         broadcast.withId(msg.hasSourceId() ? msg.getSourceId() : null);
-        broadcast.setIsActivelyPublished(msg.hasActivelyPublished() ? msg.getActivelyPublished() : null);
+        broadcast.setIsActivelyPublished(msg.hasActivelyPublished()
+                                         ? msg.getActivelyPublished()
+                                         : null);
         broadcast.setRepeat(msg.hasRepeat() ? msg.getRepeat() : null);
         broadcast.setSubtitled(msg.hasSubtitled() ? msg.getSubtitled() : null);
         broadcast.setSigned(msg.hasSigned() ? msg.getSigned() : null);

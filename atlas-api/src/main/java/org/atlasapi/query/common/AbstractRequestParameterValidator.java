@@ -11,14 +11,15 @@ public abstract class AbstractRequestParameterValidator {
 
     protected static final Joiner commaJoiner = Joiner.on(", ");
 
-    public HttpServletRequest validateParameters(HttpServletRequest request) throws InvalidParameterException {
+    public HttpServletRequest validateParameters(HttpServletRequest request)
+            throws InvalidParameterException {
         Set<String> requestParams = paramNames(request);
-    
+
         Collection<String> invalidParams = determineInvalidParameters(requestParams);
         if (!invalidParams.isEmpty()) {
             throw new InvalidParameterException(invalidParameterMessage(invalidParams));
         }
-    
+
         Collection<String> missingParams = determineMissingParameters(requestParams);
         if (!missingParams.isEmpty()) {
             throw new InvalidParameterException(missingParameterMessage(missingParams));
@@ -30,7 +31,7 @@ public abstract class AbstractRequestParameterValidator {
         if (!missingParams.isEmpty()) {
             throw new InvalidParameterException(conflictingParameterMessage(conflictingParams));
         }
-    
+
         return request;
     }
 

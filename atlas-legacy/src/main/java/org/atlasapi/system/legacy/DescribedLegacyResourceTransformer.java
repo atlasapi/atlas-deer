@@ -9,22 +9,22 @@ import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Described;
 import org.atlasapi.media.entity.Identified;
 import org.atlasapi.media.entity.Topic;
+
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public abstract class DescribedLegacyResourceTransformer<F extends Described, T extends org.atlasapi.content.Described>
-    extends BaseLegacyResourceTransformer<F, T> {
-    
+        extends BaseLegacyResourceTransformer<F, T> {
+
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
     public final T apply(F input) {
         T described = createDescribed(input);
-        
+
         setIdentifiedFields(described, input);
-        
+
         described.addAliases(moreAliases(input));
 
         described.setActivelyPublished(input.isActivelyPublished());
@@ -55,17 +55,22 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         return described;
     }
 
-    private org.atlasapi.content.Priority transformPriority(org.atlasapi.media.entity.Priority legacy) {
+    private org.atlasapi.content.Priority transformPriority(
+            org.atlasapi.media.entity.Priority legacy) {
         if (legacy == null) {
             return null;
         }
-        return new org.atlasapi.content.Priority(legacy.getScore(),
+        return new org.atlasapi.content.Priority(
+                legacy.getScore(),
                 new PriorityScoreReasons(
                         legacy.getReasons().getPositive(),
-                        legacy.getReasons().getNegative()));
+                        legacy.getReasons().getNegative()
+                )
+        );
     }
 
-    protected <I extends org.atlasapi.entity.Identified> void setIdentifiedFields(I i, Identified input) {
+    protected <I extends org.atlasapi.entity.Identified> void setIdentifiedFields(I i,
+            Identified input) {
         i.setAliases(transformAliases(input));
         i.setCanonicalUri(input.getCanonicalUri());
         i.setCurie(input.getCurie());
@@ -80,10 +85,8 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         }
     }
 
-
-
     protected abstract T createDescribed(F input);
-    
+
     private Synopses getSynopses(org.atlasapi.media.entity.Described input) {
         Synopses synopses = Synopses.withShortDescription(input.getShortDescription());
         synopses.setMediumDescription(input.getMediumDescription());

@@ -36,16 +36,16 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
 
         builder.setDescribed(describedSerializer.serialize(src));
 
-        if(src.getSource() != null) {
+        if (src.getSource() != null) {
             builder.setSource(src.getSource().key());
         }
-        if(src.getType() != null) {
+        if (src.getType() != null) {
             builder.setType(src.getType().key());
         }
-        if(src.getNamespace() != null) {
+        if (src.getNamespace() != null) {
             builder.setNamespace(src.getNamespace());
         }
-        if(src.getValue() != null) {
+        if (src.getValue() != null) {
             builder.setValue(src.getValue());
         }
 
@@ -59,16 +59,16 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
             describedSerializer.deserialize(msg.getDescribed(), topic);
         }
 
-        if(msg.hasType()) {
+        if (msg.hasType()) {
             topic.setType(Type.fromKey(msg.getType()));
         }
-        if(msg.hasNamespace()) {
+        if (msg.hasNamespace()) {
             topic.setNamespace(msg.getNamespace());
         }
-        if(msg.hasValue()) {
+        if (msg.hasValue()) {
             topic.setValue(msg.getValue());
         }
-        if(msg.hasSource()) {
+        if (msg.hasSource()) {
             topic.setPublisher(Sources.fromPossibleKey(msg.getSource()).get());
         }
 

@@ -1,8 +1,7 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import java.util.List;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
@@ -10,17 +9,18 @@ import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Test;
 
-import java.util.List;
-
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class ChannelsBroadcastFilterTest {
-
 
     @Test
     public void testSortAndFilter() {
@@ -65,7 +65,10 @@ public class ChannelsBroadcastFilterTest {
         ChannelsBroadcastFilter filter = new ChannelsBroadcastFilter();
         List<Broadcast> expected = ImmutableList.of(b1, b3, b4, b6);
         for (List<Broadcast> broadcastList : Collections2.permutations(broadcasts)) {
-            Iterable<Broadcast> orderedAndDeduped = filter.sortAndFilter(broadcastList, channelGroup);
+            Iterable<Broadcast> orderedAndDeduped = filter.sortAndFilter(
+                    broadcastList,
+                    channelGroup
+            );
             assertThat(orderedAndDeduped, is(expected));
         }
     }

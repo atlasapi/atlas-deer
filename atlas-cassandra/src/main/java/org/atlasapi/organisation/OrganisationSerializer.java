@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 import org.atlasapi.content.ContentGroupSerializer;
 import org.atlasapi.entity.PersonSerializer;
 import org.atlasapi.entity.Serializer;
-import org.atlasapi.organisation.Organisation;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
 public class OrganisationSerializer implements Serializer<Organisation, CommonProtos.Organisation> {

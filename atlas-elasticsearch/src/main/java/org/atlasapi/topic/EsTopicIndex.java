@@ -1,9 +1,5 @@
 package org.atlasapi.topic;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.topic.EsTopic.ID;
-import static org.atlasapi.topic.EsTopic.SOURCE;
-
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.IndexQueryResult;
@@ -14,6 +10,15 @@ import org.atlasapi.util.EsObject;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
+
+import com.metabroadcast.common.query.Selection;
+
+import com.google.common.base.Objects;
+import com.google.common.collect.FluentIterable;
+import com.google.common.util.concurrent.AbstractIdleService;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -25,28 +30,25 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.FluentIterable;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import com.metabroadcast.common.query.Selection;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.topic.EsTopic.ID;
+import static org.atlasapi.topic.EsTopic.SOURCE;
 
 public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
 
     private static final int DEFAULT_LIMIT = 50;
 
     private final Logger log = LoggerFactory.getLogger(EsTopicIndex.class);
-    
+
     private final Client esClient;
     private final String indexName;
     private final long timeOutDuration;
     private final TimeUnit timeOutUnit;
-    
+
     private final EsQueryBuilder builder = new EsQueryBuilder();
 
-    public EsTopicIndex(Client esClient, String indexName, long timeOutDuration, TimeUnit timeOutUnit) {
+    public EsTopicIndex(Client esClient, String indexName, long timeOutDuration,
+            TimeUnit timeOutUnit) {
         this.esClient = checkNotNull(esClient);
         this.indexName = checkNotNull(indexName);
         this.timeOutDuration = timeOutDuration;
@@ -57,13 +59,13 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
     protected void startUp() throws Exception {
         IndicesAdminClient indices = esClient.admin().indices();
         IndicesExistsResponse exists = get(indices.exists(
-            Requests.indicesExistsRequest(indexName)
+                Requests.indicesExistsRequest(indexName)
         ));
         if (!exists.isExists()) {
             log.info("Creating index {}", indexName);
             get(indices.create(Requests.createIndexRequest(indexName)));
             get(indices.putMapping(Requests.putMappingRequest(indexName)
-                .type(EsTopic.TYPE_NAME).source(EsTopic.getMapping())
+                    .type(EsTopic.TYPE_NAME).source(EsTopic.getMapping())
             ));
         } else {
             log.info("Index {} exists", indexName);
@@ -81,38 +83,38 @@ public class EsTopicIndex extends AbstractIdleService implements TopicIndex {
 
     public void index(Topic topic) {
         IndexRequest request = Requests.indexRequest(indexName)
-            .type(EsTopic.TYPE_NAME)
-            .id(topic.getId().toString())
-            .source(toEsTopic(topic).toMap());
+                .type(EsTopic.TYPE_NAME)
+                .id(topic.getId().toString())
+                .source(toEsTopic(topic).toMap());
         esClient.index(request).actionGet(timeOutDuration, timeOutUnit);
         log.debug("indexed {}", topic);
     }
-    
+
     private EsObject toEsTopic(Topic topic) {
         return new EsTopic()
-            .id(topic.getId().longValue())
-            .type(topic.getType())
-            .source(topic.getSource())
-            .aliases(topic.getAliases())
-            .title(topic.getTitle())
-            .description(topic.getDescription());
+                .id(topic.getId().longValue())
+                .type(topic.getType())
+                .source(topic.getSource())
+                .aliases(topic.getAliases())
+                .title(topic.getTitle())
+                .description(topic.getDescription());
     }
-    
+
     @Override
-    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query, 
-        Iterable<Publisher> publishers, Selection selection) {
+    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
         esClient
-            .prepareSearch(indexName)
-            .setTypes(EsTopic.TYPE_NAME)
-            .setQuery(builder.buildQuery(query))
-            .addField(ID)
-            .setPostFilter(FiltersBuilder.buildForPublishers(SOURCE, publishers))
-            .setFrom(selection.getOffset())
-            .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
-            .addSort(EsTopic.ID, SortOrder.ASC)
-            .execute(FutureSettingActionListener.setting(response));
-        
+                .prepareSearch(indexName)
+                .setTypes(EsTopic.TYPE_NAME)
+                .setQuery(builder.buildQuery(query))
+                .addField(ID)
+                .setPostFilter(FiltersBuilder.buildForPublishers(SOURCE, publishers))
+                .setFrom(selection.getOffset())
+                .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT))
+                .addSort(EsTopic.ID, SortOrder.ASC)
+                .execute(FutureSettingActionListener.setting(response));
+
         return Futures.transform(response, (SearchResponse input) -> {
             /*
              * TODO: if

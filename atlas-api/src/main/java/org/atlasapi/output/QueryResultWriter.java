@@ -1,23 +1,24 @@
 package org.atlasapi.output;
 
-import org.atlasapi.query.common.QueryResult;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.atlasapi.query.common.QueryResult;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * <p>Writes out the result of a query, a {@link QueryResult} via the provided
- * {@link ResponseWriter}</p>
- * 
+ * <p>Writes out the result of a query, a {@link QueryResult} via the provided {@link
+ * ResponseWriter}</p>
+ *
  * @param <T>
  */
 public abstract class QueryResultWriter<T> {
 
     private final EntityWriter<Object> licenseWriter;
     private final EntityWriter<HttpServletRequest> requestWriter;
+
     protected QueryResultWriter(
             EntityWriter<Object> licenseWriter,
             EntityWriter<HttpServletRequest> requestWriter
@@ -48,6 +49,7 @@ public abstract class QueryResultWriter<T> {
         responseWriter.finishResponse();
     }
 
-    protected abstract void writeResult(QueryResult<T> result, ResponseWriter writer) throws IOException;
+    protected abstract void writeResult(QueryResult<T> result, ResponseWriter writer)
+            throws IOException;
 
 }

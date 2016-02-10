@@ -18,5 +18,4 @@ public class ReadException extends Exception {
         super(cause);
     }
 
-    
 }

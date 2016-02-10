@@ -1,14 +1,15 @@
 package org.atlasapi.topic;
 
 import org.atlasapi.entity.Id;
-import org.joda.time.Interval;
+
+import com.metabroadcast.common.query.Selection;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.query.Selection;
+import org.joda.time.Interval;
 
 public interface PopularTopicIndex {
-   
+
     ListenableFuture<FluentIterable<Id>> popularTopics(Interval interval, Selection selection);
-    
+
 }

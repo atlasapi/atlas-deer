@@ -10,7 +10,8 @@ public class SortAttributeQuery extends AttributeQuery<String> {
         super(attribute, op, values);
     }
 
-    @Override public <V> V accept(QueryVisitor<V> v) {
+    @Override
+    public <V> V accept(QueryVisitor<V> v) {
         return v.visit(this);
     }
 }

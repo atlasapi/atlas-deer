@@ -1,9 +1,9 @@
 package org.atlasapi.query.common.useraware;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class UserAwareQuery<T> {
 
@@ -30,7 +30,7 @@ public abstract class UserAwareQuery<T> {
 
     public abstract AttributeQuerySet getOperands();
 
-    public abstract Id getOnlyId();    
+    public abstract Id getOnlyId();
 
     public static final class SingleQuery<T> extends UserAwareQuery<T> {
 
@@ -53,7 +53,7 @@ public abstract class UserAwareQuery<T> {
         @Override
         public AttributeQuerySet getOperands() {
             throw new IllegalStateException(
-                "Query.getOperands() cannot be called on a single query");
+                    "Query.getOperands() cannot be called on a single query");
         }
 
     }

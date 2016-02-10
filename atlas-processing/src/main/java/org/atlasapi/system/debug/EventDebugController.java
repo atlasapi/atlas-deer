@@ -1,7 +1,5 @@
 package org.atlasapi.system.debug;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.AtlasPersistenceModule;
@@ -10,9 +8,9 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
-import org.joda.time.DateTime;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -22,8 +20,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import org.joda.time.DateTime;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EventDebugController {
 
@@ -38,15 +39,17 @@ public class EventDebugController {
         this.legacyPersistenceModule = checkNotNull(legacyPersistenceModule);
         this.atlasPersistenceModule = checkNotNull(atlasPersistenceModule);
         this.lowercaseDecoder = SubstitutionTableNumberCodec.lowerCaseOnly();
-        this.gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
+        this.gson = new GsonBuilder().registerTypeAdapter(
+                DateTime.class,
                 (JsonSerializer<DateTime>) (src, typeOfSrc, context) ->
-                        new JsonPrimitive(src.toString()))
+                        new JsonPrimitive(src.toString())
+        )
                 .create();
     }
 
     @RequestMapping("/system/debug/event/{id}/legacy")
     public void printLegacyEvent(@PathVariable("id") String id, HttpServletResponse response)
-        throws Exception {
+            throws Exception {
         Id decodedId = Id.valueOf(lowercaseDecoder.decode(id));
 
         EventResolver legacyEventResolver = legacyPersistenceModule.legacyEventResolver();
@@ -60,7 +63,7 @@ public class EventDebugController {
 
     @RequestMapping("/system/debug/event/{id}")
     public void printEvent(@PathVariable("id") String id, HttpServletResponse response)
-        throws Exception {
+            throws Exception {
         Id decodedId = Id.valueOf(lowercaseDecoder.decode(id));
 
         EventResolver eventResolver = atlasPersistenceModule.eventResolver();

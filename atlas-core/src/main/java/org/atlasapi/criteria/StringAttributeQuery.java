@@ -18,26 +18,26 @@ import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.criteria.operator.StringOperatorVisitor;
 
-
 public class StringAttributeQuery extends AttributeQuery<String> {
 
-	private final StringOperator op;
+    private final StringOperator op;
 
-	public StringAttributeQuery(Attribute<String> attribute, StringOperator op,  Iterable<String> values) {
-		super(attribute, op, values);
-		this.op = op;
-	}
+    public StringAttributeQuery(Attribute<String> attribute, StringOperator op,
+            Iterable<String> values) {
+        super(attribute, op, values);
+        this.op = op;
+    }
 
-	public <V> V accept(QueryVisitor<V> visitor) {
-		return visitor.visit(this);
-	}
-	
-	public <V> V accept(StringOperatorVisitor<V> v) {
-		return op.accept(v);
-	}
+    public <V> V accept(QueryVisitor<V> visitor) {
+        return visitor.visit(this);
+    }
 
-	public StringOperator getOperator() {
-		return op;
-	}
+    public <V> V accept(StringOperatorVisitor<V> v) {
+        return op.accept(v);
+    }
+
+    public StringOperator getOperator() {
+        return op;
+    }
 
 }

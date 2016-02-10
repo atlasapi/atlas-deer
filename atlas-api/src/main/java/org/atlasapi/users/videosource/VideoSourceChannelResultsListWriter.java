@@ -8,7 +8,6 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.users.videosource.model.VideoSourceChannel;
 import org.atlasapi.users.videosource.model.VideoSourceChannelResults;
 
-
 public class VideoSourceChannelResultsListWriter implements
         EntityListWriter<VideoSourceChannelResults> {
 

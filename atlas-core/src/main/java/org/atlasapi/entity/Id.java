@@ -6,25 +6,25 @@ import com.google.common.base.Function;
 import com.google.common.primitives.Longs;
 
 public final class Id implements Comparable<Id> {
-    
+
     public static final Function<Id, Long> toLongValue() {
         return ToLongValueFunction.INSTANCE;
     }
-    
+
     private enum ToLongValueFunction implements Function<Id, Long> {
         INSTANCE;
-        
+
         @Override
         public Long apply(Id input) {
             return input.longValue;
         }
-        
+
     }
-    
+
     public static final Function<Long, Id> fromLongValue() {
         return FromLongValueFunction.INSTANCE;
     }
-    
+
     private enum FromLongValueFunction implements Function<Long, Id> {
         INSTANCE;
 
@@ -33,18 +33,17 @@ public final class Id implements Comparable<Id> {
             return Id.valueOf(input);
         }
     }
-    
+
     public static Id valueOf(String id) {
         return valueOf(Long.parseLong(id));
     }
-    
 
     public static final Id valueOf(BigInteger bigInt) {
         return valueOf(bigInt.longValue());
     }
 
     public static final Id valueOf(int intValue) {
-        return valueOf((long)intValue);
+        return valueOf((long) intValue);
     }
 
     public static final Id valueOf(long longValue) {
@@ -68,7 +67,7 @@ public final class Id implements Comparable<Id> {
     public BigInteger toBigInteger() {
         return BigInteger.valueOf(longValue);
     }
-    
+
     @Override
     public int compareTo(Id other) {
         return Longs.compare(longValue, other.longValue);
@@ -85,12 +84,12 @@ public final class Id implements Comparable<Id> {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return Longs.hashCode(longValue);
     }
-    
+
     @Override
     public String toString() {
         return String.valueOf(longValue);

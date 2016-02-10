@@ -1,9 +1,9 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Query<T> {
 
@@ -12,7 +12,7 @@ public abstract class Query<T> {
     }
 
     public static final <T> ListQuery<T> listQuery(AttributeQuerySet operands,
-                                               QueryContext context) {
+            QueryContext context) {
         return new ListQuery<T>(operands, context);
     }
 
@@ -53,7 +53,7 @@ public abstract class Query<T> {
         @Override
         public AttributeQuerySet getOperands() {
             throw new IllegalStateException(
-                "Query.getOperands() cannot be called on a single query");
+                    "Query.getOperands() cannot be called on a single query");
         }
 
     }

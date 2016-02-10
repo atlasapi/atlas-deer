@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.topic;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -13,6 +11,8 @@ import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.topic.Topic;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class TopicListWriter implements EntityListWriter<Topic> {
 
     private final AnnotationRegistry<Topic> annotationRegistry;
@@ -20,7 +20,7 @@ public class TopicListWriter implements EntityListWriter<Topic> {
     public TopicListWriter(AnnotationRegistry<Topic> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
-    
+
     @Override
     public void write(Topic entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.TOPIC);

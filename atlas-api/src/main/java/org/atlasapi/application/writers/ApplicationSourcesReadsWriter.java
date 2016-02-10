@@ -10,6 +10,7 @@ import org.atlasapi.output.OutputContext;
 
 public class ApplicationSourcesReadsWriter implements
         EntityListWriter<SourceReadEntry> {
+
     private final SourceIdCodec sourceIdCodec;
 
     public ApplicationSourcesReadsWriter(SourceIdCodec sourceIdCodec) {
@@ -24,7 +25,10 @@ public class ApplicationSourcesReadsWriter implements
         writer.writeField("title", entity.getPublisher().title());
         writer.writeField("state", entity.getSourceStatus().getState().toString().toLowerCase());
         writer.writeField("enabled", entity.getSourceStatus().isEnabled());
-        writer.writeField("restriction", entity.getPublisher().restriction().toString().toLowerCase());
+        writer.writeField(
+                "restriction",
+                entity.getPublisher().restriction().toString().toLowerCase()
+        );
     }
 
     @Override

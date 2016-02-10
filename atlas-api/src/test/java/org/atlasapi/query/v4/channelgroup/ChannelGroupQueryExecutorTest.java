@@ -1,13 +1,5 @@
 package org.atlasapi.query.v4.channelgroup;
 
-
-import com.google.api.client.util.Lists;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.query.Selection;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -20,6 +12,14 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+
+import com.metabroadcast.common.query.Selection;
+
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -40,9 +40,9 @@ public class ChannelGroupQueryExecutorTest {
     @Mock
     private ChannelGroupResolver channelGroupResolver;
 
-
     @InjectMocks
     private ChannelGroupQueryExecutor objectUnderTest;
+
     @Test
     public void testExecuteSingle() throws Exception {
         Id channelGroupId = Id.valueOf(1L);
@@ -52,7 +52,8 @@ public class ChannelGroupQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.getContext()).thenReturn(context);
-        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(channelGroupId))))
+        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
+                channelGroupId))))
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableSet.of(result))
@@ -94,7 +95,8 @@ public class ChannelGroupQueryExecutorTest {
         when(attributeQuery.getAttribute()).thenReturn(attribute);
         when(attribute.getPath()).thenReturn(ImmutableList.of("path"));
 
-        AttributeQuerySet attributeQueries =  new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet(attributeQuery));
+        AttributeQuerySet attributeQueries = new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet(
+                attributeQuery));
 
         when(channelQuery.getOperands()).thenReturn(attributeQueries);
 

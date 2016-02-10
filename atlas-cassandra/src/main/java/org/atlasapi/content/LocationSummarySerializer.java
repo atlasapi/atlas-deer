@@ -33,7 +33,7 @@ public class LocationSummarySerializer {
     public LocationSummary deserialize(CommonProtos.LocationSummary msg) {
         return new LocationSummary(
                 msg.hasAvailable() ? msg.getAvailable() : null,
-                msg.hasUri() ? msg.getUri(): null,
+                msg.hasUri() ? msg.getUri() : null,
                 msg.hasAvailabilityStart() ?
                 dateTimeSerializer.deserialize(msg.getAvailabilityStart()) : null,
                 msg.hasAvailabilityEnd() ?

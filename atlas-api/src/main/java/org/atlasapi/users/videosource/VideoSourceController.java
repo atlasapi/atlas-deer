@@ -14,6 +14,7 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.users.videosource.model.VideoSourceOAuthProvider;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -41,7 +42,11 @@ public class VideoSourceController {
         try {
             writer = writerResolver.writerFor(request, response);
             QueryResult<VideoSourceOAuthProvider> queryResult =
-                    QueryResult.listResult(VideoSourceOAuthProvider.all(), QueryContext.standard(request), VideoSourceOAuthProvider.all().size());
+                    QueryResult.listResult(
+                            VideoSourceOAuthProvider.all(),
+                            QueryContext.standard(request),
+                            VideoSourceOAuthProvider.all().size()
+                    );
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

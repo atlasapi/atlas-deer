@@ -1,6 +1,9 @@
 package org.atlasapi.query.v4.channel;
 
-import com.google.common.collect.FluentIterable;
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -9,8 +12,7 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.query.common.QueryResult;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
+import com.google.common.collect.FluentIterable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

@@ -16,6 +16,6 @@ package org.atlasapi.criteria.operator;
 
 public interface DateTimeOperator extends Operator {
 
-	<V> V accept(DateTimeOperatorVisitor<V> visitor);
+    <V> V accept(DateTimeOperatorVisitor<V> visitor);
 
 }

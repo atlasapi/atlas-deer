@@ -1,12 +1,12 @@
 package org.atlasapi.output.annotation;
 
+import java.io.IOException;
+
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
-
-import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

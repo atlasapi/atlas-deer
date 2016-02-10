@@ -1,15 +1,16 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import com.metabroadcast.common.query.Selection;
 
-import javax.servlet.http.HttpServletRequest;
+import com.google.common.base.Objects;
+import com.google.common.base.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class QueryContext {
 
@@ -17,9 +18,10 @@ public class QueryContext {
         return new QueryContext(
                 ApplicationSources.defaults(),
                 ActiveAnnotations.standard(),
-                request);
+                request
+        );
     }
-    
+
     private final ApplicationSources appSources;
     private final ActiveAnnotations annotations;
     private final Optional<Selection> selection;
@@ -32,7 +34,7 @@ public class QueryContext {
     ) {
         this(appSources, annotations, null, request);
     }
-    
+
     public QueryContext(
             ApplicationSources appSources,
             ActiveAnnotations annotations,
@@ -52,7 +54,7 @@ public class QueryContext {
     public ActiveAnnotations getAnnotations() {
         return this.annotations;
     }
-    
+
     public Optional<Selection> getSelection() {
         return this.selection;
     }
@@ -69,8 +71,8 @@ public class QueryContext {
         if (that instanceof QueryContext) {
             QueryContext other = (QueryContext) that;
             return appSources.equals(other.appSources)
-                && annotations.equals(other.annotations)
-                && selection.equals(other.selection);
+                    && annotations.equals(other.annotations)
+                    && selection.equals(other.selection);
         }
         return false;
     }
@@ -83,9 +85,9 @@ public class QueryContext {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-            .add("config", appSources)
-            .add("annotations", annotations)
-            .add("selection", selection)
-            .toString();
+                .add("config", appSources)
+                .add("annotations", annotations)
+                .add("selection", selection)
+                .toString();
     }
 }

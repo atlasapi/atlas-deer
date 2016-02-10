@@ -4,20 +4,20 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.ResourceType;
 import org.atlasapi.media.entity.Publisher;
-
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
 
 public class SegmentRef extends ResourceRef {
-    
-    public static final Function<SegmentRef, Id> TO_ID = new Function<SegmentRef, Id>(){
+
+    public static final Function<SegmentRef, Id> TO_ID = new Function<SegmentRef, Id>() {
+
         @Override
         public Id apply(SegmentRef input) {
             return input.getId();
         }
     };
-    
+
     public SegmentRef(Id id, Publisher source) {
         super(id, source);
     }

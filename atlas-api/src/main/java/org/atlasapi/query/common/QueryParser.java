@@ -8,5 +8,5 @@ import org.atlasapi.content.QueryParseException;
 public interface QueryParser<T> {
 
     Query<T> parse(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException;
-    
+
 }

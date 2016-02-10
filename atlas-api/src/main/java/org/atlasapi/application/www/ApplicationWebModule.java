@@ -1,8 +1,8 @@
 package org.atlasapi.application.www;
 
-import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
-
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
@@ -72,8 +72,6 @@ import org.atlasapi.input.ModelReader;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
-import org.atlasapi.output.License;
-import org.atlasapi.output.writers.LicenseWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
@@ -92,23 +90,7 @@ import org.atlasapi.users.videosource.VideoSourceOAuthProvidersQueryResultWriter
 import org.atlasapi.users.videosource.VideoSourceOauthProvidersListWriter;
 import org.atlasapi.users.videosource.remote.RemoteSourceUpdaterClient;
 import org.atlasapi.users.videosource.youtube.YouTubeLinkedServiceController;
-import org.elasticsearch.common.collect.Maps;
-import org.joda.time.DateTime;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.reflect.TypeToken;
 import com.metabroadcast.common.http.HttpClients;
 import com.metabroadcast.common.http.SimpleHttpClient;
 import com.metabroadcast.common.ids.IdGenerator;
@@ -126,12 +108,33 @@ import com.metabroadcast.common.social.user.TwitterOAuth1AccessTokenChecker;
 import com.metabroadcast.common.time.SystemClock;
 import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
 
-import javax.servlet.http.HttpServletRequest;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.reflect.TypeToken;
+import org.elasticsearch.common.collect.Maps;
+import org.joda.time.DateTime;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping;
+
+import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
 
 @Configuration
-@Import({AtlasPersistenceModule.class, ApplicationPersistenceModule.class, NotifierModule.class, LicenseModule.class})
+@Import({
+        AtlasPersistenceModule.class,
+        ApplicationPersistenceModule.class,
+        NotifierModule.class,
+        LicenseModule.class })
 public class ApplicationWebModule {
-    
+
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final SourceIdCodec sourceIdCodec = new SourceIdCodec(idCodec);
     private final JsonDeserializer<Id> idDeserializer = new IdDeserializer(idCodec);
@@ -139,49 +142,51 @@ public class ApplicationWebModule {
     private final JsonDeserializer<SourceReadEntry> readsDeserializer = new SourceReadEntryDeserializer();
     private final JsonDeserializer<Publisher> publisherDeserializer = new PublisherDeserializer();
     private final JsonDeserializer<Role> roleDeserializer = new RoleDeserializer();
-    
+
     @Autowired AtlasPersistenceModule persistence;
     @Autowired ApplicationPersistenceModule appPersistence;
     @Autowired NotifierModule notifier;
-    
+
     @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
 
     private static final String APP_NAME = "atlas";
-    
+
     @Value("${twitter.auth.consumerKey}") private String twitterConsumerKey;
     @Value("${twitter.auth.consumerSecret}") private String twitterConsumerSecret;
-    
+
     @Value("${github.auth.consumerKey}") private String githubConsumerKey;
     @Value("${github.auth.consumerSecret}") private String githubConsumerSecret;
-    
+
     @Value("${google.auth.consumerKey}") private String googleConsumerKey;
     @Value("${google.auth.consumerSecret}") private String googleConsumerSecret;
-    
+
     @Value("${youtube.clientId}") private String youTubeClientId;
     @Value("${youtube.clientSecret}") private String youTubeClientSecret;
-    
+
     @Value("${youtube.handling.service}") private String handlingService;
-    
+
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(DateTime.class, datetimeDeserializer)
             .registerTypeAdapter(Id.class, idDeserializer)
             .registerTypeAdapter(SourceReadEntry.class, readsDeserializer)
             .registerTypeAdapter(Publisher.class, publisherDeserializer)
             .registerTypeAdapter(Role.class, roleDeserializer)
-            .registerTypeAdapter(new TypeToken<Optional<DateTime>>(){}.getType(), new OptionalDeserializer())
+            .registerTypeAdapter(new TypeToken<Optional<DateTime>>() {
+
+            }.getType(), new OptionalDeserializer())
             .setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES)
             .create();
-    
+
     @Bean
     protected ModelReader gsonModelReader() {
         return new GsonModelReader(gson);
     }
-    
+
     @Bean
     ResourceAnnotationIndex applicationAnnotationIndex() {
         return ResourceAnnotationIndex.builder(Resource.APPLICATION, Annotation.all()).build();
     }
-    
+
     @Bean
     SelectionBuilder selectionBuilder() {
         return Selection.builder().withDefaultLimit(50).withMaxLimit(100);
@@ -193,14 +198,20 @@ public class ApplicationWebModule {
 
     }
 
-    public @Bean
+    public
+    @Bean
     AuthController authController() {
         return new AuthController(
-                new AuthProvidersQueryResultWriter(new AuthProvidersListWriter(), licenseWriter, requestWriter()),
+                new AuthProvidersQueryResultWriter(
+                        new AuthProvidersListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                ),
                 userFetcher(),
-                idCodec);
+                idCodec
+        );
     }
-    
+
     @Bean
     public ApplicationsController applicationAdminController() {
         return new ApplicationsController(
@@ -212,17 +223,21 @@ public class ApplicationWebModule {
                 sourceIdCodec,
                 appPersistence.applicationStore(),
                 userFetcher(),
-                appPersistence.userStore());
+                appPersistence.userStore()
+        );
     }
-    
-    public @Bean DefaultAnnotationHandlerMapping controllerMappings() {
+
+    public
+    @Bean
+    DefaultAnnotationHandlerMapping controllerMappings() {
         DefaultAnnotationHandlerMapping controllerClassNameHandlerMapping = new DefaultAnnotationHandlerMapping();
         Object[] interceptors = { getAuthenticationInterceptor() };
         controllerClassNameHandlerMapping.setInterceptors(interceptors);
         return controllerClassNameHandlerMapping;
     }
-    
-    @Bean OAuthInterceptor getAuthenticationInterceptor() {
+
+    @Bean
+    OAuthInterceptor getAuthenticationInterceptor() {
         return OAuthInterceptor
                 .builder()
                 .withUserFetcher(userFetcher())
@@ -233,199 +248,318 @@ public class ApplicationWebModule {
                         "/4/requests",
                         "/4/users",
                         "/4/auth/user",
-                        "/4/videosource"))
-               .withUrlsNotNeedingCompleteProfile(ImmutableSet.of(
-                "/4/auth/user",
-                "/4/users/:uid",
-                "/4/eula",
-                "/4/users/:uid/eula/accept"))
-               .withExemptions(ImmutableSet.of(
-                		"/4/videosource/youtube/token.json"
-                		))
+                        "/4/videosource"
+                ))
+                .withUrlsNotNeedingCompleteProfile(ImmutableSet.of(
+                        "/4/auth/user",
+                        "/4/users/:uid",
+                        "/4/eula",
+                        "/4/users/:uid/eula/accept"
+                ))
+                .withExemptions(ImmutableSet.of(
+                        "/4/videosource/youtube/token.json"
+                ))
                 .build();
     }
-    
-    @Bean 
+
+    @Bean
     public SourcesController sourcesController() {
-        return new SourcesController(sourcesQueryParser(), 
+        return new SourcesController(
+                sourcesQueryParser(),
                 soucesQueryExecutor(),
-                new SourcesQueryResultWriter(new SourceWithIdWriter(sourceIdCodec, "source", "sources")),
+                new SourcesQueryResultWriter(new SourceWithIdWriter(
+                        sourceIdCodec,
+                        "source",
+                        "sources"
+                )),
                 idCodec,
                 sourceIdCodec,
                 appPersistence.applicationStore(),
-                userFetcher());
+                userFetcher()
+        );
     }
-    
+
     @Bean
     public SourceRequestsController sourceRequestsController() {
-        IdGenerator idGenerator = new MongoSequentialIdGenerator(persistence.databasedWriteMongo(), "sourceRequest");
-        SourceRequestManager manager = new SourceRequestManager(appPersistence.sourceRequestStore(), 
-                appPersistence.applicationStore(), 
+        IdGenerator idGenerator = new MongoSequentialIdGenerator(
+                persistence.databasedWriteMongo(),
+                "sourceRequest"
+        );
+        SourceRequestManager manager = new SourceRequestManager(
+                appPersistence.sourceRequestStore(),
+                appPersistence.applicationStore(),
                 idGenerator,
                 notifier.emailSender(),
-                new SystemClock());
-        return new SourceRequestsController(sourceRequestsQueryParser(),
+                new SystemClock()
+        );
+        return new SourceRequestsController(
+                sourceRequestsQueryParser(),
                 new SourceRequestQueryExecutor(appPersistence.sourceRequestStore()),
-                new SourceRequestsQueryResultsWriter(new SourceRequestListWriter(sourceIdCodec, idCodec)),
+                new SourceRequestsQueryResultsWriter(new SourceRequestListWriter(
+                        sourceIdCodec,
+                        idCodec
+                )),
                 manager,
                 idCodec,
                 sourceIdCodec,
-                userFetcher());
+                userFetcher()
+        );
     }
-    
+
     @Bean
     public UsersController usersController() {
-        return new UsersController(usersQueryParser(),
+        return new UsersController(
+                usersQueryParser(),
                 new UsersQueryExecutor(appPersistence.userStore()),
                 new UsersQueryResultWriter(usersListWriter()),
                 gsonModelReader(),
                 idCodec,
                 userFetcher(),
                 appPersistence.userStore(),
-                new SystemClock());
+                new SystemClock()
+        );
     }
-    
+
     private StandardUserAwareQueryParser<Application> applicationQueryParser() {
-        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(), userFetcher(),
-                new IndexAnnotationsExtractor(applicationAnnotationIndex()), selectionBuilder());
+        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(),
+                userFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
 
         return new StandardUserAwareQueryParser<Application>(Resource.APPLICATION,
                 new QueryAttributeParser(ImmutableList.of(
-                    QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec)),
-                    QueryAtomParser.valueOf(Attributes.SOURCE_READS, AttributeCoercers.sourceIdCoercer(sourceIdCodec)),
-                    QueryAtomParser.valueOf(Attributes.SOURCE_WRITES, AttributeCoercers.sourceIdCoercer(sourceIdCodec))
-                    )),
-                idCodec, contextParser);
+                        QueryAtomParser.valueOf(
+                                Attributes.ID,
+                                AttributeCoercers.idCoercer(idCodec)
+                        ),
+                        QueryAtomParser.valueOf(
+                                Attributes.SOURCE_READS,
+                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                        ),
+                        QueryAtomParser.valueOf(
+                                Attributes.SOURCE_WRITES,
+                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                        )
+                )),
+                idCodec, contextParser
+        );
     }
-    
+
     @Bean
     protected EntityListWriter<Application> applicationListWriter() {
         return new ApplicationListWriter(idCodec, sourceIdCodec);
     }
-    
+
     private StandardUserAwareQueryParser<User> usersQueryParser() {
-        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(), userFetcher(),
-                new IndexAnnotationsExtractor(applicationAnnotationIndex()), selectionBuilder());
+        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(),
+                userFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
 
         return new StandardUserAwareQueryParser<User>(Resource.USER,
                 new QueryAttributeParser(ImmutableList.of(
-                    QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
                 )),
-                idCodec, contextParser);
+                idCodec, contextParser
+        );
     }
-    
+
     @Bean
     protected EntityListWriter<User> usersListWriter() {
         return new UsersListWriter(idCodec, sourceIdCodec);
     }
-    
-    public @Bean
+
+    public
+    @Bean
     ApplicationSourcesFetcher configFetcher() {
-         return new ApiKeySourcesFetcher(appPersistence.applicationStore());
+        return new ApiKeySourcesFetcher(appPersistence.applicationStore());
     }
-    
-    public @Bean
+
+    public
+    @Bean
     UserFetcher userFetcher() {
         Map<UserNamespace, AccessTokenChecker> checkers = Maps.newHashMap();
-        checkers.put(UserNamespace.TWITTER, new CachingAccessTokenChecker(twitterAccessTokenChecker()));
-        checkers.put(UserNamespace.GITHUB, new CachingAccessTokenChecker(gitHubAccessTokenChecker()));
-        checkers.put(UserNamespace.GOOGLE, new CachingAccessTokenChecker(googleAccessTokenChecker()));
-        return new OAuthTokenUserFetcher(appPersistence.credentialsStore(), 
+        checkers.put(
+                UserNamespace.TWITTER,
+                new CachingAccessTokenChecker(twitterAccessTokenChecker())
+        );
+        checkers.put(
+                UserNamespace.GITHUB,
+                new CachingAccessTokenChecker(gitHubAccessTokenChecker())
+        );
+        checkers.put(
+                UserNamespace.GOOGLE,
+                new CachingAccessTokenChecker(googleAccessTokenChecker())
+        );
+        return new OAuthTokenUserFetcher(
+                appPersistence.credentialsStore(),
                 checkers,
-                appPersistence.userStore());
+                appPersistence.userStore()
+        );
     }
-    
+
     private StandardUserAwareQueryParser<Publisher> sourcesQueryParser() {
-        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(), userFetcher(), 
-                new IndexAnnotationsExtractor(applicationAnnotationIndex()), selectionBuilder());
+        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(),
+                userFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
 
         return new StandardUserAwareQueryParser<Publisher>(Resource.SOURCE,
                 new QueryAttributeParser(ImmutableList.of(
-                    QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
                 )),
-                idCodec, contextParser);
+                idCodec, contextParser
+        );
     }
-    
+
     @Bean
     protected UserAwareQueryExecutor<Publisher> soucesQueryExecutor() {
         return new SourcesQueryExecutor(sourceIdCodec);
     }
-    
+
     private StandardUserAwareQueryParser<SourceRequest> sourceRequestsQueryParser() {
-        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(), userFetcher(), 
-                new IndexAnnotationsExtractor(applicationAnnotationIndex()), selectionBuilder());
+        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(),
+                userFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
 
         return new StandardUserAwareQueryParser<SourceRequest>(Resource.SOURCE_REQUEST,
                 new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.SOURCE_REQUEST_SOURCE,
-                                AttributeCoercers.sourceIdCoercer(sourceIdCodec))
-                    )),
-                idCodec, contextParser);
-    }
-    
-    private NewUserSupplier newUserSupplier() {
-        return new NewUserSupplier(new MongoSequentialIdGenerator(persistence.databasedWriteMongo(), "users"));
+                        QueryAtomParser.valueOf(
+                                Attributes.SOURCE_REQUEST_SOURCE,
+                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                        )
+                )),
+                idCodec, contextParser
+        );
     }
 
-    public @Bean TwitterAuthController twitterAuthController() {
-        return new TwitterAuthController(new TwitterApplication(twitterConsumerKey, twitterConsumerSecret), 
-                new AccessTokenProcessor(twitterAccessTokenChecker(), appPersistence.credentialsStore()),
-                appPersistence.userStore(), 
+    private NewUserSupplier newUserSupplier() {
+        return new NewUserSupplier(new MongoSequentialIdGenerator(
+                persistence.databasedWriteMongo(),
+                "users"
+        ));
+    }
+
+    public
+    @Bean
+    TwitterAuthController twitterAuthController() {
+        return new TwitterAuthController(
+                new TwitterApplication(twitterConsumerKey, twitterConsumerSecret),
+                new AccessTokenProcessor(
+                        twitterAccessTokenChecker(),
+                        appPersistence.credentialsStore()
+                ),
+                appPersistence.userStore(),
                 newUserSupplier(),
                 appPersistence.tokenStore(),
-                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter, requestWriter()),
-                new OAuthResultQueryResultWriter(new OAuthResultListWriter(), licenseWriter, requestWriter())
-                );
+                new OAuthRequestQueryResultWriter(
+                        new OAuthRequestListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                ),
+                new OAuthResultQueryResultWriter(
+                        new OAuthResultListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                )
+        );
     }
 
-    public @Bean GitHubAuthController gitHubAuthController() {
+    public
+    @Bean
+    GitHubAuthController gitHubAuthController() {
         return new GitHubAuthController(
                 gitHubClient(),
-                new AccessTokenProcessor(gitHubAccessTokenChecker(), appPersistence.credentialsStore()),
-                appPersistence.userStore(), 
+                new AccessTokenProcessor(
+                        gitHubAccessTokenChecker(),
+                        appPersistence.credentialsStore()
+                ),
+                appPersistence.userStore(),
                 newUserSupplier(),
                 appPersistence.tokenStore(),
-                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter,requestWriter()),
-                new OAuthResultQueryResultWriter(new OAuthResultListWriter(), licenseWriter, requestWriter())
-                );
+                new OAuthRequestQueryResultWriter(
+                        new OAuthRequestListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                ),
+                new OAuthResultQueryResultWriter(
+                        new OAuthResultListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                )
+        );
     }
 
-    public @Bean GoogleAuthController googleAuthController() {
-        return new GoogleAuthController(googleClient(),
-                appPersistence.userStore(), 
+    public
+    @Bean
+    GoogleAuthController googleAuthController() {
+        return new GoogleAuthController(
+                googleClient(),
+                appPersistence.userStore(),
                 newUserSupplier(),
-                new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter, requestWriter()),
-                new OAuthResultQueryResultWriter(new OAuthResultListWriter(), licenseWriter, requestWriter()),
-                new AccessTokenProcessor(googleAccessTokenChecker(), appPersistence.credentialsStore()), 
-                appPersistence.tokenStore());
+                new OAuthRequestQueryResultWriter(
+                        new OAuthRequestListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                ),
+                new OAuthResultQueryResultWriter(
+                        new OAuthResultListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                ),
+                new AccessTokenProcessor(
+                        googleAccessTokenChecker(),
+                        appPersistence.credentialsStore()
+                ),
+                appPersistence.tokenStore()
+        );
     }
 
-    public @Bean FixedAppIdUserRefBuilder userRefBuilder() {
+    public
+    @Bean
+    FixedAppIdUserRefBuilder userRefBuilder() {
         return new FixedAppIdUserRefBuilder(APP_NAME);
     }
-    
+
     private GitHubAuthClient gitHubClient() {
         return new GitHubAuthClient(githubConsumerKey, githubConsumerSecret);
     }
-    
+
     private GoogleAuthClient googleClient() {
         return new GoogleAuthClient(googleConsumerKey, googleConsumerSecret);
     }
-    
-    public @Bean AccessTokenChecker twitterAccessTokenChecker() {
-        return new TwitterOAuth1AccessTokenChecker(userRefBuilder() , twitterConsumerKey, twitterConsumerSecret);
+
+    public
+    @Bean
+    AccessTokenChecker twitterAccessTokenChecker() {
+        return new TwitterOAuth1AccessTokenChecker(
+                userRefBuilder(),
+                twitterConsumerKey,
+                twitterConsumerSecret
+        );
     }
-    
-    public @Bean AccessTokenChecker gitHubAccessTokenChecker() {
-        return new GitHubAccessTokenChecker(userRefBuilder() , gitHubClient());
+
+    public
+    @Bean
+    AccessTokenChecker gitHubAccessTokenChecker() {
+        return new GitHubAccessTokenChecker(userRefBuilder(), gitHubClient());
     }
-    
-    public @Bean AccessTokenChecker googleAccessTokenChecker() {
+
+    public
+    @Bean
+    AccessTokenChecker googleAccessTokenChecker() {
         return new GoogleAccessTokenChecker(userRefBuilder(), googleClient());
     }
-    
-    public @Bean VideoSourceController linkedServiceController() {
-    	return new VideoSourceController(
+
+    public
+    @Bean
+    VideoSourceController linkedServiceController() {
+        return new VideoSourceController(
                 new VideoSourceOAuthProvidersQueryResultWriter(
                         new VideoSourceOauthProvidersListWriter(),
                         licenseWriter,
@@ -434,63 +568,89 @@ public class ApplicationWebModule {
                 userFetcher()
         );
     }
-    
+
     VideoSourceChannelResultsQueryResultWriter videoSourceChannelResultsQueryResultWriter() {
-        return new VideoSourceChannelResultsQueryResultWriter(new VideoSourceChannelResultsListWriter(), licenseWriter, requestWriter());
+        return new VideoSourceChannelResultsQueryResultWriter(
+                new VideoSourceChannelResultsListWriter(),
+                licenseWriter,
+                requestWriter()
+        );
     }
-    
+
     @Bean
     public SimpleHttpClient httpClient() {
         return HttpClients.webserviceClient();
     }
-    
-    public @Bean YouTubeLinkedServiceController youTubeLinkedServiceController() {
-       
-    	RemoteSourceUpdaterClient sourceUpdaterClient = new RemoteSourceUpdaterClient(gson, 
-    	        handlingService,
-    	        httpClient());
-    	return new YouTubeLinkedServiceController(youTubeClientId, 
-    			youTubeClientSecret,
-    			new OAuthRequestQueryResultWriter(new OAuthRequestListWriter(), licenseWriter, requestWriter()),
-    			userFetcher(),
-    			idCodec,
-    			sourceIdCodec,
-    			appPersistence.linkedOauthTokenUserStore(),
-    			sourceUpdaterClient,
-    			videoSourceChannelResultsQueryResultWriter());
+
+    public
+    @Bean
+    YouTubeLinkedServiceController youTubeLinkedServiceController() {
+
+        RemoteSourceUpdaterClient sourceUpdaterClient = new RemoteSourceUpdaterClient(
+                gson,
+                handlingService,
+                httpClient()
+        );
+        return new YouTubeLinkedServiceController(
+                youTubeClientId,
+                youTubeClientSecret,
+                new OAuthRequestQueryResultWriter(
+                        new OAuthRequestListWriter(),
+                        licenseWriter,
+                        requestWriter()
+                ),
+                userFetcher(),
+                idCodec,
+                sourceIdCodec,
+                appPersistence.linkedOauthTokenUserStore(),
+                sourceUpdaterClient,
+                videoSourceChannelResultsQueryResultWriter()
+        );
     }
-    
+
     private StandardUserAwareQueryParser<SourceLicense> sourceLicenseQueryParser() {
-        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(), userFetcher(), 
-                new IndexAnnotationsExtractor(applicationAnnotationIndex()), selectionBuilder());
+        UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(),
+                userFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
         return new StandardUserAwareQueryParser<SourceLicense>(Resource.SOURCE_LICENSE,
                 new QueryAttributeParser(ImmutableList.of(
-                    QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
                 )),
-                idCodec, contextParser);
+                idCodec, contextParser
+        );
     }
-    
+
     @Bean
     protected UserAwareQueryExecutor<SourceLicense> souceLicenseQueryExecutor() {
         return new SourceLicenseQueryExecutor(sourceIdCodec, appPersistence.sourceLicenseStore());
-    }    
-    
-    public @Bean SourceLicenseController sourceLicenseController() {
-        return new SourceLicenseController(sourceLicenseQueryParser(),
+    }
+
+    public
+    @Bean
+    SourceLicenseController sourceLicenseController() {
+        return new SourceLicenseController(
+                sourceLicenseQueryParser(),
                 souceLicenseQueryExecutor(),
                 new SourceLicenseQueryResultWriter(new SourceLicenseWithIdWriter(sourceIdCodec)),
                 gsonModelReader(),
                 userFetcher(),
-                appPersistence.sourceLicenseStore()               
-              );
+                appPersistence.sourceLicenseStore()
+        );
     }
-    
+
     @Bean
     public EndUserLicenseController endUserLicenseController() {
         EndUserLicenseListWriter endUserLicenseListWriter = new EndUserLicenseListWriter();
-        
-        return new EndUserLicenseController(new EndUserLicenseQueryResultWriter(endUserLicenseListWriter, licenseWriter, requestWriter()),
-                gsonModelReader(), appPersistence.endUserLicenseStore(), userFetcher()); 
+
+        return new EndUserLicenseController(new EndUserLicenseQueryResultWriter(
+                endUserLicenseListWriter,
+                licenseWriter,
+                requestWriter()
+        ),
+                gsonModelReader(), appPersistence.endUserLicenseStore(), userFetcher()
+        );
     }
-  
+
 }

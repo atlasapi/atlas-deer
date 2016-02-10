@@ -13,8 +13,8 @@ import com.google.common.collect.ImmutableList;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * This class is used when a content index is used as a delegate of another content index to
- * pass additional information between them without polluting {@link IndexQueryResult} with it
+ * This class is used when a content index is used as a delegate of another content index to pass
+ * additional information between them without polluting {@link IndexQueryResult} with it
  */
 public class DelegateIndexQueryResult {
 
@@ -37,8 +37,8 @@ public class DelegateIndexQueryResult {
     public FluentIterable<Id> getIds() {
         return FluentIterable.from(
                 results.stream()
-                    .map(Result::getId)
-                    .collect(ImmutableCollectors.toList())
+                        .map(Result::getId)
+                        .collect(ImmutableCollectors.toList())
         );
     }
 

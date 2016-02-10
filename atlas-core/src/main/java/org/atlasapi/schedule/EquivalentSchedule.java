@@ -1,28 +1,26 @@
 package org.atlasapi.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 
 import com.google.common.base.Function;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EquivalentSchedule {
 
     private final Interval interval;
     private final List<EquivalentChannelSchedule> channelSchedules;
-    
+
     public EquivalentSchedule(List<EquivalentChannelSchedule> channelSchedules, Interval interval) {
         this.channelSchedules = ImmutableList.copyOf(channelSchedules);
         this.interval = checkNotNull(interval);
     }
-    
+
     public Interval interval() {
         return interval;
     }
@@ -47,18 +45,19 @@ public class EquivalentSchedule {
         }
         return false;
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-            .addValue(channelSchedules)
-            .toString();
+                .addValue(channelSchedules)
+                .toString();
     }
 
     public EquivalentSchedule withLimitedBroadcasts(final Integer count) {
         Iterable<EquivalentChannelSchedule> limitedChannelSchedules = Iterables.transform(
                 channelSchedules,
                 new Function<EquivalentChannelSchedule, EquivalentChannelSchedule>() {
+
                     @Override
                     public EquivalentChannelSchedule apply(EquivalentChannelSchedule input) {
                         return input.withLimitedBroadcasts(count);
@@ -80,5 +79,5 @@ public class EquivalentSchedule {
                 newScheduleInterval
         );
     }
-    
+
 }

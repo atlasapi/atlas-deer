@@ -3,20 +3,18 @@ package org.atlasapi.query.common;
 import java.util.Collection;
 import java.util.Set;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 public class SetBasedRequestParameterValidator extends AbstractRequestParameterValidator {
-    
+
     public static final Builder builder() {
         return new Builder();
     }
 
     public static final class Builder {
-        
+
         private ImmutableSet<String> required;
         private ImmutableSet<String> optional;
         private ImmutableSet<String> requiredAlternatives = ImmutableSet.of();
@@ -25,7 +23,7 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
             this.required = ImmutableSet.copyOf(parameters);
             return this;
         }
-        
+
         public Builder withOptionalParameters(String... parameters) {
             this.optional = ImmutableSet.copyOf(parameters);
             return this;
@@ -35,21 +33,22 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
             this.requiredAlternatives = ImmutableSet.copyOf(parameters);
             return this;
         }
-        
+
         public SetBasedRequestParameterValidator build() {
             return new SetBasedRequestParameterValidator(required, optional, requiredAlternatives);
         }
     }
-    
+
     private final Set<String> requiredParams;
     private final Set<String> optionalParams;
     private final Set<String> requiredAlternativeParams;
-    
+
     private final Set<String> allParams;
     private final String validParamMsg;
     private final ReplacementSuggestion replacementSuggestion;
 
-    private SetBasedRequestParameterValidator(Set<String> requiredParams, Set<String> optionalParams, Set<String> requiredAlternativeParams) {
+    private SetBasedRequestParameterValidator(Set<String> requiredParams,
+            Set<String> optionalParams, Set<String> requiredAlternativeParams) {
         this.requiredParams = ImmutableSet.copyOf(requiredParams);
         this.optionalParams = ImmutableSet.copyOf(optionalParams);
         this.requiredAlternativeParams = ImmutableSet.copyOf(requiredAlternativeParams);
@@ -60,7 +59,11 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
                 )
         );
         this.validParamMsg = "Valid params: " + commaJoiner.join(allParams);
-        this.replacementSuggestion = new ReplacementSuggestion(allParams, "Invalid parameters: ", " (did you mean %s?)");
+        this.replacementSuggestion = new ReplacementSuggestion(
+                allParams,
+                "Invalid parameters: ",
+                " (did you mean %s?)"
+        );
     }
 
     @Override
@@ -74,8 +77,12 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
             return ImmutableSet.of();
         }
 
-        Collection<String> requestRequiredAlternativeParams = Sets.intersection(requiredAlternativeParams, requestParams);
-        if (requestRequiredAlternativeParams.isEmpty() || requestRequiredAlternativeParams.size() > 1) {
+        Collection<String> requestRequiredAlternativeParams = Sets.intersection(
+                requiredAlternativeParams,
+                requestParams
+        );
+        if (requestRequiredAlternativeParams.isEmpty()
+                || requestRequiredAlternativeParams.size() > 1) {
             return requiredAlternativeParams;
         }
         return ImmutableList.of();
@@ -98,7 +105,11 @@ public class SetBasedRequestParameterValidator extends AbstractRequestParameterV
 
     @Override
     protected String invalidParameterMessage(Collection<String> invalidParams) {
-        return String.format("%s. %s.", replacementSuggestion.forInvalid(invalidParams), validParamMsg);
+        return String.format(
+                "%s. %s.",
+                replacementSuggestion.forInvalid(invalidParams),
+                validParamMsg
+        );
     }
 
 }

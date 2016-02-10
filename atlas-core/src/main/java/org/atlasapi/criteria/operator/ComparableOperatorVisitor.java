@@ -25,7 +25,7 @@ public interface ComparableOperatorVisitor<V> extends EqualsOperatorVisitor<V> {
 
     V visit(GreaterThan greaterThan);
 
-    V visit (Ascending ascending);
+    V visit(Ascending ascending);
 
-    V visit (Descending ascending);
+    V visit(Descending ascending);
 }

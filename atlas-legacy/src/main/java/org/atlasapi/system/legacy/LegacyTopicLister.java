@@ -12,7 +12,7 @@ import com.google.common.collect.FluentIterable;
 public class LegacyTopicLister implements ResourceLister<Topic> {
 
     private final MongoTopicStore topicStore;
-	private final Function<org.atlasapi.media.entity.Topic, Topic> transformer;
+    private final Function<org.atlasapi.media.entity.Topic, Topic> transformer;
 
     public LegacyTopicLister(MongoTopicStore topicStore) {
         this.topicStore = topicStore;
@@ -35,7 +35,8 @@ public class LegacyTopicLister implements ResourceLister<Topic> {
     }
 
     @Override
-    public FluentIterable<Topic> list(Iterable<Publisher> sources, ContentListingProgress progress) {
+    public FluentIterable<Topic> list(Iterable<Publisher> sources,
+            ContentListingProgress progress) {
         throw new UnsupportedOperationException();
     }
 

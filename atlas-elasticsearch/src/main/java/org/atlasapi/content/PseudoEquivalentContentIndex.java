@@ -70,13 +70,13 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
         int numberOfSources = Iterables.size(publishers);
         int delegateLimit = selection.limitOrDefaultValue(100) * numberOfSources;
 
-        if(selection.hasNonZeroOffset()) {
+        if (selection.hasNonZeroOffset()) {
             delegateLimit += selection.getOffset() * numberOfSources;
         }
 
         return Selection.limitedTo(delegateLimit);
     }
-    
+
     private ImmutableList<Id> dedupeIds(DelegateIndexQueryResult result,
             Iterable<Publisher> publishers) {
         LinkedHashMap<Id, DelegateIndexQueryResult.Result> dedupedEntries = new LinkedHashMap<>();
@@ -134,7 +134,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
     }
 
     private ImmutableList<Id> paginateIds(Iterable<Id> ids, Selection selection) {
-         return StreamSupport.stream(ids.spliterator(), false)
+        return StreamSupport.stream(ids.spliterator(), false)
                 .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
                 .limit(selection.limitOrDefaultValue(100))
                 .collect(ImmutableCollectors.toList());

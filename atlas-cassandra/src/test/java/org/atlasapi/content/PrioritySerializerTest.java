@@ -1,13 +1,13 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.serialization.protobuf.CommonProtos;
+
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class PrioritySerializerTest {
 

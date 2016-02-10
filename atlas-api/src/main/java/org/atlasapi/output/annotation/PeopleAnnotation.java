@@ -1,6 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
 import java.io.IOException;
 
 import org.atlasapi.content.Actor;
@@ -9,7 +8,6 @@ import org.atlasapi.content.CrewMember;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-
 
 public class PeopleAnnotation extends OutputAnnotation<Content> {
 
@@ -22,7 +20,8 @@ public class PeopleAnnotation extends OutputAnnotation<Content> {
         writer.writeList(new EntityListWriter<CrewMember>() {
 
             @Override
-            public void write(CrewMember entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+            public void write(CrewMember entity, FieldWriter writer, OutputContext ctxt)
+                    throws IOException {
                 writer.writeField("uri", entity.getCanonicalUri());
                 writer.writeField("curie", entity.getCurie());
                 writer.writeField("type", "person");
@@ -31,7 +30,7 @@ public class PeopleAnnotation extends OutputAnnotation<Content> {
                 if (entity instanceof Actor) {
                     writer.writeField("character", ((Actor) entity).character());
                 }
-                
+
                 writer.writeField("role", entity.role().key());
                 writer.writeField("display_role", entity.role().title());
             }

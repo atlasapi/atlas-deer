@@ -7,7 +7,6 @@ import org.atlasapi.media.entity.Publisher;
 
 public class ChannelRef extends ResourceRef {
 
-
     public ChannelRef(Id id, Publisher source) {
         super(id, source);
     }

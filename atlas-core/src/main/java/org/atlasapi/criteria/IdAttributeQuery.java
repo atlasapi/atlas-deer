@@ -19,26 +19,25 @@ import org.atlasapi.criteria.operator.ComparableOperator;
 import org.atlasapi.criteria.operator.ComparableOperatorVisitor;
 import org.atlasapi.entity.Id;
 
-
 public class IdAttributeQuery extends AttributeQuery<Id> {
 
-	private final ComparableOperator op;
+    private final ComparableOperator op;
 
-	public IdAttributeQuery(Attribute<Id> attribute, ComparableOperator op,  Iterable<Id> values) {
-		super(attribute, op, values);
-		this.op = op;
-	}
+    public IdAttributeQuery(Attribute<Id> attribute, ComparableOperator op, Iterable<Id> values) {
+        super(attribute, op, values);
+        this.op = op;
+    }
 
-	public <V> V accept(QueryVisitor<V> visitor) {
-		return visitor.visit(this);
-	}
-	
-	public <V> V accept(ComparableOperatorVisitor<V> v) {
-		return op.accept(v);
-	}
+    public <V> V accept(QueryVisitor<V> visitor) {
+        return visitor.visit(this);
+    }
 
-	public ComparableOperator getOperator() {
-		return op;
-	}
+    public <V> V accept(ComparableOperatorVisitor<V> v) {
+        return op.accept(v);
+    }
+
+    public ComparableOperator getOperator() {
+        return op;
+    }
 
 }

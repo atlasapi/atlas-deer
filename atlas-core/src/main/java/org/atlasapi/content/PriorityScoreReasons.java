@@ -34,16 +34,20 @@ public class PriorityScoreReasons {
         this.negative = negative;
     }
 
-    @Override public boolean equals(Object o) {
-        if (this == o)
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
         PriorityScoreReasons that = (PriorityScoreReasons) o;
 
-        if (positive != null ? !positive.equals(that.positive) : that.positive != null)
+        if (positive != null ? !positive.equals(that.positive) : that.positive != null) {
             return false;
+        }
         return !(negative != null ? !negative.equals(that.negative) : that.negative != null);
 
     }

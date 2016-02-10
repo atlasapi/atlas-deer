@@ -1,7 +1,5 @@
 package org.atlasapi.system.bootstrap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ContentVisitor;
@@ -10,9 +8,11 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.schedule.ScheduleWriter;
-import org.joda.time.Interval;
 
 import com.google.common.base.Optional;
+import org.joda.time.Interval;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory
         implements SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> {
@@ -48,6 +48,7 @@ public class EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory
                 channel,
                 interval,
                 Optional.<ContentVisitor<?>>absent(),
-                Optional.of(equivalenceWriter), Optional.of(graphStore));
+                Optional.of(equivalenceWriter), Optional.of(graphStore)
+        );
     }
 }

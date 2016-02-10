@@ -1,16 +1,17 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.meta.annotations.FieldName;
 
-import com.google.common.base.Objects;
 import com.metabroadcast.common.intl.Country;
+
+import com.google.common.base.Objects;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Certificate {
 
     //TODO make some static final instantiations?
-    
+
     private Country country;
     private String classification;
 
@@ -52,12 +53,12 @@ public class Certificate {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hashCode(classification, country);
     }
-    
+
     @Override
     public String toString() {
         return String.format("%s (%s)", classification, country.code());

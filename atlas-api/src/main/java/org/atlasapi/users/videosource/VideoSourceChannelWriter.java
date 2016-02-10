@@ -7,7 +7,6 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.users.videosource.model.VideoSourceChannel;
 
-
 public class VideoSourceChannelWriter implements EntityListWriter<VideoSourceChannel> {
 
     @Override

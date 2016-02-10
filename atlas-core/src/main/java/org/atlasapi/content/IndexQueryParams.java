@@ -1,10 +1,10 @@
 package org.atlasapi.content;
 
-import org.atlasapi.entity.Id;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.atlasapi.entity.Id;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -21,9 +21,13 @@ public class IndexQueryParams {
     private final Optional<Map<String, String>> actionableFilterParams;
     private final Optional<Id> seriesId;
 
-    public IndexQueryParams(Optional<FuzzyQueryParams> fuzzyQueryParams, Optional<QueryOrdering> ordering,
-            Optional<Id> regionId, Optional<Float> broadcastWeighting, Optional<Float> titleWeighting, Optional<List<List<InclusionExclusionId>>> topicFilterIds,
-            Boolean containerAvailability, Optional<Id> brandId, Optional<Map<String, String>> actionableFilterParams, Optional<Id> seriesId) {
+    public IndexQueryParams(Optional<FuzzyQueryParams> fuzzyQueryParams,
+            Optional<QueryOrdering> ordering,
+            Optional<Id> regionId, Optional<Float> broadcastWeighting,
+            Optional<Float> titleWeighting,
+            Optional<List<List<InclusionExclusionId>>> topicFilterIds,
+            Boolean containerAvailability, Optional<Id> brandId,
+            Optional<Map<String, String>> actionableFilterParams, Optional<Id> seriesId) {
         this.fuzzyQueryParams = checkNotNull(fuzzyQueryParams);
         this.ordering = checkNotNull(ordering);
         this.regionId = checkNotNull(regionId);

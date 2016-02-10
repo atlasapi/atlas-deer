@@ -14,8 +14,6 @@
  permissions and limitations under the License. */
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,12 +23,15 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.segment.SegmentEvent;
 
+import com.metabroadcast.common.intl.Country;
+
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.metabroadcast.common.intl.Country;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Robert Chatley (robert@metabroadcast.com)
@@ -62,7 +63,12 @@ public class Item extends Content {
 
     @Override
     public ItemRef toRef() {
-        return new ItemRef(getId(), getSource(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
+        return new ItemRef(
+                getId(),
+                getSource(),
+                SortKey.keyFrom(this),
+                getThisOrChildLastUpdated()
+        );
     }
 
     public void setContainerRef(ContainerRef containerRef) {
@@ -77,6 +83,7 @@ public class Item extends Content {
     public ContainerRef getContainerRef() {
         return containerRef;
     }
+
     @FieldName("is_long_form")
     public boolean getIsLongForm() {
         return isLongForm;
@@ -120,7 +127,7 @@ public class Item extends Content {
     public void setBroadcasts(Set<Broadcast> broadcasts) {
         this.broadcasts = broadcasts;
     }
-    
+
     public void addBroadcast(Broadcast broadcast) {
         checkNotNull(broadcast);
         broadcasts.add(broadcast);
@@ -144,11 +151,11 @@ public class Item extends Content {
     public List<SegmentEvent> getSegmentEvents() {
         return segmentEvents;
     }
-    
+
     public void setSegmentEvents(Iterable<SegmentEvent> segmentEvents) {
         this.segmentEvents = SegmentEvent.ORDERING.immutableSortedCopy(segmentEvents);
     }
-    
+
     public void addSegmentEvents(Iterable<SegmentEvent> segmentEvents) {
         this.segmentEvents = SegmentEvent.ORDERING.immutableSortedCopy(ImmutableSet.<SegmentEvent>builder()
                 .addAll(segmentEvents)
@@ -193,7 +200,7 @@ public class Item extends Content {
 
         @Override
         public Item apply(Item input) {
-            return (Item) input.copy();
+            return input.copy();
         }
     };
 
@@ -205,14 +212,14 @@ public class Item extends Content {
     public void setContainerSummary(ContainerSummary containerSummary) {
         this.containerSummary = containerSummary;
     }
-    
+
     public <V> V accept(ItemVisitor<V> visitor) {
         return visitor.visit(this);
     }
-    
+
     @Override
     public <V> V accept(ContentVisitor<V> visitor) {
-        return accept((ItemVisitor<V>)visitor);
+        return accept((ItemVisitor<V>) visitor);
     }
 
     @Override
@@ -221,23 +228,31 @@ public class Item extends Content {
     }
 
     public ItemSummary toSummary() {
-        return new ItemSummary(toRef(), getTitle(), getDescription(), getImage(), getYear(), getCertificates());
+        return new ItemSummary(
+                toRef(),
+                getTitle(),
+                getDescription(),
+                getImage(),
+                getYear(),
+                getCertificates()
+        );
     }
 
     public static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
+
         @Override
         public Set<Broadcast> apply(Item input) {
             return input.broadcasts;
         }
     };
-    
+
     public static final Function<Item, List<SegmentEvent>> TO_SEGMENT_EVENTS = new Function<Item, List<SegmentEvent>>() {
 
         @Override
         public List<SegmentEvent> apply(Item input) {
             return input.segmentEvents;
         }
-        
+
     };
 
     public Iterable<BroadcastRef> getUpcomingBroadcastRefs() {

@@ -4,9 +4,10 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 
 public class BlackoutRestrictionSerializer {
 
-    public ContentProtos.BlackoutRestriction.Builder serialize(BlackoutRestriction blackoutRestriction) {
+    public ContentProtos.BlackoutRestriction.Builder serialize(
+            BlackoutRestriction blackoutRestriction) {
         ContentProtos.BlackoutRestriction.Builder builder = ContentProtos.BlackoutRestriction.newBuilder();
-        if(blackoutRestriction.getAll() != null) {
+        if (blackoutRestriction.getAll() != null) {
             builder.setAll(blackoutRestriction.getAll());
         }
         return builder;

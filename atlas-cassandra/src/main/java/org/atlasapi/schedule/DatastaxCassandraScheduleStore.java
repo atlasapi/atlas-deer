@@ -1,13 +1,5 @@
 package org.atlasapi.schedule;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.putAll;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Date;
@@ -28,8 +20,9 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.media.entity.Publisher;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Interval;
+
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.Clock;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -49,8 +42,16 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.Clock;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Interval;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.putAll;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
 
@@ -109,26 +110,36 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
     }
 
     @Override
-    protected List<ChannelSchedule> resolveCurrentScheduleBlocks(Publisher source, Channel channel, Interval interval) throws WriteException {
+    protected List<ChannelSchedule> resolveCurrentScheduleBlocks(Publisher source, Channel channel,
+            Interval interval) throws WriteException {
         return Futures.get(
                 resolveAndProcess(
                         ImmutableList.of(channel),
                         interval,
                         source,
-                        (List<Optional<Row>> input) -> rowsToCurrentScheduleBlocks(input, channel, interval)
+                        (List<Optional<Row>> input) -> rowsToCurrentScheduleBlocks(
+                                input,
+                                channel,
+                                interval
+                        )
                 ), timeoutSeconds, TimeUnit.SECONDS,
                 WriteException.class
         );
     }
 
     @Override
-    protected List<ChannelSchedule> resolveStaleScheduleBlocks(Publisher source, Channel channel, Interval interval) throws WriteException {
+    protected List<ChannelSchedule> resolveStaleScheduleBlocks(Publisher source, Channel channel,
+            Interval interval) throws WriteException {
         return Futures.get(
                 resolveAndProcess(
                         ImmutableList.of(channel),
                         interval,
                         source,
-                        (List<Optional<Row>> input) -> rowsToPastScheduleBlocks(input, channel, interval)
+                        (List<Optional<Row>> input) -> rowsToPastScheduleBlocks(
+                                input,
+                                channel,
+                                interval
+                        )
                 ), timeoutSeconds, TimeUnit.SECONDS,
                 WriteException.class
         );
@@ -154,7 +165,14 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             batch.add(scheduleUpdate.bind()
                     .setString("source", source.key())
                     .setLong("channel", channelId)
-                    .setDate("day", block.getInterval().getStart().toLocalDate().toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate())
+                    .setDate(
+                            "day",
+                            block.getInterval()
+                                    .getStart()
+                                    .toLocalDate()
+                                    .toDateTimeAtStartOfDay(DateTimeZone.UTC)
+                                    .toDate()
+                    )
                     .setMap("broadcastsData", broadcasts)
                     .setSet("broadcastsIdsData", broadcasts.keySet())
                     .setDate("updatedData", clock.now().toDate()));
@@ -163,7 +181,8 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
     }
 
     @Override
-    public ListenableFuture<Schedule> resolve(Iterable<Channel> channels, Interval interval, Publisher source) {
+    public ListenableFuture<Schedule> resolve(Iterable<Channel> channels, Interval interval,
+            Publisher source) {
         return resolveAndProcess(
                 channels,
                 interval,
@@ -195,13 +214,15 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             }
         }
 
-        ListenableFuture<List<Optional<Row>>> resultFutures = Futures.allAsList(selects.build().stream()
-                        .map(
-                                s -> Futures.transform(
-                                        session.executeAsync(s),
-                                        (ResultSet rs) -> Optional.ofNullable(rs.one())
-                                )
-                        ).collect(Collectors.toList())
+        ListenableFuture<List<Optional<Row>>> resultFutures = Futures.allAsList(selects.build()
+                .stream()
+                .map(
+                        s -> Futures.transform(
+                                session.executeAsync(s),
+                                (ResultSet rs) -> Optional.ofNullable(rs.one())
+                        )
+                )
+                .collect(Collectors.toList())
         );
         return Futures.transform(
                 resultFutures,
@@ -209,7 +230,8 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         );
     }
 
-    private Schedule rowsToSchedule(List<Optional<Row>> rows, Iterable<Channel> channels, Interval interval) {
+    private Schedule rowsToSchedule(List<Optional<Row>> rows, Iterable<Channel> channels,
+            Interval interval) {
         Multimap<Channel, ItemAndBroadcast> multimap = HashMultimap.create();
         Map<Id, Channel> channelsMap = StreamSupport.stream(channels.spliterator(), false)
                 .collect(Collectors.toMap(Identified::getId, ch -> ch));
@@ -222,7 +244,11 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             Id channelId = Id.valueOf(row.getLong(CHANNEL_COLUMN));
             Channel channel = channelsMap.get(channelId);
             Set<String> broadcastIds = row.getSet(BROADCAST_IDS_COLUMN, String.class);
-            Map<String, ByteBuffer> broadcasts = row.getMap(BROADCASTS_COLUMN, String.class, ByteBuffer.class);
+            Map<String, ByteBuffer> broadcasts = row.getMap(
+                    BROADCASTS_COLUMN,
+                    String.class,
+                    ByteBuffer.class
+            );
             for (String broadcastId : broadcastIds) {
                 ItemAndBroadcast itemAndBroadcast = deserialize(broadcasts.get(broadcastId));
                 if (filter.apply(itemAndBroadcast.getBroadcast())) {
@@ -240,7 +266,8 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         return Schedule.fromChannelMap(channelSchedules, interval);
     }
 
-    private List<ChannelSchedule> rowsToCurrentScheduleBlocks(List<Optional<Row>> rows, Channel channel, Interval interval) {
+    private List<ChannelSchedule> rowsToCurrentScheduleBlocks(List<Optional<Row>> rows,
+            Channel channel, Interval interval) {
 
         Predicate<Broadcast> filter = Broadcast.intervalFilter(interval);
         List<Row> existingRows = rows.stream()
@@ -250,7 +277,11 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         Multimap<Date, ItemAndBroadcast> scheduleBroadcasts = ArrayListMultimap.create();
         for (Row row : existingRows) {
             Set<String> broadcastIds = row.getSet(BROADCAST_IDS_COLUMN, String.class);
-            Map<String, ByteBuffer> broadcasts = row.getMap(BROADCASTS_COLUMN, String.class, ByteBuffer.class);
+            Map<String, ByteBuffer> broadcasts = row.getMap(
+                    BROADCASTS_COLUMN,
+                    String.class,
+                    ByteBuffer.class
+            );
             Date scheduleDate = row.getDate(DAY_COLUMN);
             for (String broadcastId : broadcastIds) {
                 ItemAndBroadcast itemAndBroadcast = deserialize(broadcasts.get(broadcastId));
@@ -260,11 +291,20 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             }
         }
         return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
-                .map(date -> new ChannelSchedule(channel, new Interval(date.toDateTimeAtStartOfDay(DateTimeZone.UTC), date.plusDays(1).toDateTimeAtStartOfDay(DateTimeZone.UTC)), scheduleBroadcasts.get(date.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate())))
+                .map(date -> new ChannelSchedule(
+                        channel,
+                        new Interval(
+                                date.toDateTimeAtStartOfDay(DateTimeZone.UTC),
+                                date.plusDays(1).toDateTimeAtStartOfDay(DateTimeZone.UTC)
+                        ),
+                        scheduleBroadcasts.get(date.toDateTimeAtStartOfDay(DateTimeZone.UTC)
+                                .toDate())
+                ))
                 .collect(Collectors.toList());
     }
 
-    private List<ChannelSchedule> rowsToPastScheduleBlocks(List<Optional<Row>> rows, Channel channel, Interval interval) {
+    private List<ChannelSchedule> rowsToPastScheduleBlocks(List<Optional<Row>> rows,
+            Channel channel, Interval interval) {
 
         Predicate<Broadcast> filter = Broadcast.intervalFilter(interval);
         List<Row> existingRows = rows.stream()
@@ -274,7 +314,11 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
         Multimap<Date, ItemAndBroadcast> scheduleBroadcasts = ArrayListMultimap.create();
         for (Row row : existingRows) {
             Set<String> broadcastIds = row.getSet(BROADCAST_IDS_COLUMN, String.class);
-            Map<String, ByteBuffer> broadcasts = row.getMap(BROADCASTS_COLUMN, String.class, ByteBuffer.class);
+            Map<String, ByteBuffer> broadcasts = row.getMap(
+                    BROADCASTS_COLUMN,
+                    String.class,
+                    ByteBuffer.class
+            );
             Date scheduleDate = row.getDate(DAY_COLUMN);
             for (Map.Entry<String, ByteBuffer> broadcastsEntry : broadcasts.entrySet()) {
                 if (broadcastIds.contains(broadcastsEntry.getKey())) {
@@ -287,7 +331,15 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             }
         }
         return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
-                .map(date -> new ChannelSchedule(channel, new Interval(date.toDateTimeAtStartOfDay(DateTimeZone.UTC), date.plusDays(1).toDateTimeAtStartOfDay(DateTimeZone.UTC)), scheduleBroadcasts.get(date.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate())))
+                .map(date -> new ChannelSchedule(
+                        channel,
+                        new Interval(
+                                date.toDateTimeAtStartOfDay(DateTimeZone.UTC),
+                                date.plusDays(1).toDateTimeAtStartOfDay(DateTimeZone.UTC)
+                        ),
+                        scheduleBroadcasts.get(date.toDateTimeAtStartOfDay(DateTimeZone.UTC)
+                                .toDate())
+                ))
                 .filter(cs -> !cs.getEntries().isEmpty())
                 .collect(Collectors.toList());
     }

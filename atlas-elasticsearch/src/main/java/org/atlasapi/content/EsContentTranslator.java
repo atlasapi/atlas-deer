@@ -1,8 +1,5 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -19,14 +16,8 @@ import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.EsObject;
 import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
@@ -37,7 +28,17 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.time.DateTimeZones;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EsContentTranslator {
 
@@ -93,7 +94,8 @@ public class EsContentTranslator {
                 .filter(p -> p != null)
                 .map(Policy::getPrice)
                 .filter(p -> p != null && p.getCurrency() != null)
-                .map(price -> new EsPriceMapping().currency(price.getCurrency()).value(price.getAmount()))
+                .map(price -> new EsPriceMapping().currency(price.getCurrency())
+                        .value(price.getAmount()))
                 .collect(ImmutableCollectors.toList());
     }
 
@@ -148,7 +150,8 @@ public class EsContentTranslator {
 
     private Id toCanonicalId(Id id) throws IndexException {
         try {
-            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of(id.longValue()));
+            ListenableFuture<ImmutableMap<Long, Long>> result = equivIdIndex.lookup(ImmutableList.of(
+                    id.longValue()));
             ImmutableMap<Long, Long> idToCanonical = Futures.get(result, IOException.class);
             if (idToCanonical.get(Long.valueOf(id.longValue())) != null) {
                 return Id.valueOf(idToCanonical.get(id.longValue()));
@@ -172,8 +175,10 @@ public class EsContentTranslator {
             }
 
             Resolved<Content> resolved = Futures.get(
-                    contentResolver.resolveIds(Iterables.transform(container.getItemRefs(),
-                            ResourceRef::getId)),
+                    contentResolver.resolveIds(Iterables.transform(
+                            container.getItemRefs(),
+                            ResourceRef::getId
+                    )),
                     IOException.class
             );
 
@@ -207,9 +212,11 @@ public class EsContentTranslator {
                 .parentTitle(container.getTitle())
                 .parentFlattenedTitle(flattenedOrNull(container.getTitle()))
                 .specialization(container.getSpecialization() != null ?
-                        container.getSpecialization().name() :
-                        null)
-                .priority(container.getPriority() != null ? container.getPriority().getPriority() : null);
+                                container.getSpecialization().name() :
+                                null)
+                .priority(container.getPriority() != null
+                          ? container.getPriority().getPriority()
+                          : null);
 
         if (maybeExisting.isPresent()) {
             setExistingData(container, indexed, maybeExisting.get());
@@ -237,7 +244,8 @@ public class EsContentTranslator {
         return indexed;
     }
 
-    private void setExistingData(Container container, EsContent indexed, Map<String, Object> existing) {
+    private void setExistingData(Container container, EsContent indexed,
+            Map<String, Object> existing) {
         List<Map<String, Object>> locations = dedupeAndMergeLocations(
                 container, (List) existing.get(EsContent.LOCATIONS)
         );
@@ -280,7 +288,10 @@ public class EsContentTranslator {
                     Map<String, Object> series = maybeParent.get();
                     series.put(
                             EsContent.BROADCASTS,
-                            dedupeAndMergeBroadcasts(episode, (List) series.get(EsContent.BROADCASTS))
+                            dedupeAndMergeBroadcasts(
+                                    episode,
+                                    (List) series.get(EsContent.BROADCASTS)
+                            )
                     );
                     series.put(
                             EsContent.LOCATIONS,
@@ -288,7 +299,10 @@ public class EsContentTranslator {
                     );
                     series.put(
                             EsBroadcast.TRANSMISSION_TIME_IN_MILLIS,
-                            dedupeAndMergeTransmissionTime(episode, (List) series.get(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS))
+                            dedupeAndMergeTransmissionTime(
+                                    episode,
+                                    (List) series.get(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS)
+                            )
                     );
                     reindexParent(seriesRef, series);
                 }
@@ -314,7 +328,8 @@ public class EsContentTranslator {
                 .collect(ImmutableCollectors.toList());
     }
 
-    private List<Map<String, Object>> dedupeAndMergeLocations(Content episode, List<Map<String, Object>> existingLocations) {
+    private List<Map<String, Object>> dedupeAndMergeLocations(Content episode,
+            List<Map<String, Object>> existingLocations) {
         ImmutableSet<Policy> policies = episode.getManifestedAs().stream()
                 .filter(encoding -> encoding != null)
                 .flatMap(encoding -> encoding.getAvailableAt().stream())
@@ -364,8 +379,14 @@ public class EsContentTranslator {
     private Predicate<Policy> createLocationNotPresentFilter(List<Policy> existingPolicies) {
         return policy -> {
             for (Policy existingPolicy : existingPolicies) {
-                if (Objects.equals(toUtc(policy.getAvailabilityStart()), toUtc(existingPolicy.getAvailabilityStart())) &&
-                        Objects.equals(toUtc(policy.getAvailabilityEnd()), toUtc(existingPolicy.getAvailabilityEnd()))) {
+                if (Objects.equals(
+                        toUtc(policy.getAvailabilityStart()),
+                        toUtc(existingPolicy.getAvailabilityStart())
+                ) &&
+                        Objects.equals(
+                                toUtc(policy.getAvailabilityEnd()),
+                                toUtc(existingPolicy.getAvailabilityEnd())
+                        )) {
                     return false;
                 }
             }
@@ -385,7 +406,8 @@ public class EsContentTranslator {
         }
     }
 
-    private ImmutableList<Object> dedupeAndMergeBroadcasts(Item item, List<Map<String, Object>> indexedBroadcasts) {
+    private ImmutableList<Object> dedupeAndMergeBroadcasts(Item item,
+            List<Map<String, Object>> indexedBroadcasts) {
         List<Broadcast> parentIndexedBroadcasts = fromEsBroadcasts(
                 indexedBroadcasts != null ? indexedBroadcasts : ImmutableList.of()
         );
@@ -406,7 +428,8 @@ public class EsContentTranslator {
         return merged.build();
     }
 
-    private Predicate<Broadcast> createBroadcastNotPresentFilter(Iterable<Broadcast> existingBroadcasts) {
+    private Predicate<Broadcast> createBroadcastNotPresentFilter(
+            Iterable<Broadcast> existingBroadcasts) {
         return broadcast -> {
             if (broadcast == null || broadcast.getTransmissionInterval() == null) {
                 return false;
@@ -453,7 +476,10 @@ public class EsContentTranslator {
 
     private Optional<Map<String, Object>> getContainer(ContainerRef parent) {
         GetRequest request = Requests.getRequest(indexName).id(getDocId(parent));
-        GetResponse response = ElasticsearchUtils.getWithTimeout(esClient.get(request), requestTimeout);
+        GetResponse response = ElasticsearchUtils.getWithTimeout(
+                esClient.get(request),
+                requestTimeout
+        );
         if (response.isExists()) {
             return Optional.of(response.getSource());
         }
@@ -470,18 +496,18 @@ public class EsContentTranslator {
                 .title(item.getTitle())
                 .genre(item.getGenres())
                 .age(item.getRestrictions().stream()
-                                .map(Restriction::getMinimumAge)
-                                .filter(a -> a != null)
-                                .max(Integer::compare)
-                                .orElse(null)
+                        .map(Restriction::getMinimumAge)
+                        .filter(a -> a != null)
+                        .max(Integer::compare)
+                        .orElse(null)
                 )
                 .price(makeEsPrices(item.getManifestedAs()))
                 .flattenedTitle(flattenedOrNull(item.getTitle()))
                 .parentTitle(item.getTitle())
                 .parentFlattenedTitle(flattenedOrNull(item.getTitle()))
                 .specialization(item.getSpecialization() != null ?
-                        item.getSpecialization().name() :
-                        null)
+                                item.getSpecialization().name() :
+                                null)
                 .priority(item.getPriority() != null ? item.getPriority().getPriority() : null)
                 .broadcasts(makeESBroadcasts(item))
                 .broadcastStartTimeInMillis(itemToBroadcastStartTimes(item))
@@ -513,9 +539,9 @@ public class EsContentTranslator {
 
     private Iterable<Long> itemToBroadcastStartTimes(Item item) {
         return item.getBroadcasts().stream()
-                .filter(b -> b.getTransmissionTime() != null 
-                             && Boolean.TRUE.equals(b.isActivelyPublished())
-                       )
+                .filter(b -> b.getTransmissionTime() != null
+                        && Boolean.TRUE.equals(b.isActivelyPublished())
+                )
                 .map(b -> b.getTransmissionTime().getMillis())
                 .collect(ImmutableCollectors.toList());
     }

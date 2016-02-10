@@ -32,16 +32,17 @@ import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryParser;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 @Controller
 public class ApplicationsController {
@@ -57,9 +58,11 @@ public class ApplicationsController {
     private final ApplicationStore applicationStore;
     private final UserFetcher userFetcher;
     private final UserStore userStore;
-    
+
     private static class PrecedenceOrdering {
+
         private List<String> ordering;
+
         public List<String> getOrdering() {
             return ordering;
         }
@@ -108,7 +111,10 @@ public class ApplicationsController {
         try {
             User user = userFetcher.userFor(request).get();
             writer = writerResolver.writerFor(request, response);
-            Application application = deserialize(new InputStreamReader(request.getInputStream()), Application.class);
+            Application application = deserialize(
+                    new InputStreamReader(request.getInputStream()),
+                    Application.class
+            );
             if (application.getId() != null) {
                 if (!userCanAccessApplication(application.getId(), request)) {
                     throw new ResourceForbiddenException();
@@ -131,12 +137,15 @@ public class ApplicationsController {
             // So we run the application through the query executor
             // to filter out anything they should not see
             UserAwareQueryContext context = new UserAwareQueryContext(
-                    ApplicationSources.defaults(), 
+                    ApplicationSources.defaults(),
                     ActiveAnnotations.standard(),
                     Optional.of(user),
                     request
             );
-            UserAwareQuery<Application> applicationsQuery = UserAwareQuery.singleQuery(application.getId(), context);
+            UserAwareQuery<Application> applicationsQuery = UserAwareQuery.singleQuery(
+                    application.getId(),
+                    context
+            );
             UserAwareQueryResult<Application> queryResult = queryExecutor.execute(applicationsQuery);
 
             resultWriter.write(queryResult, writer);
@@ -148,7 +157,7 @@ public class ApplicationsController {
     }
 
     @RequestMapping(value = "/4/applications/{aid}/sources", method = RequestMethod.POST)
-    public void writeApplicationSources(HttpServletRequest request, 
+    public void writeApplicationSources(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String aid)
             throws IOException {
@@ -171,9 +180,9 @@ public class ApplicationsController {
             new ErrorResultWriter().write(summary, null, request, response);
         }
     }
-    
+
     @RequestMapping(value = "/4/applications/{aid}/precedence", method = RequestMethod.POST)
-    public void setPrecedenceOrder(HttpServletRequest request, 
+    public void setPrecedenceOrder(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String aid) throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
@@ -183,7 +192,10 @@ public class ApplicationsController {
             if (!userCanAccessApplication(applicationId, request)) {
                 throw new ResourceForbiddenException();
             }
-            ordering = deserialize(new InputStreamReader(request.getInputStream()), PrecedenceOrdering.class);
+            ordering = deserialize(
+                    new InputStreamReader(request.getInputStream()),
+                    PrecedenceOrdering.class
+            );
             List<Publisher> sourceOrder;
             sourceOrder = getSourcesFrom(ordering);
             Application existing = applicationStore.applicationFor(applicationId).get();
@@ -191,12 +203,12 @@ public class ApplicationsController {
         } catch (Exception e) {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, null, request, response);
-        } 
-      
+        }
+
     }
-    
+
     @RequestMapping(value = "/4/applications/{aid}/precedence", method = RequestMethod.DELETE)
-    public void disablePrecedence(HttpServletRequest request, 
+    public void disablePrecedence(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String aid) throws IOException {
         try {
@@ -210,15 +222,16 @@ public class ApplicationsController {
         } catch (Exception e) {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, null, request, response);
-        } 
+        }
     }
 
     private <T> T deserialize(Reader input, Class<T> cls) throws IOException, ReadException {
         return reader.read(new BufferedReader(input), cls);
     }
-    
-    private List<Publisher> getSourcesFrom(PrecedenceOrdering ordering) throws QueryExecutionException {
-        ImmutableList.Builder<Publisher> sources =ImmutableList.builder();
+
+    private List<Publisher> getSourcesFrom(PrecedenceOrdering ordering)
+            throws QueryExecutionException {
+        ImmutableList.Builder<Publisher> sources = ImmutableList.builder();
         for (String sourceId : ordering.getOrdering()) {
             Optional<Publisher> source = sourceIdCodec.decode(sourceId);
             if (source.isPresent()) {
@@ -229,7 +242,7 @@ public class ApplicationsController {
         }
         return sources.build();
     }
-    
+
     private boolean userCanAccessApplication(Id id, HttpServletRequest request) {
         Optional<User> user = userFetcher.userFor(request);
         if (!user.isPresent()) {
@@ -238,9 +251,10 @@ public class ApplicationsController {
             return user.get().is(Role.ADMIN) || user.get().getApplicationIds().contains(id);
         }
     }
-    
+
     // Restrict source status changes that non admins can make
-    private void checkSourceStatusChanges(User user, Application application, Optional<Application> existingApp) throws NotAuthorizedException {
+    private void checkSourceStatusChanges(User user, Application application,
+            Optional<Application> existingApp) throws NotAuthorizedException {
         // An admin can always make a source status change
         // Additionally the sources object may be null here if creating an application
         // and the element has not been specified
@@ -253,7 +267,8 @@ public class ApplicationsController {
             if (existingApp.isPresent()) {
                 existing = existingApp.get().getSources().readStatusOrDefault(read.getPublisher());
             } else {
-                existing = SourceStatus.fromV3SourceStatus(read.getPublisher().getDefaultSourceStatus());
+                existing = SourceStatus.fromV3SourceStatus(read.getPublisher()
+                        .getDefaultSourceStatus());
             }
             // Only allow non admins to enable or disable a source 
             if (isStateChanged(existing, read.getSourceStatus())) {
@@ -261,7 +276,7 @@ public class ApplicationsController {
             }
         }
     }
-    
+
     private boolean isStateChanged(SourceStatus existing, SourceStatus submitted) {
         return !submitted.getState().equals(existing.getState());
     }

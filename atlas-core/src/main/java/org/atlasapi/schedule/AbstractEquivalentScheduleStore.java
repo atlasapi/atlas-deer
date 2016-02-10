@@ -1,7 +1,5 @@
 package org.atlasapi.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +21,8 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
-import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.collect.OptionalMap;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -38,57 +35,66 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.collect.OptionalMap;
+import org.joda.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Base implementation of an {@link EquivalentScheduleStore} which resolves the necessary {@link Content}
- *  for {@link ScheduleUpdate}s and {@link EquivalenceUpdate}s.
+ * Base implementation of an {@link EquivalentScheduleStore} which resolves the necessary {@link
+ * Content} for {@link ScheduleUpdate}s and {@link EquivalenceUpdate}s.
  */
 public abstract class AbstractEquivalentScheduleStore implements EquivalentScheduleStore {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentScheduleStore.class);
-    
+
     private final EquivalenceGraphStore graphStore;
     private final ContentResolver contentStore;
-    
+
     //TODO make this more flexible.
     private final FlexibleBroadcastMatcher broadcastMatcher
-        = new FlexibleBroadcastMatcher(Duration.standardMinutes(10));
+            = new FlexibleBroadcastMatcher(Duration.standardMinutes(10));
 
-    public AbstractEquivalentScheduleStore(EquivalenceGraphStore graphStore, ContentResolver contentStore) {
+    public AbstractEquivalentScheduleStore(EquivalenceGraphStore graphStore,
+            ContentResolver contentStore) {
         this.graphStore = checkNotNull(graphStore);
         this.contentStore = checkNotNull(contentStore);
     }
-    
+
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
 
         writeSchedule(update, contentFor(update.getSchedule()));
     }
 
-
-
-    protected abstract void writeSchedule(ScheduleUpdate update, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
+    protected abstract void writeSchedule(ScheduleUpdate update,
+            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
             throws WriteException;
 
-    private Map<ScheduleRef.Entry, EquivalentScheduleEntry> contentFor(ScheduleRef schedule) throws WriteException {
-        final List<Id> itemIds = Lists.transform(schedule.getScheduleEntries(), 
-            new Function<ScheduleRef.Entry, Id>(){
-                @Override
-                public Id apply(ScheduleRef.Entry input) {
-                    return input.getItem();
+    private Map<ScheduleRef.Entry, EquivalentScheduleEntry> contentFor(ScheduleRef schedule)
+            throws WriteException {
+        final List<Id> itemIds = Lists.transform(
+                schedule.getScheduleEntries(),
+                new Function<ScheduleRef.Entry, Id>() {
+
+                    @Override
+                    public Id apply(ScheduleRef.Entry input) {
+                        return input.getItem();
+                    }
                 }
-            }
         );
         OptionalMap<Id, EquivalenceGraph> graphs = graphsFor(itemIds);
         Map<Id, Item> content = itemsFor(graphs, itemIds);
         return join(schedule.getScheduleEntries(), graphs, content);
     }
 
-    private ImmutableMap<ScheduleRef.Entry, EquivalentScheduleEntry> join(List<ScheduleRef.Entry> entries, 
+    private ImmutableMap<ScheduleRef.Entry, EquivalentScheduleEntry> join(
+            List<ScheduleRef.Entry> entries,
             OptionalMap<Id, EquivalenceGraph> graphs, Map<Id, Item> allItems) {
         Function<Id, Item> toItems = Functions.forMap(allItems, null);
-        ImmutableMap.Builder<ScheduleRef.Entry, EquivalentScheduleEntry> entryContent = ImmutableMap.builder();
+        ImmutableMap.Builder<ScheduleRef.Entry, EquivalentScheduleEntry> entryContent = ImmutableMap
+                .builder();
         for (ScheduleRef.Entry entry : entries) {
             Id itemId = entry.getItem();
             Item item = toItems.apply(itemId);
@@ -106,27 +112,30 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
             Optional<EquivalenceGraph> possibleGraph = graphs.get(itemId);
             EquivalenceGraph graph = possibleGraph.isPresent() ? possibleGraph.get()
                                                                : EquivalenceGraph.valueOf(item.toRef());
-            Equivalent<Item> equivItems = new Equivalent<Item>(graph, 
-                    equivItems(item, broadcast, graphItems(graph, toItems)));
+            Equivalent<Item> equivItems = new Equivalent<Item>(
+                    graph,
+                    equivItems(item, broadcast, graphItems(graph, toItems))
+            );
             entryContent.put(entry, new EquivalentScheduleEntry(broadcast, equivItems));
         }
         return entryContent.build();
     }
 
-    private ImmutableSet<Item> equivItems(Item item, Broadcast broadcast, Iterable<Item> graphItems) {
+    private ImmutableSet<Item> equivItems(Item item, Broadcast broadcast,
+            Iterable<Item> graphItems) {
         ImmutableSet<Item> items = ImmutableSet.<Item>builder()
-            .add(item)
-            .addAll(filterSources(itemsBySource(graphItems), broadcast, item.getSource()))
-            .build();
+                .add(item)
+                .addAll(filterSources(itemsBySource(graphItems), broadcast, item.getSource()))
+                .build();
         return items;
     }
-    
+
     private Broadcast findBroadcast(Item broadcastItem, ScheduleRef.Entry entry) {
         BroadcastRef ref = entry.getBroadcast();
         for (Broadcast broadcast : broadcastItem.getBroadcasts()) {
-            if (broadcast.getSourceId().equals(ref .getSourceId())
-                || broadcast.getChannelId().equals(ref.getChannelId())
-                && ref.getTransmissionInterval().equals(broadcast.getTransmissionInterval())) {
+            if (broadcast.getSourceId().equals(ref.getSourceId())
+                    || broadcast.getChannelId().equals(ref.getChannelId())
+                    && ref.getTransmissionInterval().equals(broadcast.getTransmissionInterval())) {
                 return broadcast;
             }
         }
@@ -134,7 +143,10 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     }
 
     private Iterable<Item> graphItems(EquivalenceGraph graph, Function<Id, Item> toContent) {
-        return Iterables.filter(Iterables.transform(graph.getEquivalenceSet(), toContent), Predicates.notNull());
+        return Iterables.filter(
+                Iterables.transform(graph.getEquivalenceSet(), toContent),
+                Predicates.notNull()
+        );
     }
 
     private Map<Id, Item> itemsFor(OptionalMap<Id, EquivalenceGraph> graphs, List<Id> itemIds)
@@ -152,16 +164,20 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     }
 
     private Iterable<Id> graphIds(Collection<Optional<EquivalenceGraph>> values) {
-        return Iterables.concat(Iterables.transform(Optional.presentInstances(values), 
-            new Function<EquivalenceGraph, Iterable<Id>>(){
-                @Override
-                public Iterable<Id> apply(EquivalenceGraph input) {
-                    return input.getEquivalenceSet();
+        return Iterables.concat(Iterables.transform(
+                Optional.presentInstances(values),
+                new Function<EquivalenceGraph, Iterable<Id>>() {
+
+                    @Override
+                    public Iterable<Id> apply(EquivalenceGraph input) {
+                        return input.getEquivalenceSet();
+                    }
                 }
-            }));
+        ));
     }
 
-    private OptionalMap<Id, EquivalenceGraph> graphsFor(final List<Id> itemIds) throws WriteException {
+    private OptionalMap<Id, EquivalenceGraph> graphsFor(final List<Id> itemIds)
+            throws WriteException {
         return get(graphStore.resolveIds(itemIds));
     }
 
@@ -177,11 +193,13 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                 if (elem instanceof Item) {
                     Item item = (Item) elem;
                     Publisher src = item.getSource();
-                    for (Broadcast bcast : Iterables.filter(item.getBroadcasts(),Broadcast.ACTIVELY_PUBLISHED)) {
+                    for (Broadcast bcast : Iterables.filter(item.getBroadcasts(),
+                            Broadcast.ACTIVELY_PUBLISHED)) {
                         Item copy = item.copy();
                         copy.setBroadcasts(ImmutableSet.of(bcast));
                         updateEquivalentContent(src, bcast, graph, equivItems(copy, bcast,
-                                graphContent.getResources().filter(Item.class)));
+                                graphContent.getResources().filter(Item.class)
+                        ));
                     }
                 }
             }
@@ -192,7 +210,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         return Multimaps.index(graphContent, Sourceds.toPublisher()).asMap();
     }
 
-    private ImmutableSet<Item> filterSources(Map<Publisher, Collection<Item>> contentBySource, Broadcast subjBcast, Publisher src) {
+    private ImmutableSet<Item> filterSources(Map<Publisher, Collection<Item>> contentBySource,
+            Broadcast subjBcast, Publisher src) {
         ImmutableSet.Builder<Item> selected = ImmutableSet.builder();
         for (Map.Entry<Publisher, Collection<Item>> sourceContent : contentBySource.entrySet()) {
             if (sourceContent.getKey().equals(src)) {
@@ -219,8 +238,10 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         return ImmutableSet.of();
     }
 
-    private Iterable<? extends Item> matchingOrEmptyBroadcasts(final Broadcast subjBroadcast, Collection<Item> value) {
-        return Iterables.transform(value, new Function<Item, Item>(){
+    private Iterable<? extends Item> matchingOrEmptyBroadcasts(final Broadcast subjBroadcast,
+            Collection<Item> value) {
+        return Iterables.transform(value, new Function<Item, Item>() {
+
             @Override
             public Item apply(Item input) {
                 Item copy = input.copy();
@@ -240,7 +261,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     }
 
     private boolean broadcastMatch(Item item, Broadcast subjBcast) {
-        for (Broadcast broadcast : Iterables.filter(item.getBroadcasts(),Broadcast.ACTIVELY_PUBLISHED)) {
+        for (Broadcast broadcast : Iterables.filter(item.getBroadcasts(),
+                Broadcast.ACTIVELY_PUBLISHED)) {
             if (broadcastMatcher.matches(subjBcast, broadcast)) {
                 return true;
             }

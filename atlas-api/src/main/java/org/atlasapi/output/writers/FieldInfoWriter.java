@@ -1,7 +1,5 @@
 package org.atlasapi.output.writers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.generation.model.FieldInfo;
@@ -10,14 +8,15 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.v4.meta.LinkCreator;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class FieldInfoWriter implements EntityListWriter<FieldInfo> {
-    
+
     private static final String ELEMENT_NAME = "field";
-    
+
     private final String listName;
     private final LinkCreator linkCreator;
-    
+
     public FieldInfoWriter(String listName, LinkCreator linkCreator) {
         this.listName = checkNotNull(listName);
         this.linkCreator = checkNotNull(linkCreator);
@@ -29,7 +28,8 @@ public class FieldInfoWriter implements EntityListWriter<FieldInfo> {
         writer.writeField("description", entity.description());
         writer.writeField("type", entity.type());
         if (entity.isModelType()) {
-            writer.writeField("model_class_link",linkCreator.createModelLink(entity.type().toLowerCase()));
+            writer.writeField("model_class_link",
+                    linkCreator.createModelLink(entity.type().toLowerCase()));
         }
         writer.writeField("is_multiple", entity.isMultiple().toString());
         writer.writeField("json_type", entity.jsonType().value());

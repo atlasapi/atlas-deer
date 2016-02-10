@@ -1,22 +1,21 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class ContainerSummarySerializerTest {
 
     private final ContainerSummarySerializer serializer = new ContainerSummarySerializer();
-    
+
     @Test
     public void testDeSerializeContainerSummary() {
         serializeAndCheck(new ContainerSummary(null, null, null, null));
         serializeAndCheck(new ContainerSummary("title", null, null, null));
         serializeAndCheck(new ContainerSummary(null, "desc", null, null));
         serializeAndCheck(new ContainerSummary(null, null, "type", null));
-        serializeAndCheck(new ContainerSummary(null, null,  null, 1));
+        serializeAndCheck(new ContainerSummary(null, null, null, 1));
     }
 
     private void serializeAndCheck(ContainerSummary containerSummary) {

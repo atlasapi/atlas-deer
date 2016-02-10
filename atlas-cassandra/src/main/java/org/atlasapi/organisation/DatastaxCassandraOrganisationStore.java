@@ -1,13 +1,5 @@
 package org.atlasapi.organisation;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.nio.ByteBuffer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -15,8 +7,6 @@ import java.util.stream.StreamSupport;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.serialization.protobuf.CommonProtos;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -30,6 +20,16 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
@@ -40,7 +40,6 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private final String KEYS = "keys";
     private final String ORGANISATION_ID = "organisationId";
     private final String DATA = "data";
-
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -72,10 +71,12 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     @Override
     public ListenableFuture<Resolved<Organisation>> resolveIds(Iterable<Id> ids) {
-        Statement select = selectStatement.bind().setList(KEYS,
+        Statement select = selectStatement.bind().setList(
+                KEYS,
                 StreamSupport.stream(ids.spliterator(), false)
                         .map(Id::longValue)
-                        .collect(Collectors.toList()))
+                        .collect(Collectors.toList())
+        )
                 .setConsistencyLevel(readConsistency);
 
         ResultSetFuture result = session.executeAsync(select);
@@ -92,12 +93,14 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         );
     }
 
-    @Override public void write(Organisation organisation) {
-        ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation).toByteArray());
+    @Override
+    public void write(Organisation organisation) {
+        ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation)
+                .toByteArray());
 
         session.execute(rowUpdate.bind()
-                .setLong(ORGANISATION_ID,organisation.getId().longValue())
-                .setBytes(DATA,serializedOrganisation));
+                .setLong(ORGANISATION_ID, organisation.getId().longValue())
+                .setBytes(DATA, serializedOrganisation));
     }
 
     protected Organisation extractOrganisation(Row row) {
@@ -118,7 +121,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         private ConsistencyLevel writeConsistency;
         private ConsistencyLevel readConsistency;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         @Override
         public WriteConsistencyStep withSession(Session session) {
@@ -149,18 +153,22 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     }
 
     public interface SessionStep {
+
         WriteConsistencyStep withSession(Session session);
     }
 
     public interface WriteConsistencyStep {
+
         ReadConsistencyStep withWriteConsistency(ConsistencyLevel writeConsistency);
     }
 
     public interface ReadConsistencyStep {
+
         BuildStep withReadConsistency(ConsistencyLevel readConsistency);
     }
 
     public interface BuildStep {
+
         DatastaxCassandraOrganisationStore build();
     }
 

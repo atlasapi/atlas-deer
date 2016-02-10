@@ -43,6 +43,7 @@ import org.atlasapi.query.v4.topic.TopicContentQueryExecutor;
 import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 import org.atlasapi.search.SearchResolver;
 import org.atlasapi.topic.Topic;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -54,13 +55,21 @@ public class QueryModule {
 
     private @Autowired AtlasPersistenceModule persistenceModule;
 
-    @Bean QueryExecutor<Topic> topicQueryExecutor() {
-        return new IndexBackedTopicQueryExecutor(persistenceModule.topicIndex(), persistenceModule.topicStore());
+    @Bean
+    QueryExecutor<Topic> topicQueryExecutor() {
+        return new IndexBackedTopicQueryExecutor(
+                persistenceModule.topicIndex(),
+                persistenceModule.topicStore()
+        );
     }
-    
+
     @Bean
     public ContextualQueryExecutor<Topic, Content> topicContentQueryExecutor() {
-        return new TopicContentQueryExecutor(persistenceModule.topicStore(), persistenceModule.contentIndex(), mergingContentResolver());
+        return new TopicContentQueryExecutor(
+                persistenceModule.topicStore(),
+                persistenceModule.contentIndex(),
+                mergingContentResolver()
+        );
     }
 
     @Bean
@@ -75,8 +84,10 @@ public class QueryModule {
 
     @Bean
     public QueryExecutor<Content> contentQueryExecutor() {
-        return new IndexBackedEquivalentContentQueryExecutor(persistenceModule.contentIndex(), 
-            mergingContentResolver());
+        return new IndexBackedEquivalentContentQueryExecutor(
+                persistenceModule.contentIndex(),
+                mergingContentResolver()
+        );
     }
 
     @Bean
@@ -89,32 +100,40 @@ public class QueryModule {
         return new ChannelGroupQueryExecutor(persistenceModule.channelGroupResolver());
     }
 
-
     public MergingEquivalentsResolver<Content> mergingContentResolver() {
         return new AnnotationBasedMergingEquivalentsResolver<Content>(
-            persistenceModule.getEquivalentContentStore(), 
-            equivalentsMerger()
+                persistenceModule.getEquivalentContentStore(),
+                equivalentsMerger()
         );
     }
 
     private StrategyBackedEquivalentsMerger<Content> equivalentsMerger() {
-        return new StrategyBackedEquivalentsMerger<Content>(new OutputContentMerger(contentHierarchyChooser()));
+        return new StrategyBackedEquivalentsMerger<Content>(new OutputContentMerger(
+                contentHierarchyChooser()));
     }
-    
+
     private EquivalentSetContentHierarchyChooser contentHierarchyChooser() {
         return new MostPrecidentWithChildrenContentHierarchyChooser();
     }
-    
+
     @Qualifier("store")
-    @Bean ScheduleQueryExecutor equivalentScheduleStoreScheduleQueryExecutor() {
+    @Bean
+    ScheduleQueryExecutor equivalentScheduleStoreScheduleQueryExecutor() {
         return new EquivalentScheduleResolverBackedScheduleQueryExecutor(persistenceModule.channelResolver(),
-            persistenceModule.getEquivalentScheduleStore(), equivalentsMerger(), FlexibleBroadcastMatcher.exactStartEnd());
+                persistenceModule.getEquivalentScheduleStore(),
+                equivalentsMerger(),
+                FlexibleBroadcastMatcher.exactStartEnd()
+        );
     }
 
     @Bean
     public SearchResolver v4SearchResolver() {
         // FIXME externalize timeout
-        return new ContentResolvingSearcher(persistenceModule.contentSearcher(), persistenceModule.contentStore(), 60000);
+        return new ContentResolvingSearcher(
+                persistenceModule.contentSearcher(),
+                persistenceModule.contentStore(),
+                60000
+        );
     }
 
     @Bean

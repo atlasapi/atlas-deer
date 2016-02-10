@@ -1,17 +1,5 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static org.atlasapi.content.CassandraEquivalentContentStore.CONTENT_ID_KEY;
-import static org.atlasapi.content.CassandraEquivalentContentStore.EQUIVALENT_CONTENT_TABLE;
-import static org.atlasapi.content.CassandraEquivalentContentStore.GRAPH_KEY;
-import static org.atlasapi.content.CassandraEquivalentContentStore.SET_ID_KEY;
-import static org.atlasapi.media.entity.Publisher.METABROADCAST;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -25,11 +13,8 @@ import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.TestCassandraPersistenceModule;
-import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import com.metabroadcast.common.time.DateTimeZones;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
@@ -41,11 +26,25 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.time.DateTimeZones;
+import org.joda.time.DateTime;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static org.atlasapi.content.CassandraEquivalentContentStore.CONTENT_ID_KEY;
+import static org.atlasapi.content.CassandraEquivalentContentStore.EQUIVALENT_CONTENT_TABLE;
+import static org.atlasapi.content.CassandraEquivalentContentStore.GRAPH_KEY;
+import static org.atlasapi.content.CassandraEquivalentContentStore.SET_ID_KEY;
+import static org.atlasapi.media.entity.Publisher.METABROADCAST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class CassandraEquivalentContentStoreRowIT {
-    
+
     private static TestCassandraPersistenceModule persistenceModule;
 
     @BeforeClass
@@ -53,12 +52,12 @@ public class CassandraEquivalentContentStoreRowIT {
         persistenceModule = new TestCassandraPersistenceModule();
         persistenceModule.startAsync().awaitRunning(1, TimeUnit.MINUTES);
     }
-    
+
     @After
     public void after() throws Exception {
         persistenceModule.reset();
     }
-    
+
     @AfterClass
     public static void tearDown() {
         persistenceModule.tearDown();
@@ -79,42 +78,42 @@ public class CassandraEquivalentContentStoreRowIT {
         persistenceModule.equivalentContentStore().updateContent(c4.getId());
         persistenceModule.equivalentContentStore().updateContent(c5.getId());
         persistenceModule.equivalentContentStore().updateContent(c6.getId());
-        
+
         makeEquivalent(c2, c4);
         makeEquivalent(c3, c5);
-        
+
         resolved(c2, c2, c4);
         resolved(c3, c3, c5);
-        
+
         assertNoRowsWithSetId(c4.getId());
         assertNoRowsWithSetId(c5.getId());
-        
+
         makeEquivalent(c1, c2, c3);
-        
+
         resolved(c1, c1, c2, c3, c4, c5);
-        
+
         assertNoRowsWithSetId(c2.getId());
         assertNoRowsWithSetId(c3.getId());
         assertNoRowsWithSetId(c4.getId());
         assertNoRowsWithSetId(c5.getId());
-        
+
         makeEquivalent(c1, c2);
-        
+
         resolved(c1, c1, c2, c4);
         resolved(c3, c3, c5);
-        
+
         assertNoRowsWithIds(c1.getId(), c3.getId());
         assertNoRowsWithIds(c1.getId(), c5.getId());
         assertNoRowsWithSetId(c2.getId());
         assertNoRowsWithSetId(c4.getId());
         assertNoRowsWithSetId(c5.getId());
-        
+
         makeEquivalent(c2);
-        
-        resolved(c1, c1, c2); 
+
+        resolved(c1, c1, c2);
         resolved(c4, c4);
         resolved(c3, c3, c5);
-        
+
         assertNoRowsWithIds(c1.getId(), c4.getId());
         assertNoRowsWithSetId(c2.getId());
         assertNoRowsWithSetId(c5.getId());
@@ -285,30 +284,51 @@ public class CassandraEquivalentContentStoreRowIT {
                 .and(eq(CONTENT_ID_KEY, contentId.longValue()));
         ResultSet rows = session.execute(rowsForIdQuery);
         boolean exhausted = rows.isExhausted();
-        assertTrue(String.format("Expected 0 rows for %s-%s, got %s", setId, contentId, rows.all().size()), exhausted);
+        assertTrue(String.format(
+                "Expected 0 rows for %s-%s, got %s",
+                setId,
+                contentId,
+                rows.all().size()
+        ), exhausted);
     }
 
     private void assertNoRowsWithSetId(Id setId) {
         Session session = persistenceModule.getCassandraSession();
-        Statement rowsForIdQuery = select().all().from(EQUIVALENT_CONTENT_TABLE).where(eq(SET_ID_KEY, setId.longValue()));
+        Statement rowsForIdQuery = select().all()
+                .from(EQUIVALENT_CONTENT_TABLE)
+                .where(eq(SET_ID_KEY, setId.longValue()));
         ResultSet rows = session.execute(rowsForIdQuery);
         boolean exhausted = rows.isExhausted();
-        assertTrue(String.format("Expected 0 rows for %s, got %s", setId, rows.all().size()), exhausted);
+        assertTrue(
+                String.format("Expected 0 rows for %s, got %s", setId, rows.all().size()),
+                exhausted
+        );
     }
 
     private void resolved(Content c, Content... cs) throws Exception {
         ResolvedEquivalents<Content> resolved
-            = get(persistenceModule.equivalentContentStore().resolveIds(ImmutableList.of(c.getId()), 
-                    ImmutableSet.of(METABROADCAST), Annotation.all()));
+                = get(persistenceModule.equivalentContentStore()
+                .resolveIds(ImmutableList.of(c.getId()),
+                        ImmutableSet.of(METABROADCAST), Annotation.all()
+                ));
         ImmutableSet<Content> idContent = resolved.get(c.getId());
         assertEquals(ImmutableSet.copyOf(cs), idContent);
     }
 
     private void resolvedWithoutEquivalence(Id setId) throws Exception {
-        ResolvedEquivalents<Content> resolvedWithoutEquivalence = get(persistenceModule.equivalentContentStore().
-                resolveIdsWithoutEquivalence(ImmutableSet.of(setId), ImmutableSet.of(METABROADCAST), ImmutableSet.of()));
+        ResolvedEquivalents<Content> resolvedWithoutEquivalence = get(persistenceModule.equivalentContentStore()
+                .
+                        resolveIdsWithoutEquivalence(
+                                ImmutableSet.of(setId),
+                                ImmutableSet.of(METABROADCAST),
+                                ImmutableSet.of()
+                        ));
         ResolvedEquivalents<Content> resolved = get(persistenceModule.equivalentContentStore().
-                resolveIds(ImmutableSet.of(setId), ImmutableSet.of(METABROADCAST), ImmutableSet.of()));
+                resolveIds(
+                        ImmutableSet.of(setId),
+                        ImmutableSet.of(METABROADCAST),
+                        ImmutableSet.of()
+                ));
         assertEquals(resolved.size(), 3);
         assertEquals(resolvedWithoutEquivalence.size(), 1);
     }
@@ -322,25 +342,27 @@ public class CassandraEquivalentContentStoreRowIT {
     private <T> T get(ListenableFuture<T> resolveIds) throws Exception {
         return Futures.get(resolveIds, 10, TimeUnit.MINUTES, Exception.class);
     }
-    
 
     private void makeEquivalent(Content c, Content... cs) throws WriteException {
         Set<ResourceRef> csRefs = ImmutableSet.<ResourceRef>copyOf(
                 Iterables.transform(ImmutableSet.copyOf(cs), Content.toContentRef()));
-       
+
         Optional<EquivalenceGraphUpdate> graphs
-            = persistenceModule.contentEquivalenceGraphStore().updateEquivalences(c.toRef(), csRefs, 
-                ImmutableSet.of(METABROADCAST, Publisher.BBC));
-        
+                = persistenceModule.contentEquivalenceGraphStore()
+                .updateEquivalences(c.toRef(), csRefs,
+                        ImmutableSet.of(METABROADCAST, Publisher.BBC)
+                );
+
         persistenceModule.equivalentContentStore().updateEquivalences(graphs.get());
-        
+
     }
 
     private Content createAndWriteItem(Id id, Publisher src) throws WriteException {
         Content content = new Item(id, src);
         content.setThisOrChildLastUpdated(new DateTime(DateTimeZones.UTC));
-        
-        WriteResult<Content, Content> result = persistenceModule.contentStore().writeContent(content);
+
+        WriteResult<Content, Content> result = persistenceModule.contentStore()
+                .writeContent(content);
         assertTrue("Failed to write " + content, result.written());
         return content;
     }

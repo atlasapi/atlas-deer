@@ -3,7 +3,7 @@ package org.atlasapi.query.common;
 import com.google.common.collect.ImmutableSet;
 
 public enum Resource {
-    
+
     CONTENT("content", "content"),
     TOPIC("topic", "topics"),
     CHANNEL("channel", "channels"),
@@ -17,10 +17,9 @@ public enum Resource {
     END_USER_LICENSE("end_user_license", "end_user_licenses"),
     MODEL_INFO("model_class", "model_classes"),
     ENDPOINT_INFO("endpoint", "endpoints"),
-    EVENT("event","events"),
-    ORGANISATION("organisation", "organisations")
-    ;
-    
+    EVENT("event", "events"),
+    ORGANISATION("organisation", "organisations");
+
     private final String singular;
     private final String plural;
 
@@ -28,24 +27,23 @@ public enum Resource {
         this.singular = singular;
         this.plural = plural;
     }
-    
-    
+
     public String getSingular() {
         return this.singular;
     }
-    
+
     public String getPlural() {
         return this.plural;
     }
-    
+
     public String key() {
         return toString().toLowerCase();
     }
 
     private static final ImmutableSet<Resource> ALL = ImmutableSet.copyOf(values());
-    
+
     public static ImmutableSet<Resource> all() {
         return ALL;
     }
-    
+
 }

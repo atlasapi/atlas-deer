@@ -1,7 +1,5 @@
 package org.atlasapi.output.annotation;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.generation.model.EndpointClassInfo;
@@ -12,12 +10,14 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.OperationWriter;
 import org.atlasapi.query.v4.meta.LinkCreator;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class EndpointInfoAnnotation<T extends EndpointClassInfo> extends
         OutputAnnotation<T> {
 
     private final EntityListWriter<? super Operation> operationWriter;
     private final LinkCreator linkCreator;
-    
+
     public EndpointInfoAnnotation(LinkCreator linkCreator) {
         this.linkCreator = checkNotNull(linkCreator);
         this.operationWriter = new OperationWriter("operations");

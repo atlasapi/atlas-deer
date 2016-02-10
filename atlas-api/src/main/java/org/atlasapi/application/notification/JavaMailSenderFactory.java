@@ -7,6 +7,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 public class JavaMailSenderFactory implements FactoryBean<JavaMailSender> {
+
     private final JavaMailSenderImpl sender;
 
     public JavaMailSenderFactory() {

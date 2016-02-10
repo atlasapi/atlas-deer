@@ -1,11 +1,8 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.DateTimeSerializer;
@@ -18,11 +15,14 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
 import org.atlasapi.util.ImmutableCollectors;
 
-import com.google.common.collect.Iterables;
 import com.metabroadcast.common.intl.Countries;
 
+import com.google.common.collect.Iterables;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
-    
+
     private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
     private final ImageSerializer imageSerializer = new ImageSerializer();
     private final EncodingSerializer encodingSerializer = new EncodingSerializer();
@@ -45,12 +45,12 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     public ContentSerializationVisitor(ContentResolver resolver) {
         this.resolver = checkNotNull(resolver);
     }
-    
+
     private Builder visitIdentified(Identified ided) {
         Builder builder = ContentProtos.Content.newBuilder();
         if (ided.getId() != null) {
             builder.setId(ided.getId().longValue())
-                .setType(ided.getClass().getSimpleName().toLowerCase());
+                    .setType(ided.getClass().getSimpleName().toLowerCase());
         }
         if (ided.getLastUpdated() != null) {
             builder.setLastUpdated(dateTimeSerializer.serialize(ided.getLastUpdated()));
@@ -65,13 +65,13 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         for (EquivalenceRef equivRef : ided.getEquivalentTo()) {
             builder.addEquivs(CommonProtos.Reference.newBuilder()
-                .setId(equivRef.getId().longValue())
-                .setSource(equivRef.getSource().key())
+                    .setId(equivRef.getId().longValue())
+                    .setSource(equivRef.getSource().key())
             );
         }
         return builder;
     }
-    
+
     private Builder visitDescribed(Described content) {
         Builder builder = visitIdentified(content);
         if (content.getThisOrChildLastUpdated() != null) {
@@ -168,21 +168,21 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         }
         for (ContentGroupRef groupRef : content.getContentGroupRefs()) {
             builder.addContentGroupsBuilder()
-                .setId(groupRef.getId().longValue())
-                .build();
+                    .setId(groupRef.getId().longValue())
+                    .build();
         }
-        
+
         builder.addAllLanguage(content.getLanguages());
-        
+
         for (KeyPhrase keyPhrase : content.getKeyPhrases()) {
             builder.addKeyPhrases(keyPhraseSerializer.serialize(keyPhrase));
         }
-        
+
         for (Tag tag : content.getTags()) {
             builder.addTopicRefs(tagSerializer.serialize(tag));
         }
 
-        for (EventRef eventRef: content.getEventRefs()) {
+        for (EventRef eventRef : content.getEventRefs()) {
             builder.addEventRefs(eventRefSerializer.serialize(eventRef));
         }
 
@@ -220,30 +220,44 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         return builder;
     }
 
-    private Iterable<ContentProtos.SegmentEvent> serializeSegmentEvents(List<SegmentEvent> segmentEvents) {
-        return Iterables.transform(segmentEvents, segmentEvent -> segmentEventSerializer.serialize(segmentEvent).build());
+    private Iterable<ContentProtos.SegmentEvent> serializeSegmentEvents(
+            List<SegmentEvent> segmentEvents) {
+        return Iterables.transform(
+                segmentEvents,
+                segmentEvent -> segmentEventSerializer.serialize(segmentEvent).build()
+        );
     }
-    
+
     private Iterable<ContentProtos.Broadcast> serializeBroadcasts(Set<Broadcast> broadcasts) {
-      return Iterables.transform(broadcasts, broadcast -> broadcastSerializer.serialize(broadcast).build());
+        return Iterables.transform(
+                broadcasts,
+                broadcast -> broadcastSerializer.serialize(broadcast).build()
+        );
     }
-    
+
     private Iterable<ContentProtos.Encoding> serializeEncoding(Set<Encoding> encodings) {
-      return Iterables.transform(encodings, encoding -> encodingSerializer.serialize(encoding).build());
+        return Iterables.transform(
+                encodings,
+                encoding -> encodingSerializer.serialize(encoding).build()
+        );
     }
 
-    private Iterable<ContentProtos.Restriction> serializeRestrictions(Set<Restriction> restrictions) {
-        return Iterables.transform(restrictions, restriction -> restrictionSerializer.serialize(restriction).build());
+    private Iterable<ContentProtos.Restriction> serializeRestrictions(
+            Set<Restriction> restrictions) {
+        return Iterables.transform(
+                restrictions,
+                restriction -> restrictionSerializer.serialize(restriction).build()
+        );
     }
 
-    
     private Builder visitContainer(Container container) {
         Builder builder = visitContent(container);
         ContentRefSerializer refSerializer = new ContentRefSerializer(container.getSource());
         for (ItemRef child : container.getItemRefs()) {
             builder.addChildren(refSerializer.serialize(child));
         }
-        for (Map.Entry<ItemRef, Iterable<BroadcastRef>> upcomingContent : container.getUpcomingContent().entrySet()) {
+        for (Map.Entry<ItemRef, Iterable<BroadcastRef>> upcomingContent : container.getUpcomingContent()
+                .entrySet()) {
             builder.addUpcomingContent(
                     itemAndBroadcastRefSerializer.serialize(
                             upcomingContent.getKey(),
@@ -251,7 +265,8 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                     )
             );
         }
-        for (Map.Entry<ItemRef, Iterable<LocationSummary>> availableContent : container.getAvailableContent().entrySet()) {
+        for (Map.Entry<ItemRef, Iterable<LocationSummary>> availableContent : container.getAvailableContent()
+                .entrySet()) {
             builder.addAvailableContent(
                     itemAndLocationSummarySerializer.serialize(
                             availableContent.getKey(),
@@ -266,7 +281,6 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
                         is -> itemSummarySerializer.serialize(is).build()
                 )
         );
-
 
         if (container.getCertificates() != null) {
             builder.addAllCertificates(container.getCertificates().stream()
@@ -330,7 +344,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     public Builder visit(Film film) {
         Builder builder = visitItem(film);
         for (ReleaseDate releaseDate : film.getReleaseDates()) {
-            builder.addReleaseDates(releaseDateSerializer .serialize(releaseDate));
+            builder.addReleaseDates(releaseDateSerializer.serialize(releaseDate));
         }
         if (film.getWebsiteUrl() != null) {
             builder.setWebsiteUrl(film.getWebsiteUrl());
@@ -359,10 +373,10 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     public Builder visit(Item item) {
         return visitItem(item);
     }
-    
+
     @Override
     public Builder visit(Clip clip) {
         return visitItem(clip);
     }
-    
+
 }

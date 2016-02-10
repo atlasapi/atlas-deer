@@ -31,19 +31,19 @@ public class EventSerializer implements Serializer<Event, byte[]> {
 
         builder.setIdentified(identifiedSerializer.serialize(event));
 
-        if(event.getTitle() != null) {
+        if (event.getTitle() != null) {
             builder.setTitle(builder.getTitleBuilder().setValue(event.getTitle()).build());
         }
-        if(event.getSource() != null) {
+        if (event.getSource() != null) {
             builder.setSource(event.getSource().key());
         }
-        if(event.getVenue() != null) {
+        if (event.getVenue() != null) {
             builder.setVenue(topicSerializer.serializeToBuilder(event.getVenue()));
         }
-        if(event.getStartTime() != null) {
+        if (event.getStartTime() != null) {
             builder.setStartTime(dateTimeSerializer.serialize(event.getStartTime()));
         }
-        if(event.getEndTime() != null) {
+        if (event.getEndTime() != null) {
             builder.setEndTime(dateTimeSerializer.serialize(event.getEndTime()));
         }
         if (event.getParticipants() != null) {

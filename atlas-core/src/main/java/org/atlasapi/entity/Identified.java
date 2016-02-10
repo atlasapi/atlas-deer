@@ -1,7 +1,5 @@
 package org.atlasapi.entity;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -11,7 +9,6 @@ import org.atlasapi.content.Content;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.DateTime;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -21,42 +18,44 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
+import org.joda.time.DateTime;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Base type for descriptions of resources.
  */
 public class Identified implements Identifiable, Aliased {
 
-	private Id id;
-	private String canonicalUri;
-	private String curie;
-	private @Deprecated Set<String> aliasUrls = Sets.newHashSet();
-	private ImmutableSet<Alias> aliases = ImmutableSet.of();
-	private Set<EquivalenceRef> equivalentTo = Sets.newHashSet();
-	/**
-	 * Records the time that the 3rd party reported that the
-	 * {@link Identified} was last updated
-	 */
-	private DateTime lastUpdated;
-	private DateTime equivalenceUpdate;
-	
-	public Identified(String uri, String curie) {
-		this.canonicalUri = uri;
-		this.curie = curie;
-	}
-	
-	public Identified() { 
-		/* allow anonymous entities */ 
-		this.canonicalUri = null;
-		this.curie = null;
-	}
-	
-	public Identified(String uri) { 
-		this(uri, null);
-	}
-	
-	public Identified(Id id) {
-	    this.id = id;
+    private Id id;
+    private String canonicalUri;
+    private String curie;
+    private @Deprecated Set<String> aliasUrls = Sets.newHashSet();
+    private ImmutableSet<Alias> aliases = ImmutableSet.of();
+    private Set<EquivalenceRef> equivalentTo = Sets.newHashSet();
+    /**
+     * Records the time that the 3rd party reported that the {@link Identified} was last updated
+     */
+    private DateTime lastUpdated;
+    private DateTime equivalenceUpdate;
+
+    public Identified(String uri, String curie) {
+        this.canonicalUri = uri;
+        this.curie = curie;
+    }
+
+    public Identified() {
+        /* allow anonymous entities */
+        this.canonicalUri = null;
+        this.curie = null;
+    }
+
+    public Identified(String uri) {
+        this(uri, null);
+    }
+
+    public Identified(Id id) {
+        this.id = id;
     }
 
     protected Identified(Builder<?, ?> builder) {
@@ -70,67 +69,67 @@ public class Identified implements Identifiable, Aliased {
     }
 
     @FieldName("id")
-	@Override
-	public Id getId() {
-		return id;
-	}
+    @Override
+    public Id getId() {
+        return id;
+    }
 
-	public void setId(long id) {
-		this.id = Id.valueOf(id);
-	}
+    public void setId(long id) {
+        this.id = Id.valueOf(id);
+    }
 
-	public void setId(Id id) {
-		this.id = id;
-	}
+    public void setId(Id id) {
+        this.id = id;
+    }
 
-	@FieldName("uri")
-	public String getCanonicalUri() {
-		return canonicalUri;
-	}
+    @FieldName("uri")
+    public String getCanonicalUri() {
+        return canonicalUri;
+    }
 
-	public void setCanonicalUri(String canonicalUri) {
-		this.canonicalUri = canonicalUri;
-	}
+    public void setCanonicalUri(String canonicalUri) {
+        this.canonicalUri = canonicalUri;
+    }
 
-	@FieldName("curie")
-	public String getCurie() {
-		return curie;
-	}
+    @FieldName("curie")
+    public String getCurie() {
+        return curie;
+    }
 
-	public void setCurie(String curie) {
-		this.curie = curie;
-	}
+    public void setCurie(String curie) {
+        this.curie = curie;
+    }
 
-	@FieldName("alias_urls")
+    @FieldName("alias_urls")
     @Deprecated
-	public Set<String> getAliasUrls() {
-		return aliasUrls;
-	}
+    public Set<String> getAliasUrls() {
+        return aliasUrls;
+    }
 
-	@Deprecated
-	public void setAliasUrls(Iterable<String> urls) {
-		this.aliasUrls = ImmutableSortedSet.copyOf(urls);
-	}
+    @Deprecated
+    public void setAliasUrls(Iterable<String> urls) {
+        this.aliasUrls = ImmutableSortedSet.copyOf(urls);
+    }
 
-	@FieldName("uris")
-	@Deprecated
-	public Set<String> getAllUris() {
-		Set<String> allUris = Sets.newHashSet(getAliasUrls());
-		allUris.add(getCanonicalUri());
-		return Collections.unmodifiableSet(allUris);
-	}
+    @FieldName("uris")
+    @Deprecated
+    public Set<String> getAllUris() {
+        Set<String> allUris = Sets.newHashSet(getAliasUrls());
+        allUris.add(getCanonicalUri());
+        return Collections.unmodifiableSet(allUris);
+    }
 
-	@Deprecated
-	public void addAliasUrl(String alias) {
-		addAliasUrls(ImmutableList.of(alias));
-	}
+    @Deprecated
+    public void addAliasUrl(String alias) {
+        addAliasUrls(ImmutableList.of(alias));
+    }
 
-	@Deprecated
-	public void addAliasUrls(Iterable<String> urls) {
-		setAliasUrls(Iterables.concat(this.aliasUrls, ImmutableList.copyOf(urls)));
-	}
+    @Deprecated
+    public void addAliasUrls(Iterable<String> urls) {
+        setAliasUrls(Iterables.concat(this.aliasUrls, ImmutableList.copyOf(urls)));
+    }
 
-	@FieldName("aliases")
+    @FieldName("aliases")
     @Override
     public ImmutableSet<Alias> getAliases() {
         return aliases;
@@ -144,72 +143,72 @@ public class Identified implements Identifiable, Aliased {
         addAliases(ImmutableList.of(alias));
     }
 
-	public void addAliases(Iterable<Alias> aliases) {
-	    setAliases(Iterables.concat(this.aliases, ImmutableList.copyOf(aliases)));
-	}
+    public void addAliases(Iterable<Alias> aliases) {
+        setAliases(Iterables.concat(this.aliases, ImmutableList.copyOf(aliases)));
+    }
 
-	public Set<EquivalenceRef> getEquivalentTo() {
-		return equivalentTo;
-	}
+    public Set<EquivalenceRef> getEquivalentTo() {
+        return equivalentTo;
+    }
 
-	public void setEquivalentTo(Set<EquivalenceRef> uris) {
-		this.equivalentTo = uris;
-	}
+    public void setEquivalentTo(Set<EquivalenceRef> uris) {
+        this.equivalentTo = uris;
+    }
 
-	//wut?
-	public void addEquivalentTo(Content content) {
-		checkNotNull(content.getCanonicalUri());
-		this.equivalentTo.add(EquivalenceRef.valueOf(content));
-	}
+    //wut?
+    public void addEquivalentTo(Content content) {
+        checkNotNull(content.getCanonicalUri());
+        this.equivalentTo.add(EquivalenceRef.valueOf(content));
+    }
 
-	public Identified copyWithEquivalentTo(Iterable<EquivalenceRef> refs) {
-		this.equivalentTo = ImmutableSet.copyOf(refs);
-		return this;
-	}
+    public Identified copyWithEquivalentTo(Iterable<EquivalenceRef> refs) {
+        this.equivalentTo = ImmutableSet.copyOf(refs);
+        return this;
+    }
 
-	@FieldName("last_updated")
-	public DateTime getLastUpdated() {
-		return lastUpdated;
-	}
+    @FieldName("last_updated")
+    public DateTime getLastUpdated() {
+        return lastUpdated;
+    }
 
-	public void setLastUpdated(DateTime lastUpdated) {
-		this.lastUpdated = lastUpdated;
-	}
+    public void setLastUpdated(DateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 
-	@FieldName("equivalence_update")
-	public DateTime getEquivalenceUpdate() {
-		return equivalenceUpdate;
-	}
+    @FieldName("equivalence_update")
+    public DateTime getEquivalenceUpdate() {
+        return equivalenceUpdate;
+    }
 
-	public void setEquivalenceUpdate(DateTime equivalenceUpdate) {
-		this.equivalenceUpdate = equivalenceUpdate;
-	}
+    public void setEquivalenceUpdate(DateTime equivalenceUpdate) {
+        this.equivalenceUpdate = equivalenceUpdate;
+    }
 
-	@Override
-	public int hashCode() {
-		return id != null ? id.hashCode(): super.hashCode();
-	}
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : super.hashCode();
+    }
 
-	@Override
-	public boolean equals(Object that) {
-		if (this == that) {
-			return true;
-		}
-		if (that instanceof Identified && id != null) {
+    @Override
+    public boolean equals(Object that) {
+        if (this == that) {
+            return true;
+        }
+        if (that instanceof Identified && id != null) {
             Identified other = (Identified) that;
             return id.equals(other.id);
         }
-		return false;
-	}
+        return false;
+    }
 
-	@Override
-	public String toString() {
-		return Objects.toStringHelper(getClass().getSimpleName().toLowerCase())
-				.addValue(id != null ? id : "no-id")
-				.toString();
-	}
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(getClass().getSimpleName().toLowerCase())
+                .addValue(id != null ? id : "no-id")
+                .toString();
+    }
 
-	public static final Comparator<Identified> DESCENDING_LAST_UPDATED = (s1, s2) -> {
+    public static final Comparator<Identified> DESCENDING_LAST_UPDATED = (s1, s2) -> {
         if (s1.getLastUpdated() == null && s2.getLastUpdated() == null) {
             return 0;
         }
@@ -222,33 +221,35 @@ public class Identified implements Identifiable, Aliased {
 
         return s2.getLastUpdated().compareTo(s1.getLastUpdated());
     };
-	
-	 /**
-     * This method attempts to preserve symmetry of
-     * equivalence (since content is persisted independently
-     * there is often a window of inconsistency)
+
+    /**
+     * This method attempts to preserve symmetry of equivalence (since content is persisted
+     * independently there is often a window of inconsistency)
      */
-	public <T extends Identifiable & Sourced & Equivalable<T>> boolean isEquivalentTo(T content) {
-		return getEquivalentTo().contains(EquivalenceRef.valueOf(content))
-	        || Iterables.contains(Iterables.transform(content.getEquivalentTo(), Identifiables.toId()), id);
-	}
-	
-	public static void copyTo(Identified from, Identified to) {
-	    to.id = from.id;
-		to.canonicalUri = from.canonicalUri;
-		to.curie = from.curie;
-		to.aliasUrls = Sets.newHashSet(from.aliasUrls);
-		to.aliases = ImmutableSet.copyOf(from.aliases);
-	    to.equivalentTo = Sets.newHashSet(from.equivalentTo);
-	    to.lastUpdated = from.lastUpdated;
-		to.equivalenceUpdate = from.equivalenceUpdate;
-	}
-	
-	public static <T extends Identified> List<T> sort(List<T> content,
-			final Iterable<String> orderIterable) {
-        
+    public <T extends Identifiable & Sourced & Equivalable<T>> boolean isEquivalentTo(T content) {
+        return getEquivalentTo().contains(EquivalenceRef.valueOf(content))
+                || Iterables.contains(Iterables.transform(
+                content.getEquivalentTo(),
+                Identifiables.toId()
+        ), id);
+    }
+
+    public static void copyTo(Identified from, Identified to) {
+        to.id = from.id;
+        to.canonicalUri = from.canonicalUri;
+        to.curie = from.curie;
+        to.aliasUrls = Sets.newHashSet(from.aliasUrls);
+        to.aliases = ImmutableSet.copyOf(from.aliases);
+        to.equivalentTo = Sets.newHashSet(from.equivalentTo);
+        to.lastUpdated = from.lastUpdated;
+        to.equivalenceUpdate = from.equivalenceUpdate;
+    }
+
+    public static <T extends Identified> List<T> sort(List<T> content,
+            final Iterable<String> orderIterable) {
+
         final ImmutableList<String> order = ImmutableList.copyOf(orderIterable);
-        
+
         Comparator<Identified> byPositionInList = new Comparator<Identified>() {
 
             @Override
@@ -269,7 +270,7 @@ public class Identified implements Identifiable, Aliased {
                 return -1;
             }
         };
-        
+
         List<T> toSort = Lists.newArrayList(content);
         Collections.sort(toSort, byPositionInList);
         return toSort;
@@ -280,16 +281,18 @@ public class Identified implements Identifiable, Aliased {
     }
 
     public abstract static class Builder<T extends Identified, B extends Builder<T, B>> {
+
         private Id id;
         private String canonicalUri;
         private String curie;
-	    private @Deprecated ImmutableSet<String> aliasUrls = ImmutableSet.of();
+        private @Deprecated ImmutableSet<String> aliasUrls = ImmutableSet.of();
         private ImmutableSet<Alias> aliases = ImmutableSet.of();
         private ImmutableSet<EquivalenceRef> equivalentTo = ImmutableSet.of();
         private DateTime lastUpdated;
         private DateTime equivalenceUpdate;
 
-        protected Builder() {}
+        protected Builder() {
+        }
 
         public B withId(Id id) {
             this.id = id;
@@ -306,15 +309,15 @@ public class Identified implements Identifiable, Aliased {
             return self();
         }
 
-	    /**
-	     * @deprecated Use {@link org.atlasapi.entity.Identified.Builder#withAliases(Iterable)}
-	     * instead
-	     */
-	    @Deprecated
-	    public B withAliasUrls(Iterable<String> aliasUrls) {
-		    this.aliasUrls = ImmutableSet.copyOf(aliasUrls);
-		    return self();
-	    }
+        /**
+         * @deprecated Use {@link org.atlasapi.entity.Identified.Builder#withAliases(Iterable)}
+         * instead
+         */
+        @Deprecated
+        public B withAliasUrls(Iterable<String> aliasUrls) {
+            this.aliasUrls = ImmutableSet.copyOf(aliasUrls);
+            return self();
+        }
 
         public B withAliases(Iterable<Alias> aliases) {
             this.aliases = ImmutableSet.copyOf(aliases);
@@ -343,14 +346,15 @@ public class Identified implements Identifiable, Aliased {
 
     public static class IdentifiedBuilder extends Builder<Identified, IdentifiedBuilder> {
 
-	    private IdentifiedBuilder() {}
+        private IdentifiedBuilder() {
+        }
 
-	    @Override
-	    public Identified build() {
-		    return new Identified(this);
-	    }
+        @Override
+        public Identified build() {
+            return new Identified(this);
+        }
 
-	    @Override
+        @Override
         protected IdentifiedBuilder self() {
             return this;
         }

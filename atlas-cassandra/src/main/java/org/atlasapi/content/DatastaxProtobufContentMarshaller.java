@@ -1,11 +1,5 @@
 package org.atlasapi.content;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.nio.ByteBuffer;
 
 import org.atlasapi.entity.Id;
@@ -18,7 +12,14 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSet;
 
-public class DatastaxProtobufContentMarshaller extends ProtobufContentMarshaller<BatchStatement, Iterable<Row>> {
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public class DatastaxProtobufContentMarshaller
+        extends ProtobufContentMarshaller<BatchStatement, Iterable<Row>> {
 
     private static final String TABLE = "content";
     private static final String PRIMARY_KEY_COLUMN = "key";

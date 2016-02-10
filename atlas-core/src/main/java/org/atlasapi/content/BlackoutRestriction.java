@@ -1,8 +1,8 @@
 package org.atlasapi.content;
 
-import com.google.common.base.Objects;
-
 import javax.annotation.Nullable;
+
+import com.google.common.base.Objects;
 
 public class BlackoutRestriction {
 

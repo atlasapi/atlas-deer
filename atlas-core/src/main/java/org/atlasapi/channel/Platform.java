@@ -1,18 +1,20 @@
 package org.atlasapi.channel;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.metabroadcast.common.intl.Country;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.metabroadcast.common.intl.Country;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -46,10 +48,11 @@ public class Platform extends NumberedChannelGroup {
     }
 
     public static class Builder {
+
         private Id id;
         private Publisher publisher;
         private Set<ChannelNumbering> channels = Sets.newHashSet();
-        private Set<Country> availableCountries= Sets.newHashSet();
+        private Set<Country> availableCountries = Sets.newHashSet();
         private Set<TemporalField<String>> titles = Sets.newHashSet();
         private Set<Long> regionIds = Sets.newHashSet();
         private Set<Alias> aliases = Sets.newHashSet();
@@ -62,6 +65,7 @@ public class Platform extends NumberedChannelGroup {
             this.id = Id.valueOf(id);
             return this;
         }
+
         public Builder withChannels(Iterable<ChannelNumbering> channels) {
             Iterables.addAll(this.channels, channels);
             return this;
@@ -76,7 +80,6 @@ public class Platform extends NumberedChannelGroup {
             Iterables.addAll(this.titles, titles);
             return this;
         }
-
 
         public Builder withRegionIds(Iterable<Long> regionIds) {
             Iterables.addAll(this.regionIds, regionIds);
@@ -93,6 +96,7 @@ public class Platform extends NumberedChannelGroup {
                     Collections2.transform(
                             this.regionIds,
                             new Function<Long, ChannelGroupRef>() {
+
                                 @Override
                                 public ChannelGroupRef apply(Long input) {
                                     return new ChannelGroupRef(

@@ -1,7 +1,5 @@
 package org.atlasapi.query.v4.schedule;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -13,6 +11,8 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.common.Resource;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public final class ContentListWriter implements EntityListWriter<Content> {
 
     private AnnotationRegistry<Content> annotationRegistry;
@@ -20,7 +20,7 @@ public final class ContentListWriter implements EntityListWriter<Content> {
     public ContentListWriter(AnnotationRegistry<Content> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
-    
+
     @Override
     public void write(Content entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.CONTENT);

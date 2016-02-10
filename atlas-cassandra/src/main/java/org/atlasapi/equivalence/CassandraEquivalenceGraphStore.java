@@ -57,12 +57,12 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     @VisibleForTesting static final String RESOURCE_ID_KEY = "resource_id";
     @VisibleForTesting static final String GRAPH_ID_KEY = "graph_id";
     private static final String GRAPH_KEY = "graph";
-    
+
     private static final GroupLock<Id> lock = GroupLock.natural();
     private static final Logger log = LoggerFactory.getLogger(CassandraEquivalenceGraphStore.class);
-    
+
     private final EquivalenceGraphSerializer serializer = new EquivalenceGraphSerializer();
-    
+
     private final Session session;
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
@@ -72,7 +72,9 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     private final PreparedStatement indexInsert;
     private final PreparedStatement graphInsert;
 
-    public CassandraEquivalenceGraphStore(MessageSender<EquivalenceGraphUpdateMessage> messageSender, Session session, ConsistencyLevel read, ConsistencyLevel write) {
+    public CassandraEquivalenceGraphStore(
+            MessageSender<EquivalenceGraphUpdateMessage> messageSender, Session session,
+            ConsistencyLevel read, ConsistencyLevel write) {
         super(messageSender);
         this.session = checkNotNull(session);
         this.read = read;
@@ -101,46 +103,49 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     }
 
     private final Function<Iterable<Row>, Map<Long, EquivalenceGraph>> toGraph = rows -> {
-            ImmutableMap.Builder<Long, EquivalenceGraph> idGraph = ImmutableMap.builder();
-            for (Row row : rows) {
-                Long graphId = row.getLong(GRAPH_ID_KEY);
-                idGraph.put(graphId, serializer.deserialize(row.getBytes(GRAPH_KEY)));
-            }
-            return idGraph.build();
-        };
+        ImmutableMap.Builder<Long, EquivalenceGraph> idGraph = ImmutableMap.builder();
+        for (Row row : rows) {
+            Long graphId = row.getLong(GRAPH_ID_KEY);
+            idGraph.put(graphId, serializer.deserialize(row.getBytes(GRAPH_KEY)));
+        }
+        return idGraph.build();
+    };
 
     private final AsyncFunction<Map<Id, Long>, OptionalMap<Id, EquivalenceGraph>> toGraphs =
             idIndex -> {
-        ListenableFuture<List<Row>> rowFutures = Futures.transform(
-                Futures.allAsList(idIndex.values()
-                    .stream()
-                    .unordered()
-                    .distinct()
-                    .map(this::queryForGraphRow)
-                    .map(this::resultOf)
-                    .map(resultSetFuture -> Futures.transform(resultSetFuture, ResultSet::one))
-                    .collect(Collectors.toList())),
-                filterNulls
-        );
+                ListenableFuture<List<Row>> rowFutures = Futures.transform(
+                        Futures.allAsList(idIndex.values()
+                                .stream()
+                                .unordered()
+                                .distinct()
+                                .map(this::queryForGraphRow)
+                                .map(this::resultOf)
+                                .map(resultSetFuture -> Futures.transform(
+                                        resultSetFuture,
+                                        ResultSet::one
+                                ))
+                                .collect(Collectors.toList())),
+                        filterNulls
+                );
 
-        return Futures.transform(
-                Futures.transform(rowFutures, toGraph),
-                (Function<Map<Long,EquivalenceGraph>, OptionalMap<Id,EquivalenceGraph>>)
-                        rowGraphIndex -> getRequestedIdToGraphMap(idIndex, rowGraphIndex)
-        );
-    };
+                return Futures.transform(
+                        Futures.transform(rowFutures, toGraph),
+                        (Function<Map<Long, EquivalenceGraph>, OptionalMap<Id, EquivalenceGraph>>)
+                                rowGraphIndex -> getRequestedIdToGraphMap(idIndex, rowGraphIndex)
+                );
+            };
 
     private OptionalMap<Id, EquivalenceGraph> getRequestedIdToGraphMap(
             Map<Id, Long> idIndex, Map<Long, EquivalenceGraph> rowGraphIndex) {
         return ImmutableOptionalMap.fromMap(
                 idIndex.entrySet().stream()
-                    .filter(entry -> hasResolvedEquivalenceGraph(
-                            entry.getValue(), entry.getKey(), rowGraphIndex
-                    ))
-                    .collect(ImmutableCollectors.toMap(
-                            Entry::getKey,
-                            entry -> rowGraphIndex.get(entry.getValue())
-                    ))
+                        .filter(entry -> hasResolvedEquivalenceGraph(
+                                entry.getValue(), entry.getKey(), rowGraphIndex
+                        ))
+                        .collect(ImmutableCollectors.toMap(
+                                Entry::getKey,
+                                entry -> rowGraphIndex.get(entry.getValue())
+                        ))
         );
     }
 
@@ -158,31 +163,37 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     }
 
     private final Function<Iterable<Row>, Map<Id, Long>> toGraphIdIndex
-        = rows -> {
-            ImmutableMap.Builder<Id, Long> idIndex = ImmutableMap.builder();
-            for (Row row : rows) {
-                Id resourceId = Id.valueOf(row.getLong(RESOURCE_ID_KEY));
-                long graphId = row.getLong(GRAPH_ID_KEY);
-                idIndex.put(resourceId, graphId);
-            }
-            return idIndex.build();
-        };
-        
+            = rows -> {
+        ImmutableMap.Builder<Id, Long> idIndex = ImmutableMap.builder();
+        for (Row row : rows) {
+            Id resourceId = Id.valueOf(row.getLong(RESOURCE_ID_KEY));
+            long graphId = row.getLong(GRAPH_ID_KEY);
+            idIndex.put(resourceId, graphId);
+        }
+        return idIndex.build();
+    };
+
     @Override
     public ListenableFuture<OptionalMap<Id, EquivalenceGraph>> resolveIds(Iterable<Id> ids) {
         ListenableFuture<Map<Id, Long>> graphIdIndex = resolveToGraphIds(ids);
         return Futures.transform(graphIdIndex, toGraphs);
     }
 
-    private ListenableFuture<Map<Id,Long>> resolveToGraphIds(Iterable<Id> ids) {
-        ListenableFuture<List<Row>> resultsFuture = Futures.transform(Futures.allAsList(
-                queriesForGraphIds(ids)
-                        .stream()
-                        .map(this::resultOf)
-                        .map(resultSetFuture -> Futures.transform(resultSetFuture,
-                                (Function<ResultSet, Row>) rs -> rs != null ? rs.one() : null))
-                        .collect(Collectors.toList())),
-                 filterNulls);
+    private ListenableFuture<Map<Id, Long>> resolveToGraphIds(Iterable<Id> ids) {
+        ListenableFuture<List<Row>> resultsFuture = Futures.transform(
+                Futures.allAsList(
+                        queriesForGraphIds(ids)
+                                .stream()
+                                .map(this::resultOf)
+                                .map(resultSetFuture -> Futures.transform(
+                                        resultSetFuture,
+                                        (Function<ResultSet, Row>) rs -> rs != null
+                                                                         ? rs.one()
+                                                                         : null
+                                ))
+                                .collect(Collectors.toList())),
+                filterNulls
+        );
         return Futures.transform(resultsFuture, toGraphIdIndex);
     }
 
@@ -205,7 +216,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         updateBatch.setConsistencyLevel(write);
 
         for (EquivalenceGraph graph : graphs) {
-            Long graphId = lowestId(graph); 
+            Long graphId = lowestId(graph);
             ByteBuffer serializedGraph = serializer.serialize(graph);
             updateBatch.add(graphInsert(graphId, serializedGraph));
             for (Entry<Id, Adjacents> adjacency : graph.getAdjacencyList().entrySet()) {

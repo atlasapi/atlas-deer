@@ -1,13 +1,10 @@
 package org.atlasapi.channel;
 
-import org.joda.time.LocalDate;
-
-import javax.annotation.Nullable;
-import javax.swing.text.html.Option;
-
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import javax.annotation.Nullable;
+
+import org.joda.time.LocalDate;
 
 public class ChannelNumbering extends ChannelGroupMembership {
 

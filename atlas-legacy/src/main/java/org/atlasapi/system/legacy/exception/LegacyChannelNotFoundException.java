@@ -1,6 +1,7 @@
 package org.atlasapi.system.legacy.exception;
 
 public class LegacyChannelNotFoundException extends RuntimeException {
+
     public LegacyChannelNotFoundException() {
     }
 
@@ -16,7 +17,8 @@ public class LegacyChannelNotFoundException extends RuntimeException {
         super(cause);
     }
 
-    public LegacyChannelNotFoundException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public LegacyChannelNotFoundException(String message, Throwable cause,
+            boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

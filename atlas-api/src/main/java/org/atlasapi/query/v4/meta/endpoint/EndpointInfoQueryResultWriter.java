@@ -2,6 +2,8 @@ package org.atlasapi.query.v4.meta.endpoint;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
@@ -12,12 +14,10 @@ import org.atlasapi.query.common.QueryResult;
 
 import com.google.common.collect.FluentIterable;
 
-import javax.servlet.http.HttpServletRequest;
-
 public class EndpointInfoQueryResultWriter extends QueryResultWriter<EndpointClassInfo> {
 
     private final EntityListWriter<EndpointClassInfo> modelListWriter;
-    
+
     public EndpointInfoQueryResultWriter(
             EntityListWriter<EndpointClassInfo> modelListWriter,
             EntityWriter<Object> licenseWriter,
@@ -29,7 +29,7 @@ public class EndpointInfoQueryResultWriter extends QueryResultWriter<EndpointCla
 
     @Override
     protected void writeResult(QueryResult<EndpointClassInfo> result, ResponseWriter writer)
-        throws IOException {
+            throws IOException {
 
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 

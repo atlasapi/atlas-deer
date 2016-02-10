@@ -1,7 +1,5 @@
 package org.atlasapi.channel;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -16,13 +14,15 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Channel extends Identified implements Sourced {
 
@@ -90,18 +90,17 @@ public class Channel extends Identified implements Sourced {
         this.advertiseFrom = advertiseFrom;
     }
 
-
     @Override
     @FieldName("source")
     public Publisher getSource() {
         return this.publisher;
     }
 
-
     @FieldName("title")
     public String getTitle() {
         return TemporalField.currentOrFutureValue(titles);
     }
+
     public ImmutableSet<TemporalField<String>> getAllTitles() {
         return titles;
     }
@@ -213,7 +212,6 @@ public class Channel extends Identified implements Sourced {
         private LocalDate startDate;
         private LocalDate endDate;
 
-
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
         }
@@ -312,6 +310,7 @@ public class Channel extends Identified implements Sourced {
                     Iterables.transform(
                             variations,
                             new Function<Long, ChannelRef>() {
+
                                 @Override
                                 public ChannelRef apply(Long input) {
                                     return buildChannelRef(input);
@@ -352,7 +351,7 @@ public class Channel extends Identified implements Sourced {
         }
 
         public Channel build() {
-            if(adult != null && adult) {
+            if (adult != null && adult) {
                 genres.add(ADULT_GENRE);
             }
             return new Channel(

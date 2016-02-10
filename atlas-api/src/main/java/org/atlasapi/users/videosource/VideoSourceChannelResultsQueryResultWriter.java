@@ -2,6 +2,8 @@ package org.atlasapi.users.videosource;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
@@ -12,8 +14,6 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.users.videosource.model.VideoSourceChannelResults;
 
 import com.google.common.collect.FluentIterable;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class VideoSourceChannelResultsQueryResultWriter extends
         QueryResultWriter<VideoSourceChannelResults> {

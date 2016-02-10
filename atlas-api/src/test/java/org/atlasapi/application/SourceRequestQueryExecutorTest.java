@@ -1,8 +1,6 @@
 package org.atlasapi.application;
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
@@ -14,26 +12,28 @@ import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
+
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
-
-import javax.servlet.http.HttpServletRequest;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SourceRequestQueryExecutorTest {
-    
+
     private SourceRequestQueryExecutor executor;
     private SourceRequest sourceRequest1;
     private SourceRequest sourceRequest2;
-    
+
     @Mock SourceRequestStore store;
-    
+
     @Before
     public void setUp() {
         sourceRequest1 = SourceRequest.builder()
@@ -55,16 +55,21 @@ public class SourceRequestQueryExecutorTest {
         when(store.all()).thenReturn(ImmutableSet.of(sourceRequest1, sourceRequest2));
         executor = new SourceRequestQueryExecutor(store);
     }
-    
+
     @Test
     public void testExecutingAllSourceRequestQuery() throws QueryExecutionException {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
-        UserAwareQueryContext context = new UserAwareQueryContext(ApplicationSources.defaults(), 
+        UserAwareQueryContext context = new UserAwareQueryContext(
+                ApplicationSources.defaults(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
-                mock(HttpServletRequest.class));
+                mock(HttpServletRequest.class)
+        );
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        UserAwareQuery<SourceRequest> query = UserAwareQuery.listQuery(emptyAttributeQuerySet, context);
+        UserAwareQuery<SourceRequest> query = UserAwareQuery.listQuery(
+                emptyAttributeQuerySet,
+                context
+        );
         UserAwareQueryResult<SourceRequest> result = executor.execute(query);
         assertTrue(result.isListResult());
         assertTrue(result.getResources().contains(sourceRequest1));

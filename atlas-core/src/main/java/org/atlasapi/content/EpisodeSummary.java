@@ -1,8 +1,8 @@
 package org.atlasapi.content;
 
+import java.util.Optional;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
 
 public class EpisodeSummary extends ItemSummary {
 

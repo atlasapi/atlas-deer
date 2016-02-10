@@ -1,12 +1,11 @@
 package org.atlasapi.generation.model;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.elasticsearch.common.base.Objects;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EndpointTypeInfo implements TypeInfo {
-    
+
     private static final String ENDPOINT_PACKAGE = "org.atlasapi.generation.generated.endpoints";
 
     private final String key;
@@ -14,7 +13,7 @@ public class EndpointTypeInfo implements TypeInfo {
     private final String description;
     private final String rootPath;
     private final String producedType;
-    
+
     public static Builder builder() {
         return new Builder();
     }
@@ -36,7 +35,7 @@ public class EndpointTypeInfo implements TypeInfo {
     public String className() {
         return className;
     }
-    
+
     @Override
     public String fullPackage() {
         return ENDPOINT_PACKAGE;
@@ -45,15 +44,15 @@ public class EndpointTypeInfo implements TypeInfo {
     public String description() {
         return description;
     }
-    
+
     public String rootPath() {
         return rootPath;
     }
-    
+
     public String producedType() {
         return producedType;
     }
-    
+
     @Override
     public String toString() {
         return Objects.toStringHelper(getClass())
@@ -65,31 +64,32 @@ public class EndpointTypeInfo implements TypeInfo {
                 .add("producedType", producedType)
                 .toString();
     }
-    
+
     public static class Builder {
-        
+
         private String key;
         private String className;
         private String description;
         private String rootPath;
         private String producedType;
 
-        private Builder() {}
-        
+        private Builder() {
+        }
+
         public EndpointTypeInfo build() {
             return new EndpointTypeInfo(key, className, description, rootPath, producedType);
         }
-        
+
         public Builder withKey(String key) {
             this.key = key;
             return this;
         }
-        
+
         public Builder withClassName(String className) {
             this.className = className;
             return this;
         }
-        
+
         public Builder withDescription(String description) {
             this.description = description;
             return this;

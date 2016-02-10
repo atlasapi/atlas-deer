@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
+import org.atlasapi.content.QueryParseException;
 import org.atlasapi.input.ModelReader;
 import org.atlasapi.input.ReadException;
 import org.atlasapi.output.ErrorResultWriter;
@@ -21,11 +22,11 @@ import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
 import org.atlasapi.query.common.QueryExecutionException;
-import org.atlasapi.content.QueryParseException;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryParser;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
 public class SourceLicenseController {
+
     private static Logger log = LoggerFactory.getLogger(SourceLicenseController.class);
     private final UserAwareQueryParser<SourceLicense> queryParser;
     private final UserAwareQueryExecutor<SourceLicense> queryExecutor;
@@ -42,7 +44,7 @@ public class SourceLicenseController {
     private final ModelReader reader;
     private final UserFetcher userFetcher;
     private final SourceLicenseStore store;
-    
+
     public SourceLicenseController(UserAwareQueryParser<SourceLicense> queryParser,
             UserAwareQueryExecutor<SourceLicense> queryExecutor,
             UserAwareQueryResultWriter<SourceLicense> resultWriter,
@@ -57,10 +59,11 @@ public class SourceLicenseController {
         this.userFetcher = userFetcher;
         this.store = store;
     }
-    
-    @RequestMapping({"/4/source_licenses/{sid}.*", "/4/source_licenses.*" })
+
+    @RequestMapping({ "/4/source_licenses/{sid}.*", "/4/source_licenses.*" })
     public void listSources(HttpServletRequest request,
-            HttpServletResponse response) throws QueryParseException, QueryExecutionException, IOException {
+            HttpServletResponse response)
+            throws QueryParseException, QueryExecutionException, IOException {
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
             UserAwareQuery<SourceLicense> sourcesQuery = queryParser.parse(request);
@@ -71,7 +74,7 @@ public class SourceLicenseController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
+
     @RequestMapping(value = "/4/license.*", method = RequestMethod.POST)
     public void writeLicense(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -82,10 +85,16 @@ public class SourceLicenseController {
             if (!user.is(Role.ADMIN)) {
                 throw new ResourceForbiddenException();
             }
-           
-            SourceLicense license = deserialize(new InputStreamReader(request.getInputStream()), SourceLicense.class);
+
+            SourceLicense license = deserialize(
+                    new InputStreamReader(request.getInputStream()),
+                    SourceLicense.class
+            );
             store.store(license);
-            UserAwareQueryResult<SourceLicense> queryResult = UserAwareQueryResult.singleResult(license, UserAwareQueryContext.standard(request));
+            UserAwareQueryResult<SourceLicense> queryResult = UserAwareQueryResult.singleResult(
+                    license,
+                    UserAwareQueryContext.standard(request)
+            );
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
@@ -93,7 +102,7 @@ public class SourceLicenseController {
             new ErrorResultWriter().write(summary, writer, request, response);
         }
     }
-    
+
     private <T> T deserialize(Reader input, Class<T> cls) throws IOException, ReadException {
         return reader.read(new BufferedReader(input), cls);
     }

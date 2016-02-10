@@ -7,7 +7,6 @@ import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-
 public class OAuthResultListWriter implements EntityListWriter<OAuthResult> {
 
     @Override

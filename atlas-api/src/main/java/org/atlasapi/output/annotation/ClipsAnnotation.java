@@ -1,6 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
@@ -8,10 +7,10 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ClipsWriter;
 
-
 public class ClipsAnnotation extends OutputAnnotation<Content> {
 
     private final ClipsWriter clipsWriter = new ClipsWriter();
+
     public ClipsAnnotation() {
         super();
     }

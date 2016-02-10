@@ -3,12 +3,13 @@ package org.atlasapi.source;
 import org.atlasapi.application.v3.SourceRestriction;
 import org.atlasapi.media.entity.Publisher;
 
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
+
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
 
 public class Sources {
 
@@ -16,7 +17,7 @@ public class Sources {
     }
 
     private static final ImmutableSet<Publisher> ALL
-        = ImmutableSet.copyOf(Publisher.values());
+            = ImmutableSet.copyOf(Publisher.values());
 
     public static final ImmutableSet<Publisher> all() {
         return ALL;
@@ -55,9 +56,9 @@ public class Sources {
         }
 
     }
-    
+
     public static final boolean isAdminOnlySource(Publisher source) {
-    	return source.restriction().equals(SourceRestriction.ADMIN_ONLY);
+        return source.restriction().equals(SourceRestriction.ADMIN_ONLY);
     }
 
 }

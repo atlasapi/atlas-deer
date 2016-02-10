@@ -1,17 +1,17 @@
 package org.atlasapi.query.common;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.Operator;
 import org.atlasapi.criteria.operator.Operators;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class QueryAtomParser<I, O> {
-    
-    public static final <I, O> QueryAtomParser<I, O> valueOf(Attribute<O> attribute, AttributeCoercer<I, O> coercer) {
+
+    public static final <I, O> QueryAtomParser<I, O> valueOf(Attribute<O> attribute,
+            AttributeCoercer<I, O> coercer) {
         return new QueryAtomParser<I, O>(attribute, coercer);
     }
 
@@ -22,11 +22,11 @@ public final class QueryAtomParser<I, O> {
         this.attribute = checkNotNull(attribute);
         this.coercer = checkNotNull(coercer);
     }
-    
+
     public Attribute<O> getAttribute() {
         return attribute;
     }
-    
+
     public AttributeQuery<O> parse(String key, Iterable<I> rawValues)
             throws QueryParseException {
         return attribute.createQuery(operator(key), parse(rawValues));
@@ -50,5 +50,5 @@ public final class QueryAtomParser<I, O> {
             throws InvalidAttributeValueException {
         return coercer.apply(rawValues);
     }
-    
+
 }

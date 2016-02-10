@@ -1,8 +1,5 @@
 package org.atlasapi.content;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Set;
 
 import org.atlasapi.entity.Serializer;
@@ -13,6 +10,9 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableSet;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public final class ContentSerializer implements Serializer<Content, ContentProtos.Content> {
 
     private static final Set<Class<? extends Content>> supportedTypes = supportedTypes();
@@ -20,13 +20,13 @@ public final class ContentSerializer implements Serializer<Content, ContentProto
     private static Set<Class<? extends Content>> supportedTypes() {
         ImmutableSet.Builder<Class<? extends Content>> builder = ImmutableSet.builder();
         builder
-            .add(Episode.class)
-            .add(Item.class)
-            .add(Brand.class)
-            .add(Series.class)
-            .add(Song.class)
-            .add(Clip.class)
-            .add(Film.class);
+                .add(Episode.class)
+                .add(Item.class)
+                .add(Brand.class)
+                .add(Series.class)
+                .add(Song.class)
+                .add(Clip.class)
+                .add(Film.class);
         return builder.build();
     }
 

@@ -1,26 +1,27 @@
 package org.atlasapi.output.annotation;
 
+import java.io.IOException;
+
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Person;
 import org.atlasapi.event.Event;
-import org.atlasapi.organisation.Organisation;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SourceWriter;
-import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 import org.atlasapi.query.v4.event.PersonListWriter;
-
-import java.io.IOException;
+import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 
 public class EventAnnotation extends OutputAnnotation<Event> {
 
     private final EntityListWriter<ItemRef> itemRefWriter;
     private final EntityWriter<Publisher> publisherWriter = SourceWriter.sourceWriter("source");
     private final EntityListWriter<Person> participantWriter = new PersonListWriter();
-    private final EntityListWriter<Organisation> organisationListWriter = new OrganisationListWriter(participantWriter);
+    private final EntityListWriter<Organisation> organisationListWriter = new OrganisationListWriter(
+            participantWriter);
 
     public EventAnnotation(EntityListWriter<ItemRef> itemRefWriter) {
         this.itemRefWriter = itemRefWriter;

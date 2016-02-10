@@ -2,17 +2,15 @@ package org.atlasapi.output.writers;
 
 import java.io.IOException;
 
+import javax.annotation.Nonnull;
+
 import org.atlasapi.output.EntityListWriter;
-import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 import com.metabroadcast.common.intl.Country;
 
-import javax.annotation.Nonnull;
-
 import static com.google.common.base.Preconditions.checkNotNull;
-
 
 public class CountryWriter implements EntityListWriter<Country> {
 

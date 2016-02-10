@@ -1,31 +1,35 @@
 package org.atlasapi.output.annotation;
 
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
 import org.atlasapi.event.Event;
-import org.atlasapi.organisation.Organisation;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 import org.atlasapi.query.v4.event.PersonListWriter;
+import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 import org.atlasapi.topic.Topic;
+
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.servlet.http.HttpServletRequest;
-
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollectionOf;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -70,9 +74,21 @@ public class EventAnnotationTest {
         verify(fieldWriter).writeField("title", event.getTitle());
         verify(fieldWriter).writeField("start_time", event.getStartTime().toString());
         verify(fieldWriter).writeField("end_time", event.getEndTime().toString());
-        verify(fieldWriter).writeList(isA(PersonListWriter.class), anyCollectionOf(Person.class), any());
-        verify(fieldWriter).writeList(isA(OrganisationListWriter.class), anyCollectionOf(Organisation.class), any());
-        verify(fieldWriter).writeList(isA(ItemRefWriter.class), anyCollectionOf(ItemRef.class), any());
+        verify(fieldWriter).writeList(
+                isA(PersonListWriter.class),
+                anyCollectionOf(Person.class),
+                any()
+        );
+        verify(fieldWriter).writeList(
+                isA(OrganisationListWriter.class),
+                anyCollectionOf(Organisation.class),
+                any()
+        );
+        verify(fieldWriter).writeList(
+                isA(ItemRefWriter.class),
+                anyCollectionOf(ItemRef.class),
+                any()
+        );
 
     }
 

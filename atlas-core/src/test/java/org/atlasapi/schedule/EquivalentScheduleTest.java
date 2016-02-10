@@ -32,13 +32,25 @@ public class EquivalentScheduleTest {
         EquivalentChannelSchedule limitedChannelSchedule2 = mock(EquivalentChannelSchedule.class);
         EquivalentChannelSchedule limitedChannelSchedule3 = mock(EquivalentChannelSchedule.class);
 
-        when(limitedChannelSchedule1.getInterval()).thenReturn(new Interval(originalStart, limitedSchedule1End));
-        when(limitedChannelSchedule2.getInterval()).thenReturn(new Interval(originalStart, limitedSchedule2End));
-        when(limitedChannelSchedule3.getInterval()).thenReturn(new Interval(originalStart, limitedSchedule3End));
+        when(limitedChannelSchedule1.getInterval()).thenReturn(new Interval(
+                originalStart,
+                limitedSchedule1End
+        ));
+        when(limitedChannelSchedule2.getInterval()).thenReturn(new Interval(
+                originalStart,
+                limitedSchedule2End
+        ));
+        when(limitedChannelSchedule3.getInterval()).thenReturn(new Interval(
+                originalStart,
+                limitedSchedule3End
+        ));
 
-        when(originalChannelSchedule1.withLimitedBroadcasts(broadcastCount)).thenReturn(limitedChannelSchedule1);
-        when(originalChannelSchedule2.withLimitedBroadcasts(broadcastCount)).thenReturn(limitedChannelSchedule2);
-        when(originalChannelSchedule3.withLimitedBroadcasts(broadcastCount)).thenReturn(limitedChannelSchedule3);
+        when(originalChannelSchedule1.withLimitedBroadcasts(broadcastCount)).thenReturn(
+                limitedChannelSchedule1);
+        when(originalChannelSchedule2.withLimitedBroadcasts(broadcastCount)).thenReturn(
+                limitedChannelSchedule2);
+        when(originalChannelSchedule3.withLimitedBroadcasts(broadcastCount)).thenReturn(
+                limitedChannelSchedule3);
 
         EquivalentSchedule objectUnderTest = new EquivalentSchedule(
                 ImmutableList.of(
@@ -61,7 +73,6 @@ public class EquivalentScheduleTest {
         );
 
         assertThat(limitedSchedule.interval().getEnd(), is(limitedSchedule2End));
-
 
     }
 }

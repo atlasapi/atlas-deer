@@ -6,6 +6,6 @@ import com.google.common.base.Function;
 
 public interface LegacyResourceTransformer<F, T extends Identifiable> extends Function<F, T> {
 
-	Iterable<T> transform(Iterable<F> legacy);
-	
+    Iterable<T> transform(Iterable<F> legacy);
+
 }

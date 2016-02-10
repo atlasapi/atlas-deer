@@ -1,22 +1,23 @@
 package org.atlasapi.content;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Ordering;
-import org.atlasapi.channel.ChannelGroup;
-import org.atlasapi.channel.Region;
-import org.atlasapi.entity.Id;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.entity.Id;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
+
 public class ChannelsBroadcastFilter {
 
-    public Iterable<Broadcast> sortAndFilter(Iterable<Broadcast> broadcasts, ChannelGroup<?> channelGroup) {
+    public Iterable<Broadcast> sortAndFilter(Iterable<Broadcast> broadcasts,
+            ChannelGroup<?> channelGroup) {
 
-        if(Iterables.isEmpty(broadcasts)) {
+        if (Iterables.isEmpty(broadcasts)) {
             return ImmutableList.of();
         }
 
@@ -35,9 +36,15 @@ public class ChannelsBroadcastFilter {
             }
         });
 
-        List<Broadcast> filteredSortedBroadcasts = StreamSupport.stream(broadcasts.spliterator(), false)
+        List<Broadcast> filteredSortedBroadcasts = StreamSupport.stream(
+                broadcasts.spliterator(),
+                false
+        )
                 .filter(b -> channelIds.contains(b.getChannelId()))
-                .sorted(Ordering.compound(ImmutableList.of(Broadcast.startTimeOrdering(), channelOrdering)))
+                .sorted(Ordering.compound(ImmutableList.of(
+                        Broadcast.startTimeOrdering(),
+                        channelOrdering
+                )))
                 .collect(Collectors.toList());
 
         ImmutableList.Builder<Broadcast> deduped = ImmutableList.builder();
@@ -47,7 +54,7 @@ public class ChannelsBroadcastFilter {
                 currentBroadcast = broadcast;
                 deduped.add(broadcast);
             }
-            if(currentBroadcast.getTransmissionTime().equals(broadcast.getTransmissionTime())) {
+            if (currentBroadcast.getTransmissionTime().equals(broadcast.getTransmissionTime())) {
                 continue;
             }
 

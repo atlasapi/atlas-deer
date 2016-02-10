@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface MutableContentList {
 
-	List<ContentRef> getContents();
-	
+    List<ContentRef> getContents();
+
 }

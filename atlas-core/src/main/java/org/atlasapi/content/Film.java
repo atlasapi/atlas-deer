@@ -9,28 +9,28 @@ import org.atlasapi.meta.annotations.FieldName;
 import com.google.common.collect.ImmutableSet;
 
 public class Film extends Item {
-    
+
     private String websiteUrl = null;
     private Set<Subtitles> subtitles = ImmutableSet.of();
     private Set<ReleaseDate> releaseDates = ImmutableSet.of();
-    
+
     public Film(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
         setSpecialization(Specialization.FILM);
     }
-        
+
     public Film(Id id, Publisher source) {
         super(id, source);
     }
-    
+
     public Film() {
         setSpecialization(Specialization.FILM);
     }
-    
+
     public void setWebsiteUrl(String websiteUrl) {
         this.websiteUrl = websiteUrl;
     }
-    
+
     @FieldName("website_url")
     public String getWebsiteUrl() {
         return websiteUrl;
@@ -53,27 +53,32 @@ public class Film extends Item {
     public void setReleaseDates(Iterable<ReleaseDate> releaseDates) {
         this.releaseDates = ImmutableSet.copyOf(releaseDates);
     }
-    
+
     @Override
     public FilmRef toRef() {
-        return new FilmRef(getId(), getSource(), SortKey.keyFrom(this), getThisOrChildLastUpdated());
+        return new FilmRef(
+                getId(),
+                getSource(),
+                SortKey.keyFrom(this),
+                getThisOrChildLastUpdated()
+        );
     }
 
     @Override
-	public Film copy() {
-	    return copyTo(this, new Film());
-	}
-	
-	public static Film copyTo(Film from, Film to) {
-	    Item.copyTo(from, to);
-	    to.setWebsiteUrl(from.getWebsiteUrl());
-	    to.setSubtitles(from.getSubtitles());
-	    to.setReleaseDates(from.getReleaseDates());
-	    return to;
-	}
+    public Film copy() {
+        return copyTo(this, new Film());
+    }
+
+    public static Film copyTo(Film from, Film to) {
+        Item.copyTo(from, to);
+        to.setWebsiteUrl(from.getWebsiteUrl());
+        to.setSubtitles(from.getSubtitles());
+        to.setReleaseDates(from.getReleaseDates());
+        return to;
+    }
 
     public <V> V accept(ItemVisitor<V> visitor) {
         return visitor.visit(this);
     }
-    
+
 }

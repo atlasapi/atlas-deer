@@ -1,9 +1,5 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import java.io.File;
 import java.nio.file.Files;
 
@@ -16,37 +12,50 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.serialization.protobuf.ContentProtos;
+
+import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.time.DateTimeZones;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.intl.Countries;
-import com.metabroadcast.common.time.DateTimeZones;
-
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class ContentSerializerTest {
-    
-    private final Serializer<Content,ContentProtos.Content> serializer = new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver()));
+
+    private final Serializer<Content, ContentProtos.Content> serializer = new ContentSerializer(new ContentSerializationVisitor(
+            new NoOpContentResolver()));
 
     @Test
     public void testDeSerializesBrand() {
         Brand brand = new Brand();
         setContainerProperties(brand);
         brand.setSeriesRefs(ImmutableSet.of(
-            new SeriesRef(Id.valueOf(123L), brand.getSource(), "sort", 1, new DateTime(DateTimeZones.UTC), null, null)
+                new SeriesRef(
+                        Id.valueOf(123L),
+                        brand.getSource(),
+                        "sort",
+                        1,
+                        new DateTime(DateTimeZones.UTC),
+                        null,
+                        null
+                )
         ));
-        
+
         ContentProtos.Content serialized = serializer.serialize(brand);
         Content deserialized = serializer.deserialize(serialized);
-        
+
         assertThat(deserialized, is(instanceOf(Brand.class)));
         Brand deserializedBrand = (Brand) deserialized;
-        
+
         checkContainerProperties(deserializedBrand, brand);
         assertThat(deserializedBrand.getSeriesRefs(), is(brand.getSeriesRefs()));
     }
@@ -59,10 +68,10 @@ public class ContentSerializerTest {
 
         series.setBrandRef(new BrandRef(Id.valueOf(1234L), series.getSource()));
         serializeAndCheck(series);
-        
+
         series.setTotalEpisodes(5);
         serializeAndCheck(series);
-        
+
         series.withSeriesNumber(3);
         serializeAndCheck(series);
     }
@@ -76,7 +85,7 @@ public class ContentSerializerTest {
         Content deserialized = serializer.deserialize(serialized);
 
         assertThat(deserialized, is(instanceOf(Item.class)));
-        Item deserializedItem = (Item)deserialized;
+        Item deserializedItem = (Item) deserialized;
         checkItemProperties(deserializedItem, item);
     }
 
@@ -90,7 +99,7 @@ public class ContentSerializerTest {
         Content deserialized = serializer.deserialize(serialized);
 
         assertThat(deserialized, is(instanceOf(Item.class)));
-        Item deserializedItem = (Item)deserialized;
+        Item deserializedItem = (Item) deserialized;
         checkItemProperties(deserializedItem, item);
     }
 
@@ -101,14 +110,22 @@ public class ContentSerializerTest {
         episode.setEpisodeNumber(5);
         episode.setPartNumber(4);
         episode.setSeriesNumber(5);
-        SeriesRef seriesRef = new SeriesRef(Id.valueOf(5), episode.getSource(), "title", 5, new DateTime(DateTimeZones.LONDON), null, null);
+        SeriesRef seriesRef = new SeriesRef(
+                Id.valueOf(5),
+                episode.getSource(),
+                "title",
+                5,
+                new DateTime(DateTimeZones.LONDON),
+                null,
+                null
+        );
         episode.setSeriesRef(seriesRef);
 
         ContentProtos.Content serialized = serializer.serialize(episode);
         Content deserialized = serializer.deserialize(serialized);
 
         assertThat(deserialized, is(instanceOf(Episode.class)));
-        Episode deserializedEpisode = (Episode)deserialized;
+        Episode deserializedEpisode = (Episode) deserialized;
         checkItemProperties(deserializedEpisode, episode);
         assertThat(deserializedEpisode.getEpisodeNumber(), is(episode.getEpisodeNumber()));
         assertThat(deserializedEpisode.getPartNumber(), is(episode.getPartNumber()));
@@ -122,9 +139,11 @@ public class ContentSerializerTest {
         setItemProperties(film);
         serializeAndCheck(film);
 
-        film.setReleaseDates(ImmutableSet.of(new ReleaseDate(new LocalDate(DateTimeZones.UTC),
+        film.setReleaseDates(ImmutableSet.of(new ReleaseDate(
+                new LocalDate(DateTimeZones.UTC),
                 Countries.GB,
-                ReleaseDate.ReleaseType.GENERAL)));
+                ReleaseDate.ReleaseType.GENERAL
+        )));
         serializeAndCheck(film);
 
         film.setWebsiteUrl("web url");
@@ -133,7 +152,6 @@ public class ContentSerializerTest {
         film.setSubtitles(ImmutableSet.of(new Subtitles("en-GB")));
         serializeAndCheck(film);
     }
-
 
     @Test
     public void testDeSerializesSong() {
@@ -180,7 +198,7 @@ public class ContentSerializerTest {
         Content deserialized = serializer.deserialize(serialized);
 
         assertThat(deserialized, is(instanceOf(Film.class)));
-        Film deserializedFilm = (Film)deserialized;
+        Film deserializedFilm = (Film) deserialized;
         checkItemProperties(deserializedFilm, film);
         assertThat(deserializedFilm.getReleaseDates(), is(film.getReleaseDates()));
         assertThat(deserializedFilm.getWebsiteUrl(), is(film.getWebsiteUrl()));
@@ -190,15 +208,14 @@ public class ContentSerializerTest {
     private void serializeAndCheck(Song song) {
         ContentProtos.Content serialized = serializer.serialize(song);
         Content deserialized = serializer.deserialize(serialized);
-        
+
         assertThat(deserialized, is(instanceOf(Song.class)));
-        Song deserializedSong = (Song)deserialized;
+        Song deserializedSong = (Song) deserialized;
         checkItemProperties(deserializedSong, song);
-        
+
         assertThat(deserializedSong.getIsrc(), is(song.getIsrc()));
         assertThat(deserializedSong.getDuration(), is(song.getDuration()));
     }
-    
 
     private void checkContainerProperties(Container actual, Container expected) {
         checkContentProperties(actual, expected);
@@ -211,7 +228,10 @@ public class ContentSerializerTest {
     private void checkItemProperties(Item actual, Item expected) {
         checkContentProperties(actual, expected);
         assertThat(actual.getContainerRef(), is(expected.getContainerRef()));
-        assertThat(actual.getContainerSummary().getTitle(), is(expected.getContainerSummary().getTitle()));
+        assertThat(
+                actual.getContainerSummary().getTitle(),
+                is(expected.getContainerSummary().getTitle())
+        );
         assertThat(actual.getBlackAndWhite(), is(expected.getBlackAndWhite()));
         assertThat(actual.getCountriesOfOrigin(), is(expected.getCountriesOfOrigin()));
         assertThat(actual.getIsLongForm(), is(expected.getIsLongForm()));
@@ -267,10 +287,12 @@ public class ContentSerializerTest {
     private void setContainerProperties(Container container) {
         setContentProperties(container);
         container.setItemRefs(ImmutableSet.of(
-                new ItemRef(Id.valueOf(123L),
+                new ItemRef(
+                        Id.valueOf(123L),
                         container.getSource(),
                         "sort",
-                        DateTime.parse("2015-09-09T10:08:18.432Z"))
+                        DateTime.parse("2015-09-09T10:08:18.432Z")
+                )
         ));
 
         ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcomingContent = ImmutableMap.<ItemRef, Iterable<BroadcastRef>>builder()
@@ -394,10 +416,18 @@ public class ContentSerializerTest {
         item.setBlackAndWhite(true);
         item.setCountriesOfOrigin(ImmutableSet.of(Countries.GB));
         item.setIsLongForm(true);
-        
+
         item.setBroadcasts(ImmutableSet.of(
-                new Broadcast(Id.valueOf(1), DateTime.parse("2015-09-09T10:08:18.432Z"), DateTime.parse("2015-09-09T10:08:18.432Z")),
-                new Broadcast(Id.valueOf(2), DateTime.parse("2015-09-09T10:08:18.432Z"), DateTime.parse("2015-09-09T10:08:18.432Z"))
+                new Broadcast(
+                        Id.valueOf(1),
+                        DateTime.parse("2015-09-09T10:08:18.432Z"),
+                        DateTime.parse("2015-09-09T10:08:18.432Z")
+                ),
+                new Broadcast(
+                        Id.valueOf(2),
+                        DateTime.parse("2015-09-09T10:08:18.432Z"),
+                        DateTime.parse("2015-09-09T10:08:18.432Z")
+                )
         ));
         item.setSegmentEvents(ImmutableSet.of(segmentEvent(10L)));
         item.setRestrictions(ImmutableSet.of(Restriction.from(14, "old")));
@@ -410,7 +440,12 @@ public class ContentSerializerTest {
         content.setContentGroupRefs(ImmutableSet.of(new ContentGroupRef(Id.valueOf(1234), "uri")));
         content.setKeyPhrases(ImmutableSet.of(new KeyPhrase("phrase", null)));
         content.setLanguages(ImmutableSet.of("en"));
-        content.setPeople(ImmutableList.of(CrewMember.crewMember("id", "Jim", "director", Publisher.BBC)));
+        content.setPeople(ImmutableList.of(CrewMember.crewMember(
+                "id",
+                "Jim",
+                "director",
+                Publisher.BBC
+        )));
         content.setRelatedLinks(ImmutableSet.of(RelatedLink.twitterLink("twitter").build()));
         content.setTags(ImmutableSet.of(new Tag(1L, 1.0f, true, Tag.Relationship.TRANSCRIPTION)));
         content.setManifestedAs(ImmutableSet.of(encoding("one")));
@@ -441,12 +476,13 @@ public class ContentSerializerTest {
     private void setIdentifiedProperties(Identified identified) {
         identified.setId(Id.valueOf(1234));
         identified.setLastUpdated(DateTime.parse("2015-09-09T10:08:18.432Z"));
-        identified.setAliases(ImmutableSet.of(new Alias("a","alias1"),new Alias("b","alias2")));
+        identified.setAliases(ImmutableSet.of(new Alias("a", "alias1"), new Alias("b", "alias2")));
         identified.setCanonicalUri("canonicalUri");
         identified.setEquivalenceUpdate(DateTime.parse("2015-09-09T10:08:18.432Z"));
-        identified.setEquivalentTo(ImmutableSet.of(new EquivalenceRef(Id.valueOf(1) ,Publisher.BBC)));
+        identified.setEquivalentTo(ImmutableSet.of(new EquivalenceRef(Id.valueOf(1),
+                Publisher.BBC)));
     }
-    
+
     private SegmentEvent segmentEvent(Long segmentId) {
         SegmentEvent event = new SegmentEvent();
         event.setSegment(new SegmentRef(Id.valueOf(segmentId), Publisher.BBC));

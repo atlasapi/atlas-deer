@@ -1,6 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
 import java.io.IOException;
 import java.util.List;
 
@@ -15,11 +14,12 @@ import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.persistence.content.ContentGroupResolver;
 import org.atlasapi.persistence.content.ResolvedContent;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 public class ContentGroupsAnnotation extends OutputAnnotation<Content> {
 
@@ -32,7 +32,8 @@ public class ContentGroupsAnnotation extends OutputAnnotation<Content> {
         }
 
         @Override
-        public void write(ContentGroup entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+        public void write(ContentGroup entity, FieldWriter writer, OutputContext ctxt)
+                throws IOException {
             //TODO: introduce contentref writer. writer.writeList(childRefWriter, entity.getContents(), ctxt);
         }
 
@@ -49,7 +50,8 @@ public class ContentGroupsAnnotation extends OutputAnnotation<Content> {
 
     private final ContentGroupResolver contentGroupResolver;
 
-    public ContentGroupsAnnotation(NumberToShortStringCodec idCodec, ContentGroupResolver resolver) {
+    public ContentGroupsAnnotation(NumberToShortStringCodec idCodec,
+            ContentGroupResolver resolver) {
         this.contentGroupResolver = resolver;
         contentGroupWriter = new ContentGroupWriter(idCodec);
     }
@@ -67,7 +69,10 @@ public class ContentGroupsAnnotation extends OutputAnnotation<Content> {
         if (contentGroups.isEmpty()) {
             return ImmutableList.of();
         }
-        ResolvedContent resolved = contentGroupResolver.findByIds(Lists.transform(contentGroups, Id.toLongValue()));
+        ResolvedContent resolved = contentGroupResolver.findByIds(Lists.transform(
+                contentGroups,
+                Id.toLongValue()
+        ));
         return Iterables.filter(resolved.asResolvedMap().values(), ContentGroup.class);
     }
 

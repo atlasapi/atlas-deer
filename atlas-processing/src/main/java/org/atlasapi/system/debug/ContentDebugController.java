@@ -1,7 +1,5 @@
 package org.atlasapi.system.debug;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
@@ -12,7 +10,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Container;
@@ -34,16 +31,10 @@ import org.atlasapi.system.bootstrap.ContentBootstrapListener;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.util.EsObject;
-import org.joda.time.DateTime;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
+import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
@@ -58,9 +49,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
-import com.metabroadcast.common.collect.OptionalMap;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import org.joda.time.DateTime;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class ContentDebugController {
@@ -71,8 +71,10 @@ public class ContentDebugController {
     private final ChannelResolver channelResolver;
     private final EquivalentScheduleStore scheduleStore;
 
-    private final Gson gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
-            (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
+    private final Gson gson = new GsonBuilder().registerTypeAdapter(
+            DateTime.class,
+            (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString())
+    )
             .create();
     private final ObjectMapper jackson = new ObjectMapper();
 
@@ -144,11 +146,12 @@ public class ContentDebugController {
     /* Deactivates a piece of content by setting activelyPublished to false */
     @RequestMapping("/system/debug/content/{id}/deactivate")
     private void deactivateContent(@PathVariable("id") String id,
-                                   final HttpServletResponse response) throws IOException {
+            final HttpServletResponse response) throws IOException {
         try {
             ContentStore contentStore = persistence.contentStore();
             Resolved<Content> resolved = Futures.get(
-                    contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))), IOException.class
+                    contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))),
+                    IOException.class
             );
             Content content = Iterables.getOnlyElement(resolved.getResources());
             content.setActivelyPublished(false);
@@ -162,7 +165,7 @@ public class ContentDebugController {
     /* Updates the equivalent content store representation of a piece of content */
     @RequestMapping("/system/debug/content/{id}/updateEquivalentContentStore")
     private void updateEquivalentContentStore(@PathVariable("id") String id,
-                                   final HttpServletResponse response) throws IOException {
+            final HttpServletResponse response) throws IOException {
         try {
             Id contentId = Id.valueOf(lowercase.decode(id));
             persistence.getEquivalentContentStore().updateContent(contentId);
@@ -194,28 +197,55 @@ public class ContentDebugController {
         Content content = result.getResources().first().orNull();
         gson.toJson(content, response.getWriter());
     }
-    
+
     /* Returns the JSON representation of a piece of content stored in the equivalent content store */
     @RequestMapping("/system/debug/equivalentcontent/{id}")
-    public void printEquivalentContent(@PathVariable("id") String idString, final HttpServletResponse response)
-            throws Exception {
+    public void printEquivalentContent(@PathVariable("id") String idString,
+            HttpServletResponse response) throws Exception {
         Id id = Id.valueOf(lowercase.decode(idString).longValue());
-        ImmutableList<Id> ids = ImmutableList.of();
+        ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
-                persistence.getEquivalentContentStore().resolveIds(ids, Publisher.all(), Annotation.all()), 1, TimeUnit.MINUTES, Exception.class
+                persistence.getEquivalentContentStore().resolveIds(
+                        ids, Publisher.all(), ImmutableSet.of()
+                ),
+                1,
+                TimeUnit.MINUTES,
+                Exception.class
         );
         Content content = result.get(id).iterator().next();
         gson.toJson(content, response.getWriter());
     }
 
+    /* Returns the JSON representation of a set stored in the equivalent content store */
+    @RequestMapping("/system/debug/equivalentcontent/{id}/set")
+    public void printEquivalentContentSet(@PathVariable("id") String idString,
+            HttpServletResponse response) throws Exception {
+        Id id = Id.valueOf(lowercase.decode(idString).longValue());
+        ImmutableList<Id> ids = ImmutableList.of(id);
+        ResolvedEquivalents<Content> result = Futures.get(
+                persistence.getEquivalentContentStore().resolveIds(
+                        ids, Publisher.all(), ImmutableSet.of()
+                ),
+                1,
+                TimeUnit.MINUTES,
+                Exception.class
+        );
+        ImmutableSet<Content> content = result.get(id);
+        gson.toJson(content, response.getWriter());
+    }
+
     /* Returns the JSON representation of a piece of equivalent content graph */
     @RequestMapping("/system/debug/content/{id}/graph")
-    public void printContentEquivalence(@PathVariable("id") String id, final HttpServletResponse response)
+    public void printContentEquivalence(@PathVariable("id") String id,
+            final HttpServletResponse response)
             throws Exception {
         Id decodedId = Id.valueOf(lowercase.decode(id));
         ImmutableList<Id> ids = ImmutableList.of(decodedId);
         OptionalMap<Id, EquivalenceGraph> equivalenceGraph = Futures.get(
-                persistence.getContentEquivalenceGraphStore().resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
+                persistence.getContentEquivalenceGraphStore().resolveIds(ids),
+                1,
+                TimeUnit.MINUTES,
+                Exception.class
         );
         if (equivalenceGraph.get(decodedId).isPresent()) {
             gson.toJson(equivalenceGraph.get(decodedId).get(), response.getWriter());
@@ -231,11 +261,15 @@ public class ContentDebugController {
     }
 
     @RequestMapping("/system/debug/content/{id}/index")
-    public void indexContent(@PathVariable("id") String id, final HttpServletResponse response) throws IOException {
+    public void indexContent(@PathVariable("id") String id, final HttpServletResponse response)
+            throws IOException {
         try {
             Id decodedId = Id.valueOf(lowercase.decode(id).longValue());
             Resolved<Content> resolved =
-                    Futures.get(persistence.contentStore().resolveIds(ImmutableList.of(decodedId)), IOException.class);
+                    Futures.get(
+                            persistence.contentStore().resolveIds(ImmutableList.of(decodedId)),
+                            IOException.class
+                    );
             index.index(resolved.getResources().first().get());
             Content content = resolved.getResources().first().get();
             if (content instanceof Container) {
@@ -267,10 +301,9 @@ public class ContentDebugController {
 
             ContentBootstrapListener.Result result = content.accept(listener);
 
-            if(result.isSucceeded()) {
+            if (result.isSucceeded()) {
                 response.setStatus(HttpStatus.OK.value());
-            }
-            else {
+            } else {
                 response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
 
@@ -322,7 +355,10 @@ public class ContentDebugController {
 
             EquivalentSchedule equivalentSchedule = Futures.get(scheduleStore.resolveSchedules(
                     ImmutableSet.of(channel.get()),
-                    new Interval(date.toDateTimeAtStartOfDay(), date.plusDays(1).toDateTimeAtStartOfDay()),
+                    new Interval(
+                            date.toDateTimeAtStartOfDay(),
+                            date.plusDays(1).toDateTimeAtStartOfDay()
+                    ),
                     source,
                     selectedSources
             ), Exception.class);
@@ -344,8 +380,14 @@ public class ContentDebugController {
 
     private Optional<Channel> resolve(String channelId) throws Exception {
         Id cid = Id.valueOf(lowercase.decode(channelId));
-        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList.of(cid));
-        Resolved<Channel> resolvedChannel = Futures.get(channelFuture, 1, TimeUnit.MINUTES, Exception.class);
+        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList
+                .of(cid));
+        Resolved<Channel> resolvedChannel = Futures.get(
+                channelFuture,
+                1,
+                TimeUnit.MINUTES,
+                Exception.class
+        );
 
         if (resolvedChannel.getResources().isEmpty()) {
             return Optional.absent();

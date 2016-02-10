@@ -3,7 +3,7 @@ package org.atlasapi.system;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.context.annotation.Configuration;
+import com.metabroadcast.common.properties.Configurer;
 
 import com.codahale.metrics.Clock;
 import com.codahale.metrics.Metric;
@@ -14,7 +14,7 @@ import com.codahale.metrics.graphite.GraphiteUDP;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
-import com.metabroadcast.common.properties.Configurer;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ProcessingMetricsModule extends MetricsModule {

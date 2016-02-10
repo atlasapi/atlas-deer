@@ -4,10 +4,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.atlasapi.content.Broadcast;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 import com.google.common.base.Predicate;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 public class BroadcastContiguityCheck implements Predicate<List<Broadcast>> {
 
@@ -16,17 +16,17 @@ public class BroadcastContiguityCheck implements Predicate<List<Broadcast>> {
     public BroadcastContiguityCheck() {
         this(Duration.ZERO);
     }
-    
+
     public BroadcastContiguityCheck(Duration maxGap) {
         this.maxGap = maxGap;
     }
-    
+
     public boolean apply(List<Broadcast> broadcasts) {
         boolean valid = true;
         Iterator<Broadcast> iterator = broadcasts.iterator();
         if (iterator.hasNext()) {
             DateTime lastEnd = iterator.next().getTransmissionEndTime();
-            while(valid && iterator.hasNext()) {
+            while (valid && iterator.hasNext()) {
                 Broadcast broadcast = iterator.next();
                 DateTime start = broadcast.getTransmissionTime();
                 valid = valid(start, lastEnd);
@@ -41,5 +41,5 @@ public class BroadcastContiguityCheck implements Predicate<List<Broadcast>> {
         boolean withinMaxGap = !start.isAfter(lastEnd.plus(maxGap));
         return !overlaps && withinMaxGap;
     }
-    
+
 }

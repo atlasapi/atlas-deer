@@ -1,16 +1,10 @@
 package org.atlasapi.query.v4.search;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.Region;
@@ -27,16 +21,22 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 
-import com.google.common.collect.FluentIterable;
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-import javax.servlet.http.HttpServletRequest;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Strings;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
     private final EntityListWriter<Content> contentListWriter;
     private final ChannelGroupResolver channelGroupResolver;
     private final NumberToShortStringCodec codec;
-    
+
     public ContentQueryResultWriter(
             EntityListWriter<Content> contentListWriter,
             EntityWriter<Object> licenseWriter,
@@ -52,7 +52,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
     @Override
     protected void writeResult(QueryResult<Content> result, ResponseWriter writer)
-        throws IOException {
+            throws IOException {
 
         OutputContext ctxt = outputContext(result.getContext());
 
@@ -62,12 +62,13 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
         } else {
             writer.writeObject(contentListWriter, result.getOnlyResource(), ctxt);
         }
-        
+
     }
 
     private OutputContext outputContext(QueryContext queryContext) throws IOException {
-        String regionParam = queryContext.getRequest().getParameter(Attributes.REGION.externalName());
-        if(Strings.isNullOrEmpty(regionParam)) {
+        String regionParam = queryContext.getRequest()
+                .getParameter(Attributes.REGION.externalName());
+        if (Strings.isNullOrEmpty(regionParam)) {
             return OutputContext.valueOf(queryContext);
         }
 

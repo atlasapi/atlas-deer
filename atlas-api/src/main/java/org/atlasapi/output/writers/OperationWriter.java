@@ -1,7 +1,5 @@
 package org.atlasapi.output.writers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.generation.model.Operation;
@@ -9,13 +7,14 @@ import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OperationWriter implements EntityListWriter<Operation> {
-    
+
     private static final String ELEMENT_NAME = "operation";
-    
+
     private final String listName;
-    
+
     public OperationWriter(String listName) {
         this.listName = checkNotNull(listName);
     }

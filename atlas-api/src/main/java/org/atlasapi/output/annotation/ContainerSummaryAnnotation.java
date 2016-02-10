@@ -1,15 +1,14 @@
 package org.atlasapi.output.annotation;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Item;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-
 import org.atlasapi.output.writers.ContainerSummaryWriter;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContainerSummaryAnnotation extends OutputAnnotation<Content> {
 

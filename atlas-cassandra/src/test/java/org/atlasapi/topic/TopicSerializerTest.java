@@ -1,8 +1,5 @@
 package org.atlasapi.topic;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import java.io.File;
 import java.nio.file.Files;
 
@@ -15,11 +12,14 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
-import org.joda.time.DateTime;
-import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import org.joda.time.DateTime;
+import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class TopicSerializerTest {
 
@@ -137,7 +137,9 @@ public class TopicSerializerTest {
         identified.setAliases(ImmutableSet.of(new Alias("a", "alias1"), new Alias("b", "alias2")));
         identified.setCanonicalUri("canonicalUri");
         identified.setEquivalenceUpdate(DateTime.parse("2015-09-09T10:08:18.432Z"));
-        identified.setEquivalentTo(ImmutableSet.of(new EquivalenceRef(Id.valueOf(1),
-                Publisher.BBC)));
+        identified.setEquivalentTo(ImmutableSet.of(new EquivalenceRef(
+                Id.valueOf(1),
+                Publisher.BBC
+        )));
     }
 }

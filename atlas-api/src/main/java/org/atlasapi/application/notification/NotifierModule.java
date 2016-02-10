@@ -1,13 +1,13 @@
 package org.atlasapi.application.notification;
 
+import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.webapp.soy.SoyTemplateRenderer;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
-
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.webapp.soy.SoyTemplateRenderer;
 
 @Configuration
 public class NotifierModule {
@@ -45,7 +45,7 @@ public class NotifierModule {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Bean
     public SoyTemplateRenderer soyRenderer() {
         SoyTemplateRenderer renderer = new SoyTemplateRenderer();

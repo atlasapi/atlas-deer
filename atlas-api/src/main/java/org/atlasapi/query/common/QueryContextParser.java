@@ -1,10 +1,9 @@
 package org.atlasapi.query.common;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
@@ -13,8 +12,12 @@ import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.Set;
+import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.query.Selection.SelectionBuilder;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -25,14 +28,16 @@ public class QueryContextParser implements ParameterNameProvider {
     private final AnnotationsExtractor annotationExtractor;
     private final SelectionBuilder selectionBuilder;
 
-    public QueryContextParser(ApplicationSourcesFetcher configFetcher, UserFetcher userFetcher, AnnotationsExtractor annotationsParser, Selection.SelectionBuilder selectionBuilder) {
+    public QueryContextParser(ApplicationSourcesFetcher configFetcher, UserFetcher userFetcher,
+            AnnotationsExtractor annotationsParser, Selection.SelectionBuilder selectionBuilder) {
         this.configFetcher = checkNotNull(configFetcher);
         this.userFetcher = checkNotNull(userFetcher);
         this.annotationExtractor = checkNotNull(annotationsParser);
         this.selectionBuilder = checkNotNull(selectionBuilder);
     }
 
-    public QueryContext parseSingleContext(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public QueryContext parseSingleContext(HttpServletRequest request)
+            throws QueryParseException, InvalidApiKeyException {
         return new QueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromSingleRequest(request),
@@ -41,7 +46,8 @@ public class QueryContextParser implements ParameterNameProvider {
         );
     }
 
-    public QueryContext parseListContext(HttpServletRequest request) throws QueryParseException, InvalidApiKeyException {
+    public QueryContext parseListContext(HttpServletRequest request)
+            throws QueryParseException, InvalidApiKeyException {
         return new QueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromListRequest(request),

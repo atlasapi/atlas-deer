@@ -1,54 +1,53 @@
 package org.atlasapi.entity.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import javax.annotation.Nullable;
 
-import org.joda.time.DateTime;
+import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ComparisonChain;
-import com.metabroadcast.common.time.DateTimeZones;
+import org.joda.time.DateTime;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Represents the result of a call to a write/store procedure, for use with
- * *Store types.
- * 
+ * Represents the result of a call to a write/store procedure, for use with *Store types.
+ * <p>
  * Immutable given W is immutable.
- * 
- * @param <RESOURCE>
- *            - type of the written resource
+ *
+ * @param <RESOURCE> - type of the written resource
  */
-public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteResult<?,?>> {
-    
-    public static final Predicate<WriteResult<?,?>> WRITTEN
-        = new Predicate<WriteResult<?,?>>() {
-            @Override
-            public boolean apply(@Nullable WriteResult<?,?> input) {
-                return input.written();
-            }
-        };
-        
+public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteResult<?, ?>> {
+
+    public static final Predicate<WriteResult<?, ?>> WRITTEN
+            = new Predicate<WriteResult<?, ?>>() {
+
+        @Override
+        public boolean apply(@Nullable WriteResult<?, ?> input) {
+            return input.written();
+        }
+    };
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static final <R, P> Predicate<WriteResult<? extends R,? extends P>> writtenFilter() {
+    public static final <R, P> Predicate<WriteResult<? extends R, ? extends P>> writtenFilter() {
         return (Predicate) WRITTEN;
     }
 
-    public static final <R,P> Builder<R,P> result(R resource, boolean wasWritten) {
-        return new Builder<R,P>(resource, wasWritten, new DateTime(DateTimeZones.UTC));
+    public static final <R, P> Builder<R, P> result(R resource, boolean wasWritten) {
+        return new Builder<R, P>(resource, wasWritten, new DateTime(DateTimeZones.UTC));
     }
 
-    public static final <R,P> Builder<R,P> unwritten(R resource) {
+    public static final <R, P> Builder<R, P> unwritten(R resource) {
         return result(resource, false);
     }
 
-    public static final <R,P> Builder<R,P> written(R resource) {
+    public static final <R, P> Builder<R, P> written(R resource) {
         return result(resource, true);
     }
-    
-    public static final class Builder<R,P> {
+
+    public static final class Builder<R, P> {
 
         private R resource;
         private boolean written;
@@ -61,13 +60,13 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
             this.writeTime = writeTime;
         }
 
-        public Builder<R,P> withPrevious(P previous) {
+        public Builder<R, P> withPrevious(P previous) {
             this.previous = previous;
             return this;
         }
-        
-        public WriteResult<R,P> build() {
-            return new WriteResult<R,P>(resource, written, writeTime, previous);
+
+        public WriteResult<R, P> build() {
+            return new WriteResult<R, P>(resource, written, writeTime, previous);
         }
     }
 
@@ -76,7 +75,8 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
     private final DateTime writeTime;
     private final Optional<PREVIOUS> previous;
 
-    public WriteResult(RESOURCE resource, boolean written, DateTime writeTime, @Nullable PREVIOUS previous) {
+    public WriteResult(RESOURCE resource, boolean written, DateTime writeTime,
+            @Nullable PREVIOUS previous) {
         this.resource = checkNotNull(resource);
         this.written = written;
         this.writeTime = checkNotNull(writeTime);
@@ -85,7 +85,7 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
 
     /**
      * The resource as it was written when the write was attempted.
-     * 
+     *
      * @return - the resource
      */
     public RESOURCE getResource() {
@@ -93,9 +93,8 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
     }
 
     /**
-     * Indicates whether the resource was actually written at this call to
-     * write.
-     * 
+     * Indicates whether the resource was actually written at this call to write.
+     *
      * @return true iff the resource was written.
      */
     public boolean written() {
@@ -104,15 +103,16 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
 
     /**
      * The time at which the write was attempted.
-     * 
+     *
      * @return
      */
     public DateTime getWriteTime() {
         return writeTime;
     }
-    
+
     /**
      * The previous version of the resource.
+     *
      * @return
      */
     public Optional<PREVIOUS> getPrevious() {
@@ -122,10 +122,10 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
     @Override
     public int compareTo(WriteResult<?, ?> other) {
         return ComparisonChain.start()
-            .compare(writeTime, other.writeTime)
-            .compareFalseFirst(written, other.written)
-            .compare(resource.hashCode(), other.resource.hashCode())
-            .result();
+                .compare(writeTime, other.writeTime)
+                .compareFalseFirst(written, other.written)
+                .compare(resource.hashCode(), other.resource.hashCode())
+                .result();
     }
 
     @Override
@@ -133,11 +133,11 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
         if (this == that) {
             return true;
         }
-        if (that instanceof WriteResult<?,?>) {
-            WriteResult<?,?> other = (WriteResult<?,?>) that;
+        if (that instanceof WriteResult<?, ?>) {
+            WriteResult<?, ?> other = (WriteResult<?, ?>) that;
             return written == other.written
-                && writeTime.equals(other.writeTime)
-                && resource.equals(other.resource);
+                    && writeTime.equals(other.writeTime)
+                    && resource.equals(other.resource);
         }
         return false;
     }
@@ -150,10 +150,10 @@ public final class WriteResult<RESOURCE, PREVIOUS> implements Comparable<WriteRe
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-            .add("resource", resource.toString())
-            .add("written", written)
-            .add("at", writeTime)
-            .toString();
+                .add("resource", resource.toString())
+                .add("written", written)
+                .add("at", writeTime)
+                .toString();
     }
 
 }

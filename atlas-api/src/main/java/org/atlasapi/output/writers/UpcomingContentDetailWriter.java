@@ -1,16 +1,18 @@
 package org.atlasapi.output.writers;
 
-import com.google.common.collect.Iterables;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.google.common.collect.Iterables;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -19,7 +21,8 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
     private final BroadcastWriter broadcastWriter;
     private final ItemDetailWriter itemDetailWriter;
 
-    public UpcomingContentDetailWriter(BroadcastWriter broadcastWriter, ItemDetailWriter itemDetailWriter) {
+    public UpcomingContentDetailWriter(BroadcastWriter broadcastWriter,
+            ItemDetailWriter itemDetailWriter) {
         this.broadcastWriter = checkNotNull(broadcastWriter);
         this.itemDetailWriter = checkNotNull(itemDetailWriter);
     }
@@ -30,7 +33,8 @@ public class UpcomingContentDetailWriter implements EntityListWriter<Item> {
     }
 
     @Override
-    public void write(@Nonnull Item entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt) throws IOException {
+    public void write(@Nonnull Item entity, @Nonnull FieldWriter writer,
+            @Nonnull OutputContext ctxt) throws IOException {
         List<Broadcast> sortedBroadcasts = entity.getBroadcasts()
                 .stream()
                 .sorted(Broadcast.startTimeOrdering())

@@ -1,28 +1,24 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.concurrent.ExecutionException;
 
-import org.atlasapi.content.Content;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationWriter;
-import org.atlasapi.system.legacy.LegacyOrganisationResolver;
-import org.atlasapi.system.legacy.LegacyOrganisationTransformer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.MetricRegistry;
+import com.metabroadcast.common.queue.Worker;
+
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
-import com.metabroadcast.common.queue.Worker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
@@ -32,7 +28,8 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
     private final OrganisationWriter writer;
     private final Timer messagesTimer;
 
-    public OrganisationBootstrapWorker(OrganisationResolver resolver,OrganisationWriter writer, Timer timer) {
+    public OrganisationBootstrapWorker(OrganisationResolver resolver, OrganisationWriter writer,
+            Timer timer) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
         this.messagesTimer = checkNotNull(timer);
@@ -52,8 +49,13 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
             log.debug("Bootstrapped organisation {}", organisation.toString());
             time.stop();
         } catch (Exception e) {
-            log.error("Failed to bootstrap organisation {} - {} {}", message.getUpdatedResource(), e, Throwables
-                    .getStackTraceAsString(e));
+            log.error(
+                    "Failed to bootstrap organisation {} - {} {}",
+                    message.getUpdatedResource(),
+                    e,
+                    Throwables
+                            .getStackTraceAsString(e)
+            );
         }
     }
 }

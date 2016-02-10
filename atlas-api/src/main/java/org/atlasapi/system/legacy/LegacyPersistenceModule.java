@@ -22,18 +22,18 @@ import org.atlasapi.persistence.event.MongoEventStore;
 import org.atlasapi.persistence.lookup.TransitiveLookupWriter;
 import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.schedule.ScheduleResolver;
-import org.atlasapi.topic.TopicResolver;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
+
 import com.mongodb.ReadPreference;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration
 @Import(AtlasPersistenceModule.class)
@@ -51,8 +51,16 @@ public class LegacyPersistenceModule {
         if (mongoDb == null) {
             return NullContentResolver.get();
         }
-        KnownTypeContentResolver contentResolver = new MongoContentResolver(mongoDb, legacyEquivalenceStore());
-        return new LegacyContentResolver(legacyEquivalenceStore(), contentResolver, legacySegmentMigrator(), persistence.channelStore());
+        KnownTypeContentResolver contentResolver = new MongoContentResolver(
+                mongoDb,
+                legacyEquivalenceStore()
+        );
+        return new LegacyContentResolver(
+                legacyEquivalenceStore(),
+                contentResolver,
+                legacySegmentMigrator(),
+                persistence.channelStore()
+        );
     }
 
     @Bean
@@ -100,18 +108,34 @@ public class LegacyPersistenceModule {
         return new MongoLookupEntryStore(
                 persistence.databasedReadMongo().collection("lookup"),
                 persistenceAuditLog(),
-                ReadPreference.primaryPreferred());
+                ReadPreference.primaryPreferred()
+        );
     }
 
     @Bean
     @Qualifier("legacy")
     public ScheduleResolver legacyScheduleStore() {
         DatabasedMongo db = persistence.databasedReadMongo();
-        KnownTypeContentResolver contentResolver = new MongoContentResolver(db, legacyEquivalenceStore());
-        LookupResolvingContentResolver resolver = new LookupResolvingContentResolver(contentResolver, legacyEquivalenceStore());
-        EquivalentContentResolver equivalentContentResolver = new DefaultEquivalentContentResolver(contentResolver, legacyEquivalenceStore());
+        KnownTypeContentResolver contentResolver = new MongoContentResolver(
+                db,
+                legacyEquivalenceStore()
+        );
+        LookupResolvingContentResolver resolver = new LookupResolvingContentResolver(
+                contentResolver,
+                legacyEquivalenceStore()
+        );
+        EquivalentContentResolver equivalentContentResolver = new DefaultEquivalentContentResolver(
+                contentResolver,
+                legacyEquivalenceStore()
+        );
         MessageSender<ScheduleUpdateMessage> sender = MessageSenders.noopSender();
-        return new LegacyScheduleResolver(new MongoScheduleStore(db, persistence.channelStore(), resolver, equivalentContentResolver, sender), legacySegmentMigrator(), persistence.channelStore());
+        return new LegacyScheduleResolver(new MongoScheduleStore(
+                db,
+                persistence.channelStore(),
+                resolver,
+                equivalentContentResolver,
+                sender
+        ), legacySegmentMigrator(), persistence.channelStore());
     }
 
     @Bean
@@ -123,7 +147,10 @@ public class LegacyPersistenceModule {
     @Bean
     @Qualifier("legacy")
     public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
-        return new MongoSegmentResolver(persistence.databasedReadMongo(), new SubstitutionTableNumberCodec());
+        return new MongoSegmentResolver(
+                persistence.databasedReadMongo(),
+                new SubstitutionTableNumberCodec()
+        );
     }
 
     @Bean
@@ -140,8 +167,12 @@ public class LegacyPersistenceModule {
     @Bean
     @Qualifier("legacy")
     public OrganisationResolver legacyOrganisationResolver() {
-        TransitiveLookupWriter lookupWriter = TransitiveLookupWriter.generatedTransitiveLookupWriter(legacyEquivalenceStore());
-        MongoOrganisationStore store = new MongoOrganisationStore(persistence.databasedReadMongo(),lookupWriter,legacyEquivalenceStore(),persistenceAuditLog());
+        TransitiveLookupWriter lookupWriter = TransitiveLookupWriter.generatedTransitiveLookupWriter(
+                legacyEquivalenceStore());
+        MongoOrganisationStore store = new MongoOrganisationStore(persistence.databasedReadMongo(),
+                lookupWriter,
+                legacyEquivalenceStore(),
+                persistenceAuditLog());
         LegacyOrganisationTransformer transformer = new LegacyOrganisationTransformer();
         return new LegacyOrganisationResolver(store, transformer);
     }

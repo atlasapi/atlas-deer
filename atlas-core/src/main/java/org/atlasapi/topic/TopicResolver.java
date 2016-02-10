@@ -9,5 +9,5 @@ import com.metabroadcast.common.collect.OptionalMap;
 public interface TopicResolver extends IdResolver<Topic> {
 
     OptionalMap<Alias, Topic> resolveAliases(Iterable<Alias> aliases, Publisher source);
-    
+
 }

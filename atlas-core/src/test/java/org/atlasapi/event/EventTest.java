@@ -1,11 +1,12 @@
 package org.atlasapi.event;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class EventTest {
 

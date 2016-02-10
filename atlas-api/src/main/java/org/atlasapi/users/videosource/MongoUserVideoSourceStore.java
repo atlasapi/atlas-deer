@@ -1,22 +1,23 @@
 package org.atlasapi.users.videosource;
 
-import static com.metabroadcast.common.persistence.mongo.MongoBuilders.where;
-import static com.metabroadcast.common.social.model.translator.UserRefTranslator.USER_NAMESPACE_KEY;
-import static org.atlasapi.users.videosource.model.translators.UserVideoSourceTranslator.ATLAS_USER_KEY;
-import static org.atlasapi.users.videosource.model.translators.UserVideoSourceTranslator.USER_REF_KEY;
-
 import org.atlasapi.application.users.User;
 import org.atlasapi.users.videosource.model.UserVideoSource;
 import org.atlasapi.users.videosource.model.translators.UserVideoSourceTranslator;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.social.model.UserRef;
 import com.metabroadcast.common.social.model.UserRef.UserNamespace;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+
+import static com.metabroadcast.common.persistence.mongo.MongoBuilders.where;
+import static com.metabroadcast.common.social.model.translator.UserRefTranslator.USER_NAMESPACE_KEY;
+import static org.atlasapi.users.videosource.model.translators.UserVideoSourceTranslator.ATLAS_USER_KEY;
+import static org.atlasapi.users.videosource.model.translators.UserVideoSourceTranslator.USER_REF_KEY;
 
 public class MongoUserVideoSourceStore implements
         UserVideoSourceStore {
@@ -25,8 +26,9 @@ public class MongoUserVideoSourceStore implements
     private static final String NAMESPACE_KEY = USER_REF_KEY + "." + USER_NAMESPACE_KEY;
     private final DBCollection linkedTokens;
     private UserVideoSourceTranslator translator = new UserVideoSourceTranslator();
-    
-    private final Function<DBObject, UserVideoSource> translatorFunction = new Function<DBObject, UserVideoSource>(){
+
+    private final Function<DBObject, UserVideoSource> translatorFunction = new Function<DBObject, UserVideoSource>() {
+
         @Override
         public UserVideoSource apply(DBObject dbo) {
             return translator.fromDBObject(dbo);
@@ -45,8 +47,10 @@ public class MongoUserVideoSourceStore implements
     @Override
     public Iterable<UserVideoSource> userVideoSourcesFor(User user) {
         return ImmutableSet.copyOf(Iterables.transform(
-                linkedTokens.find(where().fieldEquals(ATLAS_USER_KEY, user.getId().longValue()).build()),
-                translatorFunction));
+                linkedTokens.find(where().fieldEquals(ATLAS_USER_KEY, user.getId().longValue())
+                        .build()),
+                translatorFunction
+        ));
     }
 
     @Override
@@ -54,12 +58,14 @@ public class MongoUserVideoSourceStore implements
         return ImmutableSet.copyOf(Iterables.transform(
                 linkedTokens.find(where().fieldEquals(ATLAS_USER_KEY, user.getId().longValue())
                         .fieldEquals(NAMESPACE_KEY, videoService.prefix()).build()),
-                translatorFunction));
+                translatorFunction
+        ));
     }
 
     @Override
     public UserVideoSource sourceForRemoteuserRef(UserRef userRef) {
-        return translator.fromDBObject(linkedTokens.findOne(where().idEquals(userRef.toKey()).build()));
+        return translator.fromDBObject(linkedTokens.findOne(where().idEquals(userRef.toKey())
+                .build()));
     }
 
 }

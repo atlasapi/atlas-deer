@@ -1,12 +1,5 @@
 package org.atlasapi.segment;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -26,8 +19,10 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraUtil;
 import org.atlasapi.util.ImmutableCollectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.time.SystemClock;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -42,10 +37,16 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.ids.IdGenerator;
-import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.time.SystemClock;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CassandraSegmentStore extends AbstractSegmentStore {
 
@@ -63,9 +64,9 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     private final PreparedStatement segmentSelect;
 
     private CassandraSegmentStore(Session session, String keyspace, String tableName,
-                                 AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
-                                 Equivalence<? super Segment> equivalence,
-                                 MessageSender<ResourceUpdatedMessage> sender) {
+            AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
+            Equivalence<? super Segment> equivalence,
+            MessageSender<ResourceUpdatedMessage> sender) {
         super(idGenerator, equivalence, sender, new SystemClock());
         this.session = checkNotNull(session);
         this.aliasIndex = checkNotNull(aliasIndex);
@@ -85,8 +86,10 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
 
     @Override
     protected void doWrite(Segment segment, Segment previous) {
-        checkArgument(previous == null || segment.getSource().equals(previous.getSource()),
-                "Cannot change the Source of a Segment!");
+        checkArgument(
+                previous == null || segment.getSource().equals(previous.getSource()),
+                "Cannot change the Source of a Segment!"
+        );
         try {
             log.trace("Writing Segment {}", segment.getId());
             long id = segment.getId().longValue();
@@ -101,7 +104,8 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     }
 
     @Override
-    protected Optional<Segment> resolvePrevious(@Nullable Id id, Publisher source, Set<Alias> aliases) {
+    protected Optional<Segment> resolvePrevious(@Nullable Id id, Publisher source,
+            Set<Alias> aliases) {
 
         Segment previous = null;
         if (id != null) {
@@ -121,7 +125,10 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
             if (aliasId == null) {
                 return null;
             }
-            return Iterables.getOnlyElement(resolveSegments(ImmutableList.of(Id.valueOf(aliasId))), null);
+            return Iterables.getOnlyElement(
+                    resolveSegments(ImmutableList.of(Id.valueOf(aliasId))),
+                    null
+            );
         } catch (ConnectionException e) {
             throw Throwables.propagate(e);
         }
@@ -138,9 +145,11 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
                         .map(Id.toLongValue()::apply)
                         .map(segmentSelect::bind)
                         .map(session::executeAsync)
-                        .map(rsFuture -> Futures.transform(rsFuture,
+                        .map(rsFuture -> Futures.transform(
+                                rsFuture,
                                 (Function<ResultSet, List<Row>>) input ->
-                                        input != null ? input.all() : Lists.newArrayList()))
+                                        input != null ? input.all() : Lists.newArrayList()
+                        ))
                         .collect(Collectors.toList())),
                 (Function<List<List<Row>>, List<Row>>) input -> input.stream()
                         .flatMap(Collection::stream)

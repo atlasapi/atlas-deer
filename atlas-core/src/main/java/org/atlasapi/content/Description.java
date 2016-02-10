@@ -6,14 +6,13 @@ import com.google.common.base.Objects;
 
 /**
  * A Description of something
- * 
- * @author Fred van den Driessche (fred@metabroadcast.com)
  *
+ * @author Fred van den Driessche (fred@metabroadcast.com)
  */
 public class Description {
-    
-    public static final Description EMPTY = new Description("","","","");
-    
+
+    public static final Description EMPTY = new Description("", "", "", "");
+
     public static class Builder {
 
         private String title;
@@ -22,9 +21,9 @@ public class Description {
         private String image;
         private String thumbnail;
 
-        
-        private Builder() {}
-        
+        private Builder() {
+        }
+
         private Builder(String t, String synopsis, String img, String thmb) {
             this.title = t;
             this.synopsis = synopsis;
@@ -60,24 +59,24 @@ public class Description {
     public static final Builder description() {
         return new Builder();
     }
-    
+
     public Description(String title, String synopsis, String image, String thumbnail) {
         this.title = title;
         this.synopsis = synopsis;
         this.image = image;
         this.thumbnail = thumbnail;
-        this.hash = Objects.hashCode(title,synopsis,image,thumbnail);
+        this.hash = Objects.hashCode(title, synopsis, image, thumbnail);
     }
-    
+
     private final String title;
-    
+
     private final String synopsis;
 
     private final String image;
     private final String thumbnail;
-    
+
     private final transient int hash;
-    
+
     @FieldName("title")
     public String getTitle() {
         return this.title;
@@ -97,11 +96,11 @@ public class Description {
     public String getThumbnail() {
         return this.thumbnail;
     }
-    
+
     public Builder copy() {
         return new Builder(title, synopsis, image, thumbnail);
     }
-    
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -113,12 +112,12 @@ public class Description {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return hash;
     }
-    
+
     @Override
     public String toString() {
         return String.format("%s Description", title);

@@ -1,7 +1,5 @@
 package org.atlasapi.segment;
 
-import static org.atlasapi.serialization.protobuf.SegmentProtos.Segment.Builder;
-
 import org.atlasapi.content.RelatedLinkSerializer;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.DateTimeSerializer;
@@ -9,13 +7,14 @@ import org.atlasapi.entity.Serializer;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.SegmentProtos;
-import org.joda.time.Duration;
 
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.joda.time.Duration;
 
+import static org.atlasapi.serialization.protobuf.SegmentProtos.Segment.Builder;
 
 public class SegmentSerializer implements Serializer<Segment, byte[]> {
 
@@ -27,7 +26,6 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
 
     public static final Function<CommonProtos.Alias, Alias> PROTO_TO_ALIAS =
             alias -> new Alias(alias.getNamespace(), alias.getValue());
-
 
     private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
@@ -50,7 +48,10 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
             builder.setType(src.getType().toString());
         }
         if (src.getRelatedLinks() != null && !src.getRelatedLinks().isEmpty()) {
-            builder.addAllLinks(Iterables.transform(src.getRelatedLinks(), relatedLinkSerializer.TO_PROTO));
+            builder.addAllLinks(Iterables.transform(
+                    src.getRelatedLinks(),
+                    relatedLinkSerializer.TO_PROTO
+            ));
         }
         if (src.getShortDescription() != null) {
             builder.setShortDescription(src.getShortDescription());
@@ -106,7 +107,10 @@ public class SegmentSerializer implements Serializer<Segment, byte[]> {
                 segment.setThisOrChildLastUpdated(dateTimeSerializer.deserialize(proto.getThisOrChildLastUpdated()));
             }
             if (proto.getLinksList() != null && !proto.getLinksList().isEmpty()) {
-                segment.setRelatedLinks(Iterables.transform(proto.getLinksList(), relatedLinkSerializer.FROM_PROTO));
+                segment.setRelatedLinks(Iterables.transform(
+                        proto.getLinksList(),
+                        relatedLinkSerializer.FROM_PROTO
+                ));
             }
             if (proto.getAliasesList() != null && !proto.getAliasesList().isEmpty()) {
                 segment.setAliases(Iterables.transform(proto.getAliasesList(), PROTO_TO_ALIAS));

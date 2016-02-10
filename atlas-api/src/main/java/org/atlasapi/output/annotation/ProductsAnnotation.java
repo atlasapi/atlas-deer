@@ -1,6 +1,5 @@
 package org.atlasapi.output.annotation;
 
-
 import java.io.IOException;
 
 import org.atlasapi.application.ApplicationSources;
@@ -28,8 +27,9 @@ public class ProductsAnnotation extends OutputAnnotation<Content> {
         writer.writeList(new EntityListWriter<Product>() {
 
             @Override
-            public void write(Product entity, FieldWriter writer, OutputContext ctxt) throws IOException {
-                
+            public void write(Product entity, FieldWriter writer, OutputContext ctxt)
+                    throws IOException {
+
             }
 
             @Override
@@ -41,15 +41,17 @@ public class ProductsAnnotation extends OutputAnnotation<Content> {
             public String fieldName(Product entity) {
                 return "product";
             }
-            
+
         }, resolveProductsFor(entity, null), ctxt);
     }
-    
-    private Iterable<Product> resolveProductsFor(Content content, final ApplicationSources appSources) {
+
+    private Iterable<Product> resolveProductsFor(Content content,
+            final ApplicationSources appSources) {
         return filter(productResolver.productsForContent(content.getCanonicalUri()), appSources);
     }
 
-    private Iterable<Product> filter(Iterable<Product> productsForContent, final ApplicationSources appSources) {
+    private Iterable<Product> filter(Iterable<Product> productsForContent,
+            final ApplicationSources appSources) {
         return Iterables.filter(productsForContent, new Predicate<Product>() {
 
             @Override

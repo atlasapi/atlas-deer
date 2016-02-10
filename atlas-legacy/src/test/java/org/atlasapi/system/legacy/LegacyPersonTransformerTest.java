@@ -1,8 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.media.entity.ChildRef;
@@ -10,11 +7,14 @@ import org.atlasapi.media.entity.ContentGroup;
 import org.atlasapi.media.entity.EntityType;
 import org.atlasapi.media.entity.Person;
 import org.atlasapi.media.entity.Publisher;
+
+import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class LegacyPersonTransformerTest {
 

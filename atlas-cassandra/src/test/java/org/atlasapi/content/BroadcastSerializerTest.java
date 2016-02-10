@@ -1,31 +1,32 @@
 package org.atlasapi.content;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import java.io.File;
 import java.nio.file.Files;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.serialization.protobuf.ContentProtos;
+
+import com.metabroadcast.common.time.DateTimeZones;
+
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.time.DateTimeZones;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class BroadcastSerializerTest {
-    
+
     private final BroadcastSerializer serializer = new BroadcastSerializer();
-    
+
     @Test
     public void testDeSerializeBroadcast() {
         Broadcast broadcast = getBroadcast();
-        
+
         ContentProtos.Broadcast serialized = serializer.serialize(broadcast).build();
-        
+
         Broadcast deserialized = serializer.deserialize(serialized);
 
         checkBroadcastTimes(deserialized, broadcast);

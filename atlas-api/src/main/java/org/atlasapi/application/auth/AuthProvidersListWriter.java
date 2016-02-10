@@ -7,8 +7,8 @@ import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
-
 public class AuthProvidersListWriter implements EntityListWriter<OAuthProvider> {
+
     @Override
     public void write(OAuthProvider entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {

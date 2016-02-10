@@ -11,18 +11,19 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 public class ApplicationSourcesWriter implements EntityListWriter<ApplicationSources> {
+
     private final EntityListWriter<SourceReadEntry> readsWriter;
-    private final EntityListWriter<Publisher> writesWriter; 
-    
+    private final EntityListWriter<Publisher> writesWriter;
+
     public ApplicationSourcesWriter(SourceIdCodec sourceIdCodec) {
         readsWriter = new ApplicationSourcesReadsWriter(sourceIdCodec);
         writesWriter = new SourceWithIdWriter(sourceIdCodec, "writes", "writes");
     }
-    
+
     @Override
     public void write(ApplicationSources entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
-    	
+
         writer.writeField("precedence", entity.isPrecedenceEnabled());
         writer.writeList(readsWriter, entity.getReads(), ctxt);
         writer.writeList(writesWriter, entity.getWrites(), ctxt);
