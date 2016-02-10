@@ -1,5 +1,11 @@
 package org.atlasapi.output;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -455,15 +461,26 @@ public class OutputContentMergerTest {
     public void testImageWithMerging() {
         ApplicationSources sources = sourcesWithPrecedence(true, Publisher.BBC, Publisher.PA);
         Item item1 = item(4L, "item1", Publisher.BBC);
-        item1.setImages(ImmutableSet.of(new Image("http://image1.org/")));
-        Item item2 = item(5L, "item2", Publisher.PA);
-        item2.setImages(ImmutableSet.of(new Image("http://image2.org/")));
+        Image image1 = new Image("http://image1.org/");
 
-        Content merged = merger.merge(item1, ImmutableList.of(item2), sources);
-        assertThat(
-                Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(),
-                is("http://image1.org/")
-        );
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now());
+        image1.setType(Image.Type.GENERIC_IMAGE_CONTENT_PLAYER);
+
+        item1.setImages(ImmutableSet.of(image1));
+
+        Item item2 = item(5L, "item2", Publisher.PA);
+
+        Image image2 = new Image("http://image2.org/");
+
+        image1.setAvailabilityStart(DateTime.now().minusDays(1));
+        image1.setAvailabilityEnd(DateTime.now());
+
+        item2.setImages(ImmutableSet.of(image2));
+        
+        Content merged = merger.merge(item2,  ImmutableList.of(item1), sources);
+        assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image2.org/"));
+
     }
 
     @Test

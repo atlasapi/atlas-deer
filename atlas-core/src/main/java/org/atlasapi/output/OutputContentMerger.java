@@ -357,8 +357,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<T> notChosen) {
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
         if (sources.imagePrecedenceEnabled()) {
-            List<T> topImageMatches = sources.getSourcedImagePrecedenceOrdering()
-                    .leastOf(Iterables.filter(all, HAS_AVAILABLE_IMAGE_SET), 1);
+
+            List<T> topImageMatches = sources.getSourcedImagePrecedenceOrdering().leastOf(Iterables.filter(all,
+                    HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET), 1);
+
             if (!topImageMatches.isEmpty()) {
                 T top = topImageMatches.get(0);
                 top.getImages().forEach(img -> img.setSource(top.getSource()));
@@ -532,14 +534,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     }
 
-    private static final Predicate<Described> HAS_AVAILABLE_IMAGE_SET = new Predicate<Described>() {
+    private static final Predicate<Described> HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET = new Predicate<Described>() {
 
         @Override
         public boolean apply(Described content) {
             if (content.getImage() == null) {
                 return false;
             }
-            return isImageAvailable(content.getImage(), content.getImages());
+            return isImageAvailableAndNotGenericImageContentPlayer(content.getImage(), content.getImages());
         }
     };
 
@@ -551,7 +553,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     };
 
-    private static boolean isImageAvailable(String imageUri, Iterable<Image> images) {
+    private static boolean isImageAvailableAndNotGenericImageContentPlayer(String imageUri, Iterable<Image> images) {
 
         // Fneh. Image URIs differ between the image attribute and the canonical URI on Images.
         // See PaProgrammeProcessor for why.
@@ -560,10 +562,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 "http://images.atlas.metabroadcast.com/pressassociation.com/"
         );
 
-        // If there is a corresponding Image object for this URI, we check its availability
+        // If there is a corresponding Image object for this URI, we check its availability and
+        // whether it is generic.
         for (Image image : images) {
             if (image.getCanonicalUri().equals(rewrittenUri)) {
-                return Image.IS_AVAILABLE.apply(image);
+               return Image.IS_AVAILABLE.apply(image) && !Image.Type.GENERIC_IMAGE_CONTENT_PLAYER.equals(image.getType());
             }
         }
         // Otherwise, we can only assume the image is available as we know no better
