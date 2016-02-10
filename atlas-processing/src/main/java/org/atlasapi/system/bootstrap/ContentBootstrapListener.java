@@ -106,8 +106,8 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     protected Result visitItem(Item item) {
         ResultBuilder resultBuilder = resultBuilder();
 
-        if (migrateHierarchy && item instanceof Episode) {
-            migrateParentsForEpisode((Episode) item, resultBuilder);
+        if (migrateHierarchy) {
+            migrateParents(item, resultBuilder);
         }
 
         migrateContent(item, resultBuilder);
@@ -130,8 +130,8 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
     protected Result visitContainer(Container container) {
         ResultBuilder resultBuilder = resultBuilder();
 
-        if (migrateHierarchy && container instanceof Series) {
-            migrateParentsForSeries((Series) container, resultBuilder);
+        if (migrateHierarchy) {
+            migrateParents(container, resultBuilder);
         }
 
         migrateContent(container, resultBuilder);
@@ -148,6 +148,16 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         logResult(container.getId(), result);
 
         return result;
+    }
+
+    private void migrateParents(Content content, ResultBuilder resultBuilder) {
+        if (content instanceof Episode) {
+            migrateParentsForEpisode((Episode) content, resultBuilder);
+        }
+
+        if (content instanceof Series) {
+            migrateParentsForSeries((Series) content, resultBuilder);
+        }
     }
 
     private void migrateParentsForEpisode(Episode episode, ResultBuilder resultBuilder) {
@@ -373,6 +383,13 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         for (Id equivalentId : equivalentIds) {
             ResultBuilder equivalentResultBuilder = resultBuilder();
             Content content = resolveLegacyContent(equivalentId);
+
+            // Some equivalents will fail to migrate because their parents are missing.
+            // This is intended as a workaround for that scenario
+            if (migrateHierarchy) {
+                migrateParents(content, resultBuilder());
+            }
+
             migrateContent(content, equivalentResultBuilder);
 
             if (equivalentResultBuilder.isSucceeded()) {
