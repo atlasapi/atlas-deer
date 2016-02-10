@@ -571,9 +571,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             Interval interval) {
         ImmutableList.Builder<Statement> stmts = ImmutableList.builder();
         for (BroadcastRef ref : staleBroadcasts) {
-            for (Date day : daysIn(interval)) {
-                stmts.add(delete(ref, src, day));
-            }
+            stmts.add(delete(ref, src,
+                    ref.getTransmissionInterval()
+                            .getStart()
+                            .toLocalDate()
+                            .toDate()
+            ));
         }
         return stmts.build();
     }

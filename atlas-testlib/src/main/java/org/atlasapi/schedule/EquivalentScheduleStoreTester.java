@@ -1314,6 +1314,72 @@ public final class EquivalentScheduleStoreTester
 
     }
 
+    /**
+     * If two broadcasts exist on consecutive schedule days with the same ID, and
+     * the one on the second day is marked as stale, the first broadcast should
+     * not be removed. In the case where the update interval spans from the first
+     * day to the second day, the broadcast on the first day was being removed.
+     *
+     * TODO: If the remaining, valid, broadcasts is within the update window, but
+     *       on the same calendar day as the stale broadcast, it will be removed.
+     */
+    public void testOnlyRemovesStaleBroadcastFromOutsideInterval() throws Exception {
+
+
+        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
+        channel.setId(1L);
+
+        DateTime item1BroadcastStart = new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC);
+        DateTime item1BroadcastEnd = new DateTime(2015, 10, 25, 22, 0, 0, 0, DateTimeZones.UTC);
+        DateTime item2BroadcastStart = new DateTime(2015, 10, 26, 19, 30, 0, 0, DateTimeZones.UTC);
+        DateTime item2BroadcastEnd = new DateTime(2015, 10, 26, 23, 0, 0, 0, DateTimeZones.UTC);
+
+        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
+
+        Broadcast item1Broadcast = new Broadcast(channel, item1BroadcastStart, item1BroadcastEnd).withId("bid1");
+        Broadcast item2Broadcast = new Broadcast(channel, item2BroadcastStart, item2BroadcastEnd).withId("bid1");
+
+        item1.addBroadcast(item1Broadcast);
+        item2.addBroadcast(item2Broadcast);
+
+        getSubjectGenerator().getContentStore().writeContent(item1);
+        getSubjectGenerator().getContentStore().writeContent(item2);
+
+        ScheduleRef update1 = ScheduleRef.forChannel(channel.getId(), new Interval(item1BroadcastStart, item2BroadcastEnd))
+                .addEntry(item1.getId(), item1Broadcast.toRef())
+                .addEntry(item2.getId(), item2Broadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                             .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, update1, ImmutableSet.<BroadcastRef>of()));
+
+        Broadcast item2NewBroadcast = new Broadcast(channel, item2BroadcastStart, item2BroadcastEnd).withId("bid2");
+        item2.setBroadcasts(ImmutableSet.of(item2NewBroadcast));
+
+        getSubjectGenerator().getContentStore().writeContent(item2);
+
+        ScheduleRef update2 = ScheduleRef.forChannel(channel.getId(), new Interval(item1BroadcastStart, item2BroadcastEnd))
+                .addEntry(item1.getId(), item1Broadcast.toRef())
+                .addEntry(item2.getId(), item2NewBroadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, update1, ImmutableSet.<BroadcastRef>of(item2Broadcast.toRef())));
+
+        EquivalentSchedule resolved = get(
+                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                        ImmutableList.of(channel),
+                        new Interval(item1BroadcastStart, item1BroadcastEnd),
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST)
+                )
+        );
+
+        EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
+        assertThat(schedule.getEntries().size(), is(1));
+    }
+
     public void testDoesnRemoveStaleBroadcastsFromOutsideInterval() throws Exception {
 
         Channel channel = Channel.builder(Publisher.METABROADCAST).build();
