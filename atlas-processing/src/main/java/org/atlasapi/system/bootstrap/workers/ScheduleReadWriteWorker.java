@@ -54,6 +54,11 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
 
     @Override
     public void process(ScheduleUpdateMessage msg) {
+        LOG.debug(
+                "Processing message on id {}, from: {}, to: {}",
+                msg.getChannel(), msg.getUpdateStart(), msg.getUpdateEnd()
+        );
+
         String updateMsg = String.format("update %s %s %s-%s",
                 msg.getSource(), msg.getChannel(), msg.getUpdateStart(), msg.getUpdateEnd()
         );
