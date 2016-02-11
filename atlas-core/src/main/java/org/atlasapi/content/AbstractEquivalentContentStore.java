@@ -60,6 +60,8 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     @Override
     public final void updateEquivalences(EquivalenceGraphUpdate update) throws WriteException {
         Set<Id> ids = idsOf(update);
+        ImmutableSet<Id> staleContentIds = ImmutableSet.of();
+
         try {
             lock.lock(ids);
 
@@ -78,7 +80,10 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
             // This has to run before we process the update so we can still resolve the set(s)
             // that are going to be deleted
-            updateStaleContent(update, graphsAndContent);
+            staleContentIds = getStaleContent(
+                    update.getDeleted(),
+                    graphsAndContent
+            );
 
             update(graphsAndContent, update);
         } catch (InterruptedException e) {
@@ -86,6 +91,11 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
         } finally {
             lock.unlock(ids);
         }
+
+        // We are updating stale content after we have already released our held IDs because
+        // the ID(s) of the deleted graph(s) on which we hold a lock could be among the stale
+        // content IDs and the lock is not reentrant
+        updateStaleContent(staleContentIds);
     }
 
     @Override
@@ -180,20 +190,6 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     // This will resolve all content in the graphs that are about to be deleted and then check
     // if that content appears in the updated or created graphs. If not it could be stale content
     // so we are forcing an update
-    private void updateStaleContent(EquivalenceGraphUpdate update,
-            ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
-        ImmutableSet<Id> staleContentIds = getStaleContent(update.getDeleted(), graphsAndContent);
-
-        staleContentIds.stream()
-                .forEach(contentId -> {
-                    try {
-                        updateContent(contentId);
-                    } catch (WriteException e) {
-                        LOG.warn("Failed to update stale content {}", contentId, e);
-                    }
-                });
-    }
-
     private ImmutableSet<Id> getStaleContent(ImmutableSet<Id> deletedGraphIds,
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         ImmutableSet<Id> idsOfContentToBeUpdated = graphsAndContent.values().stream()
@@ -218,5 +214,16 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             LOG.warn("Failed to resolve equivalent set {}", deletedGraphId, e);
         }
         return ImmutableSet.of();
+    }
+
+    private void updateStaleContent(ImmutableSet<Id> staleContentIds) {
+        staleContentIds.stream()
+                .forEach(contentId -> {
+                    try {
+                        updateContent(contentId);
+                    } catch (WriteException e) {
+                        LOG.warn("Failed to update stale content {}", contentId, e);
+                    }
+                });
     }
 }
