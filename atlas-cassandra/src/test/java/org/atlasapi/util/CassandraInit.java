@@ -74,6 +74,8 @@ public class CassandraInit {
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_event.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
+                "/atlas_event_v2.schema")));
+        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_schedule_v2.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_organisation.schema")));
