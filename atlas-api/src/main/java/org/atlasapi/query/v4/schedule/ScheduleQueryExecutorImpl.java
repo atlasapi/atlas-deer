@@ -38,7 +38,7 @@ import org.joda.time.Interval;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQueryExecutor {
+public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
 
     private static final Function<ItemAndBroadcast, Id> IAB_TO_ID = Functions.compose(
             Identifiables.toId(),
@@ -51,7 +51,7 @@ public class ScheduleResolverBackedScheduleQueryExecutor implements ScheduleQuer
     private ScheduleResolver scheduleResolver;
     private MergingEquivalentsResolver<Content> mergingContentResolver;
 
-    public ScheduleResolverBackedScheduleQueryExecutor(ChannelResolver channelResolver,
+    public ScheduleQueryExecutorImpl(ChannelResolver channelResolver,
             ScheduleResolver scheduleResolver,
             MergingEquivalentsResolver<Content> mergingContentResolver) {
         this.channelResolver = checkNotNull(channelResolver);

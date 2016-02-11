@@ -38,7 +38,7 @@ import org.joda.time.Interval;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class EquivalentScheduleResolverBackedScheduleQueryExecutor
+public class EquivalentScheduleQueryExecutor
         implements ScheduleQueryExecutor {
 
     private static final long QUERY_TIMEOUT = 60000;
@@ -48,7 +48,7 @@ public class EquivalentScheduleResolverBackedScheduleQueryExecutor
     private ApplicationEquivalentsMerger<Content> equivalentsMerger;
     private FlexibleBroadcastMatcher broadcastMatcher;
 
-    public EquivalentScheduleResolverBackedScheduleQueryExecutor(
+    public EquivalentScheduleQueryExecutor(
             ChannelResolver channelResolver,
             EquivalentScheduleResolver scheduleResolver,
             ApplicationEquivalentsMerger<Content> equivalentsMerger,
