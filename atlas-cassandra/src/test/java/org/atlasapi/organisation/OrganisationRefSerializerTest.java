@@ -1,5 +1,6 @@
 package org.atlasapi.organisation;
 import org.atlasapi.entity.Id;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
 import static org.hamcrest.Matchers.is;
@@ -19,7 +20,7 @@ public class OrganisationRefSerializerTest {
 
     @Test
     public void testSerialization() throws Exception {
-        OrganisationRef expected = new OrganisationRef(Id.valueOf(12l),"uri");
+        OrganisationRef expected = new OrganisationRef(Id.valueOf(12l), Publisher.WIKIPEDIA);
         CommonProtos.Reference serialized = serializer.serialize(expected);
         OrganisationRef actual = serializer.deserialize(serialized);
 

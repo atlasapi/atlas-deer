@@ -63,7 +63,7 @@ public class EventV2SerializerTest {
                 .withStartTime(DateTime.now().plusHours(1).withZone(DateTimeZone.UTC))
                 .withEndTime(DateTime.now().plusHours(2).withZone(DateTimeZone.UTC))
                 .withParticipants(Lists.newArrayList(new Person("a", "aa", Publisher.BBC)))
-                .withOrganisations(Lists.newArrayList(new OrganisationRef(Id.valueOf(12l), "")))
+                .withOrganisations(Lists.newArrayList(new OrganisationRef(Id.valueOf(12l), Publisher.BBC)))
                 .withEventGroups(Lists.newArrayList(new Topic(Id.valueOf(2L))))
                 .withContent(Lists.newArrayList(new ItemRef(Id.valueOf(21L),
                         Publisher.BBC, "sort", DateTime.now().withZone(DateTimeZone.UTC)

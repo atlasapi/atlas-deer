@@ -4,10 +4,14 @@ import java.nio.ByteBuffer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
+import com.metabroadcast.common.ids.IdGenerator;
+
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.RegularStatement;
@@ -16,10 +20,12 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +49,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
+    private final OrganisationUriStore organisationUriStore;
+
     private final Session session;
     private final ConsistencyLevel writeConsistency;
     private final ConsistencyLevel readConsistency;
@@ -51,11 +59,12 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private final PreparedStatement selectStatement;
 
     protected DatastaxCassandraOrganisationStore(Session session,
-            ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency) {
+            ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency, OrganisationUriStore uriStore) {
         this.session = checkNotNull(session);
         this.readConsistency = checkNotNull(readConsistency);
         this.serializer = new OrganisationSerializer();
         this.writeConsistency = checkNotNull(writeConsistency);
+        this.organisationUriStore = uriStore;
 
         RegularStatement statement = select().all()
                 .from(ORGANISATION_TABLE)
@@ -94,13 +103,22 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     }
 
     @Override
-    public void write(Organisation organisation) {
+    public Organisation write(Organisation organisation) {
+        Id id = organisation.getId();
         ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation)
                 .toByteArray());
 
-        session.execute(rowUpdate.bind()
-                .setLong(ORGANISATION_ID, organisation.getId().longValue())
-                .setBytes(DATA, serializedOrganisation));
+        BatchStatement batchStatement = new BatchStatement();
+
+        Statement writeOrganisation = rowUpdate.bind()
+                .setLong(ORGANISATION_ID, id.longValue())
+                .setBytes(DATA, serializedOrganisation);
+
+        Statement writeUri = organisationUriStore.prepareWritingStatement(organisation);
+        batchStatement.add(writeOrganisation);
+        batchStatement.add(writeUri);
+        session.execute(batchStatement);
+        return organisation;
     }
 
     protected Organisation extractOrganisation(Row row) {
@@ -114,12 +132,18 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         }
     }
 
+    @Override
+    public ListenableFuture<Optional<Id>> getIdByUri(Organisation organisation) {
+        return organisationUriStore.getIdByUri(organisation);
+    }
+
     private static class Builder implements SessionStep, WriteConsistencyStep,
-            ReadConsistencyStep, BuildStep {
+            ReadConsistencyStep, OrganisationUriStoreStep, BuildStep {
 
         private Session session;
         private ConsistencyLevel writeConsistency;
         private ConsistencyLevel readConsistency;
+        private OrganisationUriStore organisationUriStore;
 
         private Builder() {
         }
@@ -137,8 +161,14 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         }
 
         @Override
-        public BuildStep withReadConsistency(ConsistencyLevel readConsistency) {
+        public OrganisationUriStoreStep withReadConsistency(ConsistencyLevel readConsistency) {
             this.readConsistency = readConsistency;
+            return this;
+        }
+
+        @Override
+        public BuildStep withOrganisationUriStore(OrganisationUriStore organisationUriStore) {
+            this.organisationUriStore = organisationUriStore;
             return this;
         }
 
@@ -147,7 +177,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
             return new DatastaxCassandraOrganisationStore(
                     this.session,
                     this.writeConsistency,
-                    this.readConsistency
+                    this.readConsistency,
+                    this.organisationUriStore
             );
         }
     }
@@ -164,7 +195,11 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     public interface ReadConsistencyStep {
 
-        BuildStep withReadConsistency(ConsistencyLevel readConsistency);
+        OrganisationUriStoreStep withReadConsistency(ConsistencyLevel readConsistency);
+    }
+
+    public interface OrganisationUriStoreStep {
+        BuildStep withOrganisationUriStore(OrganisationUriStore uriStore);
     }
 
     public interface BuildStep {

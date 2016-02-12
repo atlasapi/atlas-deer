@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 
@@ -33,6 +34,9 @@ import static org.junit.Assert.assertThat;
 public class DatastaxCassandraOrganizationStoreTest {
 
     private static final String ORGANISATION_TABLE = "organisation";
+    private static final String ORGANISATION_URI = "organisation_uri";
+
+    private static final long EXPECTED_ID = 10l;
 
     private static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();
@@ -41,6 +45,7 @@ public class DatastaxCassandraOrganizationStoreTest {
     private static final String keyspace = "atlas_testing";
     private static final ConsistencyLevel writeConsistency = ConsistencyLevel.ONE;
     private static final ConsistencyLevel readConsistency = ConsistencyLevel.ONE;
+    private static OrganisationUriStore uriStore;
 
     private static Session session;
     private static DatastaxCassandraOrganisationStore store;
@@ -58,6 +63,8 @@ public class DatastaxCassandraOrganizationStoreTest {
 
         session.execute(IOUtils.toString(DatastaxCassandraOrganizationStoreTest.class
                 .getResourceAsStream("/atlas_organisation.schema")));
+        session.execute(IOUtils.toString(DatastaxCassandraOrganizationStoreTest.class.getResourceAsStream(
+                "/atlas_organisation_uri.schema")));
     }
 
     @AfterClass
@@ -71,31 +78,36 @@ public class DatastaxCassandraOrganizationStoreTest {
 
     @Before
     public void setUp() throws Exception {
+        uriStore = new OrganisationUriStore(session, writeConsistency, readConsistency);
         store = new DatastaxCassandraOrganisationStore(
                 session,
                 readConsistency,
-                writeConsistency
+                writeConsistency,
+                uriStore
         );
     }
 
     @After
     public void tearDown() throws Exception {
         context.getClient().truncateColumnFamily(ORGANISATION_TABLE);
+        context.getClient().truncateColumnFamily(ORGANISATION_URI);
     }
 
     @Test
-    public void testWriteAndReadEvent() throws Exception {
+    public void testWriteAndReadExistingOrganisation() throws Exception {
         Set<String> titles = ImmutableSet.of("title1", "title2");
         Organisation expected = new Organisation();
+        expected.setId(EXPECTED_ID);
+        expected.setCanonicalUri("uri");
+        expected.setPublisher(Publisher.BBC);
         expected.setAlternativeTitles(titles);
-        expected.setId(Id.valueOf(1));
         store.write(expected);
         Resolved<Organisation> resolved = store
                 .resolveIds(ImmutableList.of(Id.valueOf(expected.getId().longValue())))
                 .get(1, TimeUnit.SECONDS);
         Organisation actual = Iterables.getOnlyElement(resolved.getResources());
         assertThat(actual.getAlternativeTitles(), is(titles));
-        assertThat(actual.getId(), is(Id.valueOf(1)));
+        assertThat(actual.getId(), is(Id.valueOf(EXPECTED_ID)));
     }
 }
 

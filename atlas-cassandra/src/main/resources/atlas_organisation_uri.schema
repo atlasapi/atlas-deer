@@ -1,8 +1,10 @@
-CREATE TABLE event_v2 (
-  event_id bigint PRIMARY KEY,
-  data blob
+CREATE TABLE organisation_uri (
+  uri text,
+  source text,
+  id bigint,
+  PRIMARY KEY ((uri, source))
 ) WITH
   caching='KEYS_ONLY' AND
-  comment='eventV2 store' AND
+  comment='organisation uri store' AND
   compaction={'class': 'LeveledCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};

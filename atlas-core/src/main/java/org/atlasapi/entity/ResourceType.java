@@ -27,7 +27,8 @@ public enum ResourceType {
     CHANNEL_GROUP(ChannelGroup.class),
     SERVICE(Platform.class),
     PLAYER(Player.class),
-    EVENT(Event.class);
+    EVENT(Event.class),
+    ORGANISATION(Organisation.class);
 
     private Class<? extends Identified> cls;
 
