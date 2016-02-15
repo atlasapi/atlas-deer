@@ -2,6 +2,7 @@ package org.atlasapi.query.v4.schedule;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
@@ -26,6 +27,7 @@ import org.atlasapi.schedule.EquivalentScheduleResolver;
 import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 import org.atlasapi.schedule.Schedule;
 
+import com.codepoetics.protonpack.StreamUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -47,6 +49,7 @@ public class EquivalentScheduleQueryExecutor
     private EquivalentScheduleResolver scheduleResolver;
     private ApplicationEquivalentsMerger<Content> equivalentsMerger;
     private FlexibleBroadcastMatcher broadcastMatcher;
+    private ScheduleMerger scheduleMerger = new ScheduleMergerImpl();
 
     public EquivalentScheduleQueryExecutor(
             ChannelResolver channelResolver,
@@ -68,6 +71,7 @@ public class EquivalentScheduleQueryExecutor
 
         ImmutableSet<Publisher> selectedSources = selectedSources(query);
         ListenableFuture<EquivalentSchedule> schedule;
+        ListenableFuture<EquivalentSchedule> overrideSchedule = null;
         if (query.getEnd().isPresent()) {
             schedule = scheduleResolver.resolveSchedules(
                     channels,
@@ -75,6 +79,15 @@ public class EquivalentScheduleQueryExecutor
                     query.getSource(),
                     selectedSources
             );
+
+            if (query.getOverride().isPresent()) {
+                overrideSchedule = scheduleResolver.resolveSchedules(
+                        channels,
+                        new Interval(query.getStart(), query.getEnd().get()),
+                        query.getOverride().get(),
+                        selectedSources
+                );
+            }
         } else {
             schedule = scheduleResolver.resolveSchedules(
                     channels,
@@ -83,20 +96,58 @@ public class EquivalentScheduleQueryExecutor
                     query.getSource(),
                     selectedSources
             );
+
+            if (query.getOverride().isPresent()) {
+                overrideSchedule = scheduleResolver.resolveSchedules(
+                        channels,
+                        query.getStart(),
+                        query.getCount().get(),
+                        query.getOverride().get(),
+                        selectedSources
+                );
+            }
         }
 
         if (query.isMultiChannel()) {
-            List<ChannelSchedule> channelSchedules = channelSchedules(schedule, query);
+            List<ChannelSchedule> channelSchedules;
+
+            if (query.getOverride().isPresent()) {
+                List<ChannelSchedule> originalSchedules = channelSchedules(schedule, query);
+                List<ChannelSchedule> overrideSchedules = channelSchedules(overrideSchedule, query);
+
+                if (originalSchedules.size() != overrideSchedules.size()) {
+                    throw new IllegalStateException(
+                            String.format("Original schedule should have same number "
+                                    + "of items as override: %d vs. %d, %s | %s",
+                                    originalSchedules.size(), overrideSchedules.size(),
+                                    query.getChannelIds(), query.getOverride()
+                            ));
+                }
+
+                channelSchedules = StreamUtils
+                        .zip(originalSchedules.stream(), overrideSchedules.stream(),
+                                scheduleMerger::merge)
+                        .collect(Collectors.toList());
+            } else {
+                channelSchedules = channelSchedules(schedule, query);
+            }
             return QueryResult.listResult(
                     channelSchedules,
                     query.getContext(),
                     channelSchedules.size()
             );
+        } else {
+            ChannelSchedule originalSchedule =
+                    Iterables.getOnlyElement(channelSchedules(schedule, query));
+            if (overrideSchedule != null) {
+                return QueryResult.singleResult(
+                        scheduleMerger.merge(originalSchedule, originalSchedule),
+                        query.getContext()
+                );
+            } else {
+                return QueryResult.singleResult(originalSchedule, query.getContext());
+            }
         }
-        return QueryResult.singleResult(
-                Iterables.getOnlyElement(channelSchedules(schedule, query)),
-                query.getContext()
-        );
     }
 
     private ImmutableSet<Publisher> selectedSources(ScheduleQuery query) {

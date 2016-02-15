@@ -118,7 +118,7 @@ class ScheduleMergerImpl implements ScheduleMerger {
                 }
             }
 
-            /* if currEnd <= overrideStart, disjoint strictly before
+            /* currEnd <= overrideStart, disjoint strictly before
                advance originalSchedule iterator and try again
              */
             if (currBroadcast.getTransmissionEndTime()
