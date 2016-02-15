@@ -27,6 +27,7 @@ import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 
+
 public class EventAnnotationV2 extends OutputAnnotation<EventV2> {
 
     private final EntityListWriter<ItemRef> itemRefWriter;
