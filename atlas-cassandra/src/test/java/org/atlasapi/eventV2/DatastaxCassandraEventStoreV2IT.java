@@ -1,5 +1,6 @@
 package org.atlasapi.eventV2;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.Alias;
@@ -10,6 +11,8 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.organisation.Organisation;
+import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.util.CassandraInit;
 
 import com.metabroadcast.common.ids.IdGenerator;
@@ -46,7 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DatastaxCassandraEventStoreV2Test {
+public class DatastaxCassandraEventStoreV2IT {
 
     private static final String EVENT_TABLE = "event_v2";
     private static final String EVENT_ALIASES_TABLE = "event_aliases";
@@ -119,11 +122,15 @@ public class DatastaxCassandraEventStoreV2Test {
 
     @Test
     public void testWriteAndReadEvent() throws Exception {
-        EventV2 expected = EventV2.builder().withTitle("title").withSource(Publisher.BBC).build();
-
+        List<OrganisationRef> organisationRefs = ImmutableList.of(new OrganisationRef(Id.valueOf(1l), Publisher.BBC));
+        EventV2 expected = EventV2.builder()
+                .withTitle("title")
+                .withSource(Publisher.BBC)
+                .withOrganisations(organisationRefs).build();
         WriteResult<EventV2, EventV2> writeResult = store.write(expected);
         assertTrue(writeResult.written());
         assertThat(writeResult.getResource().getId().longValue(), is(firstId));
+        assertThat(writeResult.getResource().getOrganisations(), is(organisationRefs));
         assertFalse(writeResult.getPrevious().isPresent());
 
         Resolved<EventV2> resolved = store

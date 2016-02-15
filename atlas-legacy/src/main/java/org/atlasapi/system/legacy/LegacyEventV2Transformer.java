@@ -60,7 +60,7 @@ public class LegacyEventV2Transformer extends BaseLegacyResourceTransformer<
 
     private OrganisationRef generateOrganisationRef(Organisation organisation) {
         Organisation writtenOrganisation = writeOrganisation(organisation);
-        return new OrganisationRef(writtenOrganisation.getId(), organisation.getSource());
+        return new OrganisationRef(writtenOrganisation.getId(), writtenOrganisation.getSource());
     }
 
     private Organisation writeOrganisation(Organisation organisation) {

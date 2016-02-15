@@ -15,7 +15,7 @@ public class IdSettingOrganisationStore implements OrganisationStore {
 
     private final OrganisationStore delegate;
     private final IdGenerator idGenerator;
-    private static final int TIMEOUT_IN_SECONDS = 1;
+    private static final int TIMEOUT_IN_SECONDS = 30;
 
     public IdSettingOrganisationStore(OrganisationStore delegate, IdGenerator idGenerator) {
         this.delegate = delegate;
@@ -33,7 +33,7 @@ public class IdSettingOrganisationStore implements OrganisationStore {
         return delegate.write(organisation);
     }
 
-    public Organisation ensureId(Organisation organisation) {
+    private Organisation ensureId(Organisation organisation) {
         Optional<Id> possibleId;
 
         try {
