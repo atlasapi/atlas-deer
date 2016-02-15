@@ -4,6 +4,7 @@ import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.NullContentResolver;
 import org.atlasapi.event.EventResolver;
+import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.organisation.OrganisationResolver;
@@ -162,6 +163,12 @@ public class LegacyPersistenceModule {
     @Qualifier("legacy")
     public EventResolver legacyEventResolver() {
         return new LegacyEventResolver(new MongoEventStore(persistence.databasedReadMongo()));
+    }
+
+    @Bean
+    @Qualifier("legacy")
+    public EventV2Resolver legacyEventV2Resolver() {
+        return new LegacyEventV2Resolver(new MongoEventStore(persistence.databasedReadMongo()), persistence.idSettingOrganisationStore());
     }
 
     @Bean

@@ -74,11 +74,15 @@ public class CassandraInit {
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_event.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
+                "/atlas_event_v2.schema")));
+        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_schedule_v2.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_organisation.schema")));
         session.execute(
                 "CREATE INDEX inverse_equivalent_content_index ON equivalent_content_index(value);");
+        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
+                "/atlas_organisation_uri.schema")));
 
         CassandraHelper.createColumnFamily(
                 context,
@@ -89,6 +93,12 @@ public class CassandraInit {
         CassandraHelper.createColumnFamily(
                 context,
                 "event_aliases",
+                StringSerializer.get(),
+                StringSerializer.get()
+        );
+        CassandraHelper.createColumnFamily(
+                context,
+                "event_aliases_v2",
                 StringSerializer.get(),
                 StringSerializer.get()
         );
@@ -117,7 +127,7 @@ public class CassandraInit {
                 "content", "content_aliases", "event_aliases", "equivalence_graph_index",
                 "equivalence_graph", "segments", "segments_aliases", "schedule_v2", "schedule",
                 "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event",
-                "organisation"
+                "organisation", "organisation_uri", "event_aliases_v2"
         );
         for (String table : tables) {
             session.execute(String.format("TRUNCATE %s", table));

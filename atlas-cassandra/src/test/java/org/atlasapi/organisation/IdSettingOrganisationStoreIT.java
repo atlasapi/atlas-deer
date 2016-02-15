@@ -1,20 +1,18 @@
 package org.atlasapi.organisation;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
 import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 
+import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
@@ -25,13 +23,17 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
 
+import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DatastaxCassandraOrganizationStoreTest {
+public class IdSettingOrganisationStoreIT {
 
     private static final String ORGANISATION_TABLE = "organisation";
     private static final String ORGANISATION_URI = "organisation_uri";
@@ -47,8 +49,14 @@ public class DatastaxCassandraOrganizationStoreTest {
     private static final ConsistencyLevel readConsistency = ConsistencyLevel.ONE;
     private static OrganisationUriStore uriStore;
 
+    @Mock
+    private IdGenerator idGenerator;
+    @Captor
+    private ArgumentCaptor<Organisation> organisationArgumentCaptor;
+
     private static Session session;
     private static DatastaxCassandraOrganisationStore store;
+    private static IdSettingOrganisationStore idSettingOrganisationStore;
 
     @BeforeClass
     public static void init() throws Exception {
@@ -85,6 +93,9 @@ public class DatastaxCassandraOrganizationStoreTest {
                 writeConsistency,
                 uriStore
         );
+        store.write(getOrganisation(1l, "uri"));
+        when(idGenerator.generateRaw()).thenReturn(EXPECTED_ID);
+        idSettingOrganisationStore = new IdSettingOrganisationStore(store, idGenerator);
     }
 
     @After
@@ -94,20 +105,35 @@ public class DatastaxCassandraOrganizationStoreTest {
     }
 
     @Test
-    public void testWriteAndReadExistingOrganisation() throws Exception {
-        Set<String> titles = ImmutableSet.of("title1", "title2");
-        Organisation expected = new Organisation();
-        expected.setId(EXPECTED_ID);
-        expected.setCanonicalUri("uri");
-        expected.setPublisher(Publisher.BBC);
-        expected.setAlternativeTitles(titles);
-        store.write(expected);
-        Resolved<Organisation> resolved = store
-                .resolveIds(ImmutableList.of(Id.valueOf(expected.getId().longValue())))
-                .get(1, TimeUnit.SECONDS);
-        Organisation actual = Iterables.getOnlyElement(resolved.getResources());
-        assertThat(actual.getAlternativeTitles(), is(titles));
-        assertThat(actual.getId(), is(Id.valueOf(EXPECTED_ID)));
+    public void testSetIdForNewOrganisation()
+            throws InterruptedException, ExecutionException {
+        Organisation organisation = getOrganisation(1l, "newuri");
+        idSettingOrganisationStore.write(organisation);
+        Resolved<Organisation> resolved = store.resolveIds(ImmutableSet.of(Id.valueOf(EXPECTED_ID))).get();
+        assertThat(resolved.getResources().size(), is(1));
+        Organisation resolvedOrganisation = resolved.getResources().first().get();
+        assertThat(resolvedOrganisation.getId(), is(Id.valueOf(EXPECTED_ID)));
+        assertThat(resolvedOrganisation.getCanonicalUri(), is("newuri"));
+    }
+
+    @Test
+    public void testNoSetIdForExistingOrganisation()
+            throws InterruptedException, ExecutionException {
+        long expectedId = 1l;
+        Organisation organisation = getOrganisation(expectedId, "uri");
+        idSettingOrganisationStore.write(organisation);
+        Resolved<Organisation> resolved = store.resolveIds(ImmutableSet.of(Id.valueOf(expectedId))).get();
+        assertThat(resolved.getResources().size(), is(1));
+        Organisation resolvedOrganisation = resolved.getResources().first().get();
+        assertThat(resolvedOrganisation.getId(), is(Id.valueOf(expectedId)));
+        assertThat(resolvedOrganisation.getCanonicalUri(), is("uri"));
+    }
+
+    private Organisation getOrganisation(long id, String uri) {
+        Organisation organisation = new Organisation();
+        organisation.setId(Id.valueOf(id));
+        organisation.setCanonicalUri(uri);
+        organisation.setPublisher(Publisher.BBC);
+        return organisation;
     }
 }
-

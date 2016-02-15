@@ -193,7 +193,9 @@ public class BootstrapModule {
     public EventBootstrapController eventBootstrapController() {
         return new EventBootstrapController(
                 legacy.legacyEventResolver(),
-                persistence.eventWriter()
+                legacy.legacyEventV2Resolver(),
+                persistence.eventWriter(),
+                persistence.eventV2Writer()
         );
     }
 

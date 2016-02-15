@@ -1,20 +1,17 @@
 package org.atlasapi.organisation;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
 import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
@@ -24,19 +21,17 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DatastaxCassandraOrganizationStoreTest {
+public class OrganisationUriStoreIT {
 
     private static final String ORGANISATION_TABLE = "organisation";
-    private static final String ORGANISATION_URI = "organisation_uri";
+    private static final String ORGANISATION_URI_TABLE = "organisation_uri";
 
     private static final long EXPECTED_ID = 10l;
+    private final String canonicalUri = "uri";
 
     private static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();
@@ -46,9 +41,10 @@ public class DatastaxCassandraOrganizationStoreTest {
     private static final ConsistencyLevel writeConsistency = ConsistencyLevel.ONE;
     private static final ConsistencyLevel readConsistency = ConsistencyLevel.ONE;
     private static OrganisationUriStore uriStore;
-
     private static Session session;
     private static DatastaxCassandraOrganisationStore store;
+
+    private Organisation organisation;
 
     @BeforeClass
     public static void init() throws Exception {
@@ -85,29 +81,40 @@ public class DatastaxCassandraOrganizationStoreTest {
                 writeConsistency,
                 uriStore
         );
+        organisation = setupOrganisation();
+
+        store.write(organisation);
     }
 
     @After
     public void tearDown() throws Exception {
         context.getClient().truncateColumnFamily(ORGANISATION_TABLE);
-        context.getClient().truncateColumnFamily(ORGANISATION_URI);
+        context.getClient().truncateColumnFamily(ORGANISATION_URI_TABLE);
     }
 
     @Test
-    public void testWriteAndReadExistingOrganisation() throws Exception {
-        Set<String> titles = ImmutableSet.of("title1", "title2");
-        Organisation expected = new Organisation();
-        expected.setId(EXPECTED_ID);
-        expected.setCanonicalUri("uri");
-        expected.setPublisher(Publisher.BBC);
-        expected.setAlternativeTitles(titles);
-        store.write(expected);
-        Resolved<Organisation> resolved = store
-                .resolveIds(ImmutableList.of(Id.valueOf(expected.getId().longValue())))
-                .get(1, TimeUnit.SECONDS);
-        Organisation actual = Iterables.getOnlyElement(resolved.getResources());
-        assertThat(actual.getAlternativeTitles(), is(titles));
-        assertThat(actual.getId(), is(Id.valueOf(EXPECTED_ID)));
+    public void testReturnIdByUri() throws ExecutionException, InterruptedException {
+        Optional<Id> idByUri = uriStore.getExistingId(organisation).get();
+        assertThat(idByUri.get(), is(Id.valueOf(organisation.getId().longValue())));
     }
-}
 
+    @Test
+    public void testReturnEmptyOptional() throws ExecutionException, InterruptedException {
+        Organisation organisation = new Organisation();
+        organisation.setId(Id.valueOf(1l));
+        organisation.setPublisher(Publisher.BBC);
+        organisation.setCanonicalUri("notexpected");
+        Optional<Id> idByUri = uriStore.getExistingId(organisation).get();
+        assertThat(idByUri, is(Optional.absent()));
+    }
+
+    private Organisation setupOrganisation() {
+        Organisation organisation = new Organisation();
+        organisation.setId(EXPECTED_ID);
+        organisation.setPublisher(Publisher.OPTA);
+        organisation.setCanonicalUri(canonicalUri);
+        return organisation;
+    }
+
+
+}

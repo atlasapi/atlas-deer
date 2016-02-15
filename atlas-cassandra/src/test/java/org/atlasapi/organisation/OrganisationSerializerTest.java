@@ -1,4 +1,4 @@
-package org.atlasapi.event;
+package org.atlasapi.organisation;
 
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.entity.Person;

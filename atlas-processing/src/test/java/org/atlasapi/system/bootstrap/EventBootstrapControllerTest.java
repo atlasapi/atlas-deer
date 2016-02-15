@@ -9,6 +9,8 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
+import org.atlasapi.eventV2.EventV2Resolver;
+import org.atlasapi.eventV2.EventV2Writer;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
@@ -31,6 +33,8 @@ public class EventBootstrapControllerTest {
 
     private @Mock EventResolver resolver;
     private @Mock EventWriter writer;
+    private @Mock EventV2Resolver v2Resolver;
+    private @Mock EventV2Writer v2Writer;
     private @Mock NumberToShortStringCodec idCodec;
     private @Mock HttpServletResponse response;
     private @Mock Event event;
@@ -42,7 +46,7 @@ public class EventBootstrapControllerTest {
 
     @Before
     public void setUp() throws Exception {
-        controller = new EventBootstrapController(resolver, writer, idCodec);
+        controller = new EventBootstrapController(resolver, v2Resolver, writer, idCodec, v2Writer);
 
         id = "0";
         encodedId = 0L;

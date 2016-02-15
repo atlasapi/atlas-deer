@@ -17,6 +17,8 @@ import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
+import org.atlasapi.eventV2.EventV2Resolver;
+import org.atlasapi.eventV2.EventV2Writer;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
 import org.atlasapi.media.channel.ChannelGroupStore;
@@ -160,6 +162,7 @@ public class AtlasPersistenceModule {
                 idGeneratorBuilder(),
                 content -> UUID.randomUUID().toString(),
                 event -> UUID.randomUUID().toString(),
+                eventV2 -> UUID.randomUUID().toString(),
                 seeds,
                 metricsModule.metrics()
         );
@@ -199,13 +202,28 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
+    public EventV2Writer eventV2Writer() {
+        return persistenceModule().eventV2Store();
+    }
+
+    @Bean
     public EventResolver eventResolver() {
         return persistenceModule().eventStore();
     }
 
     @Bean
+    public EventV2Resolver eventV2Resolver() {
+        return persistenceModule().eventV2Store();
+    }
+
+    @Bean
     public OrganisationStore organisationStore() {
         return persistenceModule().organisationStore();
+    }
+
+    @Bean
+    public OrganisationStore idSettingOrganisationStore() {
+        return persistenceModule().idSettingOrganisationStore();
     }
 
     @Bean
