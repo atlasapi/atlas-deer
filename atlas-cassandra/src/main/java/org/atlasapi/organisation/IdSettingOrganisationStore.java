@@ -37,7 +37,7 @@ public class IdSettingOrganisationStore implements OrganisationStore {
         Optional<Id> possibleId;
 
         try {
-            possibleId = getIdByUri(organisation).get(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+            possibleId = getExistingId(organisation).get(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
@@ -51,7 +51,7 @@ public class IdSettingOrganisationStore implements OrganisationStore {
     }
 
     @Override
-    public ListenableFuture<Optional<Id>> getIdByUri(Organisation organisation) {
-        return delegate.getIdByUri(organisation);
+    public ListenableFuture<Optional<Id>> getExistingId(Organisation organisation) {
+        return delegate.getExistingId(organisation);
     }
 }

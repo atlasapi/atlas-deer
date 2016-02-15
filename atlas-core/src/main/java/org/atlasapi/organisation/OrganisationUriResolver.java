@@ -7,6 +7,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 public interface OrganisationUriResolver {
 
-    ListenableFuture<Optional<Id>> getIdByUri(Organisation organisation);
+    ListenableFuture<Optional<Id>> getExistingId(Organisation organisation);
 
 }

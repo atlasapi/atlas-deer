@@ -41,7 +41,7 @@ public class IdSettingOrganisationStoreTest {
         Organisation organisation = new Organisation();
         organisation.setId(Id.valueOf(2l));
         organisation.setCanonicalUri("uri");
-        when(organisationStore.getIdByUri(organisation)).thenReturn(Futures.immediateFuture(Optional.absent()));
+        when(organisationStore.getExistingId(organisation)).thenReturn(Futures.immediateFuture(Optional.absent()));
         idSettingStore.write(organisation);
         verify(organisationStore).write(organisationCaptor.capture());
         assertThat(organisationCaptor.getValue().getId(), is(Id.valueOf(1l)));
@@ -52,7 +52,7 @@ public class IdSettingOrganisationStoreTest {
         Organisation organisation = new Organisation();
         organisation.setId(Id.valueOf(2l));
         organisation.setCanonicalUri("uri");
-        when(organisationStore.getIdByUri(organisation)).thenReturn(Futures.immediateFuture(Optional.of(Id.valueOf(2l))));
+        when(organisationStore.getExistingId(organisation)).thenReturn(Futures.immediateFuture(Optional.of(Id.valueOf(2l))));
         idSettingStore.write(organisation);
         verify(organisationStore).write(organisationCaptor.capture());
         assertThat(organisationCaptor.getValue().getId(), is(Id.valueOf(2l)));

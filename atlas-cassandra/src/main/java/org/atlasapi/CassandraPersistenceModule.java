@@ -78,6 +78,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             Parameter.valueOf("false")
     ).toBoolean();
 
+    private final String ORGANISATION = "organisation";
+
     private final String keyspace;
     private final Session session;
 
@@ -407,7 +409,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private EventV2Store getEventV2Store(Session session) {
         EventV2PersistenceStore eventV2PersistenceStore = DatastaxCassandraEventStoreV2.builder()
-                .withAliasIndex(AliasIndex.create(context.getClient(), "event_aliases"))
+                .withAliasIndex(AliasIndex.create(context.getClient(), "event_aliases_v2"))
                 .withSession(session)
                 .withWriteConsistency(getWriteConsistencyLevel())
                 .withReadConsistency(getReadConsistencyLevel())
@@ -440,6 +442,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     private OrganisationStore getIdSettingOrganisationStore(Session session) {
-        return new IdSettingOrganisationStore(getOrganisationStore(session),idGeneratorBuilder.generator("organisation"));
+        return new IdSettingOrganisationStore(getOrganisationStore(session),idGeneratorBuilder.generator(ORGANISATION));
     }
 }

@@ -67,7 +67,7 @@ public class OrganisationUriStore implements OrganisationUriResolver {
                 .setLong(ID_COLUMN, id);
     }
 
-    public ListenableFuture<Optional<Id>> getIdByUri(Organisation organisation) {
+    public ListenableFuture<Optional<Id>> getExistingId(Organisation organisation) {
         String uri = organisation.getCanonicalUri();
         String source = organisation.getSource().key();
         ResultSetFuture resultSetFuture = session.executeAsync(uriSelect.bind()

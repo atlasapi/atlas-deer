@@ -12,7 +12,6 @@ import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
-import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.eventV2.EventV2Writer;
 import org.atlasapi.media.entity.Publisher;
@@ -247,7 +246,7 @@ public class BootstrapWorkersModule {
 
     @Bean
     @Lazy(true)
-    KafkaConsumer separatingEventReadWriter() {
+    KafkaConsumer organisationSeparatingEventReadWriter() {
         EventV2Resolver legacyResolver = legacy.legacyEventV2Resolver();
         EventV2Writer writer = persistence.eventV2Writer();
         SeparatingEventReadWriteWorker worker = new SeparatingEventReadWriteWorker(
@@ -292,7 +291,7 @@ public class BootstrapWorkersModule {
         }
         if (eventBoostrapEnabled) {
             services.add(eventReadWriter());
-            services.add(separatingEventReadWriter());
+            services.add(organisationSeparatingEventReadWriter());
         }
         if (organisationBootstrapEnabled) {
             services.add(organisationBootstrapWorker());

@@ -98,6 +98,12 @@ public class CassandraInit {
         );
         CassandraHelper.createColumnFamily(
                 context,
+                "event_aliases_v2",
+                StringSerializer.get(),
+                StringSerializer.get()
+        );
+        CassandraHelper.createColumnFamily(
+                context,
                 "content",
                 LongSerializer.get(),
                 StringSerializer.get()
@@ -121,7 +127,7 @@ public class CassandraInit {
                 "content", "content_aliases", "event_aliases", "equivalence_graph_index",
                 "equivalence_graph", "segments", "segments_aliases", "schedule_v2", "schedule",
                 "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event",
-                "organisation", "organisation_uri"
+                "organisation", "organisation_uri", "event_aliases_v2"
         );
         for (String table : tables) {
             session.execute(String.format("TRUNCATE %s", table));

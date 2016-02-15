@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
 public class DatastaxCassandraEventStoreV2IT {
 
     private static final String EVENT_TABLE = "event_v2";
-    private static final String EVENT_ALIASES_TABLE = "event_aliases";
+    private static final String EVENT_ALIASES_TABLE = "event_aliases_v2";
 
     private static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();

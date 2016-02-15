@@ -4,12 +4,9 @@ import java.nio.ByteBuffer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.serialization.protobuf.CommonProtos;
-
-import com.metabroadcast.common.ids.IdGenerator;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -25,7 +22,6 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,8 +129,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     }
 
     @Override
-    public ListenableFuture<Optional<Id>> getIdByUri(Organisation organisation) {
-        return organisationUriStore.getIdByUri(organisation);
+    public ListenableFuture<Optional<Id>> getExistingId(Organisation organisation) {
+        return organisationUriStore.getExistingId(organisation);
     }
 
     private static class Builder implements SessionStep, WriteConsistencyStep,

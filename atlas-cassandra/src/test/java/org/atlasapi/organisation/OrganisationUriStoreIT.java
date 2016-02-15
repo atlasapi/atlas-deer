@@ -94,7 +94,7 @@ public class OrganisationUriStoreIT {
 
     @Test
     public void testReturnIdByUri() throws ExecutionException, InterruptedException {
-        Optional<Id> idByUri = uriStore.getIdByUri(organisation).get();
+        Optional<Id> idByUri = uriStore.getExistingId(organisation).get();
         assertThat(idByUri.get(), is(Id.valueOf(organisation.getId().longValue())));
     }
 
@@ -104,7 +104,7 @@ public class OrganisationUriStoreIT {
         organisation.setId(Id.valueOf(1l));
         organisation.setPublisher(Publisher.BBC);
         organisation.setCanonicalUri("notexpected");
-        Optional<Id> idByUri = uriStore.getIdByUri(organisation).get();
+        Optional<Id> idByUri = uriStore.getExistingId(organisation).get();
         assertThat(idByUri, is(Optional.absent()));
     }
 
