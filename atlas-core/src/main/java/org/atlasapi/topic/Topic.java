@@ -23,7 +23,6 @@ public class Topic extends Described implements Sourced, Aliased {
     private Type type;
     private String namespace;
     private String value;
-    private Publisher publisher;
 
     public enum Type {
         SUBJECT("subject"),
@@ -165,12 +164,4 @@ public class Topic extends Described implements Sourced, Aliased {
         this.value = value;
     }
 
-    public void setPublisher(Publisher publisher) {
-        this.publisher = publisher;
-    }
-
-    @FieldName("publisher")
-    public Publisher getSource() {
-        return this.publisher;
-    }
 }
