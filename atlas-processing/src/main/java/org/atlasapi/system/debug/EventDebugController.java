@@ -7,6 +7,8 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
+import org.atlasapi.eventV2.EventV2;
+import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -21,11 +23,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import org.joda.time.DateTime;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+@Controller
 public class EventDebugController {
 
     private final LegacyPersistenceModule legacyPersistenceModule;
@@ -72,6 +76,20 @@ public class EventDebugController {
 
         Resolved<Event> resolved = Futures.get(future, Exception.class);
         Event event = Iterables.getOnlyElement(resolved.getResources());
+        gson.toJson(event, response.getWriter());
+    }
+
+    @RequestMapping("/system/debug/eventv2/{id}")
+    public void printEventV2(@PathVariable("id") String id, HttpServletResponse response)
+            throws Exception {
+        Id decodedId = Id.valueOf(lowercaseDecoder.decode(id));
+
+        EventV2Resolver eventResolver = atlasPersistenceModule.eventV2Resolver();
+        ListenableFuture<Resolved<EventV2>> future = eventResolver.resolveIds(
+                ImmutableList.of(decodedId));
+
+        Resolved<EventV2> resolved = Futures.get(future, Exception.class);
+        EventV2 event = Iterables.getOnlyElement(resolved.getResources());
         gson.toJson(event, response.getWriter());
     }
 }
