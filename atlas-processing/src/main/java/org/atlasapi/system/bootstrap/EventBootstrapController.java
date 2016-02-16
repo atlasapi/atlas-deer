@@ -58,7 +58,6 @@ public class EventBootstrapController {
             throws IOException {
         Id id = Id.valueOf(idCodec.decode(encodedId).longValue());
         ListenableFuture<Resolved<Event>> future = resolver.resolveIds(ImmutableList.of(id));
-
         Resolved<Event> resolved = Futures.get(future, IOException.class);
         if (resolved.getResources().isEmpty()) {
             resp.sendError(HttpStatus.NOT_FOUND.value());
@@ -79,6 +78,17 @@ public class EventBootstrapController {
     public void bootstrapEventV2(@PathVariable("id") String encodedId, HttpServletResponse resp)
             throws IOException {
         Id id = Id.valueOf(idCodec.decode(encodedId).longValue());
+        executeBootstrap(resp, id);
+    }
+
+    @RequestMapping(value = "/system/bootstrap/eventv2/numeric/{id}", method = RequestMethod.POST)
+    public void bootstrapEventV2(@PathVariable("id") Long numericId, HttpServletResponse resp)
+            throws IOException {
+        Id id = Id.valueOf(numericId);
+        executeBootstrap(resp, id);
+    }
+
+    private void executeBootstrap(HttpServletResponse resp, Id id) throws IOException {
         ListenableFuture<Resolved<EventV2>> future = v2Resolver.resolveIds(ImmutableList.of(id));
 
         Resolved<EventV2> resolved = Futures.get(future, IOException.class);
