@@ -48,6 +48,17 @@ public class OrganisationBoostrapController {
     public void bootstrapOrganisation(@PathVariable("id") String encodedId, HttpServletResponse resp)
             throws IOException {
         Id id = Id.valueOf(idCodec.decode(encodedId).longValue());
+        executeBootstrap(resp, id);
+    }
+
+    @RequestMapping(value = "/system/bootstrap/organisation/numeric/{id}", method = RequestMethod.POST)
+    public void bootstrapOrganisation(@PathVariable("id") Long numeric, HttpServletResponse resp)
+            throws IOException {
+        Id id = Id.valueOf(numeric);
+        executeBootstrap(resp, id);
+    }
+
+    private void executeBootstrap(HttpServletResponse resp, Id id) throws IOException {
         ListenableFuture<Resolved<Organisation>> future = resolver.resolveIds(ImmutableList.of(id));
 
         Resolved<Organisation> resolved = Futures.get(future, IOException.class);
