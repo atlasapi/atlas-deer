@@ -19,6 +19,7 @@ import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.event.Event;
+import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
@@ -52,6 +53,7 @@ import org.atlasapi.output.annotation.CurrentAndFutureBroadcastsAnnotation;
 import org.atlasapi.output.annotation.DescriptionAnnotation;
 import org.atlasapi.output.annotation.EndpointInfoAnnotation;
 import org.atlasapi.output.annotation.EventAnnotation;
+import org.atlasapi.output.annotation.EventAnnotationV2;
 import org.atlasapi.output.annotation.EventDetailsAnnotation;
 import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
 import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
@@ -697,12 +699,12 @@ public class QueryWebModule {
         );
     }
 
-    private StandardQueryParser<Event> eventQueryParser() {
+    private StandardQueryParser<EventV2> eventQueryParser() {
         QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
                 new IndexAnnotationsExtractor(eventAnnotationIndex()), selectionBuilder()
         );
 
-        return new StandardQueryParser<Event>(Resource.EVENT,
+        return new StandardQueryParser<EventV2>(Resource.EVENT,
                 new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
                         QueryAtomParser.valueOf(
                                 Attributes.ID,
@@ -1020,8 +1022,8 @@ public class QueryWebModule {
     }
 
     @Bean
-    protected EntityListWriter<Event> eventListWriter() {
-        return new EventListWriter(AnnotationRegistry.<Event>builder()
+    protected EntityListWriter<EventV2> eventListWriter() {
+        return new EventListWriter(AnnotationRegistry.<EventV2>builder()
                 .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
@@ -1029,7 +1031,7 @@ public class QueryWebModule {
                         new ExtendedIdentificationAnnotation(idCodec()),
                         ImmutableSet.of(ID)
                 )
-                .register(EVENT, new EventAnnotation(new ItemRefWriter(idCodec(), "content")))
+                .register(EVENT, new EventAnnotationV2(new ItemRefWriter(idCodec(), "content"), persistenceModule.organisationStore()))
                 .register(EVENT_DETAILS, new EventDetailsAnnotation(topicAnnotationRegistry()))
                 .build());
     }

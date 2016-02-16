@@ -40,6 +40,7 @@ public class LegacyOrganisationResolverTest {
         organisation = new org.atlasapi.organisation.Organisation();
         legacyOrganisation = new Organisation();
         legacyOrganisation.setAlternativeTitles(ImmutableList.of("title1", "title2"));
+        legacyOrganisation.setCanonicalUri("uri");
         when(store.organisation(1l)).thenReturn(Optional.of(legacyOrganisation));
         ListenableFuture<Resolved<org.atlasapi.organisation.Organisation>> resources = resolver.resolveIds(
                 ImmutableList.of(Id.valueOf(1L)));

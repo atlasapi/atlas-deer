@@ -23,6 +23,7 @@ import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryReso
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.event.Event;
+import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.EquivalentSetContentHierarchyChooser;
 import org.atlasapi.output.MostPrecidentWithChildrenContentHierarchyChooser;
@@ -73,8 +74,8 @@ public class QueryModule {
     }
 
     @Bean
-    public QueryExecutor<Event> eventQueryExecutor() {
-        return new EventQueryExecutor(persistenceModule.eventResolver());
+    public QueryExecutor<EventV2> eventQueryExecutor() {
+        return new EventQueryExecutor(persistenceModule.eventV2Resolver());
     }
 
     @Bean

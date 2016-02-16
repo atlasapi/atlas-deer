@@ -24,6 +24,8 @@ public class LegacyOrganisationTransformer extends DescribedLegacyResourceTransf
                 .map(legacyPersonTransformer::apply)
                 .collect(Collectors.toList()));
         organisation.setAlternativeTitles(input.getAlternativeTitles());
+        organisation.setCanonicalUri(input.getCanonicalUri());
+        organisation.addAlias(new Alias(Alias.URI_NAMESPACE, input.getCanonicalUri()));
 
         return organisation;
     }
