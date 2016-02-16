@@ -39,10 +39,12 @@ public class ScheduleController {
 
     private ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    public ScheduleController(ScheduleQueryExecutor queryExecutor,
+    public ScheduleController(
+            ScheduleQueryExecutor queryExecutor,
             ApplicationSourcesFetcher appFetcher,
             QueryResultWriter<ChannelSchedule> resultWriter,
-            ContextualAnnotationsExtractor annotationsExtractor) {
+            ContextualAnnotationsExtractor annotationsExtractor
+    ) {
         this.requestParser = new ScheduleRequestParser(
                 appFetcher,
                 MAX_REQUEST_DURATION,

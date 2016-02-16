@@ -35,7 +35,7 @@ import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryExecutor;
 import org.atlasapi.query.v4.content.IndexBackedEquivalentContentQueryExecutor;
 import org.atlasapi.query.v4.event.EventQueryExecutor;
 import org.atlasapi.query.v4.organisation.OrganisationQueryExecutor;
-import org.atlasapi.query.v4.schedule.EquivalentScheduleResolverBackedScheduleQueryExecutor;
+import org.atlasapi.query.v4.schedule.EquivalentScheduleQueryExecutor;
 import org.atlasapi.query.v4.schedule.ScheduleQueryExecutor;
 import org.atlasapi.query.v4.search.support.ContentResolvingSearcher;
 import org.atlasapi.query.v4.topic.IndexBackedTopicQueryExecutor;
@@ -119,7 +119,7 @@ public class QueryModule {
     @Qualifier("store")
     @Bean
     ScheduleQueryExecutor equivalentScheduleStoreScheduleQueryExecutor() {
-        return new EquivalentScheduleResolverBackedScheduleQueryExecutor(persistenceModule.channelResolver(),
+        return new EquivalentScheduleQueryExecutor(persistenceModule.channelResolver(),
                 persistenceModule.getEquivalentScheduleStore(),
                 equivalentsMerger(),
                 FlexibleBroadcastMatcher.exactStartEnd()

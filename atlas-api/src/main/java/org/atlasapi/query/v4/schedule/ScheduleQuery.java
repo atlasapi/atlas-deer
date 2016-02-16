@@ -1,37 +1,21 @@
 package org.atlasapi.query.v4.schedule;
 
-import java.util.List;
-
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.common.QueryContext;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class ScheduleQuery {
+public class ScheduleQuery {
 
-    public static final ScheduleQuery single(Publisher source, DateTime start, DateTime end,
-            QueryContext context, Id channelId) {
-        return new SingleScheduleQuery(source, start, end, context, channelId);
-    }
-
-    public static final ScheduleQuery single(Publisher source, DateTime start, Integer count,
-            QueryContext context, Id channelId) {
-        return new SingleScheduleQuery(source, start, count, context, channelId);
-    }
-
-    public static final ScheduleQuery multi(Publisher source, DateTime start, DateTime end,
-            QueryContext context, List<Id> channelIds) {
-        return new MultiScheduleQuery(source, start, end, context, channelIds);
-    }
-
-    public static final ScheduleQuery multi(Publisher source, DateTime start, Integer count,
-            QueryContext context, List<Id> channelIds) {
-        return new MultiScheduleQuery(source, start, count, context, channelIds);
+    public static Builder builder() {
+        return new Builder();
     }
 
     private final Publisher source;
@@ -39,29 +23,50 @@ public abstract class ScheduleQuery {
     private final Optional<DateTime> end;
     private final Optional<Integer> count;
     private final QueryContext context;
+    private final Optional<Publisher> override;
+    private final ImmutableSet<Id> ids;
 
-    public ScheduleQuery(Publisher source, DateTime start, DateTime end, QueryContext context) {
+    private ScheduleQuery(
+            Publisher source,
+            DateTime start,
+            Optional<DateTime> end,
+            Optional<Integer> count,
+            QueryContext context,
+            Optional<Publisher> override,
+            Iterable<Id> ids
+    ) {
         this.source = checkNotNull(source);
         this.start = checkNotNull(start);
-        this.end = Optional.of(end);
-        this.count = Optional.absent();
+        this.end = checkNotNull(end);
+        this.count = checkNotNull(count);
         this.context = checkNotNull(context);
+        this.override = checkNotNull(override);
+        checkArgument(!Iterables.isEmpty(ids), "IDs must not be empty");
+        this.ids = ImmutableSet.copyOf(ids);
     }
 
-    public ScheduleQuery(Publisher source, DateTime start, Integer count, QueryContext context) {
-        this.source = checkNotNull(source);
-        this.start = checkNotNull(start);
-        this.end = Optional.absent();
-        this.count = Optional.of(count);
-        this.context = checkNotNull(context);
+    public boolean isMultiChannel() {
+        return ids.size() > 1;
     }
 
-    public abstract boolean isMultiChannel();
+    public Id getChannelId() {
+        if (isMultiChannel()) {
+            throw new IllegalStateException(
+                    "Can't call ScheduleQuery.getChannelId() on multi query");
+        }
 
-    public abstract Id getChannelId();
+        return Iterables.getOnlyElement(ids);
+    }
+    
+    public ImmutableSet<Id> getChannelIds() {
+        if (!isMultiChannel()) {
+            throw new IllegalStateException(
+                    "Can't call ScheduleQuery.getChannelIds() on single query");
+        }
 
-    public abstract ImmutableSet<Id> getChannelIds();
-
+        return ids;
+    }
+    
     public Publisher getSource() {
         return source;
     }
@@ -82,71 +87,61 @@ public abstract class ScheduleQuery {
         return count;
     }
 
-    private static final class SingleScheduleQuery extends ScheduleQuery {
-
-        private final Id channelId;
-
-        public SingleScheduleQuery(Publisher source, DateTime start, DateTime end,
-                QueryContext context, Id channelId) {
-            super(source, start, end, context);
-            this.channelId = channelId;
-        }
-
-        public SingleScheduleQuery(Publisher source, DateTime start, Integer count,
-                QueryContext context, Id channelId) {
-            super(source, start, count, context);
-            this.channelId = channelId;
-        }
-
-        @Override
-        public boolean isMultiChannel() {
-            return false;
-        }
-
-        @Override
-        public Id getChannelId() {
-            return channelId;
-        }
-
-        @Override
-        public ImmutableSet<Id> getChannelIds() {
-            throw new IllegalStateException(
-                    "Can't call ScheduleQuery.getChannelIds() on single query");
-        }
-
+    public Optional<Publisher> getOverride() {
+        return override;
     }
 
-    private static final class MultiScheduleQuery extends ScheduleQuery {
+    public static class Builder {
+        private Publisher source;
+        private DateTime start;
+        private Optional<DateTime> end = Optional.absent();
+        private Optional<Integer> count = Optional.absent();
+        private QueryContext context;
+        private Optional<Publisher> override = Optional.absent();
+        private Iterable<Id> ids;
 
-        private final ImmutableSet<Id> channelIds;
-
-        public MultiScheduleQuery(Publisher source, DateTime start, DateTime end,
-                QueryContext context, List<Id> ids) {
-            super(source, start, end, context);
-            this.channelIds = ImmutableSet.copyOf(ids);
+        public Builder withSource(Publisher source) {
+            this.source = source;
+            return this;
         }
 
-        public MultiScheduleQuery(Publisher source, DateTime start, Integer count,
-                QueryContext context, List<Id> ids) {
-            super(source, start, count, context);
-            this.channelIds = ImmutableSet.copyOf(ids);
+        public Builder withStart(DateTime start) {
+            this.start = start;
+            return this;
         }
 
-        @Override
-        public boolean isMultiChannel() {
-            return true;
+        public Builder withEnd(DateTime end) {
+            this.end = Optional.fromNullable(end);
+            return this;
         }
 
-        @Override
-        public Id getChannelId() {
-            throw new IllegalStateException("Can't call ScheduleQuery.getChannelId() on multi query");
+        public Builder withCount(Integer count) {
+            this.count = Optional.fromNullable(count);
+            return this;
         }
 
-        @Override
-        public ImmutableSet<Id> getChannelIds() {
-            return channelIds;
+        public Builder withContext(QueryContext context) {
+            this.context = context;
+            return this;
         }
 
+        public Builder withOverride(Publisher override) {
+            this.override = Optional.fromNullable(override);
+            return this;
+        }
+
+        public Builder withId(Id id) {
+            this.ids = ImmutableSet.of(id);
+            return this;
+        }
+
+        public Builder withIds(Iterable<Id> ids) {
+            this.ids = ids;
+            return this;
+        }
+
+        public ScheduleQuery build() {
+            return new ScheduleQuery(source, start, end, count, context, override, ids);
+        }
     }
-
 }

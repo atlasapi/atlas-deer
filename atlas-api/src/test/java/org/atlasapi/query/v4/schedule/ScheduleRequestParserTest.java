@@ -46,6 +46,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import static org.atlasapi.media.entity.Publisher.BBC;
 import static org.atlasapi.media.entity.Publisher.METABROADCAST;
 import static org.atlasapi.media.entity.Publisher.PA;
+import static org.atlasapi.media.entity.Publisher.YOUTUBE;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
@@ -62,7 +63,7 @@ public class ScheduleRequestParserTest {
     @Mock private ApplicationSourcesFetcher applicationFetcher;
     @Mock private ContextualAnnotationsExtractor annotationsExtractor;
 
-    private DateTime time = new DateTime(2012, 12, 14, 10, 00, 00, 000, DateTimeZones.UTC);
+    private DateTime time = new DateTime(2012, 12, 14, 10, 0, 0, 0, DateTimeZones.UTC);
     private ScheduleRequestParser builder;
 
     private final NumberToShortStringCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -91,16 +92,35 @@ public class ScheduleRequestParserTest {
                 .thenThrow(new InvalidApiKeyException("therequestedapikey"));
     }
 
-    private Matcher<HttpServletRequest> httpRequestWithParam(final String key,
-            final Matcher<? super String> value) {
+    private Matcher<HttpServletRequest> httpRequestWithParam(
+            final String key,
+            final Matcher<? super String> value
+    ) {
         String desc = String.format("request with param %s", key);
         return new FeatureMatcher<HttpServletRequest, String>(value, desc, "request param " + key) {
-
             @Override
             protected String featureValueOf(HttpServletRequest actual) {
                 return actual.getParameter(key);
             }
         };
+    }
+
+    @Test
+    public void parsesOverrideSource() throws Exception {
+        StubHttpServletRequest request = new StubHttpServletRequest().withRequestUri(
+                String.format(
+                        "test/schedules/%s.json",
+                        codec.encode(BigInteger.valueOf(channel1.getId()))
+                )
+        )
+                .withParam("from", DateTime.now().toString())
+                .withParam("count", "5")
+                .withParam("source", BBC.key())
+                .withParam("override_source", YOUTUBE.key())
+                .withParam(KEY_PARAM, "apikey");
+        ScheduleQuery query = builder.queryFrom(request);
+
+        assertThat(query.getOverride().get(), is(YOUTUBE));
     }
 
     @Test
@@ -131,7 +151,8 @@ public class ScheduleRequestParserTest {
     }
 
     @Test
-    public void testCreatesSingleQueryFromValidSingleQueryStringWithNoExtension() throws Exception {
+    public void testCreatesSingleQueryFromValidSingleQueryStringWithNoExtension()
+            throws Exception {
 
         DateTime start = new DateTime(DateTimeZones.UTC);
         DateTime end = start.plusHours(1);
@@ -275,7 +296,7 @@ public class ScheduleRequestParserTest {
     @Test(expected = IllegalArgumentException.class)
     public void testDoesntAcceptDisabledPublisher() throws Exception {
 
-        DateTime from = new DateTime(2012, 12, 22, 00, 00, 00, 000, DateTimeZones.UTC);
+        DateTime from = new DateTime(2012, 12, 22, 0, 0, 0, 0, DateTimeZones.UTC);
         DateTime to = from.plusHours(24);
 
         StubHttpServletRequest request = singleScheduleRequest(channel1, from, to,
@@ -288,7 +309,7 @@ public class ScheduleRequestParserTest {
     @Test(expected = InvalidApiKeyException.class)
     public void testDoesntAcceptUnknownApiKey() throws Exception {
 
-        DateTime from = new DateTime(2012, 12, 22, 00, 00, 00, 000, DateTimeZones.UTC);
+        DateTime from = new DateTime(2012, 12, 22, 0, 0, 0, 0, DateTimeZones.UTC);
         DateTime to = from.plusHours(24);
 
         StubHttpServletRequest request = singleScheduleRequest(channel1, from, to,
@@ -302,7 +323,7 @@ public class ScheduleRequestParserTest {
     @Test(expected = IllegalArgumentException.class)
     public void testDoesntAcceptRequestWithoutSource() throws Exception {
 
-        DateTime from = new DateTime(2012, 12, 22, 00, 00, 00, 000, DateTimeZones.UTC);
+        DateTime from = new DateTime(2012, 12, 22, 0, 0, 0, 0, DateTimeZones.UTC);
         DateTime to = from.plusHours(24);
 
         StubHttpServletRequest request = singleScheduleRequest(channel1, from, to,
@@ -316,7 +337,7 @@ public class ScheduleRequestParserTest {
     @Test(expected = QueryParseException.class)
     public void testDoesntAccpetRequestWithInvalidId() throws Exception {
 
-        DateTime from = new DateTime(2012, 12, 22, 00, 00, 00, 000, DateTimeZones.UTC);
+        DateTime from = new DateTime(2012, 12, 22, 0, 0, 0, 0, DateTimeZones.UTC);
         DateTime to = from.plusHours(24);
 
         StubHttpServletRequest request = singleScheduleRequest("invalid", from, to,
