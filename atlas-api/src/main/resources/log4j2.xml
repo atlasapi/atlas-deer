@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="Atlas-API" packages="*">
+
+  <Appenders>
+    <RollingFile name="RollingFile" fileName="atlas-api.log">
+
+      <PatternLayout>
+        <pattern>%d %p [%c] - %m%n</pattern>
+      </PatternLayout>
+
+      <Policies>
+        <SizeBasedTriggeringPolicy size="10 MB"/>
+      </Policies>
+
+      <DefaultRolloverStrategy max="5"/>
+
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="RollingFile"/>
+    </Root>
+
+    <Logger name="org.atlasapi.persistence.content.mongo" level="debug">
+      <AppenderRef ref="RollingFile"/>
+    </Logger>
+
+    <Logger name="org.atlasapi.persistence.lookup" level="trace">
+      <AppenderRef ref="RollingFile"/>
+    </Logger>
+
+    <Logger name="org.atlasapi.query.content.fuzzy" level="trace">
+      <AppenderRef ref="RollingFile"/>
+    </Logger>
+
+    <Logger name="org.atlasapi.remotesite.pa.features.PaFeaturesProcessor" level="trace">
+      <AppenderRef ref="RollingFile"/>
+    </Logger>
+  </Loggers>
+</Configuration>
