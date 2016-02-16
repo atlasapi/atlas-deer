@@ -199,6 +199,14 @@ public class BootstrapModule {
         );
     }
 
+    @Bean
+    public OrganisationBoostrapController organisationBootstrapController() {
+        return new OrganisationBoostrapController(
+                legacy.legacyOrganisationResolver(),
+                persistence.idSettingOrganisationStore()
+        );
+    }
+
     private ListeningExecutorService executorService(Integer concurrencyLevel, String namePrefix) {
         return MoreExecutors.listeningDecorator(
                 new ThreadPoolExecutor(
