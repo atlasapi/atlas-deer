@@ -48,6 +48,8 @@ public class LegacyEventTransformerTest {
         Topic eventGroup = new Topic(1L);
         eventGroup.setNamespace("nsB");
         eventGroup.setValue("valueB");
+        Organisation organisation = new Organisation();
+        organisation.setCanonicalUri("uri");
 
         Event input = Event.builder()
                 .withTitle("title")
@@ -56,7 +58,7 @@ public class LegacyEventTransformerTest {
                 .withStartTime(DateTime.now())
                 .withEndTime(DateTime.now())
                 .withParticipants(ImmutableList.of(new Person()))
-                .withOrganisations(ImmutableList.of(new Organisation()))
+                .withOrganisations(ImmutableList.of(organisation))
                 .withEventGroups(ImmutableList.of(eventGroup))
                 .withContent(ImmutableList.of(new ChildRef(0L, "uri", "sort", DateTime.now(),
                         EntityType.ITEM

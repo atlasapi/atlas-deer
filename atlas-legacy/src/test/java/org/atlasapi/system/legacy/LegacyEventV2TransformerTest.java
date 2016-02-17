@@ -42,6 +42,7 @@ public class LegacyEventV2TransformerTest {
         org.atlasapi.organisation.Organisation organisation = new org.atlasapi.organisation.Organisation();
         organisation.setId(1l);
         organisation.setPublisher(Publisher.BBC);
+        organisation.setCanonicalUri("uri");
         when(organisationStore.write(Matchers.any(org.atlasapi.organisation.Organisation.class))).thenReturn(organisation);
         eventTransformer = new LegacyEventV2Transformer(organisationStore);
     }
@@ -67,10 +68,12 @@ public class LegacyEventV2TransformerTest {
         Organisation organisation = new Organisation();
         organisation.setId(1l);
         organisation.setPublisher(Publisher.BBC);
+        organisation.setCanonicalUri("uri");
 
         Organisation organisation2 = new Organisation();
-        organisation.setId(2l);
-        organisation.setPublisher(Publisher.BBC);
+        organisation2.setId(2l);
+        organisation2.setPublisher(Publisher.BBC);
+        organisation2.setCanonicalUri("curi");
 
         Event input = Event.builder()
                 .withTitle("title")
@@ -120,7 +123,7 @@ public class LegacyEventV2TransformerTest {
         assertThat(event.getCanonicalUri(), is(input.getCanonicalUri()));
         assertThat(event.getCurie(), is(input.getCurie()));
         assertThat(event.getAliasUrls(), is(input.getAliasUrls()));
-        assertThat(event.getAliases().size(), is(input.getAliases().size()));
+        assertThat(event.getAliases().size(), is(2));
         assertThat(
                 event.getAliases().iterator().next(),
                 is(new org.atlasapi.entity.Alias("ns", "value"))

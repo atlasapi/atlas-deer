@@ -41,6 +41,7 @@ public class LegacyOrganisationTransformerTest {
 
         organisation.setTitle("title");
         organisation.setPublisher(Publisher.BBC);
+        organisation.setCanonicalUri("uri");
 
         organisation.setType(ContentGroup.Type.ORGANISATION);
         organisation.setContents(ImmutableList.of(

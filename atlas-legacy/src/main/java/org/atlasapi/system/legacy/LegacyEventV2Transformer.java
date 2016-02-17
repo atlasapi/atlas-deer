@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import org.atlasapi.entity.Alias;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationRef;
@@ -33,6 +34,7 @@ public class LegacyEventV2Transformer extends BaseLegacyResourceTransformer<
         EventV2 event = builder.build();
 
         addIdentified(input, event);
+        event.addAlias(new Alias(Alias.URI_NAMESPACE, input.getCanonicalUri()));
 
         return event;
     }
