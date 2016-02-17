@@ -8,6 +8,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.util.ImmutableCollectors;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -46,11 +47,12 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
         if (LOG.isDebugEnabled()) {
             LOG.debug(
-                    "Processing message on id {}, asserted adjacents: {}, message: {}",
+                    "Processing message on id {}, took: PT{}S, asserted adjacents: {}, message: {}",
                     message.getSubject().getId(),
                     message.getAssertedAdjacents().stream()
                             .map(ResourceRef::getId)
                             .collect(ImmutableCollectors.toList()),
+                    getTimeToProcessInSeconds(message),
                     message
             );
         }
@@ -94,5 +96,9 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                 meter.mark();
             }
         }
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

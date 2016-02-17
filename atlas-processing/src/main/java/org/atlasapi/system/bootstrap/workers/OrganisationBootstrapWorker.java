@@ -9,6 +9,7 @@ import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationWriter;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.Timer;
@@ -22,7 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
-    private final Logger log = LoggerFactory.getLogger(ContentBootstrapWorker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ContentBootstrapWorker.class);
 
     private final OrganisationResolver resolver;
     private final OrganisationWriter writer;
@@ -37,6 +38,10 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
 
     @Override
     public void process(ResourceUpdatedMessage message) {
+        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+                message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
+        );
+
         try {
             Timer.Context time = messagesTimer.time();
             Id contentId = message.getUpdatedResource().getId();
@@ -46,10 +51,10 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
             );
             Organisation organisation = content.getResources().first().get();
             writer.write(organisation);
-            log.debug("Bootstrapped organisation {}", organisation.toString());
+            LOG.debug("Bootstrapped organisation {}", organisation.toString());
             time.stop();
         } catch (Exception e) {
-            log.error(
+            LOG.error(
                     "Failed to bootstrap organisation {} - {} {}",
                     message.getUpdatedResource(),
                     e,
@@ -57,5 +62,9 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
                             .getStackTraceAsString(e)
             );
         }
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

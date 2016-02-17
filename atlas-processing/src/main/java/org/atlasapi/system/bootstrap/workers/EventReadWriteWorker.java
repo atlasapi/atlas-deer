@@ -8,6 +8,7 @@ import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -39,8 +40,8 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
     @Override
     public void process(ResourceUpdatedMessage message)
             throws RecoverableException {
-        LOG.debug("Processing message on id {}, message: {}",
-                message.getUpdatedResource().getId(), message
+        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+                message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
         );
 
         ImmutableList<Id> ids = ImmutableList.of(message.getUpdatedResource().getId());
@@ -72,5 +73,9 @@ public class EventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
                 throw Throwables.propagate(t);
             }
         });
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

@@ -6,6 +6,7 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.schedule.ScheduleUpdateMessage;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -33,8 +34,10 @@ public class EquivalentScheduleStoreScheduleUpdateWorker implements Worker<Sched
 
     @Override
     public void process(ScheduleUpdateMessage message) throws RecoverableException {
-        LOG.debug("Processing message on id {}, message: {}",
-                message.getScheduleUpdate().getSchedule().getChannel(), message
+        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+                message.getScheduleUpdate().getSchedule().getChannel(),
+                getTimeToProcessInSeconds(message),
+                message
         );
 
         try {
@@ -51,4 +54,7 @@ public class EquivalentScheduleStoreScheduleUpdateWorker implements Worker<Sched
         }
     }
 
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    }
 }

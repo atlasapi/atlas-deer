@@ -10,6 +10,7 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.util.ImmutableCollectors;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -43,8 +44,10 @@ public class EquivalentScheduleStoreContentUpdateWorker
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
-        LOG.debug("Processing message on id {}, message: {}",
-                message.getEquivalentSetId(), message
+        LOG.debug("Processing message on id: {}, took: PT{}S, message: {}",
+                message.getEquivalentSetId(),
+                getTimeToProcessInSeconds(message),
+                message
         );
 
         Set<Content> content = Futures.get(
@@ -68,5 +71,9 @@ public class EquivalentScheduleStoreContentUpdateWorker
         } catch (WriteException e) {
             throw new RecoverableException(e);
         }
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

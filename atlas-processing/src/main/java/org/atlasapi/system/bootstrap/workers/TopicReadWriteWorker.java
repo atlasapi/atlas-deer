@@ -7,6 +7,7 @@ import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 import org.atlasapi.topic.TopicWriter;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.Timer;
@@ -36,8 +37,8 @@ public class TopicReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
     @Override
     public void process(ResourceUpdatedMessage message) {
-        LOG.debug("Processing message on id {}, message: {}",
-                message.getUpdatedResource().getId(), message
+        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+                message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
         );
 
         Timer.Context time = metricsTimer.time();
@@ -63,4 +64,7 @@ public class TopicReadWriteWorker implements Worker<ResourceUpdatedMessage> {
         });
     }
 
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    }
 }
