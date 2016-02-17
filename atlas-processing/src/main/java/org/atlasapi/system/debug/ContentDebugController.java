@@ -301,12 +301,7 @@ public class ContentDebugController {
 
             ContentBootstrapListener.Result result = content.accept(listener);
 
-            if (result.isSucceeded()) {
-                response.setStatus(HttpStatus.OK.value());
-            } else {
-                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            }
-
+            response.setStatus(HttpStatus.OK.value());
             response.getWriter().println(result.getMessage());
             response.flushBuffer();
         } catch (Throwable t) {
