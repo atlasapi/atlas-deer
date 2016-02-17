@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="Atlas-Cassandra" packages="*">
+
+  <Appenders>
+    <RollingFile name="RollingFile" fileName="atlas-cassandra-test.log">
+
+      <PatternLayout>
+        <pattern>%d %p [%c] - %m%n</pattern>
+      </PatternLayout>
+
+      <Policies>
+        <SizeBasedTriggeringPolicy size="10 MB"/>
+      </Policies>
+
+      <DefaultRolloverStrategy max="5"/>
+
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="RollingFile"/>
+    </Root>
+  </Loggers>
+</Configuration>
