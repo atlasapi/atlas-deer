@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.atlasapi</groupId>
         <artifactId>atlas</artifactId>
-        <version>7.0.491-SNAPSHOT</version>
+        <version>7.0.492-SNAPSHOT</version>
     </parent>
     <artifactId>atlas-elasticsearch</artifactId>
     <packaging>jar</packaging>
