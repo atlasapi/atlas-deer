@@ -8,9 +8,12 @@ import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
+import com.metabroadcast.common.time.Timestamp;
+
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +30,7 @@ public class EventReadWriteWorkerTest {
     private @Mock EventWriter writer;
     private @Mock Timer timer;
     private @Mock Timer.Context timerContext;
-    private @Mock ResourceUpdatedMessage message;
+    private ResourceUpdatedMessage message;
     private @Mock ResourceRef updatedResource;
     private @Mock Event event;
 
@@ -35,10 +38,10 @@ public class EventReadWriteWorkerTest {
 
     @Before
     public void setUp() throws Exception {
+        message = new ResourceUpdatedMessage("message", Timestamp.of(DateTime.now()), updatedResource);
         worker = new EventReadWriteWorker(resolver, writer, timer);
 
         Id id = Id.valueOf(0L);
-        when(message.getUpdatedResource()).thenReturn(updatedResource);
         when(updatedResource.getId()).thenReturn(id);
         when(resolver.resolveIds(ImmutableList.of(id)))
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(event))));

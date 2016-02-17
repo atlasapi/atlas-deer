@@ -8,10 +8,13 @@ import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationWriter;
 
+import com.metabroadcast.common.time.Timestamp;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,20 +31,20 @@ public class OrganisationBootstrapWorkerTest {
     private @Mock OrganisationWriter writer;
     private @Mock MetricRegistry metric;
     private @Mock ResourceRef updatedResource;
-    private @Mock ResourceUpdatedMessage message;
+    private ResourceUpdatedMessage message;
     private @Mock Organisation organisation;
 
     private OrganisationBootstrapWorker worker;
 
     @Before
     public void setUp() {
+        message = new ResourceUpdatedMessage("message", Timestamp.of(DateTime.now()), updatedResource);
         when(metric.timer("OrganisationBootstrapWorker")).thenReturn(new Timer());
         worker = new OrganisationBootstrapWorker(resolver,
                 writer,
                 metric.timer("OrganisationBootstrapWorker"));
 
         Id id = Id.valueOf(0L);
-        when(message.getUpdatedResource()).thenReturn(updatedResource);
         when(updatedResource.getId()).thenReturn(id);
         when(resolver.resolveIds(ImmutableList.of(id)))
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(organisation))));
