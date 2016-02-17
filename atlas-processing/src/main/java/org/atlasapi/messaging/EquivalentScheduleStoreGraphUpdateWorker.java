@@ -8,6 +8,7 @@ import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 import org.atlasapi.util.ImmutableCollectors;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -37,10 +38,11 @@ public class EquivalentScheduleStoreGraphUpdateWorker
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
         LOG.debug(
-                "Processing message on ids {}, message: {}",
+                "Processing message on ids {}, took: PT{}S, message: {}",
                 message.getGraphUpdate().getAllGraphs().stream()
                         .map(EquivalenceGraph::getId)
                         .collect(ImmutableCollectors.toList()),
+                getTimeToProcessInSeconds(message),
                 message
         );
 
@@ -58,4 +60,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
         }
     }
 
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    }
 }

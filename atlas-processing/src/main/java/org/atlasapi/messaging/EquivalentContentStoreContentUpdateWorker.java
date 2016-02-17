@@ -4,6 +4,7 @@ import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -37,8 +38,8 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
-        LOG.debug("Processing message on id {}, message: {}",
-                message.getUpdatedResource().getId(), message
+        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+                message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
         );
 
         try {
@@ -51,4 +52,7 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
         }
     }
 
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    }
 }

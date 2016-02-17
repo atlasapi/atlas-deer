@@ -14,6 +14,7 @@ import org.atlasapi.system.bootstrap.SourceChannelIntervalFactory;
 
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 
@@ -55,8 +56,11 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     @Override
     public void process(ScheduleUpdateMessage msg) {
         LOG.debug(
-                "Processing message on id {}, from: {}, to: {}",
-                msg.getChannel(), msg.getUpdateStart(), msg.getUpdateEnd()
+                "Processing message on id {}, took: PT{}S, from: {}, to: {}",
+                msg.getChannel(),
+                getTimeToProcessInSeconds(msg),
+                msg.getUpdateStart(),
+                msg.getUpdateEnd()
         );
 
         String updateMsg = String.format("update %s %s %s-%s",
@@ -123,4 +127,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         LOG.debug("{}: processed: {}", updateMsg, paResult);
     }
 
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    }
 }

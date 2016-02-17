@@ -10,6 +10,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -40,7 +41,8 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
         Id contentId = message.getUpdatedResource().getId();
-        LOG.debug("Processing message on id {}, message: {}", contentId, message);
+        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+                contentId, getTimeToProcessInSeconds(message), message);
 
         Timer.Context time = metricsTimer.time();
         Resolved<Content> content = resolveContent(contentId);
@@ -66,5 +68,9 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

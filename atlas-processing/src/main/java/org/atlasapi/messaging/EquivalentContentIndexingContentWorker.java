@@ -10,6 +10,7 @@ import org.atlasapi.content.IndexException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -47,7 +48,8 @@ public class EquivalentContentIndexingContentWorker
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
         Id contentId = getContentId(message);
 
-        LOG.debug("Processing message on id {}, message: {}", contentId, message);
+        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+                contentId, getTimeToProcessInSeconds(message), message);
 
         Timer.Context time = timer.time();
         try {
@@ -77,5 +79,9 @@ public class EquivalentContentIndexingContentWorker
 
     private ListenableFuture<Resolved<Content>> resolveContent(Id contentId) {
         return contentResolver.resolveIds(ImmutableList.of(contentId));
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

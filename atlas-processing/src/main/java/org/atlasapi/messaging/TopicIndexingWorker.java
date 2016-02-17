@@ -11,6 +11,7 @@ import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicIndex;
 import org.atlasapi.topic.TopicResolver;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -45,9 +46,8 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
     @Override
     public void process(final ResourceUpdatedMessage message) throws RecoverableException {
         LOG.debug(
-                "Processing message on id {}, message: {}",
-                message.getUpdatedResource(),
-                message
+                "Processing message on id {}, took: PT{}S, message: {}",
+                message.getUpdatedResource(), getTimeToProcessInSeconds(message), message
         );
 
         try {
@@ -82,5 +82,9 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
 
     private ListenableFuture<Resolved<Topic>> resolveContent(final ResourceUpdatedMessage message) {
         return topicResolver.resolveIds(ImmutableList.of(message.getUpdatedResource().getId()));
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

@@ -5,6 +5,7 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.util.ImmutableCollectors;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -34,10 +35,11 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
         LOG.debug(
-                "Processing message on ids {}, message: {}",
+                "Processing message on ids {}, took: PT{}S, message: {}",
                 message.getGraphUpdate().getAllGraphs().stream()
                         .map(EquivalenceGraph::getId)
                         .collect(ImmutableCollectors.toList()),
+                getTimeToProcessInSeconds(message),
                 message
         );
 
@@ -51,5 +53,9 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
             throw new RecoverableException("Failed to update canonical IDs for set"
                     + message.getGraphUpdate().getUpdated().getId(), e);
         }
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }

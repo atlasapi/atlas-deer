@@ -8,6 +8,7 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.util.ImmutableCollectors;
 
+import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
@@ -39,13 +40,14 @@ public class EquivalentContentStoreGraphUpdateWorker
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
         if (LOG.isDebugEnabled()) {
             LOG.debug(
-                    "Processing message on updated graph: {}, created graph(s): {},"
-                            + "deleted graph(s): {}, message: {}",
+                    "Processing message on updated graph: {}, took: PT{}S, "
+                            + "created graph(s): {}, deleted graph(s): {}, message: {}",
                     message.getGraphUpdate().getUpdated().getId(),
                     message.getGraphUpdate().getCreated().stream()
                             .map(EquivalenceGraph::getId)
                             .collect(ImmutableCollectors.toList()),
                     message.getGraphUpdate().getDeleted(),
+                    getTimeToProcessInSeconds(message),
                     message
             );
         }
@@ -71,5 +73,9 @@ public class EquivalentContentStoreGraphUpdateWorker
             );
             throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
         }
+    }
+
+    private long getTimeToProcessInSeconds(AbstractMessage message) {
+        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
     }
 }
