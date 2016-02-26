@@ -52,7 +52,7 @@ public class PseudoEquivalentContentIndexIT {
 
     @Test
     public void testQuery() throws Exception {
-        Item item1 = new Item(Id.valueOf(1l), Publisher.METABROADCAST);
+        Item item1 = new Item(Id.valueOf(1l), Publisher.BBC);
         Item item2 = new Item(Id.valueOf(2l), Publisher.METABROADCAST);
         Item item3 = new Item(Id.valueOf(3l), Publisher.METABROADCAST);
 

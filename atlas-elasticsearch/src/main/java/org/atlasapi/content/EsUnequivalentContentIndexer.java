@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.atlasapi.EsSchema;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -14,6 +15,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.exists.ExistsRequestBuilder;
+import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
@@ -148,9 +150,19 @@ public class EsUnequivalentContentIndexer {
             BulkRequest requests = Requests.bulkRequest();
             IndexRequest mainIndexRequest;
             ContainerRef container = item.getContainerRef();
-            if (item instanceof Episode) {
-                contentTranslator.denormalizeEpisodeOntoSeries(item);
+
+            if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
+                Episode episode = (Episode) item;
+                Optional<Map<String, Object>> maybeParent = getContainer(episode.getSeriesRef());
+
+                if (maybeParent.isPresent()) {
+                    Map<String, Object> series = contentTranslator.denormalizeEpisodeOntoSeries(
+                            episode, maybeParent.get()
+                    );
+                    reindexParent(episode.getSeriesRef(), series);
+                }
             }
+
             if (container != null) {
                 contentTranslator.setParentFields(esContent, container);
                 mainIndexRequest = Requests.indexRequest(indexName)
@@ -225,6 +237,30 @@ public class EsUnequivalentContentIndexer {
             builder.add(req.actionGet());
         }
         return builder.build();
+    }
+
+    private Optional<Map<String, Object>> getContainer(ContainerRef parent) {
+        GetRequest request = Requests.getRequest(indexName).id(getDocId(parent));
+        GetResponse response = ElasticsearchUtils.getWithTimeout(
+                esClient.get(request),
+                requestTimeout
+        );
+        if (response.isExists()) {
+            return Optional.of(response.getSource());
+        }
+        return Optional.empty();
+    }
+
+    private void reindexParent(SeriesRef seriesRef, Map<String, Object> series) {
+        IndexRequest req = Requests.indexRequest(indexName)
+                .type(EsContent.TOP_LEVEL_CONTAINER)
+                .id(getDocId(seriesRef))
+                .source(series);
+        try {
+            esClient.index(req).get();
+        } catch (Exception e) {
+            log.error("Failed to update Series {} with Episode data", seriesRef.getId(), e);
+        }
     }
 }
 

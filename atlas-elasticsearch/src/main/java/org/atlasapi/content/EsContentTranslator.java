@@ -30,7 +30,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.joda.time.DateTime;
@@ -278,36 +277,28 @@ public class EsContentTranslator {
         }
     }
 
-    public void denormalizeEpisodeOntoSeries(Item content) {
-        if (content instanceof Episode) {
-            Episode episode = (Episode) content;
-            if (episode.getSeriesRef() != null) {
-                SeriesRef seriesRef = episode.getSeriesRef();
-                Optional<Map<String, Object>> maybeParent = getContainer(seriesRef);
-                if (maybeParent.isPresent()) {
-                    Map<String, Object> series = maybeParent.get();
-                    series.put(
-                            EsContent.BROADCASTS,
-                            dedupeAndMergeBroadcasts(
-                                    episode,
-                                    (List) series.get(EsContent.BROADCASTS)
-                            )
-                    );
-                    series.put(
-                            EsContent.LOCATIONS,
-                            dedupeAndMergeLocations(episode, (List) series.get(EsContent.LOCATIONS))
-                    );
-                    series.put(
-                            EsBroadcast.TRANSMISSION_TIME_IN_MILLIS,
-                            dedupeAndMergeTransmissionTime(
-                                    episode,
-                                    (List) series.get(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS)
-                            )
-                    );
-                    reindexParent(seriesRef, series);
-                }
-            }
-        }
+    public Map<String, Object> denormalizeEpisodeOntoSeries(Episode episode,
+            Map<String, Object> series) {
+        series.put(
+                EsContent.BROADCASTS,
+                dedupeAndMergeBroadcasts(
+                        episode, (List<Map<String, Object>>) series.get(EsContent.BROADCASTS)
+                )
+        );
+        series.put(
+                EsContent.LOCATIONS,
+                dedupeAndMergeLocations(
+                        episode, (List<Map<String, Object>>) series.get(EsContent.LOCATIONS)
+                )
+        );
+        series.put(
+                EsBroadcast.TRANSMISSION_TIME_IN_MILLIS,
+                dedupeAndMergeTransmissionTime(
+                        episode, (List<Integer>) series.get(EsBroadcast.TRANSMISSION_TIME_IN_MILLIS)
+                )
+        );
+
+        return series;
     }
 
     private Object dedupeAndMergeTransmissionTime(Item episode, List<Integer> list) {
@@ -394,57 +385,60 @@ public class EsContentTranslator {
         };
     }
 
-    private void reindexParent(SeriesRef seriesRef, Map<String, Object> series) {
-        IndexRequest req = Requests.indexRequest(indexName)
-                .type(EsContent.TOP_LEVEL_CONTAINER)
-                .id(getDocId(seriesRef))
-                .source(series);
-        try {
-            esClient.index(req).get();
-        } catch (Exception e) {
-            log.error("Failed to update Series {} with Episode data", seriesRef.getId(), e);
-        }
-    }
-
     private ImmutableList<Object> dedupeAndMergeBroadcasts(Item item,
-            List<Map<String, Object>> indexedBroadcasts) {
-        List<Broadcast> parentIndexedBroadcasts = fromEsBroadcasts(
-                indexedBroadcasts != null ? indexedBroadcasts : ImmutableList.of()
-        );
+            List<Map<String, Object>> indexedParentBroadcasts) {
+        // This will remove from the parent any broadcasts that match those already on the item
+        // and then add the actively published item broadcasts back to the parent. This will
+        // effectively remove any non actively published ones of this item that were already
+        // on the parent
+
+        ImmutableList<Broadcast> itemBroadcasts = item.getBroadcasts().stream()
+                .filter(this::broadcastHasNecessaryFields)
+                .collect(ImmutableCollectors.toList());
 
         Predicate<Broadcast> broadcastNotPresentFilter =
-                createBroadcastNotPresentFilter(parentIndexedBroadcasts);
+                createBroadcastNotPresentFilter(itemBroadcasts);
 
-        ImmutableList<Map<String, Object>> newBroadcasts = item.getBroadcasts().stream()
+        ImmutableList<Broadcast> parentBroadcasts = fromEsBroadcasts(
+                indexedParentBroadcasts != null ? indexedParentBroadcasts : ImmutableList.of()
+        )
+                .stream()
+                .filter(this::broadcastHasNecessaryFields)
                 .filter(broadcastNotPresentFilter::apply)
+                .collect(ImmutableCollectors.toList());
+
+        ImmutableList<Broadcast> activelyPublishedItemBroadcasts = itemBroadcasts.stream()
+                .filter(Broadcast::isActivelyPublished)
+                .collect(ImmutableCollectors.toList());
+
+        return ImmutableList.<Broadcast>builder()
+                .addAll(parentBroadcasts)
+                .addAll(activelyPublishedItemBroadcasts)
+                .build()
+                .stream()
                 .map(this::toEsBroadcast)
                 .map(EsObject::toMap)
                 .collect(ImmutableCollectors.toList());
+    }
 
-        ImmutableList.Builder<Object> merged = ImmutableList.builder().addAll(newBroadcasts);
-        if (indexedBroadcasts != null) {
-            merged.addAll(indexedBroadcasts);
-        }
-        return merged.build();
+    private boolean broadcastHasNecessaryFields(Broadcast broadcast) {
+        return broadcast != null
+                && broadcast.getTransmissionInterval() != null
+                && broadcast.getChannelId() != null;
     }
 
     private Predicate<Broadcast> createBroadcastNotPresentFilter(
-            Iterable<Broadcast> existingBroadcasts) {
-        return broadcast -> {
-            if (broadcast == null || broadcast.getTransmissionInterval() == null) {
-                return false;
-            }
-            for (Broadcast existingBroadcast : existingBroadcasts) {
-                if (existingBroadcast.getTransmissionInterval()
-                        .isEqual(broadcast.getTransmissionInterval())) {
-                    return false;
-                }
-            }
-            return true;
-        };
+            Collection<Broadcast> existingBroadcasts) {
+        return broadcast -> existingBroadcasts.stream()
+                .noneMatch(existing -> broadcastIsEqual(broadcast, existing));
     }
 
-    private List<Broadcast> fromEsBroadcasts(List<Map<String, Object>> broadcasts) {
+    private boolean broadcastIsEqual(Broadcast broadcast, Broadcast existing) {
+        return existing.getTransmissionInterval().isEqual(broadcast.getTransmissionInterval())
+                && Objects.equals(existing.getChannelId(), broadcast.getChannelId());
+    }
+
+    private ImmutableList<Broadcast> fromEsBroadcasts(List<Map<String, Object>> broadcasts) {
         ImmutableList.Builder<Broadcast> builder = ImmutableList.builder();
         for (Map<String, Object> broadcast : broadcasts) {
             builder.add(toBroadcast(broadcast));
@@ -467,7 +461,7 @@ public class EsContentTranslator {
         }
 
         return new Broadcast(
-                Id.valueOf((Integer) broadcast.get(EsBroadcast.CHANNEL)),
+                Id.valueOf((Long) broadcast.get(EsBroadcast.CHANNEL)),
                 startDate,
                 endDate,
                 true
