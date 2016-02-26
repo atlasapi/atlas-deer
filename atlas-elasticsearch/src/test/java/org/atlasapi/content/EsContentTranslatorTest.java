@@ -6,6 +6,7 @@ import java.util.Map;
 import org.atlasapi.entity.Id;
 import org.atlasapi.util.SecondaryIndex;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.elasticsearch.client.Client;
@@ -218,11 +219,11 @@ public class EsContentTranslatorTest {
     }
 
     private Map<String, Object> toEsBroadcast(Broadcast broadcast) {
-        return new EsBroadcast()
-                .channel(broadcast.getChannelId().longValue())
-                .transmissionTime(broadcast.getTransmissionTime().toDate())
-                .transmissionEndTime(broadcast.getTransmissionEndTime().toDate())
-                .toMap();
+        return ImmutableMap.<String, Object>builder()
+                .put(EsBroadcast.CHANNEL, (int) broadcast.getChannelId().longValue())
+                .put(EsBroadcast.TRANSMISSION_TIME, broadcast.getTransmissionTime().toDate())
+                .put(EsBroadcast.TRANSMISSION_END_TIME, broadcast.getTransmissionEndTime().toDate())
+                .build();
     }
 
     private void isExpectedBroadcast(Broadcast expected, Map<String, Object> actual) {

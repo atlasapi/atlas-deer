@@ -461,7 +461,7 @@ public class EsContentTranslator {
         }
 
         return new Broadcast(
-                Id.valueOf((Long) broadcast.get(EsBroadcast.CHANNEL)),
+                Id.valueOf((Integer) broadcast.get(EsBroadcast.CHANNEL)),
                 startDate,
                 endDate,
                 true
