@@ -143,8 +143,15 @@ public class ChannelGroupMembership {
         return endDate;
     }
 
+    // We only have dates and no times for channel availability start/end
+    // so we will assume a channel is available during the entire start date,
+    // but not during the end date to avoid showing multiple versions of the
+    // same channel showing up at the same time. This is to work around PA
+    // not providing exact channel availability times
     public boolean isAvailable(LocalDate date) {
-        return startDate.orElse(date.minusDays(1)).isBefore(date)
-                && endDate.orElse(date.plusDays(1)).isAfter(date);
+        LocalDate startDate = this.startDate.orElse(date.minusDays(1));
+        LocalDate endDate = this.endDate.orElse(date.plusDays(1));
+
+        return (startDate.isBefore(date) || startDate.isEqual(date)) && endDate.isAfter(date);
     }
 }
