@@ -96,7 +96,7 @@ public abstract class CassandraContentStoreIT {
     static Logger root = Logger.getRootLogger();
 
     @BeforeClass
-    public static void setup() throws ConnectionException {
+    public static void setup() throws Exception {
         root.addAppender(new ConsoleAppender(
                 new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
         root.setLevel(Level.WARN);
@@ -119,10 +119,11 @@ public abstract class CassandraContentStoreIT {
     }
 
     @AfterClass
-    public static void tearDown() throws ConnectionException {
+    public static void tearDown() throws Exception {
         try {
             context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) {
+        } catch (BadRequestException ignore) {
+            // This can happen if the keyspace has already been dropped
         }
     }
 

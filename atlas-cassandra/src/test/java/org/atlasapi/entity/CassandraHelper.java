@@ -18,33 +18,34 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 
 public class CassandraHelper {
 
-    //TODO: externalize
-    private static String seeds = "127.0.0.1";
-    private static int clientThreads = 25;
-    private static int connectionTimeout = 60000;
-    private static int port = 9160;
+    private static final String CLUSTER_NAME = "Build";
+    private static final String KEYSPACE_NAME = "atlas_testing";
+    private static final String SEEDS = "127.0.0.1";
+    private static final int CLIENT_THREADS = 5;
+    private static final int CONNECTION_TIMEOUT = 1000;
+    private static final int PORT = 9160;
 
-    public static final AstyanaxContext<Keyspace> testCassandraContext() {
+    public static AstyanaxContext<Keyspace> testCassandraContext() {
         return new AstyanaxContext.Builder()
-                .forCluster("Atlas")
-                .forKeyspace("atlas_testing")
+                .forCluster(CLUSTER_NAME)
+                .forKeyspace(KEYSPACE_NAME)
                 .withAstyanaxConfiguration(new AstyanaxConfigurationImpl()
                         .setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE)
                         .setConnectionPoolType(ConnectionPoolType.ROUND_ROBIN)
                         .setAsyncExecutor(Executors.newFixedThreadPool(
-                                clientThreads,
+                                CLIENT_THREADS,
                                 new ThreadFactoryBuilder().setDaemon(true)
                                         .setNameFormat("astyanax-%d")
                                         .build()
                         ))
                 )
                 .withConnectionPoolConfiguration(new ConnectionPoolConfigurationImpl("Atlas")
-                        .setPort(port)
-                        .setMaxBlockedThreadsPerHost(clientThreads)
-                        .setMaxConnsPerHost(clientThreads)
-                        .setMaxConns(clientThreads * 5)
-                        .setConnectTimeout(connectionTimeout)
-                        .setSeeds(seeds)
+                        .setPort(PORT)
+                        .setMaxBlockedThreadsPerHost(CLIENT_THREADS)
+                        .setMaxConnsPerHost(CLIENT_THREADS)
+                        .setMaxConns(CLIENT_THREADS * 5)
+                        .setConnectTimeout(CONNECTION_TIMEOUT)
+                        .setSeeds(SEEDS)
                 )
                 .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
                 .buildKeyspace(ThriftFamilyFactory.getInstance());
