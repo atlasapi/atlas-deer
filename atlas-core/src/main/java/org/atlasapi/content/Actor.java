@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import java.util.Objects;
+
 import org.atlasapi.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
@@ -63,17 +65,23 @@ public class Actor extends CrewMember {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Actor) {
-            Actor actor = (Actor) obj;
-            return super.equals(actor) && character.equals(character);
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-        return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        Actor actor = (Actor) o;
+        return Objects.equals(character, actor.character);
     }
 
     @Override
     public int hashCode() {
-        return this.getCanonicalUri().hashCode();
+        return Objects.hash(super.hashCode(), character);
     }
 
     @Override

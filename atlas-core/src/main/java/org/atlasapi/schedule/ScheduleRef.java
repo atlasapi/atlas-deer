@@ -73,22 +73,22 @@ public final class ScheduleRef {
     }
 
     @Override
-    public boolean equals(Object that) {
-        if (this == that) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (that instanceof ScheduleRef) {
-            ScheduleRef other = (ScheduleRef) that;
-            return channel.equals(channel)
-                    && interval.equals(interval)
-                    && entries.equals(other.entries);
+        if (o == null || getClass() != o.getClass()) {
+            return false;
         }
-        return false;
+        ScheduleRef that = (ScheduleRef) o;
+        return java.util.Objects.equals(channel, that.channel) &&
+                java.util.Objects.equals(interval, that.interval) &&
+                java.util.Objects.equals(entries, that.entries);
     }
 
     @Override
     public int hashCode() {
-        return channel.hashCode();
+        return java.util.Objects.hash(channel, interval, entries);
     }
 
     @Override

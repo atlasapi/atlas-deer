@@ -105,7 +105,7 @@ public class User implements Identifiable {
     }
 
     public boolean manages(Id applicationId) {
-        return applicationIds.contains(applicationIds);
+        return applicationIds.contains(applicationId);
     }
 
     public boolean manages(Optional<Publisher> possibleSource) {
