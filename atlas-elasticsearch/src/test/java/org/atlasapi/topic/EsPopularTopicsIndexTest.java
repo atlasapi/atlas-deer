@@ -47,7 +47,7 @@ public class EsPopularTopicsIndexTest {
             new NoOpContentResolver(),
             mock(ChannelGroupResolver.class),
             new NoOpSecondaryIndex(),
-            60
+            1_000
     );
 
     @BeforeClass
