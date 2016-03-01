@@ -34,7 +34,6 @@ import org.junit.Test;
 import static org.atlasapi.util.ElasticSearchHelper.refresh;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -72,8 +71,6 @@ public class EsPopularTopicsIndexTest {
 
     @Test
     public void testPopularTopics() throws Exception {
-        fail();
-
         Broadcast broadcast1 = new Broadcast(
                 Id.valueOf(1),
                 new DateTime(),
