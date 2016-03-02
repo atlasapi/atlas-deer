@@ -159,7 +159,7 @@ public class SearchController {
                                     : null)
                     .withCurrentBroadcastsOnly(!Strings.isNullOrEmpty(currentBroadcastsOnly)
                                                ? Boolean.valueOf(currentBroadcastsOnly)
-                                               : null)
+                                               : false)
                     .build(), appSources);
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),

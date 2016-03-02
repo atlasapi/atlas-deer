@@ -58,7 +58,9 @@ public final class KeyPhrase {
 
     @Override
     public String toString() {
-        return String.format("%s (%s): %s", phrase,
+        return String.format(
+                "%s: %s",
+                phrase,
                 weighting != null ? weighting : "unweighted"
         );
     }

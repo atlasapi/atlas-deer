@@ -16,7 +16,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelSchedule {
 
-    public static final Function<ChannelSchedule, ImmutableList<ItemAndBroadcast>> toEntries() {
+    public static Function<ChannelSchedule, ImmutableList<ItemAndBroadcast>> toEntries() {
         return TO_ENTRIES;
     }
 
@@ -59,19 +59,22 @@ public class ChannelSchedule {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ChannelSchedule) {
-            ChannelSchedule scheduleChannel = (ChannelSchedule) obj;
-            return channel.equals(scheduleChannel.channel)
-                    && interval.equals(interval)
-                    && entries.equals(scheduleChannel.entries);
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-        return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChannelSchedule that = (ChannelSchedule) o;
+        return java.util.Objects.equals(channel, that.channel) &&
+                java.util.Objects.equals(interval, that.interval) &&
+                java.util.Objects.equals(entries, that.entries);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(channel, interval);
+        return java.util.Objects.hash(channel, interval, entries);
     }
 
     @Override

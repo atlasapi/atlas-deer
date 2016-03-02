@@ -329,10 +329,11 @@ public class EsContentTranslator {
                 .filter(policy -> policy != null)
                 .collect(ImmutableCollectors.toSet());
 
+        List<Map<String, Object>> nonNullExistingLocations = existingLocations != null
+                                                       ? existingLocations
+                                                       : ImmutableList.of();
         Predicate<Policy> filter = createLocationNotPresentFilter(
-                fromEsLocations(
-                        existingLocations != null ? existingLocations : ImmutableList.of()
-                )
+                fromEsLocations(nonNullExistingLocations)
         );
 
         ImmutableList<Map<String, Object>> newPolicies = policies.stream()
@@ -341,7 +342,10 @@ public class EsContentTranslator {
                 .map(EsObject::toMap)
                 .collect(ImmutableCollectors.toList());
 
-        return (List) ImmutableList.builder().addAll(existingLocations).addAll(newPolicies).build();
+        return ImmutableList.<Map<String, Object>>builder()
+                .addAll(nonNullExistingLocations)
+                .addAll(newPolicies)
+                .build();
     }
 
     private ImmutableList<Policy> fromEsLocations(List<Map<String, Object>> existingLocations) {
