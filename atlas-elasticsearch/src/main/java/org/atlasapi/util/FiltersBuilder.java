@@ -108,12 +108,12 @@ public class FiltersBuilder {
         if (actionableParams.get("location.available") != null) {
             orFilterBuilder.add(buildAvailabilityFilter());
         }
-        DateTime broadcastTimeGreaterThan = actionableParams.get("broadcast.time.gt") == null ? null
-                                                                                              : DateTime
-                                                    .parse(actionableParams.get("broadcast.time.gt"));
-        DateTime broadcastTimeLessThan = actionableParams.get("broadcast.time.lt") == null ? null
-                                                                                           : DateTime
-                                                 .parse(actionableParams.get("broadcast.time.lt"));
+        DateTime broadcastTimeGreaterThan =
+                actionableParams.get("broadcast.time.gt") == null ?
+                null : DateTime.parse(actionableParams.get("broadcast.time.gt"));
+        DateTime broadcastTimeLessThan =
+                actionableParams.get("broadcast.time.lt") == null ?
+                null : DateTime.parse(actionableParams.get("broadcast.time.lt"));
         if (broadcastTimeGreaterThan != null || broadcastTimeLessThan != null) {
             orFilterBuilder.add(
                     buildBroadcastRangeFilter(

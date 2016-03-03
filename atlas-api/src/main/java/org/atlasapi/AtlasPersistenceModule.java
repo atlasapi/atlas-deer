@@ -217,6 +217,11 @@ public class AtlasPersistenceModule {
         return persistenceModule().contentStore();
     }
 
+    @Bean
+    public ContentStore cqlContentStore() {
+        return persistenceModule().cqlContentStore();
+    }
+
     public ContentStore nullMessageSendingContentStore() {
         return persistenceModule().nullMessageSendingContentStore();
     }

@@ -5,6 +5,8 @@ import java.util.UUID;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
+import org.atlasapi.content.ContentStore;
+import org.atlasapi.content.v2.EmilsContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -98,6 +100,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
+    private ContentStore cqlContentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
     private OrganisationStore organisationStore;
@@ -203,6 +206,18 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
+
+        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
+
+        this.cqlContentStore = new EmilsContentStore(session);
+
+        this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                nullMessageSender(EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
 
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(
                 contentEquivalenceGraphStore,
@@ -310,6 +325,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     @Override
     public AstyanaxCassandraContentStore contentStore() {
         return contentStore;
+    }
+
+    public ContentStore cqlContentStore() {
+        return cqlContentStore;
     }
 
     public AstyanaxCassandraContentStore nullMessageSendingContentStore() {
