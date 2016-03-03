@@ -548,9 +548,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setTimestamp("day", broadcastRef.getTransmissionInterval()
                                 .getStart()
                                 .toLocalDate()
-                                .toDate())
-                        .setString("broadcast", broadcastRef.getSourceId()))
+                                .toDate()
+                ))
                 .collect(MoreCollectors.toImmutableList());
+    }
+
+    private Statement delete(BroadcastRef ref, Publisher src, Date date) {
+        return broadcastDelete.bind()
+                .setString("source", src.key())
+                .setLong("channel", ref.getChannelId().longValue())
+                .setDate("day", com.datastax.driver.core.LocalDate.fromMillisSinceEpoch(date.getTime()))
+                .setString("broadcast", ref.getSourceId());
     }
 
     private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId,

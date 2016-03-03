@@ -18,11 +18,12 @@ import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.criteria.attribute.Attributes;
-import org.atlasapi.event.Event;
+import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
+import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
@@ -51,7 +52,7 @@ import org.atlasapi.output.annotation.ContentDescriptionAnnotation;
 import org.atlasapi.output.annotation.CurrentAndFutureBroadcastsAnnotation;
 import org.atlasapi.output.annotation.DescriptionAnnotation;
 import org.atlasapi.output.annotation.EndpointInfoAnnotation;
-import org.atlasapi.output.annotation.EventAnnotation;
+import org.atlasapi.output.annotation.EventAnnotationV2;
 import org.atlasapi.output.annotation.EventDetailsAnnotation;
 import org.atlasapi.output.annotation.ExtendedDescriptionAnnotation;
 import org.atlasapi.output.annotation.ExtendedIdentificationAnnotation;
@@ -117,6 +118,7 @@ import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryResultWriter;
 import org.atlasapi.query.v4.content.ContentController;
+import org.atlasapi.query.v4.content.CqlContentShuffleController;
 import org.atlasapi.query.v4.event.EventController;
 import org.atlasapi.query.v4.event.EventListWriter;
 import org.atlasapi.query.v4.event.EventQueryResultWriter;
@@ -155,14 +157,17 @@ import org.atlasapi.topic.TopicResolver;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
+import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
+import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 import com.metabroadcast.common.time.SystemClock;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -222,12 +227,19 @@ import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
 @Configuration
-@Import({ QueryModule.class, LicenseModule.class })
+@Import({ QueryModule.class, LicenseModule.class, KafkaMessagingModule.class })
 public class QueryWebModule {
 
     private static final String CONTAINER_FIELD = "container";
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
+    private String originSystem = Configurer.get("messaging.bootstrap.system").get();
+    private String zookeeper = Configurer.get("messaging.zookeeper").get();
+    private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
+    private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
+
+    @Autowired
+    private KafkaMessagingModule messaging;
 
     private @Autowired DatabasedMongo mongo;
     private
@@ -344,6 +356,24 @@ public class QueryWebModule {
                         channelGroupResolver,
                         idCodec()
                 )
+        );
+    }
+
+    @Bean
+    CqlContentShuffleController cqlController() {
+        KafkaMessageConsumerFactory factory = new KafkaMessageConsumerFactory(
+                zookeeper,
+                originSystem,
+                backOffBase,
+                maxBackOff
+        );
+
+        return new CqlContentShuffleController(
+                idCodec(),
+                persistenceModule.contentStore(),
+                persistenceModule.cqlContentStore(),
+                factory,
+                persistenceModule.legacyContentResolver()
         );
     }
 

@@ -1,0 +1,44 @@
+package org.atlasapi.content.v2.model.udt;
+
+import com.datastax.driver.mapping.annotations.UDT;
+
+@UDT(name = "description")
+public class Description {
+
+    private String title;
+    private String synopsis;
+    private String image;
+    private String thumbnail;
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getSynopsis() {
+        return synopsis;
+    }
+
+    public void setSynopsis(String synopsis) {
+        this.synopsis = synopsis;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+}

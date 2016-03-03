@@ -42,6 +42,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 
@@ -167,17 +168,17 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                     .setLong("channel", channelId)
                     .setTimestamp(
                             "day",
-                            block.getInterval()
-                                    .getStart()
-                                    .toLocalDate()
-                                    .toDateTimeAtStartOfDay(DateTimeZone.UTC)
-                                    .toDate()
+                            toDatastaxDate(block.getInterval().getStart())
                     )
                     .setMap("broadcastsData", broadcasts)
                     .setSet("broadcastsIdsData", broadcasts.keySet())
                     .setTimestamp("updatedData", clock.now().toDate()));
         }
         session.execute(batch);
+    }
+
+    private com.datastax.driver.core.LocalDate toDatastaxDate(DateTime dt) {
+        return com.datastax.driver.core.LocalDate.fromMillisSinceEpoch(dt.getMillis());
     }
 
     @Override
