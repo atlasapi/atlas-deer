@@ -53,7 +53,7 @@ public class ModelController {
     // as the rest of the query parsing and query execution framework can be used. it might make annotations
     // a little more friendly
     // also means that the resolution/result creation methods can be removed from this controller class
-    @RequestMapping({ "/4/meta/types.*", "/4/meta/types" })
+    @RequestMapping({ "/4/meta/types\\.[a-z]+", "/4/meta/types" })
     public void fetchAllModelInfo(HttpServletRequest request, HttpServletResponse response)
             throws IOException, UnsupportedFormatException, NotAcceptableException {
         ResponseWriter writer = null;
@@ -84,7 +84,7 @@ public class ModelController {
         );
     }
 
-    @RequestMapping({ "/4/meta/types/{key}.*", "/4/meta/types/{key}" })
+    @RequestMapping({ "/4/meta/types/{key}\\.[a-z]+", "/4/meta/types/{key}" })
     public void fetchSingleModelInfo(HttpServletRequest request, HttpServletResponse response,
             @PathVariable("key") String key) throws IOException {
         ResponseWriter writer = null;

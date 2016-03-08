@@ -46,7 +46,7 @@ public class ChannelGroupController {
         this.resultWriter = checkNotNull(resultWriter);
     }
 
-    @RequestMapping({ "", ".*", "/{id}.*", "/{id}" })
+    @RequestMapping({ "", "\\.[a-z]+", "/{id}\\.[a-z]+", "/{id}" })
     public void fetchChannelGroup(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         ResponseWriter writer = null;

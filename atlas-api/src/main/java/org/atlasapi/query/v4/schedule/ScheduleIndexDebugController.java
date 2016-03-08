@@ -76,7 +76,7 @@ public class ScheduleIndexDebugController {
         );
     }
 
-    @RequestMapping({ "/system/debug/schedules/{cid}.*", "/system/debug/schedules/{cid}" })
+    @RequestMapping({ "/system/debug/schedules/{cid}\\.[a-z]+", "/system/debug/schedules/{cid}" })
     public void debugSchedule(HttpServletRequest request, HttpServletResponse response)
             throws Exception {
         ScheduleQuery query = requestParser.queryFrom(request);

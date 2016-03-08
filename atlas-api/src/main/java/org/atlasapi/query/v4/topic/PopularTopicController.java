@@ -58,7 +58,7 @@ public class PopularTopicController {
         this.sourcesFetcher = configurationFetcher;
     }
 
-    @RequestMapping({ "/4/topics/popular.*", "/4/topics/popular" })
+    @RequestMapping({ "/4/topics/popular\\.[a-z]+", "/4/topics/popular" })
     public void popularTopics(@RequestParam(required = true) String from,
             @RequestParam(required = true) String to, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
