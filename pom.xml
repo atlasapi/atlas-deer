@@ -433,7 +433,7 @@
     <sonar.jacoco.itReportPath>${project.basedir}/target/jacoco-it.exec</sonar.jacoco.itReportPath>
     <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
     <sonar.junit.reportsPath>${project.basedir}/target/surefire-reports</sonar.junit.reportsPath>
-    <sonar.projectKey>${project.groupId}:atlas-deer</sonar.projectKey>
+    <sonar.branch>deer</sonar.branch>
     <sonar.language>java</sonar.language>
     <sonar.exclusions>**/target/**/*,**/src/main/java/**/generated/**/*</sonar.exclusions>
     <netty.version>4.0.27.Final</netty.version>
