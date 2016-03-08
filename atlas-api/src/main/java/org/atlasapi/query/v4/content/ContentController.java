@@ -47,7 +47,7 @@ public class ContentController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/{id}.*", "/{id}", ".*", "" })
+    @RequestMapping({ "/{id}\\.[a-z]+", "/{id}", "\\.[a-z]+", "" })
     public void fetchContent(HttpServletRequest request, HttpServletResponse response,
             @RequestParam(value = "order_by", required = false) String orderBy)
             throws IOException {

@@ -43,7 +43,7 @@ public class OrganisationController {
         this.resultWriter = resultWriter;
     }
 
-    @RequestMapping({ "/{id}.*", "/{id}" })
+    @RequestMapping({ "/{id}\\.[a-z]+", "/{id}" })
     public void fetchContent(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         ResponseWriter writer = null;

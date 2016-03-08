@@ -47,7 +47,7 @@ public class EventController {
         this.queryResultWriter = queryResultWriter;
     }
 
-    @RequestMapping({ "/{id}.*", "/{id}" })
+    @RequestMapping({ "/{id}\\.[a-z]+", "/{id}" })
     public void fetchEvent(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         ResponseWriter writer = null;
