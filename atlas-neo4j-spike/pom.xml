@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>atlas</artifactId>
+        <groupId>org.atlasapi</groupId>
+        <version>7.0.497-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>atlas-neo4j-spike</artifactId>
+    <packaging>jar</packaging>
+    <name>Atlas Neo4j Spike</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.atlasapi</groupId>
+            <artifactId>atlas-neo4j</artifactId>
+            <version>${atlas.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.atlasapi</groupId>
+            <artifactId>atlas-elasticsearch</artifactId>
+            <version>${atlas.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.atlasapi.neo4j.spike.SpikeApplication</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
