@@ -1,23 +1,24 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "image")
 public class Image {
 
-    private String uri;
-    private String type;
-    private String color;
-    private String theme;
-    private Integer height;
-    private Integer width;
-    private String aspectRatio;
-    private String mimeType;
-    private Instant availabilityStart;
-    private Instant availabilityEnd;
-    private Boolean hasTitleArt;
-    private String source;
+    @Field(name = "u") private String uri;
+    @Field(name = "t") private String type;
+    @Field(name = "c") private String color;
+    @Field(name = "th") private String theme;
+    @Field(name = "h") private Integer height;
+    @Field(name = "w") private Integer width;
+    @Field(name = "ar") private String aspectRatio;
+    @Field(name = "mt") private String mimeType;
+    @Field(name = "as") private Instant availabilityStart;
+    @Field(name = "ae") private Instant availabilityEnd;
+    @Field(name = "hta") private Boolean hasTitleArt;
+    @Field(name = "s") private String source;
 
     public String getUri() {
         return uri;

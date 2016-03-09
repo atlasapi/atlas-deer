@@ -3,34 +3,35 @@ package org.atlasapi.content.v2.model.udt;
 import java.util.List;
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "policy")
 public class Policy {
 
-    private Long id;
-    private String canonicalUri;
-    private String curie;
-    private Set<String> aliasUrls;
-    private Set<Alias> aliases;
-    private Set<Ref> equivalentTo;
-    private Instant lastUpdated;
-    private Instant equivalenceUpdate;
-    private Instant availabilityStart;
-    private Instant availabilityEnd;
-    private Instant drmPlayableFrom;
-    private Set<String> availableCountries;
-    private Integer availabilityLength;
-    private String revenueContract;
-    private Set<String> subscriptionPackages;
-    private Price price;
-    private List<Pricing> pricing;
-    private Long serviceId;
-    private Long playerId;
-    private String platform;
-    private String network;
-    private Instant actualAvailabilityStart;
+    @Field(name = "i") private Long id;
+    @Field(name = "c") private String canonicalUri;
+    @Field(name = "cu") private String curie;
+    @Field(name = "au") private Set<String> aliasUrls;
+    @Field(name = "a") private Set<Alias> aliases;
+    @Field(name = "e") private Set<Ref> equivalentTo;
+    @Field(name = "lu") private Instant lastUpdated;
+    @Field(name = "eu") private Instant equivalenceUpdate;
+    @Field(name = "as") private Instant availabilityStart;
+    @Field(name = "ae") private Instant availabilityEnd;
+    @Field(name = "dpf") private Instant drmPlayableFrom;
+    @Field(name = "ac") private Set<String> availableCountries;
+    @Field(name = "al") private Integer availabilityLength;
+    @Field(name = "rc") private String revenueContract;
+    @Field(name = "sp") private Set<String> subscriptionPackages;
+    @Field(name = "p") private Price price;
+    @Field(name = "pr") private List<Pricing> pricing;
+    @Field(name = "si") private Long serviceId;
+    @Field(name = "pi") private Long playerId;
+    @Field(name = "pl") private String platform;
+    @Field(name = "n") private String network;
+    @Field(name = "aas") private Instant actualAvailabilityStart;
 
     public Long getId() {
         return id;

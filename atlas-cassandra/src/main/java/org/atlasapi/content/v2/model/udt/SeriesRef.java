@@ -2,17 +2,29 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "seriesref")
 public class SeriesRef {
 
+    @Field(name = "r")
     private Ref ref;
+
+    @Field(name = "t")
     private String title;
+
+    @Field(name = "u")
     private Instant updated;
+
+    @Field(name = "sn")
     private Integer seriesNumber;
+
+    @Field(name = "ry")
     private Integer releaseYear;
+
+    @Field(name = "cr")
     private Set<Certificate> certificates;
 
     public Ref getRef() {

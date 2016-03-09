@@ -2,25 +2,26 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "restriction")
 public class Restriction {
 
-    private Long id;
-    private String canonicalUri;
-    private String curie;
-    private Set<String> aliasUrls;
-    private Set<Alias> aliases;
-    private Set<Ref> equivalentTo;
-    private Instant lastUpdated;
-    private Instant equivalenceUpdate;
-    private Boolean restricted;
-    private Integer minimumAge;
-    private String message;
-    private String authority;
-    private String rating;
+    @Field(name = "i") private Long id;
+    @Field(name = "c") private String canonicalUri;
+    @Field(name = "cu") private String curie;
+    @Field(name = "au") private Set<String> aliasUrls;
+    @Field(name = "a") private Set<Alias> aliases;
+    @Field(name = "e") private Set<Ref> equivalentTo;
+    @Field(name = "lu") private Instant lastUpdated;
+    @Field(name = "eu") private Instant equivalenceUpdate;
+    @Field(name = "r") private Boolean restricted;
+    @Field(name = "ma") private Integer minimumAge;
+    @Field(name = "msg") private String message;
+    @Field(name = "ath") private String authority;
+    @Field(name = "rt") private String rating;
 
     public Long getId() {
         return id;

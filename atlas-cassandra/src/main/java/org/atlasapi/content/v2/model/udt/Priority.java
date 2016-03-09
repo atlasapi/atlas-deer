@@ -2,13 +2,19 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.List;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "priority")
 public class Priority {
 
+    @Field(name = "p")
     private List<String> positive;
+
+    @Field(name = "n")
     private List<String> negative;
+
+    @Field(name = "pr")
     private Double priority;
 
     public List<String> getPositive() {

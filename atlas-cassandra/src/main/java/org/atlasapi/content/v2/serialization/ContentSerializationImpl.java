@@ -13,12 +13,12 @@ public class ContentSerializationImpl implements ContentSerialization {
     }
 
     @Override
-    public org.atlasapi.content.v2.model.Content serialize(Content content) {
+    public Iterable<org.atlasapi.content.v2.model.Content> serialize(Content content) {
         return serializer.serialize(content);
     }
 
     @Override
-    public Content deserialize(org.atlasapi.content.v2.model.Content internal) {
+    public Content deserialize(Iterable<org.atlasapi.content.v2.model.Content> internal) {
         return deserializer.deserialize(internal);
     }
 

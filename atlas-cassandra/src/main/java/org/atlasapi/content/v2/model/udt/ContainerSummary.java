@@ -1,14 +1,15 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "containersummary")
 public class ContainerSummary {
 
-    private String type;
-    private String title;
-    private String description;
-    private Integer seriesNumber;
+    @Field(name = "t") private String type;
+    @Field(name = "tt") private String title;
+    @Field(name = "d") private String description;
+    @Field(name = "s") private Integer seriesNumber;
 
     public String getType() {
         return type;

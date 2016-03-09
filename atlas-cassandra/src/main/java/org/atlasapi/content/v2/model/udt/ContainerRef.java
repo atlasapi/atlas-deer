@@ -2,19 +2,29 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "containerref")
 public class ContainerRef {
+
+    @Field(name = "id")
     private Long id;
+    @Field(name = "src")
     private String source;
+    @Field(name = "t")
     private String type;
 
+    @Field(name = "tt")
     private String title;
-    private Instant updated;
+    @Field(name = "sn")
     private Integer seriesNumber;
+    @Field(name = "upd")
+    private Instant updated;
+    @Field(name = "ry")
     private Integer releaseYear;
+    @Field(name = "cr")
     private Set<Certificate> certificates;
 
     public Long getId() {

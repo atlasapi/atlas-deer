@@ -1,17 +1,33 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "relatedlink")
 public class RelatedLink {
 
+    @Field(name = "u")
     private String url;
+
+    @Field(name = "t")
     private String type;
+
+    @Field(name = "si")
     private String sourceId;
+
+    @Field(name = "sn")
     private String shortName;
+
+    @Field(name = "tt")
     private String title;
+
+    @Field(name = "d")
     private String description;
+
+    @Field(name = "i")
     private String image;
+
+    @Field(name = "th")
     private String thumbnail;
 
     public String getUrl() {
