@@ -1,11 +1,14 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "certificate")
 public class Certificate {
 
+    @Field(name = "cc")
     private String countryCode;
+    @Field(name = "cls")
     private String classification;
 
     public String getCountryCode() {

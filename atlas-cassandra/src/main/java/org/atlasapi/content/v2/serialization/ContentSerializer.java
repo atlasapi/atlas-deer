@@ -4,5 +4,5 @@ import org.atlasapi.content.Content;
 
 public interface ContentSerializer {
 
-    org.atlasapi.content.v2.model.Content serialize(Content content);
+    Iterable<org.atlasapi.content.v2.model.Content> serialize(Content content);
 }

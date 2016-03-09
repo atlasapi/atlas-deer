@@ -1,11 +1,15 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "keyphrase")
 public class KeyPhrase {
 
+    @Field(name = "p")
     private String phrase;
+
+    @Field(name = "w")
     private Double weighting;
 
     public String getPhrase() {

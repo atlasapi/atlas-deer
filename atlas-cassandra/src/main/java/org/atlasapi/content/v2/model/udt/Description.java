@@ -1,14 +1,15 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "description")
 public class Description {
 
-    private String title;
-    private String synopsis;
-    private String image;
-    private String thumbnail;
+    @Field(name = "t") private String title;
+    @Field(name = "s") private String synopsis;
+    @Field(name = "i") private String image;
+    @Field(name = "th") private String thumbnail;
 
     public String getTitle() {
         return title;

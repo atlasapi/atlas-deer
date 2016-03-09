@@ -2,22 +2,44 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "crewmember")
 public class CrewMember {
 
+    @Field(name = "i")
     private Long id;
+
+    @Field(name = "c")
     private String canonicalUri;
+
+    @Field(name = "cu")
     private String curie;
+
+    @Field(name = "au")
     private Set<String> aliasUrls;
+
+    @Field(name = "a")
     private Set<Alias> aliases;
+
+    @Field(name = "e")
     private Set<Ref> equivalentTo;
+
+    @Field(name = "lu")
     private Instant lastUpdated;
+
+    @Field(name = "eu")
     private Instant equivalenceUpdate;
+
+    @Field(name = "r")
     private String role;
+
+    @Field(name = "n")
     private String name;
+
+    @Field(name = "p")
     private String publisher;
 
     public Long getId() {

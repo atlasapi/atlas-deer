@@ -8,12 +8,10 @@ import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Broadcast;
 import org.atlasapi.content.v2.model.udt.BroadcastRef;
 import org.atlasapi.content.v2.model.udt.Certificate;
-import org.atlasapi.content.v2.model.udt.Clip;
 import org.atlasapi.content.v2.model.udt.ContainerRef;
 import org.atlasapi.content.v2.model.udt.ContainerSummary;
 import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
-import org.atlasapi.content.v2.model.udt.Encoding;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.ItemRef;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
@@ -29,6 +27,8 @@ import org.atlasapi.content.v2.model.udt.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
 
+import com.datastax.driver.mapping.annotations.ClusteringColumn;
+import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.Frozen;
 import com.datastax.driver.mapping.annotations.FrozenValue;
 import com.datastax.driver.mapping.annotations.PartitionKey;
@@ -37,105 +37,251 @@ import org.joda.time.Instant;
 
 @Table(name = "content_v2")
 public class Content {
+
+    // TODO: make this an enum once we figure out the DatastaxCassandraService nonsense
+    public static final String ROW_CLIPS = "clips";
+    public static final String ROW_ENCODINGS = "encodings";
+    public static final String ROW_MAIN = "main";
+
     @PartitionKey
+    @Column(name = "id")
     private Long id;
+
+    @ClusteringColumn
+    @Column(name = "dcr")
+    private String discriminator;
+
+    @Column(name = "t")
     private String type;
+
+    @Column(name = "c")
     private String canonicalUri;
+
+    @Column(name = "cu")
     private String curie;
+
+    @Column(name = "au")
     private Set<String> aliasUrls;
+
     @FrozenValue
+    @Column(name = "a")
     private Set<Alias> aliases;
+
     @FrozenValue
+    @Column(name = "e")
     private Set<Ref> equivalentTo;
+
+    @Column(name = "lu")
     private Instant lastUpdated;
+
+    @Column(name = "eu")
     private Instant equivalenceUpdate;
+
+    @Column(name = "tt")
     private String title;
+
+    @Column(name = "sd")
     private String shortDescription;
+
+    @Column(name = "md")
     private String mediumDescription;
+
+    @Column(name = "ld")
     private String longDescription;
+
     @Frozen
+    @Column(name = "sn")
     private Synopses synopses;
+
+    @Column(name = "ds")
     private String description;
+
+    @Column(name = "mt")
     private String mediaType;
+
+    @Column(name = "sp")
     private String specialization;
+
+    @Column(name = "g")
     private Set<String> genres;
+
+    @Column(name = "pb")
     private String publisher;
+
+    @Column(name = "im")
     private String image;
+
     @FrozenValue
+    @Column(name = "ims")
     private Set<Image> images;
+
+    @Column(name = "th")
     private String thumbnail;
+
+    @Column(name = "fs")
     private Instant firstSeen;
+
+    @Column(name = "lf")
     private Instant lastFetched;
+
+    @Column(name = "toclu")
     private Instant thisOrChildLastUpdated;
+
+    @Column(name = "so")
     private Boolean scheduleOnly;
+
+    @Column(name = "ap")
     private Boolean activelyPublished;
+
+    @Column(name = "pc")
     private String presentationChannel;
+
     @Frozen
+    @Column(name = "pr")
     private Priority priority;
+
     @FrozenValue
+    @Column(name = "rl")
     private Set<RelatedLink> relatedLinks;
+
     @FrozenValue
-    private List<Clip> clips;
-    @FrozenValue
+    @Column(name = "kp")
     private Set<KeyPhrase> keyPhrases;
+
     @FrozenValue
+    @Column(name = "tg")
     private List<Tag> tags;
+
     @FrozenValue
+    @Column(name = "cgr")
     private List<ContentGroupRef> contentGroupRefs;
+
     @FrozenValue
+    @Column(name = "pp")
     private List<CrewMember> people;
+
+    @Column(name = "ln")
     private Set<String> languages;
+
     @FrozenValue
+    @Column(name = "cr")
     private Set<Certificate> certificates;
+
+    @Column(name = "yr")
     private Integer year;
-    @FrozenValue
-    private Set<Encoding> manifestedAs;
+
+    @Column(name = "gd")
     private Boolean genericDescription;
+
     @FrozenValue
+    @Column(name = "er")
     private Set<Ref> eventRefs;
+
+    @Column(name = "isrc")
     private String isrc;
+
+    @Column(name = "dr")
     private Long duration;
 
+    @Column(name = "snb")
     private Integer seriesNumber;
+
+    @Column(name = "te")
     private Integer totalEpisodes;
+
     @Frozen
+    @Column(name = "br")
     private Ref brandRef;
 
     @Frozen
+    @Column(name = "cnr")
     private ContainerRef containerRef;
+
+    @Column(name = "ilf")
     private Boolean isLongForm;
+
+    @Column(name = "bnw")
     private Boolean blackAndWhite;
+
+    @Column(name = "coo")
     private Set<String> countriesOfOrigin;
+
+    @Column(name = "sk")
     private String sortKey;
+
     @Frozen
+    @Column(name = "cns")
     private ContainerSummary containerSummary;
+
     @FrozenValue
+    @Column(name = "bc")
     private Set<Broadcast> broadcasts;
+
     @FrozenValue
+    @Column(name = "sev")
     private List<SegmentEvent> segmentEvents;
+
     @FrozenValue
+    @Column(name = "rr")
     private Set<Restriction> restrictions;
 
+    @Column(name = "wu")
     private String websiteUrl;
+
+    @Column(name = "sub")
     private Set<String> subtitles;
+
     @FrozenValue
+    @Column(name = "rd")
     private Set<ReleaseDate> releaseDates;
 
+    @Column(name = "en")
     private Integer episodeNumber;
+
+    @Column(name = "pn")
     private Integer partNumber;
+
+    @Column(name = "spc")
     private Boolean special;
 
     @FrozenValue
+    @Column(name = "ser")
     private List<SeriesRef> seriesRefs;
 
     @FrozenValue
+    @Column(name = "itr")
     private List<ItemRef> itemRefs;
-    @Frozen("map<frozen<ItemRef>, frozen<list<frozen<BroadcastRef>>>>")
+
+    @Frozen("map<frozen<ItemRef>, frozen<list<BroadcastRef>>>")
+    @Column(name = "upc")
     private Map<ItemRef, List<BroadcastRef>> upcomingContent;
-    @Frozen("map<frozen<ItemRef>, frozen<list<frozen<LocationSummary>>>>")
+
+    @Frozen("map<frozen<ItemRef>, frozen<list<LocationSummary>>>")
+    @Column(name = "avc")
     private Map<ItemRef, List<LocationSummary>> availableContent;
+
     @FrozenValue
+    @Column(name = "its")
     private List<ItemSummary> itemSummaries;
+
+    @Column(name = "bl")
+    private String jsonBlob;
+
+    public String getJsonBlob() {
+        return jsonBlob;
+    }
+
+    public void setJsonBlob(String jsonBlob) {
+        this.jsonBlob = jsonBlob;
+    }
+
+    public String getDiscriminator() {
+        return discriminator;
+    }
+
+    public void setDiscriminator(String discriminator) {
+        this.discriminator = discriminator;
+    }
 
     public Long getId() {
         return id;
@@ -378,14 +524,6 @@ public class Content {
         this.relatedLinks = relatedLinks;
     }
 
-    public List<Clip> getClips() {
-        return clips;
-    }
-
-    public void setClips(List<Clip> clips) {
-        this.clips = clips;
-    }
-
     public Set<KeyPhrase> getKeyPhrases() {
         return keyPhrases;
     }
@@ -442,15 +580,6 @@ public class Content {
 
     public void setYear(Integer year) {
         this.year = year;
-    }
-
-    public Set<Encoding> getManifestedAs() {
-        return manifestedAs;
-    }
-
-    public void setManifestedAs(
-            Set<Encoding> manifestedAs) {
-        this.manifestedAs = manifestedAs;
     }
 
     public Boolean getGenericDescription() {

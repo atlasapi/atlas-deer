@@ -1,15 +1,27 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "tag")
 public class Tag {
 
+    @Field(name = "t")
     private Long topic;
+
+    @Field(name = "p")
     private String publisher;
+
+    @Field(name = "s")
     private Boolean supervised;
+
+    @Field(name = "w")
     private Float weighting;
+
+    @Field(name = "r")
     private String relationship;
+
+    @Field(name = "o")
     private Integer offset;
 
     public Long getTopic() {

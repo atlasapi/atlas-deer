@@ -2,28 +2,30 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "location")
 public class Location {
 
-    private Long id;
-    private String canonicalUri;
-    private String curie;
-    private Set<String> aliasUrls;
-    private Set<Alias> aliases;
-    private Set<Ref> equivalentTo;
-    private Instant lastUpdated;
-    private Instant equivalenceUpdate;
-    private Boolean available;
-    private Boolean transportIsLive;
-    private String transportSubType;
-    private String transportType;
-    private String uri;
-    private String embedCode;
-    private String embedId;
-    private Policy policy;
+    @Field(name = "i") private Long id;
+    @Field(name = "c") private String canonicalUri;
+    @Field(name = "cu") private String curie;
+    @Field(name = "au") private Set<String> aliasUrls;
+    @Field(name = "a") private Set<Alias> aliases;
+    @Field(name = "e") private Set<Ref> equivalentTo;
+    @Field(name = "lu") private Instant lastUpdated;
+    @Field(name = "eu") private Instant equivalenceUpdate;
+
+    @Field(name = "av") private Boolean available;
+    @Field(name = "til") private Boolean transportIsLive;
+    @Field(name = "tst") private String transportSubType;
+    @Field(name = "tt") private String transportType;
+    @Field(name = "u") private String uri;
+    @Field(name = "ec") private String embedCode;
+    @Field(name = "ei") private String embedId;
+    @Field(name = "p") private Policy policy;
 
     public Long getId() {
         return id;

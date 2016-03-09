@@ -2,6 +2,7 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 import org.joda.time.LocalDate;
@@ -9,36 +10,37 @@ import org.joda.time.LocalDate;
 @UDT(name = "broadcast")
 public class Broadcast {
 
-    private Long id;
-    private String canonicalUri;
-    private String curie;
-    private Set<String> aliasUrls;
-    private Set<Alias> aliases;
-    private Set<Ref> equivalentTo;
-    private Instant lastUpdated;
-    private Instant equivalenceUpdate;
-    private Long channelId;
-    private Instant transmissionStart;
-    private Instant transmissionEnd;
-    private Long broadcastDuration;
-    private LocalDate scheduleDate;
-    private Boolean activelyPublished;
-    private String sourceId;
-    private String versionId;
-    private Boolean repeat;
-    private Boolean subtitled;
-    private Boolean signed;
-    private Boolean audioDescribed;
-    private Boolean highDefinition;
-    private Boolean widescreen;
-    private Boolean surround;
-    private Boolean live;
-    private Boolean newSeries;
-    private Boolean newEpisode;
-    private Boolean premiere;
-    private Boolean is3d;
+    @Field(name = "i") private Long id;
+    @Field(name = "c") private String canonicalUri;
+    @Field(name = "cu") private String curie;
+    @Field(name = "au") private Set<String> aliasUrls;
+    @Field(name = "a") private Set<Alias> aliases;
+    @Field(name = "e") private Set<Ref> equivalentTo;
+    @Field(name = "lu") private Instant lastUpdated;
+    @Field(name = "eu") private Instant equivalenceUpdate;
+
+    @Field(name = "ci") private Long channelId;
+    @Field(name = "ts") private Instant transmissionStart;
+    @Field(name = "te") private Instant transmissionEnd;
+    @Field(name = "bd") private Long broadcastDuration;
+    @Field(name = "sd") private LocalDate scheduleDate;
+    @Field(name = "ap") private Boolean activelyPublished;
+    @Field(name = "si") private String sourceId;
+    @Field(name = "vi") private String versionId;
+    @Field(name = "r") private Boolean repeat;
+    @Field(name = "sub") private Boolean subtitled;
+    @Field(name = "sgn") private Boolean signed;
+    @Field(name = "ad") private Boolean audioDescribed;
+    @Field(name = "hd") private Boolean highDefinition;
+    @Field(name = "w") private Boolean widescreen;
+    @Field(name = "sr") private Boolean surround;
+    @Field(name = "l") private Boolean live;
+    @Field(name = "ns") private Boolean newSeries;
+    @Field(name = "ne") private Boolean newEpisode;
+    @Field(name = "p") private Boolean premiere;
+    @Field(name = "thd") private Boolean is3d;
     // TODO: fix this
-    private Boolean blackoutRestriction;
+    @Field(name = "br") private Boolean blackoutRestriction;
 
     public Long getId() {
         return id;

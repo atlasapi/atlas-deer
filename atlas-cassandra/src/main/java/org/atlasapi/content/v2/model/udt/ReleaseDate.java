@@ -1,14 +1,15 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.LocalDate;
 
 @UDT(name = "releasedate")
 public class ReleaseDate {
 
-    private String country;
-    private String type;
-    private LocalDate releaseDate;
+    @Field(name = "c") private String country;
+    @Field(name = "t") private String type;
+    @Field(name = "r") private LocalDate releaseDate;
 
     public String getCountry() {
         return country;

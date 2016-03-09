@@ -1,11 +1,14 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "alias")
 public class Alias {
 
+    @Field(name = "v")
     private String value;
+    @Field(name = "n")
     private String namespace;
 
     public String getValue() {

@@ -1,14 +1,22 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "locationsummary")
 public class LocationSummary {
 
+    @Field(name = "a")
     private Boolean available;
+
+    @Field(name = "u")
     private String uri;
+
+    @Field(name = "s")
     private Instant start;
+
+    @Field(name = "e")
     private Instant end;
 
     public Boolean getAvailable() {

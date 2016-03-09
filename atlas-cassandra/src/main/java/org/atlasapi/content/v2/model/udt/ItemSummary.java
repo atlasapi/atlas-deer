@@ -2,16 +2,28 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "itemsummary")
 public class ItemSummary {
 
+    @Field(name = "r")
     private ItemRef ref;
+
+    @Field(name = "t")
     private String title;
+
+    @Field(name = "d")
     private String description;
+
+    @Field(name = "i")
     private String image;
+
+    @Field(name = "ry")
     private Integer releaseYear;
+
+    @Field(name = "c")
     private Set<Certificate> certificate;
 
     public ItemRef getRef() {

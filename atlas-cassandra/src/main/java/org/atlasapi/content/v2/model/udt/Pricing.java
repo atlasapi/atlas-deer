@@ -1,13 +1,19 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "pricing")
 public class Pricing {
 
+    @Field(name = "s")
     private Instant start;
+
+    @Field(name = "e")
     private Instant end;
+
+    @Field(name = "p")
     private Price price;
 
     public Instant getStart() {

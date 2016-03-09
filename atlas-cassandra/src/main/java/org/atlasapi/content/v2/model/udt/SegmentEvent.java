@@ -2,27 +2,29 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "segmentevent")
 public class SegmentEvent {
 
-    private Long id;
-    private String canonicalUri;
-    private String curie;
-    private Set<String> aliasUrls;
-    private Set<Alias> aliases;
-    private Set<Ref> equivalentTo;
-    private Instant lastUpdated;
-    private Instant equivalenceUpdate;
-    private Integer position;
-    private Long offset;
-    private Boolean isChapter;
-    private Description description;
-    private Ref segmentRef;
-    private String versionId;
-    private String publisher;
+    @Field(name = "i") private Long id;
+    @Field(name = "c") private String canonicalUri;
+    @Field(name = "cu") private String curie;
+    @Field(name = "au") private Set<String> aliasUrls;
+    @Field(name = "a") private Set<Alias> aliases;
+    @Field(name = "e") private Set<Ref> equivalentTo;
+    @Field(name = "lu") private Instant lastUpdated;
+    @Field(name = "eu") private Instant equivalenceUpdate;
+
+    @Field(name = "p") private Integer position;
+    @Field(name = "o") private Long offset;
+    @Field(name = "ic") private Boolean isChapter;
+    @Field(name = "d") private Description description;
+    @Field(name = "sr") private Ref segmentRef;
+    @Field(name = "vi") private String versionId;
+    @Field(name = "pb") private String publisher;
 
     public Long getId() {
         return id;

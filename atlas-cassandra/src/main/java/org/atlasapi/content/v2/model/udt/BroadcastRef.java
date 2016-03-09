@@ -1,14 +1,22 @@
 package org.atlasapi.content.v2.model.udt;
 
+import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "broadcastref")
 public class BroadcastRef {
 
+    @Field(name = "s")
     private String sourceId;
+
+    @Field(name = "c")
     private Long channelId;
+
+    @Field(name = "st")
     private Instant start;
+
+    @Field(name = "e")
     private Instant end;
 
     public String getSourceId() {

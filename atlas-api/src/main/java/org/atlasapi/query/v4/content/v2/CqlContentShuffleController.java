@@ -134,7 +134,6 @@ public class CqlContentShuffleController {
         log.info("Stopped content ingester");
     }
 
-
     @RequestMapping("/migrate/{idString}")
     public void migrate(
             HttpServletRequest request,
@@ -190,8 +189,16 @@ public class CqlContentShuffleController {
                                     .forEach(content -> {
                                         try {
                                             cql.writeContent(content);
-                                        } catch (WriteException e) {
-                                            log.error("Error writing content", e);
+                                        } catch (Exception e) {
+                                            log.error(
+                                                    "Error writing content {}",
+                                                    content.getId(),
+                                                    e
+                                            );
+                                            throw new RuntimeException(String.format(
+                                                    "Error writing content %s",
+                                                    content.getId()
+                                            ));
                                         }
                                     });
 

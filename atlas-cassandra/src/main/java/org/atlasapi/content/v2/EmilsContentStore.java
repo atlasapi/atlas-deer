@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -20,6 +21,8 @@ import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.collect.OptionalMap;
 
+import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
@@ -54,7 +57,31 @@ public class EmilsContentStore implements ContentStore {
     @Override
     public WriteResult<Content, Content> writeContent(Content content)
             throws WriteException {
-        mapper.save(translator.serialize(content));
+        BatchStatement batch = new BatchStatement();
+
+        batch.addAll(StreamSupport.stream(translator.serialize(content).spliterator(), false)
+                .map(serialised -> {
+                    // TODO: this should not be a concern of the ContentStore impl I think
+                    switch (serialised.getDiscriminator()) {
+                        case org.atlasapi.content.v2.model.Content.ROW_MAIN:
+                            return mapper.saveQuery(serialised);
+                        case org.atlasapi.content.v2.model.Content.ROW_CLIPS:
+                        case org.atlasapi.content.v2.model.Content.ROW_ENCODINGS:
+                            return mapper.saveQuery(
+                                    serialised,
+                                    Mapper.Option.saveNullFields(false)
+                            );
+                        default:
+                            throw new IllegalArgumentException(String.format(
+                                    "Illegal row discriminator %s",
+                                    serialised.getDiscriminator()
+                            ));
+                    }
+                })
+                .collect(Collectors.toList()));
+
+        session.execute(batch);
+
         return new WriteResult<>(content, true, DateTime.now(), content);
     }
 
@@ -66,18 +93,28 @@ public class EmilsContentStore implements ContentStore {
 
     @Override
     public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
-        ListenableFuture<List<Content>> contentList = Futures.allAsList(
-                StreamSupport.stream(
-                    ids.spliterator(),
-                    false
-                )
+        List<ListenableFuture<Content>> futures = StreamSupport.stream(ids.spliterator(), false)
                 .map(Id::longValue)
                 .map(accessor::getContent)
                 .map(contentFuture -> Futures.transform(
                         contentFuture,
-                        translator::deserialize
+                        (ResultSet results) -> {
+                            List<org.atlasapi.content.v2.model.Content> contents =
+                                    mapper.map(results).all();
+                            if (contents.isEmpty()) {
+                                return null;
+                            } else {
+                                return translator.deserialize(contents);
+                            }
+                        }
                 ))
-                .collect(Collectors.toList())
+                .collect(Collectors.toList());
+
+        ListenableFuture<List<Content>> contentList = Futures.transform(
+                Futures.allAsList(futures),
+                (List<Content> input) -> input.stream()
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList())
         );
 
         return Futures.transform(
