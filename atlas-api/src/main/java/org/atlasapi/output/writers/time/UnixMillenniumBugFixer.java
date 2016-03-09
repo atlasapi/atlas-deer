@@ -20,7 +20,7 @@ import org.joda.time.DateTimeZone;
 public class UnixMillenniumBugFixer {
 
     public static final DateTime FIX_DISABLE_DATE_TIME =
-            new DateTime(2016, Month.MARCH.getValue(), 5, 8, 0, 0, 0, DateTimeZone.UTC);
+            new DateTime(2016, Month.APRIL.getValue(), 5, 8, 0, 0, 0, DateTimeZone.UTC);
 
     public static final DateTime MAX_ALLOWED_DATE_TIME =
             new DateTime(2038, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, DateTimeZone.UTC);
