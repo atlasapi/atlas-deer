@@ -15,6 +15,7 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
+import org.atlasapi.content.v2.EmilsContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
@@ -218,7 +219,7 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
-    public ContentStore cqlContentStore() {
+    public EmilsContentStore cqlContentStore() {
         return persistenceModule().cqlContentStore();
     }
 

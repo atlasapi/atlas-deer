@@ -52,7 +52,7 @@ public class EmilsContentStore implements ContentStore {
     }
 
     @Override
-    public <C extends Content> WriteResult<C, Content> writeContent(C content)
+    public WriteResult<Content, Content> writeContent(Content content)
             throws WriteException {
         mapper.save(translator.serialize(content));
         return new WriteResult<>(content, true, DateTime.now(), content);
