@@ -118,7 +118,7 @@ import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryResultWriter;
 import org.atlasapi.query.v4.content.ContentController;
-import org.atlasapi.query.v4.content.CqlContentShuffleController;
+import org.atlasapi.query.v4.content.v2.CqlContentShuffleController;
 import org.atlasapi.query.v4.event.EventController;
 import org.atlasapi.query.v4.event.EventListWriter;
 import org.atlasapi.query.v4.event.EventQueryResultWriter;

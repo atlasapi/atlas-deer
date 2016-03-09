@@ -5,7 +5,6 @@ import java.util.UUID;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
-import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.v2.EmilsContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
@@ -100,7 +99,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
-    private ContentStore cqlContentStore;
+    private EmilsContentStore cqlContentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
     private OrganisationStore organisationStore;
@@ -327,7 +326,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return contentStore;
     }
 
-    public ContentStore cqlContentStore() {
+    public EmilsContentStore cqlContentStore() {
         return cqlContentStore;
     }
 
