@@ -58,6 +58,8 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
                 "priority",
                 desc.getPriority() != null ? desc.getPriority().getPriority() : null
         );
+        writer.writeField("short_description", desc.getShortDescription());
+        writer.writeField("medium_description", desc.getMediumDescription());
         writer.writeField("long_description", desc.getLongDescription());
 
         if (desc instanceof Item) {
