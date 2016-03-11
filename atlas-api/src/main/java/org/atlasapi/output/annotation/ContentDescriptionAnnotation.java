@@ -66,6 +66,7 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
                     writeField("episode_number", episode.getEpisodeNumber());
                 }
                 writeField("series_number", episode.getSeriesNumber());
+                writeField("year", episode.getYear());
                 return null;
             }
 
