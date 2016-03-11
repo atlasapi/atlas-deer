@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
@@ -22,9 +23,9 @@ import org.atlasapi.eventV2.EventV2Writer;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
 import org.atlasapi.media.channel.ChannelGroupStore;
-import org.atlasapi.media.channel.ChannelStore;
 import org.atlasapi.media.channel.MongoChannelGroupStore;
 import org.atlasapi.media.channel.MongoChannelStore;
+import org.atlasapi.media.channel.ServiceChannelStore;
 import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.messaging.KafkaMessagingModule;
@@ -129,6 +130,15 @@ public class AtlasPersistenceModule {
     @PostConstruct
     public void init() {
         persistenceModule().startAsync().awaitRunning();
+
+        // This is required to initialise the BackgroundComputingValue in the CachingChannelStore
+        // otherwise we will get NPEs
+        channelStore().start();
+    }
+
+    @PreDestroy
+    public void tearDown() {
+        channelStore().shutdown();
     }
 
     @Bean
@@ -357,7 +367,7 @@ public class AtlasPersistenceModule {
 
     @Bean
     @Primary
-    public ChannelStore channelStore() {
+    public ServiceChannelStore channelStore() {
         MongoChannelStore rawStore = new MongoChannelStore(
                 databasedReadMongo(),
                 channelGroupStore(),
