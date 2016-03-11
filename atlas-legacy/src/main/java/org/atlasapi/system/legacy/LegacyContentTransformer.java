@@ -292,6 +292,11 @@ public class LegacyContentTransformer
 
                     @Override
                     public boolean apply(org.atlasapi.media.entity.Broadcast input) {
+                        if (input.getSourceId() == null) {
+                            log.warn("Broadcast with null sourceId will likely be ignored; tx start {} channel {}",
+                                    input.getTransmissionTime(),
+                                    input.getBroadcastOn());
+                        }
                         return input.getSourceId() != null;
                     }
                 }
