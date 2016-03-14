@@ -140,8 +140,12 @@ public class EquivalentScheduleQueryExecutor
             ChannelSchedule originalSchedule =
                     Iterables.getOnlyElement(channelSchedules(schedule, query));
             if (overrideSchedule != null) {
+                ChannelSchedule override = Iterables.getOnlyElement(channelSchedules(
+                        overrideSchedule,
+                        query
+                ));
                 return QueryResult.singleResult(
-                        scheduleMerger.merge(originalSchedule, originalSchedule),
+                        scheduleMerger.merge(originalSchedule, override),
                         query.getContext()
                 );
             } else {
