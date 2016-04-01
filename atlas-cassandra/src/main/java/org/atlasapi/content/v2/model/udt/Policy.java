@@ -3,12 +3,14 @@ package org.atlasapi.content.v2.model.udt;
 import java.util.List;
 import java.util.Set;
 
+import org.atlasapi.content.v2.model.Identified;
+
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "policy")
-public class Policy {
+public class Policy implements Identified {
 
     @Field(name = "i") private Long id;
     @Field(name = "c") private String canonicalUri;
