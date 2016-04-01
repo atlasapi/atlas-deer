@@ -1,12 +1,11 @@
 DROP TABLE IF EXISTS content_v2;
+
 DROP TYPE IF EXISTS ReleaseDate;
-DROP TYPE IF EXISTS Clip;
 DROP TYPE IF EXISTS ContainerSummary;
 DROP TYPE IF EXISTS Restriction;
 DROP TYPE IF EXISTS SegmentEvent;
 DROP TYPE IF EXISTS Description;
 DROP TYPE IF EXISTS Broadcast;
-DROP TYPE IF EXISTS Encoding;
 DROP TYPE IF EXISTS Location;
 DROP TYPE IF EXISTS Policy;
 DROP TYPE IF EXISTS Pricing;
@@ -28,6 +27,14 @@ DROP TYPE IF EXISTS ContentGroupRef;
 DROP TYPE IF EXISTS Ref;
 DROP TYPE IF EXISTS Certificate;
 DROP TYPE IF EXISTS Alias;
+DROP TYPE IF EXISTS Award;
+
+CREATE TYPE Award(
+  o text,
+  t text,
+  d text,
+  y int
+);
 
 CREATE TYPE Alias (
   n text,
@@ -166,7 +173,7 @@ CREATE TYPE BroadcastRef (
 
 CREATE TYPE Price (
   c text,
-  p decimal
+  p int
 );
 
 CREATE TYPE Pricing (
@@ -337,6 +344,7 @@ CREATE TABLE content_v2 (
   pc text,
   pr frozen<Priority>,
   rl set<frozen<RelatedLink>>,
+  aw set<frozen<Award>>,
   kp set<frozen<KeyPhrase>>,
   tg list<frozen<Tag>>,
   cgr list<frozen<ContentGroupRef>>,

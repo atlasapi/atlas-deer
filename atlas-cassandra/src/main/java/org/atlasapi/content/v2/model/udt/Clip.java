@@ -3,62 +3,62 @@ package org.atlasapi.content.v2.model.udt;
 import java.util.List;
 import java.util.Set;
 
-import com.datastax.driver.mapping.annotations.Field;
-import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.content.v2.model.ContentIface;
+
 import org.joda.time.Instant;
 
-@UDT(name = "clip")
-public class Clip {
+public class Clip implements ContentIface {
 
-    @Field(name = "i") private Long id;
-    @Field(name = "c") private String canonicalUri;
-    @Field(name = "cu") private String curie;
-    @Field(name = "au") private Set<String> aliasUrls;
-    @Field(name = "a") private Set<Alias> aliases;
-    @Field(name = "e") private Set<Ref> equivalentTo;
-    @Field(name = "lu") private Instant lastUpdated;
-    @Field(name = "eu") private Instant equivalenceUpdate;
-    @Field(name = "tt") private String title;
-    @Field(name = "sd") private String shortDescription;
-    @Field(name = "md") private String mediumDescription;
-    @Field(name = "ld") private String longDescription;
-    @Field(name = "sn") private Synopses synopses;
-    @Field(name = "ds") private String description;
-    @Field(name = "mt") private String mediaType;
-    @Field(name = "sp") private String specialization;
-    @Field(name = "g") private Set<String> genres;
-    @Field(name = "pb") private String publisher;
-    @Field(name = "im") private String image;
-    @Field(name = "ims") private Set<Image> images;
-    @Field(name = "th") private String thumbnail;
-    @Field(name = "fs") private Instant firstSeen;
-    @Field(name = "lf") private Instant lastFetched;
-    @Field(name = "toclu") private Instant thisOrChildLastUpdated;
-    @Field(name = "so") private Boolean scheduleOnly;
-    @Field(name = "ap") private Boolean activelyPublished;
-    @Field(name = "pc") private String presentationChannel;
-    @Field(name = "pr") private Priority priority;
-    @Field(name = "rl") private Set<RelatedLink> relatedLinks;
-    @Field(name = "kp") private Set<KeyPhrase> keyPhrases;
-    @Field(name = "t") private List<Tag> tags;
-    @Field(name = "cgr") private List<ContentGroupRef> contentGroupRefs;
-    @Field(name = "pp") private List<CrewMember> people;
-    @Field(name = "lng") private Set<String> languages;
-    @Field(name = "cr") private Set<Certificate> certificates;
-    @Field(name = "yr") private Integer year;
-    @Field(name = "ma") private Set<Encoding> manifestedAs;
-    @Field(name = "gd") private Boolean genericDescription;
-    @Field(name = "er") private Set<Ref> eventRefs;
-    @Field(name = "cnr") private ContainerRef containerRef;
-    @Field(name = "ilf") private Boolean isLongForm;
-    @Field(name = "bnw") private Boolean blackAndWhite;
-    @Field(name = "coo") private Set<String> countriesOfOrigin;
-    @Field(name = "sk") private String sortKey;
-    @Field(name = "cns") private ContainerSummary containerSummary;
-    @Field(name = "bc") private Set<Broadcast> broadcasts;
-    @Field(name = "sev") private List<SegmentEvent> segmentEvents;
-    @Field(name = "rr") private Set<Restriction> restrictions;
-    @Field(name = "co") private String clipOf;
+    private Long id;
+    private String canonicalUri;
+    private String curie;
+    private Set<String> aliasUrls;
+    private Set<Alias> aliases;
+    private Set<Ref> equivalentTo;
+    private Instant lastUpdated;
+    private Instant equivalenceUpdate;
+    private String title;
+    private String shortDescription;
+    private String mediumDescription;
+    private String longDescription;
+    private Synopses synopses;
+    private String description;
+    private String mediaType;
+    private String specialization;
+    private Set<String> genres;
+    private String publisher;
+    private String image;
+    private Set<Image> images;
+    private String thumbnail;
+    private Instant firstSeen;
+    private Instant lastFetched;
+    private Instant thisOrChildLastUpdated;
+    private Boolean scheduleOnly;
+    private Boolean activelyPublished;
+    private String presentationChannel;
+    private Priority priority;
+    private Set<RelatedLink> relatedLinks;
+    private Set<Award> awards;
+    private Set<KeyPhrase> keyPhrases;
+    private List<Tag> tags;
+    private List<ContentGroupRef> contentGroupRefs;
+    private List<CrewMember> people;
+    private Set<String> languages;
+    private Set<Certificate> certificates;
+    private Integer year;
+    private Set<Encoding> manifestedAs;
+    private Boolean genericDescription;
+    private Set<Ref> eventRefs;
+    private ContainerRef containerRef;
+    private Boolean isLongForm;
+    private Boolean blackAndWhite;
+    private Set<String> countriesOfOrigin;
+    private String sortKey;
+    private ContainerSummary containerSummary;
+    private Set<Broadcast> broadcasts;
+    private List<SegmentEvent> segmentEvents;
+    private Set<Restriction> restrictions;
+    private String clipOf;
 
     public Long getId() {
         return id;
@@ -288,9 +288,18 @@ public class Clip {
         return relatedLinks;
     }
 
-    public void setRelatedLinks(
-            Set<RelatedLink> relatedLinks) {
+    public void setRelatedLinks(Set<RelatedLink> relatedLinks) {
         this.relatedLinks = relatedLinks;
+    }
+
+    @Override
+    public Set<Award> getAwards() {
+        return awards;
+    }
+
+    @Override
+    public void setAwards(Set<Award> awards) {
+        this.awards = awards;
     }
 
     public Set<KeyPhrase> getKeyPhrases() {

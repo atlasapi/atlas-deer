@@ -203,6 +203,12 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.unitils</groupId>
+        <artifactId>unitils-core</artifactId>
+        <version>3.4.2</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
         <groupId>com.metabroadcast.common</groupId>
         <artifactId>common</artifactId>
         <version>${common.version}</version>
@@ -425,6 +431,11 @@
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-beanutils</groupId>
+        <artifactId>commons-beanutils</artifactId>
+        <version>1.9.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

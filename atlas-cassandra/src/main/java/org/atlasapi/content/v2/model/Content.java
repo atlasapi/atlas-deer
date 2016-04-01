@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.udt.Alias;
+import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
 import org.atlasapi.content.v2.model.udt.BroadcastRef;
 import org.atlasapi.content.v2.model.udt.Certificate;
@@ -36,7 +37,7 @@ import com.datastax.driver.mapping.annotations.Table;
 import org.joda.time.Instant;
 
 @Table(name = "content_v2")
-public class Content {
+public class Content implements ContentIface {
 
     // TODO: make this an enum once we figure out the DatastaxCassandraService nonsense
     public static final String ROW_CLIPS = "clips";
@@ -143,6 +144,10 @@ public class Content {
     @FrozenValue
     @Column(name = "rl")
     private Set<RelatedLink> relatedLinks;
+
+    @FrozenValue
+    @Column(name = "aw")
+    private Set<Award> awards;
 
     @FrozenValue
     @Column(name = "kp")
@@ -283,10 +288,12 @@ public class Content {
         this.discriminator = discriminator;
     }
 
+    @Override
     public Long getId() {
         return id;
     }
 
+    @Override
     public void setId(Long id) {
         this.id = id;
     }
@@ -299,301 +306,384 @@ public class Content {
         this.type = type;
     }
 
+    @Override
     public String getCanonicalUri() {
         return canonicalUri;
     }
 
+    @Override
     public void setCanonicalUri(String canonicalUri) {
         this.canonicalUri = canonicalUri;
     }
 
+    @Override
     public String getCurie() {
         return curie;
     }
 
+    @Override
     public void setCurie(String curie) {
         this.curie = curie;
     }
 
+    @Override
     public Set<String> getAliasUrls() {
         return aliasUrls;
     }
 
+    @Override
     public void setAliasUrls(Set<String> aliasUrls) {
         this.aliasUrls = aliasUrls;
     }
 
+    @Override
     public Set<Alias> getAliases() {
         return aliases;
     }
 
+    @Override
     public void setAliases(Set<Alias> aliases) {
         this.aliases = aliases;
     }
 
+    @Override
     public Set<Ref> getEquivalentTo() {
         return equivalentTo;
     }
 
+    @Override
     public void setEquivalentTo(Set<Ref> equivalentTo) {
         this.equivalentTo = equivalentTo;
     }
 
+    @Override
     public Instant getLastUpdated() {
         return lastUpdated;
     }
 
+    @Override
     public void setLastUpdated(Instant lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
 
+    @Override
     public Instant getEquivalenceUpdate() {
         return equivalenceUpdate;
     }
 
+    @Override
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         this.equivalenceUpdate = equivalenceUpdate;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
 
+    @Override
     public void setTitle(String title) {
         this.title = title;
     }
 
+    @Override
     public String getShortDescription() {
         return shortDescription;
     }
 
+    @Override
     public void setShortDescription(String shortDescription) {
         this.shortDescription = shortDescription;
     }
 
+    @Override
     public String getMediumDescription() {
         return mediumDescription;
     }
 
+    @Override
     public void setMediumDescription(String mediumDescription) {
         this.mediumDescription = mediumDescription;
     }
 
+    @Override
     public String getLongDescription() {
         return longDescription;
     }
 
+    @Override
     public void setLongDescription(String longDescription) {
         this.longDescription = longDescription;
     }
 
+    @Override
     public Synopses getSynopses() {
         return synopses;
     }
 
+    @Override
     public void setSynopses(Synopses synopses) {
         this.synopses = synopses;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public void setDescription(String description) {
         this.description = description;
     }
 
+    @Override
     public String getMediaType() {
         return mediaType;
     }
 
+    @Override
     public void setMediaType(String mediaType) {
         this.mediaType = mediaType;
     }
 
+    @Override
     public String getSpecialization() {
         return specialization;
     }
 
+    @Override
     public void setSpecialization(String specialization) {
         this.specialization = specialization;
     }
 
+    @Override
     public Set<String> getGenres() {
         return genres;
     }
 
+    @Override
     public void setGenres(Set<String> genres) {
         this.genres = genres;
     }
 
+    @Override
     public String getPublisher() {
         return publisher;
     }
 
+    @Override
     public void setPublisher(String publisher) {
         this.publisher = publisher;
     }
 
+    @Override
     public String getImage() {
         return image;
     }
 
+    @Override
     public void setImage(String image) {
         this.image = image;
     }
 
+    @Override
     public Set<Image> getImages() {
         return images;
     }
 
+    @Override
     public void setImages(Set<Image> images) {
         this.images = images;
     }
 
+    @Override
     public String getThumbnail() {
         return thumbnail;
     }
 
+    @Override
     public void setThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
     }
 
+    @Override
     public Instant getFirstSeen() {
         return firstSeen;
     }
 
+    @Override
     public void setFirstSeen(Instant firstSeen) {
         this.firstSeen = firstSeen;
     }
 
+    @Override
     public Instant getLastFetched() {
         return lastFetched;
     }
 
+    @Override
     public void setLastFetched(Instant lastFetched) {
         this.lastFetched = lastFetched;
     }
 
+    @Override
     public Instant getThisOrChildLastUpdated() {
         return thisOrChildLastUpdated;
     }
 
+    @Override
     public void setThisOrChildLastUpdated(Instant thisOrChildLastUpdated) {
         this.thisOrChildLastUpdated = thisOrChildLastUpdated;
     }
 
+    @Override
     public Boolean getScheduleOnly() {
         return scheduleOnly;
     }
 
+    @Override
     public void setScheduleOnly(Boolean scheduleOnly) {
         this.scheduleOnly = scheduleOnly;
     }
 
+    @Override
     public Boolean getActivelyPublished() {
         return activelyPublished;
     }
 
+    @Override
     public void setActivelyPublished(Boolean activelyPublished) {
         this.activelyPublished = activelyPublished;
     }
 
+    @Override
     public String getPresentationChannel() {
         return presentationChannel;
     }
 
+    @Override
     public void setPresentationChannel(String presentationChannel) {
         this.presentationChannel = presentationChannel;
     }
 
+    @Override
     public Priority getPriority() {
         return priority;
     }
 
+    @Override
     public void setPriority(Priority priority) {
         this.priority = priority;
     }
 
+    @Override
     public Set<RelatedLink> getRelatedLinks() {
         return relatedLinks;
     }
 
-    public void setRelatedLinks(
-            Set<RelatedLink> relatedLinks) {
+    @Override
+    public void setRelatedLinks(Set<RelatedLink> relatedLinks) {
         this.relatedLinks = relatedLinks;
     }
 
+    @Override
+    public Set<Award> getAwards() {
+        return awards;
+    }
+
+    @Override
+    public void setAwards(Set<Award> awards) {
+        this.awards = awards;
+    }
+
+    @Override
     public Set<KeyPhrase> getKeyPhrases() {
         return keyPhrases;
     }
 
+    @Override
     public void setKeyPhrases(Set<KeyPhrase> keyPhrases) {
         this.keyPhrases = keyPhrases;
     }
 
+    @Override
     public List<Tag> getTags() {
         return tags;
     }
 
+    @Override
     public void setTags(List<Tag> tags) {
         this.tags = tags;
     }
 
+    @Override
     public List<ContentGroupRef> getContentGroupRefs() {
         return contentGroupRefs;
     }
 
+    @Override
     public void setContentGroupRefs(
             List<ContentGroupRef> contentGroupRefs) {
         this.contentGroupRefs = contentGroupRefs;
     }
 
+    @Override
     public List<CrewMember> getPeople() {
         return people;
     }
 
+    @Override
     public void setPeople(List<CrewMember> people) {
         this.people = people;
     }
 
+    @Override
     public Set<String> getLanguages() {
         return languages;
     }
 
+    @Override
     public void setLanguages(Set<String> languages) {
         this.languages = languages;
     }
 
+    @Override
     public Set<Certificate> getCertificates() {
         return certificates;
     }
 
+    @Override
     public void setCertificates(
             Set<Certificate> certificates) {
         this.certificates = certificates;
     }
 
+    @Override
     public Integer getYear() {
         return year;
     }
 
+    @Override
     public void setYear(Integer year) {
         this.year = year;
     }
 
+    @Override
     public Boolean getGenericDescription() {
         return genericDescription;
     }
 
+    @Override
     public void setGenericDescription(Boolean genericDescription) {
         this.genericDescription = genericDescription;
     }
 
+    @Override
     public Set<Ref> getEventRefs() {
         return eventRefs;
     }
 
+    @Override
     public void setEventRefs(Set<Ref> eventRefs) {
         this.eventRefs = eventRefs;
     }

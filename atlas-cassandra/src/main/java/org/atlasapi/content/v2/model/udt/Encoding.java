@@ -2,49 +2,44 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
-import com.datastax.driver.mapping.annotations.Field;
-import com.datastax.driver.mapping.annotations.UDT;
+import org.atlasapi.content.v2.model.Identified;
+
 import org.joda.time.Instant;
 
-@UDT(name = "encoding")
-public class Encoding {
+public class Encoding implements Identified {
 
-    @Field(name = "i") private Long id;
-    @Field(name = "c") private String canonicalUri;
-    @Field(name = "cu") private String curie;
-    @Field(name = "au") private Set<String> aliasUrls;
-    @Field(name = "a") private Set<Alias> aliases;
-    @Field(name = "e") private Set<Ref> equivalentTo;
-    @Field(name = "lu") private Instant lastUpdated;
-    @Field(name = "eu") private Instant equivalenceUpdate;
-
-    @Field(name = "aa") private Set<Location> availableAt;
-    @Field(name = "ca") private Boolean containsAdvertising;
-    @Field(name = "ad") private Integer advertisingDuration;
-    @Field(name = "d") private Long duration;
-    @Field(name = "br") private Integer bitRate;
-
-    @Field(name = "abr") private Integer audioBitRate;
-    @Field(name = "ac") private Integer audioChannels;
-    @Field(name = "acd") private String audioCoding;
-
-    @Field(name = "var") private String videoAspectRatio;
-    @Field(name = "vbr") private Integer videoBitRate;
-    @Field(name = "vc") private String videoCoding;
-    @Field(name = "vfr") private Float videoFrameRate;
-    @Field(name = "vhs") private Integer videoHorizontalSize;
-    @Field(name = "vps") private Boolean videoProgressiveScan;
-    @Field(name = "vvs") private Integer videoVerticalSize;
-
-    @Field(name = "ds") private Long dataSize;
-    @Field(name = "dcf") private String dataContainerFormat;
-    @Field(name = "src") private String source;
-    @Field(name = "dst") private String distributor;
-    @Field(name = "hd") private Boolean hasDog;
-    @Field(name = "thd") private Boolean is3d;
-    @Field(name = "q") private String quality;
-    @Field(name = "qd") private String qualityDetail;
-    @Field(name = "vi") private String versionId;
+    private Long id;
+    private String canonicalUri;
+    private String curie;
+    private Set<String> aliasUrls;
+    private Set<Alias> aliases;
+    private Set<Ref> equivalentTo;
+    private Instant lastUpdated;
+    private Instant equivalenceUpdate;
+    private Set<Location> availableAt;
+    private Boolean containsAdvertising;
+    private Integer advertisingDuration;
+    private Long duration;
+    private Integer bitRate;
+    private Integer audioBitRate;
+    private Integer audioChannels;
+    private String audioCoding;
+    private String videoAspectRatio;
+    private Integer videoBitRate;
+    private String videoCoding;
+    private Float videoFrameRate;
+    private Integer videoHorizontalSize;
+    private Boolean videoProgressiveScan;
+    private Integer videoVerticalSize;
+    private Long dataSize;
+    private String dataContainerFormat;
+    private String source;
+    private String distributor;
+    private Boolean hasDog;
+    private Boolean is3d;
+    private String quality;
+    private String qualityDetail;
+    private String versionId;
 
     public Long getId() {
         return id;

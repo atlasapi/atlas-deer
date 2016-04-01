@@ -2,12 +2,14 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
+import org.atlasapi.content.v2.model.Identified;
+
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 @UDT(name = "crewmember")
-public class CrewMember {
+public class CrewMember implements Identified {
 
     @Field(name = "i")
     private Long id;

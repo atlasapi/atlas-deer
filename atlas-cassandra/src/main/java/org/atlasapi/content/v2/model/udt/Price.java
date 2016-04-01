@@ -1,7 +1,5 @@
 package org.atlasapi.content.v2.model.udt;
 
-import java.math.BigDecimal;
-
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 
@@ -12,7 +10,7 @@ public class Price {
     private String currency;
 
     @Field(name = "p")
-    private BigDecimal price;
+    private Integer price;
 
     public String getCurrency() {
         return currency;
@@ -22,11 +20,11 @@ public class Price {
         this.currency = currency;
     }
 
-    public BigDecimal getPrice() {
+    public Integer getPrice() {
         return price;
     }
 
-    public void setPrice(BigDecimal price) {
+    public void setPrice(Integer price) {
         this.price = price;
     }
 }
