@@ -12,7 +12,7 @@ import org.joda.time.DateTimeZone;
  * This was needed because some Android devices are 32-bit and we ingest from content providers that
  * sometimes give us dates higher than the max that can be represented in signed 32-bit.
  * <p>
- * It is a temporary solution and it is set to be automatically disabled on 2016-03-05T08:00:00.0Z.
+ * It is a temporary solution and it is set to be automatically disabled on 2016-05-17T08:00:00.0Z.
  * There is a unit test that will fail on that date time to alert us to remove this.
  *
  * @see <a href="https://en.wikipedia.org/wiki/Year_2038_problem">Year 2038 problem</a>
@@ -20,7 +20,7 @@ import org.joda.time.DateTimeZone;
 public class UnixMillenniumBugFixer {
 
     public static final DateTime FIX_DISABLE_DATE_TIME =
-            new DateTime(2016, Month.APRIL.getValue(), 5, 8, 0, 0, 0, DateTimeZone.UTC);
+            new DateTime(2016, Month.MAY.getValue(), 17, 8, 0, 0, 0, DateTimeZone.UTC);
 
     public static final DateTime MAX_ALLOWED_DATE_TIME =
             new DateTime(2038, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, DateTimeZone.UTC);
