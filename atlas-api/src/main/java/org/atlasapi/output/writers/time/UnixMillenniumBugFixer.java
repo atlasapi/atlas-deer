@@ -2,6 +2,8 @@ package org.atlasapi.output.writers.time;
 
 import java.time.Month;
 
+import javax.annotation.Nullable;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -25,7 +27,7 @@ public class UnixMillenniumBugFixer {
     public static final DateTime MAX_ALLOWED_DATE_TIME =
             new DateTime(2038, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, DateTimeZone.UTC);
 
-    public DateTime clampDateTime(DateTime dateTime) {
+    public @Nullable DateTime clampDateTime(@Nullable DateTime dateTime) {
         if (dateTime == null) {
             return null;
         }
