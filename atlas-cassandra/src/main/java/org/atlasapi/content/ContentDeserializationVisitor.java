@@ -1,6 +1,8 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Award;
+import org.atlasapi.entity.AwardSerializer;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
@@ -41,6 +43,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
+    private final AwardSerializer awardSerializer = new AwardSerializer();
 
     private ContentProtos.Content msg;
 
@@ -145,6 +148,11 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasActivelyPublished()) {
             described.setActivelyPublished(msg.getActivelyPublished());
         }
+        ImmutableSet.Builder<Award> awardBuilder = ImmutableSet.builder();
+        for (CommonProtos.Award award : msg.getAwardsList()) {
+            awardBuilder.add(awardSerializer.deserialize(award));
+        }
+        described.setAwards(awardBuilder.build());
         return described;
     }
 

@@ -3,10 +3,13 @@ package org.atlasapi.entity;
 import org.atlasapi.content.ContentGroupSerializer;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
+import com.google.common.collect.ImmutableSet;
+
 public class PersonSerializer implements Serializer<Person, CommonProtos.Person> {
 
     private final ContentGroupSerializer<Person> contentGroupSerializer = new ContentGroupSerializer<>();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
+    private final AwardSerializer awardSerializer = new AwardSerializer();
 
     @Override
     public CommonProtos.Person serialize(Person person) {
@@ -31,6 +34,10 @@ public class PersonSerializer implements Serializer<Person, CommonProtos.Person>
         }
         if (person.getQuotes() != null) {
             builder.addAllQuote(person.getQuotes());
+        }
+
+        for (Award award : person.getAwards()) {
+            builder.addAwards(awardSerializer.serialize(award));
         }
 
         return builder.build();
@@ -58,6 +65,12 @@ public class PersonSerializer implements Serializer<Person, CommonProtos.Person>
             person.setBirthPlace(msg.getBirthPlace());
         }
         person.setQuotes(msg.getQuoteList());
+        ImmutableSet.Builder<Award> awardBuilder = new ImmutableSet.Builder<>();
+        for(CommonProtos.Award award : msg.getAwardsList()) {
+            awardBuilder.add(awardSerializer.deserialize(award));
+        }
+
+        person.setAwards(awardBuilder.build());
 
         return person;
     }
