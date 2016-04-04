@@ -30,10 +30,6 @@ public class UnixMillenniumBugFixer {
             return null;
         }
 
-        if (DateTime.now().withZone(DateTimeZone.UTC).isAfter(FIX_DISABLE_DATE_TIME)) {
-            return dateTime;
-        }
-
         if (dateTime.isAfter(MAX_ALLOWED_DATE_TIME)) {
             return MAX_ALLOWED_DATE_TIME.withZone(dateTime.getZone());
         }
