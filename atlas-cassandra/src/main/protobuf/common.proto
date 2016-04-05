@@ -156,5 +156,5 @@ message Award {
     optional string outcome = 1;
     optional string title = 2;
     optional string description = 3;
-    optional string year = 4;
+    optional int32 year = 4;
 }

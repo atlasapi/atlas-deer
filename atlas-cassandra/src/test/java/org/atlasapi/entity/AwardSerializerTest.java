@@ -15,7 +15,7 @@ public class AwardSerializerTest {
         award.setOutcome("won");
         award.setDescription("Best Actor");
         award.setTitle("BAFTA");
-        award.setYear("2009");
+        award.setYear(2009);
 
         Award deserialized = serializer.deserialize(serializer.serialize(award));
 

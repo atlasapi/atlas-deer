@@ -9,7 +9,7 @@ public class Award {
     private String outcome;
     private String title;
     private String description;
-    private String year;
+    private Integer year;
 
     @FieldName("outcome")
     public String getOutcome() {
@@ -39,11 +39,11 @@ public class Award {
     }
 
     @FieldName("year")
-    public String getYear() {
+    public Integer getYear() {
         return year;
     }
 
-    public void setYear(String year) {
+    public void setYear(Integer year) {
         this.year = year;
     }
 
