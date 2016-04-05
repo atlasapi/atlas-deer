@@ -57,18 +57,19 @@ public class Award {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
+    public boolean equals(Object o) {
+        if (this == o)
             return true;
-        }
-        if(obj instanceof Award) {
-            Award award = (Award) obj;
-            return  Objects.equals(outcome, award.outcome) &&
-                    Objects.equals(title, award.title) &&
-                    Objects.equals(description, award.description) &&
-                    Objects.equals(year, award.year);
-        }
+        if (o == null || getClass() != o.getClass())
+            return false;
+        Award award = (Award) o;
+        return Objects.equals(outcome, award.outcome) &&
+                Objects.equals(title, award.title) &&
+                Objects.equals(description, award.description) &&
+                Objects.equals(year, award.year);
+    }
 
-        return false;
+    @Override public int hashCode() {
+        return Objects.hash(outcome, title, description, year);
     }
 }
