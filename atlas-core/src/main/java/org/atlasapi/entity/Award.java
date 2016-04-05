@@ -69,7 +69,8 @@ public class Award {
                 Objects.equals(year, award.year);
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return Objects.hash(outcome, title, description, year);
     }
 }
