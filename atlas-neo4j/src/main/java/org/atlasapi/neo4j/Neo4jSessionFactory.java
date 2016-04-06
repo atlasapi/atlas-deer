@@ -9,6 +9,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Neo4jSessionFactory {
 
+    public static final String NEO4J_HOST = "http://neo4j.stage.mbst.tv";
+    public static final int NEO4J_PORT = 7474;
+
     private static final String MODEL_PACKAGE = "org.atlasapi.neo4j.model";
 
     private final SessionFactory sessionFactory;
@@ -17,12 +20,12 @@ public class Neo4jSessionFactory {
         sessionFactory = new SessionFactory(checkNotNull(configuration), MODEL_PACKAGE);
     }
 
-    public static Neo4jSessionFactory createWithHttpDriver() {
+    public static Neo4jSessionFactory createWithHttpDriver(String host, int port) {
         Configuration configuration = Components.configuration();
 
         configuration.driverConfiguration()
                 .setDriverClassName("org.neo4j.ogm.drivers.http.driver.HttpDriver")
-                .setURI("http://neo4j:velado@neo4j.stage.mbst.tv:7474");
+                .setURI(host + ":" + port);
 
         return new Neo4jSessionFactory(configuration);
     }
