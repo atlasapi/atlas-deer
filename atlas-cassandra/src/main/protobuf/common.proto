@@ -101,7 +101,7 @@ message Person {
     optional DateTime birthDate = 4;
     optional string birthPlace = 5;
     repeated string quote = 6;
-
+    repeated Award awards = 7;
     required ContentGroup contentGroup = 100;
 }
 
@@ -150,4 +150,11 @@ message RelatedLink {
     optional string description = 6;
     optional string image = 7;
     optional string thumbnail = 8;
+}
+
+message Award {
+    optional string outcome = 1;
+    optional string title = 2;
+    optional string description = 3;
+    optional int32 year = 4;
 }

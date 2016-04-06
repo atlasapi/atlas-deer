@@ -1,10 +1,14 @@
 package org.atlasapi.system.legacy;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.PriorityScoreReasons;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.content.Synopses;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Award;
 import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Described;
 import org.atlasapi.media.entity.Identified;
@@ -13,6 +17,8 @@ import org.atlasapi.media.entity.Topic;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableSet;
 
 public abstract class DescribedLegacyResourceTransformer<F extends Described, T extends org.atlasapi.content.Described>
         extends BaseLegacyResourceTransformer<F, T> {
@@ -52,6 +58,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         described.setThumbnail(input.getThumbnail());
         described.setTitle(input.getTitle());
         described.setPriority(transformPriority(input.getPriority()));
+        described.setAwards(transformAwards(input.getAwards()));
         return described;
     }
 
@@ -95,5 +102,23 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
     }
 
     protected abstract Iterable<Alias> moreAliases(F input);
+
+    protected Set<Award> transformAwards(Set<org.atlasapi.media.entity.Award> awards) {
+        if(awards == null) {
+            return ImmutableSet.of();
+        }
+        return awards.stream()
+                .map(this::transformAward)
+                .collect(Collectors.toSet());
+    }
+
+    protected Award transformAward(org.atlasapi.media.entity.Award awardLegacy) {
+        Award award = new Award();
+        award.setOutcome(awardLegacy.getOutcome());
+        award.setTitle(awardLegacy.getTitle());
+        award.setDescription(awardLegacy.getDescription());
+        award.setYear(awardLegacy.getYear());
+        return award;
+    }
 
 }

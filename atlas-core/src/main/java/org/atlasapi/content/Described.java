@@ -20,6 +20,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
+import org.atlasapi.entity.Award;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
@@ -62,6 +63,8 @@ public abstract class Described extends Identified implements Sourced {
     private Priority priority;
 
     protected Set<RelatedLink> relatedLinks = ImmutableSet.of();
+
+    private Set<Award> awards = ImmutableSet.of();
 
     public Described(String uri, String curie, Publisher publisher) {
         super(uri, curie);
@@ -285,6 +288,16 @@ public abstract class Described extends Identified implements Sourced {
         relatedLinks = ImmutableSet.<RelatedLink>builder().add(link).addAll(relatedLinks).build();
     }
 
+    @FieldName("awards")
+    public Set<Award> getAwards() {
+        return awards;
+    }
+
+    public void setAwards(Set<Award> awards) {
+        this.awards = awards;
+    }
+
+
     public static void copyTo(Described from, Described to) {
         Identified.copyTo(from, to);
         to.description = from.description;
@@ -305,6 +318,7 @@ public abstract class Described extends Identified implements Sourced {
         to.mediumDescription = from.mediumDescription;
         to.longDescription = from.longDescription;
         to.activelyPublished = from.activelyPublished;
+        to.awards = from.awards;
     }
 
     public abstract Described copy();

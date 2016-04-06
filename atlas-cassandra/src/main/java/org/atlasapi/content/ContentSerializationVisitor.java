@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Award;
+import org.atlasapi.entity.AwardSerializer;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -41,6 +43,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
     private final ContentResolver resolver;
+    private final AwardSerializer awardSerializer = new AwardSerializer();
 
     public ContentSerializationVisitor(ContentResolver resolver) {
         this.resolver = checkNotNull(resolver);
@@ -150,6 +153,11 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
             }
             builder.setPriorities(priorityBuilder.build());
         }
+
+        for(Award award : content.getAwards()) {
+            builder.addAwards(awardSerializer.serialize(award));
+        }
+
         builder.setActivelyPublished(content.isActivelyPublished());
         return builder;
     }

@@ -107,6 +107,7 @@ message Content {
     optional bool activelyPublished = 64 [(column)=ACTIVELY_PUBLISHED];
     optional bool genericDescription = 65 [(column)=GENERIC_DESCRIPTION];
     repeated EventRef event_refs = 67 [(column)=DESC];
+    repeated common.Award awards = 68 [(column)=DESC];
 }
 
 message Restriction {
@@ -312,3 +313,4 @@ message EventRef {
     required string id = 1;
     required string source = 2;
 }
+
