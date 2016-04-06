@@ -23,10 +23,9 @@ public interface ContentIface extends Described {
 
     void setTags(List<Tag> tags);
 
-    List<ContentGroupRef> getContentGroupRefs();
+    Set<ContentGroupRef> getContentGroupRefs();
 
-    void setContentGroupRefs(
-            List<ContentGroupRef> contentGroupRefs);
+    void setContentGroupRefs(Set<ContentGroupRef> contentGroupRefs);
 
     List<CrewMember> getPeople();
 
@@ -38,8 +37,7 @@ public interface ContentIface extends Described {
 
     Set<Certificate> getCertificates();
 
-    void setCertificates(
-            Set<Certificate> certificates);
+    void setCertificates(Set<Certificate> certificates);
 
     Integer getYear();
 
@@ -53,5 +51,11 @@ public interface ContentIface extends Described {
 
     void setEventRefs(Set<Ref> eventRefs);
 
+    Clip.Wrapper getClips();
 
+    void setClips(Clip.Wrapper clips);
+
+    Encoding.Wrapper getEncodings();
+
+    void setEncodings(Encoding.Wrapper encodings);
 }

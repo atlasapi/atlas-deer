@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.CassandraHelper;
@@ -20,15 +21,22 @@ import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.serialization.protobuf.ContentProtos;
+import org.atlasapi.util.CassandraInit;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.datastax.driver.core.CodecRegistry;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -42,7 +50,6 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.ColumnListMutation;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.model.ColumnFamily;
 import com.netflix.astyanax.serializers.LongSerializer;
@@ -54,7 +61,6 @@ import org.apache.log4j.PatternLayout;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -80,8 +86,12 @@ import static org.mockito.Mockito.when;
 
 public abstract class CassandraContentStoreIT {
 
+    private static final ImmutableSet<String> SEEDS = ImmutableSet.of("localhost");
+    private static final String KEYSPACE = "atlas_testing";
+
     protected static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();
+    protected static Session session;
 
     @Mock protected ContentHasher hasher;
     @Mock protected IdGenerator idGenerator;
@@ -96,7 +106,7 @@ public abstract class CassandraContentStoreIT {
     protected abstract ContentStore provideContentStore();
 
     @Before
-    public void before() {
+    public void before() throws ConnectionException {
         store = provideContentStore();
 
         when(graphStore.resolveIds(anyCollectionOf(Id.class)))
@@ -111,36 +121,31 @@ public abstract class CassandraContentStoreIT {
                 new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
         root.setLevel(Level.WARN);
         context.start();
-        tearDown();
-        CassandraHelper.createKeyspace(context);
-        CassandraHelper.createColumnFamily(
-                context,
-                CONTENT_TABLE,
-                LongSerializer.get(),
-                StringSerializer.get()
-        );
-        CassandraHelper.createColumnFamily(
-                context,
-                "content_aliases",
-                StringSerializer.get(),
-                StringSerializer.get(),
-                LongSerializer.get()
-        );
-    }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ignore) {
-            // This can happen if the keyspace has already been dropped
-        }
+        DatastaxCassandraService cassandraService = DatastaxCassandraService.builder()
+                .withNodes(SEEDS)
+                .withConnectionsPerHostLocal(8)
+                .withConnectionsPerHostRemote(2)
+                .withCodecRegistry(new CodecRegistry()
+                        .register(InstantCodec.instance)
+                        .register(LocalDateCodec.instance)
+                        .register(new JacksonJsonCodec<>(org.atlasapi.content.v2.model.Clip.Wrapper.class))
+                        .register(new JacksonJsonCodec<>(org.atlasapi.content.v2.model.Encoding.Wrapper.class))
+                )
+                .build();
+
+        cassandraService.startAsync().awaitRunning();
+        session = cassandraService.getCluster().connect(KEYSPACE);
+
+        CassandraInit.createTables(session, context);
+        CassandraInit.truncate(session, context);
     }
 
     @After
     public void clearCf() throws ConnectionException {
         context.getClient().truncateColumnFamily(CONTENT_TABLE);
         context.getClient().truncateColumnFamily("content_aliases");
+        CassandraInit.truncate(session, context);
     }
 
     @Test
@@ -464,19 +469,18 @@ public abstract class CassandraContentStoreIT {
                 ResourceUpdatedMessage.class);
         verify(sender, times(3)).sendMessage(captor.capture(), any());
 
-        assertThat(
-                captor.getAllValues().get(0).getUpdatedResource().getId().longValue(),
-                is(1234L)
-        );
-        assertThat(
-                captor.getAllValues().get(1).getUpdatedResource().getId().longValue(),
-                is(1235L)
-        );
-        assertThat(
-                captor.getAllValues().get(2).getUpdatedResource().getId().longValue(),
-                is(1234L)
-        );
+        List<ResourceUpdatedMessage> values = captor.getAllValues();
 
+        Long numBrandUpdates = values.stream()
+                .filter(msg -> msg.getUpdatedResource().getId().longValue() == 1234L)
+                .collect(Collectors.counting());
+
+        Long numItemUpdates = values.stream()
+                .filter(msg -> msg.getUpdatedResource().getId().longValue() == 1235L)
+                .collect(Collectors.counting());
+
+        assertThat(numBrandUpdates, is(2L));
+        assertThat(numItemUpdates, is(1L));
     }
 
     @Test
@@ -839,16 +843,23 @@ public abstract class CassandraContentStoreIT {
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(
                 ResourceUpdatedMessage.class);
-        verify(sender, times(5)).sendMessage(captor.capture(), any());
-        assertThat(
-                captor.getAllValues().get(3).getUpdatedResource().getId().longValue(),
-                is(1234L)
-        );
-        assertThat(
-                captor.getAllValues().get(4).getUpdatedResource().getId().longValue(),
-                is(1235L)
+        verify(sender, times(6)).sendMessage(captor.capture(), any());
+
+        List<ResourceUpdatedMessage> messages = captor.getAllValues();
+
+        assertTrue(
+                Iterables.tryFind(
+                        messages,
+                        msg -> msg.getUpdatedResource().getId().longValue() == 1234L
+                ).isPresent()
         );
 
+        assertTrue(
+                Iterables.tryFind(
+                        messages,
+                        msg -> msg.getUpdatedResource().getId().longValue() == 1235L
+                ).isPresent()
+        );
     }
 
     @Test
@@ -1058,17 +1069,22 @@ public abstract class CassandraContentStoreIT {
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(
                 ResourceUpdatedMessage.class);
-        verify(sender, times(5)).sendMessage(captor.capture(), any());
+        verify(sender, times(6)).sendMessage(captor.capture(), any());
 
-        assertThat(
-                captor.getAllValues().get(3).getUpdatedResource().getId().longValue(),
-                is(1234L)
-        );
-        assertThat(
-                captor.getAllValues().get(4).getUpdatedResource().getId().longValue(),
-                is(1235L)
-        );
+        List<ResourceUpdatedMessage> messages = captor.getAllValues();
 
+        assertTrue(
+                Iterables.tryFind(
+                        messages,
+                        msg -> msg.getUpdatedResource().getId().longValue() == 1234L
+                ).isPresent()
+        );
+        assertTrue(
+                Iterables.tryFind(
+                        messages,
+                        msg -> msg.getUpdatedResource().getId().longValue() == 1235L
+                ).isPresent()
+        );
     }
 
     @Test
@@ -1399,7 +1415,7 @@ public abstract class CassandraContentStoreIT {
 
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(
                 ResourceUpdatedMessage.class);
-        verify(sender, times(4)).sendMessage(captor.capture(), any());
+        verify(sender, times(7)).sendMessage(captor.capture(), any());
     }
 
     private <T extends Content> T create(T content) {
@@ -1748,19 +1764,29 @@ public abstract class CassandraContentStoreIT {
         ArgumentCaptor<ResourceUpdatedMessage> captor = ArgumentCaptor.forClass(
                 ResourceUpdatedMessage.class);
 
-        verify(sender, times(7)).sendMessage(captor.capture(), any());
+        verify(sender, times(8)).sendMessage(captor.capture(), any());
 
         List<ResourceUpdatedMessage> messagesSent = captor.getAllValues();
 
-        assertThat(messagesSent.size(), is(7));
+        assertThat(messagesSent.size(), is(8));
 
-        assertThat(messagesSent.get(3).getUpdatedResource().getId().longValue(), is(1234L));
-        assertThat(messagesSent.get(4).getUpdatedResource().getId().longValue(), is(1235L));
-        assertThat(messagesSent.get(6).getUpdatedResource().getId().longValue(), is(1237L));
+        assertTrue(Iterables.tryFind(
+                messagesSent,
+                msg -> msg.getUpdatedResource().getId().longValue() == 1234L
+        ).isPresent());
+
+        assertTrue(Iterables.tryFind(
+                messagesSent,
+                msg -> msg.getUpdatedResource().getId().longValue() == 1235L
+        ).isPresent());
+
+        assertTrue(Iterables.tryFind(
+                messagesSent,
+                msg -> msg.getUpdatedResource().getId().longValue() == 1237L
+        ).isPresent());
 
         Episode newResolvedEpisode = (Episode) resolve(1237L);
         assertThat(newResolvedEpisode.getContainerSummary().getTitle(), is("NewBrand"));
-
     }
 
     @Test

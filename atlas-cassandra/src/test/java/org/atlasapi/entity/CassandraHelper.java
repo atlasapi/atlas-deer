@@ -12,6 +12,7 @@ import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.connectionpool.impl.ConnectionPoolConfigurationImpl;
 import com.netflix.astyanax.connectionpool.impl.ConnectionPoolType;
 import com.netflix.astyanax.connectionpool.impl.CountingConnectionPoolMonitor;
+import com.netflix.astyanax.ddl.ColumnFamilyDefinition;
 import com.netflix.astyanax.impl.AstyanaxConfigurationImpl;
 import com.netflix.astyanax.model.ColumnFamily;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
@@ -53,7 +54,7 @@ public class CassandraHelper {
 
     public static void createKeyspace(AstyanaxContext<Keyspace> context)
             throws ConnectionException {
-        context.getClient().createKeyspace(ImmutableMap.<String, Object>builder()
+        context.getClient().createKeyspaceIfNotExists(ImmutableMap.<String, Object>builder()
                 .put("strategy_options", ImmutableMap.<String, Object>builder()
                         .put("replication_factor", "1")
                         .build())
@@ -65,19 +66,29 @@ public class CassandraHelper {
     public static void createColumnFamily(AstyanaxContext<Keyspace> context,
             String name, Serializer<?> keySerializer, Serializer<?> colSerializer)
             throws ConnectionException {
-        context.getClient().createColumnFamily(
-                ColumnFamily.newColumnFamily(name, keySerializer, colSerializer),
-                ImmutableMap.<String, Object>of()
-        );
+        ColumnFamilyDefinition cfDef = context.getClient()
+                .describeKeyspace()
+                .getColumnFamily(name);
+        if (cfDef == null) {
+            context.getClient().createColumnFamily(
+                    ColumnFamily.newColumnFamily(name, keySerializer, colSerializer),
+                    ImmutableMap.of()
+            );
+        }
     }
 
     public static void createColumnFamily(AstyanaxContext<Keyspace> context,
             String name, Serializer<?> keySerializer, Serializer<?> colSerializer,
             Serializer<?> valSerializer) throws ConnectionException {
-        context.getClient().createColumnFamily(
-                ColumnFamily.newColumnFamily(name, keySerializer, colSerializer, valSerializer),
-                ImmutableMap.<String, Object>of()
-        );
+        ColumnFamilyDefinition cfDef = context.getClient()
+                .describeKeyspace()
+                .getColumnFamily(name);
+        if (cfDef == null) {
+            context.getClient().createColumnFamily(
+                    ColumnFamily.newColumnFamily(name, keySerializer, colSerializer, valSerializer),
+                    ImmutableMap.of()
+            );
+        }
     }
 
     public static void clearColumnFamily(AstyanaxContext<Keyspace> context, String cfName)

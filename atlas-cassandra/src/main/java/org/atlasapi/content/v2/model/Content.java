@@ -19,16 +19,17 @@ import org.atlasapi.content.v2.model.udt.ItemSummary;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
 import org.atlasapi.content.v2.model.udt.LocationSummary;
 import org.atlasapi.content.v2.model.udt.Priority;
+import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.model.udt.RelatedLink;
 import org.atlasapi.content.v2.model.udt.ReleaseDate;
 import org.atlasapi.content.v2.model.udt.Restriction;
+import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.content.v2.model.udt.SegmentEvent;
 import org.atlasapi.content.v2.model.udt.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
 
-import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.Frozen;
 import com.datastax.driver.mapping.annotations.FrozenValue;
@@ -39,18 +40,9 @@ import org.joda.time.Instant;
 @Table(name = "content_v2")
 public class Content implements ContentIface {
 
-    // TODO: make this an enum once we figure out the DatastaxCassandraService nonsense
-    public static final String ROW_CLIPS = "clips";
-    public static final String ROW_ENCODINGS = "encodings";
-    public static final String ROW_MAIN = "main";
-
     @PartitionKey
     @Column(name = "id")
     private Long id;
-
-    @ClusteringColumn
-    @Column(name = "dcr")
-    private String discriminator;
 
     @Column(name = "t")
     private String type;
@@ -159,7 +151,7 @@ public class Content implements ContentIface {
 
     @FrozenValue
     @Column(name = "cgr")
-    private List<ContentGroupRef> contentGroupRefs;
+    private Set<ContentGroupRef> contentGroupRefs;
 
     @FrozenValue
     @Column(name = "pp")
@@ -251,11 +243,11 @@ public class Content implements ContentIface {
 
     @FrozenValue
     @Column(name = "ser")
-    private List<SeriesRef> seriesRefs;
+    private Set<SeriesRef> seriesRefs;
 
     @FrozenValue
     @Column(name = "itr")
-    private List<ItemRef> itemRefs;
+    private Set<ItemRef> itemRefs;
 
     @Frozen("map<frozen<ItemRef>, frozen<list<BroadcastRef>>>")
     @Column(name = "upc")
@@ -267,26 +259,21 @@ public class Content implements ContentIface {
 
     @FrozenValue
     @Column(name = "its")
-    private List<ItemSummary> itemSummaries;
+    private Set<ItemSummary> itemSummaries;
 
-    @Column(name = "bl")
-    private String jsonBlob;
+    @FrozenValue
+    @Column(name = "rv")
+    private Set<Review> reviews;
 
-    public String getJsonBlob() {
-        return jsonBlob;
-    }
+    @FrozenValue
+    @Column(name = "rt")
+    private Set<Rating> ratings;
 
-    public void setJsonBlob(String jsonBlob) {
-        this.jsonBlob = jsonBlob;
-    }
+    @Column(name = "cl")
+    private Clip.Wrapper clips;
 
-    public String getDiscriminator() {
-        return discriminator;
-    }
-
-    public void setDiscriminator(String discriminator) {
-        this.discriminator = discriminator;
-    }
+    @Column(name = "enc")
+    private Encoding.Wrapper encodings;
 
     @Override
     public Long getId() {
@@ -597,6 +584,26 @@ public class Content implements ContentIface {
     }
 
     @Override
+    public Set<Review> getReviews() {
+        return this.reviews;
+    }
+
+    @Override
+    public void setReviews(Set<Review> reviews) {
+        this.reviews = reviews;
+    }
+
+    @Override
+    public Set<Rating> getRatings() {
+        return this.ratings;
+    }
+
+    @Override
+    public void setRatings(Set<Rating> ratings) {
+        this.ratings = ratings;
+    }
+
+    @Override
     public Set<KeyPhrase> getKeyPhrases() {
         return keyPhrases;
     }
@@ -617,13 +624,12 @@ public class Content implements ContentIface {
     }
 
     @Override
-    public List<ContentGroupRef> getContentGroupRefs() {
+    public Set<ContentGroupRef> getContentGroupRefs() {
         return contentGroupRefs;
     }
 
     @Override
-    public void setContentGroupRefs(
-            List<ContentGroupRef> contentGroupRefs) {
+    public void setContentGroupRefs(Set<ContentGroupRef> contentGroupRefs) {
         this.contentGroupRefs = contentGroupRefs;
     }
 
@@ -686,6 +692,26 @@ public class Content implements ContentIface {
     @Override
     public void setEventRefs(Set<Ref> eventRefs) {
         this.eventRefs = eventRefs;
+    }
+
+    @Override
+    public Clip.Wrapper getClips() {
+        return clips;
+    }
+
+    @Override
+    public void setClips(Clip.Wrapper clips) {
+        this.clips = clips;
+    }
+
+    @Override
+    public Encoding.Wrapper getEncodings() {
+        return encodings;
+    }
+
+    @Override
+    public void setEncodings(Encoding.Wrapper encodings) {
+        this.encodings = encodings;
     }
 
     public String getIsrc() {
@@ -852,19 +878,19 @@ public class Content implements ContentIface {
         this.special = special;
     }
 
-    public List<SeriesRef> getSeriesRefs() {
+    public Set<SeriesRef> getSeriesRefs() {
         return seriesRefs;
     }
 
-    public void setSeriesRefs(List<SeriesRef> seriesRefs) {
+    public void setSeriesRefs(Set<SeriesRef> seriesRefs) {
         this.seriesRefs = seriesRefs;
     }
 
-    public List<ItemRef> getItemRefs() {
+    public Set<ItemRef> getItemRefs() {
         return itemRefs;
     }
 
-    public void setItemRefs(List<ItemRef> itemRefs) {
+    public void setItemRefs(Set<ItemRef> itemRefs) {
         this.itemRefs = itemRefs;
     }
 
@@ -886,12 +912,11 @@ public class Content implements ContentIface {
         this.availableContent = availableContent;
     }
 
-    public List<ItemSummary> getItemSummaries() {
+    public Set<ItemSummary> getItemSummaries() {
         return itemSummaries;
     }
 
-    public void setItemSummaries(
-            List<ItemSummary> itemSummaries) {
+    public void setItemSummaries(Set<ItemSummary> itemSummaries) {
         this.itemSummaries = itemSummaries;
     }
 }

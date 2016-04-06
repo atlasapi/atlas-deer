@@ -1,10 +1,30 @@
-package org.atlasapi.content.v2.model.udt;
+package org.atlasapi.content.v2.model;
 
 import java.util.List;
 import java.util.Set;
 
-import org.atlasapi.content.v2.model.ContentIface;
+import org.atlasapi.content.v2.model.udt.Alias;
+import org.atlasapi.content.v2.model.udt.Award;
+import org.atlasapi.content.v2.model.udt.Broadcast;
+import org.atlasapi.content.v2.model.udt.Certificate;
+import org.atlasapi.content.v2.model.udt.ContainerRef;
+import org.atlasapi.content.v2.model.udt.ContainerSummary;
+import org.atlasapi.content.v2.model.udt.ContentGroupRef;
+import org.atlasapi.content.v2.model.udt.CrewMember;
+import org.atlasapi.content.v2.model.udt.Image;
+import org.atlasapi.content.v2.model.udt.KeyPhrase;
+import org.atlasapi.content.v2.model.udt.Priority;
+import org.atlasapi.content.v2.model.udt.Rating;
+import org.atlasapi.content.v2.model.udt.Ref;
+import org.atlasapi.content.v2.model.udt.RelatedLink;
+import org.atlasapi.content.v2.model.udt.Restriction;
+import org.atlasapi.content.v2.model.udt.Review;
+import org.atlasapi.content.v2.model.udt.SegmentEvent;
+import org.atlasapi.content.v2.model.udt.Synopses;
+import org.atlasapi.content.v2.model.udt.Tag;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.time.Instant;
 
 public class Clip implements ContentIface {
@@ -41,7 +61,7 @@ public class Clip implements ContentIface {
     private Set<Award> awards;
     private Set<KeyPhrase> keyPhrases;
     private List<Tag> tags;
-    private List<ContentGroupRef> contentGroupRefs;
+    private Set<ContentGroupRef> contentGroupRefs;
     private List<CrewMember> people;
     private Set<String> languages;
     private Set<Certificate> certificates;
@@ -59,6 +79,9 @@ public class Clip implements ContentIface {
     private List<SegmentEvent> segmentEvents;
     private Set<Restriction> restrictions;
     private String clipOf;
+    private Set<Review> reviews;
+    private Set<Rating> ratings;
+    private Encoding.Wrapper encodings;
 
     public Long getId() {
         return id;
@@ -292,14 +315,28 @@ public class Clip implements ContentIface {
         this.relatedLinks = relatedLinks;
     }
 
-    @Override
     public Set<Award> getAwards() {
         return awards;
     }
 
-    @Override
     public void setAwards(Set<Award> awards) {
         this.awards = awards;
+    }
+
+    public Set<Review> getReviews() {
+        return this.reviews;
+    }
+
+    public void setReviews(Set<Review> reviews) {
+        this.reviews = reviews;
+    }
+
+    public Set<Rating> getRatings() {
+        return this.ratings;
+    }
+
+    public void setRatings(Set<Rating> ratings) {
+        this.ratings = ratings;
     }
 
     public Set<KeyPhrase> getKeyPhrases() {
@@ -318,12 +355,11 @@ public class Clip implements ContentIface {
         this.tags = tags;
     }
 
-    public List<ContentGroupRef> getContentGroupRefs() {
+    public Set<ContentGroupRef> getContentGroupRefs() {
         return contentGroupRefs;
     }
 
-    public void setContentGroupRefs(
-            List<ContentGroupRef> contentGroupRefs) {
+    public void setContentGroupRefs(Set<ContentGroupRef> contentGroupRefs) {
         this.contentGroupRefs = contentGroupRefs;
     }
 
@@ -383,6 +419,23 @@ public class Clip implements ContentIface {
 
     public void setEventRefs(Set<Ref> eventRefs) {
         this.eventRefs = eventRefs;
+    }
+
+    public Clip.Wrapper getClips() {
+        // due to the whole clusterfuck where Clip descends from Content, to avoid infinite recursion
+        return null;
+    }
+
+    public void setClips(Clip.Wrapper clips) {
+        // due to the whole clusterfuck where Clip descends from Content, to avoid infinite recursion
+    }
+
+    public Encoding.Wrapper getEncodings() {
+        return encodings;
+    }
+
+    public void setEncodings(Encoding.Wrapper encodings) {
+        this.encodings = encodings;
     }
 
     public ContainerRef getContainerRef() {
@@ -466,5 +519,22 @@ public class Clip implements ContentIface {
 
     public void setClipOf(String clipOf) {
         this.clipOf = clipOf;
+    }
+
+    public static class Wrapper {
+
+        private List<Clip> clips;
+
+        @JsonCreator
+        public Wrapper(
+                @JsonProperty("clips") List<Clip> clips
+        ) {
+            this.clips = clips;
+        }
+
+        @JsonProperty("clips")
+        public List<Clip> getClips() {
+            return clips;
+        }
     }
 }

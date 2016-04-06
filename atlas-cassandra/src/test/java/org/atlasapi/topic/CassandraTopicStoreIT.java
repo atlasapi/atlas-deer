@@ -27,7 +27,6 @@ import com.netflix.astyanax.serializers.LongSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
 import org.joda.time.DateTime;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -106,11 +105,6 @@ public class CassandraTopicStoreIT {
                 StringSerializer.get(),
                 StringSerializer.get()
         );
-    }
-
-    @AfterClass
-    public static void tearDown() throws ConnectionException {
-        context.getClient().dropKeyspace();
     }
 
     @After

@@ -1,4 +1,4 @@
-CREATE TABLE organisation_uri (
+CREATE TABLE IF NOT EXISTS organisation_uri (
   uri text,
   source text,
   id bigint,

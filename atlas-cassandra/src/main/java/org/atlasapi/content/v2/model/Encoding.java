@@ -1,9 +1,13 @@
-package org.atlasapi.content.v2.model.udt;
+package org.atlasapi.content.v2.model;
 
 import java.util.Set;
 
-import org.atlasapi.content.v2.model.Identified;
+import org.atlasapi.content.v2.model.udt.Alias;
+import org.atlasapi.content.v2.model.udt.Location;
+import org.atlasapi.content.v2.model.udt.Ref;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.time.Instant;
 
 public class Encoding implements Identified {
@@ -295,5 +299,22 @@ public class Encoding implements Identified {
 
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         this.equivalenceUpdate = equivalenceUpdate;
+    }
+
+    public static class Wrapper {
+
+        private Set<Encoding> encodings;
+
+        @JsonCreator
+        public Wrapper(
+                @JsonProperty("encodings") Set<Encoding> encodings
+        ) {
+            this.encodings = encodings;
+        }
+
+        @JsonProperty("encodings")
+        public Set<Encoding> getEncodings() {
+            return encodings;
+        }
     }
 }

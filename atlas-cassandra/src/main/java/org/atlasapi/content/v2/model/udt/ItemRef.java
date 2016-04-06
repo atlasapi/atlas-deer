@@ -16,6 +16,9 @@ public class ItemRef {
     @Field(name = "u")
     private Instant updated;
 
+    @Field(name = "t")
+    private String type;
+
     public Ref getRef() {
         return ref;
     }
@@ -38,5 +41,13 @@ public class ItemRef {
 
     public void setUpdated(Instant updated) {
         this.updated = updated;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

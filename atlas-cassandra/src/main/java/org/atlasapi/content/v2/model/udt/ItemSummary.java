@@ -26,6 +26,12 @@ public class ItemSummary {
     @Field(name = "c")
     private Set<Certificate> certificate;
 
+    @Field(name = "tp")
+    private String type;
+
+    @Field(name = "en")
+    private Integer episodeNumber;
+
     public ItemRef getRef() {
         return ref;
     }
@@ -70,8 +76,23 @@ public class ItemSummary {
         return certificate;
     }
 
-    public void setCertificate(
-            Set<Certificate> certificate) {
+    public void setCertificate(Set<Certificate> certificate) {
         this.certificate = certificate;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Integer getEpisodeNumber() {
+        return episodeNumber;
+    }
+
+    public void setEpisodeNumber(Integer episodeNumber) {
+        this.episodeNumber = episodeNumber;
     }
 }

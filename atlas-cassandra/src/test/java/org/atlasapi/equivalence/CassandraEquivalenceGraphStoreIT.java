@@ -31,7 +31,6 @@ import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.joda.time.DateTime;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -85,19 +84,14 @@ public class CassandraEquivalenceGraphStoreIT {
         context = new ConfiguredAstyanaxContext("Atlas", keyspace, seeds, 9160, 5, 60).get();
         context.start();
         session = service.getCluster().connect();
-        tearDown();
         CassandraInit.createTables(session, context);
+        CassandraInit.truncate(session, context);
         store = new CassandraEquivalenceGraphStore(
                 messageSender,
                 session,
                 ConsistencyLevel.ONE,
                 ConsistencyLevel.ONE
         );
-    }
-
-    @AfterClass
-    public static void tearDown() {
-        CassandraInit.nukeIt(session);
     }
 
     @After

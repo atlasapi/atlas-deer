@@ -14,6 +14,7 @@ public class ContainerSummarySerialization {
         containerSummary.setTitle(itemContainerSummary.getTitle());
         containerSummary.setSeriesNumber(itemContainerSummary.getSeriesNumber());
         containerSummary.setDescription(itemContainerSummary.getDescription());
+        containerSummary.setTotalEpisodes(itemContainerSummary.getTotalEpisodes());
 
         return containerSummary;
     }
@@ -22,11 +23,13 @@ public class ContainerSummarySerialization {
         if (internal == null) {
             return null;
         }
-        return new org.atlasapi.content.ContainerSummary(
+
+        return org.atlasapi.content.ContainerSummary.create(
                 internal.getType(),
                 internal.getTitle(),
                 internal.getDescription(),
-                internal.getSeriesNumber()
+                internal.getSeriesNumber(),
+                internal.getTotalEpisodes()
         );
     }
 }

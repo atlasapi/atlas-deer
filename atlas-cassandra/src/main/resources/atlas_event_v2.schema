@@ -1,4 +1,4 @@
-CREATE TABLE event_v2 (
+CREATE TABLE IF NOT EXISTS event_v2 (
   event_id bigint PRIMARY KEY,
   data blob
 ) WITH

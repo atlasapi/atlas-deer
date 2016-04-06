@@ -15,10 +15,8 @@ import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSet;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,11 +24,11 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import org.mockito.runners.MockitoJUnitRunner;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class IdSettingOrganisationStoreIT {
@@ -62,7 +60,6 @@ public class IdSettingOrganisationStoreIT {
     public static void init() throws Exception {
         // Thrift init
         context.start();
-        cleanUp();
         CassandraHelper.createKeyspace(context);
         // CQL init
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
@@ -75,15 +72,6 @@ public class IdSettingOrganisationStoreIT {
                 "/atlas_organisation_uri.schema")));
     }
 
-    @AfterClass
-    public static void cleanUp() throws Exception {
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) {
-            // Nothing to do
-        }
-    }
-
     @Before
     public void setUp() throws Exception {
         uriStore = new OrganisationUriStore(session, writeConsistency, readConsistency);
@@ -93,7 +81,7 @@ public class IdSettingOrganisationStoreIT {
                 writeConsistency,
                 uriStore
         );
-        store.write(getOrganisation(1l, "uri"));
+        store.write(getOrganisation(1L, "uri"));
         when(idGenerator.generateRaw()).thenReturn(EXPECTED_ID);
         idSettingOrganisationStore = new IdSettingOrganisationStore(store, idGenerator);
     }

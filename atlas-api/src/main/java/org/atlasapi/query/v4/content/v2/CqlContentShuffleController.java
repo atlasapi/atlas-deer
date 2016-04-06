@@ -20,7 +20,7 @@ import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.QueryParseException;
-import org.atlasapi.content.v2.EmilsContentStore;
+import org.atlasapi.content.v2.CqlContentStore;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
@@ -59,7 +59,7 @@ public class CqlContentShuffleController {
     private final ExecutorService executor;
     private final NumberToShortStringCodec idCodec;
     private final ContentStore yeOlde;
-    private final EmilsContentStore cql;
+    private final CqlContentStore cql;
     private final KafkaConsumer consumer;
 
     private HistoryIngest historyIngester;
@@ -68,7 +68,7 @@ public class CqlContentShuffleController {
     public CqlContentShuffleController(
             NumberToShortStringCodec idCodec,
             ContentStore yeOlde,
-            EmilsContentStore cql,
+            CqlContentStore cql,
             MessageConsumerFactory<KafkaConsumer> kafkaConsumerFactory,
             LegacyContentResolver legacyContentResolver
     ) {

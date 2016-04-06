@@ -1,4 +1,4 @@
-CREATE TABLE organisation (
+CREATE TABLE IF NOT EXISTS organisation (
   organisation_id bigint PRIMARY KEY,
   data blob
 ) WITH

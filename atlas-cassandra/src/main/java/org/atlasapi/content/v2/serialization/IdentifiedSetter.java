@@ -6,7 +6,11 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Ref;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.equivalence.EquivalenceRef;
+
+import com.google.common.collect.ImmutableSet;
 
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;
 
@@ -24,14 +28,22 @@ public class IdentifiedSetter {
         internal.setCanonicalUri(content.getCanonicalUri());
         internal.setCurie(content.getCurie());
         internal.setAliasUrls(content.getAliasUrls());
-        internal.setAliases(content.getAliases().stream()
-                .map(alias::serialize)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet()));
-        internal.setEquivalentTo(content.getEquivalentTo().stream()
-                .map(equivRef::serialize)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet()));
+
+        ImmutableSet<Alias> aliases = content.getAliases();
+        if (aliases != null) {
+            internal.setAliases(aliases.stream()
+                    .map(alias::serialize)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()));
+        }
+
+        Set<EquivalenceRef> equivalentTo = content.getEquivalentTo();
+        if (equivalentTo != null) {
+            internal.setEquivalentTo(equivalentTo.stream()
+                    .map(equivRef::serialize)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()));
+        }
 
         internal.setLastUpdated(DateTimeUtils.toInstant(content.getLastUpdated()));
         internal.setEquivalenceUpdate(DateTimeUtils.toInstant(content.getEquivalenceUpdate()));
@@ -40,7 +52,11 @@ public class IdentifiedSetter {
     public void deserialize(
             org.atlasapi.entity.Identified content, Identified internal) {
 
-        content.setId(internal.getId());
+        Long id = internal.getId();
+        if (id != null) {
+            content.setId(id);
+        }
+
         content.setCanonicalUri(internal.getCanonicalUri());
         content.setCurie(internal.getCurie());
 
@@ -55,12 +71,14 @@ public class IdentifiedSetter {
                     .map(alias::deserialize)
                     .collect(Collectors.toSet()));
         }
+
         Set<Ref> equivalentTo = internal.getEquivalentTo();
         if (equivalentTo != null) {
             content.setEquivalentTo(equivalentTo.stream()
                     .map(equivRef::deserialize)
                     .collect(Collectors.toSet()));
         }
+
         content.setLastUpdated(toDateTime(internal.getLastUpdated()));
         content.setEquivalenceUpdate(toDateTime(internal.getEquivalenceUpdate()));
     }
