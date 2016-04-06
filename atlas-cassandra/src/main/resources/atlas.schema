@@ -1,4 +1,4 @@
-CREATE TABLE content (
+CREATE TABLE IF NOT EXISTS content (
   key bigint,
   column1 text,
   value blob,
@@ -15,7 +15,7 @@ CREATE TABLE content (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE content_aliases (
+CREATE TABLE IF NOT EXISTS content_aliases (
   key text,
   column1 text,
   value bigint,
@@ -32,7 +32,7 @@ CREATE TABLE content_aliases (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE equivalence_graph (
+CREATE TABLE IF NOT EXISTS equivalence_graph (
   graph_id bigint PRIMARY KEY,
   graph blob
 ) WITH
@@ -47,7 +47,7 @@ CREATE TABLE equivalence_graph (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE equivalence_graph_index (
+CREATE TABLE IF NOT EXISTS equivalence_graph_index (
   resource_id bigint PRIMARY KEY,
   graph_id bigint
 ) WITH
@@ -62,7 +62,7 @@ CREATE TABLE equivalence_graph_index (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE equivalent_content (
+CREATE TABLE IF NOT EXISTS equivalent_content (
   set_id bigint,
   content_id bigint,
   data blob,
@@ -80,7 +80,7 @@ CREATE TABLE equivalent_content (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE equivalent_content_index (
+CREATE TABLE IF NOT EXISTS equivalent_content_index (
   key bigint PRIMARY KEY,
   value bigint
 ) WITH
@@ -95,7 +95,7 @@ CREATE TABLE equivalent_content_index (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE schedule (
+CREATE TABLE IF NOT EXISTS schedule (
   key text,
   column1 text,
   value blob,
@@ -112,7 +112,7 @@ CREATE TABLE schedule (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
   
-CREATE TABLE equivalent_schedule (
+CREATE TABLE IF NOT EXISTS equivalent_schedule (
   source text,
   channel bigint,
   day timestamp,
@@ -137,7 +137,7 @@ CREATE TABLE equivalent_schedule (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
   
-CREATE TABLE topics (
+CREATE TABLE IF NOT EXISTS topics (
   key bigint,
   column1 text,
   value blob,
@@ -154,7 +154,7 @@ CREATE TABLE topics (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE topics_aliases (
+CREATE TABLE IF NOT EXISTS topics_aliases (
   key text,
   column1 text,
   value bigint,
@@ -171,7 +171,7 @@ CREATE TABLE topics_aliases (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE segments (
+CREATE TABLE IF NOT EXISTS segments (
   key bigint,
   column1 text,
   value blob,
@@ -188,7 +188,7 @@ CREATE TABLE segments (
   compaction={'class': 'SizeTieredCompactionStrategy'} AND
   compression={'sstable_compression': 'SnappyCompressor'};
 
-CREATE TABLE segments_aliases (
+CREATE TABLE IF NOT EXISTS segments_aliases (
     key text,
     column1 text,
     value bigint,
@@ -205,4 +205,4 @@ CREATE TABLE segments_aliases (
     compaction={'class': 'SizeTieredCompactionStrategy'} AND
     compression={'sstable_compression': 'SnappyCompressor'};
 
-create index inverse_equivalent_content_index on equivalent_content_index(value);
+CREATE INDEX IF NOT EXISTS inverse_equivalent_content_index ON equivalent_content_index(value);

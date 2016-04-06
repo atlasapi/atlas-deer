@@ -125,9 +125,9 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
     public void tearDown() {
         try {
             Session session = cassandraService.getCluster().connect();
-            CassandraInit.nukeIt(session);
-        } catch (InvalidQueryException iqe) {
-            log.warn("failed to drop " + keyspace);
+            CassandraInit.truncate(session, context);
+        } catch (InvalidQueryException | ConnectionException e) {
+            log.warn("failed to truncate {}", keyspace);
         }
     }
 

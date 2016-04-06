@@ -2,18 +2,25 @@ package org.atlasapi.content.v2.serialization;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.atlasapi.content.Content;
+import org.atlasapi.content.v2.model.Clip;
 import org.atlasapi.content.v2.model.ContentIface;
+import org.atlasapi.content.v2.model.Encoding;
 import org.atlasapi.content.v2.model.udt.CrewMember;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
+import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.Ref;
+import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.content.v2.model.udt.Tag;
 
 public class ContentSetter {
 
+    private final ClipSerialization clip;
+    private final EncodingSerialization encoding = new EncodingSerialization();
     private final KeyPhraseSerialization keyPhrase = new KeyPhraseSerialization();
     private final ContentGroupRefSerialization contentGroupRef = new ContentGroupRefSerialization();
     private final EventRefSerialization eventRef = new EventRefSerialization();
@@ -21,6 +28,12 @@ public class ContentSetter {
     private final CrewMemberSerialization crewMember = new CrewMemberSerialization();
     private final CertificateSerialization certificate = new CertificateSerialization();
     private final TagSerialization tag = new TagSerialization();
+    private final RatingSerialization rating = new RatingSerialization();
+    private final ReviewSerialization review = new ReviewSerialization();
+
+    public ContentSetter() {
+        this.clip = new ClipSerialization(this);
+    }
 
     public void serialize(ContentIface internal, Content content) {
         describedSetter.serialize(internal, content);
@@ -38,7 +51,7 @@ public class ContentSetter {
         internal.setContentGroupRefs(content.getContentGroupRefs().stream()
                 .map(contentGroupRef::serialize)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toSet()));
 
         internal.setPeople(content.people().stream()
                 .map(crewMember::serialize)
@@ -59,6 +72,26 @@ public class ContentSetter {
                 .map(eventRef::serialize)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
+
+        internal.setRatings(content.getRatings()
+                .stream()
+                .map(rating::serialize)
+                .collect(Collectors.toSet()));
+
+        internal.setReviews(content.getReviews()
+                .stream()
+                .map(review::serialize)
+                .collect(Collectors.toSet()));
+
+        internal.setClips(new Clip.Wrapper(content.getClips()
+                .stream()
+                .map(clip::serialize)
+                .collect(Collectors.toList())));
+
+        internal.setEncodings(new Encoding.Wrapper(content.getManifestedAs()
+                .stream()
+                .map(encoding::serialize)
+                .collect(Collectors.toSet())));
     }
 
     public void deserialize(Content content, ContentIface internal) {
@@ -78,7 +111,7 @@ public class ContentSetter {
                     .collect(Collectors.toList()));
         }
 
-        List<org.atlasapi.content.v2.model.udt.ContentGroupRef> contentGroupRefs =
+        Set<org.atlasapi.content.v2.model.udt.ContentGroupRef> contentGroupRefs =
                 internal.getContentGroupRefs();
         if (contentGroupRefs != null) {
             content.setContentGroupRefs(contentGroupRefs.stream()
@@ -115,6 +148,39 @@ public class ContentSetter {
             content.setEventRefs(eventRefs.stream()
                     .map(eventRef::deserialize)
                     .collect(Collectors.toList()));
+        }
+
+        Set<Review> reviews = internal.getReviews();
+        if (reviews != null) {
+            content.setReviews(reviews.stream()
+                    .map(review::deserialize)
+                    .map(rv -> new org.atlasapi.entity.Review(
+                            rv.getLocale(),
+                            rv.getReview(),
+                            Optional.of(content.getSource())
+                    ))
+                    .collect(Collectors.toSet()));
+        }
+
+        Set<Rating> ratings = internal.getRatings();
+        if (ratings != null) {
+            content.setRatings(ratings.stream()
+                    .map(rating::deserialize)
+                    .collect(Collectors.toSet()));
+        }
+
+        Clip.Wrapper clips = internal.getClips();
+        if (clips != null) {
+            content.setClips(clips.getClips().stream()
+                    .map(clip::deserialize)
+                    .collect(Collectors.toList()));
+        }
+
+        Encoding.Wrapper encodings = internal.getEncodings();
+        if (encodings != null) {
+            content.setManifestedAs(encodings.getEncodings().stream()
+                    .map(encoding::deserialize)
+                    .collect(Collectors.toSet()));
         }
     }
 }

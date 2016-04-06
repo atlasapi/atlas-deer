@@ -5,7 +5,9 @@ import java.util.Set;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.Priority;
+import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.RelatedLink;
+import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.content.v2.model.udt.Synopses;
 
 import org.joda.time.Instant;
@@ -99,4 +101,12 @@ public interface Described extends Identified {
     Set<Award> getAwards();
 
     void setAwards(Set<Award> awards);
+
+    Set<Review> getReviews();
+
+    void setReviews(Set<Review> reviews);
+
+    Set<Rating> getRatings();
+
+    void setRatings(Set<Rating> ratings);
 }

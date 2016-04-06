@@ -1,4 +1,4 @@
-CREATE TABLE schedule_v2 (
+CREATE TABLE IF NOT EXISTS schedule_v2 (
   source text,
   channel bigint,
   day timestamp,

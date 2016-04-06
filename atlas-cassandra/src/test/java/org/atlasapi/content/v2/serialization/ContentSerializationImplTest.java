@@ -4,6 +4,8 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Currency;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 import org.atlasapi.channel.Channel;
@@ -52,6 +54,8 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.Review;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.media.entity.Publisher;
@@ -180,6 +184,15 @@ public class ContentSerializationImplTest {
         c.setManifestedAs(ImmutableSet.of(makeEncoding()));
         c.setGenericDescription(Boolean.FALSE);
         c.setEventRefs(ImmutableSet.of(new EventRef(Id.valueOf(23), Publisher.ARQIVA)));
+
+        c.setRatings(ImmutableList.of(new Rating("sometype", 4.2f, Publisher.AMAZON_UK)));
+
+        c.setReviews(ImmutableList.of(
+                new Review(
+                        Locale.CANADA,
+                        "hao aboot this one, eh?",
+                        Optional.of(Publisher.BBC_KIWI)
+                )));
     }
 
     private static void setContainerFields(Container container) {
@@ -353,7 +366,7 @@ public class ContentSerializationImplTest {
         i.setBlackAndWhite(Boolean.FALSE);
         i.setCountriesOfOrigin(ImmutableSet.of(Countries.IE));
         i = i.withSortKey("sort key");
-        i.setContainerSummary(new ContainerSummary("type", "title", "description", 1));
+        i.setContainerSummary(ContainerSummary.create("type", "title", "description", 1, 10));
         i.setBroadcasts(ImmutableSet.of(makeBroadcast()));
         i.setSegmentEvents(ImmutableList.of(makeSegmentEvent()));
         i.setRestrictions(ImmutableSet.of(makeRestriction()));

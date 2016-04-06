@@ -1,62 +1,31 @@
-DROP TABLE IF EXISTS content_v2;
-
-DROP TYPE IF EXISTS ReleaseDate;
-DROP TYPE IF EXISTS ContainerSummary;
-DROP TYPE IF EXISTS Restriction;
-DROP TYPE IF EXISTS SegmentEvent;
-DROP TYPE IF EXISTS Description;
-DROP TYPE IF EXISTS Broadcast;
-DROP TYPE IF EXISTS Location;
-DROP TYPE IF EXISTS Policy;
-DROP TYPE IF EXISTS Pricing;
-DROP TYPE IF EXISTS Price;
-DROP TYPE IF EXISTS BroadcastRef;
-DROP TYPE IF EXISTS LocationSummary;
-DROP TYPE IF EXISTS CrewMember;
-DROP TYPE IF EXISTS ItemSummary;
-DROP TYPE IF EXISTS Tag;
-DROP TYPE IF EXISTS KeyPhrase;
-DROP TYPE IF EXISTS RelatedLink;
-DROP TYPE IF EXISTS Priority;
-DROP TYPE IF EXISTS Image;
-DROP TYPE IF EXISTS ItemRef;
-DROP TYPE IF EXISTS SeriesRef;
-DROP TYPE IF EXISTS Synopses;
-DROP TYPE IF EXISTS ContainerRef;
-DROP TYPE IF EXISTS ContentGroupRef;
-DROP TYPE IF EXISTS Ref;
-DROP TYPE IF EXISTS Certificate;
-DROP TYPE IF EXISTS Alias;
-DROP TYPE IF EXISTS Award;
-
-CREATE TYPE Award(
+CREATE TYPE IF NOT EXISTS Award(
   o text,
   t text,
   d text,
   y int
 );
 
-CREATE TYPE Alias (
+CREATE TYPE IF NOT EXISTS Alias (
   n text,
   v text
 );
 
-CREATE TYPE Certificate (
+CREATE TYPE IF NOT EXISTS Certificate (
   cc text,
   cls text
 );
 
-CREATE TYPE Ref (
+CREATE TYPE IF NOT EXISTS Ref (
   id bigint,
   src text
 );
 
-CREATE TYPE ContentGroupRef (
+CREATE TYPE IF NOT EXISTS ContentGroupRef (
   id bigint,
   uri text
 );
 
-CREATE TYPE ContainerRef (
+CREATE TYPE IF NOT EXISTS ContainerRef (
   id bigint,
   src text,
   t text,
@@ -67,13 +36,13 @@ CREATE TYPE ContainerRef (
   cr set<frozen<Certificate>>
 );
 
-CREATE TYPE Synopses (
+CREATE TYPE IF NOT EXISTS Synopses (
   s text,
   m text,
   l text
 );
 
-CREATE TYPE SeriesRef (
+CREATE TYPE IF NOT EXISTS SeriesRef (
   r frozen<Ref>,
   t text,
   u timestamp,
@@ -82,13 +51,14 @@ CREATE TYPE SeriesRef (
   cr set<frozen<Certificate>>
 );
 
-CREATE TYPE ItemRef (
+CREATE TYPE IF NOT EXISTS ItemRef (
   r frozen<Ref>,
   sk text,
-  u timestamp
+  u timestamp,
+  t text
 );
 
-CREATE TYPE Image (
+CREATE TYPE IF NOT EXISTS Image (
   u text,
   t text,
   c text,
@@ -103,13 +73,13 @@ CREATE TYPE Image (
   s text
 );
 
-CREATE TYPE Priority (
+CREATE TYPE IF NOT EXISTS Priority (
   p list<text>,
   n list<text>,
   pr double
 );
 
-CREATE TYPE RelatedLink (
+CREATE TYPE IF NOT EXISTS RelatedLink (
   u text,
   t text,
   si text,
@@ -120,12 +90,12 @@ CREATE TYPE RelatedLink (
   th text
 );
 
-CREATE TYPE KeyPhrase (
+CREATE TYPE IF NOT EXISTS KeyPhrase (
   p text,
   w double
 );
 
-CREATE TYPE Tag (
+CREATE TYPE IF NOT EXISTS Tag (
   t bigint,
   p text,
   s boolean,
@@ -134,16 +104,18 @@ CREATE TYPE Tag (
   o int
 );
 
-CREATE TYPE ItemSummary (
+CREATE TYPE IF NOT EXISTS ItemSummary (
   r frozen<ItemRef>,
   t text,
   d text,
   i text,
   ry int,
-  c set<frozen<Certificate>>
+  c set<frozen<Certificate>>,
+  tp text,
+  en int
 );
 
-CREATE TYPE CrewMember (
+CREATE TYPE IF NOT EXISTS CrewMember (
   i bigint,
   c text,
   cu text,
@@ -157,32 +129,32 @@ CREATE TYPE CrewMember (
   p text
 );
 
-CREATE TYPE LocationSummary (
+CREATE TYPE IF NOT EXISTS LocationSummary (
   a boolean,
   u text,
   s timestamp,
   e timestamp
 );
 
-CREATE TYPE BroadcastRef (
+CREATE TYPE IF NOT EXISTS BroadcastRef (
   s text,
   c bigint,
   st timestamp,
   e timestamp
 );
 
-CREATE TYPE Price (
+CREATE TYPE IF NOT EXISTS Price (
   c text,
   p int
 );
 
-CREATE TYPE Pricing (
+CREATE TYPE IF NOT EXISTS Pricing (
   s timestamp,
   e timestamp,
   p frozen<Price>
 );
 
-CREATE TYPE Policy (
+CREATE TYPE IF NOT EXISTS Policy (
   i bigint,
   c text,
   cu text,
@@ -207,7 +179,7 @@ CREATE TYPE Policy (
   aas timestamp
 );
 
-CREATE TYPE Location (
+CREATE TYPE IF NOT EXISTS Location (
   i bigint,
   c text,
   cu text,
@@ -226,7 +198,7 @@ CREATE TYPE Location (
   p frozen<Policy>
 );
 
-CREATE TYPE Broadcast (
+CREATE TYPE IF NOT EXISTS Broadcast (
   i bigint,
   c text,
   cu text,
@@ -240,7 +212,7 @@ CREATE TYPE Broadcast (
   te timestamp,
   bd bigint,
   sd date,
-  sp boolean,
+  ap boolean,
   si text,
   vi text,
   r boolean,
@@ -258,14 +230,14 @@ CREATE TYPE Broadcast (
   br boolean
 );
 
-CREATE TYPE Description (
+CREATE TYPE IF NOT EXISTS Description (
   t text,
   s text,
   i text,
   th text
 );
 
-CREATE TYPE SegmentEvent (
+CREATE TYPE IF NOT EXISTS SegmentEvent (
   i bigint,
   c text,
   cu text,
@@ -283,7 +255,7 @@ CREATE TYPE SegmentEvent (
   pb text
 );
 
-CREATE TYPE Restriction (
+CREATE TYPE IF NOT EXISTS Restriction (
   i bigint,
   c text,
   cu text,
@@ -299,23 +271,34 @@ CREATE TYPE Restriction (
   rt text
 );
 
-CREATE TYPE ContainerSummary (
+CREATE TYPE IF NOT EXISTS Review (
+  l text,
+  r text
+);
+
+CREATE TYPE IF NOT EXISTS Rating (
+  v float,
+  t text,
+  p text
+);
+
+CREATE TYPE IF NOT EXISTS ContainerSummary (
   t text,
   tt text,
   d text,
-  s int
+  s int,
+  te int
 );
 
-CREATE TYPE ReleaseDate (
+CREATE TYPE IF NOT EXISTS ReleaseDate (
   r date,
   c text,
   t text
 );
 
-CREATE TABLE content_v2 (
+CREATE TABLE IF NOT EXISTS content_v2 (
   t text,
-  id bigint,
-  dcr text,
+  id bigint PRIMARY KEY,
   c text,
   cu text,
   au set<text>,
@@ -347,7 +330,7 @@ CREATE TABLE content_v2 (
   aw set<frozen<Award>>,
   kp set<frozen<KeyPhrase>>,
   tg list<frozen<Tag>>,
-  cgr list<frozen<ContentGroupRef>>,
+  cgr set<frozen<ContentGroupRef>>,
   pp list<frozen<CrewMember>>,
   ln set<text>,
   cr set<frozen<Certificate>>,
@@ -380,14 +363,16 @@ CREATE TABLE content_v2 (
   pn int,
   spc boolean,
 
-  ser list<frozen<SeriesRef>>,
+  ser set<frozen<SeriesRef>>,
 
-  itr list<frozen<ItemRef>>,
+  itr set<frozen<ItemRef>>,
   upc map<frozen<ItemRef>, frozen<list<BroadcastRef>>>,
   avc map<frozen<ItemRef>, frozen<list<LocationSummary>>>,
-  its list<frozen<ItemSummary>>,
+  its set<frozen<ItemSummary>>,
 
-  bl text,
+  rv set<frozen<Review>>,
+  rt set<frozen<Rating>>,
 
-  PRIMARY KEY (id, dcr)
+  cl text,
+  enc text
 );

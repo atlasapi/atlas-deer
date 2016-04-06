@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
-import org.atlasapi.content.v2.EmilsContentStore;
+import org.atlasapi.content.v2.CqlContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -99,7 +99,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
-    private EmilsContentStore cqlContentStore;
+    private CqlContentStore cqlContentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
     private OrganisationStore organisationStore;
@@ -211,7 +211,12 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 session, read, write
         );
 
-        this.cqlContentStore = new EmilsContentStore(session);
+        this.cqlContentStore = new CqlContentStore(
+                session,
+                sender(contentChanges, ResourceUpdatedMessage.class),
+                contentIdGenerator,
+                new SystemClock()
+        );
 
         this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(EquivalenceGraphUpdateMessage.class),
@@ -326,7 +331,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return contentStore;
     }
 
-    public EmilsContentStore cqlContentStore() {
+    public CqlContentStore cqlContentStore() {
         return cqlContentStore;
     }
 

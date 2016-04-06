@@ -1,13 +1,13 @@
 package org.atlasapi.content.v2.serialization;
 
-import java.util.List;
+import java.util.Set;
 
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.v2.model.Content;
 import org.atlasapi.content.v2.model.udt.SeriesRef;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public class EpisodeSetter {
 
@@ -25,7 +25,7 @@ public class EpisodeSetter {
         internal.setSpecial(episode.getSpecial());
         SeriesRef ref = seriesRef.serialize(episode.getSeriesRef());
         if (ref != null) {
-            internal.setSeriesRefs(Lists.newArrayList(ref));
+            internal.setSeriesRefs(Sets.newHashSet(ref));
         }
     }
 
@@ -37,7 +37,7 @@ public class EpisodeSetter {
         episode.setPartNumber(internal.getPartNumber());
         episode.setSpecial(internal.getSpecial());
 
-        List<SeriesRef> seriesRefs = internal.getSeriesRefs();
+        Set<SeriesRef> seriesRefs = internal.getSeriesRefs();
         if (seriesRefs != null && !seriesRefs.isEmpty()) {
             episode.setSeriesRef(seriesRef.deserialize(Iterables.getOnlyElement(seriesRefs)));
         }

@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.atlasapi.content.Certificate;
+import org.atlasapi.content.EpisodeSummary;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
 
 import com.google.common.collect.ImmutableSet;
@@ -15,9 +16,9 @@ public class ItemSummarySerialization {
     private final ItemRefSerialization itemRef = new ItemRefSerialization();
 
     public ItemSummary serialize(org.atlasapi.content.ItemSummary itemSummary) {
-        ItemSummary internal =
-                new ItemSummary();
+        ItemSummary internal = new ItemSummary();
 
+        internal.setType("item");
         internal.setRef(itemRef.serialize(itemSummary.getItemRef()));
         internal.setTitle(itemSummary.getTitle());
 
@@ -45,6 +46,13 @@ public class ItemSummarySerialization {
                     .collect(Collectors.toSet()));
         }
 
+        if (itemSummary instanceof EpisodeSummary) {
+            internal.setType("episode");
+            internal.setEpisodeNumber(
+                    ((EpisodeSummary) itemSummary).getEpisodeNumber().orElse(null)
+            );
+        }
+
         return internal;
     }
 
@@ -52,16 +60,32 @@ public class ItemSummarySerialization {
         if (is == null) {
             return null;
         }
-        return new org.atlasapi.content.ItemSummary(
-                itemRef.deserialize(is.getRef()),
-                is.getTitle(),
-                is.getDescription(),
-                is.getImage(),
-                is.getReleaseYear(),
-                is.getCertificate()
-                        .stream()
-                        .map(certificate::deserialize)
-                        .collect(Collectors.toList())
-        );
+
+        if ("item".equals(is.getType())) {
+            return new org.atlasapi.content.ItemSummary(
+                    itemRef.deserialize(is.getRef()),
+                    is.getTitle(),
+                    is.getDescription(),
+                    is.getImage(),
+                    is.getReleaseYear(),
+                    is.getCertificate()
+                            .stream()
+                            .map(certificate::deserialize)
+                            .collect(Collectors.toList())
+            );
+        } else {
+            return new org.atlasapi.content.EpisodeSummary(
+                    itemRef.deserialize(is.getRef()),
+                    is.getTitle(),
+                    is.getDescription(),
+                    is.getImage(),
+                    is.getEpisodeNumber(),
+                    is.getReleaseYear(),
+                    is.getCertificate()
+                            .stream()
+                            .map(certificate::deserialize)
+                            .collect(Collectors.toList())
+            );
+        }
     }
 }

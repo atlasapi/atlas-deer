@@ -102,15 +102,14 @@ public abstract class CassandraScheduleStoreIT {
         cassandraService.startAsync().awaitRunning();
         session = cassandraService.getCluster().connect();
 
-        CassandraInit.nukeIt(session);
         CassandraInit.createTables(session, context);
+        CassandraInit.truncate(session, context);
 
         session = cassandraService.getCluster().connect(keyspace);
     }
 
     @AfterClass
     public static void tearDown() throws ConnectionException {
-        CassandraInit.nukeIt(session);
         cassandraService.stopAsync().awaitTerminated();
     }
 

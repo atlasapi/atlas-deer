@@ -10,6 +10,7 @@ public class ContainerSummary {
     @Field(name = "tt") private String title;
     @Field(name = "d") private String description;
     @Field(name = "s") private Integer seriesNumber;
+    @Field(name = "te") private Integer totalEpisodes;
 
     public String getType() {
         return type;
@@ -41,5 +42,13 @@ public class ContainerSummary {
 
     public void setSeriesNumber(Integer seriesNumber) {
         this.seriesNumber = seriesNumber;
+    }
+
+    public Integer getTotalEpisodes() {
+        return totalEpisodes;
+    }
+
+    public void setTotalEpisodes(Integer totalEpisodes) {
+        this.totalEpisodes = totalEpisodes;
     }
 }

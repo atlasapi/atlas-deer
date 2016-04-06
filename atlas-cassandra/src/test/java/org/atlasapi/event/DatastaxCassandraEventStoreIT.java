@@ -32,7 +32,6 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import org.joda.time.DateTime;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -84,14 +83,9 @@ public class DatastaxCassandraEventStoreIT {
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
         cassandraService.startAsync().awaitRunning();
         session = cassandraService.getCluster().connect();
-        cleanUp();
         CassandraInit.createTables(session, context);
+        CassandraInit.truncate(session, context);
         session = cassandraService.getCluster().connect(keyspace);
-    }
-
-    @AfterClass
-    public static void cleanUp() throws Exception {
-        CassandraInit.nukeIt(session);
     }
 
     @Before

@@ -5,17 +5,19 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.atlasapi.content.v2.model.udt.Clip;
-import org.atlasapi.content.v2.model.udt.Encoding;
+import org.atlasapi.content.v2.model.Clip;
+import org.atlasapi.content.v2.model.Encoding;
 import org.atlasapi.content.v2.model.udt.Restriction;
 import org.atlasapi.content.v2.model.udt.SegmentEvent;
 
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.intl.Country;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ClipSerialization {
 
-    private final ContentSetter contentSetter = new ContentSetter();
+    private final ContentSetter contentSetter;
     private final EncodingSerialization encoding = new EncodingSerialization();
     private final ContainerRefSerialization containerRef = new ContainerRefSerialization();
     private final ContainerSummarySerialization containerSummary =
@@ -24,12 +26,15 @@ public class ClipSerialization {
     private final SegmentEventSerialization segmentEvent = new SegmentEventSerialization();
     private final RestrictionSerialization restriction = new RestrictionSerialization();
 
+    public ClipSerialization(ContentSetter parent) {
+        this.contentSetter = checkNotNull(parent);
+    }
+
     public Clip serialize(org.atlasapi.content.Clip clip) {
         if (clip == null) {
             return null;
         }
-        Clip internal =
-                new Clip();
+        Clip internal = new Clip();
 
         contentSetter.serialize(internal, clip);
 
