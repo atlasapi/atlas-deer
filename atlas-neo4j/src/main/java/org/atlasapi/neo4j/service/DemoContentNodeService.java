@@ -13,18 +13,18 @@ import org.neo4j.ogm.session.Session;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ContentNodeService {
+public class DemoContentNodeService {
 
-    public static final int DEPTH_LIST = 0;
+    private static final int DEPTH_LIST = 0;
 
     private final Session session;
 
-    private ContentNodeService(Session session) {
+    private DemoContentNodeService(Session session) {
         this.session = checkNotNull(session);
     }
 
-    public static ContentNodeService create(Session session) {
-        return new ContentNodeService(session);
+    public static DemoContentNodeService create(Session session) {
+        return new DemoContentNodeService(session);
     }
 
     public Iterable<ContentNode> findAll() {

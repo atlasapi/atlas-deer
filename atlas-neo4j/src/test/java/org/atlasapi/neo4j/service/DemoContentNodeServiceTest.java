@@ -20,14 +20,14 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-public class ContentNodeServiceTest {
+public class DemoContentNodeServiceTest {
 
-    private ContentNodeService service;
+    private DemoContentNodeService service;
 
     @Before
     public void setUp() throws Exception {
         Session session = Neo4jSessionFactory.createWithEmbeddedDriver().getNeo4jSession();
-        service = ContentNodeService.create(session);
+        service = DemoContentNodeService.create(session);
     }
 
     @Test
