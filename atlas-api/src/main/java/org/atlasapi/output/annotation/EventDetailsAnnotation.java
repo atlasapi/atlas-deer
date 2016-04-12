@@ -3,7 +3,6 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.List;
 
-import org.atlasapi.event.Event;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;

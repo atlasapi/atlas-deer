@@ -6,7 +6,6 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.event.Event;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;

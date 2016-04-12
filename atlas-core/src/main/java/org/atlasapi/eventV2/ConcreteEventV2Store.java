@@ -6,10 +6,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.event.Event;
-import org.atlasapi.event.EventHasher;
-import org.atlasapi.event.EventPersistenceStore;
-import org.atlasapi.event.EventRef;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
 import com.metabroadcast.common.ids.IdGenerator;

@@ -4,11 +4,6 @@ import java.util.List;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
-import org.atlasapi.event.ConcreteEventStore;
-import org.atlasapi.event.Event;
-import org.atlasapi.event.EventHasher;
-import org.atlasapi.event.EventPersistenceStore;
-import org.atlasapi.event.EventStore;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 

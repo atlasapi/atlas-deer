@@ -72,8 +72,6 @@ public class CassandraInit {
          */
 
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
-                "/atlas_event.schema")));
-        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_event_v2.schema")));
         session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
                 "/atlas_schedule_v2.schema")));
@@ -87,12 +85,6 @@ public class CassandraInit {
         CassandraHelper.createColumnFamily(
                 context,
                 "schedule",
-                StringSerializer.get(),
-                StringSerializer.get()
-        );
-        CassandraHelper.createColumnFamily(
-                context,
-                "event_aliases",
                 StringSerializer.get(),
                 StringSerializer.get()
         );
@@ -124,9 +116,9 @@ public class CassandraInit {
     public static void truncate(Session session, AstyanaxContext<Keyspace> context)
             throws ConnectionException {
         ImmutableList<String> tables = ImmutableList.of(
-                "content", "content_aliases", "event_aliases", "equivalence_graph_index",
+                "content", "content_aliases", "equivalence_graph_index",
                 "equivalence_graph", "segments", "segments_aliases", "schedule_v2", "schedule",
-                "equivalent_content_index", "equivalent_content", "equivalent_schedule", "event",
+                "equivalent_content_index", "equivalent_content", "equivalent_schedule",
                 "organisation", "organisation_uri", "event_aliases_v2"
         );
         for (String table : tables) {

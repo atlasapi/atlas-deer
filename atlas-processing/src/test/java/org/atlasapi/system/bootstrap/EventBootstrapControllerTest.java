@@ -6,9 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.event.Event;
-import org.atlasapi.event.EventResolver;
-import org.atlasapi.event.EventWriter;
+import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.eventV2.EventV2Writer;
 
@@ -31,13 +29,11 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class EventBootstrapControllerTest {
 
-    private @Mock EventResolver resolver;
-    private @Mock EventWriter writer;
     private @Mock EventV2Resolver v2Resolver;
     private @Mock EventV2Writer v2Writer;
     private @Mock NumberToShortStringCodec idCodec;
     private @Mock HttpServletResponse response;
-    private @Mock Event event;
+    private @Mock EventV2 event;
 
     private EventBootstrapController controller;
 
@@ -46,7 +42,7 @@ public class EventBootstrapControllerTest {
 
     @Before
     public void setUp() throws Exception {
-        controller = new EventBootstrapController(resolver, v2Resolver, writer, idCodec, v2Writer);
+        controller = new EventBootstrapController(v2Resolver, idCodec, v2Writer);
 
         id = "0";
         encodedId = 0L;
@@ -57,23 +53,23 @@ public class EventBootstrapControllerTest {
 
     @Test
     public void testBootstrapEvent() throws Exception {
-        when(resolver.resolveIds(ImmutableList.of(Id.valueOf(encodedId))))
+        when(v2Resolver.resolveIds(ImmutableList.of(Id.valueOf(encodedId))))
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(event))));
 
-        controller.bootstrapEvent(id, response);
+        controller.bootstrapEventV2(id, response);
 
-        verify(writer).write(event);
+        verify(v2Writer).write(event);
         verify(response).setStatus(HttpStatus.OK.value());
     }
 
     @Test
     public void testBootstrapMissingEvent() throws Exception {
-        when(resolver.resolveIds(any())).thenReturn(Futures.immediateFuture(Resolved.valueOf(
+        when(v2Resolver.resolveIds(any())).thenReturn(Futures.immediateFuture(Resolved.valueOf(
                 ImmutableList.of())));
 
-        controller.bootstrapEvent(id, response);
+        controller.bootstrapEventV2(id, response);
 
-        verify(writer, never()).write(any());
+        verify(v2Writer, never()).write(any());
         verify(response).sendError(HttpStatus.NOT_FOUND.value());
     }
 }

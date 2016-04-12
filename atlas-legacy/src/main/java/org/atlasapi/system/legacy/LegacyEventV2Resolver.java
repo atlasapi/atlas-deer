@@ -5,9 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.IdResolver;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.event.Event;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.organisation.OrganisationStore;

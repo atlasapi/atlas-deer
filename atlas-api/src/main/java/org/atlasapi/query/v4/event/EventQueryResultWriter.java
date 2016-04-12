@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.event.Event;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;

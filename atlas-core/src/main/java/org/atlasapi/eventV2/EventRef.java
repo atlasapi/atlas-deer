@@ -1,4 +1,4 @@
-package org.atlasapi.event;
+package org.atlasapi.eventV2;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;

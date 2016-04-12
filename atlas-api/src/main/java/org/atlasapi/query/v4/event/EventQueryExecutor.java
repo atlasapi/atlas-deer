@@ -5,8 +5,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.event.Event;
-import org.atlasapi.event.EventResolver;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.output.NotFoundException;

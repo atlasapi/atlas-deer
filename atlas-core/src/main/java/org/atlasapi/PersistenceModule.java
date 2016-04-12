@@ -2,7 +2,7 @@ package org.atlasapi;
 
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.event.EventStore;
+import org.atlasapi.eventV2.EventV2Store;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
@@ -25,7 +25,7 @@ public interface PersistenceModule {
 
     EquivalentScheduleStore equivalentScheduleStore();
 
-    EventStore eventStore();
+    EventV2Store eventStore();
 
     OrganisationStore organisationStore();
 }

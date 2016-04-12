@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMessage> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EventReadWriteWorker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SeparatingEventReadWriteWorker.class);
 
     private final EventV2Resolver resolver;
     private final EventV2Writer writer;

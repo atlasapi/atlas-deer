@@ -10,7 +10,7 @@ import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.event.EventStore;
+import org.atlasapi.eventV2.EventV2Store;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
@@ -115,7 +115,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
 
         CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(
                 messageSenderFactory, context, cassandraService, keyspace, idGeneratorBuilder(),
-                content -> UUID.randomUUID().toString(), event -> UUID.randomUUID().toString(), eventv2 -> UUID.randomUUID().toString(),
+                content -> UUID.randomUUID().toString(), eventv2 -> UUID.randomUUID().toString(),
                 seeds, new MetricRegistry()
         );
         persistenceModule.startAsync().awaitRunning();
@@ -200,7 +200,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
     }
 
     @Override
-    public EventStore eventStore() {
+    public EventV2Store eventStore() {
         return persistenceModule.eventStore();
     }
 

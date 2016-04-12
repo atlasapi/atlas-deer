@@ -7,9 +7,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.event.Event;
-import org.atlasapi.event.EventResolver;
-import org.atlasapi.event.EventWriter;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.eventV2.EventV2Writer;
@@ -33,47 +30,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Controller
 public class EventBootstrapController {
 
-    private final EventResolver resolver;
     private final EventV2Resolver v2Resolver;
-    private final EventWriter writer;
     private final EventV2Writer eventV2Writer;
     private final NumberToShortStringCodec idCodec;
 
-    public EventBootstrapController(EventResolver resolver, EventV2Resolver v2Resolver, EventWriter writer, EventV2Writer eventsV2writer) {
-        this(resolver, v2Resolver, writer, SubstitutionTableNumberCodec.lowerCaseOnly(), eventsV2writer);
+    public EventBootstrapController(EventV2Resolver v2Resolver, EventV2Writer eventsV2writer) {
+        this(v2Resolver, SubstitutionTableNumberCodec.lowerCaseOnly(), eventsV2writer);
     }
 
     @VisibleForTesting
-    EventBootstrapController(EventResolver resolver, EventV2Resolver v2Resolver, EventWriter writer,
+    EventBootstrapController(EventV2Resolver v2Resolver,
             NumberToShortStringCodec idCodec, EventV2Writer eventV2Writer) {
-        this.resolver = checkNotNull(resolver);
-        this.writer = checkNotNull(writer);
         this.idCodec = checkNotNull(idCodec);
         this.eventV2Writer = checkNotNull(eventV2Writer);
         this.v2Resolver = checkNotNull(v2Resolver);
     }
-
-    @RequestMapping(value = "/system/bootstrap/event/{id}", method = RequestMethod.POST)
-    public void bootstrapEvent(@PathVariable("id") String encodedId, HttpServletResponse resp)
-            throws IOException {
-        Id id = Id.valueOf(idCodec.decode(encodedId).longValue());
-        ListenableFuture<Resolved<Event>> future = resolver.resolveIds(ImmutableList.of(id));
-        Resolved<Event> resolved = Futures.get(future, IOException.class);
-        if (resolved.getResources().isEmpty()) {
-            resp.sendError(HttpStatus.NOT_FOUND.value());
-            return;
-        }
-        for (Event event : resolved.getResources()) {
-            try {
-                writer.write(event);
-            } catch (WriteException e) {
-                Throwables.propagate(e);
-            }
-        }
-        resp.setStatus(HttpStatus.OK.value());
-        resp.setContentLength(0);
-    }
-
     @RequestMapping(value = "/system/bootstrap/eventv2/{id}", method = RequestMethod.POST)
     public void bootstrapEventV2(@PathVariable("id") String encodedId, HttpServletResponse resp)
             throws IOException {

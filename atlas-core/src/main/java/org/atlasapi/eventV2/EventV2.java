@@ -4,7 +4,6 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
-import org.atlasapi.event.Event;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.topic.Topic;
@@ -79,7 +78,7 @@ public class EventV2 extends Identified implements Sourced {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(Event.class)
+        return Objects.toStringHelper(EventV2.class)
                 .add("title", title)
                 .add("source", source)
                 .add("venue", venue)
@@ -97,8 +96,8 @@ public class EventV2 extends Identified implements Sourced {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Event) {
-            Event target = (Event) obj;
+        if (obj instanceof EventV2) {
+            EventV2 target = (EventV2) obj;
             return getId() != null ? Objects.equal(getId(), target.getId())
                                    : Objects.equal(getCanonicalUri(), target.getCanonicalUri());
         }

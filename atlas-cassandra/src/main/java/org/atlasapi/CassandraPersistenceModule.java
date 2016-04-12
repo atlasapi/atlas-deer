@@ -8,11 +8,6 @@ import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
-import org.atlasapi.event.ConcreteEventStore;
-import org.atlasapi.event.DatastaxCassandraEventStore;
-import org.atlasapi.event.EventHasher;
-import org.atlasapi.event.EventPersistenceStore;
-import org.atlasapi.event.EventStore;
 import org.atlasapi.eventV2.ConcreteEventV2Store;
 import org.atlasapi.eventV2.DatastaxCassandraEventStoreV2;
 import org.atlasapi.eventV2.EventV2;
@@ -84,7 +79,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final Session session;
 
     private final ContentHasher contentHasher;
-    private final EventHasher eventHasher;
     private final EventV2Hasher eventV2Hasher;
     private final IdGeneratorBuilder idGeneratorBuilder;
 
@@ -104,7 +98,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
-    private EventStore eventStore;
     private EventV2Store eventV2Store;
     private OrganisationStore organisationStore;
     private OrganisationStore idSettingOrganisationStore;
@@ -118,12 +111,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             String keyspace,
             IdGeneratorBuilder idGeneratorBuilder,
             ContentHasher contentHasher,
-            EventHasher eventHasher,
             EventV2Hasher eventV2Hasher,
             Iterable<String> cassNodes,
             MetricRegistry metrics) {
         this.contentHasher = contentHasher;
-        this.eventHasher = checkNotNull(eventHasher);
         this.eventV2Hasher = checkNotNull(eventV2Hasher);
         this.idGeneratorBuilder = idGeneratorBuilder;
         this.contentIdGenerator = idGeneratorBuilder.generator("content");
@@ -252,7 +243,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withEquivalence(segmentEquivalence())
                 .build();
 
-        this.eventStore = getEventStore(session);
         this.eventV2Store = getEventV2Store(session);
         this.organisationStore = getOrganisationStore(session);
         this.idSettingOrganisationStore = getIdSettingOrganisationStore(session);
@@ -332,12 +322,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return this.segmentStore;
     }
 
-    @Override
-    public EventStore eventStore() {
-        return eventStore;
-    }
-
-    public EventV2Store eventV2Store() {
+    public EventV2Store eventStore() {
         return eventV2Store;
     }
 
@@ -388,23 +373,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public EquivalentScheduleStore equivalentScheduleStore() {
         return this.equivalentScheduleStore;
-    }
-
-    private EventStore getEventStore(Session session) {
-        EventPersistenceStore eventPersistenceStore = DatastaxCassandraEventStore.builder()
-                .withAliasIndex(AliasIndex.create(context.getClient(), "event_aliases"))
-                .withSession(session)
-                .withWriteConsistency(getWriteConsistencyLevel())
-                .withReadConsistency(getReadConsistencyLevel())
-                .build();
-
-        return ConcreteEventStore.builder()
-                .withClock(new SystemClock())
-                .withIdGenerator(idGeneratorBuilder.generator("event"))
-                .withEventHasher(eventHasher)
-                .withSender(nullMessageSender(ResourceUpdatedMessage.class))
-                .withPersistenceStore(eventPersistenceStore)
-                .build();
     }
 
     private EventV2Store getEventV2Store(Session session) {

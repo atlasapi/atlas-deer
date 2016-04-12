@@ -1,7 +1,6 @@
 package org.atlasapi.eventV2;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.event.Event;
 import org.atlasapi.media.entity.Publisher;
 
 import org.junit.Test;
@@ -13,7 +12,7 @@ public class EventV2Test {
 
     @Test
     public void testBuilderPopulatesSuperclassFields() throws Exception {
-        Event event = Event.builder()
+        EventV2 event = EventV2.builder()
                 .withId(Id.valueOf(0L))
                 .withTitle("title")
                 .withSource(Publisher.BBC)

@@ -22,7 +22,6 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
-import org.atlasapi.event.Event;
 import org.atlasapi.eventV2.EventV2;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.EquivalentSetContentHierarchyChooser;
