@@ -1,7 +1,7 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.eventV2.EventRef;
+import org.atlasapi.event.EventRef;
 import org.atlasapi.media.entity.Publisher;
 
 import org.junit.Test;

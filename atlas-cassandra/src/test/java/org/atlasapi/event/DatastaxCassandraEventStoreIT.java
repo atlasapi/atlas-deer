@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -11,7 +11,6 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.util.CassandraInit;
 
@@ -49,7 +48,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DatastaxCassandraEventStoreV2IT {
+public class DatastaxCassandraEventStoreIT {
 
     private static final String EVENT_TABLE = "event_v2";
     private static final String EVENT_ALIASES_TABLE = "event_aliases_v2";
@@ -64,13 +63,13 @@ public class DatastaxCassandraEventStoreV2IT {
 
     private static Session session;
 
-    private @Mock EventV2Hasher hasher;
+    private @Mock EventHasher hasher;
     private @Mock IdGenerator idGenerator;
     private @Mock MessageSender<ResourceUpdatedMessage> sender;
 
     private @Mock Clock clock;
 
-    private EventV2Store store;
+    private EventStore store;
     private DateTime now;
     private DateTime secondNow;
     private long firstId;
@@ -97,14 +96,14 @@ public class DatastaxCassandraEventStoreV2IT {
 
     @Before
     public void setUp() throws Exception {
-        DatastaxCassandraEventStoreV2 persistenceStore = new DatastaxCassandraEventStoreV2(
+        DatastaxCassandraEventStore persistenceStore = new DatastaxCassandraEventStore(
                 AliasIndex.create(context.getClient(), EVENT_ALIASES_TABLE),
                 session,
                 readConsistency,
                 writeConsistency
         );
 
-        store = new ConcreteEventV2Store(clock, idGenerator, hasher, sender, persistenceStore);
+        store = new ConcreteEventStore(clock, idGenerator, hasher, sender, persistenceStore);
 
         now = new DateTime(DateTimeZones.UTC);
         secondNow = now.plusHours(1);
@@ -123,20 +122,20 @@ public class DatastaxCassandraEventStoreV2IT {
     @Test
     public void testWriteAndReadEvent() throws Exception {
         List<OrganisationRef> organisationRefs = ImmutableList.of(new OrganisationRef(Id.valueOf(1l), Publisher.BBC));
-        EventV2 expected = EventV2.builder()
+        Event expected = Event.builder()
                 .withTitle("title")
                 .withSource(Publisher.BBC)
                 .withOrganisations(organisationRefs).build();
-        WriteResult<EventV2, EventV2> writeResult = store.write(expected);
+        WriteResult<Event, Event> writeResult = store.write(expected);
         assertTrue(writeResult.written());
         assertThat(writeResult.getResource().getId().longValue(), is(firstId));
         assertThat(writeResult.getResource().getOrganisations(), is(organisationRefs));
         assertFalse(writeResult.getPrevious().isPresent());
 
-        Resolved<EventV2> resolved = store
+        Resolved<Event> resolved = store
                 .resolveIds(ImmutableList.of(Id.valueOf(expected.getId().longValue())))
                 .get(1, TimeUnit.SECONDS);
-        EventV2 actual = Iterables.getOnlyElement(resolved.getResources());
+        Event actual = Iterables.getOnlyElement(resolved.getResources());
 
         assertThat(actual.getId(), is(writeResult.getResource().getId()));
         assertThat(actual.getTitle(), is(expected.getTitle()));
@@ -147,12 +146,12 @@ public class DatastaxCassandraEventStoreV2IT {
     public void testContentNotWrittenWhenHashNotChanged() throws Exception {
         when(hasher.hash(any())).thenReturn("sameHash");
 
-        EventV2 expected = EventV2.builder().withTitle("title").withSource(Publisher.BBC).build();
+        Event expected = Event.builder().withTitle("title").withSource(Publisher.BBC).build();
 
-        WriteResult<EventV2, EventV2> firstWriteResult = store.write(expected);
+        WriteResult<Event, Event> firstWriteResult = store.write(expected);
         assertTrue(firstWriteResult.written());
 
-        WriteResult<EventV2, EventV2> secondWriteResult = store.write(expected);
+        WriteResult<Event, Event> secondWriteResult = store.write(expected);
         assertFalse(secondWriteResult.written());
 
         verify(hasher, times(2)).hash(any());
@@ -162,17 +161,17 @@ public class DatastaxCassandraEventStoreV2IT {
     public void testContentWrittenWhenHashChanged() throws Exception {
         when(hasher.hash(any())).thenReturn("hashA", "hashB");
 
-        EventV2 expected = EventV2.builder().withTitle("title").withSource(Publisher.BBC).build();
+        Event expected = Event.builder().withTitle("title").withSource(Publisher.BBC).build();
 
-        WriteResult<EventV2, EventV2> firstWriteResult = store.write(expected);
+        WriteResult<Event, Event> firstWriteResult = store.write(expected);
         assertTrue(firstWriteResult.written());
 
-        WriteResult<EventV2, EventV2> secondWriteResult = store.write(expected);
+        WriteResult<Event, Event> secondWriteResult = store.write(expected);
         assertTrue(secondWriteResult.written());
 
         verify(hasher, times(2)).hash(any());
 
-        EventV2 actual = secondWriteResult.getResource();
+        Event actual = secondWriteResult.getResource();
         assertThat(actual.getId().longValue(), is(firstId));
         assertThat(actual.getLastUpdated(), is(secondNow));
 
@@ -183,35 +182,35 @@ public class DatastaxCassandraEventStoreV2IT {
         when(hasher.hash(any())).thenReturn("hashA", "hashB");
 
         Alias alias = new Alias("namespace", "same");
-        EventV2 firstEvent = EventV2.builder()
+        Event firstEvent = Event.builder()
                 .withTitle("titleA")
                 .withSource(Publisher.BBC)
                 .withAliases(Lists.newArrayList(alias))
                 .build();
-        EventV2 secondEvent = EventV2.builder()
+        Event secondEvent = Event.builder()
                 .withTitle("titleB")
                 .withSource(Publisher.BBC)
                 .withAliases(Lists.newArrayList(alias))
                 .build();
 
-        WriteResult<EventV2, EventV2> firstWriteResult = store.write(firstEvent);
+        WriteResult<Event, Event> firstWriteResult = store.write(firstEvent);
         assertTrue(firstWriteResult.written());
 
-        WriteResult<EventV2, EventV2> secondWriteResult = store.write(secondEvent);
+        WriteResult<Event, Event> secondWriteResult = store.write(secondEvent);
         assertThat(secondWriteResult.written(), is(true));
 
-        EventV2 actualWritten = secondWriteResult.getResource();
+        Event actualWritten = secondWriteResult.getResource();
         assertThat(actualWritten.getId().longValue(), is(firstId));
         assertThat(actualWritten.getTitle(), is("titleB"));
 
-        Optional<EventV2> actualPrevious = secondWriteResult.getPrevious();
+        Optional<Event> actualPrevious = secondWriteResult.getPrevious();
         assertThat(actualPrevious.isPresent(), is(true));
         assertThat(actualPrevious.get().getId().longValue(), is(firstId));
     }
 
     @Test
     public void testResolvingMissingEventReturnsEmptyResolved() throws Exception {
-        ListenableFuture<Resolved<EventV2>> resolved =
+        ListenableFuture<Resolved<Event>> resolved =
                 store.resolveIds(ImmutableSet.of(Id.valueOf(4321L)));
 
         assertTrue(resolved.get(1, TimeUnit.SECONDS).getResources().isEmpty());

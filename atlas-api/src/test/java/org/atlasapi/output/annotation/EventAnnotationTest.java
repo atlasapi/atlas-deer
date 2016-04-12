@@ -6,7 +6,7 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.eventV2.EventV2;
+import org.atlasapi.event.Event;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationRef;
@@ -40,13 +40,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class EventAnnotationV2Test {
+public class EventAnnotationTest {
 
     private @Mock FieldWriter fieldWriter;
     private OrganisationResolver resolver = mock(OrganisationResolver.class);
     private NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private EntityListWriter<ItemRef> itemRefWriter = new ItemRefWriter(idCodec, "items");
-    private final EventAnnotationV2 eventAnnotation = new EventAnnotationV2(itemRefWriter, resolver);
+    private final EventAnnotation eventAnnotation = new EventAnnotation(itemRefWriter, resolver);
 
     @Test
     public void eventFieldsTest() throws Exception {
@@ -64,7 +64,7 @@ public class EventAnnotationV2Test {
         organisation.setPublisher(Publisher.BBC);
         organisation.setId(Id.valueOf(14));
 
-        EventV2 event = EventV2.builder().withTitle("Sherlock Holmes")
+        Event event = Event.builder().withTitle("Sherlock Holmes")
                 .withSource(Publisher.BBC)
                 .withStartTime(new DateTime())
                 .withEndTime(new DateTime())

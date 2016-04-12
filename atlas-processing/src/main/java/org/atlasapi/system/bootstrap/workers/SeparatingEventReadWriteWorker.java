@@ -3,9 +3,9 @@ package org.atlasapi.system.bootstrap.workers;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.eventV2.EventV2;
-import org.atlasapi.eventV2.EventV2Resolver;
-import org.atlasapi.eventV2.EventV2Writer;
+import org.atlasapi.event.Event;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
 import com.metabroadcast.common.queue.AbstractMessage;
@@ -27,11 +27,11 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
 
     private static final Logger LOG = LoggerFactory.getLogger(SeparatingEventReadWriteWorker.class);
 
-    private final EventV2Resolver resolver;
-    private final EventV2Writer writer;
+    private final EventResolver resolver;
+    private final EventWriter writer;
     private final Timer metricsTimer;
 
-    public SeparatingEventReadWriteWorker(EventV2Resolver resolver, EventV2Writer writer, Timer metricsTimer) {
+    public SeparatingEventReadWriteWorker(EventResolver resolver, EventWriter writer, Timer metricsTimer) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
         this.metricsTimer = checkNotNull(metricsTimer);
@@ -51,12 +51,12 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
     public void process(Iterable<Id> ids) {
         Timer.Context time = metricsTimer.time();
 
-        ListenableFuture<Resolved<EventV2>> future = resolver.resolveIds(ids);
-        Futures.addCallback(future, new FutureCallback<Resolved<EventV2>>() {
+        ListenableFuture<Resolved<Event>> future = resolver.resolveIds(ids);
+        Futures.addCallback(future, new FutureCallback<Resolved<Event>>() {
 
             @Override
-            public void onSuccess(Resolved<EventV2> result) {
-                for (EventV2 event : result.getResources()) {
+            public void onSuccess(Resolved<Event> result) {
+                for (Event event : result.getResources()) {
                     try {
                         writer.write(event);
                     } catch (WriteException e) {

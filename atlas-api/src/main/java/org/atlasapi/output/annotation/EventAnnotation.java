@@ -10,7 +10,7 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.eventV2.EventV2;
+import org.atlasapi.event.Event;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationRef;
@@ -27,7 +27,7 @@ import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 
 
-public class EventAnnotationV2 extends OutputAnnotation<EventV2> {
+public class EventAnnotation extends OutputAnnotation<Event> {
 
     private final EntityListWriter<ItemRef> itemRefWriter;
     private final EntityWriter<Publisher> publisherWriter = SourceWriter.sourceWriter("source");
@@ -37,13 +37,13 @@ public class EventAnnotationV2 extends OutputAnnotation<EventV2> {
 
     private final OrganisationResolver resolver;
 
-    public EventAnnotationV2(EntityListWriter<ItemRef> itemRefWriter, OrganisationResolver organisationResolver) {
+    public EventAnnotation(EntityListWriter<ItemRef> itemRefWriter, OrganisationResolver organisationResolver) {
         this.itemRefWriter = itemRefWriter;
         this.resolver = organisationResolver;
     }
 
     @Override
-    public void write(EventV2 entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(Event entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeField("title", entity.getTitle());
         writer.writeField("start_time", entity.getStartTime().toString());
         writer.writeField("end_time", entity.getEndTime().toString());

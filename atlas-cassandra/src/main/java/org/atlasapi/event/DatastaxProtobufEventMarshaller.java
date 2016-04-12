@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import java.nio.ByteBuffer;
 
@@ -16,16 +16,16 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class DatastaxProtobufEventV2Marshaller implements EventV2Marshaller<BatchStatement, Row> {
+public class DatastaxProtobufEventMarshaller implements EventMarshaller<BatchStatement, Row> {
 
     private static final String TABLE = "event_v2";
     private static final String PRIMARY_KEY_COLUMN = "event_id";
     private static final String DATA_COLUMN = "data";
 
-    private final Serializer<EventV2, byte[]> serializer;
+    private final Serializer<Event, byte[]> serializer;
     private final PreparedStatement dataUpdate;
 
-    protected DatastaxProtobufEventV2Marshaller(Serializer<EventV2, byte[]> serialiser,
+    protected DatastaxProtobufEventMarshaller(Serializer<Event, byte[]> serialiser,
             Session session) {
         this.serializer = checkNotNull(serialiser);
         this.dataUpdate = session.prepare(update(TABLE)
@@ -34,13 +34,13 @@ public class DatastaxProtobufEventV2Marshaller implements EventV2Marshaller<Batc
     }
 
     @Override
-    public void marshallInto(Id id, BatchStatement mutation, EventV2 event) {
+    public void marshallInto(Id id, BatchStatement mutation, Event event) {
         byte[] serialized = serializer.serialize(event);
         addDataToBatch(mutation, id, serialized);
     }
 
     @Override
-    public EventV2 unmarshall(Row data) {
+    public Event unmarshall(Row data) {
         return serializer.deserialize(toByteArrayValues(data));
     }
 

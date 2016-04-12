@@ -3,9 +3,9 @@ package org.atlasapi.system.bootstrap.workers;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.eventV2.EventV2;
-import org.atlasapi.eventV2.EventV2Resolver;
-import org.atlasapi.eventV2.EventV2Writer;
+import org.atlasapi.event.Event;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
 import com.metabroadcast.common.time.Timestamp;
@@ -26,13 +26,13 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class EventReadWriteWorkerTest {
 
-    private @Mock EventV2Resolver resolver;
-    private @Mock EventV2Writer writer;
+    private @Mock EventResolver resolver;
+    private @Mock EventWriter writer;
     private @Mock Timer timer;
     private @Mock Timer.Context timerContext;
     private ResourceUpdatedMessage message;
     private @Mock ResourceRef updatedResource;
-    private @Mock EventV2 event;
+    private @Mock Event event;
 
     private SeparatingEventReadWriteWorker worker;
 

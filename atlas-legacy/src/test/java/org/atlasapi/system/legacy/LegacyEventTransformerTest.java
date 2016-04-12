@@ -14,7 +14,6 @@ import org.atlasapi.media.entity.Topic;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.content.ContentCategory;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
@@ -25,15 +24,14 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.hamcrest.Matchers.any;
 import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
-public class LegacyEventV2TransformerTest {
+public class LegacyEventTransformerTest {
 
-    private LegacyEventV2Transformer eventTransformer;
+    private LegacyEventTransformer eventTransformer;
     @Mock
     private OrganisationStore organisationStore;
 
@@ -44,14 +42,14 @@ public class LegacyEventV2TransformerTest {
         organisation.setPublisher(Publisher.BBC);
         organisation.setCanonicalUri("uri");
         when(organisationStore.write(Matchers.any(org.atlasapi.organisation.Organisation.class))).thenReturn(organisation);
-        eventTransformer = new LegacyEventV2Transformer(organisationStore);
+        eventTransformer = new LegacyEventTransformer(organisationStore);
     }
 
     @Test
     public void testTransformation() throws Exception {
         Event input = getEvent();
 
-        org.atlasapi.eventV2.EventV2 event = eventTransformer.apply(input);
+        org.atlasapi.event.Event event = eventTransformer.apply(input);
 
         checkEvent(event, input);
     }
@@ -103,7 +101,7 @@ public class LegacyEventV2TransformerTest {
         return input;
     }
 
-    private void checkEvent(org.atlasapi.eventV2.EventV2 event, Event input) {
+    private void checkEvent(org.atlasapi.event.Event event, Event input) {
         assertThat(event.getTitle(), is(input.title()));
         assertThat(event.getSource(), is(input.publisher()));
         assertThat(event.getVenue().getId().longValue(), is(0L));

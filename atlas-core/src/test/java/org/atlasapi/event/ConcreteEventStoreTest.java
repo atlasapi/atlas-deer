@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import java.util.List;
 
@@ -37,22 +37,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ConcreteEventV2StoreTest {
+public class ConcreteEventStoreTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private @Captor ArgumentCaptor<EventV2> eventCaptor;
+    private @Captor ArgumentCaptor<Event> eventCaptor;
     private @Captor ArgumentCaptor<Iterable<Alias>> aliasCaptor;
     private @Captor ArgumentCaptor<ResourceUpdatedMessage> messageCaptor;
 
-    private EventV2Store eventStore;
+    private EventStore eventStore;
 
     private @Mock Clock clock;
     private @Mock IdGenerator idGenerator;
-    private @Mock EventV2Hasher eventHasher;
+    private @Mock EventHasher eventHasher;
     private @Mock MessageSender<ResourceUpdatedMessage> sender;
-    private @Mock EventV2PersistenceStore persistenceStore;
+    private @Mock EventPersistenceStore persistenceStore;
 
     private DateTime now;
     private long id;
@@ -60,7 +60,7 @@ public class ConcreteEventV2StoreTest {
 
     @Before
     public void setUp() throws Exception {
-        eventStore = new ConcreteEventV2Store(
+        eventStore = new ConcreteEventStore(
                 clock, idGenerator, eventHasher, sender, persistenceStore
         );
 
@@ -84,14 +84,14 @@ public class ConcreteEventV2StoreTest {
     @Test
     public void testWritePersistsNewEventIfNoneExists() throws Exception {
         when(persistenceStore.resolvePrevious(any(), any(), any()))
-                .thenReturn(Optional.<EventV2>absent());
+                .thenReturn(Optional.<Event>absent());
 
-        EventV2 expected = (EventV2) getEvent().build();
+        Event expected = (Event) getEvent().build();
         eventStore.write(expected);
 
         verify(persistenceStore).write(eventCaptor.capture(), eq(null));
 
-        EventV2 actual = eventCaptor.getValue();
+        Event actual = eventCaptor.getValue();
         assertThat(actual.getId().longValue(), is(id));
         assertThat(actual.getLastUpdated(), is(now));
         assertThat(actual.getTitle(), is(expected.getTitle()));
@@ -101,14 +101,14 @@ public class ConcreteEventV2StoreTest {
     @Test
     public void testWritePersistsNewEventUsesIdIfSpecified() throws Exception {
         when(persistenceStore.resolvePrevious(any(), any(), any()))
-                .thenReturn(Optional.<EventV2>absent());
+                .thenReturn(Optional.<Event>absent());
 
-        EventV2 expected = (EventV2) getEvent().withId(Id.valueOf(1111L)).build();
+        Event expected = (Event) getEvent().withId(Id.valueOf(1111L)).build();
         eventStore.write(expected);
 
         verify(persistenceStore).write(eventCaptor.capture(), eq(null));
 
-        EventV2 actual = eventCaptor.getValue();
+        Event actual = eventCaptor.getValue();
         assertThat(actual.getId().longValue(), is(1111L));
         assertThat(actual.getLastUpdated(), is(now));
         assertThat(actual.getTitle(), is(expected.getTitle()));
@@ -119,7 +119,7 @@ public class ConcreteEventV2StoreTest {
     public void testWriteGetsIdFromExistingEvent() throws Exception {
         Id id = Id.valueOf(this.id);
         Alias alias = new Alias("ns", "value");
-        EventV2 previousEvent = (EventV2) getEvent()
+        Event previousEvent = (Event) getEvent()
                 .withId(id)
                 .withAliases(Lists.newArrayList(alias))
                 .build();
@@ -127,7 +127,7 @@ public class ConcreteEventV2StoreTest {
                 .thenReturn(Optional.of(previousEvent));
         when(eventHasher.hash(any())).thenReturn("a", "b");
 
-        EventV2 expected = (EventV2) getEvent()
+        Event expected = (Event) getEvent()
                 .withTitle("b")
                 .withAliases(Lists.newArrayList(alias))
                 .build();
@@ -144,21 +144,21 @@ public class ConcreteEventV2StoreTest {
 
         assertThat(eventCaptor.getAllValues().size(), is(2));
 
-        EventV2 actual = eventCaptor.getAllValues().get(0);
+        Event actual = eventCaptor.getAllValues().get(0);
         assertThat(actual.getId().longValue(), is(id.longValue()));
         assertThat(actual.getLastUpdated(), is(now));
         assertThat(actual.getTitle(), is("b"));
 
-        EventV2 actualPrevious = eventCaptor.getAllValues().get(1);
+        Event actualPrevious = eventCaptor.getAllValues().get(1);
         assertThat(actualPrevious, sameInstance(previousEvent));
     }
 
     @Test
     public void testWriteSendsResourceUpdatedMessage() throws Exception {
         when(persistenceStore.resolvePrevious(any(), any(), any()))
-                .thenReturn(Optional.<EventV2>absent());
+                .thenReturn(Optional.<Event>absent());
 
-        EventV2 expected = (EventV2) getEvent().withId(Id.valueOf(1L)).build();
+        Event expected = (Event) getEvent().withId(Id.valueOf(1L)).build();
         eventStore.write(expected);
 
         verify(sender).sendMessage(
@@ -171,8 +171,8 @@ public class ConcreteEventV2StoreTest {
         assertThat(actual.getUpdatedResource().getId(), is(expected.getId()));
     }
 
-    private EventV2.Builder getEvent() {
-        return EventV2.builder()
+    private Event.Builder getEvent() {
+        return Event.builder()
                 .withTitle("title")
                 .withSource(publisher);
     }

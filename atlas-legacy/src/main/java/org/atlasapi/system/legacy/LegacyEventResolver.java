@@ -6,8 +6,8 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.eventV2.EventV2;
-import org.atlasapi.eventV2.EventV2Resolver;
+import org.atlasapi.event.Event;
+import org.atlasapi.event.EventResolver;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.event.EventStore;
 
@@ -18,25 +18,25 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class LegacyEventV2Resolver implements EventV2Resolver {
+public class LegacyEventResolver implements EventResolver {
 
     private final org.atlasapi.persistence.event.EventResolver eventResolver;
-    private final LegacyEventV2Transformer legacyEventTransformer;
+    private final LegacyEventTransformer legacyEventTransformer;
 
-    public LegacyEventV2Resolver(EventStore eventResolver, OrganisationStore store) {
-        this(eventResolver, new LegacyEventV2Transformer(store));
+    public LegacyEventResolver(EventStore eventResolver, OrganisationStore store) {
+        this(eventResolver, new LegacyEventTransformer(store));
     }
 
     @VisibleForTesting
-    LegacyEventV2Resolver(org.atlasapi.persistence.event.EventResolver eventResolver,
-            LegacyEventV2Transformer legacyEventTransformer) {
+    LegacyEventResolver(org.atlasapi.persistence.event.EventResolver eventResolver,
+            LegacyEventTransformer legacyEventTransformer) {
         this.eventResolver = checkNotNull(eventResolver);
         this.legacyEventTransformer = checkNotNull(legacyEventTransformer);
     }
 
     @Override
-    public ListenableFuture<Resolved<EventV2>> resolveIds(Iterable<Id> ids) {
-        List<EventV2> events = StreamSupport.stream(ids.spliterator(), false)
+    public ListenableFuture<Resolved<Event>> resolveIds(Iterable<Id> ids) {
+        List<Event> events = StreamSupport.stream(ids.spliterator(), false)
                 .map(Id::longValue)
                 .map(eventResolver::fetch)
                 .filter(Optional::isPresent)

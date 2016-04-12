@@ -5,15 +5,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.eventV2.EventV2;
-import org.atlasapi.eventV2.EventV2Resolver;
+import org.atlasapi.event.Event;
+import org.atlasapi.event.EventResolver;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
-import com.google.api.client.json.JsonGenerator;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
@@ -56,26 +54,26 @@ public class EventDebugController {
             throws Exception {
         Id decodedId = Id.valueOf(lowercaseDecoder.decode(id));
 
-        EventV2Resolver legacyEventResolver = legacyPersistenceModule.legacyEventV2Resolver();
-        ListenableFuture<Resolved<EventV2>> future = legacyEventResolver.resolveIds(
+        EventResolver legacyEventResolver = legacyPersistenceModule.legacyEventResolver();
+        ListenableFuture<Resolved<Event>> future = legacyEventResolver.resolveIds(
                 ImmutableList.of(decodedId));
 
-        Resolved<EventV2> resolved = Futures.get(future, Exception.class);
-        EventV2 event = Iterables.getOnlyElement(resolved.getResources());
+        Resolved<Event> resolved = Futures.get(future, Exception.class);
+        Event event = Iterables.getOnlyElement(resolved.getResources());
         gson.toJson(event, response.getWriter());
     }
 
-    @RequestMapping("/system/debug/eventv2/{id}")
-    public void printEventV2(@PathVariable("id") String id, HttpServletResponse response)
+    @RequestMapping("/system/debug/event/{id}")
+    public void printEvent(@PathVariable("id") String id, HttpServletResponse response)
             throws Exception {
         Id decodedId = Id.valueOf(lowercaseDecoder.decode(id));
 
-        EventV2Resolver eventResolver = atlasPersistenceModule.eventV2Resolver();
-        ListenableFuture<Resolved<EventV2>> future = eventResolver.resolveIds(
+        EventResolver eventResolver = atlasPersistenceModule.eventResolver();
+        ListenableFuture<Resolved<Event>> future = eventResolver.resolveIds(
                 ImmutableList.of(decodedId));
 
-        Resolved<EventV2> resolved = Futures.get(future, Exception.class);
-        EventV2 event = Iterables.getOnlyElement(resolved.getResources());
+        Resolved<Event> resolved = Futures.get(future, Exception.class);
+        Event event = Iterables.getOnlyElement(resolved.getResources());
         gson.toJson(event, response.getWriter());
     }
 }

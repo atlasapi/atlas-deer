@@ -6,7 +6,7 @@ option java_package = "org.atlasapi.serialization.protobuf";
 option java_outer_classname = "EventProtos";
 option optimize_for = SPEED;
 
-message EventV2 {
+message Event {
     optional common.LocaleString title = 1;
     optional string source = 2;
     optional topic.Topic venue = 3;

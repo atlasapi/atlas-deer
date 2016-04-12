@@ -3,7 +3,7 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.List;
 
-import org.atlasapi.eventV2.EventV2;
+import org.atlasapi.event.Event;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
@@ -13,7 +13,7 @@ import org.atlasapi.topic.Topic;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EventDetailsAnnotation extends OutputAnnotation<EventV2> {
+public class EventDetailsAnnotation extends OutputAnnotation<Event> {
 
     private final EntityListWriter<Topic> topicListWriter = getTopicListWriter();
     private final AnnotationRegistry<Topic> annotationRegistry;
@@ -23,7 +23,7 @@ public class EventDetailsAnnotation extends OutputAnnotation<EventV2> {
     }
 
     @Override
-    public void write(EventV2 entity, FieldWriter writer, OutputContext ctxt) throws IOException {
+    public void write(Event entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeObject(topicListWriter, entity.getVenue(), ctxt);
         writer.writeList(topicListWriter, entity.getEventGroups(), ctxt);
     }

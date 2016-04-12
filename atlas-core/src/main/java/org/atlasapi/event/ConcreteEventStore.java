@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import java.util.UUID;
 
@@ -23,20 +23,20 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ConcreteEventV2Store implements EventV2Store {
+public class ConcreteEventStore implements EventStore {
 
-    private static final EventV2 NO_PREVIOUS = null;
+    private static final Event NO_PREVIOUS = null;
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final Clock clock;
     private final IdGenerator idGenerator;
-    private final EventV2Hasher eventHasher;
+    private final EventHasher eventHasher;
     private final MessageSender<ResourceUpdatedMessage> sender;
-    private final EventV2PersistenceStore persistenceStore;
+    private final EventPersistenceStore persistenceStore;
 
-    protected ConcreteEventV2Store(Clock clock, IdGenerator idGenerator, EventV2Hasher eventHasher,
-            MessageSender<ResourceUpdatedMessage> sender, EventV2PersistenceStore persistenceStore) {
+    protected ConcreteEventStore(Clock clock, IdGenerator idGenerator, EventHasher eventHasher,
+            MessageSender<ResourceUpdatedMessage> sender, EventPersistenceStore persistenceStore) {
         this.clock = checkNotNull(clock);
         this.idGenerator = checkNotNull(idGenerator);
         this.sender = checkNotNull(sender);
@@ -45,16 +45,16 @@ public class ConcreteEventV2Store implements EventV2Store {
     }
 
     @Override
-    public ListenableFuture<Resolved<EventV2>> resolveIds(Iterable<Id> ids) {
+    public ListenableFuture<Resolved<Event>> resolveIds(Iterable<Id> ids) {
         return persistenceStore.resolveIds(ids);
     }
 
     @Override
-    public WriteResult<EventV2, EventV2> write(EventV2 event) throws WriteException {
+    public WriteResult<Event, Event> write(Event event) throws WriteException {
         checkNotNull(event, "cannot write null event");
         checkNotNull(event.getSource(), "cannot write event without source");
 
-        WriteResult<EventV2, EventV2> result = writeInternal(event);
+        WriteResult<Event, Event> result = writeInternal(event);
 
         if (result.written()) {
             sendResourceUpdatedMessage(result);
@@ -63,65 +63,65 @@ public class ConcreteEventV2Store implements EventV2Store {
         return result;
     }
 
-    private WriteResult<EventV2, EventV2> writeInternal(EventV2 event) throws WriteException {
-        Optional<EventV2> previous = getPreviousEvent(event);
+    private WriteResult<Event, Event> writeInternal(Event event) throws WriteException {
+        Optional<Event> previous = getPreviousEvent(event);
         if (previous.isPresent()) {
             return writeEventWithPrevious(event, previous.get());
         }
         return writeNewEvent(event);
     }
 
-    private Optional<EventV2> getPreviousEvent(EventV2 event) {
+    private Optional<Event> getPreviousEvent(Event event) {
         return persistenceStore.resolvePrevious(
                 Optional.fromNullable(event.getId()), event.getSource(), event.getAliases()
         );
     }
 
-    private WriteResult<EventV2, EventV2> writeEventWithPrevious(EventV2 event, EventV2 previous) {
+    private WriteResult<Event, Event> writeEventWithPrevious(Event event, Event previous) {
         boolean written = false;
         if (hashChanged(event, previous)) {
             updateWithPrevious(event, previous);
             writeEvent(event, previous);
             written = true;
         }
-        return WriteResult.<EventV2, EventV2>result(event, written)
+        return WriteResult.<Event, Event>result(event, written)
                 .withPrevious(previous)
                 .build();
     }
 
-    private WriteResult<EventV2, EventV2> writeNewEvent(EventV2 event) {
+    private WriteResult<Event, Event> writeNewEvent(Event event) {
         updateTimes(event);
         writeEvent(event, NO_PREVIOUS);
-        return WriteResult.<EventV2, EventV2>written(event).build();
+        return WriteResult.<Event, Event>written(event).build();
     }
 
-    private boolean hashChanged(EventV2 writing, EventV2 previous) {
+    private boolean hashChanged(Event writing, Event previous) {
         return !eventHasher.hash(writing).equals(eventHasher.hash(previous));
     }
 
-    private void updateWithPrevious(EventV2 writing, EventV2 previous) {
+    private void updateWithPrevious(Event writing, Event previous) {
         writing.setId(previous.getId());
         updateTimes(writing);
     }
 
-    private void updateTimes(EventV2 event) {
+    private void updateTimes(Event event) {
         DateTime now = clock.now();
         event.setLastUpdated(now);
     }
 
-    private void ensureId(EventV2 event) {
+    private void ensureId(Event event) {
         if (event.getId() == null) {
             Id id = Id.valueOf(idGenerator.generateRaw());
             event.setId(id);
         }
     }
 
-    private void writeEvent(EventV2 event, EventV2 previous) {
+    private void writeEvent(Event event, Event previous) {
         ensureId(event);
         persistenceStore.write(event, previous);
     }
 
-    private void sendResourceUpdatedMessage(WriteResult<EventV2, EventV2> result) {
+    private void sendResourceUpdatedMessage(WriteResult<Event, Event> result) {
         ResourceUpdatedMessage message = createEntityUpdatedMessages(result);
         try {
             Id resourceId = message.getUpdatedResource().getId();
@@ -131,8 +131,8 @@ public class ConcreteEventV2Store implements EventV2Store {
         }
     }
 
-    private ResourceUpdatedMessage createEntityUpdatedMessages(WriteResult<EventV2, EventV2> result) {
-        EventV2 writtenResource = result.getResource();
+    private ResourceUpdatedMessage createEntityUpdatedMessages(WriteResult<Event, Event> result) {
+        Event writtenResource = result.getResource();
         return new ResourceUpdatedMessage(
                 UUID.randomUUID().toString(),
                 Timestamp.of(clock.now().withZone(DateTimeZone.UTC)),
@@ -156,7 +156,7 @@ public class ConcreteEventV2Store implements EventV2Store {
 
     public interface EventHasherStep {
 
-        SenderStep withEventHasher(EventV2Hasher eventHasher);
+        SenderStep withEventHasher(EventHasher eventHasher);
     }
 
     public interface SenderStep {
@@ -166,12 +166,12 @@ public class ConcreteEventV2Store implements EventV2Store {
 
     public interface PersistenceStoreStep {
 
-        BuildStep withPersistenceStore(EventV2PersistenceStore persistenceStore);
+        BuildStep withPersistenceStore(EventPersistenceStore persistenceStore);
     }
 
     public interface BuildStep {
 
-        ConcreteEventV2Store build();
+        ConcreteEventStore build();
     }
 
     private static class Builder implements ClockStep, IdGeneratorStep, EventHasherStep, SenderStep,
@@ -179,9 +179,9 @@ public class ConcreteEventV2Store implements EventV2Store {
 
         private Clock clock;
         private IdGenerator idGenerator;
-        private EventV2Hasher eventHasher;
+        private EventHasher eventHasher;
         private MessageSender<ResourceUpdatedMessage> sender;
-        private EventV2PersistenceStore persistenceStore;
+        private EventPersistenceStore persistenceStore;
 
         private Builder() {
         }
@@ -199,7 +199,7 @@ public class ConcreteEventV2Store implements EventV2Store {
         }
 
         @Override
-        public SenderStep withEventHasher(EventV2Hasher eventHasher) {
+        public SenderStep withEventHasher(EventHasher eventHasher) {
             this.eventHasher = eventHasher;
             return this;
         }
@@ -211,14 +211,14 @@ public class ConcreteEventV2Store implements EventV2Store {
         }
 
         @Override
-        public BuildStep withPersistenceStore(EventV2PersistenceStore persistenceStore) {
+        public BuildStep withPersistenceStore(EventPersistenceStore persistenceStore) {
             this.persistenceStore = persistenceStore;
             return this;
         }
 
         @Override
-        public ConcreteEventV2Store build() {
-            return new ConcreteEventV2Store(
+        public ConcreteEventStore build() {
+            return new ConcreteEventStore(
                     this.clock,
                     this.idGenerator,
                     this.eventHasher,

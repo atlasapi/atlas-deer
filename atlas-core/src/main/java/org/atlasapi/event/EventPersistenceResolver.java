@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
@@ -8,11 +8,11 @@ import org.atlasapi.media.entity.Publisher;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
 
-public interface EventV2PersistenceResolver {
+public interface EventPersistenceResolver {
 
-    ListenableFuture<Resolved<EventV2>> resolveIds(Iterable<Id> ids);
+    ListenableFuture<Resolved<Event>> resolveIds(Iterable<Id> ids);
 
-    Optional<EventV2> resolvePrevious(Optional<Id> id, Publisher source,
+    Optional<Event> resolvePrevious(Optional<Id> id, Publisher source,
             Iterable<Alias> aliases);
 
 }

@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Identified;
@@ -14,7 +14,7 @@ import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EventV2 extends Identified implements Sourced {
+public class Event extends Identified implements Sourced {
 
     private final String title;
     private final Publisher source;
@@ -26,7 +26,7 @@ public class EventV2 extends Identified implements Sourced {
     private final ImmutableList<Topic> eventGroups;
     private final ImmutableList<ItemRef> content;
 
-    private EventV2(Builder<?, ?> builder) {
+    private Event(Builder<?, ?> builder) {
         super(builder);
         this.title = checkNotNull(builder.title);
         this.source = checkNotNull(builder.source);
@@ -78,7 +78,7 @@ public class EventV2 extends Identified implements Sourced {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(EventV2.class)
+        return Objects.toStringHelper(Event.class)
                 .add("title", title)
                 .add("source", source)
                 .add("venue", venue)
@@ -96,8 +96,8 @@ public class EventV2 extends Identified implements Sourced {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof EventV2) {
-            EventV2 target = (EventV2) obj;
+        if (obj instanceof Event) {
+            Event target = (Event) obj;
             return getId() != null ? Objects.equal(getId(), target.getId())
                                    : Objects.equal(getCanonicalUri(), target.getCanonicalUri());
         }
@@ -113,7 +113,7 @@ public class EventV2 extends Identified implements Sourced {
         return new EventBuilder();
     }
 
-    public abstract static class Builder<T extends EventV2, B extends Builder<T, B>>
+    public abstract static class Builder<T extends Event, B extends Builder<T, B>>
             extends Identified.Builder<T, B> {
 
         private String title;
@@ -175,14 +175,14 @@ public class EventV2 extends Identified implements Sourced {
         }
     }
 
-    public static class EventBuilder extends Builder<EventV2, EventBuilder> {
+    public static class EventBuilder extends Builder<Event, EventBuilder> {
 
         private EventBuilder() {
         }
 
         @Override
-        public EventV2 build() {
-            return new EventV2(this);
+        public Event build() {
+            return new Event(this);
         }
 
         @Override

@@ -1,5 +1,5 @@
 @NonNullByDefault
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import com.metabroadcast.common.annotation.NonNullByDefault;
 

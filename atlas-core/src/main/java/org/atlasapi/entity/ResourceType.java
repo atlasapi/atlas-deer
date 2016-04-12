@@ -5,7 +5,7 @@ import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Player;
-import org.atlasapi.eventV2.EventV2;
+import org.atlasapi.event.Event;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.segment.Segment;
 import org.atlasapi.topic.Topic;
@@ -27,7 +27,7 @@ public enum ResourceType {
     CHANNEL_GROUP(ChannelGroup.class),
     SERVICE(Platform.class),
     PLAYER(Player.class),
-    EVENT(EventV2.class),
+    EVENT(Event.class),
     ORGANISATION(Organisation.class);
 
     private Class<? extends Identified> cls;

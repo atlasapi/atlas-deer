@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,7 +39,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
+public class DatastaxCassandraEventStore implements EventPersistenceStore {
 
     private static final String EVENT_TABLE = "event_v2";
     private static final String PRIMARY_KEY_COLUMN = "event_id";
@@ -47,21 +47,21 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final AliasIndex<EventV2> aliasIndex;
+    private final AliasIndex<Event> aliasIndex;
     private final Session session;
     private final ConsistencyLevel writeConsistency;
     private final ConsistencyLevel readConsistency;
-    private final DatastaxProtobufEventV2Marshaller marshaller;
+    private final DatastaxProtobufEventMarshaller marshaller;
 
     private final PreparedStatement idSelect;
 
-    protected DatastaxCassandraEventStoreV2(AliasIndex<EventV2> aliasIndex, Session session,
+    protected DatastaxCassandraEventStore(AliasIndex<Event> aliasIndex, Session session,
             ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency) {
         this.aliasIndex = checkNotNull(aliasIndex);
         this.session = checkNotNull(session);
         this.writeConsistency = checkNotNull(writeConsistency);
         this.readConsistency = checkNotNull(readConsistency);
-        this.marshaller = new DatastaxProtobufEventV2Marshaller(new EventV2Serializer(), session);
+        this.marshaller = new DatastaxProtobufEventMarshaller(new EventSerializer(), session);
 
         this.idSelect = session.prepare(select().all()
                 .from(EVENT_TABLE)
@@ -70,7 +70,7 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
     }
 
     @Override
-    public ListenableFuture<Resolved<EventV2>> resolveIds(Iterable<Id> ids) {
+    public ListenableFuture<Resolved<Event>> resolveIds(Iterable<Id> ids) {
         ListenableFuture<List<Row>> resultsFuture = Futures.transform(
                 Futures.allAsList(StreamSupport.stream(ids.spliterator(), false)
                         .map(Id::longValue)
@@ -101,7 +101,7 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
     }
 
     @Override
-    public Optional<EventV2> resolvePrevious(Optional<Id> id, Publisher source,
+    public Optional<Event> resolvePrevious(Optional<Id> id, Publisher source,
             Iterable<Alias> aliases) {
         try {
             if (id.isPresent()) {
@@ -131,7 +131,7 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
     }
 
     @Override
-    public void write(EventV2 event, EventV2 previous) {
+    public void write(Event event, Event previous) {
         try {
             BatchStatement batch = new BatchStatement();
             batch.setConsistencyLevel(writeConsistency);
@@ -149,7 +149,7 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
 
     public interface AliasIndexStep {
 
-        SessionStep withAliasIndex(AliasIndex<EventV2> aliasIndex);
+        SessionStep withAliasIndex(AliasIndex<Event> aliasIndex);
     }
 
     public interface SessionStep {
@@ -169,13 +169,13 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
 
     public interface BuildStep {
 
-        DatastaxCassandraEventStoreV2 build();
+        DatastaxCassandraEventStore build();
     }
 
     private static class Builder implements AliasIndexStep, SessionStep, WriteConsistencyStep,
             ReadConsistencyStep, BuildStep {
 
-        private AliasIndex<EventV2> aliasIndex;
+        private AliasIndex<Event> aliasIndex;
         private Session session;
         private ConsistencyLevel writeConsistency;
         private ConsistencyLevel readConsistency;
@@ -184,7 +184,7 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
         }
 
         @Override
-        public SessionStep withAliasIndex(AliasIndex<EventV2> aliasIndex) {
+        public SessionStep withAliasIndex(AliasIndex<Event> aliasIndex) {
             this.aliasIndex = aliasIndex;
             return this;
         }
@@ -208,8 +208,8 @@ public class DatastaxCassandraEventStoreV2 implements EventV2PersistenceStore {
         }
 
         @Override
-        public DatastaxCassandraEventStoreV2 build() {
-            return new DatastaxCassandraEventStoreV2(
+        public DatastaxCassandraEventStore build() {
+            return new DatastaxCassandraEventStore(
                     this.aliasIndex,
                     this.session,
                     this.writeConsistency,

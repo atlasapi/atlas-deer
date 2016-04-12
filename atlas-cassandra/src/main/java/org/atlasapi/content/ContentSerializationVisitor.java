@@ -10,7 +10,7 @@ import org.atlasapi.entity.AwardSerializer;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.equivalence.EquivalenceRef;
-import org.atlasapi.eventV2.EventRef;
+import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;

@@ -8,12 +8,11 @@ import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
-import org.atlasapi.eventV2.ConcreteEventV2Store;
-import org.atlasapi.eventV2.DatastaxCassandraEventStoreV2;
-import org.atlasapi.eventV2.EventV2;
-import org.atlasapi.eventV2.EventV2Hasher;
-import org.atlasapi.eventV2.EventV2PersistenceStore;
-import org.atlasapi.eventV2.EventV2Store;
+import org.atlasapi.event.ConcreteEventStore;
+import org.atlasapi.event.DatastaxCassandraEventStore;
+import org.atlasapi.event.EventHasher;
+import org.atlasapi.event.EventPersistenceStore;
+import org.atlasapi.event.EventStore;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.organisation.DatastaxCassandraOrganisationStore;
@@ -79,7 +78,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private final Session session;
 
     private final ContentHasher contentHasher;
-    private final EventV2Hasher eventV2Hasher;
+    private final EventHasher eventHasher;
     private final IdGeneratorBuilder idGeneratorBuilder;
 
     private final AstyanaxContext<Keyspace> context;
@@ -98,7 +97,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
-    private EventV2Store eventV2Store;
+    private EventStore eventStore;
     private OrganisationStore organisationStore;
     private OrganisationStore idSettingOrganisationStore;
 
@@ -111,11 +110,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
             String keyspace,
             IdGeneratorBuilder idGeneratorBuilder,
             ContentHasher contentHasher,
-            EventV2Hasher eventV2Hasher,
+            EventHasher eventHasher,
             Iterable<String> cassNodes,
             MetricRegistry metrics) {
         this.contentHasher = contentHasher;
-        this.eventV2Hasher = checkNotNull(eventV2Hasher);
+        this.eventHasher = checkNotNull(eventHasher);
         this.idGeneratorBuilder = idGeneratorBuilder;
         this.contentIdGenerator = idGeneratorBuilder.generator("content");
         this.messageSenderFactory = messageSenderFactory;
@@ -243,7 +242,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withEquivalence(segmentEquivalence())
                 .build();
 
-        this.eventV2Store = getEventV2Store(session);
+        this.eventStore = getEventStore(session);
         this.organisationStore = getOrganisationStore(session);
         this.idSettingOrganisationStore = getIdSettingOrganisationStore(session);
     }
@@ -322,8 +321,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return this.segmentStore;
     }
 
-    public EventV2Store eventStore() {
-        return eventV2Store;
+    public EventStore eventStore() {
+        return eventStore;
     }
 
     @Override
@@ -375,18 +374,18 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return this.equivalentScheduleStore;
     }
 
-    private EventV2Store getEventV2Store(Session session) {
-        EventV2PersistenceStore eventV2PersistenceStore = DatastaxCassandraEventStoreV2.builder()
+    private EventStore getEventStore(Session session) {
+        EventPersistenceStore eventV2PersistenceStore = DatastaxCassandraEventStore.builder()
                 .withAliasIndex(AliasIndex.create(context.getClient(), "event_aliases_v2"))
                 .withSession(session)
                 .withWriteConsistency(getWriteConsistencyLevel())
                 .withReadConsistency(getReadConsistencyLevel())
                 .build();
 
-        return ConcreteEventV2Store.builder()
+        return ConcreteEventStore.builder()
                 .withClock(new SystemClock())
                 .withIdGenerator(idGeneratorBuilder.generator("event"))
-                .withEventHasher(eventV2Hasher)
+                .withEventHasher(eventHasher)
                 .withSender(nullMessageSender(ResourceUpdatedMessage.class))
                 .withPersistenceStore(eventV2PersistenceStore)
                 .build();

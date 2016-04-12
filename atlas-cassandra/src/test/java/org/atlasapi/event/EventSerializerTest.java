@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Alias;
@@ -20,32 +20,32 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class EventV2SerializerTest {
+public class EventSerializerTest {
 
-    private EventV2Serializer serializer;
+    private EventSerializer serializer;
 
     @Before
     public void setUp() throws Exception {
-        serializer = new EventV2Serializer();
+        serializer = new EventSerializer();
     }
 
     @Test
     public void testSerialization() throws Exception {
-        EventV2.Builder<?, ?> builder = EventV2.builder();
+        Event.Builder<?, ?> builder = Event.builder();
 
         setIdentifiedFields(builder);
         setEventFields(builder);
 
-        EventV2 expected = builder.build();
+        Event expected = builder.build();
 
         byte[] msg = serializer.serialize(expected);
-        EventV2 actual = serializer.deserialize(msg);
+        Event actual = serializer.deserialize(msg);
 
         checkIdentified(expected, actual);
         checkEvent(expected, actual);
     }
 
-    private void setIdentifiedFields(EventV2.Builder<?, ?> builder) {
+    private void setIdentifiedFields(Event.Builder<?, ?> builder) {
         builder.withId(Id.valueOf(0L))
                 .withCanonicalUri("url")
                 .withCurie("curie")
@@ -56,7 +56,7 @@ public class EventV2SerializerTest {
                 .withEquivalenceUpdate(DateTime.now().withZone(DateTimeZone.UTC));
     }
 
-    private void setEventFields(EventV2.Builder<?, ?> builder) {
+    private void setEventFields(Event.Builder<?, ?> builder) {
         builder.withTitle("title")
                 .withSource(Publisher.BBC)
                 .withVenue(new Topic(Id.valueOf(12L)))
@@ -80,7 +80,7 @@ public class EventV2SerializerTest {
         assertThat(actual.getEquivalenceUpdate(), is(expected.getEquivalenceUpdate()));
     }
 
-    private void checkEvent(EventV2 expected, EventV2 actual) {
+    private void checkEvent(Event expected, Event actual) {
         assertThat(actual.getTitle(), is(expected.getTitle()));
         assertThat(actual.getSource(), is(expected.getSource()));
         assertThat(actual.getVenue(), is(expected.getVenue()));

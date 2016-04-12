@@ -10,7 +10,7 @@ import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.eventV2.EventV2Store;
+import org.atlasapi.event.EventStore;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.schedule.EquivalentScheduleStore;
 import org.atlasapi.schedule.ScheduleStore;
@@ -200,7 +200,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
     }
 
     @Override
-    public EventV2Store eventStore() {
+    public EventStore eventStore() {
         return persistenceModule.eventStore();
     }
 

@@ -5,20 +5,20 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Alias;
-import org.atlasapi.eventV2.EventV2;
+import org.atlasapi.event.Event;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.organisation.OrganisationStore;
 
-public class LegacyEventV2Transformer extends BaseLegacyResourceTransformer<
-        org.atlasapi.media.entity.Event, EventV2> {
+public class LegacyEventTransformer extends BaseLegacyResourceTransformer<
+        org.atlasapi.media.entity.Event, Event> {
 
     private final LegacyTopicTransformer legacyTopicTransformer;
     private final LegacyPersonTransformer legacyPersonTransformer;
     private final LegacyOrganisationTransformer legacyOrganisationTransformer;
     private final OrganisationStore organisationStore;
 
-    public LegacyEventV2Transformer(OrganisationStore organisationStore) {
+    public LegacyEventTransformer(OrganisationStore organisationStore) {
         this.legacyTopicTransformer = new LegacyTopicTransformer();
         this.legacyPersonTransformer = new LegacyPersonTransformer();
         this.legacyOrganisationTransformer = new LegacyOrganisationTransformer();
@@ -27,11 +27,11 @@ public class LegacyEventV2Transformer extends BaseLegacyResourceTransformer<
 
     @Nullable
     @Override
-    public EventV2 apply(org.atlasapi.media.entity.Event input) {
-        EventV2.EventBuilder builder = EventV2.builder();
+    public Event apply(org.atlasapi.media.entity.Event input) {
+        Event.EventBuilder builder = Event.builder();
 
         addEvent(input, builder);
-        EventV2 event = builder.build();
+        Event event = builder.build();
 
         addIdentified(input, event);
         event.addAlias(new Alias(Alias.URI_NAMESPACE, input.getCanonicalUri()));
@@ -39,7 +39,7 @@ public class LegacyEventV2Transformer extends BaseLegacyResourceTransformer<
         return event;
     }
 
-    private void addEvent(org.atlasapi.media.entity.Event input, EventV2.EventBuilder builder) {
+    private void addEvent(org.atlasapi.media.entity.Event input, Event.EventBuilder builder) {
         builder.withTitle(input.title())
                 .withSource(input.publisher())
                 .withVenue(legacyTopicTransformer.apply(input.venue()))

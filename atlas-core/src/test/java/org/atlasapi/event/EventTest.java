@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -8,11 +8,11 @@ import org.junit.Test;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public class EventV2Test {
+public class EventTest {
 
     @Test
     public void testBuilderPopulatesSuperclassFields() throws Exception {
-        EventV2 event = EventV2.builder()
+        Event event = Event.builder()
                 .withId(Id.valueOf(0L))
                 .withTitle("title")
                 .withSource(Publisher.BBC)

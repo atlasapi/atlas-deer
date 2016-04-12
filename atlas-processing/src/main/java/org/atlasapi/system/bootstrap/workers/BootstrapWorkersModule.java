@@ -10,8 +10,8 @@ import javax.annotation.PreDestroy;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.content.ContentResolver;
-import org.atlasapi.eventV2.EventV2Resolver;
-import org.atlasapi.eventV2.EventV2Writer;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -225,8 +225,8 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy(true)
     KafkaConsumer organisationSeparatingEventReadWriter() {
-        EventV2Resolver legacyResolver = legacy.legacyEventV2Resolver();
-        EventV2Writer writer = persistence.eventV2Writer();
+        EventResolver legacyResolver = legacy.legacyEventResolver();
+        EventWriter writer = persistence.eventWriter();
         SeparatingEventReadWriteWorker worker = new SeparatingEventReadWriteWorker(
                 legacyResolver,
                 writer,

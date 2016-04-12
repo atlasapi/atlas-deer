@@ -1,4 +1,4 @@
-package org.atlasapi.eventV2;
+package org.atlasapi.event;
 
 import java.util.stream.Collectors;
 
@@ -16,9 +16,9 @@ import org.atlasapi.topic.TopicSerializer;
 import com.google.common.base.Throwables;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-public class EventV2Serializer implements Serializer<EventV2, byte[]> {
+public class EventSerializer implements Serializer<Event, byte[]> {
 
-    private final IdentifiedSerializer<EventV2> identifiedSerializer = new IdentifiedSerializer<>();
+    private final IdentifiedSerializer<Event> identifiedSerializer = new IdentifiedSerializer<>();
     private final TopicSerializer topicSerializer = new TopicSerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final PersonSerializer personSerializer = new PersonSerializer();
@@ -26,8 +26,8 @@ public class EventV2Serializer implements Serializer<EventV2, byte[]> {
     private final ContentRefSerializer contentRefSerializer = new ContentRefSerializer(null);
 
     @Override
-    public byte[] serialize(EventV2 event) {
-        EventProtos.EventV2.Builder builder = EventProtos.EventV2.newBuilder();
+    public byte[] serialize(Event event) {
+        EventProtos.Event.Builder builder = EventProtos.Event.newBuilder();
 
         builder.setIdentified(identifiedSerializer.serialize(event));
 
@@ -71,7 +71,7 @@ public class EventV2Serializer implements Serializer<EventV2, byte[]> {
     }
 
     @Override
-    public EventV2 deserialize(byte[] dest) {
+    public Event deserialize(byte[] dest) {
         try {
             return deserializeInternal(dest);
         } catch (InvalidProtocolBufferException e) {
@@ -79,11 +79,11 @@ public class EventV2Serializer implements Serializer<EventV2, byte[]> {
         }
     }
 
-    private EventV2 deserializeInternal(byte[] dest)
+    private Event deserializeInternal(byte[] dest)
             throws com.google.protobuf.InvalidProtocolBufferException {
-        EventProtos.EventV2 msg = EventProtos.EventV2.parseFrom(dest);
+        EventProtos.Event msg = EventProtos.Event.parseFrom(dest);
 
-        EventV2.Builder<?, ?> builder = EventV2.builder();
+        Event.Builder<?, ?> builder = Event.builder();
 
         identifiedSerializer.deserialize(msg.getIdentified(), builder);
 
