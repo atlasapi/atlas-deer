@@ -48,4 +48,5 @@ public class LegacyEventResolverTest {
         assertThat(resources.size(), is(1));
         assertThat(resources.first().get(), sameInstance(event));
     }
+
 }

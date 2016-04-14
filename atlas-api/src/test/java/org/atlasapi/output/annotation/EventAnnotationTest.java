@@ -5,9 +5,12 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.organisation.Organisation;
+import org.atlasapi.organisation.OrganisationRef;
+import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -21,6 +24,7 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,17 +33,20 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollectionOf;
+import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EventAnnotationTest {
 
     private @Mock FieldWriter fieldWriter;
+    private OrganisationResolver resolver = mock(OrganisationResolver.class);
     private NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private EntityListWriter<ItemRef> itemRefWriter = new ItemRefWriter(idCodec, "items");
-    private final EventAnnotation eventAnnotation = new EventAnnotation(itemRefWriter);
+    private final EventAnnotation eventAnnotation = new EventAnnotation(itemRefWriter, resolver);
 
     @Test
     public void eventFieldsTest() throws Exception {
@@ -65,9 +72,11 @@ public class EventAnnotationTest {
                 .withContent(ImmutableSet.of(itemRef))
                 .withParticipants(ImmutableSet.of(person))
                 .withVenue(topic)
-                .withOrganisations(ImmutableSet.of(organisation))
+                .withOrganisations(ImmutableSet.of(new OrganisationRef(organisation.getId(), organisation.getSource())))
                 .build();
 
+        when(resolver.resolveIds(anySet())).thenReturn(Futures.immediateFuture(
+                Resolved.valueOf(ImmutableSet.of(organisation))));
         OutputContext context = OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)));
 
         eventAnnotation.write(event, fieldWriter, context);

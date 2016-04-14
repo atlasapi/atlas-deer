@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatastaxCassandraEventStore implements EventPersistenceStore {
 
-    private static final String EVENT_TABLE = "event";
+    private static final String EVENT_TABLE = "event_v2";
     private static final String PRIMARY_KEY_COLUMN = "event_id";
     private static final int TIMEOUT_IN_MINUTES = 1;
 
@@ -217,4 +217,5 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
             );
         }
     }
+
 }

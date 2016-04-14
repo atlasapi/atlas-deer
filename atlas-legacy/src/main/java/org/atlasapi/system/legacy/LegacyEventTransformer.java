@@ -4,7 +4,11 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import org.atlasapi.entity.Alias;
 import org.atlasapi.event.Event;
+import org.atlasapi.organisation.Organisation;
+import org.atlasapi.organisation.OrganisationRef;
+import org.atlasapi.organisation.OrganisationStore;
 
 public class LegacyEventTransformer extends BaseLegacyResourceTransformer<
         org.atlasapi.media.entity.Event, Event> {
@@ -12,11 +16,13 @@ public class LegacyEventTransformer extends BaseLegacyResourceTransformer<
     private final LegacyTopicTransformer legacyTopicTransformer;
     private final LegacyPersonTransformer legacyPersonTransformer;
     private final LegacyOrganisationTransformer legacyOrganisationTransformer;
+    private final OrganisationStore organisationStore;
 
-    public LegacyEventTransformer() {
+    public LegacyEventTransformer(OrganisationStore organisationStore) {
         this.legacyTopicTransformer = new LegacyTopicTransformer();
         this.legacyPersonTransformer = new LegacyPersonTransformer();
         this.legacyOrganisationTransformer = new LegacyOrganisationTransformer();
+        this.organisationStore = organisationStore;
     }
 
     @Nullable
@@ -28,6 +34,7 @@ public class LegacyEventTransformer extends BaseLegacyResourceTransformer<
         Event event = builder.build();
 
         addIdentified(input, event);
+        event.addAlias(new Alias(Alias.URI_NAMESPACE, input.getCanonicalUri()));
 
         return event;
     }
@@ -43,6 +50,7 @@ public class LegacyEventTransformer extends BaseLegacyResourceTransformer<
                         .collect(Collectors.toList()))
                 .withOrganisations(input.organisations().stream()
                         .map(legacyOrganisationTransformer::apply)
+                        .map(this::generateOrganisationRef)
                         .collect(Collectors.toList()))
                 .withEventGroups(input.eventGroups().stream()
                         .map(legacyTopicTransformer::apply)
@@ -51,4 +59,14 @@ public class LegacyEventTransformer extends BaseLegacyResourceTransformer<
                         .map(ref -> LegacyContentTransformer.legacyRefToRef(ref, input.publisher()))
                         .collect(Collectors.toList()));
     }
+
+    private OrganisationRef generateOrganisationRef(Organisation organisation) {
+        Organisation writtenOrganisation = writeOrganisation(organisation);
+        return new OrganisationRef(writtenOrganisation.getId(), writtenOrganisation.getSource());
+    }
+
+    private Organisation writeOrganisation(Organisation organisation) {
+        return organisationStore.write(organisation);
+    }
+
 }

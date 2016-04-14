@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatastaxProtobufEventMarshaller implements EventMarshaller<BatchStatement, Row> {
 
-    private static final String TABLE = "event";
+    private static final String TABLE = "event_v2";
     private static final String PRIMARY_KEY_COLUMN = "event_id";
     private static final String DATA_COLUMN = "data";
 
@@ -58,4 +58,5 @@ public class DatastaxProtobufEventMarshaller implements EventMarshaller<BatchSta
 
         return bytes;
     }
+
 }

@@ -14,4 +14,5 @@ public interface EventPersistenceResolver {
 
     Optional<Event> resolvePrevious(Optional<Id> id, Publisher source,
             Iterable<Alias> aliases);
+
 }

@@ -11,6 +11,7 @@ import org.atlasapi.media.entity.Organisation;
 import org.atlasapi.media.entity.Person;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.media.entity.Topic;
+import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.content.ContentCategory;
 
 import com.google.common.collect.ImmutableList;
@@ -18,17 +19,30 @@ import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LegacyEventTransformerTest {
 
     private LegacyEventTransformer eventTransformer;
+    @Mock
+    private OrganisationStore organisationStore;
 
     @Before
     public void setUp() throws Exception {
-        eventTransformer = new LegacyEventTransformer();
+        org.atlasapi.organisation.Organisation organisation = new org.atlasapi.organisation.Organisation();
+        organisation.setId(1l);
+        organisation.setPublisher(Publisher.BBC);
+        organisation.setCanonicalUri("uri");
+        when(organisationStore.write(Matchers.any(org.atlasapi.organisation.Organisation.class))).thenReturn(organisation);
+        eventTransformer = new LegacyEventTransformer(organisationStore);
     }
 
     @Test
@@ -48,8 +62,16 @@ public class LegacyEventTransformerTest {
         Topic eventGroup = new Topic(1L);
         eventGroup.setNamespace("nsB");
         eventGroup.setValue("valueB");
+
         Organisation organisation = new Organisation();
+        organisation.setId(1l);
+        organisation.setPublisher(Publisher.BBC);
         organisation.setCanonicalUri("uri");
+
+        Organisation organisation2 = new Organisation();
+        organisation2.setId(2l);
+        organisation2.setPublisher(Publisher.BBC);
+        organisation2.setCanonicalUri("curi");
 
         Event input = Event.builder()
                 .withTitle("title")
@@ -58,7 +80,7 @@ public class LegacyEventTransformerTest {
                 .withStartTime(DateTime.now())
                 .withEndTime(DateTime.now())
                 .withParticipants(ImmutableList.of(new Person()))
-                .withOrganisations(ImmutableList.of(organisation))
+                .withOrganisations(ImmutableList.of(organisation, organisation2))
                 .withEventGroups(ImmutableList.of(eventGroup))
                 .withContent(ImmutableList.of(new ChildRef(0L, "uri", "sort", DateTime.now(),
                         EntityType.ITEM
@@ -99,7 +121,7 @@ public class LegacyEventTransformerTest {
         assertThat(event.getCanonicalUri(), is(input.getCanonicalUri()));
         assertThat(event.getCurie(), is(input.getCurie()));
         assertThat(event.getAliasUrls(), is(input.getAliasUrls()));
-        assertThat(event.getAliases().size(), is(input.getAliases().size()));
+        assertThat(event.getAliases().size(), is(2));
         assertThat(
                 event.getAliases().iterator().next(),
                 is(new org.atlasapi.entity.Alias("ns", "value"))
@@ -112,4 +134,5 @@ public class LegacyEventTransformerTest {
         assertThat(event.getLastUpdated(), is(input.getLastUpdated()));
         assertThat(event.getEquivalenceUpdate(), is(input.getEquivalenceUpdate()));
     }
+
 }

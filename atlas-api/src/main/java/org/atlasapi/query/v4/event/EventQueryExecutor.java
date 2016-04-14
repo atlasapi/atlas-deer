@@ -7,8 +7,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
-import org.atlasapi.eventV2.EventV2;
-import org.atlasapi.eventV2.EventV2Resolver;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryExecutionException;
@@ -23,16 +21,16 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EventQueryExecutor implements QueryExecutor<EventV2> {
+public class EventQueryExecutor implements QueryExecutor<Event> {
 
-    private final EventV2Resolver resolver;
+    private final EventResolver resolver;
 
-    public EventQueryExecutor(EventV2Resolver resolver) {
+    public EventQueryExecutor(EventResolver resolver) {
         this.resolver = checkNotNull(resolver);
     }
 
     @Override
-    public QueryResult<EventV2> execute(Query<EventV2> query) throws QueryExecutionException {
+    public QueryResult<Event> execute(Query<Event> query) throws QueryExecutionException {
         try {
             return Futures.get(
                     executeQuery(query),
@@ -45,31 +43,31 @@ public class EventQueryExecutor implements QueryExecutor<EventV2> {
         }
     }
 
-    private ListenableFuture<QueryResult<EventV2>> executeQuery(final Query<EventV2> query) {
+    private ListenableFuture<QueryResult<Event>> executeQuery(final Query<Event> query) {
         return query.isListQuery() ? executeListQuery(query) : executeSingleQuery(query);
     }
 
-    private ListenableFuture<QueryResult<EventV2>> executeSingleQuery(final Query<EventV2> query) {
+    private ListenableFuture<QueryResult<Event>> executeSingleQuery(final Query<Event> query) {
         Id id = query.getOnlyId();
         return Futures.transform(
                 resolve(id),
-                (Resolved<EventV2> input) -> {
-                    List<EventV2> eventList = input.getResources().toList();
+                (Resolved<Event> input) -> {
+                    List<Event> eventList = input.getResources().toList();
                     if (eventList.isEmpty()) {
                         throw new UncheckedQueryExecutionException(new NotFoundException(id));
                     }
-                    EventV2 resource = eventList.get(0);
+                    Event resource = eventList.get(0);
                     return QueryResult.singleResult(resource, query.getContext());
                 }
         );
 
     }
 
-    private ListenableFuture<QueryResult<EventV2>> executeListQuery(final Query<EventV2> query) {
+    private ListenableFuture<QueryResult<Event>> executeListQuery(final Query<Event> query) {
         throw new UnsupportedOperationException();
     }
 
-    private ListenableFuture<Resolved<EventV2>> resolve(Id id) {
+    private ListenableFuture<Resolved<Event>> resolve(Id id) {
         return resolver.resolveIds(ImmutableSet.of(id));
     }
 }

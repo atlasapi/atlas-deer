@@ -5,7 +5,7 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.organisation.Organisation;
+import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.topic.Topic;
 
 import com.google.common.base.Objects;
@@ -22,7 +22,7 @@ public class Event extends Identified implements Sourced {
     private final DateTime startTime;
     private final DateTime endTime;
     private final ImmutableList<Person> participants;
-    private final ImmutableList<Organisation> organisations;
+    private final ImmutableList<OrganisationRef> organisations;
     private final ImmutableList<Topic> eventGroups;
     private final ImmutableList<ItemRef> content;
 
@@ -64,7 +64,7 @@ public class Event extends Identified implements Sourced {
         return participants;
     }
 
-    public ImmutableList<Organisation> getOrganisations() {
+    public ImmutableList<OrganisationRef> getOrganisations() {
         return organisations;
     }
 
@@ -122,7 +122,7 @@ public class Event extends Identified implements Sourced {
         private DateTime startTime;
         private DateTime endTime;
         private ImmutableList<Person> participants = ImmutableList.of();
-        private ImmutableList<Organisation> organisations = ImmutableList.of();
+        private ImmutableList<OrganisationRef> organisations = ImmutableList.of();
         private ImmutableList<Topic> eventGroups = ImmutableList.of();
         private ImmutableList<ItemRef> content = ImmutableList.of();
 
@@ -159,7 +159,7 @@ public class Event extends Identified implements Sourced {
             return self();
         }
 
-        public B withOrganisations(Iterable<Organisation> organisations) {
+        public B withOrganisations(Iterable<OrganisationRef> organisations) {
             this.organisations = ImmutableList.copyOf(organisations);
             return self();
         }

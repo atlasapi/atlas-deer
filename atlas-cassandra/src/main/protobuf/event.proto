@@ -13,20 +13,6 @@ message Event {
     optional common.DateTime start_time = 4;
     optional common.DateTime end_time = 5;
     repeated common.Person participant = 6;
-    repeated common.Organisation organisation = 7;
-    repeated topic.Topic eventGroup = 8;
-    repeated common.Reference content = 9;
-
-    required common.Identification identified = 100;
-}
-
-message EventV2 {
-    optional common.LocaleString title = 1;
-    optional string source = 2;
-    optional topic.Topic venue = 3;
-    optional common.DateTime start_time = 4;
-    optional common.DateTime end_time = 5;
-    repeated common.Person participant = 6;
     repeated common.Reference organisation = 7;
     repeated topic.Topic eventGroup = 8;
     repeated common.Reference content = 9;

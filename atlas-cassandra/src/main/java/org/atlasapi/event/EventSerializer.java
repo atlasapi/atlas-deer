@@ -8,7 +8,7 @@ import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.IdentifiedSerializer;
 import org.atlasapi.entity.PersonSerializer;
 import org.atlasapi.entity.Serializer;
-import org.atlasapi.organisation.OrganisationSerializer;
+import org.atlasapi.organisation.OrganisationRefSerializer;
 import org.atlasapi.serialization.protobuf.EventProtos;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.TopicSerializer;
@@ -22,7 +22,7 @@ public class EventSerializer implements Serializer<Event, byte[]> {
     private final TopicSerializer topicSerializer = new TopicSerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final PersonSerializer personSerializer = new PersonSerializer();
-    private final OrganisationSerializer organisationSerializer = new OrganisationSerializer();
+    private final OrganisationRefSerializer organisationRefSerializer = new OrganisationRefSerializer();
     private final ContentRefSerializer contentRefSerializer = new ContentRefSerializer(null);
 
     @Override
@@ -53,7 +53,7 @@ public class EventSerializer implements Serializer<Event, byte[]> {
         }
         if (event.getOrganisations() != null) {
             builder.addAllOrganisation(event.getOrganisations().stream()
-                    .map(organisationSerializer::serialize)
+                    .map(organisationRefSerializer::serialize)
                     .collect(Collectors.toList()));
         }
         if (event.getEventGroups() != null) {
@@ -106,7 +106,7 @@ public class EventSerializer implements Serializer<Event, byte[]> {
                 .map(personSerializer::deserialize)
                 .collect(Collectors.toList()));
         builder.withOrganisations(msg.getOrganisationList().stream()
-                .map(organisationSerializer::deserialize)
+                .map(organisationRefSerializer::deserialize)
                 .collect(Collectors.toList()));
         builder.withEventGroups(msg.getEventGroupList().stream()
                 .map(topicSerializer::deserialize)

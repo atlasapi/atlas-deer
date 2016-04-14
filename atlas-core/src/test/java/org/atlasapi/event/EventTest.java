@@ -22,4 +22,5 @@ public class EventTest {
         assertThat(event.getTitle(), is("title"));
         assertThat(event.getSource(), is(Publisher.BBC));
     }
+
 }

@@ -115,7 +115,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
 
         CassandraPersistenceModule persistenceModule = new CassandraPersistenceModule(
                 messageSenderFactory, context, cassandraService, keyspace, idGeneratorBuilder(),
-                content -> UUID.randomUUID().toString(), event -> UUID.randomUUID().toString(), eventv2 -> UUID.randomUUID().toString(),
+                content -> UUID.randomUUID().toString(), eventv2 -> UUID.randomUUID().toString(),
                 seeds, new MetricRegistry()
         );
         persistenceModule.startAsync().awaitRunning();

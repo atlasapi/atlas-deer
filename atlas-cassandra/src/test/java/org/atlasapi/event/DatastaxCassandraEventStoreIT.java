@@ -1,5 +1,6 @@
 package org.atlasapi.event;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.Alias;
@@ -10,6 +11,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.util.CassandraInit;
 
 import com.metabroadcast.common.ids.IdGenerator;
@@ -39,9 +41,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -50,8 +50,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class DatastaxCassandraEventStoreIT {
 
-    private static final String EVENT_TABLE = "event";
-    private static final String EVENT_ALIASES_TABLE = "event_aliases";
+    private static final String EVENT_TABLE = "event_v2";
+    private static final String EVENT_ALIASES_TABLE = "event_aliases_v2";
 
     private static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();
@@ -121,11 +121,15 @@ public class DatastaxCassandraEventStoreIT {
 
     @Test
     public void testWriteAndReadEvent() throws Exception {
-        Event expected = Event.builder().withTitle("title").withSource(Publisher.BBC).build();
-
+        List<OrganisationRef> organisationRefs = ImmutableList.of(new OrganisationRef(Id.valueOf(1l), Publisher.BBC));
+        Event expected = Event.builder()
+                .withTitle("title")
+                .withSource(Publisher.BBC)
+                .withOrganisations(organisationRefs).build();
         WriteResult<Event, Event> writeResult = store.write(expected);
         assertTrue(writeResult.written());
         assertThat(writeResult.getResource().getId().longValue(), is(firstId));
+        assertThat(writeResult.getResource().getOrganisations(), is(organisationRefs));
         assertFalse(writeResult.getPrevious().isPresent());
 
         Resolved<Event> resolved = store
@@ -211,4 +215,5 @@ public class DatastaxCassandraEventStoreIT {
 
         assertTrue(resolved.get(1, TimeUnit.SECONDS).getResources().isEmpty());
     }
+
 }

@@ -190,16 +190,6 @@ public class BootstrapModule {
     }
 
     @Bean
-    public EventBootstrapController eventBootstrapController() {
-        return new EventBootstrapController(
-                legacy.legacyEventResolver(),
-                legacy.legacyEventV2Resolver(),
-                persistence.eventWriter(),
-                persistence.eventV2Writer()
-        );
-    }
-
-    @Bean
     public OrganisationBoostrapController organisationBootstrapController() {
         return new OrganisationBoostrapController(
                 legacy.legacyOrganisationResolver(),

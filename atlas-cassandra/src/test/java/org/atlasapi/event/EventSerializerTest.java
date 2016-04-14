@@ -7,7 +7,7 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.organisation.Organisation;
+import org.atlasapi.organisation.OrganisationRef;
 import org.atlasapi.topic.Topic;
 
 import com.google.common.collect.Lists;
@@ -63,7 +63,7 @@ public class EventSerializerTest {
                 .withStartTime(DateTime.now().plusHours(1).withZone(DateTimeZone.UTC))
                 .withEndTime(DateTime.now().plusHours(2).withZone(DateTimeZone.UTC))
                 .withParticipants(Lists.newArrayList(new Person("a", "aa", Publisher.BBC)))
-                .withOrganisations(Lists.newArrayList(new Organisation()))
+                .withOrganisations(Lists.newArrayList(new OrganisationRef(Id.valueOf(12l), Publisher.BBC)))
                 .withEventGroups(Lists.newArrayList(new Topic(Id.valueOf(2L))))
                 .withContent(Lists.newArrayList(new ItemRef(Id.valueOf(21L),
                         Publisher.BBC, "sort", DateTime.now().withZone(DateTimeZone.UTC)
@@ -95,4 +95,5 @@ public class EventSerializerTest {
         assertThat(actual.getEventGroups(), is(expected.getEventGroups()));
         assertThat(actual.getContent(), is(expected.getContent()));
     }
+
 }

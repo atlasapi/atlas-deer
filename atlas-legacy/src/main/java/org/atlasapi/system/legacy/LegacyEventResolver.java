@@ -8,6 +8,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
+import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.event.EventStore;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -22,8 +23,8 @@ public class LegacyEventResolver implements EventResolver {
     private final org.atlasapi.persistence.event.EventResolver eventResolver;
     private final LegacyEventTransformer legacyEventTransformer;
 
-    public LegacyEventResolver(EventStore eventResolver) {
-        this(eventResolver, new LegacyEventTransformer());
+    public LegacyEventResolver(EventStore eventResolver, OrganisationStore store) {
+        this(eventResolver, new LegacyEventTransformer(store));
     }
 
     @VisibleForTesting
@@ -45,4 +46,5 @@ public class LegacyEventResolver implements EventResolver {
 
         return Futures.immediateFuture(Resolved.valueOf(events));
     }
+
 }

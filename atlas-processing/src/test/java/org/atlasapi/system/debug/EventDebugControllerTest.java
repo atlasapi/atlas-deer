@@ -8,9 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.eventV2.EventV2;
+import org.atlasapi.event.Event;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.system.legacy.LegacyEventV2Resolver;
+import org.atlasapi.system.legacy.LegacyEventResolver;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -41,7 +41,7 @@ public class EventDebugControllerTest {
     @Mock
     private AtlasPersistenceModule atlasPersistenceModule;
     @Mock
-    private LegacyEventV2Resolver resolver;
+    private LegacyEventResolver resolver;
     private NumberToShortStringCodec lowercaseDecoder;
     private Gson gson = new GsonBuilder().registerTypeAdapter(
             DateTime.class,
@@ -57,20 +57,20 @@ public class EventDebugControllerTest {
     @Before
     public void setUp() {
         lowercaseDecoder = SubstitutionTableNumberCodec.lowerCaseOnly();
-        when(atlasPersistenceModule.eventV2Resolver()).thenReturn(resolver);
+        when(atlasPersistenceModule.eventResolver()).thenReturn(resolver);
         controller = new EventDebugController(legacyPersistenceModule, atlasPersistenceModule);
     }
 
     @Test
     public void testDeserializerDoesntThrowException() throws Exception {
-        EventV2 eventV2 = EventV2.builder().withId(Id.valueOf(1l)).withTitle("title").withCanonicalUri("uri").withSource(
+        Event event = Event.builder().withId(Id.valueOf(1l)).withTitle("title").withCanonicalUri("uri").withSource(
                 Publisher.BBC).build();
         when(resolver.resolveIds(anyCollection())).thenReturn(Futures.immediateFuture(Resolved.valueOf(
-                ImmutableList.of(eventV2))));
+                ImmutableList.of(event))));
         HttpServletResponse response = mock(HttpServletResponse.class);
         PrintWriter printWriter = new PrintWriter(new StringWriter());
         when(response.getWriter()).thenReturn(printWriter);
-        controller.printEventV2("hnv5", response);
+        controller.printEvent("hnv5", response);
     }
 
 }
