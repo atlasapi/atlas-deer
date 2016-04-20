@@ -40,7 +40,7 @@ public class ContentGraphServiceTest {
 
     @Mock private ContentWriter contentWriter;
     @Mock private GraphWriter graphWriter;
-    @Mock private ContentGraphServiceSelector serviceSelector;
+    @Mock private ContentGraphQueryFactory queryFactory;
     @Mock private QueryExecutor queryExecutor;
 
     private ContentGraphService contentGraphService;
@@ -51,7 +51,7 @@ public class ContentGraphServiceTest {
     @Before
     public void setUp() throws Exception {
         contentGraphService = new ContentGraphService(
-                contentWriter, graphWriter, serviceSelector, queryExecutor
+                contentWriter, graphWriter, queryFactory, queryExecutor
         );
 
         content = new Item(Id.valueOf(0L), Publisher.METABROADCAST);
@@ -79,7 +79,7 @@ public class ContentGraphServiceTest {
                 IndexQueryResult.withSingleId(Id.valueOf(0L))
         );
 
-        when(serviceSelector.getGraphQuery(indexQueryParams, publishers, parameters))
+        when(queryFactory.getGraphQuery(indexQueryParams, publishers, parameters))
                 .thenReturn(Optional.of(graphQuery));
         when(queryExecutor.execute(graphQuery)).thenReturn(expectedResult);
 

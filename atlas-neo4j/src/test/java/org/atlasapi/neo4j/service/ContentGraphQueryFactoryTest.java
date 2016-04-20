@@ -14,16 +14,16 @@ import org.junit.Test;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-public class ContentGraphServiceSelectorTest {
+public class ContentGraphQueryFactoryTest {
     
-    private ContentGraphServiceSelector serviceSelector;
+    private ContentGraphQueryFactory serviceSelector;
 
     private IndexQueryParams indexQueryParams;
     private Set<Publisher> publishers;
 
     @Before
     public void setUp() throws Exception {
-        serviceSelector = ContentGraphServiceSelector.create();
+        serviceSelector = ContentGraphQueryFactory.create();
 
         indexQueryParams = new IndexQueryParams(
                 Optional.empty(),

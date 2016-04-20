@@ -12,7 +12,7 @@ import org.atlasapi.neo4j.service.query.GraphQuery;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-public class ContentGraphServiceSelector {
+public class ContentGraphQueryFactory {
 
     private static final ImmutableSet<String> ACTIONABLE_EPISODES_REQUIRED_PARAMETERS =
             ImmutableSet.of(
@@ -39,10 +39,10 @@ public class ContentGraphServiceSelector {
                     .addAll(ACTIONABLE_EPISODES_OPTIONAL_SUPPORTED_PARAMETERS)
                     .build();
 
-    private ContentGraphServiceSelector() { }
+    private ContentGraphQueryFactory() { }
 
-    public static ContentGraphServiceSelector create() {
-        return new ContentGraphServiceSelector();
+    public static ContentGraphQueryFactory create() {
+        return new ContentGraphQueryFactory();
     }
 
     public Optional<GraphQuery> getGraphQuery(

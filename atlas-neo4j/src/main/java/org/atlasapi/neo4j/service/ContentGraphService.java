@@ -29,19 +29,19 @@ public class ContentGraphService {
 
     private final ContentWriter contentWriter;
     private final GraphWriter graphWriter;
-    private final ContentGraphServiceSelector serviceSelector;
+    private final ContentGraphQueryFactory queryFactory;
     private final QueryExecutor queryExecutor;
 
     @VisibleForTesting
     ContentGraphService(
             ContentWriter contentWriter,
             GraphWriter graphWriter,
-            ContentGraphServiceSelector serviceSelector,
+            ContentGraphQueryFactory queryFactory,
             QueryExecutor queryExecutor
     ) {
         this.contentWriter = checkNotNull(contentWriter);
         this.graphWriter = checkNotNull(graphWriter);
-        this.serviceSelector = checkNotNull(serviceSelector);
+        this.queryFactory = checkNotNull(queryFactory);
         this.queryExecutor = checkNotNull(queryExecutor);
     }
 
@@ -49,7 +49,7 @@ public class ContentGraphService {
         return new ContentGraphService(
                 ContentWriter.create(session),
                 GraphWriter.create(session),
-                ContentGraphServiceSelector.create(),
+                ContentGraphQueryFactory.create(),
                 QueryExecutor.create(session)
         );
     }
@@ -63,7 +63,7 @@ public class ContentGraphService {
 
     public Optional<ListenableFuture<IndexQueryResult>> query(IndexQueryParams indexQueryParams,
             Iterable<Publisher> publishers, Map<String, String> parameters) {
-        Optional<GraphQuery> graphQuery = serviceSelector.getGraphQuery(
+        Optional<GraphQuery> graphQuery = queryFactory.getGraphQuery(
                 indexQueryParams, publishers, parameters
         );
 
