@@ -6,6 +6,8 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.Neo4jModule;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class SpikeModule {
 
     private final Neo4jModule neo4jModule;
@@ -13,13 +15,33 @@ public class SpikeModule {
     private final ContentResolver contentResolver;
     private final EquivalenceGraphStore equivalenceGraphStore;
 
-    public SpikeModule() {
-        this.neo4jModule = new Neo4jModule();
+    private SpikeModule(
+            ContentIndex contentIndex,
+            ContentResolver contentResolver,
+            EquivalenceGraphStore equivalenceGraphStore
+    ) {
+        this.neo4jModule = Neo4jModule.create();
 
-        AtlasPersistenceModule atlasPersistenceModule = new AtlasPersistenceModule();
-        this.contentIndex = atlasPersistenceModule.contentIndex();
-        this.contentResolver = atlasPersistenceModule.contentResolver();
-        this.equivalenceGraphStore = atlasPersistenceModule.equivalenceGraphStore();
+        this.contentIndex = checkNotNull(contentIndex);
+        this.contentResolver = checkNotNull(contentResolver);
+        this.equivalenceGraphStore = checkNotNull(equivalenceGraphStore);
+    }
+
+    public static SpikeModule createStandalone() {
+        Neo4jAtlasPersistenceModule atlasPersistenceModule = new Neo4jAtlasPersistenceModule();
+        return new SpikeModule(
+                atlasPersistenceModule.contentIndex(),
+                atlasPersistenceModule.contentResolver(),
+                atlasPersistenceModule.equivalenceGraphStore()
+        );
+    }
+
+    public static SpikeModule create(
+            ContentIndex contentIndex,
+            ContentResolver contentResolver,
+            EquivalenceGraphStore equivalenceGraphStore
+    ) {
+        return new SpikeModule(contentIndex, contentResolver, equivalenceGraphStore);
     }
 
     public TestDateCreator testDateCreator(int limit, int maxOffset,
@@ -34,5 +56,4 @@ public class SpikeModule {
                 publishers
         );
     }
-
 }

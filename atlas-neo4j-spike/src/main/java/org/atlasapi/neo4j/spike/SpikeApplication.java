@@ -17,10 +17,10 @@ public class SpikeApplication {
     }
 
     private void run() throws Exception {
-        SpikeModule spikeModule = new SpikeModule();
+        SpikeModule spikeModule = SpikeModule.createStandalone();
 
         ZonedDateTime start = ZonedDateTime.now();
-        spikeModule.testDateCreator(100, 5_000_000, ImmutableSet.of(Publisher.BT_TVE_VOD))
+        spikeModule.testDateCreator(100, 100, ImmutableSet.of(Publisher.BT_TVE_VOD))
                 .createTestData();
         ZonedDateTime end = ZonedDateTime.now();
 

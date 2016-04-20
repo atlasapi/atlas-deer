@@ -16,7 +16,6 @@ import java.util.stream.IntStream;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentResolver;
-import org.atlasapi.content.IndexQueryParams;
 import org.atlasapi.content.IndexQueryResult;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -30,7 +29,6 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -97,7 +95,7 @@ public class TestDateCreator {
     }
 
     private void createTestDataPage(int offset, int limit) {
-        FluentIterable<Id> ids = getCanonicalIds(offset, limit).getIds();
+        Iterable<Id> ids = getCanonicalIds(offset, limit).getIds();
         LOG.info("Offset: {} - Received canonical IDs", offset);
 
         ImmutableMap<Id, ContentAndGraph> equivalentSets = getEquivalentSet(ids);
@@ -116,7 +114,7 @@ public class TestDateCreator {
                     new AttributeQuerySet(ImmutableSet.of()),
                     publishers,
                     new Selection(offset, limit),
-                    Optional.<IndexQueryParams>empty()
+                    Optional.empty()
             ).get(30_000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw Throwables.propagate(e);
@@ -143,7 +141,7 @@ public class TestDateCreator {
                 ));
     }
 
-    private FluentIterable<Content> getContent(EquivalenceGraph graph) {
+    private Iterable<Content> getContent(EquivalenceGraph graph) {
         try {
             return contentResolver.resolveIds(graph.getEquivalenceSet())
                     .get(30_000, TimeUnit.MILLISECONDS)
@@ -154,16 +152,16 @@ public class TestDateCreator {
     }
 
     private void writeToNeo4j(EquivalenceGraph graph, Iterable<Content> content) {
-        neo4jModule.spikeContentNodeService().writeEquivalentSet(graph, content);
+        neo4jModule.contentGraphService().writeEquivalentSet(graph, content);
     }
 
     private class ContentAndGraph {
 
         private EquivalenceGraph graph;
-        private FluentIterable<Content> content;
+        private Iterable<Content> content;
 
         public ContentAndGraph(EquivalenceGraph graph,
-                FluentIterable<Content> content) {
+                Iterable<Content> content) {
             this.graph = graph;
             this.content = content;
         }
@@ -172,7 +170,7 @@ public class TestDateCreator {
             return graph;
         }
 
-        public FluentIterable<Content> getContent() {
+        public Iterable<Content> getContent() {
             return content;
         }
     }

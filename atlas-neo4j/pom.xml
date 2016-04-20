@@ -16,7 +16,7 @@
 
     <properties>
         <neo4j-ogm.version>2.0.0-M03</neo4j-ogm.version>
-        <neo4j.version>2.3.2</neo4j.version>
+        <neo4j.version>2.3.3</neo4j.version>
     </properties>
 
     <dependencies>
@@ -24,6 +24,16 @@
             <groupId>org.atlasapi</groupId>
             <artifactId>atlas-core</artifactId>
             <version>${atlas.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
@@ -44,11 +54,6 @@
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
             <version>${neo4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.3.6</version>
         </dependency>
     </dependencies>
 </project>

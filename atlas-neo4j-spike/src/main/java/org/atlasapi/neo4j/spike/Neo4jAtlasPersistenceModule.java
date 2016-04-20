@@ -33,7 +33,7 @@ import com.mongodb.ServerAddress;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 
-public class AtlasPersistenceModule {
+public class Neo4jAtlasPersistenceModule {
 
     private static final String mongoReadHost = "db1.owl.atlas.mbst.tv";
     private static final Integer mongoReadPort = 27017;
@@ -62,10 +62,10 @@ public class AtlasPersistenceModule {
     private static final String esIndex = "content";
     private static final String esRequestTimeout = "5000";
 
-    private final CassandraPersistenceModule persistenceModule;
+    private final Neo4jCassandraPersistenceModule persistenceModule;
     private final ElasticSearchContentIndexModule indexModule;
 
-    public AtlasPersistenceModule() {
+    public Neo4jAtlasPersistenceModule() {
         this.persistenceModule = persistenceModule();
         this.persistenceModule.startAsync().awaitRunning();
 
@@ -147,7 +147,7 @@ public class AtlasPersistenceModule {
         );
     }
 
-    private CassandraPersistenceModule persistenceModule() {
+    private Neo4jCassandraPersistenceModule persistenceModule() {
         Iterable<String> seeds = Splitter.on(",").split(cassandraSeeds);
         ConfiguredAstyanaxContext contextSupplier = new ConfiguredAstyanaxContext(cassandraCluster,
                 cassandraKeyspace,
@@ -169,7 +169,7 @@ public class AtlasPersistenceModule {
                 .build();
 
         cassandraService.startAsync().awaitRunning();
-        return new CassandraPersistenceModule(
+        return new Neo4jCassandraPersistenceModule(
                 context,
                 cassandraService,
                 cassandraKeyspace,

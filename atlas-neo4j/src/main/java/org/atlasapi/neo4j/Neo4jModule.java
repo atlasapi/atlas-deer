@@ -1,6 +1,6 @@
 package org.atlasapi.neo4j;
 
-import org.atlasapi.neo4j.service.SpikeContentNodeService;
+import org.atlasapi.neo4j.service.ContentGraphService;
 
 import org.neo4j.ogm.session.Session;
 
@@ -8,7 +8,7 @@ public class Neo4jModule {
 
     private final Session session;
 
-    public Neo4jModule() {
+    private Neo4jModule() {
         this.session = Neo4jSessionFactory
                 .createWithHttpDriver(
                         Neo4jSessionFactory.NEO4J_HOST,
@@ -17,8 +17,12 @@ public class Neo4jModule {
                 .getNeo4jSession();
     }
 
-    public SpikeContentNodeService spikeContentNodeService() {
-        return SpikeContentNodeService.create(session);
+    public static Neo4jModule create() {
+        return new Neo4jModule();
+    }
+
+    public ContentGraphService contentGraphService() {
+        return ContentGraphService.create(session);
     }
 
     public Session session() {

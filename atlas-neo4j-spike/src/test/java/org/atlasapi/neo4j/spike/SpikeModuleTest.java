@@ -19,7 +19,7 @@ public class SpikeModuleTest {
 
     @Before
     public void setUp() throws Exception {
-        spikeModule = new SpikeModule();
+        spikeModule = SpikeModule.createStandalone();
     }
 
     @Test

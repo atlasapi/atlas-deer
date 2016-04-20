@@ -20,7 +20,7 @@ import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ConsistencyLevel;
 
-public class CassandraPersistenceModule extends AbstractIdleService {
+public class Neo4jCassandraPersistenceModule extends AbstractIdleService {
 
     private final String keyspace;
     private final Session session;
@@ -34,7 +34,7 @@ public class CassandraPersistenceModule extends AbstractIdleService {
     private CassandraEquivalenceGraphStore equivGraphStore;
     private ContentResolver contentStore;
 
-    public CassandraPersistenceModule(
+    public Neo4jCassandraPersistenceModule(
             AstyanaxContext<Keyspace> context,
             DatastaxCassandraService datastaxCassandraService,
             String keyspace,
