@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.users.User;
@@ -17,6 +18,7 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
+import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryParser;
@@ -41,8 +43,12 @@ public class SourceRequestsController {
     private final NumberToShortStringCodec idCodec;
     private final SourceIdCodec sourceIdCodec;
     private final UserFetcher userFetcher;
+    private final StandardUserAwareQueryParserNoAuth<SourceRequest> queryParserNoAuth;
+    private final NoAuthUserFetcher userFetcherNoAuth;
 
     public SourceRequestsController(UserAwareQueryParser<SourceRequest> queryParser,
+            StandardUserAwareQueryParserNoAuth<SourceRequest> queryParserNoAuth,
+            NoAuthUserFetcher userFetcherNoAuth,
             UserAwareQueryExecutor<SourceRequest> queryExecutor,
             UserAwareQueryResultWriter<SourceRequest> resultWriter,
             SourceRequestManager sourceRequestManager,
@@ -56,11 +62,26 @@ public class SourceRequestsController {
         this.idCodec = idCodec;
         this.sourceIdCodec = sourceIdCodec;
         this.userFetcher = userFetcher;
+        this.queryParserNoAuth = queryParserNoAuth;
+        this.userFetcherNoAuth = userFetcherNoAuth;
     }
 
     @RequestMapping(value = { "/4/requests.*", "/4/requests/{id}.*" }, method = RequestMethod.GET)
     public void listSourceRequests(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
+        listSourceRequestsInternal(request, response, queryParser);
+
+    }
+
+    @RequestMapping(value = { "/4/admin/requests.*", "/4/admin/requests/{id}.*" }, method = RequestMethod.GET)
+    public void listSourceRequestsNoAuth(HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        listSourceRequestsInternal(request, response, queryParserNoAuth);
+
+    }
+
+    private void listSourceRequestsInternal(HttpServletRequest request,
+            HttpServletResponse response, UserAwareQueryParser<SourceRequest> queryParser) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -71,7 +92,6 @@ public class SourceRequestsController {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
         }
-
     }
 
     @RequestMapping(value = "/4/sources/{sid}/requests", method = RequestMethod.POST)
@@ -84,6 +104,46 @@ public class SourceRequestsController {
             @RequestParam String usageType,
             @RequestParam String licenseAccepted) throws IOException {
 
+        storeSourceRequestInternal(
+                request,
+                response,
+                sid,
+                appId,
+                appUrl,
+                reason,
+                usageType,
+                licenseAccepted, userFetcher
+        );
+    }
+
+    @RequestMapping(value = "/4/admin/sources/{sid}/requests", method = RequestMethod.POST)
+    public void storeSourceRequestNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String sid,
+            @RequestParam String appId,
+            @RequestParam String appUrl,
+            @RequestParam String reason,
+            @RequestParam String usageType,
+            @RequestParam String licenseAccepted) throws IOException {
+
+        storeSourceRequestInternal(
+                request,
+                response,
+                sid,
+                appId,
+                appUrl,
+                reason,
+                usageType,
+                licenseAccepted,
+                userFetcherNoAuth
+        );
+    }
+    private void storeSourceRequestInternal(HttpServletRequest request,
+            HttpServletResponse response, String sid, String appId,
+            String appUrl, String reason,
+            String usageType, String licenseAccepted,
+            UserFetcher userFetcher)
+            throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         try {
             Optional<Publisher> source = sourceIdCodec.decode(sid);
@@ -106,6 +166,18 @@ public class SourceRequestsController {
     public void storeSourceRequest(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String rid) throws IOException {
+        storeSourceRequestInternal(request, response, rid, userFetcher);
+    }
+
+    @RequestMapping(value = "/4/admin/requests/{rid}/approve", method = RequestMethod.POST)
+    public void storeSourceRequestNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String rid) throws IOException {
+        storeSourceRequestInternal(request, response, rid, userFetcherNoAuth);
+    }
+
+    private void storeSourceRequestInternal(HttpServletRequest request,
+            HttpServletResponse response, @PathVariable String rid, UserFetcher userFetcher) throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         try {
             Id requestId = Id.valueOf(idCodec.decode(rid));
@@ -118,4 +190,5 @@ public class SourceRequestsController {
             new ErrorResultWriter().write(summary, null, request, response);
         }
     }
+
 }

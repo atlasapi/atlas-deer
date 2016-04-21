@@ -8,6 +8,7 @@ import java.io.Reader;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.entity.Id;
 import org.atlasapi.input.ModelReader;
@@ -21,6 +22,7 @@ import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
+import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
@@ -43,34 +45,52 @@ public class UsersController {
     private static Logger log = LoggerFactory.getLogger(UsersController.class);
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final UserAwareQueryParser<User> requestParser;
+    private final StandardUserAwareQueryParserNoAuth<User> requestParserNoAuth;
     private final UserAwareQueryExecutor<User> queryExecutor;
     private final UserAwareQueryResultWriter<User> resultWriter;
     private final ModelReader reader;
     private final NumberToShortStringCodec idCodec;
     private final UserFetcher userFetcher;
+    private final NoAuthUserFetcher userFetcherNoAuth;
     private final UserStore userStore;
     private final Clock clock;
 
     public UsersController(UserAwareQueryParser<User> requestParser,
+            StandardUserAwareQueryParserNoAuth<User> requestParserNoAuth,
             UserAwareQueryExecutor<User> queryExecutor,
             UserAwareQueryResultWriter<User> resultWriter,
             ModelReader reader,
             NumberToShortStringCodec idCodec,
             UserFetcher userFetcher,
+            NoAuthUserFetcher userFetcherNoAuth,
             UserStore userStore,
             Clock clock) {
+        this.requestParserNoAuth = requestParserNoAuth;
         this.requestParser = requestParser;
         this.queryExecutor = queryExecutor;
         this.resultWriter = resultWriter;
         this.reader = reader;
         this.idCodec = idCodec;
         this.userFetcher = userFetcher;
+        this.userFetcherNoAuth = userFetcherNoAuth;
         this.userStore = userStore;
         this.clock = clock;
     }
 
     @RequestMapping({ "/4/users/{uid}.*", "/4/users.*" })
     public void outputUsers(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        outputUsersInternal(request, response, requestParser);
+    }
+
+    @RequestMapping({ "/4/admin/users/{uid}.*", "/4/admin/users.*" })
+    public void outputUsersNoAuth(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        outputUsersInternal(request, response, requestParserNoAuth);
+    }
+
+    private void outputUsersInternal(HttpServletRequest request, HttpServletResponse response,
+            UserAwareQueryParser<User> requestParser)
             throws IOException {
         ResponseWriter writer = null;
         try {
@@ -91,6 +111,18 @@ public class UsersController {
     public void userAcceptsLicense(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String uid) throws IOException {
+        userAcceptsLicenseInternal(request, response, uid, userFetcher);
+    }
+
+    @RequestMapping(value = "/4/admin/users/{uid}/eula/accept.*", method = RequestMethod.POST)
+    public void userAcceptsLicenseNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String uid) throws IOException {
+        userAcceptsLicenseInternal(request, response, uid, userFetcherNoAuth);
+    }
+
+    private void userAcceptsLicenseInternal(HttpServletRequest request,
+            HttpServletResponse response, @PathVariable String uid, UserFetcher userFetcher) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -122,6 +154,18 @@ public class UsersController {
     public void updateUser(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String uid) throws IOException {
+        updateUserInternal(request, response, uid, userFetcher);
+    }
+
+    @RequestMapping(value = "/4/admin/users/{uid}.*", method = RequestMethod.POST)
+    public void updateUserNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String uid) throws IOException {
+        updateUserInternal(request, response, uid, userFetcherNoAuth);
+    }
+
+    private void updateUserInternal(HttpServletRequest request, HttpServletResponse response,
+            @PathVariable String uid, UserFetcher userFetcher) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -138,7 +182,7 @@ public class UsersController {
                         User.class
                 );
                 // Only admins can change the role for a user
-                // if editing user is not an admin reject 
+                // if editing user is not an admin reject
                 if (!editingUser.is(Role.ADMIN) && isUserRoleChanged(posted, existing.get())) {
                     throw new InsufficientPrivilegeException(
                             "You do not have permission to change the user role");
@@ -164,6 +208,18 @@ public class UsersController {
     public void deactivateUser(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String uid) throws IOException {
+        deactivateUserInternal(request, response, uid, userFetcher);
+    }
+
+    @RequestMapping(value = "/4/admin/users/{uid}.*", method = RequestMethod.DELETE)
+    public void deactivateUserNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String uid) throws IOException {
+        deactivateUserInternal(request, response, uid, userFetcherNoAuth);
+    }
+
+    private void deactivateUserInternal(HttpServletRequest request, HttpServletResponse response,
+            @PathVariable String uid, UserFetcher userFetcher) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);

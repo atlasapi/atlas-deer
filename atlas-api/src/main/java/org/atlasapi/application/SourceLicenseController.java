@@ -8,6 +8,7 @@ import java.io.Reader;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
@@ -16,12 +17,15 @@ import org.atlasapi.input.ModelReader;
 import org.atlasapi.input.ReadException;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
+import org.atlasapi.output.NotAcceptableException;
 import org.atlasapi.output.ResourceForbiddenException;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
+import org.atlasapi.output.UnsupportedFormatException;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
 import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
@@ -38,25 +42,31 @@ public class SourceLicenseController {
 
     private static Logger log = LoggerFactory.getLogger(SourceLicenseController.class);
     private final UserAwareQueryParser<SourceLicense> queryParser;
+    private final StandardUserAwareQueryParserNoAuth<SourceLicense> queryParserNoAuth;
     private final UserAwareQueryExecutor<SourceLicense> queryExecutor;
     private final UserAwareQueryResultWriter<SourceLicense> resultWriter;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final ModelReader reader;
     private final UserFetcher userFetcher;
+    private final NoAuthUserFetcher userFetcherNoAuth;
     private final SourceLicenseStore store;
 
     public SourceLicenseController(UserAwareQueryParser<SourceLicense> queryParser,
+            StandardUserAwareQueryParserNoAuth<SourceLicense> queryParserNoAuth,
             UserAwareQueryExecutor<SourceLicense> queryExecutor,
             UserAwareQueryResultWriter<SourceLicense> resultWriter,
             ModelReader reader,
             UserFetcher userFetcher,
+            NoAuthUserFetcher userFetcherNoAuth,
             SourceLicenseStore store) {
         super();
         this.queryParser = queryParser;
+        this.queryParserNoAuth = queryParserNoAuth;
         this.queryExecutor = queryExecutor;
         this.resultWriter = resultWriter;
         this.reader = reader;
         this.userFetcher = userFetcher;
+        this.userFetcherNoAuth = userFetcherNoAuth;
         this.store = store;
     }
 
@@ -64,6 +74,19 @@ public class SourceLicenseController {
     public void listSources(HttpServletRequest request,
             HttpServletResponse response)
             throws QueryParseException, QueryExecutionException, IOException {
+        listSourcesInternal(request, response, queryParser);
+    }
+
+    @RequestMapping({ "/4/admin/source_licenses/{sid}.*", "/4/admin/source_licenses.*" })
+    public void listSourcesNoAuth(HttpServletRequest request,
+            HttpServletResponse response)
+            throws QueryParseException, QueryExecutionException, IOException {
+        listSourcesInternal(request, response, queryParserNoAuth);
+    }
+
+    private void listSourcesInternal(HttpServletRequest request, HttpServletResponse response,
+            UserAwareQueryParser<SourceLicense> queryParser)
+            throws IOException, UnsupportedFormatException, NotAcceptableException {
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
             UserAwareQuery<SourceLicense> sourcesQuery = queryParser.parse(request);
@@ -75,8 +98,22 @@ public class SourceLicenseController {
         }
     }
 
+
     @RequestMapping(value = "/4/license.*", method = RequestMethod.POST)
     public void writeLicense(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        writeLicenseInternal(request, response, userFetcher);
+    }
+
+
+    @RequestMapping(value = "/4/admin/license.*", method = RequestMethod.POST)
+    public void writeLicenseNoAuth(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        writeLicenseInternal(request, response, userFetcherNoAuth);
+    }
+
+    private void writeLicenseInternal(HttpServletRequest request, HttpServletResponse response,
+            UserFetcher userFetcher)
             throws IOException {
         ResponseWriter writer = null;
         try {
