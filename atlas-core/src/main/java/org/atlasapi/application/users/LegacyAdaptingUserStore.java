@@ -65,6 +65,11 @@ public class LegacyAdaptingUserStore implements UserStore {
     }
 
     @Override
+    public Optional<User> userForEmail(String email) {
+        return legacyStore.userForEmail(email).transform(transformer);
+    }
+
+    @Override
     public Iterable<User> allUsers() {
         return Iterables.transform(collection.find(), legacyTranslatorFunction);
     }

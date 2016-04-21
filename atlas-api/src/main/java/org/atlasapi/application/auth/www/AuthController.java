@@ -7,6 +7,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.model.auth.OAuthProvider;
 import org.atlasapi.application.users.User;
@@ -38,18 +39,22 @@ import static org.atlasapi.application.auth.OAuthTokenUserFetcher.OAUTH_TOKEN_QU
 @Controller
 public class AuthController {
 
+    private final String EMAIL_PARAMETER = NoAuthUserFetcher.EMAIL_PARAMETER;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private static Logger log = LoggerFactory.getLogger(AuthController.class);
     private final QueryResultWriter<OAuthProvider> resultWriter;
     private final UserFetcher userFetcher;
+    private final NoAuthUserFetcher userFetcherNoAuth;
     private final NumberToShortStringCodec idCodec;
     private final String USER_URL = Configurer.get("atlas.uri").toString() + "/4/users/%s.%s";
+    private final String USER_URL_ADMIN = Configurer.get("atlas.uri").toString() + "/4/admin/users/%s.%s";
 
     public AuthController(QueryResultWriter<OAuthProvider> resultWriter,
-            UserFetcher userFetcher,
+            UserFetcher userFetcher, NoAuthUserFetcher userFetcherNoAuth,
             NumberToShortStringCodec idCodec) {
         this.resultWriter = resultWriter;
         this.userFetcher = userFetcher;
+        this.userFetcherNoAuth = userFetcherNoAuth;
         this.idCodec = idCodec;
     }
 
@@ -78,6 +83,25 @@ public class AuthController {
             @RequestParam(value = OAUTH_PROVIDER_QUERY_PARAMETER) String oauthProvider,
             @RequestParam(value = OAUTH_TOKEN_QUERY_PARAMETER) String oauthToken)
             throws IOException {
+        Map<String, String> params = Maps.newHashMap();
+        params.put(OAUTH_PROVIDER_QUERY_PARAMETER, oauthProvider);
+        params.put(OAUTH_TOKEN_QUERY_PARAMETER, oauthToken);
+        redirectToCurrentUserInternal(request, response, params, userFetcher, USER_URL);
+    }
+
+    @RequestMapping(value = { "/4/admin/auth/user.json" }, method = RequestMethod.GET)
+    public void redirectToCurrentUserNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @RequestParam(value = EMAIL_PARAMETER) String email)
+            throws IOException {
+        Map<String, String> params = Maps.newHashMap();
+        params.put(EMAIL_PARAMETER, email);
+        redirectToCurrentUserInternal(request, response, params, userFetcherNoAuth, USER_URL_ADMIN);
+    }
+
+    private void redirectToCurrentUserInternal(HttpServletRequest request,
+            HttpServletResponse response, Map<String, String> params, UserFetcher userFetcher,
+            String user_url) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -90,15 +114,12 @@ public class AuthController {
                 return;
             }
             String userUrl = String.format(
-                    USER_URL,
+                    user_url,
                     idCodec.encode(BigInteger.valueOf(user.get().getId().longValue())),
                     "json"
             );
-            Map<String, String> oauthParams = Maps.newHashMap();
-            oauthParams.put(OAUTH_PROVIDER_QUERY_PARAMETER, oauthProvider);
-            oauthParams.put(OAUTH_TOKEN_QUERY_PARAMETER, oauthToken);
             response.setStatus(HttpServletResponse.SC_FOUND);
-            response.sendRedirect(Urls.appendParameters(userUrl, oauthParams));
+            response.sendRedirect(Urls.appendParameters(userUrl, params));
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);
             writeError(e, writer, request, response);

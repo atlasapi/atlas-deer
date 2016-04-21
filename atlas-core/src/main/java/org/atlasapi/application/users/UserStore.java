@@ -13,6 +13,8 @@ public interface UserStore extends IdResolver<User> {
 
     Optional<User> userForId(Id id);
 
+    Optional<User> userForEmail(String email);
+
     Iterable<User> allUsers();
 
     void store(User user);

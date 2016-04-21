@@ -25,6 +25,7 @@ import org.atlasapi.application.auth.ApiKeySourcesFetcher;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.AuthProvidersListWriter;
 import org.atlasapi.application.auth.AuthProvidersQueryResultWriter;
+import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.OAuthInterceptor;
 import org.atlasapi.application.auth.OAuthRequestListWriter;
 import org.atlasapi.application.auth.OAuthRequestQueryResultWriter;
@@ -81,7 +82,9 @@ import org.atlasapi.query.common.QueryAtomParser;
 import org.atlasapi.query.common.QueryAttributeParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.useraware.StandardUserAwareQueryParser;
+import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAwareQueryContextParser;
+import org.atlasapi.query.common.useraware.UserAwareQueryContextParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.users.videosource.VideoSourceChannelResultsListWriter;
 import org.atlasapi.users.videosource.VideoSourceChannelResultsQueryResultWriter;
@@ -208,6 +211,7 @@ public class ApplicationWebModule {
                         requestWriter()
                 ),
                 userFetcher(),
+                noAuthUserFetcher(),
                 idCodec
         );
     }
@@ -216,6 +220,7 @@ public class ApplicationWebModule {
     public ApplicationsController applicationAdminController() {
         return new ApplicationsController(
                 applicationQueryParser(),
+                applicationQueryParserNoAuth(),
                 new ApplicationQueryExecutor(appPersistence.applicationStore()),
                 new ApplicationQueryResultWriter(applicationListWriter()),
                 gsonModelReader(),
@@ -223,6 +228,7 @@ public class ApplicationWebModule {
                 sourceIdCodec,
                 appPersistence.applicationStore(),
                 userFetcher(),
+                noAuthUserFetcher(),
                 appPersistence.userStore()
         );
     }
@@ -266,6 +272,7 @@ public class ApplicationWebModule {
     public SourcesController sourcesController() {
         return new SourcesController(
                 sourcesQueryParser(),
+                sourcesQueryParserNoAuth(),
                 soucesQueryExecutor(),
                 new SourcesQueryResultWriter(new SourceWithIdWriter(
                         sourceIdCodec,
@@ -275,7 +282,8 @@ public class ApplicationWebModule {
                 idCodec,
                 sourceIdCodec,
                 appPersistence.applicationStore(),
-                userFetcher()
+                userFetcher(),
+                noAuthUserFetcher()
         );
     }
 
@@ -294,6 +302,8 @@ public class ApplicationWebModule {
         );
         return new SourceRequestsController(
                 sourceRequestsQueryParser(),
+                sourceRequestParserNoAuth(),
+                noAuthUserFetcher(),
                 new SourceRequestQueryExecutor(appPersistence.sourceRequestStore()),
                 new SourceRequestsQueryResultsWriter(new SourceRequestListWriter(
                         sourceIdCodec,
@@ -310,11 +320,13 @@ public class ApplicationWebModule {
     public UsersController usersController() {
         return new UsersController(
                 usersQueryParser(),
+                usersQueryParserNoAuth(),
                 new UsersQueryExecutor(appPersistence.userStore()),
                 new UsersQueryResultWriter(usersListWriter()),
                 gsonModelReader(),
                 idCodec,
                 userFetcher(),
+                noAuthUserFetcher(),
                 appPersistence.userStore(),
                 new SystemClock()
         );
@@ -328,22 +340,39 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParser<Application>(Resource.APPLICATION,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(
-                                Attributes.ID,
-                                AttributeCoercers.idCoercer(idCodec)
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.SOURCE_READS,
-                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.SOURCE_WRITES,
-                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
-                        )
-                )),
+                getAttributeParser(),
                 idCodec, contextParser
         );
+    }
+
+    private StandardUserAwareQueryParserNoAuth<Application> applicationQueryParserNoAuth() {
+        UserAwareQueryContextParserNoAuth contextParser = new UserAwareQueryContextParserNoAuth(configFetcher(),
+                noAuthUserFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
+
+        return new StandardUserAwareQueryParserNoAuth<Application>(Resource.APPLICATION,
+                getAttributeParser(),
+                idCodec, contextParser
+        );
+    }
+
+    private QueryAttributeParser getAttributeParser() {
+        return new QueryAttributeParser(ImmutableList.of(
+                QueryAtomParser.valueOf(
+                        Attributes.ID,
+                        AttributeCoercers.idCoercer(idCodec)
+                ),
+                QueryAtomParser.valueOf(
+                        Attributes.SOURCE_READS,
+                        AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                ),
+                QueryAtomParser.valueOf(
+                        Attributes.SOURCE_WRITES,
+                        AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                )
+        ));
     }
 
     @Bean
@@ -359,6 +388,21 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParser<User>(Resource.USER,
+                new QueryAttributeParser(ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                )),
+                idCodec, contextParser
+        );
+    }
+
+    private StandardUserAwareQueryParserNoAuth<User> usersQueryParserNoAuth() {
+        UserAwareQueryContextParserNoAuth contextParser = new UserAwareQueryContextParserNoAuth(configFetcher(),
+                noAuthUserFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
+
+        return new StandardUserAwareQueryParserNoAuth<User>(Resource.USER,
                 new QueryAttributeParser(ImmutableList.of(
                         QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
                 )),
@@ -400,6 +444,11 @@ public class ApplicationWebModule {
         );
     }
 
+    @Bean
+    public NoAuthUserFetcher noAuthUserFetcher() {
+        return new NoAuthUserFetcher(appPersistence.userStore());
+    }
+
     private StandardUserAwareQueryParser<Publisher> sourcesQueryParser() {
         UserAwareQueryContextParser contextParser = new UserAwareQueryContextParser(configFetcher(),
                 userFetcher(),
@@ -408,6 +457,21 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParser<Publisher>(Resource.SOURCE,
+                new QueryAttributeParser(ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                )),
+                idCodec, contextParser
+        );
+    }
+
+    private StandardUserAwareQueryParserNoAuth<Publisher> sourcesQueryParserNoAuth() {
+        UserAwareQueryContextParserNoAuth contextParser = new UserAwareQueryContextParserNoAuth(configFetcher(),
+                noAuthUserFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
+
+        return new StandardUserAwareQueryParserNoAuth<Publisher>(Resource.SOURCE,
                 new QueryAttributeParser(ImmutableList.of(
                         QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
                 )),
@@ -428,6 +492,23 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParser<SourceRequest>(Resource.SOURCE_REQUEST,
+                new QueryAttributeParser(ImmutableList.of(
+                        QueryAtomParser.valueOf(
+                                Attributes.SOURCE_REQUEST_SOURCE,
+                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                        )
+                )),
+                idCodec, contextParser
+        );
+    }
+
+    private StandardUserAwareQueryParserNoAuth<SourceRequest> sourceRequestParserNoAuth() {
+        UserAwareQueryContextParserNoAuth contextParser = new UserAwareQueryContextParserNoAuth(configFetcher(),
+                noAuthUserFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
+        return new StandardUserAwareQueryParserNoAuth<SourceRequest>(Resource.SOURCE_REQUEST,
                 new QueryAttributeParser(ImmutableList.of(
                         QueryAtomParser.valueOf(
                                 Attributes.SOURCE_REQUEST_SOURCE,
@@ -622,6 +703,20 @@ public class ApplicationWebModule {
         );
     }
 
+    private StandardUserAwareQueryParserNoAuth<SourceLicense> sourceLicenseQueryParserNoAuth() {
+        UserAwareQueryContextParserNoAuth contextParser = new UserAwareQueryContextParserNoAuth(configFetcher(),
+                noAuthUserFetcher(),
+                new IndexAnnotationsExtractor(applicationAnnotationIndex()),
+                selectionBuilder()
+        );
+        return new StandardUserAwareQueryParserNoAuth<SourceLicense>(Resource.SOURCE_LICENSE,
+                new QueryAttributeParser(ImmutableList.of(
+                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                )),
+                idCodec, contextParser
+        );
+    }
+
     @Bean
     protected UserAwareQueryExecutor<SourceLicense> souceLicenseQueryExecutor() {
         return new SourceLicenseQueryExecutor(sourceIdCodec, appPersistence.sourceLicenseStore());
@@ -632,10 +727,12 @@ public class ApplicationWebModule {
     SourceLicenseController sourceLicenseController() {
         return new SourceLicenseController(
                 sourceLicenseQueryParser(),
+                sourceLicenseQueryParserNoAuth(),
                 souceLicenseQueryExecutor(),
                 new SourceLicenseQueryResultWriter(new SourceLicenseWithIdWriter(sourceIdCodec)),
                 gsonModelReader(),
                 userFetcher(),
+                noAuthUserFetcher(),
                 appPersistence.sourceLicenseStore()
         );
     }
@@ -649,7 +746,7 @@ public class ApplicationWebModule {
                 licenseWriter,
                 requestWriter()
         ),
-                gsonModelReader(), appPersistence.endUserLicenseStore(), userFetcher()
+                gsonModelReader(), appPersistence.endUserLicenseStore(), userFetcher(), noAuthUserFetcher()
         );
     }
 

@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.application.EndUserLicense;
 import org.atlasapi.application.EndUserLicenseStore;
+import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.entity.Id;
 import org.atlasapi.input.ModelReader;
@@ -40,18 +41,31 @@ public class EndUserLicenseController {
     private final ModelReader reader;
     private final EndUserLicenseStore licenseStore;
     private final UserFetcher userFetcher;
+    private final NoAuthUserFetcher userFetcherNoAuth;
 
     public EndUserLicenseController(QueryResultWriter<EndUserLicense> resultWriter,
-            ModelReader reader, EndUserLicenseStore licenseStore, UserFetcher userFetcher) {
+            ModelReader reader, EndUserLicenseStore licenseStore, UserFetcher userFetcher, NoAuthUserFetcher userFetcherNoAuth) {
         super();
         this.resultWriter = resultWriter;
         this.reader = reader;
         this.licenseStore = licenseStore;
         this.userFetcher = userFetcher;
+        this.userFetcherNoAuth = userFetcherNoAuth;
     }
 
     @RequestMapping({ "/4/eula.*" })
     public void outputLicense(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        outputLicenseInternal(request, response);
+    }
+
+    @RequestMapping({ "/4/admin/eula.*" })
+    public void outputLicenseNoAuth(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        outputLicenseInternal(request, response);
+    }
+
+    private void outputLicenseInternal(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         ResponseWriter writer = null;
         try {
@@ -73,6 +87,18 @@ public class EndUserLicenseController {
     public void updatelicense(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         ResponseWriter writer = null;
+        updateLicenseInternal(request, response, writer, userFetcher);
+    }
+
+    @RequestMapping(value = "/4/admin/eula.*", method = RequestMethod.POST)
+    public void updatelicenseNoAuth(HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        ResponseWriter writer = null;
+        updateLicenseInternal(request, response, writer, userFetcherNoAuth);
+    }
+
+    private void updateLicenseInternal(HttpServletRequest request, HttpServletResponse response,
+            ResponseWriter writer, UserFetcher userFetcher) throws IOException {
         try {
             User editingUser = userFetcher.userFor(request).get();
             if (!editingUser.is(Role.ADMIN)) {

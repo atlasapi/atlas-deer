@@ -9,6 +9,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.users.Role;
@@ -28,6 +29,7 @@ import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
@@ -50,6 +52,7 @@ public class ApplicationsController {
     private static Logger log = LoggerFactory.getLogger(ApplicationsController.class);
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final UserAwareQueryParser<Application> requestParser;
+    private final StandardUserAwareQueryParserNoAuth<Application> requestParserNoAuth;
     private final UserAwareQueryExecutor<Application> queryExecutor;
     private final UserAwareQueryResultWriter<Application> resultWriter;
     private final ModelReader reader;
@@ -57,6 +60,7 @@ public class ApplicationsController {
     private final SourceIdCodec sourceIdCodec;
     private final ApplicationStore applicationStore;
     private final UserFetcher userFetcher;
+    private final NoAuthUserFetcher userFetcherNoAuth;
     private final UserStore userStore;
 
     private static class PrecedenceOrdering {
@@ -69,6 +73,7 @@ public class ApplicationsController {
     }
 
     public ApplicationsController(UserAwareQueryParser<Application> requestParser,
+            StandardUserAwareQueryParserNoAuth<Application> requestParserNoAuth,
             UserAwareQueryExecutor<Application> queryExecutor,
             UserAwareQueryResultWriter<Application> resultWriter,
             ModelReader reader,
@@ -76,8 +81,10 @@ public class ApplicationsController {
             SourceIdCodec sourceIdCodec,
             ApplicationStore applicationStore,
             UserFetcher userFetcher,
+            NoAuthUserFetcher userFetcherNoAuth,
             UserStore userStore) {
         this.requestParser = requestParser;
+        this.requestParserNoAuth = requestParserNoAuth;
         this.queryExecutor = queryExecutor;
         this.resultWriter = resultWriter;
         this.reader = reader;
@@ -85,12 +92,25 @@ public class ApplicationsController {
         this.sourceIdCodec = sourceIdCodec;
         this.applicationStore = applicationStore;
         this.userFetcher = userFetcher;
+        this.userFetcherNoAuth = userFetcherNoAuth;
         this.userStore = userStore;
     }
 
     @RequestMapping({ "/4/applications/{aid}.*", "/4/applications.*" })
     public void outputAllApplications(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        outputAllApplicationsInternal(request, response, requestParser);
+    }
+
+
+    @RequestMapping({ "/4/admin/applications/{aid}.*", "/4/admin/applications.*" })
+    public void outputAllApplicationsNoAuth(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        outputAllApplicationsInternal(request, response, requestParserNoAuth);
+    }
+
+    private void outputAllApplicationsInternal(HttpServletRequest request,
+            HttpServletResponse response, UserAwareQueryParser<Application> requestParser) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -107,16 +127,28 @@ public class ApplicationsController {
     @RequestMapping(value = "/4/applications.*", method = RequestMethod.POST)
     public void writeApplication(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        writeApplicationInternal(request, response, userFetcher);
+    }
+
+    @RequestMapping(value = "/4/admin/applications.*", method = RequestMethod.POST)
+    public void writeApplicationNoAuth(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        writeApplicationInternal(request, response, userFetcherNoAuth);
+    }
+
+    private void writeApplicationInternal(HttpServletRequest request, HttpServletResponse response,
+            UserFetcher userFetcher)
+            throws IOException {
         ResponseWriter writer = null;
         try {
-            User user = userFetcher.userFor(request).get();
             writer = writerResolver.writerFor(request, response);
             Application application = deserialize(
                     new InputStreamReader(request.getInputStream()),
                     Application.class
             );
+            User user = userFetcher.userFor(request).get();
             if (application.getId() != null) {
-                if (!userCanAccessApplication(application.getId(), request)) {
+                if (!userCanAccessApplication(application.getId(), request, userFetcher)) {
                     throw new ResourceForbiddenException();
                 }
                 Optional<Application> existing = applicationStore.applicationFor(application.getId());
@@ -161,12 +193,25 @@ public class ApplicationsController {
             HttpServletResponse response,
             @PathVariable String aid)
             throws IOException {
+        writeApplicationSourcesInternal(request, response, aid, userFetcher);
+    }
+
+    @RequestMapping(value = "/4/admin/applications/{aid}/sources", method = RequestMethod.POST)
+    public void writeApplicationSourcesNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String aid)
+            throws IOException {
+        writeApplicationSourcesInternal(request, response, aid, userFetcherNoAuth);
+    }
+
+    private void writeApplicationSourcesInternal(HttpServletRequest request,
+            HttpServletResponse response, @PathVariable String aid, UserFetcher userFetcher) throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         Id applicationId = Id.valueOf(idCodec.decode(aid));
         ApplicationSources sources;
         User user = userFetcher.userFor(request).get();
         try {
-            if (!userCanAccessApplication(applicationId, request)) {
+            if (!userCanAccessApplication(applicationId, request, userFetcher)) {
                 throw new ResourceForbiddenException();
             }
             sources = deserialize(new InputStreamReader(
@@ -181,15 +226,31 @@ public class ApplicationsController {
         }
     }
 
+
     @RequestMapping(value = "/4/applications/{aid}/precedence", method = RequestMethod.POST)
     public void setPrecedenceOrder(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String aid) throws IOException {
+        setPrecedenceOrderInternal(request, response, aid, userFetcher);
+
+    }
+
+    @RequestMapping(value = "/4/admin/applications/{aid}/precedence", method = RequestMethod.POST)
+    public void setPrecedenceOrderNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String aid) throws IOException {
+        setPrecedenceOrderInternal(request, response, aid, userFetcherNoAuth);
+
+    }
+
+    private void setPrecedenceOrderInternal(HttpServletRequest request,
+            HttpServletResponse response, String aid, UserFetcher userFetcher)
+            throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         Id applicationId = Id.valueOf(idCodec.decode(aid));
         PrecedenceOrdering ordering;
         try {
-            if (!userCanAccessApplication(applicationId, request)) {
+            if (!userCanAccessApplication(applicationId, request, userFetcher)) {
                 throw new ResourceForbiddenException();
             }
             ordering = deserialize(
@@ -204,17 +265,21 @@ public class ApplicationsController {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, null, request, response);
         }
-
     }
 
     @RequestMapping(value = "/4/applications/{aid}/precedence", method = RequestMethod.DELETE)
     public void disablePrecedence(HttpServletRequest request,
             HttpServletResponse response,
             @PathVariable String aid) throws IOException {
+        desablePrecedenceInternal(request, response, aid, userFetcher);
+    }
+
+    private void desablePrecedenceInternal(HttpServletRequest request, HttpServletResponse response,
+            @PathVariable String aid, UserFetcher userFetcher) throws IOException {
         try {
             response.addHeader("Access-Control-Allow-Origin", "*");
             Id applicationId = Id.valueOf(idCodec.decode(aid));
-            if (!userCanAccessApplication(applicationId, request)) {
+            if (!userCanAccessApplication(applicationId, request, userFetcher)) {
                 throw new ResourceForbiddenException();
             }
             Application existing = applicationStore.applicationFor(applicationId).get();
@@ -223,6 +288,13 @@ public class ApplicationsController {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, null, request, response);
         }
+    }
+
+    @RequestMapping(value = "/4/admin/applications/{aid}/precedence", method = RequestMethod.DELETE)
+    public void disablePrecedenceNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String aid) throws IOException {
+        desablePrecedenceInternal(request, response, aid, userFetcherNoAuth);
     }
 
     private <T> T deserialize(Reader input, Class<T> cls) throws IOException, ReadException {
@@ -243,7 +315,8 @@ public class ApplicationsController {
         return sources.build();
     }
 
-    private boolean userCanAccessApplication(Id id, HttpServletRequest request) {
+    private boolean userCanAccessApplication(Id id, HttpServletRequest request,
+            UserFetcher userFetcher) {
         Optional<User> user = userFetcher.userFor(request);
         if (!user.isPresent()) {
             return false;
