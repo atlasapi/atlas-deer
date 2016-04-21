@@ -10,17 +10,21 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.Application;
 import org.atlasapi.application.ApplicationPersistenceModule;
 import org.atlasapi.application.ApplicationQueryExecutor;
+import org.atlasapi.application.ApplicationQueryExecutorMultipleAccounts;
 import org.atlasapi.application.ApplicationsController;
 import org.atlasapi.application.SourceLicense;
 import org.atlasapi.application.SourceLicenseController;
 import org.atlasapi.application.SourceLicenseQueryExecutor;
+import org.atlasapi.application.SourceLicenseQueryExecutorMultipleAccounts;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceRequest;
 import org.atlasapi.application.SourceRequestManager;
 import org.atlasapi.application.SourceRequestQueryExecutor;
+import org.atlasapi.application.SourceRequestQueryExecutorMultipleAccounts;
 import org.atlasapi.application.SourceRequestsController;
 import org.atlasapi.application.SourcesController;
 import org.atlasapi.application.SourcesQueryExecutor;
+import org.atlasapi.application.SourcesQueryExecutorMultipleAccounts;
 import org.atlasapi.application.auth.ApiKeySourcesFetcher;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.AuthProvidersListWriter;
@@ -54,18 +58,24 @@ import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
 import org.atlasapi.application.users.UsersController;
 import org.atlasapi.application.users.UsersQueryExecutor;
+import org.atlasapi.application.users.UsersQueryExecutorMultipleAccounts;
 import org.atlasapi.application.writers.ApplicationListWriter;
 import org.atlasapi.application.writers.ApplicationQueryResultWriter;
+import org.atlasapi.application.writers.ApplicationQueryResultWriterMultipleAccounts;
 import org.atlasapi.application.writers.EndUserLicenseListWriter;
 import org.atlasapi.application.writers.EndUserLicenseQueryResultWriter;
 import org.atlasapi.application.writers.SourceLicenseQueryResultWriter;
+import org.atlasapi.application.writers.SourceLicenseQueryResultWriterMultipleAccounts;
 import org.atlasapi.application.writers.SourceLicenseWithIdWriter;
 import org.atlasapi.application.writers.SourceRequestListWriter;
 import org.atlasapi.application.writers.SourceRequestsQueryResultsWriter;
 import org.atlasapi.application.writers.SourceWithIdWriter;
 import org.atlasapi.application.writers.SourcesQueryResultWriter;
+import org.atlasapi.application.writers.SourcesQueryResultWriterMultipleAccounts;
+import org.atlasapi.application.writers.SourcesRequestsQueryResultsWriter;
 import org.atlasapi.application.writers.UsersListWriter;
 import org.atlasapi.application.writers.UsersQueryResultWriter;
+import org.atlasapi.application.writers.UsersQueryResultWriterMultipleAccounts;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.input.GsonModelReader;
@@ -83,6 +93,7 @@ import org.atlasapi.query.common.QueryAttributeParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.useraware.StandardUserAwareQueryParser;
 import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
+import org.atlasapi.query.common.useraware.UserAccountsAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryContextParser;
 import org.atlasapi.query.common.useraware.UserAwareQueryContextParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
@@ -222,7 +233,9 @@ public class ApplicationWebModule {
                 applicationQueryParser(),
                 applicationQueryParserNoAuth(),
                 new ApplicationQueryExecutor(appPersistence.applicationStore()),
+                new ApplicationQueryExecutorMultipleAccounts(appPersistence.applicationStore()),
                 new ApplicationQueryResultWriter(applicationListWriter()),
+                new ApplicationQueryResultWriterMultipleAccounts(applicationListWriter()),
                 gsonModelReader(),
                 idCodec,
                 sourceIdCodec,
@@ -274,16 +287,22 @@ public class ApplicationWebModule {
                 sourcesQueryParser(),
                 sourcesQueryParserNoAuth(),
                 soucesQueryExecutor(),
-                new SourcesQueryResultWriter(new SourceWithIdWriter(
-                        sourceIdCodec,
-                        "source",
-                        "sources"
-                )),
+                new SourcesQueryResultWriter(getSourcesWriter()),
+                soucesQueryExecutorMultipleAccounts(),
+                new SourcesQueryResultWriterMultipleAccounts(getSourcesWriter()),
                 idCodec,
                 sourceIdCodec,
                 appPersistence.applicationStore(),
                 userFetcher(),
                 noAuthUserFetcher()
+        );
+    }
+
+    private SourceWithIdWriter getSourcesWriter() {
+        return new SourceWithIdWriter(
+                sourceIdCodec,
+                "source",
+                "sources"
         );
     }
 
@@ -309,6 +328,11 @@ public class ApplicationWebModule {
                         sourceIdCodec,
                         idCodec
                 )),
+                new SourceRequestQueryExecutorMultipleAccounts(appPersistence.sourceRequestStore()),
+                new SourcesRequestsQueryResultsWriter(new SourceRequestListWriter(
+                        sourceIdCodec,
+                        idCodec
+                )),
                 manager,
                 idCodec,
                 sourceIdCodec,
@@ -323,6 +347,8 @@ public class ApplicationWebModule {
                 usersQueryParserNoAuth(),
                 new UsersQueryExecutor(appPersistence.userStore()),
                 new UsersQueryResultWriter(usersListWriter()),
+                new UsersQueryExecutorMultipleAccounts(appPersistence.userStore()),
+                new UsersQueryResultWriterMultipleAccounts(usersListWriter()),
                 gsonModelReader(),
                 idCodec,
                 userFetcher(),
@@ -482,6 +508,11 @@ public class ApplicationWebModule {
     @Bean
     protected UserAwareQueryExecutor<Publisher> soucesQueryExecutor() {
         return new SourcesQueryExecutor(sourceIdCodec);
+    }
+
+    @Bean
+    protected UserAccountsAwareQueryExecutor<Publisher> soucesQueryExecutorMultipleAccounts() {
+        return new SourcesQueryExecutorMultipleAccounts(sourceIdCodec);
     }
 
     private StandardUserAwareQueryParser<SourceRequest> sourceRequestsQueryParser() {
@@ -721,6 +752,12 @@ public class ApplicationWebModule {
     protected UserAwareQueryExecutor<SourceLicense> souceLicenseQueryExecutor() {
         return new SourceLicenseQueryExecutor(sourceIdCodec, appPersistence.sourceLicenseStore());
     }
+    @Bean
+    protected UserAccountsAwareQueryExecutor
+            <SourceLicense> souceLicenseQueryExecutorMultipleAccounts() {
+        return new SourceLicenseQueryExecutorMultipleAccounts(sourceIdCodec, appPersistence.sourceLicenseStore());
+    }
+
 
     public
     @Bean
@@ -730,6 +767,8 @@ public class ApplicationWebModule {
                 sourceLicenseQueryParserNoAuth(),
                 souceLicenseQueryExecutor(),
                 new SourceLicenseQueryResultWriter(new SourceLicenseWithIdWriter(sourceIdCodec)),
+                souceLicenseQueryExecutorMultipleAccounts(),
+                new SourceLicenseQueryResultWriterMultipleAccounts(new SourceLicenseWithIdWriter(sourceIdCodec)),
                 gsonModelReader(),
                 userFetcher(),
                 noAuthUserFetcher(),

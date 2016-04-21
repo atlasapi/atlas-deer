@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -56,17 +57,27 @@ public class EndUserLicenseController {
     @RequestMapping({ "/4/eula.*" })
     public void outputLicense(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        outputLicenseInternal(request, response);
+
+        ResponseWriter writer = null;
+        try {
+            writer = writerResolver.writerFor(request, response);
+            EndUserLicense license = licenseStore.getById(LICENSE_ID);
+            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(
+                    license,
+                    QueryContext.standard(request)
+            );
+            resultWriter.write(queryResult, writer);
+        } catch (Exception e) {
+            log.error("Request exception " + request.getRequestURI(), e);
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, writer, request, response);
+        }
     }
 
     @RequestMapping({ "/4/admin/eula.*" })
     public void outputLicenseNoAuth(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        outputLicenseInternal(request, response);
-    }
 
-    private void outputLicenseInternal(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -87,21 +98,42 @@ public class EndUserLicenseController {
     public void updatelicense(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         ResponseWriter writer = null;
-        updateLicenseInternal(request, response, writer, userFetcher);
+        try {
+            User editingUser = userFetcher.userFor(request).get();
+            if (!editingUser.is(Role.ADMIN)) {
+                throw new ResourceForbiddenException();
+            }
+
+            writer = writerResolver.writerFor(request, response);
+            EndUserLicense posted = deserialize(
+                    new InputStreamReader(request.getInputStream()),
+                    EndUserLicense.class
+            );
+            // set to the EULA id
+            licenseStore.store(posted.copy().withId(LICENSE_ID).build());
+            QueryResult<EndUserLicense> queryResult = QueryResult.singleResult(
+                    posted,
+                    QueryContext.standard(request)
+            );
+            resultWriter.write(queryResult, writer);
+        } catch (Exception e) {
+            log.error("Request exception " + request.getRequestURI(), e);
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, writer, request, response);
+        }
     }
 
     @RequestMapping(value = "/4/admin/eula.*", method = RequestMethod.POST)
     public void updatelicenseNoAuth(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         ResponseWriter writer = null;
-        updateLicenseInternal(request, response, writer, userFetcherNoAuth);
-    }
-
-    private void updateLicenseInternal(HttpServletRequest request, HttpServletResponse response,
-            ResponseWriter writer, UserFetcher userFetcher) throws IOException {
         try {
-            User editingUser = userFetcher.userFor(request).get();
-            if (!editingUser.is(Role.ADMIN)) {
+            Set<User> editingUserAccounts = userFetcherNoAuth.userFor(request);
+            if (!editingUserAccounts
+                    .stream()
+                    .filter(user -> user.is(Role.ADMIN))
+                    .findAny()
+                    .isPresent()) {
                 throw new ResourceForbiddenException();
             }
 

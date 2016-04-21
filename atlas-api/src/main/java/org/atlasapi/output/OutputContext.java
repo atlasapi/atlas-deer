@@ -13,6 +13,7 @@ import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.Resource;
+import org.atlasapi.query.common.useraware.UserAccountsAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.ImmutableSet;
@@ -44,6 +45,15 @@ public class OutputContext {
     }
 
     public static OutputContext valueOf(UserAwareQueryContext standard) {
+        return new OutputContext(
+                standard.getAnnotations(),
+                standard.getApplicationSources(),
+                standard.getRequest(),
+                null
+        );
+    }
+
+    public static OutputContext valueOf(UserAccountsAwareQueryContext standard) {
         return new OutputContext(
                 standard.getAnnotations(),
                 standard.getApplicationSources(),

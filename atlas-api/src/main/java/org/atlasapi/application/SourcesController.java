@@ -1,6 +1,7 @@
 package org.atlasapi.application;
 
 import java.io.IOException;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,10 +23,14 @@ import org.atlasapi.output.ResourceForbiddenException;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.UnsupportedFormatException;
+import org.atlasapi.output.useraware.UserAccountsAwareQueryResult;
+import org.atlasapi.output.useraware.UserAccountsAwareQueryResultWriter;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
+import org.atlasapi.query.common.useraware.UserAccountsAwareQuery;
+import org.atlasapi.query.common.useraware.UserAccountsAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryParser;
@@ -46,6 +51,8 @@ public class SourcesController {
     private final StandardUserAwareQueryParserNoAuth<Publisher> queryParserNoAuth;
     private final UserAwareQueryExecutor<Publisher> queryExecutor;
     private final UserAwareQueryResultWriter<Publisher> resultWriter;
+    private final UserAccountsAwareQueryExecutor<Publisher> queryExecutorNoAuth;
+    private final UserAccountsAwareQueryResultWriter<Publisher> resultWriterNoAuth;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final NumberToShortStringCodec idCodec;
     private final SourceIdCodec sourceIdCodec;
@@ -57,6 +64,8 @@ public class SourcesController {
             StandardUserAwareQueryParserNoAuth<Publisher> queryParserNoAuth,
             UserAwareQueryExecutor<Publisher> queryExecutor,
             UserAwareQueryResultWriter<Publisher> resultWriter,
+            UserAccountsAwareQueryExecutor<Publisher> queryExecutorNoAuth,
+            UserAccountsAwareQueryResultWriter<Publisher> resultWriterNoAuth,
             NumberToShortStringCodec idCodec,
             SourceIdCodec sourceIdCodec,
             ApplicationStore applicationStore,
@@ -66,6 +75,8 @@ public class SourcesController {
         this.queryParserNoAuth = queryParserNoAuth;
         this.queryExecutor = queryExecutor;
         this.resultWriter = resultWriter;
+        this.queryExecutorNoAuth = queryExecutorNoAuth;
+        this.resultWriterNoAuth = resultWriterNoAuth;
         this.idCodec = idCodec;
         this.sourceIdCodec = sourceIdCodec;
         this.applicationStore = applicationStore;
@@ -86,21 +97,12 @@ public class SourcesController {
             @PathVariable String sourceId,
             @RequestParam String id,
             @RequestParam String permission) throws IOException {
-        writeSourceForApplicationInternal(request, response, sourceId, id, permission, userFetcher);
-    }
-
-    @RequestMapping(value = "/4/admin/sources/{sourceId}/applications", method = RequestMethod.POST)
-    public void writeSourceForApplicationNoAuth(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String sourceId,
-            @RequestParam String id,
-            @RequestParam String permission) throws IOException {
-        writeSourceForApplicationInternal(request, response, sourceId, id, permission, userFetcherNoAuth);
+        writeSourceForApplicationInternal(request, response, sourceId, id, permission);
     }
 
     private void writeSourceForApplicationInternal(HttpServletRequest request,
             HttpServletResponse response, @PathVariable String sourceId, @RequestParam String id,
-            @RequestParam String permission, UserFetcher userFetcher) throws IOException {
+            @RequestParam String permission) throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         try {
             Optional<Publisher> source = sourceIdCodec.decode(sourceId);
@@ -130,6 +132,40 @@ public class SourcesController {
         }
     }
 
+    @RequestMapping(value = "/4/admin/sources/{sourceId}/applications", method = RequestMethod.POST)
+    public void writeSourceForApplicationNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String sourceId,
+            @RequestParam String id,
+            @RequestParam String permission) throws IOException {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        try {
+            Optional<Publisher> source = sourceIdCodec.decode(sourceId);
+            // Only people with admin permission on source can use this endpoint
+            if (source.isPresent()) {
+                if (!userMangesSource(source.get(), request, userFetcherNoAuth)) {
+                    throw new ResourceForbiddenException();
+                }
+                Id applicationId = Id.valueOf(idCodec.decode(id));
+                Permission permissionType = Permission.valueOf(permission.toUpperCase());
+                Application existing = applicationStore.applicationFor(applicationId).get();
+                Application modified = null;
+                if (permissionType.equals(Permission.READ)) {
+                    modified = existing.copyWithSourceEnabled(source.get());
+                } else if (permissionType.equals(Permission.WRITE)) {
+                    modified = existing.copyWithAddedWritingSource(source.get());
+                }
+                if (modified != null) {
+                    applicationStore.updateApplication(modified);
+                }
+            } else {
+                throw new NotFoundException(null);
+            }
+        } catch (Exception e) {
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, null, request, response);
+        }
+    }
 
     /**
      * DELETE /4/sources/:sourceId/applications Removes a permission (read/write) from an app on a
@@ -144,28 +180,6 @@ public class SourcesController {
             @PathVariable String sourceId,
             @RequestParam String id,
             @RequestParam String permission) throws IOException {
-        deleteSourceForApplicationInternal(request, response, sourceId, id, permission, userFetcher);
-    }
-
-    @RequestMapping(value = "/4/admin/sources/{sourceId}/applications", method = RequestMethod.DELETE)
-    public void deleteSourceForApplicationNoAuth(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String sourceId,
-            @RequestParam String id,
-            @RequestParam String permission) throws IOException {
-        deleteSourceForApplicationInternal(
-                request,
-                response,
-                sourceId,
-                id,
-                permission,
-                userFetcherNoAuth
-        );
-    }
-
-    private void deleteSourceForApplicationInternal(HttpServletRequest request,
-            HttpServletResponse response, String sourceId, String id,
-            String permission, UserFetcher userFetcher) throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         try {
             Optional<Publisher> source = sourceIdCodec.decode(sourceId);
@@ -195,6 +209,40 @@ public class SourcesController {
         }
     }
 
+    @RequestMapping(value = "/4/admin/sources/{sourceId}/applications", method = RequestMethod.DELETE)
+    public void deleteSourceForApplicationNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String sourceId,
+            @RequestParam String id,
+            @RequestParam String permission) throws IOException {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        try {
+            Optional<Publisher> source = sourceIdCodec.decode(sourceId);
+            if (source.isPresent()) {
+                // Only people with admin permission on source can use this endpoint
+                if (!userMangesSource(source.get(), request, userFetcherNoAuth)) {
+                    throw new ResourceForbiddenException();
+                }
+                Id applicationId = Id.valueOf(idCodec.decode(id));
+                Permission permissionType = Permission.valueOf(permission.toUpperCase());
+                Application existing = applicationStore.applicationFor(applicationId).get();
+                Application modified = null;
+                if (permissionType.equals(Permission.READ)) {
+                    modified = existing.copyWithSourceDisabled(source.get());
+                } else if (permissionType.equals(Permission.WRITE)) {
+                    modified = existing.copyWithRemovedWritingSource(source.get());
+                }
+                if (modified != null) {
+                    applicationStore.updateApplication(modified);
+                }
+            } else {
+                throw new QueryExecutionException("No source with id " + sourceId);
+            }
+        } catch (Exception e) {
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, null, request, response);
+        }
+    }
 
     /**
      * POST /4/sources/:sourceId/applications/readers/:appId/state Changes state of app for source,
@@ -210,29 +258,6 @@ public class SourcesController {
             @PathVariable String sourceId,
             @PathVariable String id,
             @RequestParam String state) throws IOException {
-        changeSourceStateForApplicationInternal(request, response, sourceId, id, state, userFetcher);
-    }
-
-    @RequestMapping(value = "/4/admin/sources/{sourceId}/applications/readers/{id}/state",
-            method = RequestMethod.POST)
-    public void changeSourceStateForApplicationNoAuth(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String sourceId,
-            @PathVariable String id,
-            @RequestParam String state) throws IOException {
-        changeSourceStateForApplicationInternal(
-                request,
-                response,
-                sourceId,
-                id,
-                state,
-                userFetcherNoAuth
-        );
-    }
-
-    private void changeSourceStateForApplicationInternal(HttpServletRequest request,
-            HttpServletResponse response, String sourceId, String id,
-            String state, UserFetcher userFetcher) throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         try {
             Optional<Publisher> source = sourceIdCodec.decode(sourceId);
@@ -255,29 +280,59 @@ public class SourcesController {
         }
     }
 
+    @RequestMapping(value = "/4/admin/sources/{sourceId}/applications/readers/{id}/state",
+            method = RequestMethod.POST)
+    public void changeSourceStateForApplicationNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String sourceId,
+            @PathVariable String id,
+            @RequestParam String state) throws IOException {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        try {
+            Optional<Publisher> source = sourceIdCodec.decode(sourceId);
+            if (source.isPresent()) {
+                // Only people with admin permission on source can use this endpoint
+                if (!userMangesSource(source.get(), request, userFetcherNoAuth)) {
+                    throw new ResourceForbiddenException();
+                }
+                Id applicationId = Id.valueOf(idCodec.decode(id));
+                SourceState requestedState = SourceState.valueOf(state.toUpperCase());
+                Application existing = applicationStore.applicationFor(applicationId).get();
+                applicationStore.updateApplication(
+                        existing.copyWithReadSourceState(source.get(), requestedState));
+            } else {
+                throw new QueryExecutionException("No source with id " + sourceId);
+            }
+        } catch (Exception e) {
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, null, request, response);
+        }
+    }
 
     @RequestMapping({ "/4/sources/{sid}.*", "/4/sources.*" })
     public void listSources(HttpServletRequest request,
             HttpServletResponse response)
             throws QueryParseException, QueryExecutionException, IOException {
-        listSourcesInternal(request, response, queryParser);
+        ResponseWriter writer = writerResolver.writerFor(request, response);
+        try {
+            UserAwareQuery<Publisher> sourcesQuery = queryParser.parse(request);
+            UserAwareQueryResult<Publisher> queryResult = queryExecutor.execute(sourcesQuery);
+            resultWriter.write(queryResult, writer);
+        } catch (Exception e) {
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, writer, request, response);
+        }
     }
 
     @RequestMapping({ "/4/admin/sources/{sid}.*", "/4/sources.*" })
     public void listSourcesNoAuth(HttpServletRequest request,
             HttpServletResponse response)
             throws QueryParseException, QueryExecutionException, IOException {
-        listSourcesInternal(request, response, queryParserNoAuth);
-    }
-
-    private void listSourcesInternal(HttpServletRequest request, HttpServletResponse response,
-            UserAwareQueryParser<Publisher> queryParser)
-            throws IOException, UnsupportedFormatException, NotAcceptableException {
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
-            UserAwareQuery<Publisher> sourcesQuery = queryParser.parse(request);
-            UserAwareQueryResult<Publisher> queryResult = queryExecutor.execute(sourcesQuery);
-            resultWriter.write(queryResult, writer);
+            UserAccountsAwareQuery<Publisher> sourcesQuery = queryParserNoAuth.parse(request);
+            UserAccountsAwareQueryResult<Publisher> queryResult = queryExecutorNoAuth.execute(sourcesQuery);
+            resultWriterNoAuth.write(queryResult, writer);
         } catch (Exception e) {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
@@ -293,5 +348,11 @@ public class SourcesController {
         } else {
             return user.get().is(Role.ADMIN) || user.get().getSources().contains(source);
         }
+    }
+
+    private boolean userMangesSource(Publisher source, HttpServletRequest request,
+            NoAuthUserFetcher userFetcher) {
+        Set<User> userAcccounts = userFetcher.userFor(request);
+        return userAcccounts.stream().filter(user->user.is(Role.ADMIN) || user.getSources().contains(source)).findAny().isPresent();
     }
 }

@@ -3,6 +3,7 @@ package org.atlasapi.application.auth.www;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -11,6 +12,7 @@ import org.atlasapi.application.auth.NoAuthUserFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.application.model.auth.OAuthProvider;
 import org.atlasapi.application.users.User;
+import org.atlasapi.entity.Id;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.NotAuthenticatedException;
@@ -86,22 +88,6 @@ public class AuthController {
         Map<String, String> params = Maps.newHashMap();
         params.put(OAUTH_PROVIDER_QUERY_PARAMETER, oauthProvider);
         params.put(OAUTH_TOKEN_QUERY_PARAMETER, oauthToken);
-        redirectToCurrentUserInternal(request, response, params, userFetcher, USER_URL);
-    }
-
-    @RequestMapping(value = { "/4/admin/auth/user.json" }, method = RequestMethod.GET)
-    public void redirectToCurrentUserNoAuth(HttpServletRequest request,
-            HttpServletResponse response,
-            @RequestParam(value = EMAIL_PARAMETER) String email)
-            throws IOException {
-        Map<String, String> params = Maps.newHashMap();
-        params.put(EMAIL_PARAMETER, email);
-        redirectToCurrentUserInternal(request, response, params, userFetcherNoAuth, USER_URL_ADMIN);
-    }
-
-    private void redirectToCurrentUserInternal(HttpServletRequest request,
-            HttpServletResponse response, Map<String, String> params, UserFetcher userFetcher,
-            String user_url) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
@@ -114,8 +100,41 @@ public class AuthController {
                 return;
             }
             String userUrl = String.format(
-                    user_url,
+                    USER_URL,
                     idCodec.encode(BigInteger.valueOf(user.get().getId().longValue())),
+                    "json"
+            );
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            response.sendRedirect(Urls.appendParameters(userUrl, params));
+        } catch (Exception e) {
+            log.error("Request exception " + request.getRequestURI(), e);
+            writeError(e, writer, request, response);
+            return;
+        }
+    }
+
+    @RequestMapping(value = { "/4/admin/auth/user.json" }, method = RequestMethod.GET)
+    public void redirectToCurrentUserNoAuth(HttpServletRequest request,
+            HttpServletResponse response,
+            @RequestParam(value = EMAIL_PARAMETER) String email)
+            throws IOException {
+        Map<String, String> params = Maps.newHashMap();
+        params.put(EMAIL_PARAMETER, email);
+        ResponseWriter writer = null;
+        try {
+            writer = writerResolver.writerFor(request, response);
+            Set<User> userAccounts = userFetcherNoAuth.userFor(request);
+            // We should always have a user at this point. However, there are
+            // cases where the OAuthInterceptor is passing, yet there is no
+            // user. Therefore we will check for the presence of a user here.
+            if (userAccounts.isEmpty()) {
+                writeError(new NotAuthenticatedException(), writer, request, response);
+                return;
+            }
+            Id id = userAccounts.stream().findAny().get().getId();
+            String userUrl = String.format(
+                    USER_URL_ADMIN,
+                    idCodec.encode(BigInteger.valueOf(id.longValue())),
                     "json"
             );
             response.setStatus(HttpServletResponse.SC_FOUND);

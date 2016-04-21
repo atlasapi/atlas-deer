@@ -1,5 +1,8 @@
 package org.atlasapi.application.users;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.atlasapi.application.LegacyApplicationStore;
 import org.atlasapi.application.users.v3.UserTranslator;
 import org.atlasapi.entity.Id;
@@ -65,8 +68,12 @@ public class LegacyAdaptingUserStore implements UserStore {
     }
 
     @Override
-    public Optional<User> userForEmail(String email) {
-        return legacyStore.userForEmail(email).transform(transformer);
+    public Set<User> userAccountsForEmail(String email) {
+        return legacyStore.userAccountsForEmail(email)
+                .stream()
+                .map(transformer::apply)
+                .collect(Collectors.toSet());
+
     }
 
     @Override

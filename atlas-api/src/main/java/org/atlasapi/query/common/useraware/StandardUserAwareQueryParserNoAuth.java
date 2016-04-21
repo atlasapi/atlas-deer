@@ -18,7 +18,7 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class StandardUserAwareQueryParserNoAuth<T> implements UserAwareQueryParser<T> {
+public class StandardUserAwareQueryParserNoAuth<T> implements UserAccountsAwareQueryParser<T> {
 
     private final NumberToShortStringCodec idCodec;
     private final QueryAttributeParser attributeParser;
@@ -41,7 +41,7 @@ public class StandardUserAwareQueryParserNoAuth<T> implements UserAwareQueryPars
     }
 
     @Override
-    public UserAwareQuery<T> parse(HttpServletRequest request)
+    public UserAccountsAwareQuery<T> parse(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
         parameterValidator.validateParameters(request);
         Id singleId = tryExtractSingleId(request);
@@ -55,15 +55,15 @@ public class StandardUserAwareQueryParserNoAuth<T> implements UserAwareQueryPars
                               : null;
     }
 
-    private UserAwareQuery<T> singleQuery(HttpServletRequest request, Id singleId)
+    private UserAccountsAwareQuery<T> singleQuery(HttpServletRequest request, Id singleId)
             throws QueryParseException, InvalidApiKeyException {
-        return UserAwareQuery.singleQuery(singleId, contextParser.parseSingleContext(request));
+        return UserAccountsAwareQuery.singleQuery(singleId, contextParser.parseSingleContext(request));
     }
 
-    private UserAwareQuery<T> listQuery(HttpServletRequest request)
+    private UserAccountsAwareQuery<T> listQuery(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
         AttributeQuerySet querySet = attributeParser.parse(request);
-        return UserAwareQuery.listQuery(
+        return UserAccountsAwareQuery.listQuery(
                 querySet,
                 contextParser.parseListContext(request)
         );

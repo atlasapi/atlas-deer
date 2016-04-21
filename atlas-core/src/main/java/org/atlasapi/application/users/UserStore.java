@@ -1,5 +1,7 @@
 package org.atlasapi.application.users;
 
+import java.util.Set;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.IdResolver;
 
@@ -13,7 +15,7 @@ public interface UserStore extends IdResolver<User> {
 
     Optional<User> userForId(Id id);
 
-    Optional<User> userForEmail(String email);
+    Set<User> userAccountsForEmail(String email);
 
     Iterable<User> allUsers();
 
