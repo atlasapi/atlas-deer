@@ -37,9 +37,9 @@ public class UserAwareQueryContextParserNoAuth implements ParameterNameProvider 
         this.selectionBuilder = checkNotNull(selectionBuilder);
     }
 
-    public UserAwareQueryContext parseSingleContext(HttpServletRequest request)
+    public UserAccountsAwareQueryContext parseSingleContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        return new UserAwareQueryContext(
+        return new UserAccountsAwareQueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromSingleRequest(request),
                 userFetcher.userFor(request),
@@ -48,9 +48,9 @@ public class UserAwareQueryContextParserNoAuth implements ParameterNameProvider 
         );
     }
 
-    public UserAwareQueryContext parseListContext(HttpServletRequest request)
+    public UserAccountsAwareQueryContext parseListContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        return new UserAwareQueryContext(
+        return new UserAccountsAwareQueryContext(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromListRequest(request),
                 userFetcher.userFor(request),
