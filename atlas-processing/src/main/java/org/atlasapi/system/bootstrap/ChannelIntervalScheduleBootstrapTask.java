@@ -135,18 +135,25 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
         for (ItemAndBroadcast iab : channelSchedule.getEntries()) {
             Broadcast broadcast = iab.getBroadcast();
             Optional<Content> possItem = scheduleItems.get(iab.getItem().getId());
-            if (!possItem.isPresent()) {
-                log.warn("content not resolved for broadcast " + broadcast);
+
+            if (!possItem.isPresent() || !(possItem.get() instanceof Item)) {
+                log.warn("Content not resolved for broadcast " + broadcast);
+                break;
             }
+            Item item = (Item) possItem.get();
+
             Container topLevelContainer = topLevelContainer(iab, containers);
             Series series = series(iab, containers);
-            iab = new ItemAndBroadcast(contentOrNull(possItem, Item.class), broadcast);
+
+            iab = new ItemAndBroadcast(item, broadcast);
             schedule.add(new ScheduleHierarchy(iab, topLevelContainer, series));
         }
+
         ImmutableList<ScheduleHierarchy> builtSchedule = schedule.build();
         UpdateProgress progress = tryWrite(builtSchedule);
         notifyListener(builtSchedule);
         writeEquivalences(builtSchedule);
+
         return progress;
     }
 
