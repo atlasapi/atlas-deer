@@ -19,7 +19,7 @@ import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class PlatformAnnontation extends OutputAnnotation<ChannelGroup<?>> {
+public class PlatformAnnotation extends OutputAnnotation<ChannelGroup<?>> {
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
             "regions",
@@ -27,7 +27,7 @@ public class PlatformAnnontation extends OutputAnnotation<ChannelGroup<?>> {
     );
     private final ChannelGroupResolver channelGroupResolver;
 
-    public PlatformAnnontation(ChannelGroupResolver channelGroupResolver) {
+    public PlatformAnnotation(ChannelGroupResolver channelGroupResolver) {
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
     }
 

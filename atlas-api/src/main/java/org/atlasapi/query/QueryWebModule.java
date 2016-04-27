@@ -66,7 +66,7 @@ import org.atlasapi.output.annotation.NextBroadcastAnnotation;
 import org.atlasapi.output.annotation.NullWriter;
 import org.atlasapi.output.annotation.ParentChannelAnnotation;
 import org.atlasapi.output.annotation.PeopleAnnotation;
-import org.atlasapi.output.annotation.PlatformAnnontation;
+import org.atlasapi.output.annotation.PlatformAnnotation;
 import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
@@ -553,7 +553,7 @@ public class QueryWebModule {
                         ),
                         CHANNEL_GROUP
                 )
-                .register(REGIONS, new PlatformAnnontation(channelGroupResolver), CHANNEL_GROUP)
+                .register(REGIONS, new PlatformAnnotation(channelGroupResolver), CHANNEL_GROUP)
                 .register(PLATFORM, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
                 .register(
                         CHANNEL_GROUPS_SUMMARY,
