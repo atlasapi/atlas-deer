@@ -218,11 +218,12 @@ public class ApplicationsController {
             } else {
                 checkSourceStatusChanges(userAccounts, application, Optional.<Application>absent());
                 // New application
-                Application createdApplication = applicationStore.createApplication(application);
+                application = applicationStore.createApplication(application);
                 // Add application to user ownership
-                userAccounts.stream()
-                        .map(user -> user.copyWithAdditionalApplication(createdApplication))
-                        .forEach(userStore::store);
+                for (User userAccount : userAccounts) {
+                    userAccount = userAccount.copyWithAdditionalApplication(application);
+                    userStore.store(userAccount);
+                }
 
             }
             // We do not want non-admins to see admin only sources
