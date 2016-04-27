@@ -18,6 +18,8 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -25,6 +27,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Contains state required during the output of a response. Not thread-safe
  */
 public class OutputContext {
+
+    private final Logger log = LoggerFactory.getLogger(OutputContext.class);
 
     public static OutputContext valueOf(QueryContext standard) {
         return new OutputContext(
@@ -98,8 +102,12 @@ public class OutputContext {
     public <T> List<OutputAnnotation<? super T>> getAnnotations(AnnotationRegistry<T> registry) {
         ImmutableSet<Annotation> active = annotations.forPath(resources);
         if (active == null || active.isEmpty()) {
+            log.info("TISH state of annotation is " + active);
             return registry.defaultAnnotations();
         }
+
+        log.info("TISH annotations is " + active.toString());
+
         return registry.activeAnnotations(active);
     }
 
