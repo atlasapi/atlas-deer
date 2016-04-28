@@ -324,7 +324,7 @@ public class SourcesController {
         }
     }
 
-    @RequestMapping({ "/4/admin/sources/{sid}.*", "/4/sources.*" })
+    @RequestMapping({ "/4/admin/sources/{sid}.*", "/4/admin/sources.*" })
     public void listSourcesNoAuth(HttpServletRequest request,
             HttpServletResponse response)
             throws QueryParseException, QueryExecutionException, IOException {
