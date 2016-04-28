@@ -1,7 +1,5 @@
 package org.atlasapi.messaging;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
@@ -14,6 +12,7 @@ import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,14 +24,31 @@ public class EquivalentScheduleStoreGraphUpdateWorker
     private static final Logger LOG =
             LoggerFactory.getLogger(EquivalentScheduleStoreGraphUpdateWorker.class);
 
+    private static final String METRICS_TIMER = "EquivalentScheduleStoreGraphUpdateWorker";
+
     private final EquivalentScheduleWriter scheduleWriter;
     private final Timer messageTimer;
 
-    public EquivalentScheduleStoreGraphUpdateWorker(EquivalentScheduleWriter scheduleWriter,
-            @Nullable MetricRegistry metrics) {
+    private final EquivalenceGraphUpdateResolver graphUpdateResolver;
+
+    private EquivalentScheduleStoreGraphUpdateWorker(
+            EquivalentScheduleWriter scheduleWriter,
+            MetricRegistry metrics,
+            EquivalenceGraphUpdateResolver graphUpdateResolver
+    ) {
         this.scheduleWriter = checkNotNull(scheduleWriter);
-        this.messageTimer = (metrics != null ? checkNotNull(metrics.timer(
-                "EquivalentScheduleStoreGraphUpdateWorker")) : null);
+        this.messageTimer = checkNotNull(metrics.timer(METRICS_TIMER));
+        this.graphUpdateResolver = checkNotNull(graphUpdateResolver);
+    }
+
+    public static EquivalentScheduleStoreGraphUpdateWorker create(
+            EquivalentScheduleWriter scheduleWriter,
+            MetricRegistry metrics,
+            EquivalenceGraphUpdateResolver graphUpdateResolver
+    ) {
+        return new EquivalentScheduleStoreGraphUpdateWorker(
+                scheduleWriter, metrics, graphUpdateResolver
+        );
     }
 
     @Override
@@ -47,14 +63,14 @@ public class EquivalentScheduleStoreGraphUpdateWorker
         );
 
         try {
-            Timer.Context timer = null;
-            if (messageTimer != null) {
-                timer = messageTimer.time();
-            }
-            scheduleWriter.updateEquivalences(message.getGraphUpdate());
-            if (timer != null) {
-                timer.stop();
-            }
+            Timer.Context timer = messageTimer.time();
+
+            ImmutableSet<EquivalenceGraph> graphs =
+                    graphUpdateResolver.resolve(message.getGraphUpdate());
+
+            scheduleWriter.updateEquivalences(graphs);
+
+            timer.stop();
         } catch (WriteException e) {
             throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
         }

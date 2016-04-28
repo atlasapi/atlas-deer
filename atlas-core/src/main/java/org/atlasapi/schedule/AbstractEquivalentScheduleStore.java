@@ -18,7 +18,6 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 
@@ -186,8 +185,9 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     }
 
     @Override
-    public final void updateEquivalences(EquivalenceGraphUpdate update) throws WriteException {
-        for (EquivalenceGraph graph : update.getAllGraphs()) {
+    public final void updateEquivalences(ImmutableSet<EquivalenceGraph> graphs)
+            throws WriteException {
+        for (EquivalenceGraph graph : graphs) {
             Resolved<Content> graphContent = get(contentStore.resolveIds(graph.getEquivalenceSet()));
             for (Content elem : graphContent.getResources()) {
                 if (elem instanceof Item) {

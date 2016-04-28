@@ -182,8 +182,9 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             for (Id id : ids) {
                 Optional<EquivalenceGraph> graph = graphs.get(id);
                 if (graph.isPresent()) {
-                    updater.updateEquivalences(new EquivalenceGraphUpdate(
-                            graph.get(), Lists.newArrayList(), Lists.newArrayList()));
+                    EquivalenceGraphUpdate update = new EquivalenceGraphUpdate(
+                            graph.get(), Lists.newArrayList(), Lists.newArrayList());
+                    updater.updateEquivalences(update.getAllGraphs());
                 } else {
                     log.warn("Failed to resolve graph for {}", id);
                 }

@@ -93,7 +93,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public Worker<ResourceUpdatedMessage> topicIndexingWorker() {
         return new TopicIndexingWorker(
                 persistence.topicStore(),
@@ -104,7 +104,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer topicIndexerMessageListener() {
         return messaging.messageConsumerFactory().createConsumer(topicIndexingWorker(),
                 serializer(ResourceUpdatedMessage.class), topicChanges, "TopicIndexer"
@@ -115,7 +115,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public Worker<EquivalenceGraphUpdateMessage> equivalentContentStoreGraphUpdateWorker() {
         return new EquivalentContentStoreGraphUpdateWorker(
                 persistence.getEquivalentContentStore(),
@@ -125,7 +125,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer equivalentContentStoreGraphUpdateListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(equivalentContentStoreGraphUpdateWorker(),
@@ -138,7 +138,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public Worker<ResourceUpdatedMessage> equivalentContentStoreContentUpdateWorker() {
         return new EquivalentContentStoreContentUpdateWorker(
                 persistence.getEquivalentContentStore(),
@@ -152,7 +152,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer equivalentContentStoreContentUpdateListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(equivalentContentStoreContentUpdateWorker(),
@@ -165,18 +165,18 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
-    public Worker<EquivalenceGraphUpdateMessage> equivalentScheduletStoreGraphUpdateWorker() {
-        return new EquivalentScheduleStoreGraphUpdateWorker(
+    @Lazy
+    public Worker<EquivalenceGraphUpdateMessage> equivalentScheduleStoreGraphUpdateWorker() {
+        return EquivalentScheduleStoreGraphUpdateWorker.create(
                 persistence.getEquivalentScheduleStore(),
-                metricsModule
-                        .metrics()
+                metricsModule.metrics(),
+                EquivalenceGraphUpdateResolver.create(persistence.getContentEquivalenceGraphStore())
         );
     }
 
     @Bean
-    @Lazy(true)
-    public Worker<EquivalentContentUpdatedMessage> equivalentScheduletStoreContentUpdateWorker() {
+    @Lazy
+    public Worker<EquivalentContentUpdatedMessage> equivalentScheduleStoreContentUpdateWorker() {
         return new EquivalentScheduleStoreContentUpdateWorker(
                 persistence.getEquivalentContentStore(),
                 persistence.getEquivalentScheduleStore(),
@@ -185,10 +185,11 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer equivalentScheduleStoreGraphUpdateListener() {
         return messaging.messageConsumerFactory()
-                .createConsumer(equivalentScheduletStoreGraphUpdateWorker(),
+                .createConsumer(
+                        equivalentScheduleStoreGraphUpdateWorker(),
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges, "EquivalentScheduleStoreGraphs"
                 )
@@ -198,10 +199,11 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer equivalentScheduleStoreContentListener() {
         return messaging.messageConsumerFactory()
-                .createConsumer(equivalentScheduletStoreContentUpdateWorker(),
+                .createConsumer(
+                        equivalentScheduleStoreContentUpdateWorker(),
                         serializer(EquivalentContentUpdatedMessage.class),
                         equivalentContentChanges, "EquivalentScheduleStoreContent"
                 )
@@ -211,7 +213,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public Worker<ScheduleUpdateMessage> equivalentScheduleStoreScheduleUpdateWorker() {
         return new EquivalentScheduleStoreScheduleUpdateWorker(
                 persistence.getEquivalentScheduleStore(),
@@ -221,7 +223,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer equivalentScheduleStoreScheduleUpdateListener() {
         return messaging.messageConsumerFactory().createConsumer(
                 equivalentScheduleStoreScheduleUpdateWorker(),
@@ -235,7 +237,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public Worker<EquivalenceAssertionMessage> contentEquivalenceUpdater() {
         return new ContentEquivalenceUpdatingWorker(
                 persistence.getContentEquivalenceGraphStore(),
@@ -245,7 +247,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer equivUpdateListener() {
         return messaging.messageConsumerFactory().createConsumer(contentEquivalenceUpdater(),
                 new ContentEquivalenceAssertionLegacyMessageSerializer(),
@@ -259,7 +261,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public EquivalentContentIndexingContentWorker equivalentContentIndexingWorker() {
         return new EquivalentContentIndexingContentWorker(
                 persistence.contentStore(), persistence.contentIndex(), metricsModule.metrics()
@@ -267,7 +269,7 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     public KafkaConsumer equivalentContentIndexingMessageListener() {
         MessageConsumerBuilder<KafkaConsumer, EquivalentContentUpdatedMessage> consumer =
                 messaging.messageConsumerFactory().createConsumer(
@@ -283,16 +285,17 @@ public class WorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy()
     public EquivalentContentIndexingGraphWorker equivalentContentIndexingGraphWorker() {
-        return new EquivalentContentIndexingGraphWorker(
+        return EquivalentContentIndexingGraphWorker.create(
                 persistence.contentIndex(),
-                metricsModule.metrics()
+                metricsModule.metrics(),
+                EquivalenceGraphUpdateResolver.create(persistence.getContentEquivalenceGraphStore())
         );
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy()
     public KafkaConsumer equivalentContentIndexingGraphMessageListener() {
         MessageConsumerBuilder<KafkaConsumer, EquivalenceGraphUpdateMessage> consumer =
                 messaging.messageConsumerFactory().createConsumer(
@@ -346,7 +349,7 @@ public class WorkersModule {
         consumerManager.stopAsync().awaitStopped(1, TimeUnit.MINUTES);
     }
 
-    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+    private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
         return new DirectAndExplicitEquivalenceMigrator(
                 persistence.legacyContentResolver(),
                 persistence.legacyEquivalenceStore(),

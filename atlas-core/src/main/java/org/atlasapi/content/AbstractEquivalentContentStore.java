@@ -69,7 +69,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                     = ImmutableSetMultimap.builder();
             Function<Id, Optional<Content>> toContent = Functions.forMap(resolveIds(ids));
 
-            for (EquivalenceGraph graph : graphsOf(update)) {
+            for (EquivalenceGraph graph : update.getAllGraphs()) {
                 Iterable<Optional<Content>> content =
                         Collections2.transform(graph.getEquivalenceSet(), toContent);
                 graphsAndContentBuilder.putAll(graph, Optional.presentInstances(content));
@@ -137,13 +137,6 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     protected ContentResolver getContentResolver() {
         return contentResolver;
-    }
-
-    private Iterable<EquivalenceGraph> graphsOf(EquivalenceGraphUpdate update) {
-        return ImmutableSet.<EquivalenceGraph>builder()
-                .add(update.getUpdated())
-                .addAll(update.getCreated())
-                .build();
     }
 
     private ImmutableSet<Id> idsOf(EquivalenceGraphUpdate update) {
