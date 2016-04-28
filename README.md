@@ -46,6 +46,18 @@ The netty transport is set to use `epoll`, which may not work if you want to run
 environment. If you see issues around the Cassandra driver or Netty's transport, try removing the
 relevant lines from the POMs and rebuilding.
 
+Security
+--------------------------
+
+Be advised that we are in the process of removing OAuth authentication from Atlas and externalising 
+those responsibilities to other internal systems. Towards that goal we have added new admin
+endpoints under `/4/admin` that duplicate functionality in our existing OAuth enabled admin
+endpoints, but without any user authentication in them.
+
+If you are running your own deployment of Atlas you need to put your own security in front of
+those endpoints otherwise you will be introducing a security vulnerability that will allow anyone
+with access to the endpoints to read and modify api keys.
+
 Problems
 --------
 * Error when using make to compile protoc
