@@ -553,6 +553,7 @@ public class QueryWebModule {
                         ),
                         CHANNEL_GROUP
                 )
+                .register(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
                 .register(REGIONS, new PlatformAnnotation(channelGroupResolver), CHANNEL_GROUP)
                 .register(PLATFORM, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
                 .register(
@@ -1074,6 +1075,7 @@ public class QueryWebModule {
         return new ChannelListWriter(
                 AnnotationRegistry.<Channel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))
+                        .register(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
                         .register(
                                 CHANNEL_GROUPS,
                                 new ChannelGroupMembershipAnnotation(
