@@ -102,11 +102,8 @@ public class OutputContext {
     public <T> List<OutputAnnotation<? super T>> getAnnotations(AnnotationRegistry<T> registry) {
         ImmutableSet<Annotation> active = annotations.forPath(resources);
         if (active == null || active.isEmpty()) {
-            log.info("TISH state of annotation is " + active);
             return registry.defaultAnnotations();
         }
-
-        log.info("TISH annotations is " + active.toString());
 
         return registry.activeAnnotations(active);
     }
