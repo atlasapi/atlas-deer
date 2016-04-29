@@ -9,6 +9,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.service.query.ActionableEpisodesQuery;
 import org.atlasapi.neo4j.service.query.GraphQuery;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -48,7 +49,7 @@ public class ContentGraphQueryFactory {
     public Optional<GraphQuery> getGraphQuery(
             IndexQueryParams indexQueryParams,
             Iterable<Publisher> publishers,
-            Map<String, String> requestParameters
+            Map<String, String[]> requestParameters
     ) {
         if (supportsQueryParameters(requestParameters)) {
             return Optional.of(ActionableEpisodesQuery.create(
@@ -59,7 +60,7 @@ public class ContentGraphQueryFactory {
         return Optional.empty();
     }
 
-    private boolean supportsQueryParameters(Map<String, String> parameters) {
+    private boolean supportsQueryParameters(Map<String, String[]> parameters) {
         return checkRequiredParameters(parameters.keySet())
                 && checkRequiredParametersWithValues(parameters)
                 && checkAllowedParameters(parameters.keySet());
@@ -69,9 +70,12 @@ public class ContentGraphQueryFactory {
         return parameters.containsAll(ACTIONABLE_EPISODES_REQUIRED_PARAMETERS);
     }
 
-    private boolean checkRequiredParametersWithValues(Map<String, String> parameters) {
+    private boolean checkRequiredParametersWithValues(Map<String, String[]> parameters) {
         return ACTIONABLE_EPISODES_REQUIRED_PARAMETERS_WITH_VALUES.entrySet().stream()
-                .allMatch(entry -> parameters.get(entry.getKey()).equals(entry.getValue()));
+                .allMatch(entry -> Joiner.on(",").join(
+                        parameters.get(entry.getKey())
+                )
+                        .equals(entry.getValue()));
     }
 
     private boolean checkAllowedParameters(Set<String> parameters) {

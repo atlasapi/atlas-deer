@@ -71,7 +71,7 @@ public class ContentGraphServiceTest {
     public void supportsQueryParametersDelegatesToServiceSelector() throws Exception {
         IndexQueryParams indexQueryParams = mock(IndexQueryParams.class);
         List<Publisher> publishers = ImmutableList.of(Publisher.METABROADCAST);
-        Map<String, String> parameters = ImmutableMap.of();
+        Map<String, String[]> parameters = ImmutableMap.of();
 
         GraphQuery graphQuery = mock(GraphQuery.class);
 

@@ -35,7 +35,7 @@ public class ContentGraphServiceIT {
     private static Session session;
     private static ContentGraphService contentGraphService;
 
-    private Map<String, String> requestParameters;
+    private Map<String, String[]> requestParameters;
     private Series series;
     private Series equivalentSeries;
     private Episode episode;
@@ -52,9 +52,9 @@ public class ContentGraphServiceIT {
         session.purgeDatabase();
 
         requestParameters = ImmutableMap.of(
-                "actionableFilterParameters", "location.available:true",
-                "type", "episode",
-                "series.id", "0L"
+                "actionableFilterParameters", new String[] { "location.available:true" },
+                "type", new String[] { "episode" },
+                "series.id", new String[] { "0L" }
         );
 
         series = getSeries(Id.valueOf(0L), Publisher.METABROADCAST);

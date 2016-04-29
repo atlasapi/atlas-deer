@@ -43,9 +43,9 @@ public class ContentGraphServicePerformance {
                             "broadcast.time.lt", now.plusHours(i + 2).toString())),
                     Publisher.all(),
                     ImmutableMap.of(
-                            "actionableFilterParameters", "location.available:true",
-                            "type", "episode",
-                            "series.id", "0L"
+                            "actionableFilterParameters", new String[] { "location.available:true" },
+                            "type", new String[] { "episode" },
+                            "series.id", new String[] { "0L" }
                     )
             ).get().get();
             ZonedDateTime end = ZonedDateTime.now();

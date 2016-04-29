@@ -62,7 +62,7 @@ public class ContentGraphService {
     }
 
     public Optional<ListenableFuture<IndexQueryResult>> query(IndexQueryParams indexQueryParams,
-            Iterable<Publisher> publishers, Map<String, String> parameters) {
+            Iterable<Publisher> publishers, Map<String, String[]> parameters) {
         Optional<GraphQuery> graphQuery = queryFactory.getGraphQuery(
                 indexQueryParams, publishers, parameters
         );

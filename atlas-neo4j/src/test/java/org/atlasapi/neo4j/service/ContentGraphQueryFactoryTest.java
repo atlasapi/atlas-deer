@@ -42,14 +42,14 @@ public class ContentGraphQueryFactoryTest {
 
     @Test
     public void doesNotsupportActionableSeriesUnderBrandQuery() throws Exception {
-        ImmutableMap<String, String> parameters = ImmutableMap.<String, String>builder()
-                .put("key", "")
-                .put("actionableFilterParameters", "")
-                .put("brand.id", "")
-                .put("region", "")
-                .put("type", "series")
-                .put("order_by", "")
-                .put("annotations", "")
+        ImmutableMap<String, String[]> parameters = ImmutableMap.<String, String[]>builder()
+                .put("key", new String[] { "" })
+                .put("actionableFilterParameters", new String[] { "" })
+                .put("brand.id", new String[] { "" })
+                .put("region", new String[] { "" })
+                .put("type", new String[] { "series" })
+                .put("order_by", new String[] { "" })
+                .put("annotations", new String[] { "" })
                 .build();
 
         assertThat(
@@ -60,14 +60,14 @@ public class ContentGraphQueryFactoryTest {
 
     @Test
     public void supportsActionableEpisodesUnderSeriesQuery() throws Exception {
-        ImmutableMap<String, String> parameters = ImmutableMap.<String, String>builder()
-                .put("key", "")
-                .put("actionableFilterParameters", "")
-                .put("series.id", "")
-                .put("region", "")
-                .put("type", "episode")
-                .put("order_by", "")
-                .put("annotations", "")
+        ImmutableMap<String, String[]> parameters = ImmutableMap.<String, String[]>builder()
+                .put("key", new String[] { "" })
+                .put("actionableFilterParameters", new String[] { "" })
+                .put("series.id", new String[] { "" })
+                .put("region", new String[] { "" })
+                .put("type", new String[] { "episode" })
+                .put("order_by", new String[] { "" })
+                .put("annotations", new String[] { "" })
                 .build();
 
         assertThat(
@@ -78,14 +78,14 @@ public class ContentGraphQueryFactoryTest {
 
     @Test
     public void doesNotSupportNonEpisodeType() throws Exception {
-        ImmutableMap<String, String> parameters = ImmutableMap.<String, String>builder()
-                .put("key", "")
-                .put("actionableFilterParameters", "")
-                .put("series.id", "")
-                .put("region", "")
-                .put("type", "item")
-                .put("order_by", "")
-                .put("annotations", "")
+        ImmutableMap<String, String[]> parameters = ImmutableMap.<String, String[]>builder()
+                .put("key", new String[] { "" })
+                .put("actionableFilterParameters", new String[] { "" })
+                .put("series.id", new String[] { "" })
+                .put("region", new String[] { "" })
+                .put("type", new String[] { "item" })
+                .put("order_by", new String[] { "" })
+                .put("annotations", new String[] { "" })
                 .build();
 
         assertThat(
@@ -96,15 +96,15 @@ public class ContentGraphQueryFactoryTest {
 
     @Test
     public void supportsOptionalParameters() throws Exception {
-        ImmutableMap<String, String> parameters = ImmutableMap.<String, String>builder()
-                .put("key", "")
-                .put("actionableFilterParameters", "")
-                .put("series.id", "")
-                .put("region", "")
-                .put("type", "episode")
-                .put("order_by", "")
-                .put("annotations", "")
-                .put("limit", "")
+        ImmutableMap<String, String[]> parameters = ImmutableMap.<String, String[]>builder()
+                .put("key", new String[] { "" })
+                .put("actionableFilterParameters", new String[] { "" })
+                .put("series.id", new String[] { "" })
+                .put("region", new String[] { "" })
+                .put("type", new String[] { "episode" })
+                .put("order_by", new String[] { "" })
+                .put("annotations", new String[] { "" })
+                .put("limit", new String[] { "" })
                 .build();
 
         assertThat(
@@ -115,10 +115,10 @@ public class ContentGraphQueryFactoryTest {
 
     @Test
     public void supportsOptionalParametersMissing() throws Exception {
-        ImmutableMap<String, String> parameters = ImmutableMap.<String, String>builder()
-                .put("actionableFilterParameters", "")
-                .put("series.id", "")
-                .put("type", "episode")
+        ImmutableMap<String, String[]> parameters = ImmutableMap.<String, String[]>builder()
+                .put("actionableFilterParameters", new String[] { "" })
+                .put("series.id", new String[] { "" })
+                .put("type", new String[] { "episode" })
                 .build();
 
         assertThat(
@@ -129,12 +129,12 @@ public class ContentGraphQueryFactoryTest {
 
     @Test
     public void doesNotSupportMultipleMutuallyExclusiveParameters() throws Exception {
-        ImmutableMap<String, String> parameters = ImmutableMap.<String, String>builder()
-                .put("actionableFilterParameters", "")
-                .put("series.id", "")
-                .put("brand.id", "")
-                .put("region", "")
-                .put("type", "episode")
+        ImmutableMap<String, String[]> parameters = ImmutableMap.<String, String[]>builder()
+                .put("actionableFilterParameters", new String[] { "" })
+                .put("series.id", new String[] { "" })
+                .put("brand.id", new String[] { "" })
+                .put("region", new String[] { "" })
+                .put("type", new String[] { "episode" })
                 .build();
 
         assertThat(
@@ -145,10 +145,10 @@ public class ContentGraphQueryFactoryTest {
 
     @Test
     public void doesNotSupportMissingMutuallyExclusiveParameters() throws Exception {
-        ImmutableMap<String, String> parameters = ImmutableMap.<String, String>builder()
-                .put("actionableFilterParameters", "")
-                .put("region", "")
-                .put("type", "episode")
+        ImmutableMap<String, String[]> parameters = ImmutableMap.<String, String[]>builder()
+                .put("actionableFilterParameters", new String[] { "" })
+                .put("region", new String[] { "" })
+                .put("type", new String[] { "episode" })
                 .build();
 
         assertThat(
