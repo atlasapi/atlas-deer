@@ -1,8 +1,13 @@
 package org.atlasapi.neo4j.service.query;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.TemporalAccessor;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -14,6 +19,11 @@ import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 
 public class ActionableEpisodesQuery implements GraphQuery {
 
@@ -48,13 +58,13 @@ public class ActionableEpisodesQuery implements GraphQuery {
         this.broadcastGreaterThan =
                 actionableParams.get("broadcast.time.gt") == null
                 ? ZonedDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)
-                : ZonedDateTime.parse(actionableParams.get("broadcast.time.gt"))
+                : parseDateTime(actionableParams.get("broadcast.time.gt"))
                         .withZoneSameInstant(ZoneOffset.UTC);
 
         this.broadcastLessThan =
                 actionableParams.get("broadcast.time.lt") == null
                 ? ZonedDateTime.of(3000, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-                : ZonedDateTime.parse(actionableParams.get("broadcast.time.lt"))
+                : parseDateTime(actionableParams.get("broadcast.time.lt"))
                         .withZoneSameInstant(ZoneOffset.UTC);
 
         this.broadcastFilterEnabled =
@@ -170,5 +180,37 @@ public class ActionableEpisodesQuery implements GraphQuery {
                 + "WITH episode\n"
                 + "ORDER BY episode.episodeNumber\n"
                 + "RETURN episode.id AS id";
+    }
+
+    private ZonedDateTime parseDateTime(String dateTimeString) {
+        DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .append(ISO_LOCAL_DATE)
+                .appendLiteral('T')
+                .appendValue(HOUR_OF_DAY, 2)
+                .optionalStart()
+                .appendLiteral(':')
+                .appendValue(MINUTE_OF_HOUR, 2)
+                .optionalStart()
+                .appendLiteral(':')
+                .appendValue(SECOND_OF_MINUTE, 2)
+                .optionalStart()
+                .appendFraction(NANO_OF_SECOND, 0, 9, true)
+                .optionalStart()
+                .appendOffsetId()
+                .toFormatter();
+
+        TemporalAccessor temporalAccessor = dateTimeFormatter
+                .parseBest(
+                        dateTimeString, ZonedDateTime::from, LocalDateTime::from, LocalDate::from
+                );
+
+        if (temporalAccessor instanceof ZonedDateTime) {
+            return ((ZonedDateTime) temporalAccessor);
+        }
+        if (temporalAccessor instanceof LocalDateTime) {
+            return ((LocalDateTime) temporalAccessor).atZone(ZoneOffset.UTC);
+        }
+        return ((LocalDate) temporalAccessor).atStartOfDay(ZoneOffset.UTC);
     }
 }

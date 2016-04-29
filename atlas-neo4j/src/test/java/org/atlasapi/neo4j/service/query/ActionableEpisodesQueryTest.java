@@ -46,6 +46,28 @@ public class ActionableEpisodesQueryTest {
     }
 
     @Test
+    public void parsingIso8601DateTimeWithoutMinutesDoesNotFail() throws Exception {
+        IndexQueryParams queryParams = new IndexQueryParams(
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                false,
+                Optional.empty(),
+                Optional.of(ImmutableMap.of(
+                        "location.available", "true",
+                        "broadcast.time.gt", "2016-04-01T00",
+                        "broadcast.time.lt", "2016-04-30T00"
+                )),
+                Optional.of(Id.valueOf(20414624)) // OR 386450
+        );
+
+        ActionableEpisodesQuery.create(queryParams, ImmutableSet.of(Publisher.METABROADCAST));
+    }
+
+    @Test
     public void getQuery() throws Exception {
         String query = actionableEpisodesQuery.getQuery().getQuery();
 
