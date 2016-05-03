@@ -25,6 +25,7 @@ public class ApplicationSourcesWriter implements EntityListWriter<ApplicationSou
             throws IOException {
 
         writer.writeField("precedence", entity.isPrecedenceEnabled());
+        writer.writeField("image_precedence_enabled", entity.imagePrecedenceEnabled());
         writer.writeList(readsWriter, entity.getReads(), ctxt);
         writer.writeList(writesWriter, entity.getWrites(), ctxt);
     }
