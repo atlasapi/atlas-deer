@@ -11,6 +11,7 @@ import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,10 +27,26 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
     private final ContentIndex contentIndex;
     private final Timer timer;
 
-    public EquivalentContentIndexingGraphWorker(ContentIndex contentIndex,
-            MetricRegistry metricRegistry) {
+    private final EquivalenceGraphUpdateResolver graphUpdateResolver;
+
+    private EquivalentContentIndexingGraphWorker(
+            ContentIndex contentIndex,
+            MetricRegistry metricRegistry,
+            EquivalenceGraphUpdateResolver graphUpdateResolver
+    ) {
         this.contentIndex = checkNotNull(contentIndex);
         this.timer = checkNotNull(metricRegistry.timer(METRICS_TIMER));
+        this.graphUpdateResolver = checkNotNull(graphUpdateResolver);
+    }
+
+    public static EquivalentContentIndexingGraphWorker create(
+            ContentIndex contentIndex,
+            MetricRegistry metricRegistry,
+            EquivalenceGraphUpdateResolver graphUpdateResolver
+    ) {
+        return new EquivalentContentIndexingGraphWorker(
+                contentIndex, metricRegistry, graphUpdateResolver
+        );
     }
 
     @Override
@@ -45,7 +62,10 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
 
         Timer.Context time = timer.time();
         try {
-            for (EquivalenceGraph graph : message.getGraphUpdate().getAllGraphs()) {
+            ImmutableSet<EquivalenceGraph> graphs =
+                    graphUpdateResolver.resolve(message.getGraphUpdate());
+
+            for (EquivalenceGraph graph : graphs) {
                 contentIndex.updateCanonicalIds(graph.getId(), graph.getEquivalenceSet());
             }
             time.stop();
