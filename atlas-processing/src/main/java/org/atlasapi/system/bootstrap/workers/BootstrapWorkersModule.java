@@ -54,8 +54,16 @@ public class BootstrapWorkersModule {
     private String zookeeper = Configurer.get("messaging.zookeeper").get();
     private String originSystem = Configurer.get("messaging.bootstrap.system").get();
 
-    private Integer consumers = Configurer.get("messaging.bootstrap.consumers.default").toInt();
-    private Integer maxConsumers = Configurer.get("messaging.bootstrap.consumers.max").toInt();
+    private Integer contentChangesNumOfConsumers =
+            Configurer.get("messaging.bootstrap.content.changes.consumers").toInt();
+    private Integer topicChangesNumOfConsumers =
+            Configurer.get("messaging.bootstrap.topics.changes.consumers").toInt();
+    private Integer scheduleChangesNumOfConsumers =
+            Configurer.get("messaging.bootstrap.schedule.changes.consumers").toInt();
+    private Integer eventChangesNumOfConsumers =
+            Configurer.get("messaging.bootstrap.event.changes.consumers").toInt();
+    private Integer organisationChangesNumOfConsumers =
+            Configurer.get("messaging.bootstrap.organisation.changes.consumers").toInt();
 
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
     private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
@@ -71,16 +79,20 @@ public class BootstrapWorkersModule {
 
     private Boolean v2ScheduleEnabled = Configurer.get("schedule.v2.enabled").toBoolean();
 
-    private Boolean contentBootstrapEnabled = Configurer.get("messaging.enabled.content.bootstrap")
+    private Boolean contentBootstrapEnabled = Configurer.get(
+            "messaging.bootstrap.content.changes.enabled")
             .toBoolean();
-    private Boolean scheduleBootstrapEnabled = Configurer.get("messaging.enabled.schedule.bootstrap")
+    private Boolean scheduleBootstrapEnabled = Configurer.get(
+            "messaging.bootstrap.schedule.changes.enabled")
             .toBoolean();
-    private Boolean topicBootstrapEnabled = Configurer.get("messaging.enabled.topic.bootstrap")
+    private Boolean topicBootstrapEnabled = Configurer.get(
+            "messaging.bootstrap.topics.changes.enabled")
             .toBoolean();
-    private Boolean eventBoostrapEnabled = Configurer.get("messaging.enabled.event.bootstrap")
+    private Boolean eventBoostrapEnabled = Configurer.get(
+            "messaging.bootstrap.event.changes.enabled")
             .toBoolean();
     private Boolean organisationBootstrapEnabled = Configurer.get(
-            "messaging.enabled.organisation.bootstrap").toBoolean();
+            "messaging.bootstrap.organisation.changes.enabled").toBoolean();
 
     private Set<Publisher> ignoredScheduleSources
             = Sets.difference(
@@ -108,7 +120,7 @@ public class BootstrapWorkersModule {
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     KafkaConsumer contentBootstrapWorker() {
         ContentResolver legacyResolver = legacy.legacyContentResolver();
         ContentBootstrapWorker worker = new ContentBootstrapWorker(
@@ -125,13 +137,13 @@ public class BootstrapWorkersModule {
                 "ContentBootstrap"
         )
                 .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(consumers)
-                .withMaxConsumers(maxConsumers)
+                .withDefaultConsumers(contentChangesNumOfConsumers)
+                .withMaxConsumers(contentChangesNumOfConsumers)
                 .build();
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     KafkaConsumer organisationBootstrapWorker() {
         OrganisationBootstrapWorker worker = new OrganisationBootstrapWorker(
                 legacy.legacyOrganisationResolver(),
@@ -147,13 +159,13 @@ public class BootstrapWorkersModule {
                 "OrganisationBootstrap"
         )
                 .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(consumers)
-                .withMaxConsumers(maxConsumers)
+                .withDefaultConsumers(organisationChangesNumOfConsumers)
+                .withMaxConsumers(organisationChangesNumOfConsumers)
                 .build();
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     KafkaConsumer scheduleReadWriter() {
         ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
                 scheduleBootstrapTaskFactory(),
@@ -170,13 +182,13 @@ public class BootstrapWorkersModule {
                 "ScheduleBootstrap"
         )
                 .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(consumers)
-                .withMaxConsumers(maxConsumers)
+                .withDefaultConsumers(scheduleChangesNumOfConsumers)
+                .withMaxConsumers(scheduleChangesNumOfConsumers)
                 .build();
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     KafkaConsumer scheduleV2ReadWriter() {
         ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
                 scheduleV2BootstrapTaskFactory(),
@@ -193,13 +205,13 @@ public class BootstrapWorkersModule {
                 "ScheduleBootstrapV2"
         )
                 .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(consumers)
-                .withMaxConsumers(maxConsumers)
+                .withDefaultConsumers(scheduleChangesNumOfConsumers)
+                .withMaxConsumers(scheduleChangesNumOfConsumers)
                 .build();
     }
 
     @Bean
-    @Lazy(true)
+    @Lazy
     KafkaConsumer topicReadWriter() {
         TopicResolver legacyResolver = legacy.legacyTopicResolver();
         TopicStore writer = persistence.topicStore();
@@ -217,14 +229,14 @@ public class BootstrapWorkersModule {
                 "TopicBootstrap"
         )
                 .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(consumers)
-                .withMaxConsumers(maxConsumers)
+                .withDefaultConsumers(topicChangesNumOfConsumers)
+                .withMaxConsumers(topicChangesNumOfConsumers)
                 .build();
     }
 
     @Bean
-    @Lazy(true)
-    KafkaConsumer organisationSeparatingEventReadWriter() {
+    @Lazy
+    KafkaConsumer eventReadWriter() {
         EventResolver legacyResolver = legacy.legacyEventResolver();
         EventWriter writer = persistence.eventWriter();
         SeparatingEventReadWriteWorker worker = new SeparatingEventReadWriteWorker(
@@ -237,8 +249,8 @@ public class BootstrapWorkersModule {
         return bootstrapQueueFactory()
                 .createConsumer(worker, serializer, eventChanges, "SeparatingEventBootstrap")
                 .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(consumers)
-                .withMaxConsumers(maxConsumers)
+                .withDefaultConsumers(eventChangesNumOfConsumers)
+                .withMaxConsumers(eventChangesNumOfConsumers)
                 .build();
     }
 
@@ -268,7 +280,7 @@ public class BootstrapWorkersModule {
             services.add(topicReadWriter());
         }
         if (eventBoostrapEnabled) {
-            services.add(organisationSeparatingEventReadWriter());
+            services.add(eventReadWriter());
         }
         if (organisationBootstrapEnabled) {
             services.add(organisationBootstrapWorker());

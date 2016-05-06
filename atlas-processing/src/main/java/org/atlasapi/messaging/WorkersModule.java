@@ -45,39 +45,44 @@ public class WorkersModule {
     private String equivalentContentChanges = Configurer.get(
             "messaging.destination.equivalent.content.changes").get();
 
-    private Integer defaultTopicIndexers = Configurer.get(
-            "messaging.topic.indexing.consumers.default").toInt();
-    private Integer maxTopicIndexers = Configurer.get("messaging.topic.indexing.consumers.max")
-            .toInt();
-
-    private Integer defaultContentIndexers = Configurer.get(
-            "messaging.content.indexing.consumers.default").toInt();
-    private Integer maxContentIndexers = Configurer.get("messaging.content.indexing.consumers.max")
-            .toInt();
-
-    private Integer equivDefaultConsumers = Configurer.get("equiv.update.consumers.default")
-            .toInt();
-    private Integer equivMaxConsumers = Configurer.get("equiv.update.consumers.max").toInt();
+    private Integer topicIndexingNumOfConsumers =
+            Configurer.get("messaging.deer.topic.indexer.consumers").toInt();
+    private Integer equivContentContentChangesNumOfConsumers =
+            Configurer.get("messaging.deer.equivalent.content.content.changes.consumers").toInt();
+    private Integer equivContentGraphChangesNumOfConsumers =
+            Configurer.get("messaging.deer.equivalent.content.graph.changes.consumers").toInt();
+    private Integer equivScheduleContentChangesNumOfConsumers =
+            Configurer.get("messaging.deer.equivalent.schedule.content.changes.consumers").toInt();
+    private Integer equivScheduleGraphChangesNumOfConsumers =
+            Configurer.get("messaging.deer.equivalent.schedule.graph.changes.consumers").toInt();
+    private Integer equivScheduleScheduleChangesNumOfConsumers =
+            Configurer.get("messaging.deer.equivalent.schedule.schedule.changes.consumers").toInt();
+    private Integer contentEquivalenceGraphChangesNumOfConsumers =
+            Configurer.get("messaging.deer.equivalence.content.graph.changes.consumers").toInt();
+    private Integer contentIndexingNumOfConsumers =
+            Configurer.get("messaging.deer.content.indexer.consumers").toInt();
+    private Integer contentIndexingEquivalenceGraphChangesNumOfConsumers =
+            Configurer.get("messaging.deer.content.indexer.graph.changes.consumers").toInt();
 
     private String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
 
-    private Boolean equivalentScheduleStoreContentUpdatesEnabled = Configurer.get(
-            "equiv.schedule.content.updates.enabled").toBoolean();
-
-    private Boolean contentIndexerEnabled = Configurer.get("messaging.enabled.content.indexer")
+    private Boolean contentIndexerEnabled = Configurer.get("messaging.deer.content.indexer.enabled")
             .toBoolean();
     private Boolean equivalentContentStoreEnabled = Configurer.get(
-            "messaging.enabled.content.equivalent.store").toBoolean();
+            "messaging.deer.equivalent.content.content.changes.enabled").toBoolean();
     private Boolean equivalentContentGraphEnabled = Configurer.get(
-            "messaging.enabled.content.equivalent.graph").toBoolean();
-    private Boolean equivalentScheduleStoreEnabled = Configurer.get(
-            "messaging.enabled.schedule.equivalent.store").toBoolean();
+            "messaging.deer.equivalent.content.graph.changes.enabled").toBoolean();
+    private Boolean equivalentScheduleContentEnabled =
+            Configurer.get("messaging.deer.equivalent.schedule.content.changes.enabled").toBoolean();
+    private Boolean equivalentScheduleScheduleEnabled = Configurer.get(
+            "messaging.deer.equivalent.schedule.schedule.changes.enabled").toBoolean();
     private Boolean equivalentScheduleGraphEnabled = Configurer.get(
-            "messaging.enabled.schedule.equivalent.graph").toBoolean();
-    private Boolean topicIndexerEnabled = Configurer.get("messaging.enabled.topic.indexer")
+            "messaging.deer.equivalent.schedule.graph.changes.enabled").toBoolean();
+    private Boolean topicIndexerEnabled = Configurer.get("messaging.deer.topic.indexer.enabled")
             .toBoolean();
-    private Boolean equivalenceGraphEnabled = Configurer.get("messaging.enabled.equivalence.graph")
+    private Boolean equivalenceGraphEnabled = Configurer.get(
+            "messaging.deer.equivalence.content.graph.changes.enabled")
             .toBoolean();
 
     @Autowired
@@ -109,8 +114,8 @@ public class WorkersModule {
         return messaging.messageConsumerFactory().createConsumer(topicIndexingWorker(),
                 serializer(ResourceUpdatedMessage.class), topicChanges, "TopicIndexer"
         )
-                .withDefaultConsumers(defaultTopicIndexers)
-                .withMaxConsumers(maxTopicIndexers)
+                .withDefaultConsumers(topicIndexingNumOfConsumers)
+                .withMaxConsumers(topicIndexingNumOfConsumers)
                 .build();
     }
 
@@ -132,8 +137,8 @@ public class WorkersModule {
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges, "EquivalentContentStoreGraphs"
                 )
-                .withDefaultConsumers(equivDefaultConsumers)
-                .withMaxConsumers(equivMaxConsumers)
+                .withDefaultConsumers(equivContentGraphChangesNumOfConsumers)
+                .withMaxConsumers(equivContentGraphChangesNumOfConsumers)
                 .build();
     }
 
@@ -159,8 +164,8 @@ public class WorkersModule {
                         serializer(ResourceUpdatedMessage.class),
                         contentChanges, "EquivalentContentStoreContent"
                 )
-                .withDefaultConsumers(equivDefaultConsumers)
-                .withMaxConsumers(equivMaxConsumers)
+                .withDefaultConsumers(equivContentContentChangesNumOfConsumers)
+                .withMaxConsumers(equivContentContentChangesNumOfConsumers)
                 .build();
     }
 
@@ -193,8 +198,8 @@ public class WorkersModule {
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges, "EquivalentScheduleStoreGraphs"
                 )
-                .withDefaultConsumers(equivDefaultConsumers)
-                .withMaxConsumers(equivMaxConsumers)
+                .withDefaultConsumers(equivScheduleGraphChangesNumOfConsumers)
+                .withMaxConsumers(equivScheduleGraphChangesNumOfConsumers)
                 .build();
     }
 
@@ -207,8 +212,8 @@ public class WorkersModule {
                         serializer(EquivalentContentUpdatedMessage.class),
                         equivalentContentChanges, "EquivalentScheduleStoreContent"
                 )
-                .withDefaultConsumers(equivDefaultConsumers)
-                .withMaxConsumers(equivMaxConsumers)
+                .withDefaultConsumers(equivScheduleContentChangesNumOfConsumers)
+                .withMaxConsumers(equivScheduleContentChangesNumOfConsumers)
                 .build();
     }
 
@@ -231,8 +236,8 @@ public class WorkersModule {
                 scheduleChanges,
                 "EquivalentScheduleStoreSchedule"
         )
-                .withDefaultConsumers(equivDefaultConsumers)
-                .withMaxConsumers(equivMaxConsumers)
+                .withDefaultConsumers(equivScheduleScheduleChangesNumOfConsumers)
+                .withMaxConsumers(equivScheduleScheduleChangesNumOfConsumers)
                 .build();
     }
 
@@ -255,8 +260,8 @@ public class WorkersModule {
                 "EquivGraphUpdate"
         )
                 .withProducerSystem(equivSystem)
-                .withDefaultConsumers(equivDefaultConsumers)
-                .withMaxConsumers(equivMaxConsumers)
+                .withDefaultConsumers(contentEquivalenceGraphChangesNumOfConsumers)
+                .withMaxConsumers(contentEquivalenceGraphChangesNumOfConsumers)
                 .build();
     }
 
@@ -278,8 +283,8 @@ public class WorkersModule {
                         equivalentContentChanges,
                         "EquivalentContentIndexer"
                 );
-        return consumer.withMaxConsumers(maxContentIndexers)
-                .withDefaultConsumers(defaultContentIndexers)
+        return consumer.withMaxConsumers(contentIndexingNumOfConsumers)
+                .withDefaultConsumers(contentIndexingNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
                 .build();
     }
@@ -304,8 +309,8 @@ public class WorkersModule {
                         contentEquivalenceGraphChanges,
                         "EquivalentContentIndexer"
                 );
-        return consumer.withMaxConsumers(maxContentIndexers)
-                .withDefaultConsumers(equivDefaultConsumers)
+        return consumer.withMaxConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
+                .withDefaultConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
                 .build();
     }
@@ -314,9 +319,6 @@ public class WorkersModule {
     public void start() throws TimeoutException {
         ImmutableList.Builder<Service> services = ImmutableList.builder();
 
-        if (equivalentScheduleStoreContentUpdatesEnabled) {
-            services.add(equivalentScheduleStoreContentListener());
-        }
         if (contentIndexerEnabled) {
             services.add(equivalentContentIndexingMessageListener());
             services.add(equivalentContentIndexingGraphMessageListener());
@@ -327,7 +329,10 @@ public class WorkersModule {
         if (equivalentContentGraphEnabled) {
             services.add(equivalentContentStoreGraphUpdateListener());
         }
-        if (equivalentScheduleStoreEnabled) {
+        if (equivalentScheduleContentEnabled) {
+            services.add(equivalentScheduleStoreContentListener());
+        }
+        if (equivalentScheduleScheduleEnabled) {
             services.add(equivalentScheduleStoreScheduleUpdateListener());
         }
         if (equivalentScheduleGraphEnabled) {
