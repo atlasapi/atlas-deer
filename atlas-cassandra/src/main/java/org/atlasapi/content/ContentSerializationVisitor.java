@@ -9,6 +9,11 @@ import org.atlasapi.entity.Award;
 import org.atlasapi.entity.AwardSerializer;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.RatingSerializer;
+import org.atlasapi.entity.Review;
+import org.atlasapi.entity.ReviewSerializer;
+
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
@@ -44,6 +49,8 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
     private final ContentResolver resolver;
     private final AwardSerializer awardSerializer = new AwardSerializer();
+    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
+    private final RatingSerializer ratingSerializer = new RatingSerializer();
 
     public ContentSerializationVisitor(ContentResolver resolver) {
         this.resolver = checkNotNull(resolver);
@@ -156,6 +163,14 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
 
         for(Award award : content.getAwards()) {
             builder.addAwards(awardSerializer.serialize(award));
+        }
+
+        for (Rating rating: content.getRatings()) {
+            builder.addRatings(ratingSerializer.serialize(rating));
+        }
+
+        for (Review review: content.getReviews()) {
+            builder.addReviews(reviewSerializer.serialize(review));
         }
 
         builder.setActivelyPublished(content.isActivelyPublished());
