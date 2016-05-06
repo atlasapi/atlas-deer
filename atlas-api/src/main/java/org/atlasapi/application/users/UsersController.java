@@ -123,36 +123,34 @@ public class UsersController {
     // If user posts to this endpoint with the oauth token then they are accepting the 
     // terms and conditions
     @RequestMapping(value = "/4/users/{uid}/eula/accept.*", method = RequestMethod.POST)
-    public void userAcceptsLicense(HttpServletRequest request,
-            HttpServletResponse response,
+    public void userAcceptsLicense(HttpServletRequest request, HttpServletResponse response,
             @PathVariable String uid) throws IOException {
+
         Id userId = Id.valueOf(idCodec.decode(uid));
-        User editingUser = userFetcher.userFor(request).get();
-        // if not own profile then need to be admin
-        boolean userIsAdminAndEditingHimself = editingUser.is(Role.ADMIN) && editingUser.getId().equals(userId);
-        userAcceptsLicenseInternal(request, response, userId, userIsAdminAndEditingHimself);
+        boolean hasPermissionToEditUser = hasPermissionToEditUser(
+                userId, userFetcher.userFor(request).get()
+        );
+        userAcceptsLicenseInternal(request, response, userId, hasPermissionToEditUser);
     }
 
     @RequestMapping(value = "/4/admin/users/{uid}/eula/accept.*", method = RequestMethod.POST)
     public void userAcceptsLicenseNoAuth(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String uid) throws IOException {
+            HttpServletResponse response, @PathVariable String uid) throws IOException {
 
         Id userId = Id.valueOf(idCodec.decode(uid));
-        boolean userIsAdminAndEditingHimself = checkThatUserHasAdminAccountAndEditingHimself(
-                request,
-                userId
+        boolean hasPermissionToEditUser = hasPermissionToEditUser(
+                userId, userFetcherNoAuth.userFor(request)
         );
-        userAcceptsLicenseInternal(request, response, userId, userIsAdminAndEditingHimself);
+        userAcceptsLicenseInternal(request, response, userId, hasPermissionToEditUser);
     }
 
     private void userAcceptsLicenseInternal(HttpServletRequest request,
-            HttpServletResponse response, Id userId, boolean userIsAdminAndEditingHimself)
+            HttpServletResponse response, Id userId, boolean hasPermissionToEditUser)
             throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            if (!userIsAdminAndEditingHimself) {
+            if (!hasPermissionToEditUser) {
                 throw new ResourceForbiddenException();
             }
             Optional<User> existing = userStore.userForId(userId);
@@ -175,49 +173,43 @@ public class UsersController {
 
     @RequestMapping(value = "/4/users/{uid}.*", method = RequestMethod.POST)
     public void updateUser(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String uid) throws IOException {
+            HttpServletResponse response, @PathVariable String uid) throws IOException {
+
         Id userId = Id.valueOf(idCodec.decode(uid));
         User editingUser = userFetcher.userFor(request).get();
-        boolean userIsAdminAndEditingHimself = editingUser.is(Role.ADMIN) && editingUser.getId().equals(userId);
-        boolean editingUserIsAdmin = !editingUser.is(Role.ADMIN);
+
+        boolean hasPermissionToEditUser = hasPermissionToEditUser(userId, editingUser);
+        boolean editingUserIsAdmin = isAdmin(editingUser);
+
         updateUserInternal(
-                request,
-                response,
-                userId,
-                editingUser,
-                userIsAdminAndEditingHimself, editingUserIsAdmin
+                request, response, userId, hasPermissionToEditUser, editingUserIsAdmin
         );
     }
 
     @RequestMapping(value = "/4/admin/users/{uid}.*", method = RequestMethod.POST)
     public void updateUserNoAuth(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String uid) throws IOException {
+            HttpServletResponse response, @PathVariable String uid) throws IOException {
+
         Id userId = Id.valueOf(idCodec.decode(uid));
-        Set<User> editingUserAccounts = userFetcherNoAuth.userFor(request);
-        boolean editingUserIsAdmin = editingUserAccounts.stream()
-                .filter(o -> o.is(Role.ADMIN))
-                .findAny()
-                .isPresent();
-        java.util.Optional<User> editingUser = editingUserAccounts
-                .stream()
-                .filter(o -> o.getId().equals(userId)).findFirst();
+        Set<User> editingUsers = userFetcherNoAuth.userFor(request);
 
-        boolean userIsAdminAndEditingHimself = editingUserIsAdmin && editingUser.isPresent();
-        updateUserInternal(request, response, userId, editingUser.get(), userIsAdminAndEditingHimself, editingUserIsAdmin);
+        boolean hasPermissionToEditUser = hasPermissionToEditUser(userId, editingUsers);
+        boolean editingUserIsAdmin = isAdmin(editingUsers);
 
+        updateUserInternal(
+                request, response, userId, hasPermissionToEditUser, editingUserIsAdmin
+        );
     }
 
     private void updateUserInternal(HttpServletRequest request, HttpServletResponse response,
-            Id userId, User editingUser,
-            boolean userIsAdminAndEditingHimself, boolean editingUserIsAdmin) throws IOException {
+            Id userId, boolean hasPermissionToEditUser, boolean editingUserIsAdmin)
+            throws IOException {
 
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
 
-            if (!userIsAdminAndEditingHimself) {
+            if (!hasPermissionToEditUser) {
                 throw new ResourceForbiddenException();
             }
             Optional<User> existing = userStore.userForId(userId);
@@ -226,13 +218,15 @@ public class UsersController {
                         new InputStreamReader(request.getInputStream()),
                         User.class
                 );
+
                 // Only admins can change the role for a user
                 // if editing user is not an admin reject
-                if (editingUserIsAdmin && isUserRoleChanged(posted, existing.get())) {
+                if (!editingUserIsAdmin && isUserRoleChanged(posted, existing.get())) {
                     throw new InsufficientPrivilegeException(
                             "You do not have permission to change the user role");
                 }
-                User modified = updateProfileFields(posted, existing.get(), editingUser);
+
+                User modified = updateProfileFields(posted, existing.get());
                 userStore.store(modified);
                 UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(
                         modified,
@@ -251,29 +245,40 @@ public class UsersController {
 
     @RequestMapping(value = "/4/users/{uid}.*", method = RequestMethod.DELETE)
     public void deactivateUser(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String uid) throws IOException {
+            HttpServletResponse response, @PathVariable String uid) throws IOException {
+
         Id userId = Id.valueOf(idCodec.decode(uid));
         User editingUser = userFetcher.userFor(request).get();
 
-        deactivateUserInternal(request, response, userId, editingUser);
+        boolean editingUserIsAdmin = isAdmin(editingUser);
+
+        deactivateUserInternal(request, response, userId, editingUserIsAdmin);
+    }
+
+    @RequestMapping(value = "/4/admin/users/{uid}.*", method = RequestMethod.DELETE)
+    public void deactivateUserNoAuth(HttpServletRequest request,
+            HttpServletResponse response, @PathVariable String uid) throws IOException {
+
+        Id userId = Id.valueOf(idCodec.decode(uid));
+        Set<User> editingUsers = userFetcherNoAuth.userFor(request);
+
+        boolean editingUserIsAdmin = isAdmin(editingUsers);
+
+        deactivateUserInternal(request, response, userId, editingUserIsAdmin);
     }
 
     private void deactivateUserInternal(HttpServletRequest request, HttpServletResponse response,
-            Id userId, User editingUser) throws IOException {
+            Id userId, boolean editingUserIsAdmin) throws IOException {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            boolean editingUserIsAdmin = !editingUser.is(Role.ADMIN);
-            if (editingUserIsAdmin) {
+
+            if (!editingUserIsAdmin) {
                 throw new ResourceForbiddenException();
             }
+
             Optional<User> existing = userStore.userForId(userId);
             if (existing.isPresent()) {
-                if (editingUserIsAdmin) {
-                    throw new InsufficientPrivilegeException(
-                            "You do not have permission to deactivate user");
-                }
                 User deactivated = existing.get().copy().withProfileDeactivated(true).build();
                 userStore.store(deactivated);
                 UserAwareQueryResult<User> queryResult = UserAwareQueryResult.singleResult(
@@ -291,26 +296,22 @@ public class UsersController {
         }
     }
 
-    @RequestMapping(value = "/4/admin/users/{uid}.*", method = RequestMethod.DELETE)
-    public void deactivateUserNoAuth(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String uid) throws IOException {
-        Id userId = Id.valueOf(idCodec.decode(uid));
-        Set<User> editingUserAccounts = userFetcherNoAuth.userFor(request);
-        java.util.Optional<User> editingUser = editingUserAccounts
-                .stream()
-                .filter(o -> o.getId().equals(userId)).findFirst();
-        deactivateUserInternal(request, response, userId, editingUser.get());
+    private boolean hasPermissionToEditUser(Id userId, User editingUser) {
+        return isAdmin(editingUser) || editingUser.getId().equals(userId);
     }
 
-    private boolean checkThatUserHasAdminAccountAndEditingHimself(HttpServletRequest request,
-            Id userId) {
-        Set<User> editingUser = userFetcherNoAuth.userFor(request);
-        return editingUser
-                .stream()
-                .filter(o -> o.is(Role.ADMIN) && o.getId().equals(userId))
-                .findAny()
-                .isPresent();
+    private boolean hasPermissionToEditUser(Id userId, Set<User> editingUsers) {
+        return editingUsers.stream()
+                .anyMatch(user -> hasPermissionToEditUser(userId, user));
+    }
+
+    private boolean isAdmin(User user) {
+        return user.is(Role.ADMIN);
+    }
+
+    private boolean isAdmin(Set<User> users) {
+        return users.stream()
+                .anyMatch(this::isAdmin);
     }
 
     private boolean isUserRoleChanged(User posted, User existing) {
@@ -320,7 +321,7 @@ public class UsersController {
     /**
      * Only allow certain fields to be updated
      */
-    private User updateProfileFields(User posted, User existing, User editingUser) {
+    private User updateProfileFields(User posted, User existing) {
         return existing.copy()
                 .withFullName(posted.getFullName())
                 .withCompany(posted.getCompany())
@@ -335,5 +336,4 @@ public class UsersController {
     private <T> T deserialize(Reader input, Class<T> cls) throws IOException, ReadException {
         return reader.read(new BufferedReader(input), cls);
     }
-
 }
