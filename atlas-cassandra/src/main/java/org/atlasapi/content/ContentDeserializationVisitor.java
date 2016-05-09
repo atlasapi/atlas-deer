@@ -1,11 +1,6 @@
 package org.atlasapi.content;
 
-import org.atlasapi.entity.Alias;
-import org.atlasapi.entity.Award;
-import org.atlasapi.entity.AwardSerializer;
-import org.atlasapi.entity.DateTimeSerializer;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.*;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
@@ -44,6 +39,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
     private final AwardSerializer awardSerializer = new AwardSerializer();
+    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
+    private final RatingSerializer ratingSerializer = new RatingSerializer();
+
 
     private ContentProtos.Content msg;
 
@@ -153,6 +151,19 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             awardBuilder.add(awardSerializer.deserialize(award));
         }
         described.setAwards(awardBuilder.build());
+
+        ImmutableSet.Builder<Review> reviewBuilder = ImmutableSet.builder();
+        for (CommonProtos.Review review: msg.getReviewsList()) {
+            reviewBuilder.add(reviewSerializer.deserialize(review));
+        }
+        described.setReviews(reviewBuilder.build());
+
+        ImmutableSet.Builder<Rating> ratingBuilder = ImmutableSet.builder();
+        for (CommonProtos.Rating rating: msg.getRatingsList()) {
+            ratingBuilder.add(ratingSerializer.deserialize(rating));
+        }
+        described.setRatings(ratingBuilder.build());
+
         return described;
     }
 

@@ -2,10 +2,14 @@ package org.atlasapi.content;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Locale;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -28,6 +32,7 @@ import org.junit.Test;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class ContentSerializerTest {
 
@@ -153,6 +158,15 @@ public class ContentSerializerTest {
         serializeAndCheck(film);
     }
 
+
+    @Test
+    public void testDeSerializesFilmWithReviewsAndRatings() {
+        Film film = new Film();
+        setItemProperties(film);
+        addReviewsAndRatingsToDescribed(film);
+        serializeAndCheck(film);
+    }
+
     @Test
     public void testDeSerializesSong() {
         Song song = new Song();
@@ -274,6 +288,11 @@ public class ContentSerializerTest {
         assertThat(actual.getThumbnail(), is(expected.getThumbnail()));
         assertThat(actual.getTitle(), is(expected.getTitle()));
         assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
+
+        assertThat("Same number of reviews", actual.getReviews().size(), is(expected.getReviews().size()));
+        assertTrue("All reviews present", actual.getReviews().containsAll(expected.getReviews()));
+        assertThat("Same number of ratings", actual.getRatings().size(), is(expected.getRatings().size()));
+        assertTrue("All ratings present", actual.getRatings().containsAll(expected.getRatings()));
     }
 
     private void checkIdentifiedProperties(Identified actual, Identified expected) {
@@ -471,6 +490,19 @@ public class ContentSerializerTest {
         described.setThisOrChildLastUpdated(DateTime.parse("2015-09-09T10:08:18.543Z"));
         described.setThumbnail("thumbnail");
         described.setTitle("title");
+    }
+
+    private void addReviewsAndRatingsToDescribed(Described described) {
+        described.setReviews(Arrays.asList(
+                new Review(Locale.ENGLISH, "dog's bolls"),
+                new Review(Locale.CHINESE, "hen hao"),
+                new Review(Locale.FRENCH, "tres bien")
+        ));
+
+        described.setRatings(Arrays.asList(
+                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES),
+                new Rating("MOOSE", 1.0f, Publisher.BBC)
+        ));
     }
 
     private void setIdentifiedProperties(Identified identified) {
