@@ -19,6 +19,8 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
 import org.joda.time.Duration;
 
+import java.util.stream.Collectors;
+
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
     private static final ImageSerializer imageSerializer = new ImageSerializer();
@@ -152,17 +154,13 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         }
         described.setAwards(awardBuilder.build());
 
-        ImmutableSet.Builder<Review> reviewBuilder = ImmutableSet.builder();
-        for (CommonProtos.Review review: msg.getReviewsList()) {
-            reviewBuilder.add(reviewSerializer.deserialize(review));
-        }
-        described.setReviews(reviewBuilder.build());
+        described.setReviews(msg.getReviewsList().stream()
+                .map(reviewSerializer::deserialize)
+                .collect(Collectors.toList()));
 
-        ImmutableSet.Builder<Rating> ratingBuilder = ImmutableSet.builder();
-        for (CommonProtos.Rating rating: msg.getRatingsList()) {
-            ratingBuilder.add(ratingSerializer.deserialize(rating));
-        }
-        described.setRatings(ratingBuilder.build());
+        described.setRatings(msg.getRatingsList().stream()
+                .map(ratingSerializer::deserialize)
+                .collect(Collectors.toList()));
 
         return described;
     }
