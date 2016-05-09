@@ -34,9 +34,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -127,10 +125,10 @@ public class LegacyContentTransformerTest {
         ));
 
         org.atlasapi.content.Content actual = objectUnderTest.apply(legacy);
-        assertTrue(actual instanceof org.atlasapi.content.Item);
+        assertThat(actual instanceof org.atlasapi.content.Item, is(true));
 
-        assertEquals(expected.people().size(), actual.people().size());
-        assertTrue(actual.people().containsAll(expected.people()));
+        assertThat(actual.people().size(), is(expected.people().size()));
+        assertThat(actual.people().containsAll(expected.people()), is(true));
     }
 
     private <C extends Identified> C fluentifySetId(C identifiedChild, long id) {
