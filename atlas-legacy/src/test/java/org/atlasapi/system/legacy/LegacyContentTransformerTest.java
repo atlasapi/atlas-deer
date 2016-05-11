@@ -3,8 +3,11 @@ package org.atlasapi.system.legacy;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Alias;
+import org.atlasapi.media.entity.Actor;
+import org.atlasapi.media.entity.CrewMember;
 import org.atlasapi.media.entity.BlackoutRestriction;
 import org.atlasapi.media.entity.Broadcast;
+import org.atlasapi.media.entity.Identified;
 import org.atlasapi.media.entity.Item;
 import org.atlasapi.media.entity.ParentRef;
 import org.atlasapi.media.entity.Publisher;
@@ -16,6 +19,8 @@ import com.metabroadcast.common.base.Maybe;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +29,9 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -97,4 +104,41 @@ public class LegacyContentTransformerTest {
 
         assertThat(transformed.getBroadcasts().size(), is(0));
     }
+
+    @Test
+    public void testContentWithPeople() {
+        Item legacy = new Item();
+        legacy.setId(666L);
+        legacy.setPeople(Lists.newArrayList(
+                fluentifySetId(new Actor(), 123L).withName("Robert Smith").withCharacter("Himself"),
+                fluentifySetId(new CrewMember(), 321L).withName("Salesman McSaleFace").withRole(CrewMember.Role.ADVERTISER)
+        ));
+
+        org.atlasapi.content.Item expected = new org.atlasapi.content.Item();
+        expected.setId(555L);
+        expected.setPeople(Lists.newArrayList(
+                fluentifySetId(new org.atlasapi.content.Actor(), 123L).withName("Robert Smith").withCharacter("Himself"),
+                fluentifySetId(new org.atlasapi.content.CrewMember(), 321L).withName("Salesman McSaleFace").withRole(org.atlasapi.content.CrewMember.Role.ADVERTISER)
+        ));
+
+        org.atlasapi.content.Content actual = objectUnderTest.apply(legacy);
+        assertTrue(actual instanceof org.atlasapi.content.Item);
+
+        assertEquals(expected.people().size(), actual.people().size());
+        assertTrue(actual.people().containsAll(expected.people()));
+    }
+
+    private <C extends Identified> C fluentifySetId(C identifiedChild, long id) {
+        identifiedChild.setId(id);
+        return identifiedChild;
+    }
+
+    private <C extends org.atlasapi.entity.Identified> C fluentifySetId(C identifiedChild, long id) {
+        identifiedChild.setId(id);
+        return identifiedChild;
+    }
+
+
+
+
 }
