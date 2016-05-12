@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.atlasapi.entity.Identified;
@@ -548,16 +549,16 @@ public class CrewMember extends Identified {
     public boolean equals(Object obj) {
         if (obj instanceof CrewMember) {
             CrewMember crew = (CrewMember) obj;
-            return this.getCanonicalUri().equals(crew.getCanonicalUri())
-                    && name.equals(crew.name)
-                    && role == crew.role;
+            return Objects.equals(this.getCanonicalUri(), crew.getCanonicalUri())
+                    && Objects.equals(name, crew.name)
+                    && Objects.equals(role, crew.role);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return getCanonicalUri().hashCode();
+        return Objects.hash(super.hashCode(), role, name, publisher);
     }
 
     @Override

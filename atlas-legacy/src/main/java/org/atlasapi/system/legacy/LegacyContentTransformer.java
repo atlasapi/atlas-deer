@@ -76,11 +76,13 @@ public class LegacyContentTransformer
 
     private final ChannelResolver channelResolver;
     private final LegacySegmentMigrator legacySegmentMigrator;
+    private final LegacyCrewMemberTransformer legacyCrewMemberTransformer;
 
     public LegacyContentTransformer(ChannelResolver channelResolver,
             LegacySegmentMigrator segmentMigrator) {
         this.channelResolver = checkNotNull(channelResolver);
         this.legacySegmentMigrator = checkNotNull(segmentMigrator);
+        this.legacyCrewMemberTransformer = new LegacyCrewMemberTransformer();
     }
 
     @Override
@@ -583,6 +585,14 @@ public class LegacyContentTransformer
                         }
                 ).collect(Collectors.toList())
         );
+
+        c.setPeople(
+                input.people().stream()
+                        .map(legacyCrewMemberTransformer::apply)
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toList())
+        );
+
         transformEncodings(c, input.getVersions());
         return c;
     }
