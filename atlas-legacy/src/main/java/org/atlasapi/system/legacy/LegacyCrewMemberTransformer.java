@@ -69,7 +69,7 @@ public class LegacyCrewMemberTransformer extends BaseLegacyResourceTransformer<o
     protected void addIdentifiedId(Identified source, org.atlasapi.entity.Identified target) {
         // Owl CrewMembers don't have Ids (or precisely haven't been observed to), the base implementation
         // will fire a NPE when they don't
-        if (null != target.getId()) {
+        if (null != source.getId()) {
             super.addIdentifiedId(source, target);
         }
     }
