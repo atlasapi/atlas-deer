@@ -7,13 +7,15 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
 import com.google.common.base.Supplier;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class NewUserSupplier implements Supplier<User> {
 
     private final IdGenerator idGenerator;
     private SubstitutionTableNumberCodec codec;
 
     public NewUserSupplier(IdGenerator idGenerator) {
-        this.idGenerator = idGenerator;
+        this.idGenerator = checkNotNull(idGenerator);
         this.codec = new SubstitutionTableNumberCodec();
     }
 
@@ -21,5 +23,4 @@ public class NewUserSupplier implements Supplier<User> {
     public User get() {
         return User.builder().withId(Id.valueOf(codec.decode(idGenerator.generate()))).build();
     }
-
 }

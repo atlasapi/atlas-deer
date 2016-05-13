@@ -1,5 +1,7 @@
 package org.atlasapi.application;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public enum UsageType {
     COMMERCIAL("Commercial"),
     NON_COMMERCIAL("Non commericial"),
@@ -8,7 +10,7 @@ public enum UsageType {
     private final String title;
 
     UsageType(String title) {
-        this.title = title;
+        this.title = checkNotNull(title);
     }
 
     public String title() {

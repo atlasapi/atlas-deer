@@ -10,13 +10,11 @@ import javax.annotation.Nullable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Sourceds;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.ImmutableCollectors;
 
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
@@ -30,52 +28,22 @@ public class ApplicationSources {
     private final ImmutableSet<Publisher> enabledReadSources;
     private final Boolean imagePrecedenceEnabled;
 
-    private static final Predicate<SourceReadEntry> ENABLED_READS_FILTER = new Predicate<SourceReadEntry>() {
-
-        @Override
-        public boolean apply(@Nullable SourceReadEntry input) {
-            return input.getSourceStatus().isEnabled();
-        }
-    };
-
-    private static final Function<SourceReadEntry, Publisher> SOURCEREADS_TO_PUBLISHER = new Function<SourceReadEntry, Publisher>() {
-
-        @Override
-        public Publisher apply(@Nullable SourceReadEntry input) {
-            return input.getPublisher();
-        }
-    };
-
-    private static final Function<SourceReadEntry, Publisher> READ_TO_PUBLISHER = new Function<SourceReadEntry, Publisher>() {
-
-        @Override
-        public Publisher apply(@Nullable SourceReadEntry input) {
-            return input.getPublisher();
-        }
-    };
-
-    private static final Comparator<SourceReadEntry> SORT_READS_BY_PUBLISHER = new Comparator<SourceReadEntry>() {
-
-        @Override
-        public int compare(SourceReadEntry a, SourceReadEntry b) {
-            return a.getPublisher().compareTo(b.getPublisher());
-        }
-    };
+    private static final Comparator<SourceReadEntry> SORT_READS_BY_PUBLISHER =
+            (a, b) -> a.getPublisher().compareTo(b.getPublisher());
 
     private ApplicationSources(Builder builder) {
         this.precedence = builder.precedence;
         this.reads = ImmutableList.copyOf(builder.reads);
         this.writes = ImmutableList.copyOf(builder.writes);
         this.contentHierarchyPrecedence = builder.contentHierarchyPrecedence == null
-                                          ? Optional.absent() : builder.contentHierarchyPrecedence;
+                                          ? Optional.absent()
+                                          : builder.contentHierarchyPrecedence;
         this.imagePrecedenceEnabled = builder.imagePrecedenceEnabled;
-        this.enabledReadSources = ImmutableSet.copyOf(
-                Iterables.transform(
-                        Iterables.filter(this.getReads(), ENABLED_READS_FILTER),
-                        SOURCEREADS_TO_PUBLISHER
-                )
-        );
-        ;
+        this.enabledReadSources = this.getReads()
+                .stream()
+                .filter(input -> input.getSourceStatus().isEnabled())
+                .map(SourceReadEntry::getPublisher)
+                .collect(ImmutableCollectors.toSet());
     }
 
     public boolean isPrecedenceEnabled() {
@@ -91,15 +59,7 @@ public class ApplicationSources {
     }
 
     public Ordering<Publisher> publisherPrecedenceOrdering() {
-        return Ordering.explicit(Lists.transform(reads, READ_TO_PUBLISHER));
-    }
-
-    private Optional<Ordering<Publisher>> contentHierarchyPrecedenceOrdering() {
-        if (contentHierarchyPrecedence.isPresent()) {
-            return Optional.of(Ordering.explicit(contentHierarchyPrecedence.get()));
-        } else {
-            return Optional.absent();
-        }
+        return Ordering.explicit(Lists.transform(reads, SourceReadEntry::getPublisher));
     }
 
     public Optional<List<Publisher>> contentHierarchyPrecedence() {
@@ -117,7 +77,7 @@ public class ApplicationSources {
     }
 
     public boolean peoplePrecedenceEnabled() {
-        return peoplePrecedence() != null;
+        return true;
     }
 
     public Ordering<Publisher> peoplePrecedenceOrdering() {
@@ -137,13 +97,6 @@ public class ApplicationSources {
 
     public Ordering<Sourced> getSourcedPeoplePrecedenceOrdering() {
         return peoplePrecedenceOrdering().onResultOf(Sourceds.toPublisher());
-    }
-
-    /**
-     * Temporary: these should be persisted and not hardcoded
-     */
-    private ImmutableList<Publisher> imagePrecedence() {
-        return ImmutableList.of(Publisher.PA, Publisher.BBC, Publisher.C4);
     }
 
     public boolean imagePrecedenceEnabled() {
@@ -189,17 +142,19 @@ public class ApplicationSources {
         if (!contentHierarchyPrecedence.isPresent()) {
             return Optional.absent();
         }
-        Ordering<Publisher> ordering = orderingIncludingMissingPublishers(this.contentHierarchyPrecedence
-                .get());
+        Ordering<Publisher> ordering = orderingIncludingMissingPublishers(
+                this.contentHierarchyPrecedence.get()
+        );
         return Optional.of(ordering.onResultOf(Sourceds.toPublisher()));
     }
 
     private static final ApplicationSources dflts = createDefaults();
 
-    private static final ApplicationSources createDefaults() {
+    private static ApplicationSources createDefaults() {
         ApplicationSources dflts = ApplicationSources.builder()
                 .build()
                 .copyWithMissingSourcesPopulated();
+
         for (Publisher source : Publisher.all()) {
             if (source.enabledWithNoApiKey()) {
                 dflts = dflts.copyWithChangedReadableSourceStatus(
@@ -211,7 +166,7 @@ public class ApplicationSources {
         return dflts;
     }
 
-    // Build a default configuration, this will get popualated with publishers 
+    // Build a default configuration, this will get populated with publishers
     // with default source status
     public static ApplicationSources defaults() {
         return dflts;
@@ -292,7 +247,9 @@ public class ApplicationSources {
             return this;
         }
 
-        public Builder withContentHierarchyPrecedence(List<Publisher> contentHierarchyPrecedence) {
+        public Builder withContentHierarchyPrecedence(
+                @Nullable List<Publisher> contentHierarchyPrecedence
+        ) {
             if (contentHierarchyPrecedence != null) {
                 this.contentHierarchyPrecedence = Optional.of(ImmutableList.copyOf(
                         contentHierarchyPrecedence));

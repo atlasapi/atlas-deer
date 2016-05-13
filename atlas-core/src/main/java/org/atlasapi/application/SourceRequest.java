@@ -1,5 +1,7 @@
 package org.atlasapi.application;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.media.entity.Publisher;
@@ -19,11 +21,23 @@ public class SourceRequest implements Identifiable {
     private final boolean licenseAccepted;
     private final DateTime requestedAt;
     private final boolean approved;
-    private final Optional<DateTime> approvedAt; // Older source request records will not have this field
 
-    private SourceRequest(Id id, Id appId, Publisher source, UsageType usageType,
-            String email, String appUrl, String reason, boolean licenseAccepted,
-            DateTime requestedAt, boolean approved, Optional<DateTime> approvedAt) {
+    // Older source request records will not have this field
+    private final Optional<DateTime> approvedAt;
+
+    private SourceRequest(
+            @Nullable Id id,
+            @Nullable Id appId,
+            @Nullable Publisher source,
+            @Nullable UsageType usageType,
+            @Nullable String email,
+            @Nullable String appUrl,
+            @Nullable String reason,
+            boolean licenseAccepted,
+            @Nullable DateTime requestedAt,
+            boolean approved,
+            @Nullable Optional<DateTime> approvedAt
+    ) {
         this.id = id;
         this.appId = appId;
         this.source = source;
@@ -37,30 +51,41 @@ public class SourceRequest implements Identifiable {
         this.approvedAt = approvedAt;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Nullable
     public Id getId() {
         return this.id;
     }
 
+    @Nullable
     public Id getAppId() {
         return appId;
     }
 
+    @Nullable
     public Publisher getSource() {
         return source;
     }
 
+    @Nullable
     public UsageType getUsageType() {
         return usageType;
     }
 
+    @Nullable
     public String getEmail() {
         return email;
     }
 
+    @Nullable
     public String getAppUrl() {
         return appUrl;
     }
 
+    @Nullable
     public String getReason() {
         return reason;
     }
@@ -69,6 +94,7 @@ public class SourceRequest implements Identifiable {
         return licenseAccepted;
     }
 
+    @Nullable
     public DateTime getRequestedAt() {
         return requestedAt;
     }
@@ -77,12 +103,9 @@ public class SourceRequest implements Identifiable {
         return approved;
     }
 
+    @Nullable
     public Optional<DateTime> getApprovedAt() {
         return approvedAt;
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     public Builder copy() {
@@ -116,37 +139,37 @@ public class SourceRequest implements Identifiable {
         public Builder() {
         }
 
-        public Builder withId(Id id) {
+        public Builder withId(@Nullable Id id) {
             this.id = id;
             return this;
         }
 
-        public Builder withAppId(Id appId) {
+        public Builder withAppId(@Nullable Id appId) {
             this.appId = appId;
             return this;
         }
 
-        public Builder withSource(Publisher source) {
+        public Builder withSource(@Nullable Publisher source) {
             this.source = source;
             return this;
         }
 
-        public Builder withUsageType(UsageType usageType) {
+        public Builder withUsageType(@Nullable UsageType usageType) {
             this.usageType = usageType;
             return this;
         }
 
-        public Builder withEmail(String email) {
+        public Builder withEmail(@Nullable String email) {
             this.email = email;
             return this;
         }
 
-        public Builder withAppUrl(String appUrl) {
+        public Builder withAppUrl(@Nullable String appUrl) {
             this.appUrl = appUrl;
             return this;
         }
 
-        public Builder withReason(String reason) {
+        public Builder withReason(@Nullable String reason) {
             this.reason = reason;
             return this;
         }
@@ -156,7 +179,7 @@ public class SourceRequest implements Identifiable {
             return this;
         }
 
-        public Builder withRequestedAt(DateTime requestedAt) {
+        public Builder withRequestedAt(@Nullable DateTime requestedAt) {
             this.requestedAt = requestedAt;
             return this;
         }
@@ -166,12 +189,12 @@ public class SourceRequest implements Identifiable {
             return this;
         }
 
-        public Builder withApprovedAt(DateTime approvedAt) {
+        public Builder withApprovedAt(@Nullable DateTime approvedAt) {
             this.approvedAt = Optional.fromNullable(approvedAt);
             return this;
         }
 
-        public Builder withApprovedAt(Optional<DateTime> approvedAt) {
+        public Builder withApprovedAt(@Nullable Optional<DateTime> approvedAt) {
             this.approvedAt = approvedAt;
             return this;
         }

@@ -1,9 +1,12 @@
 package org.atlasapi.application;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.model.translators.SourceStatusModelTranslator;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class SourceStatus {
 
@@ -18,31 +21,15 @@ public class SourceStatus {
             SourceState.AVAILABLE,
             false
     );
-    public static final SourceStatus ENABLEABLE = new SourceStatus(SourceState.ENABLEABLE, false);
-
-    public static final Predicate<SourceStatus> IS_ENABLED = new Predicate<SourceStatus>() {
-
-        @Override
-        public boolean apply(SourceStatus input) {
-            return input.isEnabled();
-        }
-    };
-
-    public enum SourceState {
-
-        UNAVAILABLE,
-        REQUESTED,
-        AVAILABLE,
-        REVOKED,
-        ENABLEABLE
-
-    }
 
     private final SourceState state;
     private final boolean enabled;
 
-    public SourceStatus(SourceState state, boolean enabled) {
-        Preconditions.checkArgument(!enabled || (state == SourceState.AVAILABLE && enabled));
+    public SourceStatus(
+            @Nullable SourceState state,
+            boolean enabled
+    ) {
+        checkArgument(!enabled || (state == SourceState.AVAILABLE && enabled));
         this.state = state;
         this.enabled = enabled;
     }
@@ -90,6 +77,7 @@ public class SourceStatus {
         return enabled;
     }
 
+    @Nullable
     public SourceState getState() {
         return state;
     }
@@ -118,5 +106,13 @@ public class SourceStatus {
                 state.toString().toLowerCase(),
                 enabled ? "enabled" : "disabled"
         );
+    }
+
+    public enum SourceState {
+        UNAVAILABLE,
+        REQUESTED,
+        AVAILABLE,
+        REVOKED,
+        ENABLEABLE
     }
 }
