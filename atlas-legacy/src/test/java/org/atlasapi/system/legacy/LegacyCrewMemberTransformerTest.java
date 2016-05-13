@@ -6,7 +6,9 @@ import org.atlasapi.entity.Identified;
 import org.atlasapi.media.entity.Publisher;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class LegacyCrewMemberTransformerTest {
     private LegacyCrewMemberTransformer transformer = new LegacyCrewMemberTransformer();
@@ -19,17 +21,15 @@ public class LegacyCrewMemberTransformerTest {
 
         legacyActor.withCharacter("rubble")
                 .withName("mel blanc")
-                .withProfileLink("http://rip")
-                .setId(666L);
+                .withProfileLink("http://rip");
 
         Actor expected = new Actor("barney", "bam bam", Publisher.BETTY);
         expected.withCharacter("rubble")
                 .withName("mel blanc")
-                .withProfileLink("http://rip")
-                .setId(666L);
+                .withProfileLink("http://rip");
 
         Actor actual = transformer.translateLegacyActor(legacyActor);
-        assertNotNull(actual);
+        assertThat(actual, is(notNullValue()));
         assertActorsEqual(expected, actual);
     }
 
@@ -39,7 +39,7 @@ public class LegacyCrewMemberTransformerTest {
                 org.atlasapi.media.entity.CrewMember.crewMemberWithoutId("barney", "unknown", Publisher.BETTY);
 
         CrewMember actual = transformer.apply(legacyCrewMember);
-        assertNull(actual);
+        assertThat(actual, is(notNullValue()));
     }
 
     @Test
@@ -53,9 +53,8 @@ public class LegacyCrewMemberTransformerTest {
         expected.setId(456L);
 
         CrewMember actual = transformer.apply(legacyCrewMember);
-        assertNotNull(actual);
-        assertFalse(actual instanceof Actor);
-
+        assertThat(actual, is(notNullValue()));
+        assertThat(actual instanceof Actor, is(false));
         assertCrewMembersEqual(expected, actual);
     }
 
@@ -76,27 +75,27 @@ public class LegacyCrewMemberTransformerTest {
                 .setId(678L);
 
         CrewMember actual = transformer.apply(legacyCrewMember);
-        assertNotNull(actual);
-        assertFalse(actual instanceof Actor);
-
+        assertThat(actual, is(notNullValue()));
+        assertThat(actual instanceof Actor, is(false));
         assertCrewMembersEqual(expected, actual);
     }
 
     private void assertIdentifiedEqual(Identified expected, Identified actual) {
-        assertEquals(expected.getId(), actual.getId());
+        assertThat(actual.getId(), is(expected.getId()));
         // try out the equality operator (but useless for debugging)
-        assertEquals(expected, actual);
+        assertThat(actual, is(expected));
     }
 
     private void assertCrewMembersEqual(CrewMember expected, CrewMember actual) {
         // Identified doesn't regard aliases as important for equality
-        assertEquals(expected.profileLinks(), actual.profileLinks());
-        assertEquals(expected.role(), actual.role());
+
+        assertThat(actual.profileLinks(), is(expected.profileLinks()));
+        assertThat(actual.role(), is(expected.role()));
         assertIdentifiedEqual(expected, actual);
     }
 
     private void assertActorsEqual(Actor expected, Actor actual) {
-        assertEquals(expected.character(), actual.character());
+        assertThat(actual.character(), is(expected.character()));
         assertCrewMembersEqual(expected, actual);
     }
 }

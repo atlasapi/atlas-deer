@@ -103,7 +103,7 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
     }
 
     protected void addIdentified(Identified source, org.atlasapi.entity.Identified target) {
-        target.setId(Id.valueOf(source.getId()));
+        addIdentifiedId(source, target);
         target.setCanonicalUri(source.getCanonicalUri());
         target.setCurie(source.getCurie());
         target.setAliasUrls(source.getAliasUrls());
@@ -115,5 +115,10 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
                 .collect(Collectors.toSet()));
         target.setLastUpdated(source.getLastUpdated());
         target.setEquivalenceUpdate(source.getEquivalenceUpdate());
+    }
+
+    protected void addIdentifiedId(Identified source, org.atlasapi.entity.Identified target) {
+        // this split-up is to facilitate Identified entities without Id at transform time
+        target.setId(Id.valueOf(source.getId()));
     }
 }
