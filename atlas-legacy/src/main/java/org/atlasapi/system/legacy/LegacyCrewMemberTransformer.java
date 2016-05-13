@@ -2,6 +2,7 @@ package org.atlasapi.system.legacy;
 
 import org.atlasapi.content.Actor;
 import org.atlasapi.content.CrewMember;
+import org.atlasapi.media.entity.Identified;
 
 import java.util.Objects;
 
@@ -55,17 +56,21 @@ public class LegacyCrewMemberTransformer extends BaseLegacyResourceTransformer<o
 
     @Override
     public CrewMember apply(org.atlasapi.media.entity.CrewMember input) {
-        // we carry IDs through from Owl to Deer, reject anything without one
-        if (null == input.getId()) {
-            return null;
-        }
-
         if (input instanceof org.atlasapi.media.entity.Actor) {
             return translateLegacyActor((org.atlasapi.media.entity.Actor) input);
         } else if(null != input) {
             return translateLegacyCrewMember(input);
         } else {
             return null;
+        }
+    }
+
+    @Override
+    protected void addIdentifiedId(Identified source, org.atlasapi.entity.Identified target) {
+        // Owl CrewMembers don't have Ids (or precisely haven't been observed to), the base implementation
+        // will fire a NPE when they don't
+        if (null != target.getId()) {
+            super.addIdentifiedId(source, target);
         }
     }
 }
