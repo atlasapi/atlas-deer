@@ -2,6 +2,8 @@ package org.atlasapi.application.users;
 
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.application.Application;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -10,9 +12,10 @@ import org.atlasapi.media.entity.Publisher;
 import com.metabroadcast.common.social.model.UserRef;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class User implements Identifiable {
 
@@ -32,11 +35,23 @@ public class User implements Identifiable {
     private final Set<Id> applicationIds;
     private final Set<Publisher> sources;
 
-    private User(Id id, UserRef userRef, String screenName, String fullName,
-            String company, String email, String website, String profileImage, Role role,
-            Set<Id> applicationIds, Set<Publisher> publishers, boolean profileComplete,
-            Optional<DateTime> licenseAccepted, boolean profileDeactivated) {
-        this.id = id;
+    private User(
+            Id id,
+            @Nullable UserRef userRef,
+            @Nullable String screenName,
+            @Nullable String fullName,
+            @Nullable String company,
+            @Nullable String email,
+            @Nullable String website,
+            @Nullable String profileImage,
+            @Nullable Role role,
+            Set<Id> applicationIds,
+            Set<Publisher> publishers,
+            boolean profileComplete,
+            Optional<DateTime> licenseAccepted,
+            boolean profileDeactivated
+    ) {
+        this.id = checkNotNull(id);
         this.userRef = userRef;
         this.screenName = screenName;
         this.fullName = fullName;
@@ -48,34 +63,45 @@ public class User implements Identifiable {
         this.applicationIds = ImmutableSet.copyOf(applicationIds);
         this.sources = ImmutableSet.copyOf(publishers);
         this.profileComplete = profileComplete;
-        this.licenseAccepted = licenseAccepted;
+        this.licenseAccepted = checkNotNull(licenseAccepted);
         this.profileDeactivated = profileDeactivated;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Nullable
     public UserRef getUserRef() {
         return this.userRef;
     }
 
+    @Nullable
     public String getScreenName() {
         return screenName;
     }
 
+    @Nullable
     public String getFullName() {
         return fullName;
     }
 
+    @Nullable
     public String getCompany() {
         return company;
     }
 
+    @Nullable
     public String getEmail() {
         return email;
     }
 
+    @Nullable
     public String getWebsite() {
         return website;
     }
 
+    @Nullable
     public String getProfileImage() {
         return profileImage;
     }
@@ -88,6 +114,7 @@ public class User implements Identifiable {
         return sources;
     }
 
+    @Nullable
     public Role getRole() {
         return this.role;
     }
@@ -104,7 +131,7 @@ public class User implements Identifiable {
         return manages(application.getId());
     }
 
-    public boolean manages(Id applicationId) {
+    public boolean manages(@Nullable Id applicationId) {
         return applicationIds.contains(applicationId);
     }
 
@@ -149,10 +176,6 @@ public class User implements Identifiable {
                 .withProfileDeactivated(this.profileDeactivated);
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
     public static class Builder {
 
         private Id id;
@@ -175,42 +198,42 @@ public class User implements Identifiable {
             return this;
         }
 
-        public Builder withUserRef(UserRef userRef) {
+        public Builder withUserRef(@Nullable UserRef userRef) {
             this.userRef = userRef;
             return this;
         }
 
-        public Builder withScreenName(String screenName) {
+        public Builder withScreenName(@Nullable String screenName) {
             this.screenName = screenName;
             return this;
         }
 
-        public Builder withFullName(String fullName) {
+        public Builder withFullName(@Nullable String fullName) {
             this.fullName = fullName;
             return this;
         }
 
-        public Builder withCompany(String company) {
+        public Builder withCompany(@Nullable String company) {
             this.company = company;
             return this;
         }
 
-        public Builder withEmail(String email) {
+        public Builder withEmail(@Nullable String email) {
             this.email = email;
             return this;
         }
 
-        public Builder withWebsite(String website) {
+        public Builder withWebsite(@Nullable String website) {
             this.website = website;
             return this;
         }
 
-        public Builder withProfileImage(String profileImage) {
+        public Builder withProfileImage(@Nullable String profileImage) {
             this.profileImage = profileImage;
             return this;
         }
 
-        public Builder withRole(Role role) {
+        public Builder withRole(@Nullable Role role) {
             this.role = role;
             return this;
         }
@@ -230,7 +253,7 @@ public class User implements Identifiable {
             return this;
         }
 
-        public Builder withLicenseAccepted(DateTime licenseAccepted) {
+        public Builder withLicenseAccepted(@Nullable DateTime licenseAccepted) {
             this.licenseAccepted = Optional.fromNullable(licenseAccepted);
             return this;
         }
@@ -241,7 +264,6 @@ public class User implements Identifiable {
         }
 
         public User build() {
-            Preconditions.checkNotNull(id);
             return new User(id, userRef, screenName, fullName,
                     company, email, website, profileImage, role,
                     applicationIds, sources, profileComplete, licenseAccepted, profileDeactivated

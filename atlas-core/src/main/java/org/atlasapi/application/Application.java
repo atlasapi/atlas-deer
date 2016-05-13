@@ -3,6 +3,8 @@ package org.atlasapi.application;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.application.SourceStatus.SourceState;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -18,8 +20,7 @@ import org.joda.time.DateTime;
 public class Application implements Identifiable, Sourced {
 
     private final Id id;
-    private final String slug; // Kept to enable creation of compatible entries
-    // for 3.0
+    private final String slug; // Kept to enable creation of compatible entries for 3.0
     private final String title;
     private final String description;
     private final DateTime created;
@@ -27,14 +28,16 @@ public class Application implements Identifiable, Sourced {
     private final ApplicationSources sources;
     private final boolean revoked;
 
-    private Application(Id id,
-            String slug,
-            String title,
-            String description,
-            DateTime created,
-            ApplicationCredentials credentials,
-            ApplicationSources sources,
-            boolean revoked) {
+    private Application(
+            @Nullable Id id,
+            @Nullable String slug,
+            @Nullable String title,
+            @Nullable String description,
+            @Nullable DateTime created,
+            @Nullable ApplicationCredentials credentials,
+            @Nullable ApplicationSources sources,
+            boolean revoked
+    ) {
         this.id = id;
         this.slug = slug;
         this.title = title;
@@ -45,36 +48,45 @@ public class Application implements Identifiable, Sourced {
         this.revoked = revoked;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Nullable
     public Id getId() {
         return id;
     }
 
     /**
      * Returns an Atlas 3.0 compatible identifier for applications
-     *
-     * @return
      */
     @Deprecated
+    @Nullable
     public String getSlug() {
         return slug;
     }
 
+    @Nullable
     public String getTitle() {
         return title;
     }
 
+    @Nullable
     public String getDescription() {
         return description;
     }
 
+    @Nullable
     public DateTime getCreated() {
         return created;
     }
 
+    @Nullable
     public ApplicationCredentials getCredentials() {
         return credentials;
     }
 
+    @Nullable
     public ApplicationSources getSources() {
         return sources;
     }
@@ -89,8 +101,10 @@ public class Application implements Identifiable, Sourced {
     }
 
     public Application copyWithPrecedenceDisabled() {
-        ApplicationSources modifiedSources = this
-                .getSources().copy().withPrecedence(false).build();
+        ApplicationSources modifiedSources = this.getSources()
+                .copy()
+                .withPrecedence(false)
+                .build();
         return this.copy().withSources(modifiedSources).build();
     }
 
@@ -137,7 +151,8 @@ public class Application implements Identifiable, Sourced {
     private Application copyWithStatusForSource(Publisher source,
             SourceStatus status) {
         List<SourceReadEntry> modifiedReads = changeReadsPreservingOrder(
-                this.getSources().getReads(), source, status);
+                this.getSources().getReads(), source, status
+        );
         ApplicationSources modifiedSources = this.getSources().copy()
                 .withReadableSources(modifiedReads).build();
         return this.copy().withSources(modifiedSources).build();
@@ -181,8 +196,8 @@ public class Application implements Identifiable, Sourced {
                 readsWithNewOrder.add(sourceMap.get(source));
             }
         }
-        ApplicationSources modifiedSources = this
-                .getSources().copy()
+        ApplicationSources modifiedSources = this.getSources()
+                .copy()
                 .withPrecedence(true)
                 .withReadableSources(readsWithNewOrder)
                 .build();
@@ -229,10 +244,6 @@ public class Application implements Identifiable, Sourced {
                 .withRevoked(this.isRevoked());
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
     public static class Builder {
 
         private Id id;
@@ -248,44 +259,41 @@ public class Application implements Identifiable, Sourced {
             this.sources = ApplicationSources.defaults();
         }
 
-        public Builder withId(Id id) {
+        public Builder withId(@Nullable Id id) {
             this.id = id;
             return this;
         }
 
         /**
          * Sets the Atlas 3.0 compatible identifier for the application
-         *
-         * @param slug
-         * @return
          */
         @Deprecated
-        public Builder withSlug(String slug) {
+        public Builder withSlug(@Nullable String slug) {
             this.slug = slug;
             return this;
         }
 
-        public Builder withTitle(String title) {
+        public Builder withTitle(@Nullable String title) {
             this.title = title;
             return this;
         }
 
-        public Builder withDescription(String description) {
+        public Builder withDescription(@Nullable String description) {
             this.description = description;
             return this;
         }
 
-        public Builder withCreated(DateTime created) {
+        public Builder withCreated(@Nullable DateTime created) {
             this.created = created;
             return this;
         }
 
-        public Builder withCredentials(ApplicationCredentials credentials) {
+        public Builder withCredentials(@Nullable ApplicationCredentials credentials) {
             this.credentials = credentials;
             return this;
         }
 
-        public Builder withSources(ApplicationSources sources) {
+        public Builder withSources(@Nullable ApplicationSources sources) {
             this.sources = sources;
             return this;
         }
@@ -308,5 +316,4 @@ public class Application implements Identifiable, Sourced {
             );
         }
     }
-
 }

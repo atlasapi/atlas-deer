@@ -6,7 +6,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -58,13 +57,7 @@ public class CacheBackedApplicationStore implements ApplicationStore, LegacyAppl
     public ListenableFuture<Resolved<Application>> resolveIds(Iterable<Id> ids) {
         return Futures.immediateFuture(Resolved.valueOf(Iterables.transform(
                 ids,
-                new Function<Id, Application>() {
-
-                    @Override
-                    public Application apply(Id input) {
-                        return idCache.getUnchecked(input).get();
-                    }
-                }
+                input -> idCache.getUnchecked(input).get()
         )));
     }
 
@@ -114,12 +107,6 @@ public class CacheBackedApplicationStore implements ApplicationStore, LegacyAppl
     @Override
     @Deprecated
     public Iterable<Id> applicationIdsForSlugs(Iterable<String> slugs) {
-        return Iterables.transform(slugs, new Function<String, Id>() {
-
-            @Override
-            public Id apply(String input) {
-                return slugCache.getUnchecked(input).get();
-            }
-        });
+        return Iterables.transform(slugs, input -> slugCache.getUnchecked(input).get());
     }
 }

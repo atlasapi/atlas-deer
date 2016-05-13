@@ -1,5 +1,7 @@
 package org.atlasapi.application;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 
 import com.metabroadcast.common.persistence.mongo.MongoConstants;
@@ -10,7 +12,7 @@ import com.mongodb.DBObject;
 
 public class EndUserLicenseTranslator {
 
-    public static final String LICENSE_KEY = "license";
+    private static final String LICENSE_KEY = "license";
 
     public DBObject toDBObject(EndUserLicense endUserLicense) {
         DBObject dbo = new BasicDBObject();
@@ -19,7 +21,8 @@ public class EndUserLicenseTranslator {
         return dbo;
     }
 
-    public EndUserLicense fromDBObject(DBObject dbo) {
+    @Nullable
+    public EndUserLicense fromDBObject(@Nullable DBObject dbo) {
         if (dbo == null) {
             return null;
         }

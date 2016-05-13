@@ -4,6 +4,8 @@ import com.metabroadcast.common.social.model.UserRef.UserNamespace;
 
 import com.google.common.collect.ImmutableSet;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public enum OAuthProvider {
     TWITTER(UserNamespace.TWITTER, "Sign in with Twitter", "/4/auth/twitter/login"),
     GITHUB(UserNamespace.GITHUB, "Sign in with GitHub", "/4/auth/github/login"),
@@ -15,9 +17,9 @@ public enum OAuthProvider {
     private static final ImmutableSet<OAuthProvider> ALL = ImmutableSet.copyOf(values());
 
     OAuthProvider(UserNamespace namespace, String loginPromptMessage, String authRequestUrl) {
-        this.namespace = namespace;
-        this.loginPromptMessage = loginPromptMessage;
-        this.authRequestUrl = authRequestUrl;
+        this.namespace = checkNotNull(namespace);
+        this.loginPromptMessage = checkNotNull(loginPromptMessage);
+        this.authRequestUrl = checkNotNull(authRequestUrl);
     }
 
     public UserNamespace getNamespace() {
@@ -32,7 +34,7 @@ public enum OAuthProvider {
         return authRequestUrl;
     }
 
-    public static final ImmutableSet<OAuthProvider> all() {
+    public static ImmutableSet<OAuthProvider> all() {
         return ALL;
     }
 }

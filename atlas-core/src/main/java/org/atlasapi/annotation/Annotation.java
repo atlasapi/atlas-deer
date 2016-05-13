@@ -70,46 +70,34 @@ public enum Annotation {
     SUPPRESS_EPISODE_NUMBERS,
     NON_MERGED;
 
+    private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
+
+    private static final Map<String, Optional<Annotation>> lookup
+            = ImmutableOptionalMap.fromMap(Maps.uniqueIndex(all(), Annotation::toKey));
+
     public String toKey() {
         return name().toLowerCase();
     }
 
-    private static final Function<Annotation, String> TO_KEY = new Function<Annotation, String>() {
-
-        @Override
-        public String apply(Annotation input) {
-            return input.toKey();
-        }
-    };
-
-    public static final Function<Annotation, String> toKeyFunction() {
-        return TO_KEY;
+    public static Function<Annotation, String> toKeyFunction() {
+        return Annotation::toKey;
     }
 
-    private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
-
-    public static final ImmutableSet<Annotation> all() {
+    public static ImmutableSet<Annotation> all() {
         return ALL;
     }
 
-    private static final Map<String, Optional<Annotation>> lookup
-            = ImmutableOptionalMap.fromMap(Maps.uniqueIndex(all(), TO_KEY));
-
-    public static final Map<String, Optional<Annotation>> lookup() {
+    public static Map<String, Optional<Annotation>> lookup() {
         return lookup;
     }
 
-    public static final Optional<Annotation> fromKey(String key) {
+    public static Optional<Annotation> fromKey(String key) {
         return lookup.get(key);
     }
 
-    public static final ImmutableSet<Annotation> standard() {
-        return defaultAnnotations;
+    public static ImmutableSet<Annotation> standard() {
+        return ImmutableSet.of(
+                ID_SUMMARY, LICENSE, META_MODEL, META_ENDPOINT
+        );
     }
-
-    // TODO revise standard annotations for the meta API
-    private static final ImmutableSet<Annotation> defaultAnnotations = ImmutableSet.of(
-            ID_SUMMARY, LICENSE, META_MODEL, META_ENDPOINT
-    );
-
 }
