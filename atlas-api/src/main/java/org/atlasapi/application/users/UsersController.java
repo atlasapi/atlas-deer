@@ -33,6 +33,7 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.query.common.useraware.UserAwareQueryParser;
 
+import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.time.Clock;
 
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class UsersController {
@@ -60,6 +62,7 @@ public class UsersController {
     private final UserFetcher userFetcher;
     private final NoAuthUserFetcher userFetcherNoAuth;
     private final UserStore userStore;
+    private final IdGenerator idGenerator;
     private final Clock clock;
 
     public UsersController(UserAwareQueryParser<User> requestParser,
@@ -73,6 +76,7 @@ public class UsersController {
             UserFetcher userFetcher,
             NoAuthUserFetcher userFetcherNoAuth,
             UserStore userStore,
+            IdGenerator idGenerator,
             Clock clock) {
         this.requestParserNoAuth = requestParserNoAuth;
         this.requestParser = requestParser;
@@ -86,6 +90,7 @@ public class UsersController {
         this.userFetcherNoAuth = userFetcherNoAuth;
         this.userStore = userStore;
         this.clock = clock;
+        this.idGenerator = idGenerator;
     }
 
     @RequestMapping({ "/4/users/{uid}.*", "/4/users.*" })
@@ -102,6 +107,28 @@ public class UsersController {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
         }
+    }
+
+    @RequestMapping( value = "/4/users.*" , method = RequestMethod.POST)
+    public void createUser(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(required = true) String email)
+            throws IOException {
+        ResponseWriter writer = null;
+        try {
+            User user = getNewUser(email);
+            userStore.store(user);
+        } catch (Exception e) {
+            log.error("Request exception " + request.getRequestURI(), e);
+            ErrorSummary summary = ErrorSummary.forException(e);
+            new ErrorResultWriter().write(summary, writer, request, response);
+        }
+    }
+
+    @RequestMapping( value = "/4/admin/users.*" , method = RequestMethod.POST)
+    public void createUserNoAuth(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(required = true) String email)
+            throws IOException {
+        createUser(request, response, email);
     }
 
     @RequestMapping({ "/4/admin/users/{uid}.*", "/4/admin/users.*" })
@@ -316,6 +343,10 @@ public class UsersController {
 
     private boolean isUserRoleChanged(User posted, User existing) {
         return !posted.getRole().equals(existing.getRole());
+    }
+
+    private User getNewUser(String email) {
+        return User.builder().withId(Id.valueOf(idGenerator.generateRaw())).withEmail(email).build();
     }
 
     /**
