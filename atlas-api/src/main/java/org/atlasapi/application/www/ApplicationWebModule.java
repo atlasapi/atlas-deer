@@ -354,6 +354,7 @@ public class ApplicationWebModule {
                 userFetcher(),
                 noAuthUserFetcher(),
                 appPersistence.userStore(),
+                getUsersIdGenerator(),
                 new SystemClock()
         );
     }
@@ -551,10 +552,14 @@ public class ApplicationWebModule {
     }
 
     private NewUserSupplier newUserSupplier() {
-        return new NewUserSupplier(new MongoSequentialIdGenerator(
+        return new NewUserSupplier(getUsersIdGenerator());
+    }
+
+    private MongoSequentialIdGenerator getUsersIdGenerator() {
+        return new MongoSequentialIdGenerator(
                 persistence.databasedWriteMongo(),
                 "users"
-        ));
+        );
     }
 
     public
