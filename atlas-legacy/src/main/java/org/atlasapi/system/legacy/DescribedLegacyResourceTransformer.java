@@ -16,9 +16,11 @@ import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
 import org.atlasapi.media.entity.Content;
+import org.atlasapi.media.entity.Clip;
 import org.atlasapi.media.entity.Described;
 import org.atlasapi.media.entity.Identified;
 import org.atlasapi.media.entity.Topic;
+import org.atlasapi.media.entity.Version;
 
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -92,7 +94,11 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         i.setCanonicalUri(input.getCanonicalUri());
         i.setCurie(input.getCurie());
         i.setEquivalenceUpdate(input.getEquivalenceUpdate());
-        if (input instanceof Content || input instanceof Topic || input.getId() != null) {
+
+        // We want to carry across IDs for most items (and if it's missing in let i.setId NPE)
+        // Clips do not carry IDs to skip
+        if ((input instanceof Content || input instanceof Topic || input.getId() != null)
+            && ! ( (input instanceof Clip) || (input instanceof Version)) ) {
             i.setId(input.getId());
         }
         if (input.getLastUpdated() != null) {

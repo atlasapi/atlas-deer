@@ -331,7 +331,7 @@ public class LegacyContentTransformer
 
     private Encoding transformEncoding(org.atlasapi.media.entity.Encoding input, Version version) {
         Encoding e = new Encoding();
-        setIdentifiedFields(e, input);
+        // setIdentifiedFields(e, input); // , are not accessed in Deer model, see EncodingSerializer
         e.setAvailableAt(transformLocations(input));
         e.setContainsAdvertising(input.getContainsAdvertising());
         e.setAdvertisingDuration(input.getAdvertisingDuration());
@@ -395,8 +395,13 @@ public class LegacyContentTransformer
     }
 
     private Policy transformPolicy(org.atlasapi.media.entity.Policy input) {
+        // policies are optional
+        if (null == input) {
+            return null;
+        }
+
         Policy p = new Policy();
-        setIdentifiedFields(p, input);
+        // setIdentifiedFields(p, input); // Policy identified parts are not accessed in Deer model, see LocationSerializer.
         p.setAvailabilityStart(input.getAvailabilityStart());
         p.setAvailabilityEnd(input.getAvailabilityEnd());
         p.setDrmPlayableFrom(input.getDrmPlayableFrom());
@@ -474,7 +479,7 @@ public class LegacyContentTransformer
 
     private Restriction transformRestriction(org.atlasapi.media.entity.Restriction input) {
         Restriction r = new Restriction();
-        setIdentifiedFields(r, input);
+        //setIdentifiedFields(r, input);
         r.setRestricted(input.isRestricted());
         r.setMinimumAge(input.getMinimumAge());
         r.setMessage(input.getMessage());
@@ -572,19 +577,9 @@ public class LegacyContentTransformer
                 }
         ));
 
-        c.setClips(
-                Optional.ofNullable(input.getClips()).orElse(ImmutableList.of()).stream().map(
-                        legacyClip -> {
-                            org.atlasapi.content.Clip newClip = new org.atlasapi.content.Clip(
-                                    legacyClip.getCanonicalUri(),
-                                    legacyClip.getCanonicalUri(),
-                                    legacyClip.getPublisher()
-                            );
-                            newClip.setClipOf(legacyClip.getClipOf());
-                            return newClip;
-                        }
-                ).collect(Collectors.toList())
-        );
+
+
+        c.setClips(transformClipsOfContent(input));
 
         c.setPeople(
                 input.people().stream()
@@ -596,6 +591,34 @@ public class LegacyContentTransformer
         transformEncodings(c, input.getVersions());
         return c;
     }
+
+    private Iterable<org.atlasapi.content.Clip> transformClipsOfContent(Content inputContent) {
+        List<Clip> input = inputContent.getClips();
+        String id = java.util.Objects.toString(inputContent.getCanonicalUri(), "unknown");
+
+        log.debug("Legacy '" + id + "': Clips in count=" + input.size());
+
+        List<org.atlasapi.content.Clip> result = input.stream()
+                .map(this::transformClip)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+
+        log.debug("Legacy '" + id + "': Clips out count=" + result.size());
+
+        return result;
+    }
+
+    private Optional<org.atlasapi.content.Clip> transformClip(Clip inputClip) {
+        try {
+            return Optional.of((org.atlasapi.content.Clip) apply(inputClip));
+        } catch(NullPointerException e) {
+            log.warn("Unable to process Clip of: '{}'", inputClip.getClipOf());
+            return Optional.empty();
+        }
+    }
+
+
 
     private Iterable<Tag> translateTopicRefs(List<TopicRef> topicRefs) {
         return topicRefs.stream()
