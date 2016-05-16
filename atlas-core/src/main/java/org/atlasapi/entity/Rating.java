@@ -26,4 +26,27 @@ public class Rating {
     public Publisher getPublisher() {
         return publisher;
     }
+
+    @Override public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        Rating rating = (Rating) o;
+
+        if (Float.compare(rating.value, value) != 0)
+            return false;
+        if (!type.equals(rating.type))
+            return false;
+        return publisher == rating.publisher;
+
+    }
+
+    @Override public int hashCode() {
+        int result = (value != +0.0f ? Float.floatToIntBits(value) : 0);
+        result = 31 * result + type.hashCode();
+        result = 31 * result + publisher.hashCode();
+        return result;
+    }
 }
