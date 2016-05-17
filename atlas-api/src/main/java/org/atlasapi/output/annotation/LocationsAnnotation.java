@@ -16,7 +16,6 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.PlayerWriter;
 import org.atlasapi.output.writers.ServiceWriter;
-import org.atlasapi.output.writers.time.UnixMillenniumBugFixer;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.system.legacy.LegacyPlayerTransformer;
@@ -79,8 +78,6 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
         private final PricingWriter pricingWriter = new PricingWriter();
         private final String listName;
 
-        private final UnixMillenniumBugFixer unixMillenniumBugFixer = new UnixMillenniumBugFixer();
-
         public EncodedLocationWriter(String listName, PlayerResolver playerResolver,
                 ServiceResolver serviceResolver) {
             this.listName = checkNotNull(listName);
@@ -124,12 +121,10 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
             writer.writeField("embed_code", location.getEmbedCode());
 
             writer.writeField(
-                    "availability_start",
-                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityStart())
+                    "availability_start",policy.getAvailabilityStart()
             );
             writer.writeField(
-                    "availability_end",
-                    unixMillenniumBugFixer.clampDateTime(policy.getAvailabilityEnd())
+                    "availability_end",policy.getAvailabilityEnd()
             );
 
             writer.writeList(
