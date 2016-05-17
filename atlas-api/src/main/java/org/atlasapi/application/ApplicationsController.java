@@ -43,6 +43,7 @@ import org.atlasapi.query.common.useraware.UserAwareQueryParser;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
+import com.google.api.client.util.Sets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
@@ -205,6 +206,7 @@ public class ApplicationsController {
                     Application.class
             );
             Set<User> userAccounts = userFetcherNoAuth.userFor(request);
+            Set<User> userAccountsWithNewApplication = Sets.newHashSet();
             if (application.getId() != null) {
                 if (!userCanAccessApplication(application.getId(), request, userFetcherNoAuth)) {
                     throw new ResourceForbiddenException();
@@ -223,6 +225,7 @@ public class ApplicationsController {
                 for (User userAccount : userAccounts) {
                     userAccount = userAccount.copyWithAdditionalApplication(application);
                     userStore.store(userAccount);
+                    userAccountsWithNewApplication.add(userAccount);
                 }
 
             }
@@ -232,7 +235,7 @@ public class ApplicationsController {
             UserAccountsAwareQueryContext context = new UserAccountsAwareQueryContext(
                     ApplicationSources.defaults(),
                     ActiveAnnotations.standard(),
-                    userAccounts,
+                    userAccountsWithNewApplication,
                     request
             );
             UserAccountsAwareQuery<Application> applicationsQuery = UserAccountsAwareQuery.singleQuery(
