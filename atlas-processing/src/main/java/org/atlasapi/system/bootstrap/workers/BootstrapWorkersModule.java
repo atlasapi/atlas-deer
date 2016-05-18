@@ -9,8 +9,12 @@ import javax.annotation.PreDestroy;
 
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.ElasticSearchContentIndexModule;
+import org.atlasapi.content.ContentResolver;
+import org.atlasapi.event.EventResolver;
+import org.atlasapi.event.EventWriter;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.KafkaMessagingModule;
+import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.messaging.v3.JacksonMessageSerializer;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
@@ -19,8 +23,11 @@ import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory
 import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 import org.atlasapi.system.legacy.LegacyPersistenceModule;
+import org.atlasapi.topic.TopicResolver;
+import org.atlasapi.topic.TopicStore;
 
 import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.MessageSerializer;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 
@@ -29,6 +36,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
+import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -38,53 +46,56 @@ import org.springframework.context.annotation.Lazy;
 
 @Configuration
 @Import({
-        AtlasPersistenceModule.class,
-        KafkaMessagingModule.class,
-        LegacyPersistenceModule.class,
-        ProcessingHealthModule.class
-})
+        AtlasPersistenceModule.class, KafkaMessagingModule.class, LegacyPersistenceModule.class,
+        ProcessingHealthModule.class })
 public class BootstrapWorkersModule {
 
-    private final String consumerSystem = Configurer.get("messaging.system").get();
-    private final String zookeeper = Configurer.get("messaging.zookeeper").get();
-    private final String originSystem = Configurer.get("messaging.bootstrap.system").get();
+    private String consumerSystem = Configurer.get("messaging.system").get();
+    private String zookeeper = Configurer.get("messaging.zookeeper").get();
+    private String originSystem = Configurer.get("messaging.bootstrap.system").get();
 
-    private final Integer contentChangesNumOfConsumers =
+    private Integer contentChangesNumOfConsumers =
             Configurer.get("messaging.bootstrap.content.changes.consumers").toInt();
-    private final Integer topicChangesNumOfConsumers =
+    private Integer topicChangesNumOfConsumers =
             Configurer.get("messaging.bootstrap.topics.changes.consumers").toInt();
-    private final Integer scheduleChangesNumOfConsumers =
+    private Integer scheduleChangesNumOfConsumers =
             Configurer.get("messaging.bootstrap.schedule.changes.consumers").toInt();
-    private final Integer eventChangesNumOfConsumers =
+    private Integer eventChangesNumOfConsumers =
             Configurer.get("messaging.bootstrap.event.changes.consumers").toInt();
-    private final Integer organisationChangesNumOfConsumers =
+    private Integer organisationChangesNumOfConsumers =
             Configurer.get("messaging.bootstrap.organisation.changes.consumers").toInt();
 
-    private final String contentChanges =
-            Configurer.get("messaging.destination.content.changes").get();
-    private final String topicChanges =
-            Configurer.get("messaging.destination.topics.changes").get();
-    private final String scheduleChanges =
-            Configurer.get("messaging.destination.schedule.changes").get();
-    private final String eventChanges =
-            Configurer.get("messaging.destination.event.changes").get();
-    private final String organisationChanges =
-            Configurer.get("messaging.destination.organisation.changes").get();
+    private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
+    private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
+    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
+    private String eventChanges = Configurer.get("messaging.destination.event.changes").get();
+    private String organisationChanges = Configurer.get("messaging.destination.organisation.changes")
+            .get();
 
-    private final Boolean v2ScheduleEnabled = Configurer.get("schedule.v2.enabled").toBoolean();
+    private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis")
+            .toLong());
+    private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis")
+            .toLong());
 
-    private final Boolean contentBootstrapEnabled =
-            Configurer.get("messaging.bootstrap.content.changes.enabled").toBoolean();
-    private final Boolean scheduleBootstrapEnabled =
-            Configurer.get("messaging.bootstrap.schedule.changes.enabled").toBoolean();
-    private final Boolean topicBootstrapEnabled =
-            Configurer.get("messaging.bootstrap.topics.changes.enabled").toBoolean();
-    private final Boolean eventBootstrapEnabled =
-            Configurer.get("messaging.bootstrap.event.changes.enabled").toBoolean();
-    private final Boolean organisationBootstrapEnabled =
-            Configurer.get("messaging.bootstrap.organisation.changes.enabled").toBoolean();
+    private Boolean v2ScheduleEnabled = Configurer.get("schedule.v2.enabled").toBoolean();
 
-    private final Set<Publisher> ignoredScheduleSources = Sets.difference(
+    private Boolean contentBootstrapEnabled = Configurer.get(
+            "messaging.bootstrap.content.changes.enabled")
+            .toBoolean();
+    private Boolean scheduleBootstrapEnabled = Configurer.get(
+            "messaging.bootstrap.schedule.changes.enabled")
+            .toBoolean();
+    private Boolean topicBootstrapEnabled = Configurer.get(
+            "messaging.bootstrap.topics.changes.enabled")
+            .toBoolean();
+    private Boolean eventBoostrapEnabled = Configurer.get(
+            "messaging.bootstrap.event.changes.enabled")
+            .toBoolean();
+    private Boolean organisationBootstrapEnabled = Configurer.get(
+            "messaging.bootstrap.organisation.changes.enabled").toBoolean();
+
+    private Set<Publisher> ignoredScheduleSources
+            = Sets.difference(
             Publisher.all(),
             ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT)
     );
@@ -105,28 +116,29 @@ public class BootstrapWorkersModule {
     @Bean
     @Qualifier("bootstrap")
     KafkaMessageConsumerFactory bootstrapQueueFactory() {
-        return KafkaMessageConsumerFactory.create(zookeeper, originSystem);
+        return new KafkaMessageConsumerFactory(zookeeper, originSystem, backOffBase, maxBackOff);
     }
 
     @Bean
     @Lazy
     KafkaConsumer contentBootstrapWorker() {
+        ContentResolver legacyResolver = legacy.legacyContentResolver();
         ContentBootstrapWorker worker = new ContentBootstrapWorker(
-                legacy.legacyContentResolver(),
+                legacyResolver,
                 persistence.contentStore(),
                 metricsModule.metrics().timer("ContentBootstrapWorker")
         );
-        return bootstrapQueueFactory()
-                .createConsumer(
-                        worker,
-                        new EntityUpdatedLegacyMessageSerializer(),
-                        contentChanges,
-                        "ContentBootstrap"
-                )
+        MessageSerializer<ResourceUpdatedMessage> serializer =
+                new EntityUpdatedLegacyMessageSerializer();
+        return bootstrapQueueFactory().createConsumer(
+                worker,
+                serializer,
+                contentChanges,
+                "ContentBootstrap"
+        )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(contentChangesNumOfConsumers)
                 .withMaxConsumers(contentChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -138,17 +150,17 @@ public class BootstrapWorkersModule {
                 persistence.idSettingOrganisationStore(),
                 metricsModule.metrics().timer("OrganisationBootstrapWorker")
         );
-        return bootstrapQueueFactory()
-                .createConsumer(
-                        worker,
-                        new EntityUpdatedLegacyMessageSerializer(),
-                        organisationChanges,
-                        "OrganisationBootstrap"
-                )
+        MessageSerializer<ResourceUpdatedMessage> serializer =
+                new EntityUpdatedLegacyMessageSerializer();
+        return bootstrapQueueFactory().createConsumer(
+                worker,
+                serializer,
+                organisationChanges,
+                "OrganisationBootstrap"
+        )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(organisationChangesNumOfConsumers)
                 .withMaxConsumers(organisationChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -161,17 +173,17 @@ public class BootstrapWorkersModule {
                 ignoredScheduleSources,
                 metricsModule.metrics().timer("ScheduleBootstrapWorker")
         );
-        return bootstrapQueueFactory()
-                .createConsumer(
-                        worker,
-                        JacksonMessageSerializer.forType(ScheduleUpdateMessage.class),
-                        scheduleChanges,
-                        "ScheduleBootstrap"
-                )
+        MessageSerializer<ScheduleUpdateMessage> serializer
+                = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
+        return bootstrapQueueFactory().createConsumer(
+                worker,
+                serializer,
+                scheduleChanges,
+                "ScheduleBootstrap"
+        )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
                 .withMaxConsumers(scheduleChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -184,61 +196,61 @@ public class BootstrapWorkersModule {
                 ignoredScheduleSources,
                 metricsModule.metrics().timer("ScheduleV2BootstrapWorker")
         );
-        return bootstrapQueueFactory()
-                .createConsumer(
-                        worker,
-                        JacksonMessageSerializer.forType(ScheduleUpdateMessage.class),
-                        scheduleChanges,
-                        "ScheduleBootstrapV2"
-                )
+        MessageSerializer<ScheduleUpdateMessage> serializer
+                = JacksonMessageSerializer.forType(ScheduleUpdateMessage.class);
+        return bootstrapQueueFactory().createConsumer(
+                worker,
+                serializer,
+                scheduleChanges,
+                "ScheduleBootstrapV2"
+        )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
                 .withMaxConsumers(scheduleChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
     @Bean
     @Lazy
     KafkaConsumer topicReadWriter() {
+        TopicResolver legacyResolver = legacy.legacyTopicResolver();
+        TopicStore writer = persistence.topicStore();
         TopicReadWriteWorker worker = new TopicReadWriteWorker(
-                legacy.legacyTopicResolver(),
-                persistence.topicStore(),
+                legacyResolver,
+                writer,
                 metricsModule.metrics().timer("TopicBootstrapWorker")
         );
-        return bootstrapQueueFactory()
-                .createConsumer(
-                        worker,
-                        new EntityUpdatedLegacyMessageSerializer(),
-                        topicChanges,
-                        "TopicBootstrap"
-                )
+        MessageSerializer<ResourceUpdatedMessage> serializer =
+                new EntityUpdatedLegacyMessageSerializer();
+        return bootstrapQueueFactory().createConsumer(
+                worker,
+                serializer,
+                topicChanges,
+                "TopicBootstrap"
+        )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(topicChangesNumOfConsumers)
                 .withMaxConsumers(topicChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
     @Bean
     @Lazy
     KafkaConsumer eventReadWriter() {
+        EventResolver legacyResolver = legacy.legacyEventResolver();
+        EventWriter writer = persistence.eventWriter();
         SeparatingEventReadWriteWorker worker = new SeparatingEventReadWriteWorker(
-                legacy.legacyEventResolver(),
-                persistence.eventWriter(),
+                legacyResolver,
+                writer,
                 metricsModule.metrics().timer("SeparatingEventBootstrapWorker")
         );
+        MessageSerializer<ResourceUpdatedMessage> serializer =
+                new EntityUpdatedLegacyMessageSerializer();
         return bootstrapQueueFactory()
-                .createConsumer(
-                        worker,
-                        new EntityUpdatedLegacyMessageSerializer(),
-                        eventChanges,
-                        "SeparatingEventBootstrap"
-                )
+                .createConsumer(worker, serializer, eventChanges, "SeparatingEventBootstrap")
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(eventChangesNumOfConsumers)
                 .withMaxConsumers(eventChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -267,7 +279,7 @@ public class BootstrapWorkersModule {
         if (topicBootstrapEnabled) {
             services.add(topicReadWriter());
         }
-        if (eventBootstrapEnabled) {
+        if (eventBoostrapEnabled) {
             services.add(eventReadWriter());
         }
         if (organisationBootstrapEnabled) {
@@ -285,8 +297,7 @@ public class BootstrapWorkersModule {
 
     @Bean
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
-        return new ChannelIntervalScheduleBootstrapTaskFactory(
-                legacy.legacyScheduleStore(),
+        return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(),
                 persistence.scheduleStore(),
                 new DelegatingContentStore(
                         legacy.legacyContentResolver(),
@@ -295,11 +306,13 @@ public class BootstrapWorkersModule {
         );
     }
 
+    //    (ScheduleResolver scheduleResolver,
+    //            ScheduleWriter scheduleWriter, ContentStore contentStore, ContentIndex contentIndex,
+    //            DirectAndExplicitEquivalenceMigrator equivalenceMigrator, AtlasPersistenceModule persistence)
+
     @Bean
-    public ScheduleBootstrapWithContentMigrationTaskFactory
-    scheduleBootstrapWithContentMigrationTaskFactory() {
-        return new ScheduleBootstrapWithContentMigrationTaskFactory(
-                legacy.legacyScheduleStore(),
+    public ScheduleBootstrapWithContentMigrationTaskFactory scheduleBootstrapWithContentMigrationTaskFactory() {
+        return new ScheduleBootstrapWithContentMigrationTaskFactory(legacy.legacyScheduleStore(),
                 persistence.scheduleStore(),
                 new DelegatingContentStore(
                         legacy.legacyContentResolver(),
@@ -313,8 +326,8 @@ public class BootstrapWorkersModule {
     }
 
     @Bean
-    public EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory
-    equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory() {
+    // yes, I know.
+    public EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory() {
         return new EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory(
                 legacy.legacyScheduleStore(),
                 persistence.scheduleStore(),
