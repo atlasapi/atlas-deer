@@ -282,7 +282,7 @@ public class WorkersModule {
                 .withProducerSystem(equivSystem)
                 .withDefaultConsumers(contentEquivalenceGraphChangesNumOfConsumers)
                 .withMaxConsumers(contentEquivalenceGraphChangesNumOfConsumers)
-                .withFailedMessagePersistence(persistence.databasedWriteMongo())
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
