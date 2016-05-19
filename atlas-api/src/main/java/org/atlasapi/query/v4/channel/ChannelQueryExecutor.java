@@ -123,7 +123,7 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
                         input -> query
                                 .getContext()
                                 .getApplicationSources()
-                                .isReadEnabled(input.getBroadcaster())
+                                .isReadEnabled(input.getSource())
                 )
                 .collect(ImmutableCollectors.toList());
 
