@@ -26,6 +26,8 @@ public class DescribedSerializer<T extends Described> {
     private final PrioritySerializer prioritySerializer = new PrioritySerializer();
     private final ImageSerializer imageSerializer = new ImageSerializer();
     private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
+    private final RatingSerializer ratingSerializer = new RatingSerializer();
+    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
 
     public CommonProtos.Described serialize(T source) {
         CommonProtos.Described.Builder builder = CommonProtos.Described.newBuilder();
@@ -100,6 +102,14 @@ public class DescribedSerializer<T extends Described> {
                     .forEach(link -> builder.addRelatedLink(relatedLinkSerializer
                             .serialize(link)));
         }
+
+        builder.addAllReviews(source.getReviews().stream()
+                .map(reviewSerializer::serialize)
+                .collect(Collectors.toList()));
+
+        builder.addAllRatings(source.getRatings().stream()
+                .map(ratingSerializer::serialize)
+                .collect(Collectors.toList()));
 
         return builder.build();
     }
@@ -177,6 +187,20 @@ public class DescribedSerializer<T extends Described> {
         }
         target.setRelatedLinks(serialized.getRelatedLinkList().stream()
                 .map(relatedLinkSerializer::deserialize)
+                .collect(Collectors.toList()));
+
+        // deserialization discards entities that failed to parse
+        target.setReviews(serialized.getReviewsList().stream()
+                .map(reviewSerializer::deserialize)
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .collect(Collectors.toList()));
+
+        // deserialization discards entities that failed to parse
+        target.setRatings(serialized.getRatingsList().stream()
+                .map(ratingSerializer::deserialize)
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
                 .collect(Collectors.toList()));
 
         return target;

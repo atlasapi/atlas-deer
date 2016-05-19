@@ -11,7 +11,9 @@ import org.atlasapi.media.entity.Identified;
 import org.atlasapi.media.entity.Item;
 import org.atlasapi.media.entity.ParentRef;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.media.entity.Rating;
 import org.atlasapi.media.entity.Restriction;
+import org.atlasapi.media.entity.Review;
 import org.atlasapi.media.entity.Series;
 import org.atlasapi.media.entity.Version;
 
@@ -28,10 +30,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.Arrays;
+import java.util.Locale;
+
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -122,10 +125,10 @@ public class LegacyContentTransformerTest {
         ));
 
         org.atlasapi.content.Content actual = objectUnderTest.apply(legacy);
-        assertTrue(actual instanceof org.atlasapi.content.Item);
+        assertThat(actual instanceof org.atlasapi.content.Item, is(true));
 
-        assertEquals(expected.people().size(), actual.people().size());
-        assertTrue(actual.people().containsAll(expected.people()));
+        assertThat(actual.people().size(), is(expected.people().size()));
+        assertThat(actual.people().containsAll(expected.people()), is(true));
     }
 
     private <C extends Identified> C fluentifySetId(C identifiedChild, long id) {
@@ -138,7 +141,79 @@ public class LegacyContentTransformerTest {
         return identifiedChild;
     }
 
+    @Test
+    public void testReviews() {
+        Item legacyItem;
+        org.atlasapi.content.Item transformedItem;
 
+        legacyItem = new Item();
+        legacyItem.setId(1L);
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getReviews().size(), is(0));
 
+        legacyItem = new Item();
+        legacyItem.setId(2L);
+        legacyItem.setReviews(Arrays.asList(
+                new Review(Locale.CHINESE, "hen hao"),
+                new Review(Locale.ENGLISH, "dog's bolls"),
+                new Review(Locale.FRENCH, "tres bien")
+        ));
 
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getReviews().size(), is(3));
+
+        assertThat(transformedItem.getReviews().containsAll(Arrays.asList(
+                new org.atlasapi.entity.Review(Locale.ENGLISH, "dog's bolls"),
+                new org.atlasapi.entity.Review(Locale.CHINESE, "hen hao"),
+                new org.atlasapi.entity.Review(Locale.FRENCH, "tres bien")
+        )), is(true));
+    }
+
+    @Test
+    public void testRatings() {
+        Item legacyItem;
+        org.atlasapi.content.Item transformedItem;
+
+        legacyItem = new Item();
+        legacyItem.setId(1L);
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getRatings().size(), is(0));
+
+        legacyItem = new Item();
+        legacyItem.setId(2L);
+        legacyItem.setRatings(Arrays.asList(
+                new Rating("5STAR", 3.0f, Publisher.RADIO_TIMES),
+                new Rating("MOOSE", 1.0f, Publisher.BBC)
+        ));
+
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getRatings().size(), is(2));
+
+        assertThat(transformedItem.getRatings().containsAll(Arrays.asList(
+                new org.atlasapi.entity.Rating("MOOSE", 1.0f, Publisher.BBC),
+                new org.atlasapi.entity.Rating("5STAR", 3.0f, Publisher.RADIO_TIMES)
+        )), is(true));
+    }
+
+    @Test
+    public void testWithBrokenReview() {
+        org.atlasapi.content.Item transformedItem;
+
+        Item legacyItem = new Item();
+        legacyItem.setId(2L);
+        legacyItem.setReviews(Arrays.asList(
+                new Review(Locale.ENGLISH, null)  // this is broken Review
+        ));
+
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getReviews().size(), is(0));
+
+        legacyItem.setReviews(Arrays.asList(
+                new Review(Locale.CHINESE, "hen hao"),
+                new Review(Locale.ENGLISH, null)  // this is broken Review
+        ));
+
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getReviews().size(), is(1));
+    }
 }

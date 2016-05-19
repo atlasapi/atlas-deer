@@ -6,6 +6,8 @@ import org.atlasapi.entity.AwardSerializer;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.RatingSerializer;
+import org.atlasapi.entity.ReviewSerializer;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
@@ -23,6 +25,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
 import org.joda.time.Duration;
+
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
@@ -44,6 +49,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
     private final AwardSerializer awardSerializer = new AwardSerializer();
+    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
+    private final RatingSerializer ratingSerializer = new RatingSerializer();
+
 
     private ContentProtos.Content msg;
 
@@ -153,6 +161,21 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             awardBuilder.add(awardSerializer.deserialize(award));
         }
         described.setAwards(awardBuilder.build());
+
+        // deserialization discards entities that failed to parse
+        described.setReviews(msg.getReviewsList().stream()
+                .map(reviewSerializer::deserialize)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList()));
+
+        // deserialization discards entities that failed to parse
+        described.setRatings(msg.getRatingsList().stream()
+                .map(ratingSerializer::deserialize)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList()));
+
         return described;
     }
 
