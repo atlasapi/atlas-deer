@@ -1,6 +1,6 @@
 package org.atlasapi.entity;
 
-import com.google.common.base.Objects;
+import java.util.Objects;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
@@ -17,6 +17,7 @@ public class Review {
         this.review = checkNotNull(review);
     }
 
+    @Nullable
     public Locale getLocale() {
         return locale;
     }
@@ -26,31 +27,30 @@ public class Review {
     }
 
     @Override
-    public boolean equals(Object that) {
-        if (this == that) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-
-        if (!(that instanceof Review)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        Review thatReview = (Review) that;
-
-        return Objects.equal(this.locale, thatReview.locale)
-                && Objects.equal(this.review, thatReview.review);
+        Review review1 = (Review) o;
+        return Objects.equals(locale, review1.locale) &&
+                Objects.equals(review, review1.review);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(locale, review);
+        return Objects.hash(locale, review);
     }
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(Review.class)
-                .add("locale", locale)
-                .add("review", review)
-                .toString();
+        String safeLocale = (null != locale) ? locale.toString() : "";
+
+        return "Review{" +
+                "locale=" + safeLocale +
+                ", review='" + review + '\'' +
+                '}';
     }
 }

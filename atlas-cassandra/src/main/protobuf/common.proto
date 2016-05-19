@@ -162,12 +162,12 @@ message Award {
 }
 
 message Rating {
-    required string type = 1;
-    required float value = 2;
-    required string source = 3;
+    optional string type = 1;
+    optional float value = 2;
+    optional string source = 3;
 }
 
 message Review {
     optional LocaleString locale = 1;
-    required string review = 2;
+    optional string review = 2;
 }

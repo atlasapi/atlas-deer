@@ -1,8 +1,10 @@
 package org.atlasapi.system.legacy;
 
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.PriorityScoreReasons;
@@ -129,11 +131,26 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
     }
 
     protected Iterable<Review> transformReviews(Iterable<org.atlasapi.media.entity.Review> legacyReviews) {
-        return Iterables.transform(
-                legacyReviews,
-                legacyReview -> new Review(legacyReview.getLocale(), legacyReview.getReview())
-        );
+        // Guava Optional used here because converting from Iterable to Stream to filter and collect
+        // is very cumbersome
+        Iterable<Optional<Review>> transformedReviewsGoodAndBad =
+                Iterables.transform(
+                    legacyReviews,
+                    legacyReview -> transformReview(legacyReview.getLocale(), legacyReview.getReview()));
+
+        return Optional.presentInstances(transformedReviewsGoodAndBad);
     }
+
+    protected Optional<Review> transformReview(Locale locale, String review) {
+        // we don't want to fail the ingest of the whole content item because of
+        // a broken legacy review
+        try {
+            return Optional.of(new Review(locale, review));
+        } catch(NullPointerException e) {
+            return Optional.absent();
+        }
+    }
+
 
     protected Iterable<Rating> transformRatings(Iterable<org.atlasapi.media.entity.Rating> legacyRatings) {
         return Iterables.transform(

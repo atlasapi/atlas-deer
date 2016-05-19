@@ -139,7 +139,7 @@ public class ContentSerializerTest {
     }
 
     @Test
-    public void testDeSerializesFilm() {
+    public void testDeSerializes() {
         Film film = new Film();
         setItemProperties(film);
         serializeAndCheck(film);

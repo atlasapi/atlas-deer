@@ -189,12 +189,18 @@ public class DescribedSerializer<T extends Described> {
                 .map(relatedLinkSerializer::deserialize)
                 .collect(Collectors.toList()));
 
+        // deserialization discards entities that failed to parse
         target.setReviews(serialized.getReviewsList().stream()
                 .map(reviewSerializer::deserialize)
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
                 .collect(Collectors.toList()));
 
+        // deserialization discards entities that failed to parse
         target.setRatings(serialized.getRatingsList().stream()
                 .map(ratingSerializer::deserialize)
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
                 .collect(Collectors.toList()));
 
         return target;

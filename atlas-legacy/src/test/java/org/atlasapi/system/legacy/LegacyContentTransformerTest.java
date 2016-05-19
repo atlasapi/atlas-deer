@@ -194,4 +194,26 @@ public class LegacyContentTransformerTest {
                 new org.atlasapi.entity.Rating("5STAR", 3.0f, Publisher.RADIO_TIMES)
         )), is(true));
     }
+
+    @Test
+    public void testWithBrokenReview() {
+        org.atlasapi.content.Item transformedItem;
+
+        Item legacyItem = new Item();
+        legacyItem.setId(2L);
+        legacyItem.setReviews(Arrays.asList(
+                new Review(Locale.ENGLISH, null)  // this is broken Review
+        ));
+
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getReviews().size(), is(0));
+
+        legacyItem.setReviews(Arrays.asList(
+                new Review(Locale.CHINESE, "hen hao"),
+                new Review(Locale.ENGLISH, null)  // this is broken Review
+        ));
+
+        transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
+        assertThat(transformedItem.getReviews().size(), is(1));
+    }
 }

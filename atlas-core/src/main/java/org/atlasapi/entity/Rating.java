@@ -1,5 +1,7 @@
 package org.atlasapi.entity;
 
+import java.util.Objects;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 import org.atlasapi.media.entity.Publisher;
 
@@ -27,20 +29,18 @@ public class Rating {
         return publisher;
     }
 
-    @Override public boolean equals(Object o) {
-        if (this == o)
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
-
+        }
         Rating rating = (Rating) o;
-
-        if (Float.compare(rating.value, value) != 0)
-            return false;
-        if (!type.equals(rating.type))
-            return false;
-        return publisher == rating.publisher;
-
+        return Float.compare(rating.value, value) == 0 &&
+                Objects.equals(type, rating.type) &&
+                publisher == rating.publisher;
     }
 
     @Override public int hashCode() {
@@ -48,5 +48,14 @@ public class Rating {
         result = 31 * result + type.hashCode();
         result = 31 * result + publisher.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Rating{" +
+                "value=" + value +
+                ", type='" + type + '\'' +
+                ", publisher=" + publisher +
+                '}';
     }
 }

@@ -4,7 +4,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.atlasapi.entity.*;
+import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Award;
+import org.atlasapi.entity.AwardSerializer;
+import org.atlasapi.entity.DateTimeSerializer;
+import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.RatingSerializer;
+import org.atlasapi.entity.Review;
+import org.atlasapi.entity.ReviewSerializer;
+
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
