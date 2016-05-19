@@ -20,10 +20,9 @@ import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.system.legacy.LegacyPlayerTransformer;
 import org.atlasapi.system.legacy.LegacyServiceTransformer;
+import org.atlasapi.util.ImmutableCollectors;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Ints;
 import org.joda.time.DateTime;
@@ -54,13 +53,11 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
     private Iterable<EncodedLocation> encodedLocations(Set<Encoding> manifestedAs) {
         return Iterables.concat(Iterables.transform(
                 manifestedAs,
-                encoding -> {
-                    Builder<EncodedLocation> builder = ImmutableList.builder();
-                    for (Location location : encoding.getAvailableAt()) {
-                        builder.add(new EncodedLocation(encoding, location));
-                    }
-                    return builder.build();
-                }
+                encoding -> encoding.getAvailableAt()
+                        .stream()
+                        .filter(Location::getAvailable)
+                        .map(location -> new EncodedLocation(encoding, location))
+                        .collect(ImmutableCollectors.toList())
         ));
     }
 
