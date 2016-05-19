@@ -92,7 +92,7 @@ public class QueryModule {
 
     @Bean
     public QueryExecutor<Channel> channelQueryExecutor() {
-        return new ChannelQueryExecutor(persistenceModule.channelResolver());
+        return ChannelQueryExecutor.create(persistenceModule.channelResolver());
     }
 
     @Bean
