@@ -2,20 +2,6 @@ package org.atlasapi.system.legacy;
 
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
-import org.atlasapi.media.entity.Alias;
-import org.atlasapi.media.entity.Actor;
-import org.atlasapi.media.entity.CrewMember;
-import org.atlasapi.media.entity.BlackoutRestriction;
-import org.atlasapi.media.entity.Broadcast;
-import org.atlasapi.media.entity.Identified;
-import org.atlasapi.media.entity.Item;
-import org.atlasapi.media.entity.ParentRef;
-import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.media.entity.Rating;
-import org.atlasapi.media.entity.Restriction;
-import org.atlasapi.media.entity.Review;
-import org.atlasapi.media.entity.Series;
-import org.atlasapi.media.entity.Version;
 
 import com.metabroadcast.common.base.Maybe;
 
@@ -23,6 +9,24 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import org.atlasapi.media.entity.Alias;
+import org.atlasapi.media.entity.Actor;
+import org.atlasapi.media.entity.BlackoutRestriction;
+import org.atlasapi.media.entity.Broadcast;
+import org.atlasapi.media.entity.Clip;
+import org.atlasapi.media.entity.CrewMember;
+import org.atlasapi.media.entity.Described;
+import org.atlasapi.media.entity.Encoding;
+import org.atlasapi.media.entity.Identified;
+import org.atlasapi.media.entity.Item;
+import org.atlasapi.media.entity.Location;
+import org.atlasapi.media.entity.ParentRef;
+import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.media.entity.Rating;
+import org.atlasapi.media.entity.Restriction;
+import org.atlasapi.media.entity.Review;
+import org.atlasapi.media.entity.Series;
+import org.atlasapi.media.entity.Version;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,9 +35,11 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -131,6 +137,84 @@ public class LegacyContentTransformerTest {
         assertThat(actual.people().containsAll(expected.people()), is(true));
     }
 
+    @Test
+    public void testClip() {
+        Clip legacy = new Clip("uri", "curie", Publisher.PREVIEW_NETWORKS);
+        legacy.setTitle("trailer for film");
+        legacy.setVersions(ImmutableSet.of(
+                createVersionTestData("http://aka-m-p.maxplatform.com/15/59/28/xxlarge_640x360_HirsyF_1_uk_1_13826_27634_50544_1139.flv"),
+                createVersionTestData("http://aka-m-p.maxplatform.com/15/59/28/HD-1080p_1920x1080_IchmLh_1_uk_1_13826_27634_50544_1139.webm")
+        ));
+
+        org.atlasapi.content.Clip expected = new org.atlasapi.content.Clip("uri", "curie", Publisher.PREVIEW_NETWORKS);
+        expected.setTitle("trailer for film");
+
+        org.atlasapi.content.Content actual = objectUnderTest.apply(legacy);
+        assertThat(actual instanceof org.atlasapi.content.Clip, is(true));
+        assertClipsEqual((org.atlasapi.content.Clip) actual, expected);
+    }
+
+    private Version createVersionTestData(String contentUrl) {
+        Location location = new Location();
+        location.setUri(contentUrl);
+        Encoding encoding = new Encoding();
+        encoding.addAvailableAt(location);
+        Version result = new Version();
+        result.setRestriction(new Restriction());
+        result.addManifestedAs(encoding);
+        return result;
+    }
+
+    @Test
+    public void testContentWithClips() {
+        Item legacy = new Item();
+        legacy.setId(666L);
+        legacy.setClips(Lists.newArrayList(
+                fluentifySetTitle(new Clip("uri1", "curie", Publisher.PREVIEW_NETWORKS), "film trailer 1"),
+                fluentifySetTitle(new Clip("uri2", "curie", Publisher.PREVIEW_NETWORKS), "film trailer 2")
+        ));
+
+        org.atlasapi.content.Item expected = new org.atlasapi.content.Item();
+        expected.setClips(Lists.newArrayList(
+                fluentifySetTitle(new org.atlasapi.content.Clip("uri2", "curie", Publisher.PREVIEW_NETWORKS), "film trailer 2"),
+                fluentifySetTitle(new org.atlasapi.content.Clip("uri1", "curie", Publisher.PREVIEW_NETWORKS), "film trailer 1")
+        ));
+
+        org.atlasapi.content.Content actual = objectUnderTest.apply(legacy);
+        assertThat(actual instanceof org.atlasapi.content.Item, is(true));
+
+        assertAllClipsEqual(actual.getClips(), expected.getClips());
+
+    }
+
+    private void assertAllClipsEqual(List<org.atlasapi.content.Clip> actual, List<org.atlasapi.content.Clip> expected) {
+        assertThat(actual.size(), is(expected.size()));
+
+        List<org.atlasapi.content.Clip> expectedClips = Lists.newArrayList(expected);
+        actual.stream().forEach(
+                actualClip -> {
+
+                    assertThat(expectedClips.size(), greaterThan(0));
+                    for(int i = 0; i < expectedClips.size(); i++) {
+                        org.atlasapi.content.Clip needle = expectedClips.get(i);
+                        if (needle.equals(actualClip)) {
+                            assertClipsEqual(actualClip, needle);
+                            expectedClips.remove(i);
+                            break;
+                        }
+                    }
+                });
+
+        assertThat("expectedClips has items that are not matched by actual.getClips()", expectedClips.size(), is(0));
+    }
+
+    private void assertClipsEqual(org.atlasapi.content.Clip actual, org.atlasapi.content.Clip expected) {
+        // Clip.equals() is sparse, check fields that are referenced by API writer
+        assertThat(actual.getTitle(), is(expected.getTitle()));
+        assertThat(actual, is(expected));
+    }
+
+
     private <C extends Identified> C fluentifySetId(C identifiedChild, long id) {
         identifiedChild.setId(id);
         return identifiedChild;
@@ -215,5 +299,15 @@ public class LegacyContentTransformerTest {
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getReviews().size(), is(1));
+    }
+
+    private <C extends Described> C fluentifySetTitle(C describedChild, String title) {
+        describedChild.setTitle(title);
+        return describedChild;
+    }
+
+    private <C extends org.atlasapi.content.Described> C fluentifySetTitle(C describedChild, String title) {
+        describedChild.setTitle(title);
+        return describedChild;
     }
 }
