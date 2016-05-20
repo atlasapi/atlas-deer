@@ -860,7 +860,10 @@ public class QueryWebModule {
                         ImmutableSet.of(DESCRIPTION, EXTENDED_ID)
                 )
                 .register(SUB_ITEMS, new SubItemAnnotation(idCodec()), commonImplied)
-                .register(CLIPS, new ClipsAnnotation(), commonImplied)
+                .register(CLIPS, new ClipsAnnotation(new LocationsAnnotation(
+                        persistenceModule.playerResolver(),
+                        persistenceModule.serviceResolver()
+                )), commonImplied)
                 .register(PEOPLE, new PeopleAnnotation(), commonImplied)
                 .register(
                         TAGS,

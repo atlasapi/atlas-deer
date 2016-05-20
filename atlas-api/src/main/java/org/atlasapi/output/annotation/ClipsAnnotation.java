@@ -9,10 +9,11 @@ import org.atlasapi.output.writers.ClipsWriter;
 
 public class ClipsAnnotation extends OutputAnnotation<Content> {
 
-    private final ClipsWriter clipsWriter = new ClipsWriter();
+    private final ClipsWriter clipsWriter;
 
-    public ClipsAnnotation() {
+    public ClipsAnnotation(LocationsAnnotation locationsAnnotation) {
         super();
+        clipsWriter = new ClipsWriter(locationsAnnotation);
     }
 
     @Override
