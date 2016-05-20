@@ -21,7 +21,7 @@ public class CrewMemberSerializerTest {
 
         CrewMember deserialized = serializer.deserialize(serializer.serialize(member));
 
-        checkMemeberProperties(member, deserialized);
+        checkMemberProperties(member, deserialized);
     }
 
     @Test
@@ -32,12 +32,46 @@ public class CrewMemberSerializerTest {
         CrewMember deserialized = serializer.deserialize(serializer.serialize(actor));
 
         assertThat(deserialized, is(instanceOf(Actor.class)));
-        checkMemeberProperties(actor, deserialized);
+        checkMemberProperties(actor, deserialized);
         assertThat(((Actor) deserialized).character(), is(actor.character()));
 
     }
 
-    private void checkMemeberProperties(CrewMember member, CrewMember deserialized) {
+    @Test
+    public void testMinimalCrewMember() {
+        CrewMember deserialized;
+        CrewMember minimalCrewMember = new CrewMember();
+
+        deserialized = serializer.deserialize(serializer.serialize(minimalCrewMember));
+        assertThat(deserialized, is(instanceOf(CrewMember.class)));
+        checkMemberProperties(minimalCrewMember, deserialized);
+
+        minimalCrewMember.withRole(CrewMember.Role.ADVERTISER);
+        deserialized = serializer.deserialize(serializer.serialize(minimalCrewMember));
+        assertThat(deserialized, is(instanceOf(CrewMember.class)));
+        checkMemberProperties(minimalCrewMember, deserialized);
+    }
+
+
+    @Test
+    public void testMinimalActor() {
+        Actor minimalActor = new Actor();
+
+        CrewMember deserialized = serializer.deserialize(serializer.serialize(minimalActor));
+        assertThat(deserialized, is(instanceOf(Actor.class)));
+
+        checkMemberProperties(minimalActor, deserialized);
+        assertThat(((Actor) deserialized).character(), is(minimalActor.character()));
+
+        minimalActor.withCharacter("Bob Smith");
+        deserialized = serializer.deserialize(serializer.serialize(minimalActor));
+        assertThat(deserialized, is(instanceOf(Actor.class)));
+
+        checkMemberProperties(minimalActor, deserialized);
+        assertThat(((Actor) deserialized).character(), is(minimalActor.character()));
+    }
+
+    private void checkMemberProperties(CrewMember member, CrewMember deserialized) {
         assertThat(deserialized.getCanonicalUri(), is(member.getCanonicalUri()));
         assertThat(deserialized.name(), is(member.name()));
         assertThat(deserialized.role(), is(member.role()));

@@ -28,17 +28,34 @@ public class CrewMemberSerializer {
     }
 
     public CrewMember deserialize(ContentProtos.CrewMember crewMember) {
-        CrewMember.Role role = CrewMember.Role.fromKey(crewMember.getRole());
-        CrewMember member;
-        if (role == CrewMember.Role.ACTOR) {
-            member = new Actor().withCharacter(crewMember.getCharacter());
-        } else {
-            member = new CrewMember();
+        CrewMember member = new CrewMember();
+
+        // roles are optional, but used as a determining factor for Actor vs CrewMember
+        if (crewMember.hasRole()) {
+            CrewMember.Role role = CrewMember.Role.fromKey(crewMember.getRole());
+
+            if (role == CrewMember.Role.ACTOR) {
+                member = new Actor();
+                if (crewMember.hasCharacter()) {
+                    ((Actor) member).withCharacter(crewMember.getCharacter());
+                }
+
+            } else {
+                member.withRole(role);
+            }
         }
-        member.withName(crewMember.getName())
-                .withRole(role)
-                .withProfileLinks(ImmutableSet.copyOf(crewMember.getProfileLinksList()));
-        member.setCanonicalUri(crewMember.getUri());
+
+
+        if (crewMember.hasName()) {
+            member.withName(crewMember.getName());
+        }
+
+        if (crewMember.hasUri()) {
+            member.setCanonicalUri(crewMember.getUri());
+        }
+
+        member.withProfileLinks(ImmutableSet.copyOf(crewMember.getProfileLinksList()));
+
         return member;
     }
 
