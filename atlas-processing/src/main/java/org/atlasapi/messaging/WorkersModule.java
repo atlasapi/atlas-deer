@@ -17,7 +17,6 @@ import org.atlasapi.system.bootstrap.workers.LegacyRetryingContentResolver;
 
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.Message;
-import com.metabroadcast.common.queue.MessageConsumerBuilder;
 import com.metabroadcast.common.queue.MessageSerializer;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
@@ -32,58 +31,66 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
 @Configuration
-@Import({ AtlasPersistenceModule.class, KafkaMessagingModule.class, ProcessingHealthModule.class })
+@Import({
+        AtlasPersistenceModule.class,
+        KafkaMessagingModule.class,
+        ProcessingHealthModule.class
+})
 public class WorkersModule {
 
-    private String consumerSystem = Configurer.get("messaging.system").get();
+    private final String consumerSystem = Configurer.get("messaging.system").get();
 
-    private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
-    private String topicChanges = Configurer.get("messaging.destination.topics.changes").get();
-    private String scheduleChanges = Configurer.get("messaging.destination.schedule.changes").get();
-    private String contentEquivalenceGraphChanges = Configurer.get(
-            "messaging.destination.equivalence.content.graph.changes").get();
-    private String equivalentContentChanges = Configurer.get(
-            "messaging.destination.equivalent.content.changes").get();
+    private final String contentChanges =
+            Configurer.get("messaging.destination.content.changes").get();
+    private final String topicChanges =
+            Configurer.get("messaging.destination.topics.changes").get();
+    private final String scheduleChanges =
+            Configurer.get("messaging.destination.schedule.changes").get();
+    private final String contentEquivalenceGraphChanges =
+            Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
+    private final String equivalentContentChanges =
+            Configurer.get("messaging.destination.equivalent.content.changes").get();
 
-    private Integer topicIndexingNumOfConsumers =
+    private final Integer topicIndexingNumOfConsumers =
             Configurer.get("messaging.deer.topic.indexer.consumers").toInt();
-    private Integer equivContentContentChangesNumOfConsumers =
+    private final Integer equivContentContentChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalent.content.content.changes.consumers").toInt();
-    private Integer equivContentGraphChangesNumOfConsumers =
+    private final Integer equivContentGraphChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalent.content.graph.changes.consumers").toInt();
-    private Integer equivScheduleContentChangesNumOfConsumers =
+    private final Integer equivScheduleContentChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalent.schedule.content.changes.consumers").toInt();
-    private Integer equivScheduleGraphChangesNumOfConsumers =
+    private final Integer equivScheduleGraphChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalent.schedule.graph.changes.consumers").toInt();
-    private Integer equivScheduleScheduleChangesNumOfConsumers =
+    private final Integer equivScheduleScheduleChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalent.schedule.schedule.changes.consumers").toInt();
-    private Integer contentEquivalenceGraphChangesNumOfConsumers =
+    private final Integer contentEquivalenceGraphChangesNumOfConsumers =
             Configurer.get("messaging.deer.equivalence.content.graph.changes.consumers").toInt();
-    private Integer contentIndexingNumOfConsumers =
+    private final Integer contentIndexingNumOfConsumers =
             Configurer.get("messaging.deer.content.indexer.consumers").toInt();
-    private Integer contentIndexingEquivalenceGraphChangesNumOfConsumers =
+    private final Integer contentIndexingEquivalenceGraphChangesNumOfConsumers =
             Configurer.get("messaging.deer.content.indexer.graph.changes.consumers").toInt();
 
-    private String equivSystem = Configurer.get("equiv.update.producer.system").get();
-    private String equivTopic = Configurer.get("equiv.update.producer.topic").get();
+    private final String equivSystem = Configurer.get("equiv.update.producer.system").get();
+    private final String equivTopic = Configurer.get("equiv.update.producer.topic").get();
 
-    private Boolean contentIndexerEnabled = Configurer.get("messaging.deer.content.indexer.enabled")
-            .toBoolean();
-    private Boolean equivalentContentStoreEnabled = Configurer.get(
-            "messaging.deer.equivalent.content.content.changes.enabled").toBoolean();
-    private Boolean equivalentContentGraphEnabled = Configurer.get(
-            "messaging.deer.equivalent.content.graph.changes.enabled").toBoolean();
-    private Boolean equivalentScheduleContentEnabled =
-            Configurer.get("messaging.deer.equivalent.schedule.content.changes.enabled").toBoolean();
-    private Boolean equivalentScheduleScheduleEnabled = Configurer.get(
-            "messaging.deer.equivalent.schedule.schedule.changes.enabled").toBoolean();
-    private Boolean equivalentScheduleGraphEnabled = Configurer.get(
-            "messaging.deer.equivalent.schedule.graph.changes.enabled").toBoolean();
-    private Boolean topicIndexerEnabled = Configurer.get("messaging.deer.topic.indexer.enabled")
-            .toBoolean();
-    private Boolean equivalenceGraphEnabled = Configurer.get(
-            "messaging.deer.equivalence.content.graph.changes.enabled")
-            .toBoolean();
+    private final Boolean contentIndexerEnabled =
+            Configurer.get("messaging.deer.content.indexer.enabled").toBoolean();
+    private final Boolean equivalentContentStoreEnabled =
+            Configurer.get("messaging.deer.equivalent.content.content.changes.enabled").toBoolean();
+    private final Boolean equivalentContentGraphEnabled =
+            Configurer.get("messaging.deer.equivalent.content.graph.changes.enabled").toBoolean();
+    private final Boolean equivalentScheduleContentEnabled =
+            Configurer.get("messaging.deer.equivalent.schedule.content.changes.enabled")
+                    .toBoolean();
+    private final Boolean equivalentScheduleScheduleEnabled =
+            Configurer.get("messaging.deer.equivalent.schedule.schedule.changes.enabled")
+                    .toBoolean();
+    private final Boolean equivalentScheduleGraphEnabled =
+            Configurer.get("messaging.deer.equivalent.schedule.graph.changes.enabled").toBoolean();
+    private final Boolean topicIndexerEnabled =
+            Configurer.get("messaging.deer.topic.indexer.enabled").toBoolean();
+    private final Boolean equivalenceGraphEnabled =
+            Configurer.get("messaging.deer.equivalence.content.graph.changes.enabled").toBoolean();
 
     @Autowired
     private KafkaMessagingModule messaging;
@@ -91,11 +98,8 @@ public class WorkersModule {
     private AtlasPersistenceModule persistence;
     @Autowired
     private ProcessingMetricsModule metricsModule;
-    private ServiceManager consumerManager;
 
-    private <M extends Message> MessageSerializer<M> serializer(Class<M> cls) {
-        return JacksonMessageSerializer.forType(cls);
-    }
+    private ServiceManager consumerManager;
 
     @Bean
     @Lazy
@@ -103,19 +107,23 @@ public class WorkersModule {
         return new TopicIndexingWorker(
                 persistence.topicStore(),
                 persistence.topicIndex(),
-                metricsModule
-                        .metrics()
+                metricsModule.metrics()
         );
     }
 
     @Bean
     @Lazy
     public KafkaConsumer topicIndexerMessageListener() {
-        return messaging.messageConsumerFactory().createConsumer(topicIndexingWorker(),
-                serializer(ResourceUpdatedMessage.class), topicChanges, "TopicIndexer"
-        )
+        return messaging.messageConsumerFactory()
+                .createConsumer(
+                        topicIndexingWorker(),
+                        serializer(ResourceUpdatedMessage.class),
+                        topicChanges,
+                        "TopicIndexer"
+                )
                 .withDefaultConsumers(topicIndexingNumOfConsumers)
                 .withMaxConsumers(topicIndexingNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -124,8 +132,7 @@ public class WorkersModule {
     public Worker<EquivalenceGraphUpdateMessage> equivalentContentStoreGraphUpdateWorker() {
         return new EquivalentContentStoreGraphUpdateWorker(
                 persistence.getEquivalentContentStore(),
-                metricsModule
-                        .metrics()
+                metricsModule.metrics()
         );
     }
 
@@ -133,12 +140,15 @@ public class WorkersModule {
     @Lazy
     public KafkaConsumer equivalentContentStoreGraphUpdateListener() {
         return messaging.messageConsumerFactory()
-                .createConsumer(equivalentContentStoreGraphUpdateWorker(),
+                .createConsumer(
+                        equivalentContentStoreGraphUpdateWorker(),
                         serializer(EquivalenceGraphUpdateMessage.class),
-                        contentEquivalenceGraphChanges, "EquivalentContentStoreGraphs"
+                        contentEquivalenceGraphChanges,
+                        "EquivalentContentStoreGraphs"
                 )
                 .withDefaultConsumers(equivContentGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivContentGraphChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -160,12 +170,15 @@ public class WorkersModule {
     @Lazy
     public KafkaConsumer equivalentContentStoreContentUpdateListener() {
         return messaging.messageConsumerFactory()
-                .createConsumer(equivalentContentStoreContentUpdateWorker(),
+                .createConsumer(
+                        equivalentContentStoreContentUpdateWorker(),
                         serializer(ResourceUpdatedMessage.class),
-                        contentChanges, "EquivalentContentStoreContent"
+                        contentChanges,
+                        "EquivalentContentStoreContent"
                 )
                 .withDefaultConsumers(equivContentContentChangesNumOfConsumers)
                 .withMaxConsumers(equivContentContentChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -196,10 +209,12 @@ public class WorkersModule {
                 .createConsumer(
                         equivalentScheduleStoreGraphUpdateWorker(),
                         serializer(EquivalenceGraphUpdateMessage.class),
-                        contentEquivalenceGraphChanges, "EquivalentScheduleStoreGraphs"
+                        contentEquivalenceGraphChanges,
+                        "EquivalentScheduleStoreGraphs"
                 )
                 .withDefaultConsumers(equivScheduleGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleGraphChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -210,10 +225,12 @@ public class WorkersModule {
                 .createConsumer(
                         equivalentScheduleStoreContentUpdateWorker(),
                         serializer(EquivalentContentUpdatedMessage.class),
-                        equivalentContentChanges, "EquivalentScheduleStoreContent"
+                        equivalentContentChanges,
+                        "EquivalentScheduleStoreContent"
                 )
                 .withDefaultConsumers(equivScheduleContentChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleContentChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -222,22 +239,23 @@ public class WorkersModule {
     public Worker<ScheduleUpdateMessage> equivalentScheduleStoreScheduleUpdateWorker() {
         return new EquivalentScheduleStoreScheduleUpdateWorker(
                 persistence.getEquivalentScheduleStore(),
-                metricsModule
-                        .metrics()
+                metricsModule.metrics()
         );
     }
 
     @Bean
     @Lazy
     public KafkaConsumer equivalentScheduleStoreScheduleUpdateListener() {
-        return messaging.messageConsumerFactory().createConsumer(
-                equivalentScheduleStoreScheduleUpdateWorker(),
-                serializer(ScheduleUpdateMessage.class),
-                scheduleChanges,
-                "EquivalentScheduleStoreSchedule"
-        )
+        return messaging.messageConsumerFactory()
+                .createConsumer(
+                        equivalentScheduleStoreScheduleUpdateWorker(),
+                        serializer(ScheduleUpdateMessage.class),
+                        scheduleChanges,
+                        "EquivalentScheduleStoreSchedule"
+                )
                 .withDefaultConsumers(equivScheduleScheduleChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleScheduleChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -254,14 +272,17 @@ public class WorkersModule {
     @Bean
     @Lazy
     public KafkaConsumer equivUpdateListener() {
-        return messaging.messageConsumerFactory().createConsumer(contentEquivalenceUpdater(),
-                new ContentEquivalenceAssertionLegacyMessageSerializer(),
-                equivTopic,
-                "EquivGraphUpdate"
-        )
+        return messaging.messageConsumerFactory()
+                .createConsumer(
+                        contentEquivalenceUpdater(),
+                        new ContentEquivalenceAssertionLegacyMessageSerializer(),
+                        equivTopic,
+                        "EquivGraphUpdate"
+                )
                 .withProducerSystem(equivSystem)
                 .withDefaultConsumers(contentEquivalenceGraphChangesNumOfConsumers)
                 .withMaxConsumers(contentEquivalenceGraphChangesNumOfConsumers)
+                .withFailedMessagePersistence(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -276,16 +297,17 @@ public class WorkersModule {
     @Bean
     @Lazy
     public KafkaConsumer equivalentContentIndexingMessageListener() {
-        MessageConsumerBuilder<KafkaConsumer, EquivalentContentUpdatedMessage> consumer =
-                messaging.messageConsumerFactory().createConsumer(
+        return messaging.messageConsumerFactory()
+                .createConsumer(
                         equivalentContentIndexingWorker(),
                         serializer(EquivalentContentUpdatedMessage.class),
                         equivalentContentChanges,
                         "EquivalentContentIndexer"
-                );
-        return consumer.withMaxConsumers(contentIndexingNumOfConsumers)
+                )
+                .withMaxConsumers(contentIndexingNumOfConsumers)
                 .withDefaultConsumers(contentIndexingNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -302,16 +324,17 @@ public class WorkersModule {
     @Bean
     @Lazy()
     public KafkaConsumer equivalentContentIndexingGraphMessageListener() {
-        MessageConsumerBuilder<KafkaConsumer, EquivalenceGraphUpdateMessage> consumer =
-                messaging.messageConsumerFactory().createConsumer(
+        return messaging.messageConsumerFactory()
+                .createConsumer(
                         equivalentContentIndexingGraphWorker(),
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges,
                         "EquivalentContentIndexer"
-                );
-        return consumer.withMaxConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
+                )
+                .withMaxConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
                 .withDefaultConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -352,6 +375,10 @@ public class WorkersModule {
     @PreDestroy
     public void stop() throws TimeoutException {
         consumerManager.stopAsync().awaitStopped(1, TimeUnit.MINUTES);
+    }
+
+    private <M extends Message> MessageSerializer<M> serializer(Class<M> cls) {
+        return JacksonMessageSerializer.forType(cls);
     }
 
     private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
