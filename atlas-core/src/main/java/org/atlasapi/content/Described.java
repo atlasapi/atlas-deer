@@ -21,6 +21,8 @@ import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Award;
+import org.atlasapi.entity.Review;
+import org.atlasapi.entity.Rating;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
@@ -63,6 +65,9 @@ public abstract class Described extends Identified implements Sourced {
     private Priority priority;
 
     protected Set<RelatedLink> relatedLinks = ImmutableSet.of();
+
+    private Set<Review> reviews = ImmutableSet.of();
+    private Set<Rating> ratings = ImmutableSet.of();
 
     private Set<Award> awards = ImmutableSet.of();
 
@@ -288,6 +293,24 @@ public abstract class Described extends Identified implements Sourced {
         relatedLinks = ImmutableSet.<RelatedLink>builder().add(link).addAll(relatedLinks).build();
     }
 
+    @FieldName("reviews")
+    public Set<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(Iterable<Review> reviews) {
+        this.reviews = ImmutableSet.copyOf(reviews);
+    }
+
+    @FieldName("ratings")
+    public Set<Rating> getRatings() {
+        return ratings;
+    }
+
+    public void setRatings(Iterable<Rating> ratings) {
+        this.ratings = ImmutableSet.copyOf(ratings);
+    }
+
     @FieldName("awards")
     public Set<Award> getAwards() {
         return awards;
@@ -296,7 +319,6 @@ public abstract class Described extends Identified implements Sourced {
     public void setAwards(Set<Award> awards) {
         this.awards = awards;
     }
-
 
     public static void copyTo(Described from, Described to) {
         Identified.copyTo(from, to);
@@ -318,6 +340,8 @@ public abstract class Described extends Identified implements Sourced {
         to.mediumDescription = from.mediumDescription;
         to.longDescription = from.longDescription;
         to.activelyPublished = from.activelyPublished;
+        to.reviews = from.reviews;
+        to.ratings = from.ratings;
         to.awards = from.awards;
     }
 

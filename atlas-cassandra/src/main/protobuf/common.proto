@@ -83,6 +83,8 @@ message Described {
     optional string presentationChannel = 19;
     optional Priority priority = 20;
     repeated RelatedLink relatedLink = 21;
+    repeated Rating ratings = 22;
+    repeated Review reviews = 23;
 
     required Identification identified = 100;
 }
@@ -157,4 +159,15 @@ message Award {
     optional string title = 2;
     optional string description = 3;
     optional int32 year = 4;
+}
+
+message Rating {
+    optional string type = 1;
+    optional float value = 2;
+    optional string source = 3;
+}
+
+message Review {
+    optional LocaleString locale = 1;
+    optional string review = 2;
 }

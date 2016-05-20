@@ -108,6 +108,8 @@ message Content {
     optional bool genericDescription = 65 [(column)=GENERIC_DESCRIPTION];
     repeated EventRef event_refs = 67 [(column)=DESC];
     repeated common.Award awards = 68 [(column)=DESC];
+    repeated common.Rating ratings = 69 [(column)=DESC];
+    repeated common.Review reviews = 70 [(column)=DESC];
 }
 
 message Restriction {
