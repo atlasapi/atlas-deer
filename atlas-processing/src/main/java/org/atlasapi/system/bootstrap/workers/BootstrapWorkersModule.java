@@ -126,7 +126,6 @@ public class BootstrapWorkersModule {
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(contentChangesNumOfConsumers)
                 .withMaxConsumers(contentChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -148,7 +147,6 @@ public class BootstrapWorkersModule {
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(organisationChangesNumOfConsumers)
                 .withMaxConsumers(organisationChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -171,7 +169,6 @@ public class BootstrapWorkersModule {
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
                 .withMaxConsumers(scheduleChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -194,7 +191,6 @@ public class BootstrapWorkersModule {
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
                 .withMaxConsumers(scheduleChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -216,7 +212,6 @@ public class BootstrapWorkersModule {
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(topicChangesNumOfConsumers)
                 .withMaxConsumers(topicChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -238,7 +233,6 @@ public class BootstrapWorkersModule {
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(eventChangesNumOfConsumers)
                 .withMaxConsumers(eventChangesNumOfConsumers)
-                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
