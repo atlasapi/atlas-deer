@@ -123,6 +123,7 @@ public class WorkersModule {
                 )
                 .withDefaultConsumers(topicIndexingNumOfConsumers)
                 .withMaxConsumers(topicIndexingNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -147,6 +148,7 @@ public class WorkersModule {
                 )
                 .withDefaultConsumers(equivContentGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivContentGraphChangesNumOfConsumers)
+                .withFailedMessagePersistence(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -176,6 +178,7 @@ public class WorkersModule {
                 )
                 .withDefaultConsumers(equivContentContentChangesNumOfConsumers)
                 .withMaxConsumers(equivContentContentChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -211,6 +214,7 @@ public class WorkersModule {
                 )
                 .withDefaultConsumers(equivScheduleGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleGraphChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -226,6 +230,7 @@ public class WorkersModule {
                 )
                 .withDefaultConsumers(equivScheduleContentChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleContentChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -250,6 +255,7 @@ public class WorkersModule {
                 )
                 .withDefaultConsumers(equivScheduleScheduleChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleScheduleChangesNumOfConsumers)
+                .withFailedMessagePersistence(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -276,6 +282,7 @@ public class WorkersModule {
                 .withProducerSystem(equivSystem)
                 .withDefaultConsumers(contentEquivalenceGraphChangesNumOfConsumers)
                 .withMaxConsumers(contentEquivalenceGraphChangesNumOfConsumers)
+                .withFailedMessagePersistence(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -300,6 +307,7 @@ public class WorkersModule {
                 .withMaxConsumers(contentIndexingNumOfConsumers)
                 .withDefaultConsumers(contentIndexingNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
@@ -326,6 +334,7 @@ public class WorkersModule {
                 .withMaxConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
                 .withDefaultConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
 
