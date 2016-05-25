@@ -10,6 +10,7 @@ import org.atlasapi.entity.RatingSerializer;
 import org.atlasapi.entity.ReviewSerializer;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
@@ -89,7 +90,9 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
     private <D extends Described> D visitDescribed(D described) {
         described = visitIdentified(described);
-        described.setPublisher(Sources.fromPossibleKey(msg.getSource()).get());
+
+        Optional<Publisher> possibleSource = Optional.ofNullable(Sources.fromPossibleKey(msg.getSource()).orNull());
+        described.setPublisher(possibleSource.get());  // NPE here is _desired behaviour_
         if (msg.hasFirstSeen()) {
             described.setFirstSeen(dateTimeSerializer.deserialize(msg.getFirstSeen()));
         }
@@ -164,7 +167,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
         // deserialization discards entities that failed to parse
         described.setReviews(msg.getReviewsList().stream()
-                .map(reviewSerializer::deserialize)
+                .map(reviewBuffer -> reviewSerializer.deserialize(possibleSource, reviewBuffer))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList()));

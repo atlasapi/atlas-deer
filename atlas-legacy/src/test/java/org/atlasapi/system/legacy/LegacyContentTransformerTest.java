@@ -36,8 +36,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.hamcrest.Matchers.greaterThan;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -241,11 +246,13 @@ public class LegacyContentTransformerTest {
 
         legacyItem = new Item();
         legacyItem.setId(1L);
+        legacyItem.setPublisher(Publisher.AMAZON_UK);
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getReviews().size(), is(0));
 
         legacyItem = new Item();
         legacyItem.setId(2L);
+        legacyItem.setPublisher(Publisher.AMAZON_UK);
         legacyItem.setReviews(Arrays.asList(
                 new Review(Locale.CHINESE, "hen hao"),
                 new Review(Locale.ENGLISH, "dog's bolls"),
@@ -256,9 +263,9 @@ public class LegacyContentTransformerTest {
         assertThat(transformedItem.getReviews().size(), is(3));
 
         assertThat(transformedItem.getReviews().containsAll(Arrays.asList(
-                new org.atlasapi.entity.Review(Locale.ENGLISH, "dog's bolls"),
-                new org.atlasapi.entity.Review(Locale.CHINESE, "hen hao"),
-                new org.atlasapi.entity.Review(Locale.FRENCH, "tres bien")
+                new org.atlasapi.entity.Review(Locale.ENGLISH, "dog's bolls", Optional.of(Publisher.AMAZON_UK)),
+                new org.atlasapi.entity.Review(Locale.CHINESE, "hen hao", Optional.of(Publisher.AMAZON_UK)),
+                new org.atlasapi.entity.Review(Locale.FRENCH, "tres bien", Optional.of(Publisher.AMAZON_UK))
         )), is(true));
     }
 

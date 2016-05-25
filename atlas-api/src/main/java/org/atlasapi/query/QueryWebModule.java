@@ -67,8 +67,10 @@ import org.atlasapi.output.annotation.NullWriter;
 import org.atlasapi.output.annotation.ParentChannelAnnotation;
 import org.atlasapi.output.annotation.PeopleAnnotation;
 import org.atlasapi.output.annotation.PlatformAnnotation;
+import org.atlasapi.output.annotation.RatingsAnnotation;
 import org.atlasapi.output.annotation.RegionsAnnotation;
 import org.atlasapi.output.annotation.RelatedLinksAnnotation;
+import org.atlasapi.output.annotation.ReviewsAnnotation;
 import org.atlasapi.output.annotation.SegmentEventsAnnotation;
 import org.atlasapi.output.annotation.SeriesAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
@@ -82,9 +84,12 @@ import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
 import org.atlasapi.output.writers.ItemDetailWriter;
 import org.atlasapi.output.writers.ItemRefWriter;
+import org.atlasapi.output.writers.RatingsWriter;
 import org.atlasapi.output.writers.RequestWriter;
+import org.atlasapi.output.writers.ReviewsWriter;
 import org.atlasapi.output.writers.SeriesSummaryWriter;
 import org.atlasapi.output.writers.SeriesWriter;
+import org.atlasapi.output.writers.SourceWriter;
 import org.atlasapi.output.writers.SubItemSummaryListWriter;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 import org.atlasapi.query.annotation.AnnotationIndex;
@@ -199,8 +204,10 @@ import static org.atlasapi.annotation.Annotation.NON_MERGED;
 import static org.atlasapi.annotation.Annotation.PARENT;
 import static org.atlasapi.annotation.Annotation.PEOPLE;
 import static org.atlasapi.annotation.Annotation.PLATFORM;
+import static org.atlasapi.annotation.Annotation.RATINGS;
 import static org.atlasapi.annotation.Annotation.REGIONS;
 import static org.atlasapi.annotation.Annotation.RELATED_LINKS;
+import static org.atlasapi.annotation.Annotation.REVIEWS;
 import static org.atlasapi.annotation.Annotation.SEGMENT_EVENTS;
 import static org.atlasapi.annotation.Annotation.SERIES;
 import static org.atlasapi.annotation.Annotation.SERIES_REFERENCE;
@@ -1006,6 +1013,8 @@ public class QueryWebModule {
                         NullWriter.create(Content.class)
                 )
                 .register(NON_MERGED, NullWriter.create(Content.class))
+                .register(REVIEWS, new ReviewsAnnotation(new ReviewsWriter(SourceWriter.sourceWriter("source"))))
+                .register(RATINGS, new RatingsAnnotation(new RatingsWriter(SourceWriter.sourceWriter("source"))))
                 .build();
     }
 
