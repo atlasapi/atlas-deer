@@ -16,8 +16,6 @@ import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-import static org.atlasapi.content.Broadcast.ACTIVELY_PUBLISHED;
-
 public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
     private final BroadcastWriter broadcastWriter;
@@ -43,7 +41,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     private void writeBroadcasts(FieldWriter writer, Item item, OutputContext ctxt)
             throws IOException {
         Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
-                .filter(b -> ACTIVELY_PUBLISHED.apply(b));
+                .filter(Broadcast::isActivelyPublished);
 
         if (ctxt.getRegion().isPresent()) {
             writer.writeList(

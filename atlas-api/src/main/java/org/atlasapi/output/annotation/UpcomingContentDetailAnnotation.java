@@ -73,7 +73,7 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
                     Item item = (Item) equivs.get(0);
                     Iterable<Broadcast> upcomingBroadcasts = item.getBroadcasts()
                             .stream()
-                            .filter(Broadcast.IS_UPCOMING)
+                            .filter(Broadcast::isUpcoming)
                             .collect(Collectors.toSet());
                     if (ctxt.getRegion().isPresent()) {
                         upcomingBroadcasts = channelsBroadcastFilter.sortAndFilter(

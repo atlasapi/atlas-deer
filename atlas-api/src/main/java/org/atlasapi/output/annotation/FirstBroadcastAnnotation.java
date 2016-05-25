@@ -45,7 +45,7 @@ public class FirstBroadcastAnnotation extends OutputAnnotation<Content> {
                 broadcastWriter,
                 firstBroadcasts(Iterables.filter(
                         item.getBroadcasts(),
-                        Broadcast.ACTIVELY_PUBLISHED
+                        Broadcast::isActivelyPublished
                 )),
                 ctxt
         );

@@ -337,7 +337,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         for (Item item : content) {
             ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
                     .stream(item.getBroadcasts().spliterator(), false)
-                    .filter(b -> Broadcast.ACTIVELY_PUBLISHED.apply(b))
+                    .filter(Broadcast::isActivelyPublished)
                     .collect(ImmutableCollectors.toList());
 
             BatchStatement batchStatement = new BatchStatement();

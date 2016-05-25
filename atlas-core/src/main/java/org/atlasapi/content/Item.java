@@ -25,7 +25,6 @@ import org.atlasapi.segment.SegmentEvent;
 
 import com.metabroadcast.common.intl.Country;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -196,14 +195,6 @@ public class Item extends Content {
         return this.containerRef != null;
     }
 
-    public static final Function<Item, Item> COPY = new Function<Item, Item>() {
-
-        @Override
-        public Item apply(Item input) {
-            return input.copy();
-        }
-    };
-
     @FieldName("container_summary")
     public ContainerSummary getContainerSummary() {
         return containerSummary;
@@ -238,28 +229,11 @@ public class Item extends Content {
         );
     }
 
-    public static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
-
-        @Override
-        public Set<Broadcast> apply(Item input) {
-            return input.broadcasts;
-        }
-    };
-
-    public static final Function<Item, List<SegmentEvent>> TO_SEGMENT_EVENTS = new Function<Item, List<SegmentEvent>>() {
-
-        @Override
-        public List<SegmentEvent> apply(Item input) {
-            return input.segmentEvents;
-        }
-
-    };
-
     public Iterable<BroadcastRef> getUpcomingBroadcastRefs() {
         return broadcasts
                 .stream()
-                .filter(Broadcast.IS_UPCOMING)
-                .map(Broadcast.TO_REF)
+                .filter(Broadcast::isUpcoming)
+                .map(Broadcast::toRef)
                 .collect(Collectors.toSet());
 
     }
