@@ -143,6 +143,18 @@ public class ContentDebugController {
         response.getWriter().write(lowercase.encode(BigInteger.valueOf(id)));
     }
 
+    @RequestMapping("/system/id/toLowercase/{id}")
+    private void toLowercaseId(@PathVariable("id") String id, final HttpServletResponse response)
+            throws IOException {
+        response.getWriter().write(lowercase.encode(uppercase.decode(id)));
+    }
+
+    @RequestMapping("/system/id/toUppercase/{id}")
+    private void toUppercaseId(@PathVariable("id") String id, final HttpServletResponse response)
+            throws IOException {
+        response.getWriter().write(uppercase.encode(lowercase.decode(id)));
+    }
+
     /* Deactivates a piece of content by setting activelyPublished to false */
     @RequestMapping("/system/debug/content/{id}/deactivate")
     private void deactivateContent(@PathVariable("id") String id,
