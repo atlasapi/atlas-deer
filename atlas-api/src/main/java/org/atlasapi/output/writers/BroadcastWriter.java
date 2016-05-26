@@ -16,7 +16,6 @@ import org.atlasapi.query.v4.channel.ChannelWriter;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.Futures;
@@ -87,15 +86,18 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         );
         writer.writeField("broadcast_on", codec.encode(entity.getChannelId().toBigInteger()));
 
-        Channel channel = null;
-        Optional<Channel> maybeChannel = Futures.get(channelResolver.resolveIds(ImmutableList.of(
-                entity.getChannelId())), IOException.class)
-                .getResources().first();
-        if (maybeChannel.isPresent()) {
-            channel = maybeChannel.get();
-        } else {
-            log.error("Unable to resolve channel {}", entity.getChannelId());
-        }
+        Channel channel = Futures.get(
+                channelResolver.resolveIds(
+                        ImmutableList.of(entity.getChannelId())
+                ),
+                IOException.class
+        )
+                .getResources()
+                .first()
+                .or(() -> {
+                    log.error("Unable to resolve channel {}", entity.getChannelId());
+                    return null;
+                });
 
         writer.writeObject(channelWriter, channel, ctxt);
         writer.writeField("schedule_date", entity.getScheduleDate());

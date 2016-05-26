@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
@@ -19,23 +17,19 @@ import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Encoding;
-import org.atlasapi.content.Episode;
 import org.atlasapi.content.Film;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
-import org.atlasapi.content.KeyPhrase;
 import org.atlasapi.content.LocationSummary;
-import org.atlasapi.content.RelatedLink;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
-import org.atlasapi.equivalence.SeriesOrder;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 
@@ -58,18 +52,35 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
-    private static final Ordering<Episode> SERIES_ORDER = Ordering.from(new SeriesOrder());
-
     private static final long BROADCAST_START_TIME_TOLERANCE_IN_MS = Duration.standardMinutes(5)
             .getMillis();
 
-    private static final Function<Item, Set<Broadcast>> TO_BROADCASTS = new Function<Item, Set<Broadcast>>() {
+    private static final Predicate<Described> HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET
+            = content -> content.getImage()!= null &&
+                    isImageAvailableAndNotGenericImageContentPlayer(
+                            content.getImage(),
+                            content.getImages()
+                    );
 
-        @Override
-        public Set<Broadcast> apply(Item input) {
-            return input.getBroadcasts();
-        }
-    };
+    private static final Predicate<Item> HAS_BROADCASTS = input -> !input.getBroadcasts().isEmpty();
+
+    private static final Predicate<Film> HAS_PEOPLE =
+            film -> film.getPeople() != null && !film.getPeople().isEmpty();
+
+    private static final Function<Described, String> TO_TITLE =
+            input -> input == null ? null : input.getTitle();
+
+    private static final Function<Described, String> TO_DESCRIPTION =
+            input -> input == null ? null : input.getDescription();
+
+    private static final Function<Described, String> TO_LONG_DESCRIPTION =
+            input -> input == null ? null : input.getLongDescription();
+
+    private static final Function<Described, String> TO_MEDIUM_DESCRIPTION =
+            input -> input == null ? null : input.getMediumDescription();
+
+    private static final Function<Described, String> TO_SHORT_DESCRIPTION =
+            input -> input == null ? null : input.getShortDescription();
 
     private EquivalentSetContentHierarchyChooser hierarchyChooser;
 
@@ -144,7 +155,6 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 mergeIn(sources, item, (Iterable<Item>) equivalents);
                 return (T) item;
             }
-
         });
     }
 
@@ -200,13 +210,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setRelatedLinks(projectFieldFromEquivalents(
                 chosen,
                 notChosen,
-                new Function<T, Iterable<RelatedLink>>() {
-
-                    @Override
-                    public Iterable<RelatedLink> apply(T input) {
-                        return input.getRelatedLinks();
-                    }
-                }
+                Described::getRelatedLinks
         ));
         if (chosen.getTitle() == null) {
             chosen.setTitle(first(notChosen, TO_TITLE));
@@ -256,37 +260,18 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
         mergeTags(chosen, notChosen);
         mergeKeyPhrases(chosen, notChosen);
-        Function<T, Integer> yearProjector = new Function<T, Integer>() {
-
-            @Override
-            public Integer apply(T input) {
-                return input.getYear();
-            }
-        };
         if (chosen.getYear() == null) {
-            chosen.setYear(first(notChosen, yearProjector));
+            chosen.setYear(first(notChosen, Content::getYear));
         }
         chosen.setGenres(projectFieldFromEquivalents(
                 chosen,
                 notChosen,
-                new Function<T, Iterable<String>>() {
-
-                    @Override
-                    public Iterable<String> apply(T input) {
-                        return input.getGenres();
-                    }
-                }
+                Described::getGenres
         ));
         chosen.setAliases(projectFieldFromEquivalents(
                 chosen,
                 notChosen,
-                new Function<T, Iterable<Alias>>() {
-
-                    @Override
-                    public Iterable<Alias> apply(T input) {
-                        return input.getAliases();
-                    }
-                }
+                Identified::getAliases
         ));
         mergeEncodings(sources, chosen, notChosen);
     }
@@ -304,13 +289,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setKeyPhrases(projectFieldFromEquivalents(
                 chosen,
                 notChosen,
-                new Function<T, Iterable<KeyPhrase>>() {
-
-                    @Override
-                    public Set<KeyPhrase> apply(T input) {
-                        return input.getKeyPhrases();
-                    }
-                }
+                Content::getKeyPhrases
         ));
     }
 
@@ -319,8 +298,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 chosen,
                 notChosen,
                 input -> Iterables.transform(input.getTags(), new TagPublisherSetter(input))
-                )
-        );
+        ));
     }
 
     private void mergeFilmProperties(ApplicationSources sources, Film chosen,
@@ -358,8 +336,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
         if (sources.imagePrecedenceEnabled()) {
 
-            List<T> topImageMatches = sources.getSourcedImagePrecedenceOrdering().leastOf(Iterables.filter(all,
-                    HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET), 1);
+            List<T> topImageMatches = sources.getSourcedImagePrecedenceOrdering().leastOf(
+                    Iterables.filter(all, HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET),
+                    1
+            );
 
             if (!topImageMatches.isEmpty()) {
                 T top = topImageMatches.get(0);
@@ -376,13 +356,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             chosen.setImages(projectFieldFromEquivalents(
                     chosen,
                     notChosen,
-                    new Function<T, Iterable<Image>>() {
-
-                        @Override
-                        public Set<Image> apply(T input) {
-                            input.getImages().forEach(img -> img.setSource(input.getSource()));
-                            return input.getImages();
-                        }
+                    input -> {
+                        input.getImages().forEach(img -> img.setSource(input.getSource()));
+                        return input.getImages();
                     }
             ));
         }
@@ -425,7 +401,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                     Iterables.concat(
                             Iterables.transform(
                                     Iterables.filter(all, isPublisher(sourceForBroadcasts)),
-                                    TO_BROADCASTS
+                                    (Function<Item, Set<Broadcast>>) Item::getBroadcasts
                             )
                     )));
 
@@ -440,14 +416,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     }
 
     private static Predicate<Item> isPublisher(Publisher publisher) {
-        return new Predicate<Item>() {
-
-            @Override
-            public boolean apply(Item input) {
-                return publisher.equals(input.getSource());
-            }
-
-        };
+        return input -> publisher.equals(input.getSource());
     }
 
     private <T extends Content> void mergeEncodings(ApplicationSources sources, T chosen,
@@ -467,16 +436,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<Broadcast> notChosenBroadcasts = notChosenItem.getBroadcasts();
             Optional<Broadcast> matched = Iterables.tryFind(
                     notChosenBroadcasts,
-                    new Predicate<Broadcast>() {
-
-                        @Override
-                        public boolean apply(Broadcast input) {
-                            return chosenBroadcast.getChannelId().equals(input.getChannelId())
-                                    && Math.abs(chosenBroadcast.getTransmissionTime().getMillis() -
-                                    input.getTransmissionTime().getMillis())
-                                    <= BROADCAST_START_TIME_TOLERANCE_IN_MS;
-                        }
-                    }
+                    input -> broadcastsMatch(chosenBroadcast, input)
             );
             if (matched.isPresent()) {
                 equivBroadcasts.add(matched.get());
@@ -486,6 +446,15 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         for (Broadcast equiv : equivBroadcasts) {
             mergeBroadcast(chosenBroadcast, equiv);
         }
+    }
+
+    private boolean broadcastsMatch(Broadcast first, Broadcast second) {
+        return first.getChannelId().equals(second.getChannelId())
+                &&
+                Math.abs(
+                        first.getTransmissionTime().getMillis() -
+                                second.getTransmissionTime().getMillis()
+                ) <= BROADCAST_START_TIME_TOLERANCE_IN_MS;
     }
 
     private void mergeBroadcast(Broadcast chosen, Broadcast toMerge) {
@@ -537,26 +506,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
     }
 
-    private static final Predicate<Described> HAS_AVAILABLE_AND_NOT_GENERIC_IMAGE_CONTENT_PLAYER_SET = new Predicate<Described>() {
-
-        @Override
-        public boolean apply(Described content) {
-            if (content.getImage() == null) {
-                return false;
-            }
-            return isImageAvailableAndNotGenericImageContentPlayer(content.getImage(), content.getImages());
-        }
-    };
-
-    private static final Predicate<Item> HAS_BROADCASTS = new Predicate<Item>() {
-
-        @Override
-        public boolean apply(Item input) {
-            return !input.getBroadcasts().isEmpty();
-        }
-    };
-
-    private static boolean isImageAvailableAndNotGenericImageContentPlayer(String imageUri, Iterable<Image> images) {
+    private static boolean isImageAvailableAndNotGenericImageContentPlayer(
+            String imageUri,
+            Iterable<Image> images
+    ) {
 
         // Fneh. Image URIs differ between the image attribute and the canonical URI on Images.
         // See PaProgrammeProcessor for why.
@@ -569,58 +522,15 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         // whether it is generic.
         for (Image image : images) {
             if (image.getCanonicalUri().equals(rewrittenUri)) {
-               return Image.IS_AVAILABLE.apply(image) && !Image.Type.GENERIC_IMAGE_CONTENT_PLAYER.equals(image.getType());
+               return Image.IS_AVAILABLE.apply(image)
+                       && !Image.Type.GENERIC_IMAGE_CONTENT_PLAYER.equals(image.getType());
             }
         }
         // Otherwise, we can only assume the image is available as we know no better
         return true;
     }
 
-    private static final Predicate<Film> HAS_PEOPLE = new Predicate<Film>() {
-
-        @Override
-        public boolean apply(Film film) {
-            return film.getPeople() != null && !film.getPeople().isEmpty();
-        }
-    };
-    private static final Function<Described, String> TO_TITLE = new Function<Described, String>() {
-
-        @Override
-        @Nullable
-        public String apply(@Nullable Described input) {
-            return input == null ? null : input.getTitle();
-        }
-    };
-    private static final Function<Described, String> TO_DESCRIPTION = new Function<Described, String>() {
-
-        @Override
-        public String apply(@Nullable Described input) {
-            return input == null ? null : input.getDescription();
-        }
-    };
-    private static final Function<Described, String> TO_LONG_DESCRIPTION = new Function<Described, String>() {
-
-        @Override
-        public String apply(@Nullable Described input) {
-            return input == null ? null : input.getLongDescription();
-        }
-    };
-    private static final Function<Described, String> TO_MEDIUM_DESCRIPTION = new Function<Described, String>() {
-
-        @Override
-        public String apply(@Nullable Described input) {
-            return input == null ? null : input.getMediumDescription();
-        }
-    };
-    private static final Function<Described, String> TO_SHORT_DESCRIPTION = new Function<Described, String>() {
-
-        @Override
-        public String apply(@Nullable Described input) {
-            return input == null ? null : input.getShortDescription();
-        }
-    };
-
-    public void mergeIn(ApplicationSources sources, Container chosen,
+    private void mergeIn(ApplicationSources sources, Container chosen,
             Iterable<Container> notChosen) {
         mergeContent(sources, chosen, notChosen);
         mergeContainer(sources, chosen, notChosen);
@@ -630,7 +540,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<Container> notChosen) {
 
         Iterable<Container> orderedEquivalents;
-        Optional<Ordering<Sourced>> sourcedContentHierarchyOrdering = sources.getSourcedContentHierarchyOrdering();
+        Optional<Ordering<Sourced>> sourcedContentHierarchyOrdering =
+                sources.getSourcedContentHierarchyOrdering();
+
         if (sourcedContentHierarchyOrdering.isPresent()) {
             orderedEquivalents = sourcedContentHierarchyOrdering.get()
                     .sortedCopy(Iterables.concat(ImmutableSet.of(chosen), notChosen));
@@ -687,11 +599,12 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             ((Brand) chosen).setSeriesRefs(ImmutableList.of());
         }
 
-        Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap(chosen.getAvailableContent());
+        Map<ItemRef, Iterable<LocationSummary>> availableContent =
+                Maps.newHashMap(chosen.getAvailableContent());
 
         for (Container equiv : contentHierarchySourceOrderedContainers) {
-            for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary : equiv.getAvailableContent()
-                    .entrySet()) {
+            for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary
+                    : equiv.getAvailableContent().entrySet()) {
                 availableContent.putIfAbsent(
                         itemRefAndLocationSummary.getKey(),
                         itemRefAndLocationSummary.getValue()
