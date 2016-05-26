@@ -1,11 +1,5 @@
 package org.atlasapi.output;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -82,7 +76,6 @@ public class OutputContentMergerTest {
                 assertThat(contentList.toString(), merged.get(0), is(contentList.get(0)));
             }
         }
-
     }
 
     @Test
@@ -114,7 +107,6 @@ public class OutputContentMergerTest {
 
         sources = sourcesWithPrecedence(true, Publisher.TED, Publisher.BBC);
         mergePermutations(contents, sources, three, two.getId());
-
     }
 
     @Test
@@ -247,9 +239,8 @@ public class OutputContentMergerTest {
 
         assertThat(
                 mergedSegmentEvents,
-                Matchers.<List<SegmentEvent>>is(ImmutableList.of(seOne, seTwo, seFour, seFive))
+                Matchers.is(ImmutableList.of(seOne, seTwo, seFour, seFive))
         );
-
     }
 
     @Test
@@ -294,7 +285,6 @@ public class OutputContentMergerTest {
         Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
 
         assertThat(merged.getUpcomingContent(), is(upcomingContent));
-
     }
 
     @Test
@@ -337,7 +327,6 @@ public class OutputContentMergerTest {
         Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
 
         assertThat(merged.getItemSummaries(), is(itemSummaries));
-
     }
 
     @Test
@@ -408,7 +397,6 @@ public class OutputContentMergerTest {
                 .build();
 
         assertThat(merged.getAvailableContent(), is(expectedAvailableContent));
-
     }
 
     @Test
@@ -442,7 +430,6 @@ public class OutputContentMergerTest {
                 merged.getManifestedAs(),
                 is(ImmutableSet.of(encoding1, encoding2, encoding3, encoding4))
         );
-
     }
 
     @Test
@@ -480,7 +467,6 @@ public class OutputContentMergerTest {
         
         Content merged = merger.merge(item2,  ImmutableList.of(item1), sources);
         assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image2.org/"));
-
     }
 
     @Test
@@ -653,7 +639,48 @@ public class OutputContentMergerTest {
 
         Item merged = merger.merge(item1, ImmutableList.of(item2), sources);
         assertThat(Iterables.getOnlyElement(merged.getBroadcasts()).getAliases().size(), is(2));
+    }
 
+    @Test
+    public void mergeBroadcastsMergesTheirFields() {
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
+                .copy()
+                .withContentHierarchyPrecedence(ImmutableList.of(Publisher.BBC, Publisher.PA))
+                .build();
+
+        DateTime startTime = new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 20, 0, 0);
+        DateTime endTime = new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 20, 30, 0);
+
+        Broadcast firstItemBroadcast = new Broadcast(
+                Id.valueOf(1L),
+                new Interval(startTime, endTime)
+        );
+        firstItemBroadcast.setLive(false);
+
+        Broadcast secondItemBroadcast = new Broadcast(
+                Id.valueOf(1L),
+                new Interval(startTime, endTime)
+        );
+        secondItemBroadcast.setNewEpisode(true);
+
+        Item firstItem = item(10L, "uriFirst", Publisher.BBC);
+        Item secondItem = item(11L, "uriSecond", Publisher.PA);
+
+        firstItem.addBroadcast(firstItemBroadcast);
+        secondItem.addBroadcast(secondItemBroadcast);
+
+
+        Item merged = merger.merge(firstItem, ImmutableList.of(secondItem), sources);
+
+        Broadcast actualBroadcast = Iterables.getOnlyElement(merged.getBroadcasts());
+        assertThat(
+                actualBroadcast.getNewEpisode(),
+                is(secondItemBroadcast.getNewEpisode())
+        );
+        assertThat(
+                actualBroadcast.getLive(),
+                is(firstItemBroadcast.getLive())
+        );
     }
 
     private Brand brand(long id, String uri, Publisher source) {

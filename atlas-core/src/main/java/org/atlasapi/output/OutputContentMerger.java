@@ -525,6 +525,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getNewSeries() == null && toMerge.getNewSeries() != null) {
             chosen.setNewSeries(toMerge.getNewSeries());
         }
+        if (chosen.getNewEpisode() == null && toMerge.getNewEpisode() != null) {
+            chosen.setNewEpisode(toMerge.getNewEpisode());
+        }
         if (chosen.getPremiere() == null && toMerge.getPremiere() != null) {
             chosen.setPremiere(toMerge.getPremiere());
         }

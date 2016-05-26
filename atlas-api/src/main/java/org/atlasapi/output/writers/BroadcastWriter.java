@@ -31,17 +31,25 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
 
     private static final String ELEMENT_NAME = "broadcast";
 
-    private final AliasWriter aliasWriter = new AliasWriter();
-    private final BroadcastIdAliasMapping aliasMapping = new BroadcastIdAliasMapping();
-    private final BlackoutRestrictionWriter blackoutRestrictionWriter = new BlackoutRestrictionWriter();
-    private final ChannelWriter channelWriter;
+    private final AliasWriter aliasWriter;
+    private final BroadcastIdAliasMapping aliasMapping;
+    private final BlackoutRestrictionWriter blackoutRestrictionWriter;
 
     private final String listName;
     private final NumberToShortStringCodec codec;
     private final ChannelResolver channelResolver;
+    private final ChannelWriter channelWriter;
 
-    public BroadcastWriter(String listName, NumberToShortStringCodec codec,
-            ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
+    public BroadcastWriter(
+            String listName,
+            NumberToShortStringCodec codec,
+            ChannelResolver channelResolver,
+            ChannelGroupResolver channelGroupResolver
+    ) {
+        this.aliasWriter = new AliasWriter();
+        this.aliasMapping = new BroadcastIdAliasMapping();
+        this.blackoutRestrictionWriter = new BlackoutRestrictionWriter();
+
         this.listName = checkNotNull(listName);
         this.codec = checkNotNull(codec);
         this.channelResolver = checkNotNull(channelResolver);
@@ -51,6 +59,15 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
                 "channel",
                 new ChannelGroupSummaryWriter(new SubstitutionTableNumberCodec())
         );
+    }
+
+    public static BroadcastWriter create(
+            String listName,
+            NumberToShortStringCodec codec,
+            ChannelResolver channelResolver,
+            ChannelGroupResolver channelGroupResolver
+    ) {
+        return new BroadcastWriter(listName, codec, channelResolver, channelGroupResolver);
     }
 
     @Override
@@ -69,17 +86,17 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
                 Ints.saturatedCast(entity.getBroadcastDuration().getStandardSeconds())
         );
         writer.writeField("broadcast_on", codec.encode(entity.getChannelId().toBigInteger()));
+
         Channel channel = null;
-        if (entity.getChannelId() != null) {
-            Optional<Channel> maybeChannel = Futures.get(channelResolver.resolveIds(ImmutableList.of(
-                    entity.getChannelId())), IOException.class)
-                    .getResources().first();
-            if (maybeChannel.isPresent()) {
-                channel = maybeChannel.get();
-            } else {
-                log.error("Unable to resolve channel {}", entity.getChannelId());
-            }
+        Optional<Channel> maybeChannel = Futures.get(channelResolver.resolveIds(ImmutableList.of(
+                entity.getChannelId())), IOException.class)
+                .getResources().first();
+        if (maybeChannel.isPresent()) {
+            channel = maybeChannel.get();
+        } else {
+            log.error("Unable to resolve channel {}", entity.getChannelId());
         }
+
         writer.writeObject(channelWriter, channel, ctxt);
         writer.writeField("schedule_date", entity.getScheduleDate());
         writer.writeField("repeat", entity.getRepeat());
@@ -92,6 +109,8 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeField("live", entity.getLive());
         writer.writeField("premiere", entity.getPremiere());
         writer.writeField("new_series", entity.getNewSeries());
+        writer.writeField("new_episode", entity.getNewEpisode());
+
         if (!entity.getBlackoutRestriction().isPresent()) {
             writer.writeField("blackout_restriction", null);
         } else {
