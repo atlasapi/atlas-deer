@@ -18,15 +18,9 @@ public enum ChannelType {
         return this.name().toLowerCase();
     }
 
-    private static final ImmutableSet<ChannelType> ALL = ImmutableSet.copyOf(values());
-
-    public static final ImmutableSet<ChannelType> all() {
-        return ALL;
-    }
-
-    private static final ImmutableMap<String, Optional<ChannelType>> KEY_MAP = ImmutableMap
-            .copyOf(Maps.transformValues(Maps.uniqueIndex(
-                    all(),
+    private static final ImmutableMap<String, ChannelType> KEY_MAP = ImmutableMap
+            .copyOf(Maps.uniqueIndex(
+                    ImmutableSet.copyOf(values()),
                     new Function<ChannelType, String>() {
                         @Override
                         @Nullable
@@ -34,10 +28,13 @@ public enum ChannelType {
                             return input.toKey();
                         }
                     }
-            ), Optional::ofNullable));
+            ));
 
-    public static Optional<ChannelType> fromKey(String key) {
-        Optional<ChannelType> possibleMediaType = KEY_MAP.get(key);
-        return possibleMediaType != null ? possibleMediaType : Optional.empty();
+    public static ChannelType fromKey(String key) {
+        ChannelType channelType = KEY_MAP.get(key);
+        if (channelType == null) {
+            return ChannelType.CHANNEL;
+        }
+        return channelType;
     }
 }

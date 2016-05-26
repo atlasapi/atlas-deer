@@ -52,7 +52,7 @@ public class Channel extends Identified implements Sourced {
     private final ImmutableSet<String> targetRegions;
     private final ChannelType channelType;
 
-    public Channel(
+    private Channel(
             String uri,
             Id id,
             Set<Alias> aliases,
@@ -72,11 +72,11 @@ public class Channel extends Identified implements Sourced {
             Set<ChannelRef> variations,
             @Nullable LocalDate startDate,
             @Nullable LocalDate endDate,
-            DateTime advertiseFrom,
-            String shortDescription,
-            String mediumDescription,
-            String longDescription,
-            String region,
+            @Nullable DateTime advertiseFrom,
+            @Nullable String shortDescription,
+            @Nullable String mediumDescription,
+            @Nullable String longDescription,
+            @Nullable String region,
             Set<String> targetRegions,
             ChannelType channelType
     ) {
@@ -197,21 +197,25 @@ public class Channel extends Identified implements Sourced {
         return advertiseFrom;
     }
 
+    @Nullable
     @FieldName("short_description")
     public String getShortDescription() {
         return shortDescription;
     }
 
+    @Nullable
     @FieldName("medium_description")
     public String getMediumDescription() {
         return mediumDescription;
     }
 
+    @Nullable
     @FieldName("long_description")
     public String getLongDescription() {
         return longDescription;
     }
 
+    @Nullable
     @FieldName("region")
     public String getRegion() {
         return region;
@@ -399,22 +403,22 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
-        public Builder withShortDescription(String shortDescription) {
+        public Builder withShortDescription(@Nullable String shortDescription) {
             this.shortDescription = shortDescription;
             return this;
         }
 
-        public Builder withMediumDescription(String mediumDescription) {
+        public Builder withMediumDescription(@Nullable String mediumDescription) {
             this.mediumDescription = mediumDescription;
             return this;
         }
 
-        public Builder withLongDescription(String longDescription) {
+        public Builder withLongDescription(@Nullable String longDescription) {
             this.longDescription = longDescription;
             return this;
         }
 
-        public Builder withRegion(String region) {
+        public Builder withRegion(@Nullable String region) {
             this.region = region;
             return this;
         }

@@ -1,6 +1,7 @@
 package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -8,21 +9,32 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelType;
+import org.atlasapi.content.MediaType;
+import org.atlasapi.content.RelatedLink;
+import org.atlasapi.entity.Alias;
+import org.atlasapi.media.channel.TemporalField;
+import org.atlasapi.media.entity.Image;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
+import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.output.writers.ImageListWriter;
+import org.atlasapi.output.writers.SourceWriter;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,7 +64,15 @@ public class ChannelWriterTest {
     private String longDescription = "long_description";
     private String region = "region";
     private String targetRegions = "target_regions";
+    private String targetRegion = "target_region";
     private String channelType = "channel_type";
+    private String genres = "genres";
+    private TemporalField temporalField = new TemporalField(title, null, null);
+    private MediaType mediaTypeObject = MediaType.VIDEO;
+    private boolean highDefinitionValue = true;
+    private boolean regionalValue = true;
+    private LocalDate startDateValue = LocalDate.parse("2016-05-26");
+    private DateTime advertisedFromValue = DateTime.parse("2016-05-27T07:15:30.450Z");
 
     @Before
     public void setUp() throws Exception {
@@ -66,94 +86,10 @@ public class ChannelWriterTest {
     }
 
     @Test
-    public void writingChannelShortDescription() throws IOException {
+    public void noFieldsHasBeenSet() throws IOException {
         this.channel = Channel.builder(Publisher.METABROADCAST)
-                .withId(199999L)
-                .withShortDescription(shortDescription)
+                .withId(199999L) // ID always needs to be specified, otherwise getting NPE.
                 .build();
-
-        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-
-        when(outputContext.getRequest()).thenReturn(request);
-        when(request.getParameter(annotations)).thenReturn("");
-
-        channelWriter.write(channel, fieldWriter, outputContext);
-
-        verify(fieldWriter).writeField(eq(title), eq(null));
-        verify(fieldWriter).writeField(eq(id), eq("pgnp"));
-        verify(fieldWriter).writeField(eq(uri), eq(null));
-        verify(fieldWriter).writeField(eq(mediaType), eq(null));
-        verify(fieldWriter).writeField(eq(highDefinition), eq(null));
-        verify(fieldWriter).writeField(eq(regional), eq(null));
-        verify(fieldWriter).writeField(eq(startDate), eq(null));
-        verify(fieldWriter).writeField(eq(advertisedFrom), eq(null));
-        verify(fieldWriter).writeField(eq(shortDescription), argumentCaptor.capture());
-        verify(fieldWriter).writeField(eq(shortDescription), eq(shortDescription));
-    }
-
-    @Test
-    public void writingChannelMediumDescription() throws IOException {
-        this.channel = Channel.builder(Publisher.METABROADCAST)
-                .withId(199999L)
-                .withMediumDescription(mediumDescription)
-                .build();
-
-        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-
-        when(outputContext.getRequest()).thenReturn(request);
-        when(request.getParameter(annotations)).thenReturn("");
-
-        channelWriter.write(channel, fieldWriter, outputContext);
-
-        verify(fieldWriter).writeField(eq(title), eq(null));
-        verify(fieldWriter).writeField(eq(id), eq("pgnp"));
-        verify(fieldWriter).writeField(eq(uri), eq(null));
-        verify(fieldWriter).writeField(eq(mediaType), eq(null));
-        verify(fieldWriter).writeField(eq(highDefinition), eq(null));
-        verify(fieldWriter).writeField(eq(regional), eq(null));
-        verify(fieldWriter).writeField(eq(startDate), eq(null));
-        verify(fieldWriter).writeField(eq(advertisedFrom), eq(null));
-        verify(fieldWriter).writeField(eq(shortDescription), eq(null));
-        verify(fieldWriter).writeField(eq(mediumDescription), argumentCaptor.capture());
-        verify(fieldWriter).writeField(eq(mediumDescription), eq(mediumDescription));
-    }
-
-    @Test
-    public void writingChannelLongDescription() throws IOException {
-        this.channel = Channel.builder(Publisher.METABROADCAST)
-                .withId(199999L)
-                .withLongDescription(longDescription)
-                .build();
-
-        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-
-        when(outputContext.getRequest()).thenReturn(request);
-        when(request.getParameter(annotations)).thenReturn("");
-
-        channelWriter.write(channel, fieldWriter, outputContext);
-
-        verify(fieldWriter).writeField(eq(title), eq(null));
-        verify(fieldWriter).writeField(eq(id), eq("pgnp"));
-        verify(fieldWriter).writeField(eq(uri), eq(null));
-        verify(fieldWriter).writeField(eq(mediaType), eq(null));
-        verify(fieldWriter).writeField(eq(highDefinition), eq(null));
-        verify(fieldWriter).writeField(eq(regional), eq(null));
-        verify(fieldWriter).writeField(eq(startDate), eq(null));
-        verify(fieldWriter).writeField(eq(advertisedFrom), eq(null));
-        verify(fieldWriter).writeField(eq(shortDescription), eq(null));
-        verify(fieldWriter).writeField(eq(mediumDescription), eq(null));
-        verify(fieldWriter).writeField(eq(longDescription), argumentCaptor.capture());
-        verify(fieldWriter).writeField(eq(longDescription), eq(longDescription));
-    }
-
-    @Test
-    public void writingChannelRegion() throws IOException {
-        this.channel = Channel.builder(Publisher.METABROADCAST)
-                .withId(199999L)
-                .withRegion(region)
-                .build();
-
-        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
         when(outputContext.getRequest()).thenReturn(request);
         when(request.getParameter(annotations)).thenReturn("");
@@ -171,92 +107,109 @@ public class ChannelWriterTest {
         verify(fieldWriter).writeField(eq(shortDescription), eq(null));
         verify(fieldWriter).writeField(eq(mediumDescription), eq(null));
         verify(fieldWriter).writeField(eq(longDescription), eq(null));
-        verify(fieldWriter).writeField(eq(region), argumentCaptor.capture());
-        verify(fieldWriter).writeField(eq(region), eq(region));
-    }
-
-    @Test
-    public void writingChannelTargetRegions() throws IOException {
-        Set<String> targetRegionsSet = Sets.newHashSet("r1", "r2", "r3");
-
-        this.channel = Channel.builder(Publisher.METABROADCAST)
-                .withId(199999L)
-                .withTargetRegions(targetRegionsSet)
-                .build();
-
-        when(outputContext.getRequest()).thenReturn(request);
-        when(request.getParameter(annotations)).thenReturn("");
-
-        channelWriter.write(channel, fieldWriter, outputContext);
+        verify(fieldWriter).writeField(eq(region), eq(null));
+        verify(fieldWriter).writeField(eq(channelType), eq(null));
+        verify(fieldWriter).writeList(
+                eq(genres),
+                eq(genres),
+                eq(Sets.newHashSet()),
+                any(OutputContext.class)
+        );
         verify(fieldWriter).writeList(
                 eq(targetRegions),
-                eq(targetRegions),
-                eq(targetRegionsSet),
+                eq(targetRegion),
+                eq(Sets.newHashSet()),
+                any(OutputContext.class)
+        );
+        verify(fieldWriter, times(4)).writeList(
+                any(EntityListWriter.class),
+                eq(Sets.newHashSet()),
                 any(OutputContext.class)
         );
     }
 
     @Test
-    public void writingChannelTypeOfChannel() throws IOException {
-        ChannelType typeChannel = ChannelType.CHANNEL;
-
+    public void allFieldsHasBeenSet() throws IOException {
+        Set<String> genreSet = Sets.newHashSet("genre 1", "genre 2");
+        Set<String> targetRegionsSet = Sets.newHashSet("target region 1", "target region 2");
+        HashSet iamgeSet = Sets.newHashSet(
+                new TemporalField(
+                        new Image("image 1"), null, null
+                ),
+                new TemporalField(
+                        new Image("image 1"), null, null
+                )
+        );
+        Set<Alias> aliasSet = Sets.newHashSet(
+                new Alias("alias 1", "value 1"),
+                new Alias("alias 2", "value 2")
+        );
+        Set<RelatedLink> relatedLinkSet = Sets.newHashSet(
+                RelatedLink.unknownTypeLink("test 1").build(),
+                RelatedLink.unknownTypeLink("test 2").build()
+        );
+        Set<Publisher> availabilitySet = Sets.newHashSet(Publisher.PA, Publisher.INTERNET_VIDEO_ARCHIVE);
         this.channel = Channel.builder(Publisher.METABROADCAST)
+                .withTitles(ImmutableList.of(temporalField))
                 .withId(199999L)
-                .withChannelType(typeChannel)
+                .withUri(uri)
+                .withMediaType(mediaTypeObject)
+                .withHighDefinition(highDefinitionValue)
+                .withRegional(regionalValue)
+                .withStartDate(startDateValue)
+                .withAdvertiseFrom(advertisedFromValue)
+                .withShortDescription(shortDescription)
+                .withMediumDescription(mediumDescription)
+                .withLongDescription(longDescription)
+                .withRegion(region)
+                .withChannelType(ChannelType.CHANNEL)
+                .withGenres(genreSet)
+                .withTargetRegions(targetRegionsSet)
+                .withImages(iamgeSet)
+                .withAvailableFrom(availabilitySet)
+                .withAliases(aliasSet)
+                .withRelatedLinks(relatedLinkSet)
                 .build();
-
-        ArgumentCaptor<ChannelType> argumentCaptor = ArgumentCaptor.forClass(ChannelType.class);
 
         when(outputContext.getRequest()).thenReturn(request);
         when(request.getParameter(annotations)).thenReturn("");
 
         channelWriter.write(channel, fieldWriter, outputContext);
 
-        verify(fieldWriter).writeField(eq(title), eq(null));
+        verify(fieldWriter).writeField(eq(title), eq(title));
         verify(fieldWriter).writeField(eq(id), eq("pgnp"));
-        verify(fieldWriter).writeField(eq(uri), eq(null));
-        verify(fieldWriter).writeField(eq(mediaType), eq(null));
-        verify(fieldWriter).writeField(eq(highDefinition), eq(null));
-        verify(fieldWriter).writeField(eq(regional), eq(null));
-        verify(fieldWriter).writeField(eq(startDate), eq(null));
-        verify(fieldWriter).writeField(eq(advertisedFrom), eq(null));
-        verify(fieldWriter).writeField(eq(shortDescription), eq(null));
-        verify(fieldWriter).writeField(eq(mediumDescription), eq(null));
-        verify(fieldWriter).writeField(eq(longDescription), eq(null));
-        verify(fieldWriter).writeField(eq(region), eq(null));
-        verify(fieldWriter).writeField(eq(channelType), argumentCaptor.capture());
-        verify(fieldWriter).writeField(eq(channelType), eq(typeChannel));
-    }
-
-    @Test
-    public void writingChannelTypeOfMasterbrand() throws IOException {
-        ChannelType typeMasterbrand = ChannelType.MASTERBRAND;
-
-        this.channel = Channel.builder(Publisher.METABROADCAST)
-                .withId(199999L)
-                .withChannelType(typeMasterbrand)
-                .build();
-
-        ArgumentCaptor<ChannelType> argumentCaptor = ArgumentCaptor.forClass(ChannelType.class);
-
-        when(outputContext.getRequest()).thenReturn(request);
-        when(request.getParameter(annotations)).thenReturn("");
-
-        channelWriter.write(channel, fieldWriter, outputContext);
-
-        verify(fieldWriter).writeField(eq(title), eq(null));
-        verify(fieldWriter).writeField(eq(id), eq("pgnp"));
-        verify(fieldWriter).writeField(eq(uri), eq(null));
-        verify(fieldWriter).writeField(eq(mediaType), eq(null));
-        verify(fieldWriter).writeField(eq(highDefinition), eq(null));
-        verify(fieldWriter).writeField(eq(regional), eq(null));
-        verify(fieldWriter).writeField(eq(startDate), eq(null));
-        verify(fieldWriter).writeField(eq(advertisedFrom), eq(null));
-        verify(fieldWriter).writeField(eq(shortDescription), eq(null));
-        verify(fieldWriter).writeField(eq(mediumDescription), eq(null));
-        verify(fieldWriter).writeField(eq(longDescription), eq(null));
-        verify(fieldWriter).writeField(eq(region), eq(null));
-        verify(fieldWriter).writeField(eq(channelType), argumentCaptor.capture());
-        verify(fieldWriter).writeField(eq(channelType), eq(typeMasterbrand));
+        verify(fieldWriter).writeField(eq(uri), eq(uri));
+        verify(fieldWriter).writeField(eq(mediaType), eq(mediaTypeObject));
+        verify(fieldWriter).writeField(eq(highDefinition), eq(highDefinitionValue));
+        verify(fieldWriter).writeField(eq(regional), eq(regionalValue));
+        verify(fieldWriter).writeField(eq(startDate), eq(startDateValue));
+        verify(fieldWriter).writeField(eq(advertisedFrom), eq(advertisedFromValue));
+        verify(fieldWriter).writeField(eq(shortDescription), eq(shortDescription));
+        verify(fieldWriter).writeField(eq(mediumDescription), eq(mediumDescription));
+        verify(fieldWriter).writeField(eq(longDescription), eq(longDescription));
+        verify(fieldWriter).writeField(eq(region), eq(region));
+        verify(fieldWriter).writeField(eq(channelType), eq(ChannelType.CHANNEL));
+        verify(fieldWriter).writeList(
+                eq(genres),
+                eq(genres),
+                eq(genreSet),
+                any(OutputContext.class)
+        );
+        verify(fieldWriter).writeList(
+                eq(targetRegions),
+                eq(targetRegion),
+                eq(targetRegionsSet),
+                any(OutputContext.class)
+        );
+        verify(fieldWriter, times(4)).writeList(
+                any(ImageListWriter.class),
+                any(Iterable.class),
+                any(OutputContext.class)
+        );
+        verify(fieldWriter).writeObject(
+                any(SourceWriter.class),
+                eq(Publisher.METABROADCAST),
+                any(OutputContext.class)
+        );
     }
 }

@@ -58,11 +58,8 @@ public class LegacyChannelTransformer
     private ChannelType getChannelTypeFromInput(
             org.atlasapi.media.channel.ChannelType inputChannelType
     ) {
-        Optional<ChannelType> possibleChannelType = ChannelType.fromKey(inputChannelType.toKey());
-        if (possibleChannelType.isPresent()) {
-            return possibleChannelType.get();
-        }
-        return null;
+        ChannelType possibleChannelType = ChannelType.fromKey(inputChannelType.toKey());
+        return possibleChannelType;
     }
 
     public org.atlasapi.media.channel.Channel toBasicLegacyChannel(Channel input) {
