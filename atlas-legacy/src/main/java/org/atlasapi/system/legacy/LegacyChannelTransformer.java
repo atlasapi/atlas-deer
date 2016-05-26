@@ -1,9 +1,12 @@
 package org.atlasapi.system.legacy;
 
+import java.util.Optional;
+
 import javax.annotation.Nullable;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ChannelType;
 import org.atlasapi.content.Image;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.media.channel.ChannelNumbering;
@@ -43,7 +46,23 @@ public class LegacyChannelTransformer
                                 input.getSource()
                         )
                 ).withAdvertiseFrom(input.getAdvertiseFrom())
+                .withShortDescription(input.getShortDescription())
+                .withMediumDescription(input.getMediumDescription())
+                .withLongDescription(input.getLongDescription())
+                .withRegion(input.getRegion())
+                .withTargetRegions(input.getTargetRegions())
+                .withChannelType(getChannelTypeFromInput(input.getChannelType()))
                 .build();
+    }
+
+    private ChannelType getChannelTypeFromInput(
+            org.atlasapi.media.channel.ChannelType inputChannelType
+    ) {
+        Optional<ChannelType> possibleChannelType = ChannelType.fromKey(inputChannelType.toKey());
+        if (possibleChannelType.isPresent()) {
+            return possibleChannelType.get();
+        }
+        return null;
     }
 
     public org.atlasapi.media.channel.Channel toBasicLegacyChannel(Channel input) {
