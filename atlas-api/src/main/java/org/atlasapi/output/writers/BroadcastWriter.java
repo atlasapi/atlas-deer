@@ -94,10 +94,12 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         )
                 .getResources()
                 .first()
-                .or(() -> {
-                    log.error("Unable to resolve channel {}", entity.getChannelId());
-                    return null;
-                });
+                .orNull();
+
+        if (channel == null) {
+            log.error("Unable to resolve channel {}", entity.getChannelId());
+
+        }
 
         writer.writeObject(channelWriter, channel, ctxt);
         writer.writeField("schedule_date", entity.getScheduleDate());
