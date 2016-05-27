@@ -72,7 +72,10 @@ public class BroadcastSerializerTest {
         ContentProtos.Broadcast deserialized = ContentProtos.Broadcast.parseFrom(msg);
         Broadcast broadcast = serializer.deserialize(deserialized);
 
-        checkBroadcast(broadcast, getBroadcast());
+        Broadcast expectedBroadcast = getBroadcast();
+        expectedBroadcast.setNewEpisode(null);
+
+        checkBroadcast(broadcast, expectedBroadcast);
         checkBroadcastTimes(
                 broadcast,
                 DateTime.parse("2015-09-08T14:44:32.596Z"),
@@ -101,6 +104,7 @@ public class BroadcastSerializerTest {
         assertThat(actual.getSurround(), is(expected.getSurround()));
         assertThat(actual.getLive(), is(expected.getLive()));
         assertThat(actual.getNewSeries(), is(expected.getNewSeries()));
+        assertThat(actual.getNewEpisode(), is(expected.getNewEpisode()));
         assertThat(actual.getPremiere(), is(expected.getPremiere()));
         assertThat(actual.is3d(), is(expected.is3d()));
         assertThat(actual.getVersionId(), is(expected.getVersionId()));
@@ -140,6 +144,7 @@ public class BroadcastSerializerTest {
         broadcast.setSurround(false);
         broadcast.setLive(true);
         broadcast.setNewSeries(false);
+        broadcast.setNewEpisode(true);
         broadcast.setPremiere(true);
         broadcast.set3d(true);
         broadcast.setVersionId("version");

@@ -47,7 +47,7 @@ public class NextBroadcastAnnotation extends OutputAnnotation<Content> {
             throws IOException {
         writer.writeList(
                 broadcastWriter,
-                nextBroadcast(Iterables.filter(item.getBroadcasts(), Broadcast.ACTIVELY_PUBLISHED)),
+                nextBroadcast(Iterables.filter(item.getBroadcasts(), Broadcast::isActivelyPublished)),
                 ctxt
         );
     }

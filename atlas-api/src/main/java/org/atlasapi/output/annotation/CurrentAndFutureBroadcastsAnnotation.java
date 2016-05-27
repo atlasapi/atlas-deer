@@ -19,8 +19,6 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import static org.atlasapi.content.Broadcast.ACTIVELY_PUBLISHED;
-
 public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Content> {
 
     private final BroadcastWriter broadcastWriter;
@@ -41,7 +39,7 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
         if (entity instanceof Item) {
             Item item = (Item) entity;
             Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
-                    .filter(b -> ACTIVELY_PUBLISHED.apply(b))
+                    .filter(Broadcast::isActivelyPublished)
                     .filter(b -> b.getTransmissionEndTime()
                             .isAfter(DateTime.now(DateTimeZone.UTC)));
 

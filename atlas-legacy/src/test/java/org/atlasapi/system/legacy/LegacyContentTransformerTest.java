@@ -1,15 +1,11 @@
 package org.atlasapi.system.legacy;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
 import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
-
-import com.metabroadcast.common.base.Maybe;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-
-import org.atlasapi.media.entity.Alias;
 import org.atlasapi.media.entity.Actor;
 import org.atlasapi.media.entity.BlackoutRestriction;
 import org.atlasapi.media.entity.Broadcast;
@@ -27,6 +23,12 @@ import org.atlasapi.media.entity.Restriction;
 import org.atlasapi.media.entity.Review;
 import org.atlasapi.media.entity.Series;
 import org.atlasapi.media.entity.Version;
+
+import com.metabroadcast.common.base.Maybe;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,12 +36,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import static org.hamcrest.core.Is.is;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -66,30 +64,41 @@ public class LegacyContentTransformerTest {
     }
 
     @Test
-    public void testCopyBlackoutRestrictionOnBroadcasts() {
-        String channelId = "channelId";
-        Item legacy = new Item();
-        legacy.setId(1L);
-        legacy.setParentRef(new ParentRef("parentUrl", 2L));
-        legacy.setPublisher(Publisher.PA);
-        Version version = new Version();
-        Broadcast broadcast = new Broadcast(channelId, DateTime.now(), DateTime.now().plusHours(1));
-        broadcast.withId("sourceId");
+    public void broadcastFieldsAreTransformed() {
+        Broadcast broadcast = new Broadcast(
+                "channelId",
+                DateTime.now(),
+                DateTime.now().plusHours(1)
+        ).withId("broadcastId");
+
+        // Tested fields
+        broadcast.setNewEpisode(true);
         broadcast.setBlackoutRestriction(new BlackoutRestriction(true));
+
+        Version version = new Version();
         version.setBroadcasts(ImmutableSet.of(broadcast));
         version.setRestriction(new Restriction());
-        legacy.setVersions(ImmutableSet.of(version));
-        legacy.setAliases(ImmutableSet.<Alias>of());
-        Channel channel = mock(Channel.class);
-        when(channelResolver.fromUri(channelId)).thenReturn(Maybe.just(channel));
+
+        Item legacyItem = new Item("uri", "", Publisher.METABROADCAST);
+        legacyItem.setId(1L);
+        legacyItem.setVersions(ImmutableSet.of(version));
+
+        when(channelResolver.fromUri("channelId")).thenReturn(Maybe.just(mock(Channel.class)));
 
         org.atlasapi.content.Item transformed = (org.atlasapi.content.Item) objectUnderTest.apply(
-                legacy);
+                legacyItem);
 
-        assertThat(Iterables.getOnlyElement(transformed.getBroadcasts())
-                .getBlackoutRestriction()
-                .get()
-                .getAll(), is(true));
+        org.atlasapi.content.Broadcast actualBroadcast =
+                Iterables.getOnlyElement(transformed.getBroadcasts());
+
+        assertThat(
+                actualBroadcast.getNewEpisode(),
+                is(broadcast.getNewEpisode())
+        );
+        assertThat(
+                actualBroadcast.getBlackoutRestriction().get().getAll(),
+                is(broadcast.getBlackoutRestriction().getAll())
+        );
     }
 
     @Test
@@ -105,8 +114,8 @@ public class LegacyContentTransformerTest {
         version.setBroadcasts(ImmutableSet.of(broadcast));
         version.setRestriction(new Restriction());
         legacy.setVersions(ImmutableSet.of(version));
-        legacy.setAliases(ImmutableSet.<Alias>of());
-        when(channelResolver.fromUri(channelId)).thenReturn(Maybe.<Channel>nothing());
+        legacy.setAliases(ImmutableSet.of());
+        when(channelResolver.fromUri(channelId)).thenReturn(Maybe.nothing());
 
         org.atlasapi.content.Item transformed = (org.atlasapi.content.Item) objectUnderTest.apply(
                 legacy);

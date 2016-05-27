@@ -167,6 +167,7 @@ message Broadcast {
     optional string channel_uri = 18;
     optional bool is_three_d = 20;
     optional BlackoutRestriction blackout_restriction = 21;
+    optional bool new_episode = 22;
 }
 
 message BlackoutRestriction {

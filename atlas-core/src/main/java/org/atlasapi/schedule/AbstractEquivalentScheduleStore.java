@@ -72,7 +72,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
                     Iterable<Broadcast> activelyPublishedBroadcasts = item.getBroadcasts()
                             .stream()
-                            .filter(Broadcast.ACTIVELY_PUBLISHED::apply)
+                            .filter(Broadcast::isActivelyPublished)
                             .collect(Collectors.toList());
 
                     for (Broadcast broadcast : activelyPublishedBroadcasts) {
@@ -240,7 +240,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     private Set<Broadcast> matchingOrEmpty(Broadcast subjectBroadcast, Set<Broadcast> broadcasts) {
         return broadcasts.stream()
-                .filter(Broadcast.ACTIVELY_PUBLISHED::apply)
+                .filter(Broadcast::isActivelyPublished)
                 .filter(broadcast -> broadcastMatcher.matches(subjectBroadcast, broadcast))
                 .findFirst()
                 .map(ImmutableSet::of)
@@ -268,7 +268,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     private boolean broadcastMatch(Item item, Broadcast subjectBroadcast) {
         return item.getBroadcasts()
                 .stream()
-                .filter(Broadcast.ACTIVELY_PUBLISHED::apply)
+                .filter(Broadcast::isActivelyPublished)
                 .anyMatch(broadcast -> broadcastMatcher.matches(subjectBroadcast, broadcast));
     }
 }
