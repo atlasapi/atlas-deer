@@ -25,12 +25,7 @@ public class Series extends Container {
     }
 
     public ContainerSummary toSummary() {
-        return new ContainerSummary(
-                getClass().getSimpleName().toLowerCase(),
-                getTitle(),
-                getDescription(),
-                seriesNumber
-        );
+        return ContainerSummary.from(this);
     }
 
     public Series withSeriesNumber(Integer seriesNumber) {

@@ -131,7 +131,8 @@ message Summary {
     optional string type = 1;
     optional string title = 2;
     optional string description = 3;
-    optional int32 position = 4;
+    optional int32 series_number = 4;
+    optional int32 total_episodes = 5;
 }
 
 message ItemAndBroadcastRef {

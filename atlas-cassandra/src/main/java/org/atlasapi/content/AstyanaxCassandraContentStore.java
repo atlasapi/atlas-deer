@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.CassandraPersistenceException;
@@ -306,29 +308,20 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         }
     }
 
-    private ContainerSummary summarize(Container container) {
+    @Nullable
+    private ContainerSummary summarize(@Nullable Container container) {
         ContainerSummary summary = null;
         if (container != null) {
             summary = container.accept(new ContainerVisitor<ContainerSummary>() {
 
                 @Override
                 public ContainerSummary visit(Brand brand) {
-                    return new ContainerSummary(
-                            EntityType.from(brand).name(),
-                            brand.getTitle(),
-                            brand.getDescription(),
-                            null
-                    );
+                    return ContainerSummary.from(brand);
                 }
 
                 @Override
                 public ContainerSummary visit(Series series) {
-                    return new ContainerSummary(
-                            EntityType.from(series).name(),
-                            series.getTitle(),
-                            series.getDescription(),
-                            series.getSeriesNumber()
-                    );
+                    return ContainerSummary.from(series);
                 }
 
             });

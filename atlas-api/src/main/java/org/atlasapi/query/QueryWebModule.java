@@ -92,6 +92,7 @@ import org.atlasapi.output.writers.SeriesWriter;
 import org.atlasapi.output.writers.SourceWriter;
 import org.atlasapi.output.writers.SubItemSummaryListWriter;
 import org.atlasapi.output.writers.UpcomingContentDetailWriter;
+import org.atlasapi.output.writers.common.CommonContainerSummaryWriter;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.ImagesAnnotation;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
@@ -831,9 +832,11 @@ public class QueryWebModule {
                 .register(SERIES_REFERENCE, new SeriesReferenceAnnotation(idCodec()), commonImplied)
                 .register(
                         SERIES_SUMMARY,
-                        new SeriesSummaryAnnotation(
-                                new SeriesSummaryWriter(idCodec(), containerSummaryResolver)
-                        ),
+                        new SeriesSummaryAnnotation(SeriesSummaryWriter.create(
+                                idCodec(),
+                                containerSummaryResolver,
+                                CommonContainerSummaryWriter.create()
+                        )),
                         commonImplied,
                         ImmutableSet.of(SERIES_REFERENCE)
                 )
@@ -842,10 +845,11 @@ public class QueryWebModule {
                         BRAND_SUMMARY,
                         new ContainerSummaryAnnotation(
                                 CONTAINER_FIELD,
-                                new ContainerSummaryWriter(
+                                ContainerSummaryWriter.create(
                                         idCodec(),
                                         CONTAINER_FIELD,
-                                        containerSummaryResolver
+                                        containerSummaryResolver,
+                                        CommonContainerSummaryWriter.create()
                                 )
                         ),
                         commonImplied,
