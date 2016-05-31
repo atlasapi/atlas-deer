@@ -17,18 +17,21 @@ public class ContainerSummarySerializer {
             summary.setDescription(containerSummary.getDescription());
         }
         if (containerSummary.getSeriesNumber() != null) {
-            summary.setPosition(containerSummary.getSeriesNumber());
+            summary.setSeriesNumber(containerSummary.getSeriesNumber());
+        }
+        if (containerSummary.getTotalEpisodes() != null) {
+            summary.setTotalEpisodes(containerSummary.getTotalEpisodes());
         }
         return summary.build();
     }
 
     public ContainerSummary deserialize(Summary summary) {
-        return new ContainerSummary(
+        return ContainerSummary.create(
                 summary.hasType() ? summary.getType() : null,
                 summary.hasTitle() ? summary.getTitle() : null,
                 summary.hasDescription() ? summary.getDescription() : null,
-                summary.hasPosition() ? summary.getPosition() : null
+                summary.hasSeriesNumber() ? summary.getSeriesNumber() : null,
+                summary.hasTotalEpisodes() ? summary.getTotalEpisodes() : null
         );
     }
-
 }

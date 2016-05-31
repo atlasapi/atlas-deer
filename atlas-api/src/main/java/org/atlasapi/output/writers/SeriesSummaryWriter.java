@@ -10,6 +10,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.annotation.SeriesSummaryAnnotation;
+import org.atlasapi.output.writers.common.CommonContainerSummaryWriter;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
@@ -21,11 +22,26 @@ public class SeriesSummaryWriter implements EntityWriter<Episode> {
 
     private final NumberToShortStringCodec idCodec;
     private final ContainerSummaryResolver containerSummaryResolver;
+    private final CommonContainerSummaryWriter commonContainerSummaryWriter;
 
-    public SeriesSummaryWriter(NumberToShortStringCodec idCodec,
-            ContainerSummaryResolver containerSummaryResolver) {
+    private SeriesSummaryWriter(
+            NumberToShortStringCodec idCodec,
+            ContainerSummaryResolver containerSummaryResolver,
+            CommonContainerSummaryWriter commonContainerSummaryWriter
+    ) {
         this.idCodec = checkNotNull(idCodec);
         this.containerSummaryResolver = checkNotNull(containerSummaryResolver);
+        this.commonContainerSummaryWriter = checkNotNull(commonContainerSummaryWriter);
+    }
+
+    public static SeriesSummaryWriter create(
+            NumberToShortStringCodec idCodec,
+            ContainerSummaryResolver containerSummaryResolver,
+            CommonContainerSummaryWriter commonContainerSummaryWriter
+    ) {
+        return new SeriesSummaryWriter(
+                idCodec, containerSummaryResolver, commonContainerSummaryWriter
+        );
     }
 
     @Override
@@ -41,13 +57,9 @@ public class SeriesSummaryWriter implements EntityWriter<Episode> {
                 ctxt.getApplicationSources(),
                 ctxt.getActiveAnnotations()
         );
+
         if (summary.isPresent()) {
-            writer.writeField("type", summary.get().getType().toLowerCase());
-            writer.writeField("title", summary.get().getTitle());
-            writer.writeField("description", summary.get().getDescription());
-            if (summary.get().getSeriesNumber() != null) {
-                writer.writeField("series_number", summary.get().getSeriesNumber());
-            }
+            commonContainerSummaryWriter.write(summary.get(), writer);
         }
     }
 

@@ -50,12 +50,7 @@ public class Brand extends Container {
     }
 
     public ContainerSummary toSummary() {
-        return new ContainerSummary(
-                getClass().getSimpleName().toLowerCase(),
-                getTitle(),
-                getDescription(),
-                null
-        );
+        return ContainerSummary.from(this);
     }
 
     @Override

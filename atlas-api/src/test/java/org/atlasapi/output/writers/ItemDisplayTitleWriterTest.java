@@ -37,10 +37,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(true);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setTitle("Episode Title");
@@ -81,10 +82,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setEpisodeNumber(42);
@@ -111,10 +113,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setEpisodeNumber(null);
@@ -137,10 +140,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setEpisodeNumber(42);
@@ -163,10 +167,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setEpisodeNumber(42);
@@ -189,10 +194,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setEpisodeNumber(42);
@@ -215,10 +221,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setEpisodeNumber(null);
@@ -247,10 +254,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setEpisodeNumber(null);
@@ -273,10 +281,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setSeriesRef(new SeriesRef(
@@ -308,10 +317,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setSeriesRef(new SeriesRef(
@@ -343,10 +353,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setSeriesRef(new SeriesRef(
@@ -378,10 +389,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setSeriesRef(new SeriesRef(
@@ -413,10 +425,11 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setSeriesRef(new SeriesRef(
@@ -476,10 +489,11 @@ public class ItemDisplayTitleWriterTest {
             throws Exception {
 
         Item entity = new Item();
-        entity.setContainerSummary(new ContainerSummary(
+        entity.setContainerSummary(ContainerSummary.create(
                 "brand",
                 "Brand Title",
                 "Brand Desc",
+                null,
                 null
         ));
         entity.setTitle(null);
@@ -500,7 +514,9 @@ public class ItemDisplayTitleWriterTest {
             throws Exception {
 
         Item entity = new Item();
-        entity.setContainerSummary(new ContainerSummary("brand", null, "Brand Desc", null));
+        entity.setContainerSummary(ContainerSummary.create(
+                "brand", null, "Brand Desc", null,  null
+        ));
         entity.setTitle(null);
 
         titleWriter.write(
@@ -538,7 +554,9 @@ public class ItemDisplayTitleWriterTest {
 
         Episode entity = new Episode();
         entity.setSpecial(false);
-        entity.setContainerSummary(new ContainerSummary("brand", "Silent Witness", "Shhh", null));
+        entity.setContainerSummary(ContainerSummary.create(
+                "brand", "Silent Witness", "Shhh", null, null
+        ));
         entity.setSeriesRef(new SeriesRef(
                 Id.valueOf(1L),
                 Publisher.METABROADCAST,

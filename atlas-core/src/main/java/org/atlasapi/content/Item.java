@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
@@ -195,6 +197,7 @@ public class Item extends Content {
         return this.containerRef != null;
     }
 
+    @Nullable
     @FieldName("container_summary")
     public ContainerSummary getContainerSummary() {
         return containerSummary;

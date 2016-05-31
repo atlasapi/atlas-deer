@@ -11,19 +11,22 @@ public class ContainerSummarySerializerTest {
 
     @Test
     public void testDeSerializeContainerSummary() {
-        serializeAndCheck(new ContainerSummary(null, null, null, null));
-        serializeAndCheck(new ContainerSummary("title", null, null, null));
-        serializeAndCheck(new ContainerSummary(null, "desc", null, null));
-        serializeAndCheck(new ContainerSummary(null, null, "type", null));
-        serializeAndCheck(new ContainerSummary(null, null, null, 1));
+        serializeAndCheck(ContainerSummary.create(null, null, null, null, null));
+        serializeAndCheck(ContainerSummary.create("title", null, null, null, null));
+        serializeAndCheck(ContainerSummary.create(null, "desc", null, null, null));
+        serializeAndCheck(ContainerSummary.create(null, null, "type", null, null));
+        serializeAndCheck(ContainerSummary.create(null, null, null, 1, null));
+        serializeAndCheck(ContainerSummary.create(null, null, null, null, 10));
     }
 
     private void serializeAndCheck(ContainerSummary containerSummary) {
-        ContainerSummary deserialized = serializer.deserialize(serializer.serialize(containerSummary));
+        ContainerSummary deserialized = serializer.deserialize(
+                serializer.serialize(containerSummary)
+        );
         assertThat(deserialized.getTitle(), is(containerSummary.getTitle()));
         assertThat(deserialized.getDescription(), is(containerSummary.getDescription()));
         assertThat(deserialized.getType(), is(containerSummary.getType()));
         assertThat(deserialized.getSeriesNumber(), is(containerSummary.getSeriesNumber()));
+        assertThat(deserialized.getTotalEpisodes(), is(containerSummary.getTotalEpisodes()));
     }
-
 }
