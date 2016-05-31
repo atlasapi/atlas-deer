@@ -1,7 +1,11 @@
 package org.atlasapi.output;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
@@ -22,6 +26,8 @@ import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.Review;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
@@ -681,6 +687,78 @@ public class OutputContentMergerTest {
                 actualBroadcast.getLive(),
                 is(firstItemBroadcast.getLive())
         );
+    }
+
+    @Test
+    public void mergeAllReviewsToChosenContent() {
+        // content belonging to sources that the user does not have permission to access
+        // have already been whittled out
+
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
+
+        Item chosenItem = item(10L, "uriFirst", Publisher.RADIO_TIMES);
+        Item firstEquivItem = item(11L, "uriSecond", Publisher.PA);
+        Item secondEquivItem = item(12L, "uriSecond", Publisher.BBC);
+
+        Set<Review> expectedReviews = new ImmutableSet.Builder<Review>()
+                .addAll(addReviews(chosenItem, "review 1", "review 2"))
+                .addAll(addReviews(firstEquivItem, "review 3", "review 4"))
+                .addAll(addReviews(secondEquivItem, "review 5"))
+                .build();
+
+        // chosenItem is mutated by merge, so calculate this first
+        int expectedReviewsCount = expectedReviews.size();
+
+        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), sources);
+
+        assertThat(merged.getReviews().size(), is(expectedReviewsCount));
+        assertThat(merged.getReviews().containsAll(expectedReviews), is(true));
+    }
+
+    private List<Review> addReviews(Item item, String... reviewComments) {
+        Optional<Publisher> publisher = Optional.of(item.getSource());
+        List<Review> reviews = Arrays.asList(reviewComments).stream()
+                .map(comment -> new Review(null, comment, publisher))
+                .collect(Collectors.toList());
+
+        item.setReviews(ImmutableList.copyOf(reviews));
+        return reviews;
+    }
+
+    @Test
+    public void mergeAllRatingsToChosenContent() {
+        // content belonging to sources that the user does not have permission to access
+        // have already been whittled out
+
+        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
+
+        Item chosenItem = item(10L, "uriFirst", Publisher.RADIO_TIMES);
+        Item firstEquivItem = item(11L, "uriSecond", Publisher.PA);
+        Item secondEquivItem = item(12L, "uriSecond", Publisher.BBC);
+
+        Set<Rating> expectedRatings = new ImmutableSet.Builder<Rating>()
+                .addAll(addRatings(chosenItem, 0.1f, 0.2f))
+                .addAll(addRatings(firstEquivItem, 0.3f, 0.4f))
+                .addAll(addRatings(secondEquivItem, 0.5f))
+                .build();
+
+        // chosenItem is mutated by merge, so calculate this first
+        int expectedRatingsCount = expectedRatings.size();
+
+        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), sources);
+
+        assertThat(merged.getRatings().size(), is(expectedRatingsCount));
+        assertThat(merged.getRatings().containsAll(expectedRatings), is(true));
+    }
+
+    private List<Rating> addRatings(Item item, Float... ratingValues) {
+        Publisher publisher = item.getSource();
+        List<Rating> ratings = Arrays.asList(ratingValues).stream()
+                .map(rating -> new Rating("5STAR", rating, publisher))
+                .collect(Collectors.toList());
+
+        item.setRatings(ratings);
+        return ratings;
     }
 
     private Brand brand(long id, String uri, Publisher source) {

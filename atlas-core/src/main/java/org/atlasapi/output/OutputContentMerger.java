@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Brand;
@@ -28,6 +29,8 @@ import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
+import org.atlasapi.entity.Rating;
+import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
@@ -274,6 +277,39 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 Identified::getAliases
         ));
         mergeEncodings(sources, chosen, notChosen);
+
+        mergeReviews(chosen, notChosen);
+        mergeRatings(chosen, notChosen);
+    }
+
+    private <T extends Content> void mergeReviews(T chosen, Iterable<T> notChosen) {
+
+        List<T> allContent = new ImmutableList.Builder<T>()
+                .add(chosen)
+                .addAll(notChosen)
+                .build();
+
+        Set<Review> combinedReviews = allContent.stream()
+                .map(Content::getReviews)
+                .flatMap(review -> review.stream())
+                .collect(Collectors.toSet());
+
+        chosen.setReviews(combinedReviews);
+    }
+
+    private <T extends Content> void mergeRatings(T chosen, Iterable<T> notChosen) {
+
+        List<T> allContent = new ImmutableList.Builder<T>()
+                .add(chosen)
+                .addAll(notChosen)
+                .build();
+
+        Set<Rating> combinedRatings = allContent.stream()
+                .map(Content::getRatings)
+                .flatMap(rating -> rating.stream())
+                .collect(Collectors.toSet());
+
+        chosen.setRatings(combinedRatings);
     }
 
     private <T extends Item> void mergeIn(ApplicationSources sources, T chosen,
