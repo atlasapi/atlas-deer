@@ -19,6 +19,7 @@ import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Clip;
 import org.atlasapi.media.entity.Described;
 import org.atlasapi.media.entity.Identified;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.media.entity.Topic;
 import org.atlasapi.media.entity.Version;
 
@@ -68,7 +69,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         described.setPriority(transformPriority(input.getPriority()));
         described.setAwards(transformAwards(input.getAwards()));
 
-        described.setReviews(transformReviews(input.getReviews()));
+        described.setReviews(transformReviews(input.getReviews(), input.getPublisher()));
         described.setRatings(transformRatings(input.getRatings()));
 
         return described;
@@ -137,19 +138,19 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         return award;
     }
 
-    protected Iterable<Review> transformReviews(Collection<org.atlasapi.media.entity.Review> legacyReviews) {
+    protected Iterable<Review> transformReviews(Collection<org.atlasapi.media.entity.Review> legacyReviews, Publisher source) {
         return legacyReviews.stream()
-                .map(legacyReview -> transformReview(legacyReview.getLocale(), legacyReview.getReview()))
+                .map(legacyReview -> transformReview(legacyReview.getLocale(), legacyReview.getReview(), source))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
-    protected Optional<Review> transformReview(Locale locale, String review) {
+    protected Optional<Review> transformReview(Locale locale, String review, Publisher source) {
         // we don't want to fail the ingest of the whole content item because of
         // a broken legacy review
         try {
-            return Optional.of(new Review(locale, review));
+            return Optional.of(new Review(locale, review, Optional.ofNullable(source)));
         } catch(NullPointerException e) {
             return Optional.empty();
         }

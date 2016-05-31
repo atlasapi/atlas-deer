@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
@@ -162,7 +163,7 @@ public class ContentSerializerTest {
     public void testDeSerializesFilmWithReviewsAndRatings() {
         Film film = new Film();
         setItemProperties(film);
-        addReviewsAndRatingsToDescribed(film);
+        addReviewsAndRatingsToDescribed(film, Optional.ofNullable(film.getSource()));
         serializeAndCheck(film);
     }
 
@@ -491,11 +492,11 @@ public class ContentSerializerTest {
         described.setTitle("title");
     }
 
-    private void addReviewsAndRatingsToDescribed(Described described) {
+    private void addReviewsAndRatingsToDescribed(Described described, Optional<Publisher> publisher) {
         described.setReviews(Arrays.asList(
-                new Review(Locale.ENGLISH, "dog's bolls"),
-                new Review(Locale.CHINESE, "hen hao"),
-                new Review(Locale.FRENCH, "tres bien")
+                new Review(Locale.ENGLISH, "dog's bolls", publisher),
+                new Review(Locale.CHINESE, "hen hao", publisher),
+                new Review(Locale.FRENCH, "tres bien", publisher)
         ));
 
         described.setRatings(Arrays.asList(

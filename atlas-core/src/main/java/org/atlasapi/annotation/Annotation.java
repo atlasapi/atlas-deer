@@ -68,7 +68,9 @@ public enum Annotation {
     EVENT_DETAILS,
     ADVERTISED_CHANNELS,
     SUPPRESS_EPISODE_NUMBERS,
-    NON_MERGED;
+    NON_MERGED,
+    REVIEWS,
+    RATINGS;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
 

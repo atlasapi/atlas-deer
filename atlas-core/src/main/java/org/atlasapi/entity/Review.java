@@ -5,16 +5,24 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import javax.annotation.Nullable;
 import java.util.Locale;
+import java.util.Optional;
+
+import org.atlasapi.media.entity.Publisher;
 
 public class Review {
 
     private final Locale locale;
     private final String review;
+    // source should not be serialised.  It is inherited from the Content that contains it
+    private final Optional<Publisher> source;
 
-    public Review(@Nullable Locale locale, String review) {
+    public Review(@Nullable Locale locale, String review, Optional<Publisher> source) {
         this.locale = locale;
         // note this is more strict than Owl (non-existent reviews should not be carried across)
         this.review = checkNotNull(review);
+
+        // source of containing Content is stored for ease of rendering at API
+        this.source = checkNotNull(source);
     }
 
     @Nullable
@@ -24,6 +32,10 @@ public class Review {
 
     public String getReview() {
         return review;
+    }
+
+    public Optional<Publisher> getSource() {
+        return source;
     }
 
     @Override
@@ -36,21 +48,21 @@ public class Review {
         }
         Review review1 = (Review) o;
         return Objects.equals(locale, review1.locale) &&
-                Objects.equals(review, review1.review);
+                Objects.equals(review, review1.review) &&
+                Objects.equals(source, review1.source);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(locale, review);
+        return Objects.hash(locale, review, source);
     }
 
     @Override
     public String toString() {
-        String safeLocale = (null != locale) ? locale.toString() : "";
-
         return "Review{" +
-                "locale=" + safeLocale +
+                "locale=" + locale +
                 ", review='" + review + '\'' +
+                ", source=" + source +
                 '}';
     }
 }

@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -67,10 +68,10 @@ public class ContentGroupSerializerTest {
 
     private void addReviewsAndRatingsToDescribed(Described described) {
         described.setReviews(Arrays.asList(
-                new Review(Locale.ENGLISH, "dog's bolls"),
-                new Review(Locale.CHINESE, "hen hao"),
-                new Review(Locale.FRENCH, "tres bien"),
-                new Review(null, "sehr gut")
+                new Review(Locale.ENGLISH, "dog's bolls", Optional.empty()),
+                new Review(Locale.CHINESE, "hen hao", Optional.empty()),
+                new Review(Locale.FRENCH, "tres bien", Optional.empty()),
+                new Review(null, "sehr gut", Optional.empty())
         ));
 
         described.setRatings(Arrays.asList(
