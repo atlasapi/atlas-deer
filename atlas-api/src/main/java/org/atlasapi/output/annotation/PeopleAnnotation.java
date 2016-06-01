@@ -31,8 +31,16 @@ public class PeopleAnnotation extends OutputAnnotation<Content> {
                     writer.writeField("character", ((Actor) entity).character());
                 }
 
-                writer.writeField("role", entity.role().key());
-                writer.writeField("display_role", entity.role().title());
+                // CrewMember.role() can be null
+                String role = null;
+                String displayRole = null;
+                if (null != entity.role()) {
+                    role = entity.role().key();
+                    displayRole = entity.role().title();
+                }
+
+                writer.writeField("role", role);
+                writer.writeField("display_role", displayRole);
             }
 
             @Override
