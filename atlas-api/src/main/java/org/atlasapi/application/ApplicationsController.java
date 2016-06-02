@@ -45,13 +45,17 @@ import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import com.google.api.client.util.Sets;
 import com.google.common.base.Optional;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
 public class ApplicationsController {
@@ -146,43 +150,33 @@ public class ApplicationsController {
     @RequestMapping(value = "/4/applications.*", method = RequestMethod.POST)
     public void writeApplication(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        Set<User> userAccounts = userFetcher.userFor(request).asSet();
+
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            Application application = deserialize(
-                    new InputStreamReader(request.getInputStream()),
-                    Application.class
+
+            ApplicationWriteResult writeResult = writeApplicationInternal(
+                    request, userAccounts
             );
-            User user = userFetcher.userFor(request).get();
-            if (application.getId() != null) {
-                if (!userCanAccessApplication(application.getId(), request, userFetcher)) {
-                    throw new ResourceForbiddenException();
-                }
-                Optional<Application> existing = applicationStore.applicationFor(application.getId());
-                checkSourceStatusChanges(user, application, existing);
-                // Copy across slug and disallow modification of credentials
-                application = application.copy().withSlug(existing.get().getSlug())
-                        .withCredentials(existing.get().getCredentials()).build();
-                application = applicationStore.updateApplication(application);
-            } else {
-                checkSourceStatusChanges(user, application, Optional.<Application>absent());
-                // New application
-                application = applicationStore.createApplication(application);
-                // Add application to user ownership
-                user = user.copyWithAdditionalApplication(application);
-                userStore.store(user);
-            }
+
+            // There will only every be 0 or 1 user in this iterable
+            Optional<User> user = Iterables.tryFind(
+                    writeResult.getUserAccountsWithNewApplication(),
+                    Predicates.alwaysTrue()
+            );
+
             // We do not want non-admins to see admin only sources
             // So we run the application through the query executor
             // to filter out anything they should not see
             UserAwareQueryContext context = new UserAwareQueryContext(
                     ApplicationSources.defaults(),
                     ActiveAnnotations.standard(),
-                    Optional.of(user),
+                    user,
                     request
             );
             UserAwareQuery<Application> applicationsQuery = UserAwareQuery.singleQuery(
-                    application.getId(),
+                    writeResult.getApplication().getId(),
                     context
             );
             UserAwareQueryResult<Application> queryResult = queryExecutor.execute(applicationsQuery);
@@ -198,51 +192,34 @@ public class ApplicationsController {
     @RequestMapping(value = "/4/admin/applications.*", method = RequestMethod.POST)
     public void writeApplicationNoAuth(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        Set<User> userAccounts = userFetcherNoAuth.userFor(request);
+
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            Application application = deserialize(
-                    new InputStreamReader(request.getInputStream()),
-                    Application.class
-            );
-            Set<User> userAccounts = userFetcherNoAuth.userFor(request);
-            Set<User> userAccountsWithNewApplication = Sets.newHashSet();
-            if (application.getId() != null) {
-                if (!userCanAccessApplication(application.getId(), request, userFetcherNoAuth)) {
-                    throw new ResourceForbiddenException();
-                }
-                Optional<Application> existing = applicationStore.applicationFor(application.getId());
-                checkSourceStatusChanges(userAccounts, application, existing);
-                // Copy across slug and disallow modification of credentials
-                application = application.copy().withSlug(existing.get().getSlug())
-                        .withCredentials(existing.get().getCredentials()).build();
-                application = applicationStore.updateApplication(application);
-            } else {
-                checkSourceStatusChanges(userAccounts, application, Optional.<Application>absent());
-                // New application
-                application = applicationStore.createApplication(application);
-                // Add application to user ownership
-                for (User userAccount : userAccounts) {
-                    userAccount = userAccount.copyWithAdditionalApplication(application);
-                    userStore.store(userAccount);
-                    userAccountsWithNewApplication.add(userAccount);
-                }
 
-            }
+            ApplicationWriteResult writeResult = writeApplicationInternal(
+                    request, userAccounts
+            );
+
             // We do not want non-admins to see admin only sources
             // So we run the application through the query executor
             // to filter out anything they should not see
             UserAccountsAwareQueryContext context = new UserAccountsAwareQueryContext(
                     ApplicationSources.defaults(),
                     ActiveAnnotations.standard(),
-                    userAccountsWithNewApplication,
+                    writeResult.getUserAccountsWithNewApplication(),
                     request
             );
-            UserAccountsAwareQuery<Application> applicationsQuery = UserAccountsAwareQuery.singleQuery(
-                    application.getId(),
-                    context
+            UserAccountsAwareQuery<Application> applicationsQuery = UserAccountsAwareQuery
+                    .singleQuery(
+                            writeResult.getApplication().getId(),
+                            context
+                    );
+
+            UserAccountsAwareQueryResult<Application> queryResult = queryExecutorNoAuth.execute(
+                    applicationsQuery
             );
-            UserAccountsAwareQueryResult<Application> queryResult = queryExecutorNoAuth.execute(applicationsQuery);
 
             resultWriterNoAuth.write(queryResult, writer);
         } catch (Exception e) {
@@ -252,48 +229,96 @@ public class ApplicationsController {
         }
     }
 
-    @RequestMapping(value = "/4/applications/{aid}/sources", method = RequestMethod.POST)
-    public void writeApplicationSources(HttpServletRequest request,
-            HttpServletResponse response,
-            @PathVariable String aid)
-            throws IOException {
-        response.addHeader("Access-Control-Allow-Origin", "*");
-        Id applicationId = Id.valueOf(idCodec.decode(aid));
-        ApplicationSources sources;
-        User user = userFetcher.userFor(request).get();
-        try {
-            if (!userCanAccessApplication(applicationId, request, userFetcher)) {
+    private ApplicationWriteResult writeApplicationInternal(
+            HttpServletRequest request,
+            Set<User> userAccounts
+    ) throws ResourceForbiddenException, IOException, ReadException, NotAuthorizedException {
+
+        Set<User> userAccountsWithNewApplication = Sets.newHashSet();
+        Application application = deserialize(
+                new InputStreamReader(request.getInputStream()),
+                Application.class
+        );
+
+        if (application.getId() != null) {
+            if (!userCanAccessApplication(application.getId(), userAccounts)) {
                 throw new ResourceForbiddenException();
             }
-            sources = deserialize(new InputStreamReader(
-                    request.getInputStream()), ApplicationSources.class);
-            Optional<Application> existing = applicationStore.applicationFor(applicationId);
-            Application modified = existing.get().copyWithSources(sources);
-            checkSourceStatusChanges(user, modified, existing);
-            applicationStore.updateApplication(modified);
-        } catch (Exception e) {
-            ErrorSummary summary = ErrorSummary.forException(e);
-            new ErrorResultWriter().write(summary, null, request, response);
+
+            Optional<Application> existing = applicationStore.applicationFor(application.getId());
+            checkSourceStatusChanges(userAccounts, application, existing);
+
+            // Copy across slug and disallow modification of credentials
+            application = application.copy().withSlug(existing.get().getSlug())
+                    .withCredentials(existing.get().getCredentials()).build();
+
+            application = applicationStore.updateApplication(application);
+        } else {
+            checkSourceStatusChanges(userAccounts, application, Optional.absent());
+
+            // New application
+            application = applicationStore.createApplication(application);
+
+            // Add application to user ownership
+            for (User userAccount : userAccounts) {
+                userAccount = userAccount.copyWithAdditionalApplication(application);
+                userStore.store(userAccount);
+                userAccountsWithNewApplication.add(userAccount);
+            }
         }
+
+        return ApplicationWriteResult.create(application, userAccountsWithNewApplication);
+    }
+
+    @RequestMapping(value = "/4/applications/{aid}/sources", method = RequestMethod.POST)
+    public void writeApplicationSources(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @PathVariable String aid
+    ) throws IOException {
+
+        writeApplicationSourcesInternal(
+                request,
+                response,
+                aid,
+                userFetcher.userFor(request).asSet()
+        );
     }
 
     @RequestMapping(value = "/4/admin/applications/{aid}/sources", method = RequestMethod.POST)
-    public void writeApplicationSourcesNoAuth(HttpServletRequest request,
+    public void writeApplicationSourcesNoAuth(
+            HttpServletRequest request,
             HttpServletResponse response,
-            @PathVariable String aid)
+            @PathVariable String aid
+    ) throws IOException {
+
+        writeApplicationSourcesInternal(
+                request,
+                response,
+                aid,
+                userFetcherNoAuth.userFor(request)
+        );
+    }
+
+    private void writeApplicationSourcesInternal(HttpServletRequest request,
+            HttpServletResponse response, String aid, Set<User> userAccounts)
             throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
+
         Id applicationId = Id.valueOf(idCodec.decode(aid));
         ApplicationSources sources;
-        Set<User> userAccounts = userFetcherNoAuth.userFor(request);
+
         try {
-            if (!userCanAccessApplication(applicationId, request, userFetcherNoAuth)) {
+            if (!userCanAccessApplication(applicationId, userAccounts)) {
                 throw new ResourceForbiddenException();
             }
+
             sources = deserialize(new InputStreamReader(
                     request.getInputStream()), ApplicationSources.class);
+
             Optional<Application> existing = applicationStore.applicationFor(applicationId);
             Application modified = existing.get().copyWithSources(sources);
+
             checkSourceStatusChanges(userAccounts, modified, existing);
             applicationStore.updateApplication(modified);
         } catch (Exception e) {
@@ -302,41 +327,44 @@ public class ApplicationsController {
         }
     }
 
-
     @RequestMapping(value = "/4/applications/{aid}/precedence", method = RequestMethod.POST)
-    public void setPrecedenceOrder(HttpServletRequest request,
+    public void setPrecedenceOrder(
+            HttpServletRequest request,
             HttpServletResponse response,
-            @PathVariable String aid) throws IOException {
-        response.addHeader("Access-Control-Allow-Origin", "*");
-        Id applicationId = Id.valueOf(idCodec.decode(aid));
-        PrecedenceOrdering ordering;
-        try {
-            if (!userCanAccessApplication(applicationId, request, userFetcher)) {
-                throw new ResourceForbiddenException();
-            }
-            ordering = deserialize(
-                    new InputStreamReader(request.getInputStream()),
-                    PrecedenceOrdering.class
-            );
-            List<Publisher> sourceOrder;
-            sourceOrder = getSourcesFrom(ordering);
-            Application existing = applicationStore.applicationFor(applicationId).get();
-            applicationStore.updateApplication(existing.copyWithReadSourceOrder(sourceOrder));
-        } catch (Exception e) {
-            ErrorSummary summary = ErrorSummary.forException(e);
-            new ErrorResultWriter().write(summary, null, request, response);
-        }
+            @PathVariable String aid
+    ) throws IOException {
+
+        setPrecedenceOrderInternal(
+                request,
+                response,
+                aid,
+                userFetcher.userFor(request).asSet()
+        );
     }
 
     @RequestMapping(value = "/4/admin/applications/{aid}/precedence", method = RequestMethod.POST)
-    public void setPrecedenceOrderNoAuth(HttpServletRequest request,
+    public void setPrecedenceOrderNoAuth(
+            HttpServletRequest request,
             HttpServletResponse response,
-            @PathVariable String aid) throws IOException {
+            @PathVariable String aid
+    ) throws IOException {
+
+        setPrecedenceOrderInternal(
+                request,
+                response,
+                aid,
+                userFetcherNoAuth.userFor(request)
+        );
+    }
+
+    private void setPrecedenceOrderInternal(HttpServletRequest request,
+            HttpServletResponse response, String aid, Set<User> userAccounts)
+            throws IOException {
         response.addHeader("Access-Control-Allow-Origin", "*");
         Id applicationId = Id.valueOf(idCodec.decode(aid));
         PrecedenceOrdering ordering;
         try {
-            if (!userCanAccessApplication(applicationId, request, userFetcherNoAuth)) {
+            if (!userCanAccessApplication(applicationId, userAccounts)) {
                 throw new ResourceForbiddenException();
             }
             ordering = deserialize(
@@ -354,31 +382,41 @@ public class ApplicationsController {
     }
 
     @RequestMapping(value = "/4/applications/{aid}/precedence", method = RequestMethod.DELETE)
-    public void disablePrecedence(HttpServletRequest request,
+    public void disablePrecedence(
+            HttpServletRequest request,
             HttpServletResponse response,
-            @PathVariable String aid) throws IOException {
-        try {
-            response.addHeader("Access-Control-Allow-Origin", "*");
-            Id applicationId = Id.valueOf(idCodec.decode(aid));
-            if (!userCanAccessApplication(applicationId, request, userFetcher)) {
-                throw new ResourceForbiddenException();
-            }
-            Application existing = applicationStore.applicationFor(applicationId).get();
-            applicationStore.updateApplication(existing.copyWithPrecedenceDisabled());
-        } catch (Exception e) {
-            ErrorSummary summary = ErrorSummary.forException(e);
-            new ErrorResultWriter().write(summary, null, request, response);
-        }
+            @PathVariable String aid
+    ) throws IOException {
+
+        disablePrecedenceInternal(
+                request,
+                response,
+                aid,
+                userFetcher.userFor(request).asSet()
+        );
     }
 
     @RequestMapping(value = "/4/admin/applications/{aid}/precedence", method = RequestMethod.DELETE)
-    public void disablePrecedenceNoAuth(HttpServletRequest request,
+    public void disablePrecedenceNoAuth(
+            HttpServletRequest request,
             HttpServletResponse response,
-            @PathVariable String aid) throws IOException {
+            @PathVariable String aid
+    ) throws IOException {
+
+        disablePrecedenceInternal(
+                request,
+                response,
+                aid,
+                userFetcherNoAuth.userFor(request)
+        );
+    }
+
+    private void disablePrecedenceInternal(HttpServletRequest request, HttpServletResponse response,
+            String aid, Set<User> userAccounts) throws IOException {
         try {
             response.addHeader("Access-Control-Allow-Origin", "*");
             Id applicationId = Id.valueOf(idCodec.decode(aid));
-            if (!userCanAccessApplication(applicationId, request, userFetcherNoAuth)) {
+            if (!userCanAccessApplication(applicationId, userAccounts)) {
                 throw new ResourceForbiddenException();
             }
             Application existing = applicationStore.applicationFor(applicationId).get();
@@ -407,51 +445,43 @@ public class ApplicationsController {
         return sources.build();
     }
 
-    private boolean userCanAccessApplication(Id id, HttpServletRequest request,
-            UserFetcher userFetcher) {
-        Optional<User> user = userFetcher.userFor(request);
-        if (!user.isPresent()) {
-            return false;
-        } else {
-            return user.get().is(Role.ADMIN) || user.get().getApplicationIds().contains(id);
-        }
-    }
-
-    private boolean userCanAccessApplication(Id id, HttpServletRequest request,
-            NoAuthUserFetcher userFetcher) {
-        Set<User> userAccounts = userFetcher.userFor(request);
-        return userAccounts.stream().filter(user -> user.is(Role.ADMIN) || user.getApplicationIds().contains(id)).findAny().isPresent();
+    private boolean userCanAccessApplication(Id id, Set<User> userAccounts) {
+        return userAccounts.stream()
+                .filter(
+                        user -> user.is(Role.ADMIN) || user.getApplicationIds().contains(id)
+                )
+                .findAny()
+                .isPresent();
     }
 
     // Restrict source status changes that non admins can make
-    private void checkSourceStatusChanges(User user, Application application,
-            Optional<Application> existingApp) throws NotAuthorizedException {
-        // An admin can always make a source status change
-        // Additionally the sources object may be null here if creating an application
-        // and the element has not been specified
-        if (user.is(Role.ADMIN) || application.getSources() == null) {
-            return;
-        }
-        // cycle through source reads and check status changes are allowed
-        checkAllSources(application, existingApp);
-    }
-
     private void checkSourceStatusChanges(Set<User> userAccounts, Application application,
             Optional<Application> existingApp) throws NotAuthorizedException {
-        // An admin can always make a source status change
-        // Additionally the sources object may be null here if creating an application
-        // and the element has not been specified
-        if (userAccounts.stream()
+        boolean isAdmin = userAccounts.stream()
                 .filter(user -> user.is(Role.ADMIN))
                 .findAny()
-                .isPresent() || application.getSources() == null) {
+                .isPresent();
+
+        // Admins are allowed to do anything
+        if (isAdmin) {
+            return;
+        }
+
+        // Non-admins are not allowed to un-revoke an application
+        if (existingApp.isPresent()
+                && existingApp.get().isRevoked()
+                && !application.isRevoked()) {
+            throw new NotAuthorizedException();
+        }
+
+        // The sources object may be null here if creating an application
+        // and the element has not been specified
+        if (application.getSources() == null) {
             return;
         }
         // cycle through source reads and check status changes are allowed
         checkAllSources(application, existingApp);
     }
-
-
 
     private void checkAllSources(Application application, Optional<Application> existingApp)
             throws NotAuthorizedException {
@@ -472,5 +502,34 @@ public class ApplicationsController {
 
     private boolean isStateChanged(SourceStatus existing, SourceStatus submitted) {
         return !submitted.getState().equals(existing.getState());
+    }
+
+    private static class ApplicationWriteResult {
+
+        private final Application application;
+        private final Set<User> userAccountsWithNewApplication;
+
+        private ApplicationWriteResult(
+                Application application,
+                Set<User> userAccountsWithNewApplication
+        ) {
+            this.application = checkNotNull(application);
+            this.userAccountsWithNewApplication = checkNotNull(userAccountsWithNewApplication);
+        }
+
+        public static ApplicationWriteResult create(
+                Application application,
+                Set<User> userAccountsWithNewApplication
+        ) {
+            return new ApplicationWriteResult(application, userAccountsWithNewApplication);
+        }
+
+        public Application getApplication() {
+            return application;
+        }
+
+        public Set<User> getUserAccountsWithNewApplication() {
+            return userAccountsWithNewApplication;
+        }
     }
 }
