@@ -24,8 +24,6 @@ public class DebugModule {
                 legacyPersistenceModule,
                 persistenceModule,
                 explicitEquivalenceMigrator(),
-                persistenceModule.channelResolver(),
-                persistenceModule.getEquivalentScheduleStore(),
                 persistenceModule.contentIndex(),
                 persistenceModule.esContentTranslator()
         );
@@ -42,5 +40,13 @@ public class DebugModule {
                 legacyPersistenceModule.legacyEquivalenceStore(),
                 persistenceModule.nullMessageSendingGraphStore()
         );
+    }
+
+    @Bean
+    public ScheduleDebugController scheduleDebugController() {
+        return new ScheduleDebugController(
+                persistenceModule.channelResolver(),
+                persistenceModule.getEquivalentScheduleStore(),
+                persistenceModule.scheduleStore());
     }
 }
