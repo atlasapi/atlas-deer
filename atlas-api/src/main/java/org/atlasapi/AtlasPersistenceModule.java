@@ -28,29 +28,51 @@ import org.atlasapi.media.segment.MongoSegmentResolver;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
+import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
+import org.atlasapi.persistence.audit.PersistenceAuditLog;
+import org.atlasapi.persistence.content.DefaultEquivalentContentResolver;
+import org.atlasapi.persistence.content.EquivalentContentResolver;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
+import org.atlasapi.persistence.content.LookupResolvingContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoContentResolver;
 import org.atlasapi.persistence.content.mongo.MongoPlayerStore;
 import org.atlasapi.persistence.content.mongo.MongoServiceStore;
+import org.atlasapi.persistence.content.mongo.MongoTopicStore;
+import org.atlasapi.persistence.content.organisation.MongoOrganisationStore;
+import org.atlasapi.persistence.content.schedule.mongo.MongoScheduleStore;
+import org.atlasapi.persistence.event.MongoEventStore;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
+import org.atlasapi.persistence.lookup.TransitiveLookupWriter;
 import org.atlasapi.persistence.lookup.mongo.MongoLookupEntryStore;
 import org.atlasapi.persistence.player.CachingPlayerResolver;
 import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.CachingServiceResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.schedule.EquivalentScheduleStore;
+import org.atlasapi.schedule.ScheduleResolver;
 import org.atlasapi.schedule.ScheduleStore;
 import org.atlasapi.schedule.ScheduleWriter;
 import org.atlasapi.segment.SegmentStore;
 import org.atlasapi.system.MetricsModule;
+import org.atlasapi.system.legacy.ContentListerResourceListerAdapter;
 import org.atlasapi.system.legacy.LegacyChannelGroupResolver;
 import org.atlasapi.system.legacy.LegacyChannelGroupTransformer;
 import org.atlasapi.system.legacy.LegacyChannelResolver;
 import org.atlasapi.system.legacy.LegacyChannelTransformer;
+import org.atlasapi.system.legacy.LegacyContentLister;
 import org.atlasapi.system.legacy.LegacyContentResolver;
+import org.atlasapi.system.legacy.LegacyContentTransformer;
+import org.atlasapi.system.legacy.LegacyEventResolver;
+import org.atlasapi.system.legacy.LegacyLookupResolvingContentLister;
+import org.atlasapi.system.legacy.LegacyOrganisationResolver;
+import org.atlasapi.system.legacy.LegacyOrganisationTransformer;
+import org.atlasapi.system.legacy.LegacyScheduleResolver;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
+import org.atlasapi.system.legacy.LegacyTopicLister;
+import org.atlasapi.system.legacy.LegacyTopicResolver;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
@@ -64,6 +86,8 @@ import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.persistence.mongo.health.MongoConnectionPoolProbe;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.properties.Parameter;
+import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.queue.MessageSenders;
 
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
@@ -78,6 +102,7 @@ import com.mongodb.ServerAddress;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -86,6 +111,9 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 @Import({ KafkaMessagingModule.class })
 public class AtlasPersistenceModule {
+
+    private static final String MONGO_COLLECTION_LOOKUP = "lookup";
+    private static final PersistenceAuditLog persistenceAuditLog = new NoLoggingPersistenceAuditLog();
 
     private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
     private final Integer mongoWritePort = Configurer.get("mongo.write.port").toInt();
@@ -429,7 +457,7 @@ public class AtlasPersistenceModule {
     public MongoLookupEntryStore legacyEquivalenceStore() {
         return new MongoLookupEntryStore(
                 databasedReadMongo().collection("lookup"),
-                new NoLoggingPersistenceAuditLog(),
+                persistenceAuditLog,
                 ReadPreference.primaryPreferred()
         );
     }
@@ -444,5 +472,93 @@ public class AtlasPersistenceModule {
 
     public ScheduleWriter v2ScheduleStore() {
         return persistenceModule().v2ScheduleStore();
+    }
+
+    @Bean
+    @Qualifier("legacy")
+    public EventResolver legacyEventResolver() {
+        return new LegacyEventResolver(new MongoEventStore(databasedReadMongo()), idSettingOrganisationStore());
+    }
+
+
+    @Bean
+    @Qualifier("legacy")
+    public ContentListerResourceListerAdapter legacyContentLister() {
+        DatabasedMongo mongoDb = databasedReadMongo();
+        LegacyContentLister contentLister = new LegacyLookupResolvingContentLister(
+                new MongoLookupEntryStore(
+                        mongoDb.collection(MONGO_COLLECTION_LOOKUP),
+                        persistenceAuditLog,
+                        ReadPreference.secondary()
+                ),
+                new MongoContentResolver(mongoDb, legacyEquivalenceStore())
+        );
+        return new ContentListerResourceListerAdapter(
+                contentLister,
+                new LegacyContentTransformer(
+                        channelStore(),
+                        legacySegmentMigrator()
+                )
+        );
+    }
+
+
+    @Bean
+    @Qualifier("legacy")
+    public LegacyTopicLister legacyTopicLister() {
+        return new LegacyTopicLister(legacyTopicStore());
+    }
+
+    @Bean
+    @Qualifier("legacy")
+    public MongoTopicStore legacyTopicStore() {
+        return new MongoTopicStore(databasedReadMongo(), persistenceAuditLog);
+    }
+
+    @Bean
+    @Qualifier("legacy")
+    public LegacyTopicResolver legacyTopicResolver() {
+        return new LegacyTopicResolver(legacyTopicStore(), legacyTopicStore());
+    }
+
+
+    @Bean
+    @Qualifier("legacy")
+    public OrganisationResolver legacyOrganisationResolver() {
+        TransitiveLookupWriter lookupWriter = TransitiveLookupWriter.generatedTransitiveLookupWriter(
+                legacyEquivalenceStore());
+        MongoOrganisationStore store = new MongoOrganisationStore(databasedReadMongo(),
+                lookupWriter,
+                legacyEquivalenceStore(),
+                persistenceAuditLog);
+        LegacyOrganisationTransformer transformer = new LegacyOrganisationTransformer();
+        return new LegacyOrganisationResolver(store, transformer);
+    }
+
+
+    @Bean
+    @Qualifier("legacy")
+    public ScheduleResolver legacyScheduleStore() {
+        DatabasedMongo db = databasedReadMongo();
+        KnownTypeContentResolver contentResolver = new MongoContentResolver(
+                db,
+                legacyEquivalenceStore()
+        );
+        LookupResolvingContentResolver resolver = new LookupResolvingContentResolver(
+                contentResolver,
+                legacyEquivalenceStore()
+        );
+        EquivalentContentResolver equivalentContentResolver = new DefaultEquivalentContentResolver(
+                contentResolver,
+                legacyEquivalenceStore()
+        );
+        MessageSender<ScheduleUpdateMessage> sender = MessageSenders.noopSender();
+        return new LegacyScheduleResolver(new MongoScheduleStore(
+                db,
+                channelStore(),
+                resolver,
+                equivalentContentResolver,
+                sender
+        ), legacySegmentMigrator(), channelStore());
     }
 }

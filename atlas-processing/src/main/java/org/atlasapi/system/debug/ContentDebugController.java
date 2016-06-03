@@ -12,6 +12,7 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EsContent;
 import org.atlasapi.content.EsContentTranslator;
@@ -24,7 +25,7 @@ import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.system.bootstrap.ContentBootstrapListener;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.atlasapi.system.legacy.LegacyPersistenceModule;
+import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.util.EsObject;
 
 import com.metabroadcast.common.collect.OptionalMap;
@@ -64,7 +65,7 @@ public class ContentDebugController {
             .create();
     private final ObjectMapper jackson = new ObjectMapper();
 
-    private final LegacyPersistenceModule legacyPersistence;
+    private final ContentResolver legacyContentResolver;
     private final AtlasPersistenceModule persistence;
     private final ContentIndex index;
     private final EsContentTranslator esContentTranslator;
@@ -73,12 +74,13 @@ public class ContentDebugController {
     private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
 
     public ContentDebugController(
-            LegacyPersistenceModule legacyPersistence,
+            ContentResolver legacyContentResolver,
+            LegacySegmentMigrator legacySegmentMigrator,
             AtlasPersistenceModule persistence,
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             ContentIndex index,
             EsContentTranslator esContentTranslator) {
-        this.legacyPersistence = checkNotNull(legacyPersistence);
+        this.legacyContentResolver = checkNotNull(legacyContentResolver);
         this.persistence = checkNotNull(persistence);
         this.index = checkNotNull(index);
         this.esContentTranslator = checkNotNull(esContentTranslator);
@@ -88,7 +90,7 @@ public class ContentDebugController {
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(index)
-                .withMigrateHierarchies(legacyPersistence)
+                .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .build();
 
         this.contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
@@ -96,7 +98,7 @@ public class ContentDebugController {
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
                 .withContentIndex(index)
-                .withMigrateHierarchies(legacyPersistence)
+                .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(persistence.nullMessageSendingEquivalenceGraphStore())
                 .build();
     }
@@ -172,7 +174,7 @@ public class ContentDebugController {
     @RequestMapping("/system/debug/content/{id}/legacy")
     public void printLegacyContent(@PathVariable("id") String id,
             final HttpServletResponse response) throws Exception {
-        ListenableFuture<Resolved<Content>> resolving = legacyPersistence.legacyContentResolver()
+        ListenableFuture<Resolved<Content>> resolving = legacyContentResolver
                 .resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id))));
         Resolved<Content> resolved = Futures.get(resolving, Exception.class);
         Content content = Iterables.getOnlyElement(resolved.getResources());
@@ -307,7 +309,7 @@ public class ContentDebugController {
 
     private Content resolveLegacyContent(Long id) {
         return Iterables.getOnlyElement(
-                Futures.getUnchecked(legacyPersistence.legacyContentResolver()
+                Futures.getUnchecked(legacyContentResolver
                         .resolveIds(ImmutableList.of(Id.valueOf(id)))).getResources()
         );
     }

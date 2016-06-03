@@ -11,7 +11,6 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.system.legacy.LegacyEventResolver;
-import org.atlasapi.system.legacy.LegacyPersistenceModule;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -37,7 +36,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class EventDebugControllerTest {
 
     @Mock
-    private LegacyPersistenceModule legacyPersistenceModule;
+    private LegacyEventResolver legacyEventResolver;
     @Mock
     private AtlasPersistenceModule atlasPersistenceModule;
     @Mock
@@ -58,7 +57,7 @@ public class EventDebugControllerTest {
     public void setUp() {
         lowercaseDecoder = SubstitutionTableNumberCodec.lowerCaseOnly();
         when(atlasPersistenceModule.eventResolver()).thenReturn(resolver);
-        controller = new EventDebugController(legacyPersistenceModule, atlasPersistenceModule);
+        controller = new EventDebugController(legacyEventResolver, atlasPersistenceModule);
     }
 
     @Test
