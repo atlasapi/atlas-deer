@@ -27,7 +27,6 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.system.legacy.UnresolvedLegacySegmentException;
 
@@ -68,7 +67,8 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             EquivalentContentStore equivalentContentStore,
             ContentIndex contentIndex,
             boolean migrateHierarchy,
-            LegacyPersistenceModule legacyPersistenceModule,
+            LegacySegmentMigrator legacySegmentMigrator,
+            ContentResolver legacyContentResolver,
             boolean migrateEquivalents,
             EquivalenceGraphStore equivalenceGraphStore
     ) {
@@ -77,15 +77,13 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
         this.contentIndex = checkNotNull(contentIndex);
 
-        this.migrateHierarchy = checkNotNull(migrateHierarchy);
-        checkArgument(!migrateHierarchy || legacyPersistenceModule != null);
-
-        if (legacyPersistenceModule != null) {
-            this.legacySegmentMigrator = legacyPersistenceModule.legacySegmentMigrator();
-            this.legacyContentResolver = legacyPersistenceModule.legacyContentResolver();
+        this.migrateHierarchy = migrateHierarchy;
+        if (this.migrateHierarchy) {
+            this.legacySegmentMigrator = checkNotNull(legacySegmentMigrator);
+            this.legacyContentResolver = checkNotNull(legacyContentResolver);
         } else {
-            this.legacySegmentMigrator = null;
-            this.legacyContentResolver = null;
+            this.legacySegmentMigrator = legacySegmentMigrator;
+            this.legacyContentResolver = legacyContentResolver;
         }
 
         this.migrateEquivalents = checkNotNull(migrateEquivalents);
@@ -455,7 +453,8 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         private ContentIndex contentIndex;
 
         private boolean migrateHierarchy = false;
-        private LegacyPersistenceModule legacyPersistenceModule = null;
+        private LegacySegmentMigrator legacySegmentMigrator;
+        private ContentResolver legacyContentResolver;
 
         private boolean migrateEquivalents = false;
         private EquivalenceGraphStore equivalenceGraphStore = null;
@@ -484,16 +483,19 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             return this;
         }
 
-        public Builder withLegacyPersistenceModule(
-                LegacyPersistenceModule legacyPersistenceModule) {
-            this.legacyPersistenceModule = legacyPersistenceModule;
+        public Builder withSegmentMigratorAndContentResolver(
+                LegacySegmentMigrator legacySegmentMigrator,
+                ContentResolver legacyContentResolver) {
+            this.legacySegmentMigrator = legacySegmentMigrator;
+            this.legacyContentResolver = legacyContentResolver;
             return this;
         }
 
-        public Builder withMigrateHierarchies(LegacyPersistenceModule legacyPersistenceModule) {
+        public Builder withMigrateHierarchies(
+                LegacySegmentMigrator legacySegmentMigrator,
+                ContentResolver legacyContentResolver) {
             this.migrateHierarchy = true;
-            this.legacyPersistenceModule = legacyPersistenceModule;
-            return this;
+            return withSegmentMigratorAndContentResolver(legacySegmentMigrator, legacyContentResolver);
         }
 
         public Builder withMigrateEquivalents(EquivalenceGraphStore equivalenceGraphStore) {
@@ -509,7 +511,8 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                     equivalentContentStore,
                     contentIndex,
                     migrateHierarchy,
-                    legacyPersistenceModule,
+                    legacySegmentMigrator,
+                    legacyContentResolver,
                     migrateEquivalents,
                     equivalenceGraphStore
             );

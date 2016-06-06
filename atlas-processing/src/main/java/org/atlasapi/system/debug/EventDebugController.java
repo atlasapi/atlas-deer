@@ -7,7 +7,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
-import org.atlasapi.system.legacy.LegacyPersistenceModule;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -30,15 +29,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Controller
 public class EventDebugController {
 
-    private final LegacyPersistenceModule legacyPersistenceModule;
+    private final EventResolver legacyEventResolver;
     private final AtlasPersistenceModule atlasPersistenceModule;
     private final NumberToShortStringCodec lowercaseDecoder;
     private final Gson gson;
 
     public EventDebugController(
-            LegacyPersistenceModule legacyPersistenceModule,
+            EventResolver legacyEventResolver,
             AtlasPersistenceModule atlasPersistenceModule) {
-        this.legacyPersistenceModule = checkNotNull(legacyPersistenceModule);
+        this.legacyEventResolver = checkNotNull(legacyEventResolver);
         this.atlasPersistenceModule = checkNotNull(atlasPersistenceModule);
         this.lowercaseDecoder = SubstitutionTableNumberCodec.lowerCaseOnly();
         this.gson = new GsonBuilder().registerTypeAdapter(
@@ -54,7 +53,6 @@ public class EventDebugController {
             throws Exception {
         Id decodedId = Id.valueOf(lowercaseDecoder.decode(id));
 
-        EventResolver legacyEventResolver = legacyPersistenceModule.legacyEventResolver();
         ListenableFuture<Resolved<Event>> future = legacyEventResolver.resolveIds(
                 ImmutableList.of(decodedId));
 

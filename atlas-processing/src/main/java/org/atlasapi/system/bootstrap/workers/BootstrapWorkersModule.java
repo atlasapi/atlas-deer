@@ -18,7 +18,6 @@ import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
-import org.atlasapi.system.legacy.LegacyPersistenceModule;
 
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
@@ -40,7 +39,6 @@ import org.springframework.context.annotation.Lazy;
 @Import({
         AtlasPersistenceModule.class,
         KafkaMessagingModule.class,
-        LegacyPersistenceModule.class,
         ProcessingHealthModule.class
 })
 public class BootstrapWorkersModule {
@@ -92,8 +90,6 @@ public class BootstrapWorkersModule {
     @Autowired
     private AtlasPersistenceModule persistence;
     @Autowired
-    private LegacyPersistenceModule legacy;
-    @Autowired
     private KafkaMessagingModule messaging;
     @Autowired
     private ProcessingMetricsModule metricsModule;
@@ -112,7 +108,7 @@ public class BootstrapWorkersModule {
     @Lazy
     KafkaConsumer contentBootstrapWorker() {
         ContentBootstrapWorker worker = new ContentBootstrapWorker(
-                legacy.legacyContentResolver(),
+                persistence.legacyContentResolver(),
                 persistence.contentStore(),
                 metricsModule.metrics().timer("ContentBootstrapWorker")
         );
@@ -134,7 +130,7 @@ public class BootstrapWorkersModule {
     @Lazy
     KafkaConsumer organisationBootstrapWorker() {
         OrganisationBootstrapWorker worker = new OrganisationBootstrapWorker(
-                legacy.legacyOrganisationResolver(),
+                persistence.legacyOrganisationResolver(),
                 persistence.idSettingOrganisationStore(),
                 metricsModule.metrics().timer("OrganisationBootstrapWorker")
         );
@@ -202,7 +198,7 @@ public class BootstrapWorkersModule {
     @Lazy
     KafkaConsumer topicReadWriter() {
         TopicReadWriteWorker worker = new TopicReadWriteWorker(
-                legacy.legacyTopicResolver(),
+                persistence.legacyTopicResolver(),
                 persistence.topicStore(),
                 metricsModule.metrics().timer("TopicBootstrapWorker")
         );
@@ -224,7 +220,7 @@ public class BootstrapWorkersModule {
     @Lazy
     KafkaConsumer eventReadWriter() {
         SeparatingEventReadWriteWorker worker = new SeparatingEventReadWriteWorker(
-                legacy.legacyEventResolver(),
+                persistence.legacyEventResolver(),
                 persistence.eventWriter(),
                 metricsModule.metrics().timer("SeparatingEventBootstrapWorker")
         );
@@ -245,8 +241,8 @@ public class BootstrapWorkersModule {
     @Bean
     public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
         return new DirectAndExplicitEquivalenceMigrator(
-                legacy.legacyContentResolver(),
-                legacy.legacyEquivalenceStore(),
+                persistence.legacyContentResolver(),
+                persistence.legacyEquivalenceStore(),
                 persistence.nullMessageSendingGraphStore()
         );
     }
@@ -286,10 +282,10 @@ public class BootstrapWorkersModule {
     @Bean
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(
-                legacy.legacyScheduleStore(),
+                persistence.legacyScheduleStore(),
                 persistence.scheduleStore(),
                 new DelegatingContentStore(
-                        legacy.legacyContentResolver(),
+                        persistence.legacyContentResolver(),
                         persistence.contentStore()
                 )
         );
@@ -299,16 +295,17 @@ public class BootstrapWorkersModule {
     public ScheduleBootstrapWithContentMigrationTaskFactory
     scheduleBootstrapWithContentMigrationTaskFactory() {
         return new ScheduleBootstrapWithContentMigrationTaskFactory(
-                legacy.legacyScheduleStore(),
+                persistence.legacyScheduleStore(),
                 persistence.scheduleStore(),
                 new DelegatingContentStore(
-                        legacy.legacyContentResolver(),
+                        persistence.legacyContentResolver(),
                         persistence.contentStore()
                 ),
                 search.equivContentIndex(),
                 explicitEquivalenceMigrator(),
                 persistence,
-                legacy
+                persistence.legacySegmentMigrator(),
+                persistence.legacyContentResolver()
         );
     }
 
@@ -316,10 +313,10 @@ public class BootstrapWorkersModule {
     public EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory
     equivalenceWritingChannelIntervalScheduleBootstrapTaskFactory() {
         return new EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory(
-                legacy.legacyScheduleStore(),
+                persistence.legacyScheduleStore(),
                 persistence.scheduleStore(),
                 new DelegatingContentStore(
-                        legacy.legacyContentResolver(),
+                        persistence.legacyContentResolver(),
                         persistence.contentStore()
                 ),
                 persistence.getEquivalentScheduleStore(),
@@ -330,10 +327,10 @@ public class BootstrapWorkersModule {
     @Bean
     public ChannelIntervalScheduleBootstrapTaskFactory scheduleV2BootstrapTaskFactory() {
         return new ChannelIntervalScheduleBootstrapTaskFactory(
-                legacy.legacyScheduleStore(),
+                persistence.legacyScheduleStore(),
                 persistence.v2ScheduleStore(),
                 new DelegatingContentStore(
-                        legacy.legacyContentResolver(),
+                        persistence.legacyContentResolver(),
                         persistence.contentStore()
                 )
         );

@@ -22,7 +22,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
@@ -52,7 +51,6 @@ public class ContentBootstrapListenerTest {
     private @Mock DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
     private @Mock EquivalentContentStore equivalentContentStore;
     private @Mock ContentIndex contentIndex;
-    private @Mock LegacyPersistenceModule legacyPersistenceModule;
     private @Mock LegacySegmentMigrator legacySegmentMigrator;
     private @Mock ContentResolver legacyContentResolver;
     private @Mock EquivalenceGraphStore equivalenceGraphStore;
@@ -76,9 +74,6 @@ public class ContentBootstrapListenerTest {
 
     @Before
     public void setUp() throws Exception {
-        when(legacyPersistenceModule.legacyContentResolver()).thenReturn(legacyContentResolver);
-        when(legacyPersistenceModule.legacySegmentMigrator()).thenReturn(legacySegmentMigrator);
-
         when(item.getId()).thenReturn(itemRef.getId());
 
         contentBootstrapListener = ContentBootstrapListener.builder()
@@ -86,7 +81,7 @@ public class ContentBootstrapListenerTest {
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
                 .withContentIndex(contentIndex)
-                .withMigrateHierarchies(legacyPersistenceModule)
+                .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .build();
     }
 
@@ -135,7 +130,7 @@ public class ContentBootstrapListenerTest {
                 .withEquivalenceMigrator(equivalenceMigrator)
                 .withEquivalentContentStore(equivalentContentStore)
                 .withContentIndex(contentIndex)
-                .withMigrateHierarchies(legacyPersistenceModule)
+                .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
                 .withMigrateEquivalents(equivalenceGraphStore)
                 .build();
 

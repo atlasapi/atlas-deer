@@ -36,9 +36,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
@@ -55,6 +52,9 @@ public class LegacyContentTransformerTest {
 
     @Mock
     private LegacySegmentMigrator legacySegmentMigrator;
+
+    @Mock
+    private GenreToTagMapper genreToTagMapper;
 
     @InjectMocks
     private LegacyContentTransformer objectUnderTest;

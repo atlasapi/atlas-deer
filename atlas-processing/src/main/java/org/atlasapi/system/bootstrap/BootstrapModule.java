@@ -18,7 +18,6 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.atlasapi.system.legacy.LegacyPersistenceModule;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
 import org.atlasapi.topic.Topic;
@@ -42,7 +41,7 @@ import org.springframework.context.annotation.Import;
 
 @Configuration
 @Import({
-        AtlasPersistenceModule.class, BootstrapWorkersModule.class, LegacyPersistenceModule.class,
+        AtlasPersistenceModule.class, BootstrapWorkersModule.class,
         SchedulerModule.class, ProcessingHealthModule.class })
 public class BootstrapModule {
 
@@ -54,7 +53,6 @@ public class BootstrapModule {
             "boootstrap.source.numThreads").toInt();
 
     @Autowired private AtlasPersistenceModule persistence;
-    @Autowired private LegacyPersistenceModule legacy;
     @Autowired private BootstrapWorkersModule workers;
     @Autowired private SchedulerModule scheduler;
     @Autowired private ElasticSearchContentIndexModule search;
@@ -66,7 +64,7 @@ public class BootstrapModule {
         BootstrapController bootstrapController = new BootstrapController();
 
         bootstrapController.addBootstrapPair("legacy-content",
-                new ResourceBootstrapper<Content>(legacy.legacyContentLister()),
+                new ResourceBootstrapper<Content>(persistence.legacyContentLister()),
                 new BootstrapListenerFactory<Content>() {
 
                     @Override
@@ -79,7 +77,7 @@ public class BootstrapModule {
                 }
         );
         bootstrapController.addBootstrapPair("legacy-topics",
-                new ResourceBootstrapper<Topic>(legacy.legacyTopicLister()),
+                new ResourceBootstrapper<Topic>(persistence.legacyTopicLister()),
                 new BootstrapListenerFactory<Topic>() {
 
                     @Override
@@ -97,8 +95,8 @@ public class BootstrapModule {
     @Bean
     ContentBootstrapController contentBootstrapController() {
         return new ContentBootstrapController(
-                legacy.legacyContentResolver(),
-                legacy.legacyContentLister(),
+                persistence.legacyContentResolver(),
+                persistence.legacyContentLister(),
                 persistence.nullMessageSendingContentStore(),
                 search.equivContentIndex(),
                 persistence,
@@ -117,7 +115,7 @@ public class BootstrapModule {
     @Bean
     IndividualTopicBootstrapController topicBootstrapController() {
         return new IndividualTopicBootstrapController(
-                legacy.legacyTopicResolver(),
+                persistence.legacyTopicResolver(),
                 persistence.topicStore()
         );
     }
@@ -153,10 +151,10 @@ public class BootstrapModule {
 
     @Bean
     ChannelIntervalScheduleBootstrapTaskFactory scheduleBootstrapTaskFactory() {
-        return new ChannelIntervalScheduleBootstrapTaskFactory(legacy.legacyScheduleStore(),
+        return new ChannelIntervalScheduleBootstrapTaskFactory(persistence.legacyScheduleStore(),
                 persistence.scheduleStore(),
                 new DelegatingContentStore(
-                        legacy.legacyContentResolver(),
+                        persistence.legacyContentResolver(),
                         persistence.contentStore()
                 )
         );
@@ -192,7 +190,7 @@ public class BootstrapModule {
     @Bean
     public OrganisationBoostrapController organisationBootstrapController() {
         return new OrganisationBoostrapController(
-                legacy.legacyOrganisationResolver(),
+                persistence.legacyOrganisationResolver(),
                 persistence.idSettingOrganisationStore()
         );
     }

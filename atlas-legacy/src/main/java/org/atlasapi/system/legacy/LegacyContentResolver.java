@@ -9,7 +9,6 @@ import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.LookupRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.persistence.content.KnownTypeContentResolver;
@@ -34,6 +33,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class LegacyContentResolver implements ContentResolver {
 
     private LookupEntryStore lookupStore;
@@ -41,11 +42,11 @@ public class LegacyContentResolver implements ContentResolver {
     private LegacyContentTransformer transformer;
 
     public LegacyContentResolver(LookupEntryStore lookupStore,
-            KnownTypeContentResolver contentResolver, LegacySegmentMigrator legacySegmentMigrator,
-            ChannelResolver channelResolver) {
+            KnownTypeContentResolver contentResolver,
+            LegacyContentTransformer legacyContentTransformer) {
         this.lookupStore = lookupStore;
         this.contentResolver = contentResolver;
-        this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
+        this.transformer = checkNotNull(legacyContentTransformer);
     }
 
     protected LegacyContentResolver() {

@@ -8,7 +8,6 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.media.entity.Schedule.ScheduleChannel;
 import org.atlasapi.schedule.ChannelSchedule;
@@ -34,10 +33,9 @@ public class LegacyScheduleResolver implements ScheduleResolver {
     private final LegacyChannelTransformer channelTransformer;
 
     public LegacyScheduleResolver(org.atlasapi.persistence.content.ScheduleResolver legacyResolver,
-            LegacySegmentMigrator legacySegmentMigrator,
-            ChannelResolver channelResolver) {
+            LegacyContentTransformer legacyContentTransformer) {
         this.legacyResolver = checkNotNull(legacyResolver);
-        this.transformer = new LegacyContentTransformer(channelResolver, legacySegmentMigrator);
+        this.transformer = checkNotNull(legacyContentTransformer);
         this.channelTransformer = new LegacyChannelTransformer();
     }
 
