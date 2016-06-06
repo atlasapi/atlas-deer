@@ -79,7 +79,7 @@ public class ScheduleDebugController {
             Set<Publisher> selectedSources = null;
 
             if (selectedSourcesKeys != null) {
-                Splitter.on(",")
+                selectedSources = Splitter.on(",")
                         .splitToList(selectedSourcesKeys)
                         .stream()
                         .map(key -> Publisher.fromKey(key).requireValue())
