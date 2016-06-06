@@ -1,5 +1,6 @@
 package org.atlasapi.system.legacy;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -77,12 +78,17 @@ public class LegacyContentTransformer
     private final ChannelResolver channelResolver;
     private final LegacySegmentMigrator legacySegmentMigrator;
     private final LegacyCrewMemberTransformer legacyCrewMemberTransformer;
+    private final GenreToTagMapper legacyGenreToTagTransformer;
+    private final LegacyContentTopicMerger legacyTagTopicMerger;
 
     public LegacyContentTransformer(ChannelResolver channelResolver,
-            LegacySegmentMigrator segmentMigrator) {
+            LegacySegmentMigrator segmentMigrator,
+            GenreToTagMapper genreToTagTransformer) {
         this.channelResolver = checkNotNull(channelResolver);
         this.legacySegmentMigrator = checkNotNull(segmentMigrator);
         this.legacyCrewMemberTransformer = new LegacyCrewMemberTransformer();
+        this.legacyTagTopicMerger = new LegacyContentTopicMerger();
+        this.legacyGenreToTagTransformer = checkNotNull(genreToTagTransformer);
     }
 
     @Override
@@ -559,7 +565,14 @@ public class LegacyContentTransformer
     private <C extends org.atlasapi.content.Content> C setContentFields(C c, Content input) {
         c.setYear(input.getYear());
         c.setLanguages(input.getLanguages());
-        c.setTags(translateTopicRefs(input.getTopicRefs()));
+
+        c.setTags(
+                translateTopicRefs(
+                        legacyTagTopicMerger.mergeTags(
+                                input.getTopicRefs(),
+                                legacyGenreToTagTransformer.mapGenresToTopicRefs(input.getGenres())
+                        )));
+
         c.setGenericDescription(input.getGenericDescription());
         c.setEventRefs(translateEventRefs(input.events()));
         c.setCertificates(Iterables.transform(
@@ -620,7 +633,7 @@ public class LegacyContentTransformer
 
 
 
-    private Iterable<Tag> translateTopicRefs(List<TopicRef> topicRefs) {
+    private Iterable<Tag> translateTopicRefs(Collection<TopicRef> topicRefs) {
         return topicRefs.stream()
                 .map(tr -> Tag.valueOf(
                         Id.valueOf(tr.getTopic()),

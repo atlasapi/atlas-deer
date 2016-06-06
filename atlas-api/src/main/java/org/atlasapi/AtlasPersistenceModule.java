@@ -73,6 +73,7 @@ import org.atlasapi.system.legacy.LegacyScheduleResolver;
 import org.atlasapi.system.legacy.LegacySegmentMigrator;
 import org.atlasapi.system.legacy.LegacyTopicLister;
 import org.atlasapi.system.legacy.LegacyTopicResolver;
+import org.atlasapi.system.legacy.PaTagMap;
 import org.atlasapi.topic.EsPopularTopicIndex;
 import org.atlasapi.topic.EsTopicIndex;
 import org.atlasapi.topic.TopicStore;
@@ -113,6 +114,8 @@ import org.springframework.context.annotation.Primary;
 public class AtlasPersistenceModule {
 
     private static final String MONGO_COLLECTION_LOOKUP = "lookup";
+    private static final String MONGO_TOPICS_COLLECTION = "topics";
+
     private static final PersistenceAuditLog persistenceAuditLog = new NoLoggingPersistenceAuditLog();
 
     private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
@@ -449,14 +452,13 @@ public class AtlasPersistenceModule {
         return new LegacyContentResolver(
                 legacyEquivalenceStore(),
                 contentResolver,
-                legacySegmentMigrator(),
-                channelStore()
+                legacyContentTransformer()
         );
     }
 
     public MongoLookupEntryStore legacyEquivalenceStore() {
         return new MongoLookupEntryStore(
-                databasedReadMongo().collection("lookup"),
+                databasedReadMongo().collection(MONGO_COLLECTION_LOOKUP),
                 persistenceAuditLog,
                 ReadPreference.primaryPreferred()
         );
@@ -495,13 +497,20 @@ public class AtlasPersistenceModule {
         );
         return new ContentListerResourceListerAdapter(
                 contentLister,
-                new LegacyContentTransformer(
-                        channelStore(),
-                        legacySegmentMigrator()
-                )
+                legacyContentTransformer()
         );
     }
 
+    @Bean
+    @Qualifier("legacy")
+    public LegacyContentTransformer legacyContentTransformer() {
+        return new LegacyContentTransformer(
+                channelStore(),
+                legacySegmentMigrator(),
+                new PaTagMap(
+                        legacyTopicStore(),
+                        new MongoSequentialIdGenerator(databasedWriteMongo(), MONGO_TOPICS_COLLECTION)));
+    }
 
     @Bean
     @Qualifier("legacy")
@@ -553,12 +562,15 @@ public class AtlasPersistenceModule {
                 legacyEquivalenceStore()
         );
         MessageSender<ScheduleUpdateMessage> sender = MessageSenders.noopSender();
-        return new LegacyScheduleResolver(new MongoScheduleStore(
-                db,
-                channelStore(),
-                resolver,
-                equivalentContentResolver,
-                sender
-        ), legacySegmentMigrator(), channelStore());
+        return new LegacyScheduleResolver(
+                new MongoScheduleStore(
+                        db,
+                        channelStore(),
+                        resolver,
+                        equivalentContentResolver,
+                        sender
+                ),
+                legacyContentTransformer()
+        );
     }
 }
