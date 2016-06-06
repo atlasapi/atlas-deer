@@ -526,8 +526,7 @@ public class AtlasPersistenceModule {
         return new MongoTopicStore(databasedReadMongo(), persistenceAuditLog);
     }
 
-    @Bean
-    @Qualifier("legacy")
+    // disable Bean as this breaks API spring construction
     public LegacyTopicResolver legacyTopicResolver() {
         return new LegacyTopicResolver(legacyTopicStore(), legacyTopicStore());
     }
