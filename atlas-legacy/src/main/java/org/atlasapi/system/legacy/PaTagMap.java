@@ -1,6 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import org.atlasapi.media.entity.Publisher;
@@ -14,6 +13,7 @@ import com.metabroadcast.common.ids.IdGenerator;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.media.entity.Publisher.PA;
@@ -161,7 +161,7 @@ public class PaTagMap implements GenreToTagMapper {
      * @return set of MetaBroadcast tags as TopicRef objects for the PA content.
      */
     public Set<TopicRef> mapGenresToTopicRefs(Set<String> genres) {
-        Set<String> tags = new HashSet<>(genres.size() + 1); // +1 to account for action film hack
+        Set<String> tags = Sets.newHashSet();
         for (String genre : genres) {
             if (genre.contains("http://pressassociation.com/genres/")) {
                 String tag = paTagMap.get(genre);

@@ -114,7 +114,7 @@ import org.springframework.context.annotation.Primary;
 public class AtlasPersistenceModule {
 
     private static final String MONGO_COLLECTION_LOOKUP = "lookup";
-    private static final String MONGO_TOPICS_COLLECTION = "topics";
+    private static final String MONGO_COLLECTION_TOPICS = "topics";
 
     private static final PersistenceAuditLog persistenceAuditLog = new NoLoggingPersistenceAuditLog();
 
@@ -509,7 +509,9 @@ public class AtlasPersistenceModule {
                 legacySegmentMigrator(),
                 new PaTagMap(
                         legacyTopicStore(),
-                        new MongoSequentialIdGenerator(databasedWriteMongo(), MONGO_TOPICS_COLLECTION)));
+                        new MongoSequentialIdGenerator(databasedWriteMongo(),
+                                MONGO_COLLECTION_TOPICS
+                        )));
     }
 
     @Bean

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
 
@@ -633,8 +634,8 @@ public class LegacyContentTransformer
 
 
 
-    private Iterable<Tag> translateTopicRefs(Collection<TopicRef> topicRefs) {
-        return topicRefs.stream()
+    private Iterable<Tag> translateTopicRefs(Iterable<TopicRef> topicRefs) {
+        return StreamSupport.stream(topicRefs.spliterator(), false)
                 .map(tr -> Tag.valueOf(
                         Id.valueOf(tr.getTopic()),
                         tr.getWeighting(),
