@@ -8,7 +8,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.atlasapi.media.entity.TopicRef;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Equivalence;
 
@@ -21,7 +22,7 @@ public class LegacyContentTopicMerger {
                 Arrays.asList(topicCollections).stream()
                         .flatMap(topicCollection -> topicCollection.stream())
                         .map(equivalator::wrap)
-                        .collect(ImmutableCollectors.toSet());
+                        .collect(MoreCollectors.toSet());
 
         return dedupedTopics.stream()
                 .map(Equivalence.Wrapper::get)

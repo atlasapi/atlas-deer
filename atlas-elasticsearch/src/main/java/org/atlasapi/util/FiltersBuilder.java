@@ -18,6 +18,8 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.topic.EsTopic;
 
+import com.metabroadcast.common.stream.MoreCollectors;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -208,7 +210,7 @@ public class FiltersBuilder {
         ImmutableList<Long> channelsIdsForRegion = channels.stream()
                 .map(c -> c.getChannel().getId())
                 .map(Id::longValue)
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
         return FilterBuilders.termsFilter(
                 EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL,

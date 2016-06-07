@@ -33,8 +33,8 @@ import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
-import org.atlasapi.util.ImmutableCollectors;
 
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 
 import com.datastax.driver.core.BatchStatement;
@@ -202,7 +202,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .stream()
                 .map(statement -> statement.setConsistencyLevel(read))
                 .map(session::executeAsync)
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
         return Futures.transform(
                 Futures.allAsList(resultFutures),
@@ -235,12 +235,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule().getScheduleEntries()
                 .stream()
                 .map(ScheduleRef.Entry::getBroadcast)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         Set<String> updateBroadcastIds = updateBroadcastRefs
                 .stream()
                 .map(BroadcastRef::getSourceId)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         Set<BroadcastRef> currentBroadcastRefs = resolveBroadcasts(
                 update.getSource(),
@@ -250,7 +250,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         Set<BroadcastRef> staleBroadcasts = currentBroadcastRefs.stream()
                 .filter(broadcastRef -> !updateBroadcastIds.contains(broadcastRef.getSourceId()))
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         List<Statement> deletes = deleteStatements(
                 update.getSource(),
@@ -338,7 +338,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
                     .stream(item.getBroadcasts().spliterator(), false)
                     .filter(Broadcast::isActivelyPublished)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
 
             BatchStatement batchStatement = new BatchStatement();
 
@@ -468,7 +468,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setLong("contentCountData", contentCount)
                         .setBytes("contentData", serializedContent)
                         .setDate("now", now.toDate()))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private ByteBuffer serialize(Iterable<Item> resources) throws WriteException {
@@ -502,7 +502,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                                 .toLocalDate()
                                 .toDate())
                         .setString("broadcast", broadcastRef.getSourceId()))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId,
@@ -521,7 +521,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 WriteException.class
         ).stream()
                 .flatMap(rs -> StreamSupport.stream(rs.spliterator(), false))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
         ImmutableSet.Builder<BroadcastRef> broadcasts = ImmutableSet.builder();
         for (Row row : rows) {

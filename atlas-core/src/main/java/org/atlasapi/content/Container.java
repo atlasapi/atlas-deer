@@ -9,7 +9,8 @@ import javax.annotation.Nullable;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -123,6 +124,6 @@ public abstract class Container extends Content {
     public void setItemSummaries(List<ItemSummary> itemSummaries) {
         this.itemSummaries = itemSummaries.stream()
                 .sorted(ItemSummary.ORDERING)
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 }

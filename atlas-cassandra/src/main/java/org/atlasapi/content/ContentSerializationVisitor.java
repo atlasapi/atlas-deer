@@ -13,16 +13,15 @@ import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.RatingSerializer;
 import org.atlasapi.entity.Review;
 import org.atlasapi.entity.ReviewSerializer;
-
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.Iterables;
 
@@ -308,7 +307,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (container.getCertificates() != null) {
             builder.addAllCertificates(container.getCertificates().stream()
                     .map(certificateSerializer::serialize)
-                    .collect(ImmutableCollectors.toSet()));
+                    .collect(MoreCollectors.toSet()));
         }
 
         if (container.getYear() != null) {

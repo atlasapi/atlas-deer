@@ -4,11 +4,11 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -57,7 +57,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
                 "Processing message on ids {}, took: PT{}S, message: {}",
                 message.getGraphUpdate().getAllGraphs().stream()
                         .map(EquivalenceGraph::getId)
-                        .collect(ImmutableCollectors.toList()),
+                        .collect(MoreCollectors.toList()),
                 getTimeToProcessInSeconds(message),
                 message
         );

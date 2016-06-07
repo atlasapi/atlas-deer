@@ -6,7 +6,8 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
@@ -53,7 +54,7 @@ public class EquivalenceGraphUpdateResolver {
         ImmutableSet<Id> graphIds = graphUpdate.getAllGraphs()
                 .stream()
                 .map(EquivalenceGraph::getId)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         try {
             return graphStore.resolveIds(graphIds).get()
@@ -61,7 +62,7 @@ public class EquivalenceGraphUpdateResolver {
                     .stream()
                     .filter(Optional::isPresent)
                     .map(Optional::get)
-                    .collect(ImmutableCollectors.toSet());
+                    .collect(MoreCollectors.toSet());
 
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to resolve equivalence graphs for {}", Joiner.on(",").join(graphIds));

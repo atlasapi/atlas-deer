@@ -23,9 +23,9 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.collect.OptionalMap;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
@@ -202,7 +202,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     private Iterable<Id> graphIds(Collection<Optional<EquivalenceGraph>> values) {
         return StreamSupport.stream(Optional.presentInstances(values).spliterator(), false)
                 .flatMap(graph -> graph.getEquivalenceSet().stream())
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private <T> T get(ListenableFuture<T> future) throws WriteException {

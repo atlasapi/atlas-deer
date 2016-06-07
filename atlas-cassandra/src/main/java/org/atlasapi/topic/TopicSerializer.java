@@ -6,7 +6,8 @@ import org.atlasapi.entity.Serializer;
 import org.atlasapi.serialization.protobuf.TopicProtos;
 import org.atlasapi.source.Sources;
 import org.atlasapi.topic.Topic.Type;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -86,7 +87,7 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
         if (topic.getAliases().isEmpty()) {
             ImmutableList<Alias> aliases = msg.getAliasesList().stream()
                     .map(alias -> new Alias(alias.getNamespace(), alias.getValue()))
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
             topic.setAliases(aliases);
         }
         if (msg.getTitleCount() > 0 && topic.getTitle() == null) {

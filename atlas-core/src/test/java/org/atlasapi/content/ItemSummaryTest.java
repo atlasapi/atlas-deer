@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
@@ -78,7 +78,7 @@ public class ItemSummaryTest {
             ImmutableList<ItemSummary> sortedSummaries = summaries
                     .stream()
                     .sorted(ItemSummary.ORDERING)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
             assertThat(sortedSummaries.get(0), sameInstance(itemSummary3));
             assertThat(sortedSummaries.get(1), sameInstance(itemSummary4));
             assertThat(sortedSummaries.get(2), sameInstance(itemSummary5));

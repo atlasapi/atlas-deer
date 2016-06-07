@@ -20,7 +20,8 @@ import org.atlasapi.persistence.player.PlayerResolver;
 import org.atlasapi.persistence.service.ServiceResolver;
 import org.atlasapi.system.legacy.LegacyPlayerTransformer;
 import org.atlasapi.system.legacy.LegacyServiceTransformer;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
@@ -57,7 +58,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
                         .stream()
                         .filter(Location::getAvailable)
                         .map(location -> new EncodedLocation(encoding, location))
-                        .collect(ImmutableCollectors.toList())
+                        .collect(MoreCollectors.toList())
         ));
     }
 

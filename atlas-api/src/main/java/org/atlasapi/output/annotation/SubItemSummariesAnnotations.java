@@ -8,7 +8,8 @@ import org.atlasapi.content.ItemSummary;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.SubItemSummaryListWriter;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -62,7 +63,7 @@ public class SubItemSummariesAnnotations extends OutputAnnotation<Content> {
                     .stream()
                     .skip(offset)
                     .limit(limit)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
 
             writer.writeList(subItemSummaryListWriter, summaries, ctxt);
         }

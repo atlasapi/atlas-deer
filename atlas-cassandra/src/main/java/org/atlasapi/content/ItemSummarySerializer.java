@@ -8,7 +8,8 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -34,7 +35,7 @@ public class ItemSummarySerializer {
                             proto.hasReleaseYear() ? proto.getReleaseYear() : null,
                             proto.getCertificatesList().stream()
                                     .map(certificateSerializer::deserialize)
-                                    .collect(ImmutableCollectors.toSet())
+                                    .collect(MoreCollectors.toSet())
                     )
             )
             .put("item", proto -> new ItemSummary(
@@ -45,7 +46,7 @@ public class ItemSummarySerializer {
                             proto.hasReleaseYear() ? proto.getReleaseYear() : null,
                             proto.getCertificatesList().stream()
                                     .map(certificateSerializer::deserialize)
-                                    .collect(ImmutableCollectors.toSet())
+                                    .collect(MoreCollectors.toSet())
                     )
             )
             .build();
@@ -78,7 +79,7 @@ public class ItemSummarySerializer {
             ImmutableSet<Certificate> certs = itemSummary.getCertificates().get();
             ImmutableList<CommonProtos.Certificate> serialisedCerts = certs.stream()
                     .map(certificateSerializer::serialize)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
             builder.addAllCertificates(serialisedCerts);
         }
         return builder;
@@ -88,7 +89,7 @@ public class ItemSummarySerializer {
 
         return StreamSupport.stream(itemSummariesProtos.spliterator(), false)
                 .map(proto -> TYPE_TO_CONSTRUCTOR.get(proto.getType()).apply(proto))
-                .collect(Collectors.<ItemSummary>toList());
+                .collect(Collectors.toList());
 
     }
 }

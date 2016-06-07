@@ -2,7 +2,7 @@ package org.atlasapi.content;
 
 import java.util.Arrays;
 
-import org.atlasapi.util.ImmutableCollectors;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -69,7 +69,7 @@ public class QueryOrdering {
 
                     return new Clause(path, direction);
                 })
-                .collect(ImmutableCollectors.toList()));
+                .collect(MoreCollectors.toList()));
 
     }
 }

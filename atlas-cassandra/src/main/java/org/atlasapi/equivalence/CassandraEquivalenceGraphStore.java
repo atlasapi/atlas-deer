@@ -11,11 +11,11 @@ import java.util.stream.StreamSupport;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
 import org.atlasapi.util.GroupLock;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -47,7 +47,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     public static final Function<List<Row>, List<Row>> filterNulls =
             (Function<List<Row>, List<Row>>) input -> input.stream()
                     .filter(Objects::nonNull)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
 
     private static final String EQUIVALENCE_GRAPHS_TABLE = "equivalence_graph";
     // These are exposed to allow testing that we can cope with stale index entries which
@@ -137,14 +137,14 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
 
     private OptionalMap<Id, EquivalenceGraph> getRequestedIdToGraphMap(
             Map<Id, Long> idIndex, Map<Long, EquivalenceGraph> rowGraphIndex) {
+        java.util.function.Function<Entry<Id,Long>,EquivalenceGraph> valueFunction = entry -> rowGraphIndex.get(entry.getValue());
         return ImmutableOptionalMap.fromMap(
                 idIndex.entrySet().stream()
                         .filter(entry -> hasResolvedEquivalenceGraph(
                                 entry.getValue(), entry.getKey(), rowGraphIndex
                         ))
-                        .collect(ImmutableCollectors.toMap(
-                                Entry::getKey,
-                                entry -> rowGraphIndex.get(entry.getValue())
+                        .collect(MoreCollectors.toMap(
+                                Entry::getKey, valueFunction
                         ))
         );
     }
@@ -207,7 +207,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
                 .unordered()
                 .distinct()
                 .map(graphIdsSelect::bind)
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     @Override

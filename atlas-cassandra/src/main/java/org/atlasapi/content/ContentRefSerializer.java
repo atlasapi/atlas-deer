@@ -7,7 +7,8 @@ import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference;
 import org.atlasapi.serialization.protobuf.CommonProtos.Reference.Builder;
 import org.atlasapi.source.Sources;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Ints;
@@ -87,7 +88,7 @@ public class ContentRefSerializer {
                             ImmutableSet<CommonProtos.Certificate> certs = seriesRef.getCertificates()
                                     .stream()
                                     .map(certificateSerializer::serialize)
-                                    .collect(ImmutableCollectors.toSet());
+                                    .collect(MoreCollectors.toSet());
                             builder.addAllCertificates(certs);
                         }
                         if (seriesRef.getReleaseYear() != null) {
@@ -143,7 +144,7 @@ public class ContentRefSerializer {
             public ContentRef visitSeries(ContentType contentType) {
                 ImmutableSet<Certificate> certs = ref.getCertificatesList().stream()
                         .map(certificateSerializer::deserialize)
-                        .collect(ImmutableCollectors.toSet());
+                        .collect(MoreCollectors.toSet());
                 return new SeriesRef(
                         id,
                         src,

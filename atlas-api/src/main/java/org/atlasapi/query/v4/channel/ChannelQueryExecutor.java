@@ -15,9 +15,9 @@ import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.base.MoreOrderings;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
@@ -125,7 +125,7 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
                                 .getApplicationSources()
                                 .isReadEnabled(input.getSource())
                 )
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
         ImmutableList<Channel> selectedChannels = query
                 .getContext()

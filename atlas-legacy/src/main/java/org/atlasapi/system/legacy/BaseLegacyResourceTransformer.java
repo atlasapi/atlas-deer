@@ -9,7 +9,8 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Identified;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
@@ -69,7 +70,7 @@ public abstract class BaseLegacyResourceTransformer<F, T extends org.atlasapi.en
         return images.stream()
                 .filter(image -> image.getCanonicalUri() != null)
                 .map(this::transformImage)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
     }
 
     protected Image transformImage(org.atlasapi.media.entity.Image input) {

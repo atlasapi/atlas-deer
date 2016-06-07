@@ -22,10 +22,10 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.ImageListWriter;
 import org.atlasapi.output.writers.RelatedLinkWriter;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Splitter;
@@ -93,7 +93,7 @@ public class ChannelWriter implements EntityListWriter<Channel> {
             ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
                     .stream()
                     .map(cg -> cg.getChannelGroup().getId())
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
 
             List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
                     Futures.get(
@@ -103,7 +103,7 @@ public class ChannelWriter implements EntityListWriter<Channel> {
                     ).getResources().spliterator(), false
             )
                     .map(ChannelGroup::toSummary)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
 
             format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
 

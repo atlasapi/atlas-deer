@@ -3,8 +3,9 @@ package org.atlasapi.system.legacy;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.entity.Alias;
-import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.MorePredicates;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableList;
 
@@ -37,7 +38,7 @@ public class LegacyContentGroupTransformer extends
         ImmutableList<ContentRef> refs = input.getContents().stream()
                 .map(ref -> LegacyContentTransformer.legacyRefToRef(ref, input.getPublisher()))
                 .filter(MorePredicates.isNotNull())
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
         contentGroup.setContents(refs);
     }

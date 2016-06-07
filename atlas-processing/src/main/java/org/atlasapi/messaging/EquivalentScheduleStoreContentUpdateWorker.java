@@ -8,11 +8,11 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -65,7 +65,7 @@ public class EquivalentScheduleStoreContentUpdateWorker
                                     return Stream.empty();
                                 }
                             })
-                            .collect(ImmutableCollectors.toSet())
+                            .collect(MoreCollectors.toSet())
             );
             timer.stop();
         } catch (WriteException e) {

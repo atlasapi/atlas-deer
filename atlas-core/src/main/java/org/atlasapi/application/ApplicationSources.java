@@ -10,7 +10,8 @@ import javax.annotation.Nullable;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Sourceds;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -43,7 +44,7 @@ public class ApplicationSources {
                 .stream()
                 .filter(input -> input.getSourceStatus().isEnabled())
                 .map(SourceReadEntry::getPublisher)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
     }
 
     public boolean isPrecedenceEnabled() {

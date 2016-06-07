@@ -14,7 +14,8 @@ import org.atlasapi.entity.CassandraPersistenceException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -85,7 +86,7 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
                         .collect(Collectors.toList())),
                 (Function<List<Row>, List<Row>>) input -> input.stream()
                         .filter(Predicates.notNull()::apply)
-                        .collect(ImmutableCollectors.toList())
+                        .collect(MoreCollectors.toList())
         );
 
         return Futures.transform(

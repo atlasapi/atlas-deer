@@ -8,9 +8,9 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -62,7 +62,7 @@ public class SubItemAnnotation extends OutputAnnotation<Content> {
                     .stream()
                     .skip(offset)
                     .limit(limit)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
 
             writer.writeList(childRefWriter, orderedRefs, ctxt);
         }

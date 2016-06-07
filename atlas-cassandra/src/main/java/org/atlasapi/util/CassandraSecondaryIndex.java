@@ -7,6 +7,8 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Id;
 
+import com.metabroadcast.common.stream.MoreCollectors;
+
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -90,7 +92,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     public List<Statement> insertStatements(Iterable<Long> keys, Long value) {
         return StreamSupport.stream(keys.spliterator(), false)
                 .map(k -> insertStatement(k, value))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     @Override
@@ -103,7 +105,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
             ConsistencyLevel level) {
         ImmutableList<Long> uniqueKeys = StreamSupport.stream(keys.spliterator(), false)
                 .distinct()
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
         ListenableFuture<List<Row>> resultsFuture = Futures.transform(
                 Futures.allAsList(

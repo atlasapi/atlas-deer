@@ -19,7 +19,8 @@ import org.atlasapi.output.writers.LanguageWriter;
 import org.atlasapi.output.writers.ReleaseDateWriter;
 import org.atlasapi.output.writers.RestrictionWriter;
 import org.atlasapi.output.writers.SubtitleWriter;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -77,7 +78,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .flatMap(Collection::stream)
-                    .collect(ImmutableCollectors.toSet());
+                    .collect(MoreCollectors.toSet());
             writer.writeList(
                     certificateWriter,
                     Sets.union(desc.getCertificates(), childCerts),

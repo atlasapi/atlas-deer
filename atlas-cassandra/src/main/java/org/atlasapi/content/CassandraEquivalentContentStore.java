@@ -26,10 +26,10 @@ import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.util.CassandraSecondaryIndex;
-import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
 
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -271,7 +271,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         ImmutableSetMultimap.Builder<Long, Content> sets = ImmutableSetMultimap.builder();
         ImmutableList<Row> allRows = StreamSupport.stream(setsRows.spliterator(), false)
                 .flatMap(rs -> rs.all().stream())
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
         for (Row row : allRows) {
             long setId = row.getLong(SET_ID_KEY);
@@ -337,7 +337,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
                 .map(k -> setsSelect.bind().setLong(SET_ID_BIND, k))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     @Override
@@ -377,7 +377,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private ImmutableList<Statement> getGraphUpdateRows(ImmutableSet<EquivalenceGraph> graphs) {
         return graphs.stream()
                 .map(this::getGraphUpdateRow)
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private BoundStatement getGraphUpdateRow(EquivalenceGraph graph) {
@@ -390,7 +390,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         return graphsAndContent.entries().stream()
                 .map(entry -> getUpdateDataRow(entry.getKey(), entry.getValue()))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private BoundStatement getUpdateDataRow(EquivalenceGraph graph, Content content) {
@@ -408,13 +408,13 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return deletedGraphs.stream()
                 .map(Id.toLongValue()::apply)
                 .map(setDelete::bind)
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private ImmutableList<Statement> getUpdateIndexRows(
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
 
-        ImmutableList.Builder<Statement> statementBuilder = ImmutableList.<Statement>builder();
+        ImmutableList.Builder<Statement> statementBuilder = ImmutableList.builder();
 
         for (EquivalenceGraph graph : graphsAndContent.keySet()) {
             Set<Id> indexKeys = graphsAndContent.get(graph).stream()
@@ -525,7 +525,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 (ResultSet resultSet) -> {
                     return StreamSupport.stream(resultSet.spliterator(), false)
                             .map(this::deserialize)
-                            .collect(ImmutableCollectors.toSet());
+                            .collect(MoreCollectors.toSet());
                 }
         );
     }

@@ -10,10 +10,10 @@ import org.atlasapi.content.SeriesRef;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -48,7 +48,7 @@ public class SeriesWriter implements EntityListWriter<SeriesRef> {
         ImmutableSet<Integer> childReleaseYears = series.getItemSummaries().stream()
                 .filter(i -> i.getReleaseYear().isPresent())
                 .map(i -> i.getReleaseYear().get())
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         return Sets.union(
                 childReleaseYears, series.getYear() != null ?

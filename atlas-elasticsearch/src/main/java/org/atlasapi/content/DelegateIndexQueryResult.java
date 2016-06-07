@@ -5,7 +5,8 @@ import java.util.List;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ImmutableCollectors;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -38,7 +39,7 @@ public class DelegateIndexQueryResult {
         return FluentIterable.from(
                 results.stream()
                         .map(Result::getId)
-                        .collect(ImmutableCollectors.toList())
+                        .collect(MoreCollectors.toList())
         );
     }
 

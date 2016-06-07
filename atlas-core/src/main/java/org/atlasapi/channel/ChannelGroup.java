@@ -8,9 +8,9 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.intl.Country;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.LocalDate;
@@ -51,7 +51,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
     public Iterable<T> getChannelsAvailable(LocalDate date) {
         return channels.stream()
                 .filter(ch -> ch.isAvailable(date))
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
     }
 
     @FieldName("available_countries")

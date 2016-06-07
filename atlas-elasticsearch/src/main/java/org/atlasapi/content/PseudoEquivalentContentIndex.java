@@ -7,9 +7,9 @@ import java.util.stream.StreamSupport;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -87,7 +87,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
 
         return dedupedEntries.entrySet().stream()
                 .map(entry -> entry.getValue().getId())
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private void addToDedupedResults(DelegateIndexQueryResult.Result entry,
@@ -137,6 +137,6 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
         return StreamSupport.stream(ids.spliterator(), false)
                 .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
                 .limit(selection.limitOrDefaultValue(100))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 }

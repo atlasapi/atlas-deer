@@ -31,9 +31,9 @@ import org.atlasapi.entity.Review;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
@@ -161,7 +161,7 @@ public class OutputContentMergerTest {
 
         ImmutableSet<Image> images = merged.getImages().stream()
                 .filter(img -> img.getSource() != null)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         assertThat(images.size(), is(2));
     }
@@ -194,7 +194,7 @@ public class OutputContentMergerTest {
 
         ImmutableSet<Image> images = merged.getImages().stream()
                 .filter(img -> img.getSource() != null)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         assertThat(images.size(), is(4));
     }

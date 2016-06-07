@@ -8,9 +8,9 @@ import java.util.stream.StreamSupport;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.TemporalField;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.intl.Country;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import org.joda.time.LocalDate;
 
@@ -49,7 +49,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
                                                         .compareTo(o2.getStartDate()
                                                                 .orElse(EARLIEST_POSSIBLE_DATE)))
                                         .findFirst().get()
-                ).sorted(CHANNEL_NUMBERING_ORDERING).collect(ImmutableCollectors.toList());
+                ).sorted(CHANNEL_NUMBERING_ORDERING).collect(MoreCollectors.toList());
 
     }
 }

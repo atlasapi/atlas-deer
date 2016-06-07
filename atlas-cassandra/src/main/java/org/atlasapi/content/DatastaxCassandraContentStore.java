@@ -15,12 +15,12 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 
 import com.datastax.driver.core.BatchStatement;
@@ -367,7 +367,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                                 .collect(Collectors.toList())),
                 (Function<List<List<Row>>, List<Row>>) input -> input.stream()
                         .flatMap(Collection::stream)
-                        .collect(ImmutableCollectors.toList())
+                        .collect(MoreCollectors.toList())
         );
 
         return Futures.transform(

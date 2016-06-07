@@ -9,9 +9,9 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.Id;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.base.MorePredicates;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -88,7 +88,7 @@ class ScheduleBlockUpdater {
         return entries
                 .stream()
                 .filter(iab -> !blockFilter.apply(iab.getBroadcast()))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     /**
@@ -110,7 +110,7 @@ class ScheduleBlockUpdater {
                         iab -> validIds.containsKey(iab.getBroadcast().getSourceId())
                                 && !validIds.get(iab.getBroadcast().getSourceId())
                                 .equals(iab.getItem().getId())
-                ).collect(ImmutableCollectors.toList());
+                ).collect(MoreCollectors.toList());
 
     }
 
@@ -146,14 +146,14 @@ class ScheduleBlockUpdater {
         Set<String> validBroadcastIds = updateItems
                 .stream()
                 .map(iab -> iab.getBroadcast().getSourceId())
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         return currentSchedule.getEntries()
                 .stream()
                 .filter(iab -> updateBlockFilter.apply(iab.getBroadcast()))
                 .filter(iab -> currentBlockFilter.apply(iab.getBroadcast()))
                 .filter(iab -> !validBroadcastIds.contains(iab.getBroadcast().getSourceId()))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
 
     }
 

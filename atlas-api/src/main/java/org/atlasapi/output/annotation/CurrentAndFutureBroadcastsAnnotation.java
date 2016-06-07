@@ -12,9 +12,9 @@ import org.atlasapi.content.Item;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.BroadcastWriter;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -47,7 +47,7 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
                 writer.writeList(
                         broadcastWriter,
                         channelsBroadcastFilter.sortAndFilter(
-                                broadcastStream.collect(ImmutableCollectors.toList()),
+                                broadcastStream.collect(MoreCollectors.toList()),
                                 ctxt.getRegion().get()
                         ),
                         ctxt
@@ -55,7 +55,7 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
             } else {
                 writer.writeList(
                         broadcastWriter,
-                        broadcastStream.collect(ImmutableCollectors.toList()),
+                        broadcastStream.collect(MoreCollectors.toList()),
                         ctxt
                 );
             }

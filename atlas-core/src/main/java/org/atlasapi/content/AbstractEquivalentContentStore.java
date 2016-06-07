@@ -11,11 +11,11 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.util.GroupLock;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.base.Function;
@@ -187,11 +187,11 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         ImmutableSet<Id> idsOfContentToBeUpdated = graphsAndContent.values().stream()
                 .map(Content::getId)
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
 
         return deletedGraphIds.stream()
                 .flatMap(graphId -> getStaleContent(graphId, idsOfContentToBeUpdated).stream())
-                .collect(ImmutableCollectors.toSet());
+                .collect(MoreCollectors.toSet());
     }
 
     private ImmutableSet<Id> getStaleContent(Id deletedGraphId,
@@ -201,7 +201,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                     .stream()
                     .map(Content::getId)
                     .filter(id -> !contentIdsToBeUpdated.contains(id))
-                    .collect(ImmutableCollectors.toSet());
+                    .collect(MoreCollectors.toSet());
 
         } catch (WriteException e) {
             LOG.warn("Failed to resolve equivalent set {}", deletedGraphId, e);

@@ -12,11 +12,11 @@ import org.atlasapi.util.ElasticsearchIndexCreator;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
 import org.atlasapi.util.FutureSettingActionListener;
-import org.atlasapi.util.ImmutableCollectors;
 import org.atlasapi.util.SecondaryIndex;
 
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -121,7 +121,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         return Futures.transform(response, (SearchResponse input) -> {
             ImmutableList<Id> ids = StreamSupport.stream(input.getHits().spliterator(), false)
                     .map(this::getId)
-                    .collect(ImmutableCollectors.toList());
+                    .collect(MoreCollectors.toList());
 
             return IndexQueryResult.withIds(ids, input.getHits().getTotalHits());
         });
@@ -316,7 +316,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         if (hit == null || hit.field(EsContent.SOURCE) == null) {
             return Optional.empty();
         }
-        String source = hit.field(EsContent.SOURCE).<String>value();
+        String source = hit.field(EsContent.SOURCE).value();
         Maybe<Publisher> publisherMaybe = Publisher.fromKey(source);
 
         return Optional.ofNullable(publisherMaybe.valueOrNull());

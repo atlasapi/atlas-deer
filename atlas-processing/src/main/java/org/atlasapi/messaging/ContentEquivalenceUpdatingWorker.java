@@ -6,11 +6,11 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -51,7 +51,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                     message.getSubject().getId(),
                     message.getAssertedAdjacents().stream()
                             .map(ResourceRef::getId)
-                            .collect(ImmutableCollectors.toList()),
+                            .collect(MoreCollectors.toList()),
                     getTimeToProcessInSeconds(message),
                     message
             );
@@ -79,7 +79,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                     message.getSubject().getId(),
                     message.getAssertedAdjacents().stream()
                             .map(ResourceRef::getId)
-                            .collect(ImmutableCollectors.toList()),
+                            .collect(MoreCollectors.toList()),
                     message
             );
             throw new RecoverableException("update failed for " + message.toString(), e);
@@ -89,7 +89,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                     message.getSubject().getId(),
                     message.getAssertedAdjacents().stream()
                             .map(ResourceRef::getId)
-                            .collect(ImmutableCollectors.toList()),
+                            .collect(MoreCollectors.toList()),
                     message
             );
             if (meter != null) {

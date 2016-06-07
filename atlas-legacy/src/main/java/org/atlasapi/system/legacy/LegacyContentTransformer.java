@@ -1,6 +1,5 @@
 package org.atlasapi.system.legacy;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -55,9 +54,9 @@ import org.atlasapi.segment.Segment;
 import org.atlasapi.segment.SegmentEvent;
 import org.atlasapi.segment.SegmentRef;
 import org.atlasapi.system.legacy.exception.LegacyChannelNotFoundException;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.base.Maybe;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.base.Function;
@@ -437,7 +436,7 @@ public class LegacyContentTransformer
                                 legacy.getEndTime(),
                                 legacy.getPrice()
                         ))
-                        .collect(ImmutableCollectors.toList())
+                        .collect(MoreCollectors.toList())
         );
         return p;
     }
@@ -643,14 +642,14 @@ public class LegacyContentTransformer
                         Tag.Relationship.valueOf(tr.getRelationship().name())
                         )
                 )
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     private Iterable<EventRef> translateEventRefs(
             List<org.atlasapi.media.entity.EventRef> eventRefs) {
         return eventRefs.stream().map(eventRef ->
                 new EventRef(Id.valueOf(eventRef.id()), eventRef.getPublisher()))
-                .collect(ImmutableCollectors.toList());
+                .collect(MoreCollectors.toList());
     }
 
     @Override

@@ -9,10 +9,10 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Location.Builder;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.currency.Price;
 import com.metabroadcast.common.intl.Countries;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -95,7 +95,7 @@ public class LocationSerializer {
             builder.addAllPricing(
                     policy.getPricing().stream()
                             .map(pricingSerializer::serialize)
-                            .collect(ImmutableCollectors.toList())
+                            .collect(MoreCollectors.toList())
             );
         }
 
@@ -161,7 +161,7 @@ public class LocationSerializer {
                     msg.getPricingList()
                             .stream()
                             .map(pricingSerializer::deserialize)
-                            .collect(ImmutableCollectors.toList())
+                            .collect(MoreCollectors.toList())
             );
         }
         location.setPolicy(policy);

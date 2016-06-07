@@ -18,10 +18,10 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraUtil;
-import org.atlasapi.util.ImmutableCollectors;
 
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.SystemClock;
 
 import com.datastax.driver.core.PreparedStatement;
@@ -153,7 +153,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
                         .collect(Collectors.toList())),
                 (Function<List<List<Row>>, List<Row>>) input -> input.stream()
                         .flatMap(Collection::stream)
-                        .collect(ImmutableCollectors.toList())
+                        .collect(MoreCollectors.toList())
         );
         try {
             return rowFuture.get(SELECT_TIMEOUT, TimeUnit.SECONDS);
