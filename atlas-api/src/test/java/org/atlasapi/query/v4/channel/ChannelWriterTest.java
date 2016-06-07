@@ -73,6 +73,7 @@ public class ChannelWriterTest {
     private boolean regionalValue = true;
     private LocalDate startDateValue = LocalDate.parse("2016-05-26");
     private DateTime advertisedFromValue = DateTime.parse("2016-05-27T07:15:30.450Z");
+    private String interactive = "interactive";
 
     @Before
     public void setUp() throws Exception {
@@ -108,7 +109,8 @@ public class ChannelWriterTest {
         verify(fieldWriter).writeField(eq(mediumDescription), eq(null));
         verify(fieldWriter).writeField(eq(longDescription), eq(null));
         verify(fieldWriter).writeField(eq(region), eq(null));
-        verify(fieldWriter).writeField(eq(channelType), eq(null));
+        verify(fieldWriter).writeField(eq(channelType), eq(ChannelType.CHANNEL));
+        verify(fieldWriter).writeField(eq(interactive), eq(false));
         verify(fieldWriter).writeList(
                 eq(genres),
                 eq(genres),
@@ -169,6 +171,7 @@ public class ChannelWriterTest {
                 .withAvailableFrom(availabilitySet)
                 .withAliases(aliasSet)
                 .withRelatedLinks(relatedLinkSet)
+                .withInteractive(true)
                 .build();
 
         when(outputContext.getRequest()).thenReturn(request);
@@ -189,6 +192,7 @@ public class ChannelWriterTest {
         verify(fieldWriter).writeField(eq(longDescription), eq(longDescription));
         verify(fieldWriter).writeField(eq(region), eq(region));
         verify(fieldWriter).writeField(eq(channelType), eq(ChannelType.CHANNEL));
+        verify(fieldWriter).writeField(eq(interactive),  eq(true));
         verify(fieldWriter).writeList(
                 eq(genres),
                 eq(genres),

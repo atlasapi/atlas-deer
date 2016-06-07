@@ -451,6 +451,16 @@ public class ChannelInfo implements ModelClassInfo {
                             .withJsonType(JsonType.STRING)
                             .build()
             )
+            .add(
+                    FieldInfo.builder()
+                            .withName("interactive")
+                            .withDescription("")
+                            .withType("Boolean")
+                            .withIsMultiple(false)
+                            .withIsModelType(false)
+                            .withJsonType(JsonType.BOOLEAN)
+                            .build()
+            )
             .build();
 
     @Override
