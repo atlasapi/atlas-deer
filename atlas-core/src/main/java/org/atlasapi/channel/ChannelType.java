@@ -30,11 +30,7 @@ public enum ChannelType {
                     }
             ));
 
-    public static ChannelType fromKey(String key) {
-        ChannelType channelType = KEY_MAP.get(key);
-        if (channelType == null) {
-            return ChannelType.CHANNEL;
-        }
-        return channelType;
+    public static Optional<ChannelType> fromKey(String type) {
+        return Optional.ofNullable(KEY_MAP.get(type));
     }
 }

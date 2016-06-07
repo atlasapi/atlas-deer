@@ -105,7 +105,7 @@ public class Channel extends Identified implements Sourced {
         this.longDescription = longDescription;
         this.region = region;
         this.targetRegions = ImmutableSet.copyOf(targetRegions);
-        this.channelType = channelType;
+        this.channelType = checkNotNull(channelType);
     }
 
     @Override

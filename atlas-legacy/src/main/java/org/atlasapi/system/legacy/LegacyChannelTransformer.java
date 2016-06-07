@@ -56,10 +56,17 @@ public class LegacyChannelTransformer
     }
 
     private ChannelType getChannelTypeFromInput(
-            org.atlasapi.media.channel.ChannelType inputChannelType
+            @Nullable org.atlasapi.media.channel.ChannelType inputChannelType
     ) {
-        ChannelType possibleChannelType = ChannelType.fromKey(inputChannelType.toKey());
-        return possibleChannelType;
+        if (inputChannelType != null) {
+            Optional<ChannelType> type = ChannelType.fromKey(inputChannelType.toKey());
+            if (type.isPresent()) {
+                return type.get();
+            }
+        }
+        // If the input channel type is null, will set the channel type to be Channel,
+        // this is done so that we set the channel type to be Channel by default.
+        return ChannelType.CHANNEL;
     }
 
     public org.atlasapi.media.channel.Channel toBasicLegacyChannel(Channel input) {
