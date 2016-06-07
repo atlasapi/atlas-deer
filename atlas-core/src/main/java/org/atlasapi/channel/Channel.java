@@ -51,6 +51,7 @@ public class Channel extends Identified implements Sourced {
     private final String region;
     private final ImmutableSet<String> targetRegions;
     private final ChannelType channelType;
+    private final Boolean interactive;
 
     private Channel(
             String uri,
@@ -78,7 +79,8 @@ public class Channel extends Identified implements Sourced {
             @Nullable String longDescription,
             @Nullable String region,
             Set<String> targetRegions,
-            ChannelType channelType
+            ChannelType channelType,
+            Boolean interactive
     ) {
         super(uri);
         this.setAliases(aliases);
@@ -105,7 +107,8 @@ public class Channel extends Identified implements Sourced {
         this.longDescription = longDescription;
         this.region = region;
         this.targetRegions = ImmutableSet.copyOf(targetRegions);
-        this.channelType = checkNotNull(channelType);
+        this.channelType = channelType;
+        this.interactive = interactive;
     }
 
     @Override
@@ -235,6 +238,11 @@ public class Channel extends Identified implements Sourced {
         return channelType;
     }
 
+    @FieldName("interactive")
+    public Boolean getInteractive() {
+        return interactive;
+    }
+
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
     }
@@ -275,7 +283,8 @@ public class Channel extends Identified implements Sourced {
         private String longDescription;
         private String region;
         private Set<String> targetRegions = Sets.newHashSet();
-        private ChannelType channelType;
+        private ChannelType channelType = ChannelType.CHANNEL;
+        private Boolean interactive = false;
 
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
@@ -466,6 +475,11 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withInteractive(Boolean interactive) {
+            this.interactive = interactive;
+            return this;
+        }
+
         private ChannelRef buildChannelRef(Long id) {
             return new ChannelRef(Id.valueOf(id), publisher);
         }
@@ -500,7 +514,8 @@ public class Channel extends Identified implements Sourced {
                     longDescription,
                     region,
                     targetRegions,
-                    channelType
+                    channelType,
+                    interactive
             );
         }
     }

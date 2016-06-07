@@ -52,6 +52,7 @@ public class LegacyChannelTransformer
                 .withRegion(input.getRegion())
                 .withTargetRegions(input.getTargetRegions())
                 .withChannelType(getChannelTypeFromInput(input.getChannelType()))
+                .withInteractive(input.getInteractive())
                 .build();
     }
 

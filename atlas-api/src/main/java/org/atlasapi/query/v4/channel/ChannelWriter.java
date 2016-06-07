@@ -128,6 +128,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         format.writeField("region", channel.getRegion());
         format.writeList("target_regions", "target_region", channel.getTargetRegions(), ctxt);
         format.writeField("channel_type", channel.getChannelType());
+        format.writeField("interactive", channel.getInteractive());
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
                 contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {

@@ -64,6 +64,7 @@ public class LegacyChannelTransformerTest {
                 .withRegion(region)
                 .withTargetRegions(targetRegions)
                 .withChannelType(ChannelType.MASTERBRAND)
+                .withInteractive(true)
                 .build();
         legacyChannel.setId(id);
 
@@ -89,6 +90,7 @@ public class LegacyChannelTransformerTest {
         assertThat(transformed.getRegion(), is(region));
         assertThat(transformed.getTargetRegions(), is(targetRegions));
         assertThat(transformed.getChannelType(), is(org.atlasapi.channel.ChannelType.MASTERBRAND));
+        assertThat(transformed.getInteractive(), is(true));
     }
 
     @Test
@@ -120,5 +122,6 @@ public class LegacyChannelTransformerTest {
         assertThat(transformed.getRegion(), isEmptyOrNullString());
         assertEquals(transformed.getTargetRegions(), Sets.newHashSet());
         assertEquals(transformed.getChannelType(), org.atlasapi.channel.ChannelType.CHANNEL);
+        assertEquals(transformed.getInteractive(), false);
     }
 }
