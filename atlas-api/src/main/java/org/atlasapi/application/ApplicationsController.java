@@ -162,7 +162,7 @@ public class ApplicationsController {
 
             // There will only every be 0 or 1 user in this iterable
             Optional<User> user = Iterables.tryFind(
-                    writeResult.getUserAccountsWithNewApplication(),
+                    userAccounts,
                     Predicates.alwaysTrue()
             );
 
@@ -208,7 +208,7 @@ public class ApplicationsController {
             UserAccountsAwareQueryContext context = new UserAccountsAwareQueryContext(
                     ApplicationSources.defaults(),
                     ActiveAnnotations.standard(),
-                    writeResult.getUserAccountsWithNewApplication(),
+                    userAccounts,
                     request
             );
             UserAccountsAwareQuery<Application> applicationsQuery = UserAccountsAwareQuery
