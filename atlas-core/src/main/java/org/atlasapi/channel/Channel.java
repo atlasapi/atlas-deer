@@ -45,8 +45,15 @@ public class Channel extends Identified implements Sourced {
     private final LocalDate startDate;
     private final LocalDate endDate;
     private final DateTime advertiseFrom;
+    private final String shortDescription;
+    private final String mediumDescription;
+    private final String longDescription;
+    private final String region;
+    private final ImmutableSet<String> targetRegions;
+    private final ChannelType channelType;
+    private final Boolean interactive;
 
-    public Channel(
+    private Channel(
             String uri,
             Id id,
             Set<Alias> aliases,
@@ -66,7 +73,14 @@ public class Channel extends Identified implements Sourced {
             Set<ChannelRef> variations,
             @Nullable LocalDate startDate,
             @Nullable LocalDate endDate,
-            DateTime advertiseFrom
+            @Nullable DateTime advertiseFrom,
+            @Nullable String shortDescription,
+            @Nullable String mediumDescription,
+            @Nullable String longDescription,
+            @Nullable String region,
+            Set<String> targetRegions,
+            ChannelType channelType,
+            Boolean interactive
     ) {
         super(uri);
         this.setAliases(aliases);
@@ -88,6 +102,13 @@ public class Channel extends Identified implements Sourced {
         this.startDate = startDate;
         this.endDate = endDate;
         this.advertiseFrom = advertiseFrom;
+        this.shortDescription = shortDescription;
+        this.mediumDescription = mediumDescription;
+        this.longDescription = longDescription;
+        this.region = region;
+        this.targetRegions = ImmutableSet.copyOf(targetRegions);
+        this.channelType = channelType;
+        this.interactive = interactive;
     }
 
     @Override
@@ -179,6 +200,45 @@ public class Channel extends Identified implements Sourced {
         return advertiseFrom;
     }
 
+    @Nullable
+    @FieldName("short_description")
+    public String getShortDescription() {
+        return shortDescription;
+    }
+
+    @Nullable
+    @FieldName("medium_description")
+    public String getMediumDescription() {
+        return mediumDescription;
+    }
+
+    @Nullable
+    @FieldName("long_description")
+    public String getLongDescription() {
+        return longDescription;
+    }
+
+    @Nullable
+    @FieldName("region")
+    public String getRegion() {
+        return region;
+    }
+
+    @FieldName("target_regions")
+    public ImmutableSet<String> getTargetRegions() {
+        return targetRegions;
+    }
+
+    @FieldName("type")
+    public ChannelType getChannelType() {
+        return channelType;
+    }
+
+    @FieldName("interactive")
+    public Boolean getInteractive() {
+        return interactive;
+    }
+
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
     }
@@ -208,9 +268,15 @@ public class Channel extends Identified implements Sourced {
         private ChannelRef parent;
         private Set<ChannelRef> variations = Sets.newHashSet();
         private DateTime advertiseFrom;
-
         private LocalDate startDate;
         private LocalDate endDate;
+        private String shortDescription;
+        private String mediumDescription;
+        private String longDescription;
+        private String region;
+        private Set<String> targetRegions = Sets.newHashSet();
+        private ChannelType channelType = ChannelType.CHANNEL;
+        private Boolean interactive = false;
 
         public Builder(Publisher publisher) {
             this.publisher = checkNotNull(publisher);
@@ -346,6 +412,41 @@ public class Channel extends Identified implements Sourced {
             return this;
         }
 
+        public Builder withShortDescription(@Nullable String shortDescription) {
+            this.shortDescription = shortDescription;
+            return this;
+        }
+
+        public Builder withMediumDescription(@Nullable String mediumDescription) {
+            this.mediumDescription = mediumDescription;
+            return this;
+        }
+
+        public Builder withLongDescription(@Nullable String longDescription) {
+            this.longDescription = longDescription;
+            return this;
+        }
+
+        public Builder withRegion(@Nullable String region) {
+            this.region = region;
+            return this;
+        }
+
+        public Builder withTargetRegions(Iterable<String> targetRegions) {
+            Iterables.addAll(this.targetRegions, targetRegions);
+            return this;
+        }
+
+        public Builder withChannelType(ChannelType channelType) {
+            this.channelType = channelType;
+            return this;
+        }
+
+        public Builder withInteractive(Boolean interactive) {
+            this.interactive = interactive;
+            return this;
+        }
+
         private ChannelRef buildChannelRef(Long id) {
             return new ChannelRef(Id.valueOf(id), publisher);
         }
@@ -374,7 +475,14 @@ public class Channel extends Identified implements Sourced {
                     variations,
                     startDate,
                     endDate,
-                    advertiseFrom
+                    advertiseFrom,
+                    shortDescription,
+                    mediumDescription,
+                    longDescription,
+                    region,
+                    targetRegions,
+                    channelType,
+                    interactive
             );
         }
     }
