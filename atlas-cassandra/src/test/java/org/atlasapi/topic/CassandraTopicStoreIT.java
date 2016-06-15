@@ -20,6 +20,7 @@ import com.google.common.base.Equivalence;
 import com.google.common.collect.ImmutableList;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.serializers.LongSerializer;
@@ -87,6 +88,11 @@ public class CassandraTopicStoreIT {
     @BeforeClass
     public static void setup() throws ConnectionException {
         context.start();
+        try {
+            context.getClient().dropKeyspace();
+        } catch (BadRequestException ire) {
+            // Nothing to do
+        }
         CassandraHelper.createKeyspace(context);
         CassandraHelper.createColumnFamily(
                 context,
