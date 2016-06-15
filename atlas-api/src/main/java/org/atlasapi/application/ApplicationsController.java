@@ -208,7 +208,7 @@ public class ApplicationsController {
             UserAccountsAwareQueryContext context = new UserAccountsAwareQueryContext(
                     ApplicationSources.defaults(),
                     ActiveAnnotations.standard(),
-                    userAccounts,
+                    writeResult.getUpdatedUseAccounts(),
                     request
             );
             UserAccountsAwareQuery<Application> applicationsQuery = UserAccountsAwareQuery
@@ -234,7 +234,7 @@ public class ApplicationsController {
             Set<User> userAccounts
     ) throws ResourceForbiddenException, IOException, ReadException, NotAuthorizedException {
 
-        Set<User> userAccountsWithNewApplication = Sets.newHashSet();
+        Set<User> updatedUserAccounts = Sets.newHashSet();
         Application application = deserialize(
                 new InputStreamReader(request.getInputStream()),
                 Application.class
@@ -253,6 +253,8 @@ public class ApplicationsController {
                     .withCredentials(existing.get().getCredentials()).build();
 
             application = applicationStore.updateApplication(application);
+
+            updatedUserAccounts.addAll(userAccounts);
         } else {
             checkSourceStatusChanges(userAccounts, application, Optional.absent());
 
@@ -263,11 +265,11 @@ public class ApplicationsController {
             for (User userAccount : userAccounts) {
                 userAccount = userAccount.copyWithAdditionalApplication(application);
                 userStore.store(userAccount);
-                userAccountsWithNewApplication.add(userAccount);
+                updatedUserAccounts.add(userAccount);
             }
         }
 
-        return ApplicationWriteResult.create(application, userAccountsWithNewApplication);
+        return ApplicationWriteResult.create(application, updatedUserAccounts);
     }
 
     @RequestMapping(value = "/4/applications/{aid}/sources", method = RequestMethod.POST)
@@ -507,14 +509,14 @@ public class ApplicationsController {
     private static class ApplicationWriteResult {
 
         private final Application application;
-        private final Set<User> userAccountsWithNewApplication;
+        private final Set<User> updatedUseAccounts;
 
         private ApplicationWriteResult(
                 Application application,
-                Set<User> userAccountsWithNewApplication
+                Set<User> updatedUseAccounts
         ) {
             this.application = checkNotNull(application);
-            this.userAccountsWithNewApplication = checkNotNull(userAccountsWithNewApplication);
+            this.updatedUseAccounts = checkNotNull(updatedUseAccounts);
         }
 
         public static ApplicationWriteResult create(
@@ -528,8 +530,8 @@ public class ApplicationsController {
             return application;
         }
 
-        public Set<User> getUserAccountsWithNewApplication() {
-            return userAccountsWithNewApplication;
+        public Set<User> getUpdatedUseAccounts() {
+            return updatedUseAccounts;
         }
     }
 }
