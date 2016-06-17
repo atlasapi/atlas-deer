@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -16,6 +17,7 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.CertificateWriter;
 import org.atlasapi.output.writers.LanguageWriter;
+import org.atlasapi.output.writers.PriorityReasonsWriter;
 import org.atlasapi.output.writers.ReleaseDateWriter;
 import org.atlasapi.output.writers.RestrictionWriter;
 import org.atlasapi.output.writers.SubtitleWriter;
@@ -33,6 +35,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
     private final SubtitleWriter subtitleWriter;
     private final ReleaseDateWriter releaseDateWriter;
     private final RestrictionWriter restrictionWriter;
+    private final PriorityReasonsWriter priorityReasonsWriter;
 
     public ExtendedDescriptionAnnotation() {
         super();
@@ -41,6 +44,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         this.subtitleWriter = new SubtitleWriter(languageWriter);
         releaseDateWriter = new ReleaseDateWriter();
         this.restrictionWriter = new RestrictionWriter();
+        this.priorityReasonsWriter = new PriorityReasonsWriter();
     }
 
     private Map<String, Locale> initLocalMap() {
@@ -59,6 +63,19 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
                 "priority",
                 desc.getPriority() != null ? desc.getPriority().getPriority() : null
         );
+
+        if (ctxt.getActiveAnnotations().contains(Annotation.PRIORITY_REASONS)) {
+            if (desc.getPriority() == null) {
+                writer.writeObject(priorityReasonsWriter, null, ctxt);
+            } else {
+                writer.writeObject(
+                        priorityReasonsWriter,
+                        desc.getPriority().getReasons() != null ? desc.getPriority().getReasons() : null,
+                        ctxt
+                );
+            }
+        }
+
         writer.writeField("short_description", desc.getShortDescription());
         writer.writeField("medium_description", desc.getMediumDescription());
         writer.writeField("long_description", desc.getLongDescription());
