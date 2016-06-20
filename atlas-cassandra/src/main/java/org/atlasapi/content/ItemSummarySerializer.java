@@ -35,7 +35,7 @@ public class ItemSummarySerializer {
                             proto.hasReleaseYear() ? proto.getReleaseYear() : null,
                             proto.getCertificatesList().stream()
                                     .map(certificateSerializer::deserialize)
-                                    .collect(MoreCollectors.toSet())
+                                    .collect(MoreCollectors.toImmutableSet())
                     )
             )
             .put("item", proto -> new ItemSummary(
@@ -46,7 +46,7 @@ public class ItemSummarySerializer {
                             proto.hasReleaseYear() ? proto.getReleaseYear() : null,
                             proto.getCertificatesList().stream()
                                     .map(certificateSerializer::deserialize)
-                                    .collect(MoreCollectors.toSet())
+                                    .collect(MoreCollectors.toImmutableSet())
                     )
             )
             .build();
@@ -79,7 +79,7 @@ public class ItemSummarySerializer {
             ImmutableSet<Certificate> certs = itemSummary.getCertificates().get();
             ImmutableList<CommonProtos.Certificate> serialisedCerts = certs.stream()
                     .map(certificateSerializer::serialize)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
             builder.addAllCertificates(serialisedCerts);
         }
         return builder;

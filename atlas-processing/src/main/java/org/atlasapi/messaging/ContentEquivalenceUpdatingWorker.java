@@ -51,7 +51,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                     message.getSubject().getId(),
                     message.getAssertedAdjacents().stream()
                             .map(ResourceRef::getId)
-                            .collect(MoreCollectors.toList()),
+                            .collect(MoreCollectors.toImmutableList()),
                     getTimeToProcessInSeconds(message),
                     message
             );
@@ -79,7 +79,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                     message.getSubject().getId(),
                     message.getAssertedAdjacents().stream()
                             .map(ResourceRef::getId)
-                            .collect(MoreCollectors.toList()),
+                            .collect(MoreCollectors.toImmutableList()),
                     message
             );
             throw new RecoverableException("update failed for " + message.toString(), e);
@@ -89,7 +89,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                     message.getSubject().getId(),
                     message.getAssertedAdjacents().stream()
                             .map(ResourceRef::getId)
-                            .collect(MoreCollectors.toList()),
+                            .collect(MoreCollectors.toImmutableList()),
                     message
             );
             if (meter != null) {

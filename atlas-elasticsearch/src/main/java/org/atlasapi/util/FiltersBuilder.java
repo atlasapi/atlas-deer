@@ -210,7 +210,7 @@ public class FiltersBuilder {
         ImmutableList<Long> channelsIdsForRegion = channels.stream()
                 .map(c -> c.getChannel().getId())
                 .map(Id::longValue)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         return FilterBuilders.termsFilter(
                 EsContent.BROADCASTS + "." + EsBroadcast.CHANNEL,

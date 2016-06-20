@@ -203,7 +203,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .stream()
                 .map(statement -> statement.setConsistencyLevel(read))
                 .map(session::executeAsync)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         return Futures.transform(
                 Futures.allAsList(resultFutures),
@@ -236,12 +236,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule().getScheduleEntries()
                 .stream()
                 .map(ScheduleRef.Entry::getBroadcast)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         Set<String> updateBroadcastIds = updateBroadcastRefs
                 .stream()
                 .map(BroadcastRef::getSourceId)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         Set<BroadcastRef> currentBroadcastRefs = resolveBroadcasts(
                 update.getSource(),
@@ -251,7 +251,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         Set<BroadcastRef> staleBroadcasts = currentBroadcastRefs.stream()
                 .filter(broadcastRef -> !updateBroadcastIds.contains(broadcastRef.getSourceId()))
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         List<Statement> deletes = deleteStatements(
                 update.getSource(),
@@ -339,7 +339,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
                     .stream(item.getBroadcasts().spliterator(), false)
                     .filter(Broadcast::isActivelyPublished)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
 
             BatchStatement batchStatement = new BatchStatement();
 
@@ -469,7 +469,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setLong("contentCountData", contentCount)
                         .setBytes("contentData", serializedContent)
                         .setDate("now", now.toDate()))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private ByteBuffer serialize(Iterable<Item> resources) throws WriteException {
@@ -503,7 +503,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                                 .toLocalDate()
                                 .toDate())
                         .setString("broadcast", broadcastRef.getSourceId()))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId,
@@ -522,7 +522,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 WriteException.class
         ).stream()
                 .flatMap(rs -> StreamSupport.stream(rs.spliterator(), false))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         ImmutableSet.Builder<BroadcastRef> broadcasts = ImmutableSet.builder();
         for (Row row : rows) {
@@ -658,15 +658,15 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
             ImmutableSet<EquivalenceRef> equivalenceRefs = items.stream()
                     .map(EquivalenceRef::valueOf)
-                    .collect(MoreCollectors.toSet());
+                    .collect(MoreCollectors.toImmutableSet());
 
             return items.stream()
                     .map(item -> (Item) item.copyWithEquivalentTo(
                             equivalenceRefs.stream()
                                     .filter(ref -> !ref.getId().equals(item.getId()))
-                                    .collect(MoreCollectors.toSet())
+                                    .collect(MoreCollectors.toImmutableSet())
                     ))
-                    .collect(MoreCollectors.toSet());
+                    .collect(MoreCollectors.toImmutableSet());
         }
 
         private Broadcast deserialize(ByteBuffer broadcastBytes)

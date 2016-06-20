@@ -202,7 +202,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     private Iterable<Id> graphIds(Collection<Optional<EquivalenceGraph>> values) {
         return StreamSupport.stream(Optional.presentInstances(values).spliterator(), false)
                 .flatMap(graph -> graph.getEquivalenceSet().stream())
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private <T> T get(ListenableFuture<T> future) throws WriteException {

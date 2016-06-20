@@ -57,7 +57,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
                 "Processing message on ids {}, took: PT{}S, message: {}",
                 message.getGraphUpdate().getAllGraphs().stream()
                         .map(EquivalenceGraph::getId)
-                        .collect(MoreCollectors.toList()),
+                        .collect(MoreCollectors.toImmutableList()),
                 getTimeToProcessInSeconds(message),
                 message
         );

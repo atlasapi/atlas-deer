@@ -22,7 +22,7 @@ public class LegacyContentTopicMerger {
                 Arrays.asList(topicCollections).stream()
                         .flatMap(topicCollection -> topicCollection.stream())
                         .map(equivalator::wrap)
-                        .collect(MoreCollectors.toSet());
+                        .collect(MoreCollectors.toImmutableSet());
 
         return dedupedTopics.stream()
                 .map(Equivalence.Wrapper::get)

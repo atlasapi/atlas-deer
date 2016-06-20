@@ -51,7 +51,7 @@ public class ChannelGroup<T extends ChannelGroupMembership> extends Identified i
     public Iterable<T> getChannelsAvailable(LocalDate date) {
         return channels.stream()
                 .filter(ch -> ch.isAvailable(date))
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
     }
 
     @FieldName("available_countries")

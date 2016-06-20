@@ -88,7 +88,7 @@ class ScheduleBlockUpdater {
         return entries
                 .stream()
                 .filter(iab -> !blockFilter.apply(iab.getBroadcast()))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     /**
@@ -110,7 +110,7 @@ class ScheduleBlockUpdater {
                         iab -> validIds.containsKey(iab.getBroadcast().getSourceId())
                                 && !validIds.get(iab.getBroadcast().getSourceId())
                                 .equals(iab.getItem().getId())
-                ).collect(MoreCollectors.toList());
+                ).collect(MoreCollectors.toImmutableList());
 
     }
 
@@ -146,14 +146,14 @@ class ScheduleBlockUpdater {
         Set<String> validBroadcastIds = updateItems
                 .stream()
                 .map(iab -> iab.getBroadcast().getSourceId())
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         return currentSchedule.getEntries()
                 .stream()
                 .filter(iab -> updateBlockFilter.apply(iab.getBroadcast()))
                 .filter(iab -> currentBlockFilter.apply(iab.getBroadcast()))
                 .filter(iab -> !validBroadcastIds.contains(iab.getBroadcast().getSourceId()))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
     }
 

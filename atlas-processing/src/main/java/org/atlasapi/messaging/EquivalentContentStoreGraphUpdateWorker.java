@@ -45,7 +45,7 @@ public class EquivalentContentStoreGraphUpdateWorker
                     message.getGraphUpdate().getUpdated().getId(),
                     message.getGraphUpdate().getCreated().stream()
                             .map(EquivalenceGraph::getId)
-                            .collect(MoreCollectors.toList()),
+                            .collect(MoreCollectors.toImmutableList()),
                     message.getGraphUpdate().getDeleted(),
                     getTimeToProcessInSeconds(message),
                     message
@@ -67,7 +67,7 @@ public class EquivalentContentStoreGraphUpdateWorker
                     message.getGraphUpdate().getUpdated().getId(),
                     message.getGraphUpdate().getCreated().stream()
                             .map(EquivalenceGraph::getId)
-                            .collect(MoreCollectors.toList()),
+                            .collect(MoreCollectors.toImmutableList()),
                     message.getGraphUpdate().getDeleted(),
                     message
             );

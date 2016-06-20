@@ -65,7 +65,7 @@ public class EquivalentScheduleStoreContentUpdateWorker
                                     return Stream.empty();
                                 }
                             })
-                            .collect(MoreCollectors.toSet())
+                            .collect(MoreCollectors.toImmutableSet())
             );
             timer.stop();
         } catch (WriteException e) {

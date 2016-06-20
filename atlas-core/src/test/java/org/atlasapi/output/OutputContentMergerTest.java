@@ -161,7 +161,7 @@ public class OutputContentMergerTest {
 
         ImmutableSet<Image> images = merged.getImages().stream()
                 .filter(img -> img.getSource() != null)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         assertThat(images.size(), is(2));
     }
@@ -194,7 +194,7 @@ public class OutputContentMergerTest {
 
         ImmutableSet<Image> images = merged.getImages().stream()
                 .filter(img -> img.getSource() != null)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         assertThat(images.size(), is(4));
     }

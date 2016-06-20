@@ -54,7 +54,7 @@ public class EquivalenceGraphUpdateResolver {
         ImmutableSet<Id> graphIds = graphUpdate.getAllGraphs()
                 .stream()
                 .map(EquivalenceGraph::getId)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         try {
             return graphStore.resolveIds(graphIds).get()
@@ -62,7 +62,7 @@ public class EquivalenceGraphUpdateResolver {
                     .stream()
                     .filter(Optional::isPresent)
                     .map(Optional::get)
-                    .collect(MoreCollectors.toSet());
+                    .collect(MoreCollectors.toImmutableSet());
 
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to resolve equivalence graphs for {}", Joiner.on(",").join(graphIds));

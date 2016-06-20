@@ -125,7 +125,7 @@ public class ChannelQueryExecutor implements QueryExecutor<Channel> {
                                 .getApplicationSources()
                                 .isReadEnabled(input.getSource())
                 )
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         ImmutableList<Channel> selectedChannels = query
                 .getContext()

@@ -58,7 +58,7 @@ public class LocationsAnnotation extends OutputAnnotation<Content> {
                         .stream()
                         .filter(Location::getAvailable)
                         .map(location -> new EncodedLocation(encoding, location))
-                        .collect(MoreCollectors.toList())
+                        .collect(MoreCollectors.toImmutableList())
         ));
     }
 

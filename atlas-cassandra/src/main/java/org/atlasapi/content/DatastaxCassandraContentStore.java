@@ -367,7 +367,7 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
                                 .collect(Collectors.toList())),
                 (Function<List<List<Row>>, List<Row>>) input -> input.stream()
                         .flatMap(Collection::stream)
-                        .collect(MoreCollectors.toList())
+                        .collect(MoreCollectors.toImmutableList())
         );
 
         return Futures.transform(

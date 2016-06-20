@@ -86,7 +86,7 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
                         .collect(Collectors.toList())),
                 (Function<List<Row>, List<Row>>) input -> input.stream()
                         .filter(Predicates.notNull()::apply)
-                        .collect(MoreCollectors.toList())
+                        .collect(MoreCollectors.toImmutableList())
         );
 
         return Futures.transform(

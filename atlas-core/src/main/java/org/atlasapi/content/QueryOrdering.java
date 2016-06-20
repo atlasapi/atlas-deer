@@ -69,7 +69,7 @@ public class QueryOrdering {
 
                     return new Clause(path, direction);
                 })
-                .collect(MoreCollectors.toList()));
+                .collect(MoreCollectors.toImmutableList()));
 
     }
 }

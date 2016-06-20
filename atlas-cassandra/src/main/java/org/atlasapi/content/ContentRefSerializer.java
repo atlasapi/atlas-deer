@@ -88,7 +88,7 @@ public class ContentRefSerializer {
                             ImmutableSet<CommonProtos.Certificate> certs = seriesRef.getCertificates()
                                     .stream()
                                     .map(certificateSerializer::serialize)
-                                    .collect(MoreCollectors.toSet());
+                                    .collect(MoreCollectors.toImmutableSet());
                             builder.addAllCertificates(certs);
                         }
                         if (seriesRef.getReleaseYear() != null) {
@@ -144,7 +144,7 @@ public class ContentRefSerializer {
             public ContentRef visitSeries(ContentType contentType) {
                 ImmutableSet<Certificate> certs = ref.getCertificatesList().stream()
                         .map(certificateSerializer::deserialize)
-                        .collect(MoreCollectors.toSet());
+                        .collect(MoreCollectors.toImmutableSet());
                 return new SeriesRef(
                         id,
                         src,

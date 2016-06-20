@@ -87,7 +87,7 @@ public class TopicSerializer implements Serializer<Topic, byte[]> {
         if (topic.getAliases().isEmpty()) {
             ImmutableList<Alias> aliases = msg.getAliasesList().stream()
                     .map(alias -> new Alias(alias.getNamespace(), alias.getValue()))
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
             topic.setAliases(aliases);
         }
         if (msg.getTitleCount() > 0 && topic.getTitle() == null) {

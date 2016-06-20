@@ -78,7 +78,7 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .flatMap(Collection::stream)
-                    .collect(MoreCollectors.toSet());
+                    .collect(MoreCollectors.toImmutableSet());
             writer.writeList(
                     certificateWriter,
                     Sets.union(desc.getCertificates(), childCerts),

@@ -87,7 +87,7 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
 
         return dedupedEntries.entrySet().stream()
                 .map(entry -> entry.getValue().getId())
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private void addToDedupedResults(DelegateIndexQueryResult.Result entry,
@@ -137,6 +137,6 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
         return StreamSupport.stream(ids.spliterator(), false)
                 .skip(selection.hasNonZeroOffset() ? selection.getOffset() : 0)
                 .limit(selection.limitOrDefaultValue(100))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 }

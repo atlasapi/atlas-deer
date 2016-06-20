@@ -95,7 +95,7 @@ public class LocationSerializer {
             builder.addAllPricing(
                     policy.getPricing().stream()
                             .map(pricingSerializer::serialize)
-                            .collect(MoreCollectors.toList())
+                            .collect(MoreCollectors.toImmutableList())
             );
         }
 
@@ -161,7 +161,7 @@ public class LocationSerializer {
                     msg.getPricingList()
                             .stream()
                             .map(pricingSerializer::deserialize)
-                            .collect(MoreCollectors.toList())
+                            .collect(MoreCollectors.toImmutableList())
             );
         }
         location.setPolicy(policy);

@@ -93,7 +93,7 @@ public class ChannelWriter implements EntityListWriter<Channel> {
             ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
                     .stream()
                     .map(cg -> cg.getChannelGroup().getId())
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
 
             List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
                     Futures.get(
@@ -103,7 +103,7 @@ public class ChannelWriter implements EntityListWriter<Channel> {
                     ).getResources().spliterator(), false
             )
                     .map(ChannelGroup::toSummary)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
 
             format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
 

@@ -39,7 +39,7 @@ public class DelegateIndexQueryResult {
         return FluentIterable.from(
                 results.stream()
                         .map(Result::getId)
-                        .collect(MoreCollectors.toList())
+                        .collect(MoreCollectors.toImmutableList())
         );
     }
 

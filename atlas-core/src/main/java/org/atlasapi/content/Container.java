@@ -124,6 +124,6 @@ public abstract class Container extends Content {
     public void setItemSummaries(List<ItemSummary> itemSummaries) {
         this.itemSummaries = itemSummaries.stream()
                 .sorted(ItemSummary.ORDERING)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 }

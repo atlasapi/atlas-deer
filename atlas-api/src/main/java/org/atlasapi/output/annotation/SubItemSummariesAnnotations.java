@@ -63,7 +63,7 @@ public class SubItemSummariesAnnotations extends OutputAnnotation<Content> {
                     .stream()
                     .skip(offset)
                     .limit(limit)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
 
             writer.writeList(subItemSummaryListWriter, summaries, ctxt);
         }

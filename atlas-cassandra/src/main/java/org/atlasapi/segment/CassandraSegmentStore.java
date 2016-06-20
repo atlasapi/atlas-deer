@@ -153,7 +153,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
                         .collect(Collectors.toList())),
                 (Function<List<List<Row>>, List<Row>>) input -> input.stream()
                         .flatMap(Collection::stream)
-                        .collect(MoreCollectors.toList())
+                        .collect(MoreCollectors.toImmutableList())
         );
         try {
             return rowFuture.get(SELECT_TIMEOUT, TimeUnit.SECONDS);

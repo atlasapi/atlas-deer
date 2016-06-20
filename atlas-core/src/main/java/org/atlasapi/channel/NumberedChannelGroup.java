@@ -49,7 +49,7 @@ public abstract class NumberedChannelGroup extends ChannelGroup<ChannelNumbering
                                                         .compareTo(o2.getStartDate()
                                                                 .orElse(EARLIEST_POSSIBLE_DATE)))
                                         .findFirst().get()
-                ).sorted(CHANNEL_NUMBERING_ORDERING).collect(MoreCollectors.toList());
+                ).sorted(CHANNEL_NUMBERING_ORDERING).collect(MoreCollectors.toImmutableList());
 
     }
 }

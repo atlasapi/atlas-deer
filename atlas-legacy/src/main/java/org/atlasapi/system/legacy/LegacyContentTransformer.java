@@ -436,7 +436,7 @@ public class LegacyContentTransformer
                                 legacy.getEndTime(),
                                 legacy.getPrice()
                         ))
-                        .collect(MoreCollectors.toList())
+                        .collect(MoreCollectors.toImmutableList())
         );
         return p;
     }
@@ -642,14 +642,14 @@ public class LegacyContentTransformer
                         Tag.Relationship.valueOf(tr.getRelationship().name())
                         )
                 )
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private Iterable<EventRef> translateEventRefs(
             List<org.atlasapi.media.entity.EventRef> eventRefs) {
         return eventRefs.stream().map(eventRef ->
                 new EventRef(Id.valueOf(eventRef.id()), eventRef.getPublisher()))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     @Override

@@ -121,7 +121,7 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         return Futures.transform(response, (SearchResponse input) -> {
             ImmutableList<Id> ids = StreamSupport.stream(input.getHits().spliterator(), false)
                     .map(this::getId)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
 
             return IndexQueryResult.withIds(ids, input.getHits().getTotalHits());
         });

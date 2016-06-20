@@ -187,11 +187,11 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         ImmutableSet<Id> idsOfContentToBeUpdated = graphsAndContent.values().stream()
                 .map(Content::getId)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         return deletedGraphIds.stream()
                 .flatMap(graphId -> getStaleContent(graphId, idsOfContentToBeUpdated).stream())
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
     }
 
     private ImmutableSet<Id> getStaleContent(Id deletedGraphId,
@@ -201,7 +201,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                     .stream()
                     .map(Content::getId)
                     .filter(id -> !contentIdsToBeUpdated.contains(id))
-                    .collect(MoreCollectors.toSet());
+                    .collect(MoreCollectors.toImmutableSet());
 
         } catch (WriteException e) {
             LOG.warn("Failed to resolve equivalent set {}", deletedGraphId, e);

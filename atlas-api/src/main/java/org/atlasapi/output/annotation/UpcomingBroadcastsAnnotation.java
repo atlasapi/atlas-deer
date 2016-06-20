@@ -49,7 +49,7 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
                 writer.writeList(
                         broadcastWriter,
                         channelsBroadcastFilter.sortAndFilter(
-                                broadcastStream.collect(MoreCollectors.toList()),
+                                broadcastStream.collect(MoreCollectors.toImmutableList()),
                                 ctxt.getRegion().get()
                         ),
                         ctxt
@@ -57,7 +57,7 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
             } else {
                 writer.writeList(
                         broadcastWriter,
-                        broadcastStream.collect(MoreCollectors.toList()),
+                        broadcastStream.collect(MoreCollectors.toImmutableList()),
                         ctxt
                 );
             }

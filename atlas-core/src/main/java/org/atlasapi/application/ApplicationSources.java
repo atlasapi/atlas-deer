@@ -44,7 +44,7 @@ public class ApplicationSources {
                 .stream()
                 .filter(input -> input.getSourceStatus().isEnabled())
                 .map(SourceReadEntry::getPublisher)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
     }
 
     public boolean isPrecedenceEnabled() {

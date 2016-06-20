@@ -95,7 +95,7 @@ public class EsContentTranslator {
                 .filter(p -> p != null && p.getCurrency() != null)
                 .map(price -> new EsPriceMapping().currency(price.getCurrency())
                         .value(price.getAmount()))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private DateTime toUtc(DateTime transmissionTime) {
@@ -304,7 +304,7 @@ public class EsContentTranslator {
     private Object dedupeAndMergeTransmissionTime(Item episode, List<Integer> list) {
         ImmutableList<Long> millis = episode.getBroadcasts().stream()
                 .map(b -> b.getTransmissionTime().getMillis())
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         if (list == null || list.isEmpty()) {
             return millis;
@@ -316,7 +316,7 @@ public class EsContentTranslator {
                 .build()
                 .stream()
                 .distinct()
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private List<Map<String, Object>> dedupeAndMergeLocations(Content episode,
@@ -327,7 +327,7 @@ public class EsContentTranslator {
                 .filter(location -> location != null)
                 .map(Location::getPolicy)
                 .filter(policy -> policy != null)
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         List<Map<String, Object>> nonNullExistingLocations = existingLocations != null
                                                        ? existingLocations
@@ -340,7 +340,7 @@ public class EsContentTranslator {
                 .filter(filter::apply)
                 .map(this::toEsLocation)
                 .map(EsObject::toMap)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         return ImmutableList.<Map<String, Object>>builder()
                 .addAll(nonNullExistingLocations)
@@ -398,7 +398,7 @@ public class EsContentTranslator {
 
         ImmutableList<Broadcast> itemBroadcasts = item.getBroadcasts().stream()
                 .filter(this::broadcastHasNecessaryFields)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         Predicate<Broadcast> broadcastNotPresentFilter =
                 createBroadcastNotPresentFilter(itemBroadcasts);
@@ -409,11 +409,11 @@ public class EsContentTranslator {
                 .stream()
                 .filter(this::broadcastHasNecessaryFields)
                 .filter(broadcastNotPresentFilter::apply)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         ImmutableList<Broadcast> activelyPublishedItemBroadcasts = itemBroadcasts.stream()
                 .filter(Broadcast::isActivelyPublished)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         return ImmutableList.<Broadcast>builder()
                 .addAll(parentBroadcasts)
@@ -422,7 +422,7 @@ public class EsContentTranslator {
                 .stream()
                 .map(this::toEsBroadcast)
                 .map(EsObject::toMap)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private boolean broadcastHasNecessaryFields(Broadcast broadcast) {
@@ -541,6 +541,6 @@ public class EsContentTranslator {
                         && Boolean.TRUE.equals(b.isActivelyPublished())
                 )
                 .map(b -> b.getTransmissionTime().getMillis())
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 }

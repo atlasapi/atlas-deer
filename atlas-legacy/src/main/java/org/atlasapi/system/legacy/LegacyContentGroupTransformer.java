@@ -38,7 +38,7 @@ public class LegacyContentGroupTransformer extends
         ImmutableList<ContentRef> refs = input.getContents().stream()
                 .map(ref -> LegacyContentTransformer.legacyRefToRef(ref, input.getPublisher()))
                 .filter(MorePredicates.isNotNull())
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         contentGroup.setContents(refs);
     }

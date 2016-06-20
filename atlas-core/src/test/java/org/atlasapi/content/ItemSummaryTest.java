@@ -78,7 +78,7 @@ public class ItemSummaryTest {
             ImmutableList<ItemSummary> sortedSummaries = summaries
                     .stream()
                     .sorted(ItemSummary.ORDERING)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
             assertThat(sortedSummaries.get(0), sameInstance(itemSummary3));
             assertThat(sortedSummaries.get(1), sameInstance(itemSummary4));
             assertThat(sortedSummaries.get(2), sameInstance(itemSummary5));

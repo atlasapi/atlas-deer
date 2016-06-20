@@ -271,7 +271,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         ImmutableSetMultimap.Builder<Long, Content> sets = ImmutableSetMultimap.builder();
         ImmutableList<Row> allRows = StreamSupport.stream(setsRows.spliterator(), false)
                 .flatMap(rs -> rs.all().stream())
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         for (Row row : allRows) {
             long setId = row.getLong(SET_ID_KEY);
@@ -337,7 +337,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private Iterable<Statement> selectSetsQueries(Iterable<Long> keys) {
         return StreamSupport.stream(keys.spliterator(), false)
                 .map(k -> setsSelect.bind().setLong(SET_ID_BIND, k))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     @Override
@@ -377,7 +377,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private ImmutableList<Statement> getGraphUpdateRows(ImmutableSet<EquivalenceGraph> graphs) {
         return graphs.stream()
                 .map(this::getGraphUpdateRow)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private BoundStatement getGraphUpdateRow(EquivalenceGraph graph) {
@@ -390,7 +390,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             ImmutableSetMultimap<EquivalenceGraph, Content> graphsAndContent) {
         return graphsAndContent.entries().stream()
                 .map(entry -> getUpdateDataRow(entry.getKey(), entry.getValue()))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private BoundStatement getUpdateDataRow(EquivalenceGraph graph, Content content) {
@@ -408,7 +408,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         return deletedGraphs.stream()
                 .map(Id.toLongValue()::apply)
                 .map(setDelete::bind)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private ImmutableList<Statement> getUpdateIndexRows(
@@ -525,7 +525,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 (ResultSet resultSet) -> {
                     return StreamSupport.stream(resultSet.spliterator(), false)
                             .map(this::deserialize)
-                            .collect(MoreCollectors.toSet());
+                            .collect(MoreCollectors.toImmutableSet());
                 }
         );
     }

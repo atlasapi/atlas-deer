@@ -62,7 +62,7 @@ public class SubItemAnnotation extends OutputAnnotation<Content> {
                     .stream()
                     .skip(offset)
                     .limit(limit)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
 
             writer.writeList(childRefWriter, orderedRefs, ctxt);
         }

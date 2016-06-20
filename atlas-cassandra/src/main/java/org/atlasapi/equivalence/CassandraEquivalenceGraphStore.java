@@ -47,7 +47,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     public static final Function<List<Row>, List<Row>> filterNulls =
             (Function<List<Row>, List<Row>>) input -> input.stream()
                     .filter(Objects::nonNull)
-                    .collect(MoreCollectors.toList());
+                    .collect(MoreCollectors.toImmutableList());
 
     private static final String EQUIVALENCE_GRAPHS_TABLE = "equivalence_graph";
     // These are exposed to allow testing that we can cope with stale index entries which
@@ -143,7 +143,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
                         .filter(entry -> hasResolvedEquivalenceGraph(
                                 entry.getValue(), entry.getKey(), rowGraphIndex
                         ))
-                        .collect(MoreCollectors.toMap(
+                        .collect(MoreCollectors.toImmutableMap(
                                 Entry::getKey, valueFunction
                         ))
         );
@@ -207,7 +207,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
                 .unordered()
                 .distinct()
                 .map(graphIdsSelect::bind)
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     @Override

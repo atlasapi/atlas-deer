@@ -307,7 +307,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (container.getCertificates() != null) {
             builder.addAllCertificates(container.getCertificates().stream()
                     .map(certificateSerializer::serialize)
-                    .collect(MoreCollectors.toSet()));
+                    .collect(MoreCollectors.toImmutableSet()));
         }
 
         if (container.getYear() != null) {

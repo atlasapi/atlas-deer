@@ -92,7 +92,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
     public List<Statement> insertStatements(Iterable<Long> keys, Long value) {
         return StreamSupport.stream(keys.spliterator(), false)
                 .map(k -> insertStatement(k, value))
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     @Override
@@ -105,7 +105,7 @@ public class CassandraSecondaryIndex implements SecondaryIndex {
             ConsistencyLevel level) {
         ImmutableList<Long> uniqueKeys = StreamSupport.stream(keys.spliterator(), false)
                 .distinct()
-                .collect(MoreCollectors.toList());
+                .collect(MoreCollectors.toImmutableList());
 
         ListenableFuture<List<Row>> resultsFuture = Futures.transform(
                 Futures.allAsList(

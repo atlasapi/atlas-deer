@@ -48,7 +48,7 @@ public class SeriesWriter implements EntityListWriter<SeriesRef> {
         ImmutableSet<Integer> childReleaseYears = series.getItemSummaries().stream()
                 .filter(i -> i.getReleaseYear().isPresent())
                 .map(i -> i.getReleaseYear().get())
-                .collect(MoreCollectors.toSet());
+                .collect(MoreCollectors.toImmutableSet());
 
         return Sets.union(
                 childReleaseYears, series.getYear() != null ?
