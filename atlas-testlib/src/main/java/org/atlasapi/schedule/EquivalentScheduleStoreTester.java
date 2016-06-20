@@ -8,6 +8,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 
@@ -283,6 +284,72 @@ public final class EquivalentScheduleStoreTester
         Equivalent<Item> broadcastItems = Iterables.getOnlyElement(schedule.getEntries())
                 .getItems();
         assertThat(Iterables.getOnlyElement(broadcastItems.getResources()), is(equiv));
+    }
+
+    public void testResolvingScheduleSetsEquivalentToOnItems() throws Exception {
+
+        Channel channel = Channel.builder(Publisher.BBC).build();
+        channel.setId(1L);
+        Interval interval = new Interval(
+                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
+                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+        );
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+        Broadcast broadcast = new Broadcast(channel, interval).withId("sid");
+        item.addBroadcast(broadcast);
+
+        Item equiv = new Item(Id.valueOf(2), Publisher.BBC);
+        equiv.addBroadcast(broadcast);
+        equiv.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+
+        getSubjectGenerator().getEquivalenceGraphStore().updateEquivalences(
+                item.toRef(),
+                ImmutableSet.of(equiv.toRef()),
+                ImmutableSet.of(Publisher.METABROADCAST)
+        );
+
+        getSubjectGenerator().getContentStore().writeContent(item);
+        getSubjectGenerator().getContentStore().writeContent(equiv);
+
+        ScheduleRef scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
+                .addEntry(item.getId(), broadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
+                        scheduleRef,
+                        ImmutableSet.of()
+                ));
+
+        EquivalentSchedule resolved
+                = get(getSubjectGenerator().getEquivalentScheduleStore()
+                .resolveSchedules(ImmutableList.of(channel),
+                        interval,
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)
+                ));
+
+        EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
+
+        ImmutableSet<Item> broadcastItems = Iterables.getOnlyElement(schedule.getEntries())
+                .getItems()
+                .getResources();
+
+        assertThat(broadcastItems.size(), is(2));
+
+        for (Item broadcastItem : broadcastItems) {
+            EquivalenceRef equivalentTo = Iterables.getOnlyElement(broadcastItem.getEquivalentTo());
+
+            if (broadcastItem.getId().equals(item.getId())) {
+                assertThat(equivalentTo.getId(), is(equiv.getId()));
+                assertThat(equivalentTo.getSource(), is(equiv.getSource()));
+            } else {
+                assertThat(equivalentTo.getId(), is(item.getId()));
+                assertThat(equivalentTo.getSource(), is(item.getSource()));
+            }
+        }
     }
 
     public void testWritingNewScheduleWithEquivalentItemsChoosesBestEquivalent() throws Exception {
