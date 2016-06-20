@@ -65,14 +65,10 @@ public class ExtendedDescriptionAnnotation extends OutputAnnotation<Content> {
         );
 
         if (ctxt.getActiveAnnotations().contains(Annotation.PRIORITY_REASONS)) {
-            if (desc.getPriority() == null) {
-                writer.writeObject(priorityReasonsWriter, null, ctxt);
+            if (desc.getPriority() != null && desc.getPriority().getReasons() != null) {
+                writer.writeObject(priorityReasonsWriter, desc.getPriority().getReasons(), ctxt);
             } else {
-                writer.writeObject(
-                        priorityReasonsWriter,
-                        desc.getPriority().getReasons() != null ? desc.getPriority().getReasons() : null,
-                        ctxt
-                );
+                writer.writeObject(priorityReasonsWriter, null, ctxt);
             }
         }
 

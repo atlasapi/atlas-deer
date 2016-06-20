@@ -71,7 +71,8 @@ public enum Annotation {
     NON_MERGED,
     REVIEWS,
     RATINGS,
-    PRIORITY_REASONS;
+    PRIORITY_REASONS
+    ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
 

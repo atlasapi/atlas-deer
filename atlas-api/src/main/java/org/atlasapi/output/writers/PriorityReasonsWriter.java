@@ -23,14 +23,14 @@ public class PriorityReasonsWriter implements EntityWriter<PriorityScoreReasons>
         writer.writeList(
                 "positive",
                 "positive",
-                entity.getPositive() != null ? entity.getPositive() : null,
+                entity.getPositive(),
                 ctxt
         );
 
         writer.writeList(
                 "negative",
                 "negative",
-                entity.getNegative() != null ? entity.getNegative() : null,
+                entity.getNegative(),
                 ctxt
         );
     }
