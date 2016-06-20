@@ -29,6 +29,7 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
@@ -638,15 +639,34 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ByteString itemBytesCopy = ByteString.copyFrom(itemsBytes);
             InputStream itemsStream = itemBytesCopy.newInput();
 
-            ImmutableSet.Builder<Item> items = ImmutableSet.builder();
+            ImmutableSet.Builder<Item> itemsBuilder = ImmutableSet.builder();
             for (int i = 0; i < itemCount; i++) {
                 ContentProtos.Content msg = ContentProtos.Content.parseDelimitedFrom(itemsStream);
                 Item item = (Item) contentSerializer.deserialize(msg);
                 if (selectedSources.contains(item.getSource())) {
-                    items.add(item);
+                    itemsBuilder.add(item);
                 }
             }
-            return new Equivalent<>(graph, items.build());
+
+            ImmutableSet<Item> items = getItemsWithEquivalents(itemsBuilder.build());
+
+            return new Equivalent<>(graph, items);
+        }
+
+        private ImmutableSet<Item> getItemsWithEquivalents(ImmutableSet<Item> items) {
+            // Ensure all items in the set have the correct equivalents
+
+            ImmutableSet<EquivalenceRef> equivalenceRefs = items.stream()
+                    .map(EquivalenceRef::valueOf)
+                    .collect(MoreCollectors.toSet());
+
+            return items.stream()
+                    .map(item -> (Item) item.copyWithEquivalentTo(
+                            equivalenceRefs.stream()
+                                    .filter(ref -> !ref.getId().equals(item.getId()))
+                                    .collect(MoreCollectors.toSet())
+                    ))
+                    .collect(MoreCollectors.toSet());
         }
 
         private Broadcast deserialize(ByteBuffer broadcastBytes)
