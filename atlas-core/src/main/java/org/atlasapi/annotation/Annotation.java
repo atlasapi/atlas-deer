@@ -70,7 +70,9 @@ public enum Annotation {
     SUPPRESS_EPISODE_NUMBERS,
     NON_MERGED,
     REVIEWS,
-    RATINGS;
+    RATINGS,
+    PRIORITY_REASONS
+    ;
 
     private static final ImmutableSet<Annotation> ALL = ImmutableSet.copyOf(values());
 
