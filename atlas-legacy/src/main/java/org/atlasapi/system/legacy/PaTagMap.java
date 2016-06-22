@@ -30,6 +30,8 @@ public class PaTagMap implements GenreToTagMapper {
     private final ImmutableMap<String, String> paTagMap;
     private final String PA_NAMESPACE = "gb:pressassociation:prod:";
     private final String METABROADCAST_TAG = "http://metabroadcast.com/tags/";
+    private final String UNCLASSIFIED_TAG = "unclassified";
+
     private TopicStore topicStore;
     private IdGenerator idGenerator;
 
@@ -170,8 +172,15 @@ public class PaTagMap implements GenreToTagMapper {
                 }
             }
         }
+
+        // special case, if no genres specified then tag with unclassified genre
+        // this tag will be removed if genres later appear via content updates
+        if (tags.isEmpty()) {
+            tags.add(UNCLASSIFIED_TAG);
+        }
+
         // Checking if the tags set has only a one tag with the value - film, this means that it's action film.
-        if (tags.size() == 1 && tags.contains("film")) {
+        if (tags.size() == 1 && tags.contains("films")) {
             tags.add("action");
         }
         return getTopicRefFromTags(tags);
