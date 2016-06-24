@@ -80,6 +80,7 @@ public class Item extends Content {
         setContainerRef(container.toRef());
     }
 
+    @Nullable
     @FieldName("container_ref")
     public ContainerRef getContainerRef() {
         return containerRef;

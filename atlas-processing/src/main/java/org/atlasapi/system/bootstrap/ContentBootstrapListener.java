@@ -1,11 +1,11 @@
 package org.atlasapi.system.bootstrap;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Stack;
+
+import javax.annotation.Nullable;
 
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
@@ -32,6 +32,8 @@ import org.atlasapi.system.legacy.UnresolvedLegacySegmentException;
 
 import com.metabroadcast.common.collect.OptionalMap;
 
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -44,10 +46,10 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ContentBootstrapListener extends ContentVisitorAdapter<
-        ContentBootstrapListener.Result> {
+public class ContentBootstrapListener
+        extends ContentVisitorAdapter<ContentBootstrapListener.Result> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ContentBootstrapListener.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentBootstrapListener.class);
 
     private final ContentWriter contentWriter;
     private final DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
@@ -70,7 +72,7 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
             LegacySegmentMigrator legacySegmentMigrator,
             ContentResolver legacyContentResolver,
             boolean migrateEquivalents,
-            EquivalenceGraphStore equivalenceGraphStore
+            @Nullable EquivalenceGraphStore equivalenceGraphStore
     ) {
         this.contentWriter = checkNotNull(contentWriter);
         this.equivalenceMigrator = checkNotNull(equivalenceMigrator);
@@ -102,23 +104,30 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
     @Override
     protected Result visitItem(Item item) {
-        ResultBuilder resultBuilder = resultBuilder();
+        Result result = Result.create();
 
         if (migrateHierarchy) {
-            migrateParents(item, resultBuilder);
+            result.push(ResultNode.PARENTS);
+            migrateParents(item, result);
+            result.pop();
         }
 
-        migrateContent(item, resultBuilder);
+        result.push(ResultNode.CONTENT);
+        migrateContent(item, result);
+        result.pop();
 
-        if (migrateHierarchy && resultBuilder.isSucceeded()) {
-            migrateSegments(item, resultBuilder);
+        if (migrateHierarchy && result.getSucceeded()) {
+            result.push(ResultNode.SEGMENTS);
+            migrateSegments(item, result);
+            result.pop();
         }
 
         if (migrateEquivalents) {
-            migrateEquivalents(item, resultBuilder);
+            result.push(ResultNode.EQUIVALENTS);
+            migrateEquivalents(item, result);
+            result.pop();
         }
 
-        Result result = resultBuilder.build();
         logResult(item.getId(), result);
 
         return result;
@@ -126,234 +135,151 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
 
     @Override
     protected Result visitContainer(Container container) {
-        ResultBuilder resultBuilder = resultBuilder();
+        Result result = Result.create();
 
         if (migrateHierarchy) {
-            migrateParents(container, resultBuilder);
+            result.push(ResultNode.PARENTS);
+            migrateParents(container, result);
+            result.pop();
         }
 
-        migrateContent(container, resultBuilder);
+        result.push(ResultNode.CONTENT);
+        migrateContent(container, result);
+        result.pop();
 
-        if (migrateHierarchy && resultBuilder.isSucceeded()) {
-            migrateHierarchy(container, resultBuilder);
+        if (migrateHierarchy && result.getSucceeded()) {
+            result.push(ResultNode.CHILDREN);
+            migrateHierarchy(container, result);
+            result.pop();
         }
 
         if (migrateEquivalents) {
-            migrateEquivalents(container, resultBuilder);
+            result.push(ResultNode.EQUIVALENTS);
+            migrateEquivalents(container, result);
+            result.pop();
         }
 
-        Result result = resultBuilder.build();
         logResult(container.getId(), result);
 
         return result;
     }
 
-    private void migrateParents(Content content, ResultBuilder resultBuilder) {
+    private void migrateParents(Content content, Result result) {
         if (content instanceof Episode) {
-            migrateParentsForEpisode((Episode) content, resultBuilder);
+            migrateParentsForEpisode((Episode) content, result);
         }
 
         if (content instanceof Series) {
-            migrateParentsForSeries((Series) content, resultBuilder);
+            migrateParentsForSeries((Series) content, result);
         }
     }
 
-    private void migrateParentsForEpisode(Episode episode, ResultBuilder resultBuilder) {
+    private void migrateParentsForEpisode(Episode episode, Result result) {
         if (episode.getSeriesRef() != null) {
             Id seriesId = episode.getSeriesRef().getId();
-            migrateParent(seriesId, "series", resultBuilder);
+            migrateParent(seriesId, result);
         }
 
         if (episode.getContainerRef() != null) {
             Id containerId = episode.getContainerRef().getId();
-            migrateParent(containerId, "container", resultBuilder);
+            migrateParent(containerId, result);
         }
     }
 
-    private void migrateParentsForSeries(Series series, ResultBuilder resultBuilder) {
+    private void migrateParentsForSeries(Series series, Result result) {
         if (series.getBrandRef() != null) {
             Id brandId = series.getBrandRef().getId();
-            migrateParent(brandId, "brand", resultBuilder);
+            migrateParent(brandId, result);
         }
     }
 
-    private void migrateParent(Id parentId, String parentType, ResultBuilder resultBuilder) {
-        ResultBuilder result = resultBuilder();
-
+    private void migrateParent(Id parentId, Result result) {
         Content content = resolveLegacyContent(parentId);
         migrateContent(content, result);
-
-        if (result.isSucceeded()) {
-            resultBuilder.addMessage("Successfully migrated parent " + parentType + " " + parentId);
-        } else {
-            resultBuilder.failure("Failed to migrate parent " + parentType + " " + parentId);
-        }
     }
 
-    private void migrateContent(Content content, ResultBuilder resultBuilder) {
-        resultBuilder.addMessage("Migrating content " + content.getId().longValue());
+    private void migrateContent(Content content, Result result) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Migrating content ")
+                .append(content.getId().longValue())
+                .append(", ");
+
         content.setReadHash(null);
-        Instant start = Instant.now();
 
         try {
             WriteResult<Content, Content> writeResult = contentWriter.writeContent(content);
-            Instant contentWriteEnd = Instant.now();
             if (!writeResult.written()) {
-                resultBuilder.failure("No write occurred when migrating content into C* store");
+                result.failure("No write occurred when migrating content into C* store");
                 return;
             }
-            resultBuilder.success("Migrated content into content store");
+            stringBuilder.append("Content store: DONE, ");
 
             Optional<EquivalenceGraphUpdate> graphUpdate =
                     equivalenceMigrator.migrateEquivalence(content.toRef());
-            Instant graphUpdateEnd = Instant.now();
-            resultBuilder.success("Migrated equivalence graph");
+            stringBuilder.append("Equivalence Graph: DONE, ");
 
             equivalentContentStore.updateContent(content.getId());
 
             if (graphUpdate.isPresent()) {
                 equivalentContentStore.updateEquivalences(graphUpdate.get());
             }
-            Instant equivalentContentUpdateEnd = Instant.now();
-            resultBuilder.success("Migrated content into equivalent content store");
+            stringBuilder.append("Equivalent content store: DONE, ");
 
             contentIndex.index(content);
-            Instant indexingEnd = Instant.now();
-            resultBuilder.success("Indexed content");
 
-            LOG.info(
-                    "Update for {} write: {}ms, "
-                            + "equiv graph update: {}ms, "
-                            + "equiv content update: {}ms, "
-                            + "index: {}ms, "
-                            + "total: {}ms",
-                    content.getId(),
-                    Duration.between(start, contentWriteEnd).toMillis(),
-                    Duration.between(contentWriteEnd, graphUpdateEnd).toMillis(),
-                    Duration.between(graphUpdateEnd, equivalentContentUpdateEnd).toMillis(),
-                    Duration.between(equivalentContentUpdateEnd, indexingEnd).toMillis(),
-                    Duration.between(start, indexingEnd).toMillis()
-            );
+            stringBuilder.append("Index: DONE");
+
+            result.success(stringBuilder.toString());
         } catch (Exception e) {
-            LOG.error(String.format("Bootstrapping failure: %s %s", content.getId(), content), e);
-            resultBuilder.failure("Failed to bootstrap content with error " + e.getMessage());
+            log.error(String.format("Bootstrapping failure: %s %s", content.getId(), content), e);
+            result.failure("Failed to bootstrap content with error " + e.getMessage());
         }
     }
 
-    private void migrateSegments(Item item, ResultBuilder resultBuilder) {
-        Set<Id> successfullyMigrated = new HashSet<>();
-        Set<Id> unsuccessfullyMigrated = new HashSet<>();
-
-        Instant start = Instant.now();
-
-        List<SegmentEvent> segmentEvents = item.getSegmentEvents();
-        for (SegmentEvent segmentEvent : segmentEvents) {
+    private void migrateSegments(Item item, Result result) {
+        for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
             Id segmentId = segmentEvent.getSegmentRef().getId();
-            if (migrateSegment(segmentId)) {
-                successfullyMigrated.add(segmentId);
-            } else {
-                unsuccessfullyMigrated.add(segmentId);
+
+            try {
+                legacySegmentMigrator.migrateLegacySegment(segmentId);
+                result.success("Migrated segment " + segmentId);
+            } catch (UnresolvedLegacySegmentException e) {
+                log.warn("Failed to migrate segment event {}", segmentId.longValue(), e);
+                result.failure("Failed to migrate segment " + segmentId);
             }
         }
-
-        Instant end = Instant.now();
-
-        addMigrationResult(resultBuilder, "segment events", successfullyMigrated,
-                unsuccessfullyMigrated
-        );
-
-        if (unsuccessfullyMigrated.size() > 0) {
-            LOG.warn("Failed to migrate all segment events for item {}: {}ms",
-                    item.getId().longValue(), Duration.between(start, end).toMillis()
-            );
-        } else {
-            LOG.info("Migrated segment events for item {}: {}ms",
-                    item.getId().longValue(), Duration.between(start, end).toMillis()
-            );
-        }
     }
 
-    private boolean migrateSegment(Id segmentId) {
-        try {
-            legacySegmentMigrator.migrateLegacySegment(segmentId);
-            return true;
-        } catch (UnresolvedLegacySegmentException e) {
-            LOG.warn("Failed to migrate segment event {}", segmentId.longValue(), e);
-            return false;
-        }
-    }
-
-    private void migrateHierarchy(Container container, ResultBuilder resultBuilder) {
-        Instant start = Instant.now();
+    private void migrateHierarchy(Container container, Result result) {
         if (container instanceof Brand) {
-            migrateSeries((Brand) container, resultBuilder);
+            migrateSeries((Brand) container, result);
         }
-
-        migrateItemRefs(container, resultBuilder);
-        Instant end = Instant.now();
-
-        if (resultBuilder.isSucceeded()) {
-            LOG.info("Migrated hierarchies for container {}: {}ms", container.getId().longValue(),
-                    Duration.between(start, end).toMillis()
-            );
-        } else {
-            LOG.warn("Failed to migrate all hierarchies for container {}: {}ms",
-                    container.getId().longValue(), Duration.between(start, end).toMillis()
-            );
-        }
+        migrateItemRefs(container, result);
     }
 
-    private void migrateSeries(Brand brand, ResultBuilder resultBuilder) {
-        Set<Id> successfullyMigrated = new HashSet<>();
-        Set<Id> unsuccessfullyMigrated = new HashSet<>();
-
+    private void migrateSeries(Brand brand, Result result) {
         for (SeriesRef seriesRef : brand.getSeriesRefs()) {
-            ResultBuilder seriesMigrationResultBuilder = resultBuilder();
             Id seriesRefId = seriesRef.getId();
 
             Content series = resolveLegacyContent(seriesRefId);
-            migrateContent(series, seriesMigrationResultBuilder);
+            migrateContent(series, result);
 
-            if (seriesMigrationResultBuilder.isSucceeded() && series instanceof Container) {
-                migrateHierarchy((Container) series, seriesMigrationResultBuilder);
-            }
-
-            if (seriesMigrationResultBuilder.isSucceeded()) {
-                successfullyMigrated.add(seriesRefId);
-            } else {
-                unsuccessfullyMigrated.add(seriesRefId);
+            if (result.getSucceeded() && series instanceof Container) {
+                migrateHierarchy((Container) series, result);
             }
         }
-
-        addMigrationResult(resultBuilder, "series refs", successfullyMigrated,
-                unsuccessfullyMigrated
-        );
     }
 
-    private void migrateItemRefs(Container container, ResultBuilder resultBuilder) {
-        Set<Id> successfullyMigrated = new HashSet<>();
-        Set<Id> unsuccessfullyMigrated = new HashSet<>();
-
+    private void migrateItemRefs(Container container, Result result) {
         for (ItemRef itemRef : container.getItemRefs()) {
-            ResultBuilder itemRefMigrationResultBuilder = resultBuilder();
             Id itemRefId = itemRef.getId();
 
             Content content = resolveLegacyContent(itemRefId);
-            migrateContent(content, itemRefMigrationResultBuilder);
-
-            if (itemRefMigrationResultBuilder.isSucceeded()) {
-                successfullyMigrated.add(itemRefId);
-            } else {
-                unsuccessfullyMigrated.add(itemRefId);
-            }
+            migrateContent(content, result);
         }
-
-        addMigrationResult(resultBuilder, "item refs", successfullyMigrated,
-                unsuccessfullyMigrated
-        );
     }
 
-    private void migrateEquivalents(Content content, ResultBuilder resultBuilder) {
+    private void migrateEquivalents(Content content, Result result) {
         OptionalMap<Id, EquivalenceGraph> equivalenceGraphOptional = Futures.getUnchecked(
                 equivalenceGraphStore.resolveIds(ImmutableList.of(content.getId()))
         );
@@ -366,40 +292,28 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                             ImmutableSet.of(content.getId())
                     );
 
-            migrateEquivalents(equivalentIds, resultBuilder);
+            migrateEquivalents(equivalentIds, result);
         } else {
             String message = "Failed to find equivalence graph for " + content.getId().longValue();
-            LOG.warn(message);
-            resultBuilder.failure(message);
+            log.warn(message);
+            result.failure(message);
         }
     }
 
-    private void migrateEquivalents(Set<Id> equivalentIds, ResultBuilder resultBuilder) {
-        Set<Id> successfullyMigrated = new HashSet<>();
-        Set<Id> unsuccessfullyMigrated = new HashSet<>();
-
+    private void migrateEquivalents(Set<Id> equivalentIds, Result result) {
         for (Id equivalentId : equivalentIds) {
-            ResultBuilder equivalentResultBuilder = resultBuilder();
             Content content = resolveLegacyContent(equivalentId);
 
             // Some equivalents will fail to migrate because their parents are missing.
             // This is intended as a workaround for that scenario
             if (migrateHierarchy) {
-                migrateParents(content, resultBuilder());
+                result.push(ResultNode.PARENTS);
+                migrateParents(content, result);
+                result.pop();
             }
 
-            migrateContent(content, equivalentResultBuilder);
-
-            if (equivalentResultBuilder.isSucceeded()) {
-                successfullyMigrated.add(equivalentId);
-            } else {
-                unsuccessfullyMigrated.add(equivalentId);
-            }
+            migrateContent(content, result);
         }
-
-        addMigrationResult(resultBuilder, "equivalents", successfullyMigrated,
-                unsuccessfullyMigrated
-        );
     }
 
     private Content resolveLegacyContent(Id id) {
@@ -409,39 +323,10 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         );
     }
 
-    private void addMigrationResult(ResultBuilder resultBuilder, String type,
-            Set<Id> successfullyMigrated, Set<Id> unsuccessfullyMigrated) {
-        if (unsuccessfullyMigrated.size() > 0) {
-            resultBuilder.failure("Failed to migrate all " + type + ". " +
-                    getMigrationResult(successfullyMigrated, unsuccessfullyMigrated));
-        } else {
-            resultBuilder.success("Successfully migrated " + type + ". " +
-                    getMigrationResult(successfullyMigrated, unsuccessfullyMigrated));
-        }
-    }
-
-    private String getMigrationResult(Set<Id> successfullyMigrated,
-            Set<Id> unsuccessfullyMigrated) {
-        String successMessage = "Successfully migrated: " +
-                successfullyMigrated.stream()
-                        .map(Id::toString)
-                        .collect(Collectors.joining(","));
-
-        if (unsuccessfullyMigrated.size() > 0) {
-            return successMessage +
-                    " Unsuccessfully migrated: " +
-                    unsuccessfullyMigrated.stream()
-                            .map(Id::toString)
-                            .collect(Collectors.joining(","));
-        }
-
-        return successMessage;
-    }
-
     private void logResult(Id id, Result result) {
-        LOG.info(
-                "Bootstrap of {} finished, result {} - {}",
-                id, result.isSucceeded(), result.getMessage().replaceAll("\n", " | ")
+        log.info(
+                "Bootstrap of {} finished, success: {}, result: {}",
+                id, result.getSucceeded(), result.toString().replaceAll("\n", " | ")
         );
     }
 
@@ -495,7 +380,10 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
                 LegacySegmentMigrator legacySegmentMigrator,
                 ContentResolver legacyContentResolver) {
             this.migrateHierarchy = true;
-            return withSegmentMigratorAndContentResolver(legacySegmentMigrator, legacyContentResolver);
+            return withSegmentMigratorAndContentResolver(
+                    legacySegmentMigrator,
+                    legacyContentResolver
+            );
         }
 
         public Builder withMigrateEquivalents(EquivalenceGraphStore equivalenceGraphStore) {
@@ -519,59 +407,160 @@ public class ContentBootstrapListener extends ContentVisitorAdapter<
         }
     }
 
-    private ResultBuilder resultBuilder() {
-        return new ResultBuilder();
-    }
-
+    /**
+     * This class models the result of the bootstrap as an arbitrary graph. This is to allow
+     * representing the bootstrap process which is fairly deeply nested.
+     */
     public static class Result {
 
-        private final boolean succeeded;
-        private final String message;
+        private final ResultNode root = new ResultNode();
 
-        public Result(boolean succeeded, String message) {
-            this.succeeded = succeeded;
-            this.message = message;
+        private boolean succeeded = true;
+        private Stack<String> currentPath = new Stack<>();
+
+        private Result() { }
+
+        public static Result create() {
+            return new Result();
         }
 
-        public boolean isSucceeded() {
+        public ResultNode getRoot() {
+            return root;
+        }
+
+        public boolean getSucceeded() {
             return succeeded;
+        }
+
+        public void push(String path) {
+            checkArgument(ResultNode.ALLOWED_PATHS.contains(path));
+            currentPath.push(path);
+        }
+
+        public void pop() {
+            if (currentPath.isEmpty()) {
+                return;
+            }
+            currentPath.pop();
+        }
+
+        public void success(String message) {
+            ResultNode node = getCurrentNode();
+            node.success(message);
+        }
+
+        public void failure(String message) {
+            succeeded = false;
+            ResultNode node = getCurrentNode();
+            node.failure(message);
+        }
+
+        private ResultNode getCurrentNode() {
+            ResultNode node = root;
+            for (String path : currentPath) {
+                node = node.getChild(path);
+            }
+            return node;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            stringBuilder.append("Succeeded: ")
+                    .append(getSucceeded())
+                    .append("\n\n");
+
+            appendMessages(stringBuilder, ResultNode.ROOT, root);
+
+            return stringBuilder.toString();
+        }
+
+        private void appendMessages(StringBuilder builder, String nodeName, ResultNode node) {
+            builder.append(nodeName)
+                    .append(":\n");
+
+            for (ResultMessage message : node.getMessages()) {
+                builder.append(message.getMessage())
+                        .append("\n");
+            }
+
+            builder.append("\n");
+
+            for (Map.Entry<String, ResultNode> entry : node.getChildren().entrySet()) {
+                appendMessages(builder, entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    public static class ResultNode {
+
+        public static final String ROOT = "Result";
+        public static final String CONTENT = "Content";
+        public static final String PARENTS = "Parents";
+        public static final String CHILDREN = "Children";
+        public static final String SEGMENTS = "Segments";
+        public static final String EQUIVALENTS = "Equivalents";
+
+        public static final List<String> ALLOWED_PATHS = ImmutableList.of(
+                ROOT, CONTENT, PARENTS, CHILDREN, SEGMENTS, EQUIVALENTS
+        );
+
+        private final Map<String, ResultNode> children;
+        private final List<ResultMessage> messages;
+
+        public ResultNode() {
+            this.children = Maps.newHashMap();
+            this.messages = Lists.newArrayList();
+        }
+
+        public static ResultNode create() {
+            return new ResultNode();
+        }
+
+        public Map<String, ResultNode> getChildren() {
+            return children;
+        }
+
+        public List<ResultMessage> getMessages() {
+            return messages;
+        }
+
+        public ResultNode getChild(String name) {
+            checkArgument(ALLOWED_PATHS.contains(name));
+            children.putIfAbsent(name, ResultNode.create());
+            return children.get(name);
+        }
+
+        public void success(String message) {
+            messages.add(ResultMessage.create(true, message));
+        }
+
+        public void failure(String message) {
+            messages.add(ResultMessage.create(false, message));
+        }
+    }
+
+    public static class ResultMessage {
+
+        private final boolean success;
+        private final String message;
+
+        private ResultMessage(boolean success, String message) {
+            this.success = success;
+            this.message = checkNotNull(message);
+        }
+
+        public static ResultMessage create(boolean success, String message) {
+            return new ResultMessage(success, message);
+        }
+
+        public boolean getSuccess() {
+            return success;
         }
 
         public String getMessage() {
             return message;
-        }
-    }
-
-    private static class ResultBuilder {
-
-        private boolean succeeded = true;
-        private StringBuilder message = new StringBuilder();
-
-        public ResultBuilder success(String message) {
-            addMessage(message);
-            return this;
-        }
-
-        public ResultBuilder failure(String message) {
-            this.succeeded = false;
-            addMessage(message);
-            return this;
-        }
-
-        public ResultBuilder addMessage(String message) {
-            if (this.message.length() > 0) {
-                this.message.append("\n");
-            }
-            this.message.append(message);
-            return this;
-        }
-
-        public boolean isSucceeded() {
-            return succeeded;
-        }
-
-        public Result build() {
-            return new Result(succeeded, message.toString());
         }
     }
 }

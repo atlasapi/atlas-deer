@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Sourced;
@@ -179,7 +181,7 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         to.eventRefs = from.eventRefs;
     }
 
-    public void setReadHash(String readHash) {
+    public void setReadHash(@Nullable String readHash) {
         this.readHash = readHash;
     }
 

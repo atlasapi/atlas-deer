@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
@@ -46,6 +48,7 @@ public class Series extends Container {
         this.brandRef = brandRef;
     }
 
+    @Nullable
     @FieldName("brand_ref")
     public BrandRef getBrandRef() {
         return this.brandRef;
