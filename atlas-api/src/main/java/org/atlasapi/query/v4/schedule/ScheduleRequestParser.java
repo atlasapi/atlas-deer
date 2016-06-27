@@ -135,7 +135,8 @@ class ScheduleRequestParser {
         QueryContext context = parseContext(request, publisher);
         Id channel = extractChannel(request);
 
-        DateTime from = extractFrom(request);
+        DateTime now = clock.now();
+        DateTime from = extractFrom(request, now);
         Optional<Publisher> override = extractOverride(request);
 
         ScheduleQuery.Builder builder = ScheduleQuery.builder()
@@ -148,7 +149,7 @@ class ScheduleRequestParser {
             builder.withOverride(override.get());
         }
 
-        Optional<DateTime> to = extractTo(request);
+        Optional<DateTime> to = extractTo(request, now);
         if (to.isPresent()) {
             checkInterval(from, to.get());
 
@@ -178,7 +179,8 @@ class ScheduleRequestParser {
         QueryContext context = parseContext(request, publisher);
         List<Id> channels = extractChannels(request);
 
-        DateTime from = extractFrom(request);
+        DateTime now = clock.now();
+        DateTime from = extractFrom(request, now);
         Optional<Publisher> override = extractOverride(request);
 
         ScheduleQuery.Builder builder = ScheduleQuery.builder()
@@ -191,7 +193,7 @@ class ScheduleRequestParser {
             builder.withOverride(override.get());
         }
 
-        Optional<DateTime> to = extractTo(request);
+        Optional<DateTime> to = extractTo(request, now);
         if (to.isPresent()) {
             checkInterval(from, to.get());
             return builder.withEnd(to.get()).build();
@@ -246,14 +248,12 @@ class ScheduleRequestParser {
         }
     }
 
-    private DateTime extractFrom(HttpServletRequest request) {
-        DateTime now = clock.now();
+    private DateTime extractFrom(HttpServletRequest request, DateTime now) {
         DateTime from = dateTimeParser.parse(getParameter(request, FROM_PARAM), now);
         return from;
     }
 
-    private Optional<DateTime> extractTo(HttpServletRequest request) {
-        DateTime now = clock.now();
+    private Optional<DateTime> extractTo(HttpServletRequest request, DateTime now) {
         String toParam = request.getParameter(TO_PARAM);
         if (Strings.isNullOrEmpty(toParam)) {
             return Optional.empty();
