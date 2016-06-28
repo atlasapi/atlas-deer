@@ -1,12 +1,13 @@
 package org.atlasapi.content;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class RelatedLink {
+public class RelatedLink implements Hashable {
 
     public static Builder facebookLink(String url) {
         return relatedLink(LinkType.FACEBOOK, url);

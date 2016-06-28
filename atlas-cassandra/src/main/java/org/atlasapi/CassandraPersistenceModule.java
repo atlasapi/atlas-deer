@@ -1,7 +1,6 @@
 package org.atlasapi;
 
 import org.atlasapi.content.AstyanaxCassandraContentStore;
-import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.entity.AliasIndex;
@@ -13,6 +12,7 @@ import org.atlasapi.event.DatastaxCassandraEventStore;
 import org.atlasapi.event.EventHasher;
 import org.atlasapi.event.EventPersistenceStore;
 import org.atlasapi.event.EventStore;
+import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.organisation.DatastaxCassandraOrganisationStore;
@@ -235,7 +235,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.segmentStore = CassandraSegmentStore.builder()
                 .withKeyspace(keyspace)
                 .withTableName("segments")
-                .withAliasIndex(AliasIndex.<Segment>create(context.getClient(), "segments_aliases"))
+                .withAliasIndex(AliasIndex.create(context.getClient(), "segments_aliases"))
                 .withCassandraSession(getSession())
                 .withIdGenerator(idGeneratorBuilder.generator("segment"))
                 .withMessageSender(nullMessageSender(ResourceUpdatedMessage.class))

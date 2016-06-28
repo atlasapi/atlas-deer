@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Id;
+import org.atlasapi.hashing.ExcludeFromHash;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.segment.SegmentEvent;
@@ -34,18 +35,16 @@ import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * @author Robert Chatley (robert@metabroadcast.com)
- * @author Lee Denison (lee@metabroadcast.com)
- * @author John Ayres (john@metabroadcast.com)
- */
 public class Item extends Content {
 
     private ContainerRef containerRef;
     private boolean isLongForm = false;
     private Boolean blackAndWhite;
     private Set<Country> countriesOfOrigin = Sets.newHashSet();
+
+    @ExcludeFromHash
     private String sortKey;
+
     private ContainerSummary containerSummary;
     private Set<Broadcast> broadcasts = Sets.newLinkedHashSet();
     private List<SegmentEvent> segmentEvents = ImmutableList.of();

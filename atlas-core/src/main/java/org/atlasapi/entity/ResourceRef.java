@@ -1,5 +1,6 @@
 package org.atlasapi.entity;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 
 import com.google.common.base.Objects;
@@ -7,7 +8,7 @@ import com.google.common.base.Objects.ToStringHelper;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class ResourceRef implements Identifiable, Sourced {
+public abstract class ResourceRef implements Identifiable, Sourced, Hashable {
 
     protected final Id id;
     protected final Publisher source;

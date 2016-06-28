@@ -1,9 +1,10 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Identified;
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
-public class Restriction extends Identified {
+public class Restriction extends Identified implements Hashable {
 
     private Boolean restricted = null;
 

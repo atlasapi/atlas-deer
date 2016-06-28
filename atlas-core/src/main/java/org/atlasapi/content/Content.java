@@ -23,6 +23,8 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.event.EventRef;
+import org.atlasapi.hashing.ExcludeFromHash;
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -35,9 +37,12 @@ import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class Content extends Described implements Aliased, Sourced, Equivalable<Content> {
+public abstract class Content extends Described
+        implements Aliased, Sourced, Equivalable<Content>, Hashable {
 
+    @ExcludeFromHash
     private transient String readHash;
+
     private ImmutableList<Clip> clips = ImmutableList.of();
     private Set<KeyPhrase> keyPhrases = ImmutableSet.of();
     private ImmutableList<Tag> tags = ImmutableList.of();
@@ -54,9 +59,8 @@ public abstract class Content extends Described implements Aliased, Sourced, Equ
         super(uri, curie, publisher);
     }
 
-    public Content() { /*
-         * some legacy code still requires a default constructor
-         */
+    public Content() {
+        // some legacy code still requires a default constructor
     }
 
     public Content(Id id, Publisher source) {

@@ -1,12 +1,13 @@
 package org.atlasapi.entity;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Alias {
+public class Alias implements Hashable {
 
     public static final String URI_NAMESPACE = "uri";
 

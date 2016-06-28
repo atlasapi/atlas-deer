@@ -1,10 +1,11 @@
 package org.atlasapi.content;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Subtitles {
+public class Subtitles implements Hashable {
 
     private final String languageCode;
 
