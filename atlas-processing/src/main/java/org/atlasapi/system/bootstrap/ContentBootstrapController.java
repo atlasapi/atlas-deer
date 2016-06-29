@@ -177,13 +177,13 @@ public class ContentBootstrapController {
 
         ContentBootstrapListener.Result result = content.accept(contentBootstrapListener);
 
-        if (result.isSucceeded()) {
+        if (result.getSucceeded()) {
             resp.setStatus(HttpStatus.OK.value());
         } else {
             resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
 
-        resp.getWriter().println(result.getMessage());
+        resp.getWriter().println(result.toString());
         resp.getWriter().flush();
     }
 

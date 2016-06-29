@@ -94,7 +94,7 @@ public class ContentBootstrapListenerTest {
 
         ContentBootstrapListener.Result result = contentBootstrapListener.visit(item);
 
-        assertThat(result.isSucceeded(), is(true));
+        assertThat(result.getSucceeded(), is(true));
 
         verifyContentMigration(item, itemRef, graphUpdate);
         verify(legacySegmentMigrator).migrateLegacySegment(segmentRef.getId());
@@ -115,7 +115,9 @@ public class ContentBootstrapListenerTest {
 
         ContentBootstrapListener.Result result = contentBootstrapListener.visit(brand);
 
-        assertThat(result.isSucceeded(), is(true));
+        assertThat(result.getSucceeded(), is(true));
+
+        System.out.println(result);
 
         verifyContentMigration(brand, brandRef, brandGraphUpdate);
         verifyContentMigration(series, seriesRef, seriesGraphUpdate);
@@ -157,7 +159,7 @@ public class ContentBootstrapListenerTest {
 
         ContentBootstrapListener.Result result = contentBootstrapListener.visit(item);
 
-        assertThat(result.isSucceeded(), is(true));
+        assertThat(result.getSucceeded(), is(true));
 
         verifyContentMigration(seriesItem, seriesItemRef, seriesItemGraphUpdate);
     }

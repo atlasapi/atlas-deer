@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
@@ -298,7 +297,7 @@ public class ContentDebugController {
             ContentBootstrapListener.Result result = content.accept(listener);
 
             response.setStatus(HttpStatus.OK.value());
-            response.getWriter().println(result.getMessage());
+            response.getWriter().println(result.toString());
             response.flushBuffer();
         } catch (Throwable t) {
             t.printStackTrace(response.getWriter());
