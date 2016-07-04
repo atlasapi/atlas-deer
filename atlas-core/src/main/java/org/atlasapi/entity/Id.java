@@ -53,7 +53,7 @@ public final class Id implements Comparable<Id> {
     private long longValue;
 
     private Id(Long longValue) {
-        this.longValue = longValue.longValue();
+        this.longValue = longValue;
     }
 
     private Id(long longValue) {
