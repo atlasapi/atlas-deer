@@ -39,6 +39,7 @@ public class ApiKeySourcesFetcherTest {
         String apiKey = "apikey";
         Application app = Application.builder()
                 .withCredentials(ApplicationCredentials.builder().withApiKey(apiKey).build())
+                .withRevoked(false)
                 .build();
         when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
 
@@ -56,6 +57,7 @@ public class ApiKeySourcesFetcherTest {
 
         String apiKey = "apikey";
         Application app = Application.builder()
+                .withRevoked(false)
                 .withCredentials(ApplicationCredentials.builder().withApiKey(apiKey).build())
                 .build();
         when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));

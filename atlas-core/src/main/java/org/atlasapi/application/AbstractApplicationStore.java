@@ -65,6 +65,7 @@ public abstract class AbstractApplicationStore implements ApplicationStore {
                 .withSlug(generateSlug(id))
                 .withCredentials(credentialsBuilder.build())
                 .withSources(sources.copyWithMissingSourcesPopulated())
+                .withRevoked(true)
                 .build();
 
         doCreateApplication(created);
