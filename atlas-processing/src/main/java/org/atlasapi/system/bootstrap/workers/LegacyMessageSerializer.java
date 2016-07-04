@@ -11,6 +11,7 @@ import org.atlasapi.content.SongRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.serialization.json.JsonFactory;
 import org.atlasapi.topic.TopicRef;
 
@@ -29,7 +30,10 @@ public abstract class LegacyMessageSerializer<LM extends Message, M extends Mess
         implements MessageSerializer<M> {
 
     private final ObjectMapper mapper = JsonFactory.makeJsonMapper()
-            .registerModule(new org.atlasapi.messaging.v3.JacksonMessageSerializer.MessagingModule());
+            .registerModule(new org.atlasapi.messaging.v3.JacksonMessageSerializer.MessagingModule())
+            .registerModule(new JacksonMessageSerializer.AtlasModelModule());
+
+
 
     protected final SubstitutionTableNumberCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
 
