@@ -253,7 +253,7 @@ public class Application implements Identifiable, Sourced {
         private DateTime created;
         private ApplicationCredentials credentials;
         private ApplicationSources sources;
-        private boolean revoked = false;
+        private boolean revoked = true;
 
         public Builder() {
             this.sources = ApplicationSources.defaults();
