@@ -1,5 +1,6 @@
 package org.atlasapi.hashing;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Currency;
@@ -578,6 +579,7 @@ public class HashValueExtractorTest {
         Broadcast broadcast = new Broadcast(
                 Id.valueOf(10L), DateTime.now(), DateTime.now(), true
         );
+        setIdentifiedFields(broadcast);
 
         broadcast.setScheduleDate(LocalDate.now());
         broadcast.withId("sourceId");
@@ -608,6 +610,8 @@ public class HashValueExtractorTest {
         segmentEvent.setVersionId("5");
         segmentEvent.setPublisher(Publisher.METABROADCAST);
 
+        setIdentifiedFields(segmentEvent);
+
         item.setSegmentEvents(ImmutableSet.of(segmentEvent));
 
         Restriction restriction = new Restriction();
@@ -617,6 +621,8 @@ public class HashValueExtractorTest {
         restriction.setMessage("message");
         restriction.setAuthority("authority");
         restriction.setRating("rating");
+
+        setIdentifiedFields(restriction);
 
         item.setRestrictions(ImmutableSet.of(restriction));
     }
@@ -720,6 +726,13 @@ public class HashValueExtractorTest {
     private void verifyAllFieldsAreSet(Object object) throws Exception {
         for (Field field : getFields(object)) {
             try {
+                if (Clip.class.isAssignableFrom(field.getType())
+                        || field.getName().equals("clips")) {
+                    // Clips are items which contain clips... This is to avoid an infinite loop
+                    // of checking if all fields are populated
+                    return;
+                }
+
                 if (Modifier.isStatic(field.getModifiers())) {
                     continue;
                 }
@@ -733,16 +746,45 @@ public class HashValueExtractorTest {
                 if (fieldObject == null) {
                     failWithUnsetField(field);
                 }
-                if (Iterable.class.isAssignableFrom(field.getType())
-                        && !((Iterable) fieldObject).iterator().hasNext()) {
-                    failWithUnsetField(field);
-                }
-                if (Map.class.isAssignableFrom(field.getType())
-                        && ((Map) fieldObject).isEmpty()) {
-                    failWithUnsetField(field);
-                }
+
                 if (Hashable.class.isAssignableFrom(field.getType())) {
                     verifyAllFieldsAreSet(fieldObject);
+                }
+
+                if (field.getType().isArray()) {
+                    for (int i = 0; i < Array.getLength(fieldObject); i++) {
+                        Object arrayObject = Array.get(fieldObject, i);
+
+                        if (arrayObject != null) {
+                            verifyAllFieldsAreSet(arrayObject);
+                        }
+                    }
+                }
+
+                if (Iterable.class.isAssignableFrom(field.getType())) {
+                    Iterable iterable = (Iterable) fieldObject;
+
+                    if (!iterable.iterator().hasNext()) {
+                        failWithUnsetField(field);
+                    } else {
+                        for (Object entry : iterable) {
+                            verifyAllFieldsAreSet(entry);
+                        }
+                    }
+                }
+
+                if (Map.class.isAssignableFrom(field.getType())) {
+                    Map map = (Map) fieldObject;
+                    if (map.isEmpty()) {
+                        failWithUnsetField(field);
+                    } else {
+                        for (Object key : map.keySet()) {
+                            verifyAllFieldsAreSet(key);
+                        }
+                        for (Object value : map.values()) {
+                            verifyAllFieldsAreSet(value);
+                        }
+                    }
                 }
             } finally {
                 field.setAccessible(true);
