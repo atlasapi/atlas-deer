@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identified;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.metabroadcast.common.currency.Price;
@@ -30,7 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
 
-public class Policy extends Identified implements Hashable {
+public class Policy extends org.atlasapi.entity.Identified {
 
     private DateTime availabilityStart;
 

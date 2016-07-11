@@ -1,9 +1,8 @@
 package org.atlasapi.content;
 
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
-public class Synopses implements Hashable {
+public class Synopses {
 
     private String shortDescription;
     private String mediumDescription;

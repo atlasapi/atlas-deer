@@ -5,7 +5,6 @@ import java.util.Comparator;
 import org.atlasapi.content.Description;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Sourced;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -14,7 +13,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 import org.joda.time.Duration;
 
-public class SegmentEvent extends Identified implements Sourced, Hashable {
+public class SegmentEvent extends Identified implements Sourced {
 
     private Integer position;
     private Duration offset;

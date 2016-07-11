@@ -9,6 +9,7 @@ import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Content;
+import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.Alias;
@@ -16,7 +17,6 @@ import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraInit;
@@ -236,7 +236,7 @@ public abstract class CassandraScheduleStoreIT {
 
         results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.writtenFilter()));
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
 
         Interval requestedInterval = new Interval(
                 new DateTime(2013, 05, 31, 10, 0, 0, 0, DateTimeZones.UTC),
@@ -308,7 +308,7 @@ public abstract class CassandraScheduleStoreIT {
 
         results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.writtenFilter()));
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
 
         ItemAndBroadcast episode4 = itemAndBroadcast(null, "four", source, channel, newMiddle, end);
         hiers = ImmutableList.of(
@@ -453,7 +453,7 @@ public abstract class CassandraScheduleStoreIT {
 
         results = store.writeSchedule(hiers, channel, writtenInterval);
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.writtenFilter()));
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
 
         Interval requestedInterval = new Interval(
                 new DateTime(2013, 05, 31, 10, 0, 0, 0, DateTimeZones.UTC),
@@ -601,7 +601,7 @@ public abstract class CassandraScheduleStoreIT {
 
         results = store.writeSchedule(hiers, channel, new Interval(start, newEnd));
         assertThat(results.size(), is(2));
-        assertTrue(Iterables.all(results, WriteResult.writtenFilter()));
+        assertTrue(Iterables.all(results, WriteResult.<Content, Content>writtenFilter()));
 
         Interval requestedInterval = new Interval(
                 new DateTime(2013, 05, 31, 10, 0, 0, 0, DateTimeZones.UTC),

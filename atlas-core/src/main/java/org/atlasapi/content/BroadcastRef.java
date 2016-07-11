@@ -1,7 +1,6 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects;
@@ -11,7 +10,7 @@ import org.joda.time.Interval;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class BroadcastRef implements Hashable {
+public final class BroadcastRef {
 
     public static final java.util.function.Predicate<BroadcastRef> IS_UPCOMING = b -> b.getTransmissionInterval()
             .getEnd()

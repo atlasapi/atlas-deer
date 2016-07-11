@@ -4,10 +4,9 @@ import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
-public class ContainerSummary implements Hashable {
+public class ContainerSummary {
 
     private final String type;
     private final String title;

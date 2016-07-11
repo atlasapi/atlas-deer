@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.atlasapi.entity.Identified;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.metabroadcast.common.media.MimeType;
@@ -29,7 +28,11 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import org.joda.time.Duration;
 
-public class Encoding extends Identified implements Hashable {
+/**
+ * @author Robert Chatley (robert@metabroadcast.com)
+ * @author Lee Denison (lee@metabroadcast.com)
+ */
+public class Encoding extends Identified {
 
     public static final String[] sizeUnits = { "bytes", "kB", "MB", "GB", "TB" };
 
