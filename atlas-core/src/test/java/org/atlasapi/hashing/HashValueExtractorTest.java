@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Currency;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.atlasapi.content.BlackoutRestriction;
@@ -666,13 +667,22 @@ public class HashValueExtractorTest {
         container.setUpcomingContent(ImmutableMap.of(
                 itemRef,
                 ImmutableSet.of(
-                        new BroadcastRef("id", Id.valueOf(1L), new Interval(0L, 1L))
+                        new BroadcastRef(
+                                "id",
+                                Id.valueOf(1L),
+                                new Interval(DateTime.now(), DateTime.now().plusDays(1))
+                        )
                 )
         ));
         container.setAvailableContent(ImmutableMap.of(
                 itemRef,
                 ImmutableSet.of(
-                        new LocationSummary(true, "uri", DateTime.now(), DateTime.now())
+                        new LocationSummary(
+                                true,
+                                "uri",
+                                DateTime.now().minusDays(1),
+                                DateTime.now().plusDays(1)
+                        )
                 )
         ));
         container.setItemSummaries(ImmutableList.of(new ItemSummary(
@@ -725,6 +735,10 @@ public class HashValueExtractorTest {
                 }
                 if (Iterable.class.isAssignableFrom(field.getType())
                         && !((Iterable) fieldObject).iterator().hasNext()) {
+                    failWithUnsetField(field);
+                }
+                if (Map.class.isAssignableFrom(field.getType())
+                        && ((Map) fieldObject).isEmpty()) {
                     failWithUnsetField(field);
                 }
                 if (Hashable.class.isAssignableFrom(field.getType())) {
