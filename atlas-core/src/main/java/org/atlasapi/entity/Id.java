@@ -2,10 +2,12 @@ package org.atlasapi.entity;
 
 import java.math.BigInteger;
 
+import org.atlasapi.hashing.Hashable;
+
 import com.google.common.base.Function;
 import com.google.common.primitives.Longs;
 
-public final class Id implements Comparable<Id> {
+public final class Id implements Comparable<Id>, Hashable {
 
     public static final Function<Id, Long> toLongValue() {
         return ToLongValueFunction.INSTANCE;

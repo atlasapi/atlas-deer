@@ -1,8 +1,10 @@
 package org.atlasapi.content;
 
+import org.atlasapi.hashing.Hashable;
+
 import com.google.common.base.Objects;
 
-public class Priority {
+public class Priority implements Hashable {
 
     private PriorityScoreReasons reasons;
     private Double priority;

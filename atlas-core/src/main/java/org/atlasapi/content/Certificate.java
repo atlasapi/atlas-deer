@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.metabroadcast.common.intl.Country;
@@ -8,9 +9,7 @@ import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Certificate {
-
-    //TODO make some static final instantiations?
+public class Certificate implements Hashable {
 
     private Country country;
     private String classification;

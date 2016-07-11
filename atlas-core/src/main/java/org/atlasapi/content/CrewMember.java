@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -16,7 +17,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
-public class CrewMember extends Identified {
+public class CrewMember extends Identified implements Hashable {
 
     public static final String TVA_URI_2001_PREFIX = "urn:mpeg:mpeg7:cs:RoleCS:2001";
     public static final String TVA_URI_2010_PREFIX = "urn:tva:metadata:cs:TVARoleCS:2010";
@@ -446,7 +447,7 @@ public class CrewMember extends Identified {
 
         public static Maybe<Role> fromPossibleKey(String key) {
             Maybe<Role> possibleRole = roleKeyMap.get(key);
-            return possibleRole != null ? possibleRole : Maybe.<Role>nothing();
+            return possibleRole != null ? possibleRole : Maybe.nothing();
         }
 
         private static Map<String, Maybe<Role>> roleKeyMap = initRoleKeyMap();

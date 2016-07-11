@@ -3,10 +3,12 @@ package org.atlasapi.content;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import org.atlasapi.hashing.Hashable;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-public class LocationSummary {
+public class LocationSummary implements Hashable {
 
     private final Boolean available;
 

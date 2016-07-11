@@ -14,6 +14,7 @@ import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -30,12 +31,29 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
     private final Timer metricsTimer;
+    private final Meter contentNotWrittenMeter;
 
-    public ContentBootstrapWorker(ContentResolver contentResolver, ContentWriter writer,
-            Timer metricsTimer) {
+    private ContentBootstrapWorker(
+            ContentResolver contentResolver,
+            ContentWriter writer,
+            Timer metricsTimer,
+            Meter contentNotWrittenMeter
+    ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.metricsTimer = checkNotNull(metricsTimer);
+        this.contentNotWrittenMeter = checkNotNull(contentNotWrittenMeter);
+    }
+
+    public static ContentBootstrapWorker create(
+            ContentResolver contentResolver,
+            ContentWriter writer,
+            Timer metricsTimer,
+            Meter contentNotWrittenMeter
+    ) {
+        return new ContentBootstrapWorker(
+                contentResolver, writer, metricsTimer, contentNotWrittenMeter
+        );
     }
 
     @Override
@@ -50,11 +68,17 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         try {
             WriteResult<Content, Content> result =
                     writer.writeContent(content.getResources().first().get());
-            LOG.debug("Bootstrapped content {}", result.toString());
-            time.stop();
+
+            if (result.written()) {
+                LOG.debug("Bootstrapped content {}", result.toString());
+                time.stop();
+            } else {
+                LOG.debug("Content has not been written: {}", result.toString());
+                contentNotWrittenMeter.mark();
+            }
         } catch (Exception e) {
-            String errorMsg = "Failed to bootstrap content " + message.getUpdatedResource();
-            LOG.error(errorMsg, e);
+            LOG.error("Failed to bootstrap content {}", message.getUpdatedResource(), e);
+            contentNotWrittenMeter.mark();
             throw Throwables.propagate(e);
         }
     }

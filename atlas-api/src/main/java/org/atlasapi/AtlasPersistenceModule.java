@@ -18,6 +18,8 @@ import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
+import org.atlasapi.hashing.HashGenerator;
+import org.atlasapi.hashing.content.ContentHashGenerator;
 import org.atlasapi.media.channel.CachingChannelGroupStore;
 import org.atlasapi.media.channel.CachingChannelStore;
 import org.atlasapi.media.channel.ChannelGroupStore;
@@ -199,7 +201,7 @@ public class AtlasPersistenceModule {
                 cassandraService,
                 cassandraKeyspace,
                 idGeneratorBuilder(),
-                content -> UUID.randomUUID().toString(),
+                ContentHashGenerator.create(HashGenerator.create()),
                 eventV2 -> UUID.randomUUID().toString(),
                 seeds,
                 metricsModule.metrics()

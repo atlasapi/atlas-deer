@@ -2,9 +2,10 @@ package org.atlasapi.entity;
 
 import java.util.Objects;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
-public class Award {
+public class Award implements Hashable {
 
     private String outcome;
     private String title;

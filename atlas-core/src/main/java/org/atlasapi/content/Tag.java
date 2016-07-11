@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Id;
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.topic.Topic;
@@ -15,7 +16,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
-public class Tag {
+public class Tag implements Hashable {
 
     private Id topic;
     private Publisher publisher;
@@ -144,7 +145,7 @@ public class Tag {
         );
     }
 
-    public static enum Relationship {
+    public enum Relationship {
 
         ABOUT("about"),
         TWITTER_AUDIENCE("twitter:audience"),
@@ -155,7 +156,7 @@ public class Tag {
         TRANSCRIPTION_SUBTITLES_REALTIME("transcription:subtitles:realtime");
         private final String name;
 
-        private Relationship(String name) {
+        Relationship(String name) {
             this.name = name;
         }
 
@@ -185,7 +186,7 @@ public class Tag {
         public static Optional<Relationship> fromString(String relationship) {
             Optional<Relationship> possibleRelationship = LOOKUP.get(relationship);
             return possibleRelationship != null ? possibleRelationship
-                                                : Optional.<Relationship>absent();
+                                                : Optional.absent();
         }
     }
 }

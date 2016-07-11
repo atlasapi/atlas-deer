@@ -1,15 +1,11 @@
 package org.atlasapi.content;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects;
 
-/**
- * A Description of something
- *
- * @author Fred van den Driessche (fred@metabroadcast.com)
- */
-public class Description {
+public class Description implements Hashable {
 
     public static final Description EMPTY = new Description("", "", "", "");
 

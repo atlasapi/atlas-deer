@@ -2,9 +2,11 @@ package org.atlasapi.content;
 
 import javax.annotation.Nullable;
 
+import org.atlasapi.hashing.Hashable;
+
 import com.google.common.base.Objects;
 
-public class BlackoutRestriction {
+public class BlackoutRestriction implements Hashable {
 
     private Boolean all;
 
