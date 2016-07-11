@@ -5,7 +5,6 @@ import javax.annotation.Nullable;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 import org.atlasapi.schedule.ScheduleBroadcastFilter;
 
@@ -26,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A time and channel at which a Version is/was receivable.
  */
-public class Broadcast extends Identified implements Hashable {
+public class Broadcast extends Identified {
 
     private static final Ordering<Broadcast> START_TIME_ORDERING = new BroadcastStartTimeOrdering();
 

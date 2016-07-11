@@ -3,7 +3,6 @@ package org.atlasapi.equivalence;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -12,7 +11,7 @@ import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EquivalenceRef implements Identifiable, Sourced, Hashable {
+public class EquivalenceRef implements Identifiable, Sourced {
 
     public static final <T extends Identifiable & Sourced> Function<T, EquivalenceRef> toEquivalenceRef() {
         return new Function<T, EquivalenceRef>() {

@@ -9,7 +9,6 @@ import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.RuntimeWriteException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
@@ -62,8 +61,8 @@ public abstract class AbstractContentStore implements ContentStore {
         public WriteResult<Brand, Content> visit(Brand brand) {
             Optional<Content> previous = getPreviousContent(brand);
 
-            brand.setItemRefs(ImmutableSet.of());
-            brand.setSeriesRefs(ImmutableSet.of());
+            brand.setItemRefs(ImmutableSet.<ItemRef>of());
+            brand.setSeriesRefs(ImmutableSet.<SeriesRef>of());
 
             if (previous.isPresent()) {
                 return writeBrandWithPrevious(brand, previous.get());
@@ -104,7 +103,7 @@ public abstract class AbstractContentStore implements ContentStore {
         public WriteResult<Series, Content> visit(Series series) {
             Optional<Content> previous = getPreviousContent(series);
 
-            series.setItemRefs(ImmutableSet.of());
+            series.setItemRefs(ImmutableSet.<ItemRef>of());
             if (previous.isPresent()) {
                 return writeSeriesWithPrevious(series, previous.get());
             }

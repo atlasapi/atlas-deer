@@ -16,7 +16,6 @@ permissions and limitations under the License. */
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Identified;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
@@ -24,7 +23,11 @@ import com.google.common.base.Predicate;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-public class Location extends Identified implements Hashable {
+/**
+ * @author Robert Chatley (robert@metabroadcast.com)
+ * @author Lee Denison (lee@metabroadcast.com)
+ */
+public class Location extends Identified {
 
     private boolean available = true;
 

@@ -2,12 +2,10 @@ package org.atlasapi.entity;
 
 import java.util.Objects;
 
-import org.atlasapi.hashing.Hashable;
+import static com.google.common.base.Preconditions.checkNotNull;
 import org.atlasapi.media.entity.Publisher;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public class Rating implements Hashable {
+public class Rating {
 
     private final float value;
     private final String type;

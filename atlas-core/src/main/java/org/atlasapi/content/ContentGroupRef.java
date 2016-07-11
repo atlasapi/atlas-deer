@@ -1,12 +1,11 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects;
 
-public class ContentGroupRef implements Hashable {
+public class ContentGroupRef {
 
     private Id id;
     private String uri;

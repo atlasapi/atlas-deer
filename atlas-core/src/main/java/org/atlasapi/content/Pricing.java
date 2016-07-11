@@ -1,7 +1,5 @@
 package org.atlasapi.content;
 
-import org.atlasapi.hashing.Hashable;
-
 import com.metabroadcast.common.currency.Price;
 
 import com.google.common.base.Objects;
@@ -9,7 +7,7 @@ import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Pricing implements Hashable {
+public class Pricing {
 
     private final DateTime startTime;
     private final DateTime endTime;

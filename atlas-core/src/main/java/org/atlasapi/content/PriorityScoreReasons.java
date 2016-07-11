@@ -2,11 +2,9 @@ package org.atlasapi.content;
 
 import java.util.List;
 
-import org.atlasapi.hashing.Hashable;
-
 import com.google.common.base.Objects;
 
-public class PriorityScoreReasons implements Hashable {
+public class PriorityScoreReasons {
 
     private List<String> positive;
     private List<String> negative;

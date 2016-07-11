@@ -1,6 +1,5 @@
 package org.atlasapi.content;
 
-import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.metabroadcast.common.intl.Country;
@@ -10,7 +9,7 @@ import org.joda.time.LocalDate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ReleaseDate implements Hashable {
+public class ReleaseDate {
 
     public enum ReleaseType {
         GENERAL
