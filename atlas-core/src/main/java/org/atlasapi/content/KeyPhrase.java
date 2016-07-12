@@ -1,12 +1,13 @@
 package org.atlasapi.content;
 
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class KeyPhrase {
+public final class KeyPhrase implements Hashable {
 
     private String phrase;
     private Double weighting;

@@ -4,13 +4,15 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
+import org.atlasapi.hashing.Hashable;
+
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ItemSummary {
+public class ItemSummary implements Hashable {
 
     public static final Ordering<ItemSummary> ORDERING = new Ordering<ItemSummary>() {
 

@@ -1,7 +1,8 @@
 package org.atlasapi;
 
+import java.util.UUID;
+
 import org.atlasapi.content.AstyanaxCassandraContentStore;
-import org.atlasapi.content.ContentHasher;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.entity.AliasIndex;
@@ -13,6 +14,7 @@ import org.atlasapi.event.DatastaxCassandraEventStore;
 import org.atlasapi.event.EventHasher;
 import org.atlasapi.event.EventPersistenceStore;
 import org.atlasapi.event.EventStore;
+import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.organisation.DatastaxCassandraOrganisationStore;
@@ -174,8 +176,16 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
-        this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(context, "content",
-                contentHasher, nullMessageSender(ResourceUpdatedMessage.class), contentIdGenerator
+
+        // This content store is used by debug endpoints that are used for resolving issues.
+        // Therefore we are passing a "fake" content hasher to ensure we are always writing
+        // content when asked to
+        this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(
+                context,
+                "content",
+                content -> UUID.randomUUID().toString(),
+                nullMessageSender(ResourceUpdatedMessage.class),
+                contentIdGenerator
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
@@ -235,7 +245,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.segmentStore = CassandraSegmentStore.builder()
                 .withKeyspace(keyspace)
                 .withTableName("segments")
-                .withAliasIndex(AliasIndex.<Segment>create(context.getClient(), "segments_aliases"))
+                .withAliasIndex(AliasIndex.create(context.getClient(), "segments_aliases"))
                 .withCassandraSession(getSession())
                 .withIdGenerator(idGeneratorBuilder.generator("segment"))
                 .withMessageSender(nullMessageSender(ResourceUpdatedMessage.class))

@@ -1,15 +1,17 @@
 package org.atlasapi.entity;
 
-import java.util.Objects;
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import javax.annotation.Nullable;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
 
-public class Review {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public class Review implements Hashable {
 
     private final Locale locale;
     private final String review;

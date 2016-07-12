@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import org.atlasapi.entity.Sourced;
+import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.ImageAspectRatio;
 import org.atlasapi.media.entity.ImageColor;
 import org.atlasapi.media.entity.ImageTheme;
@@ -15,7 +16,7 @@ import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Image implements Sourced {
+public class Image implements Sourced, Hashable {
 
     public enum AspectRatio {
         SIXTEEN_BY_NINE("16x9"),

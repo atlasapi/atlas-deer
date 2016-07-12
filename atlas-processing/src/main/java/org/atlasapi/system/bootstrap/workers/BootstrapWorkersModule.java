@@ -107,10 +107,11 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer contentBootstrapWorker() {
-        ContentBootstrapWorker worker = new ContentBootstrapWorker(
+        ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
                 persistence.contentStore(),
-                metricsModule.metrics().timer("ContentBootstrapWorker")
+                metricsModule.metrics().timer("ContentBootstrapWorker"),
+                metricsModule.metrics().meter("ContentBootstrapWorker-NotWritten")
         );
         return bootstrapQueueFactory()
                 .createConsumer(
