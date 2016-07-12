@@ -111,7 +111,8 @@ public class BootstrapWorkersModule {
                 persistence.legacyContentResolver(),
                 persistence.contentStore(),
                 metricsModule.metrics().timer("ContentBootstrapWorker"),
-                metricsModule.metrics().meter("ContentBootstrapWorker-NotWritten")
+                metricsModule.metrics().meter("ContentBootstrapWorker-NotWritten"),
+                metricsModule.metrics().meter("ContentBootstrapWorker-Failure")
         );
         return bootstrapQueueFactory()
                 .createConsumer(

@@ -32,27 +32,31 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final ContentWriter writer;
     private final Timer metricsTimer;
     private final Meter contentNotWrittenMeter;
+    private final Meter failureMeter;
 
     private ContentBootstrapWorker(
             ContentResolver contentResolver,
             ContentWriter writer,
             Timer metricsTimer,
-            Meter contentNotWrittenMeter
+            Meter contentNotWrittenMeter,
+            Meter failureMeter
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.metricsTimer = checkNotNull(metricsTimer);
         this.contentNotWrittenMeter = checkNotNull(contentNotWrittenMeter);
+        this.failureMeter = checkNotNull(failureMeter);
     }
 
     public static ContentBootstrapWorker create(
             ContentResolver contentResolver,
             ContentWriter writer,
             Timer metricsTimer,
-            Meter contentNotWrittenMeter
+            Meter contentNotWrittenMeter,
+            Meter failureMeter
     ) {
         return new ContentBootstrapWorker(
-                contentResolver, writer, metricsTimer, contentNotWrittenMeter
+                contentResolver, writer, metricsTimer, contentNotWrittenMeter, failureMeter
         );
     }
 
@@ -78,7 +82,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             }
         } catch (Exception e) {
             LOG.error("Failed to bootstrap content {}", message.getUpdatedResource(), e);
-            contentNotWrittenMeter.mark();
+            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }
