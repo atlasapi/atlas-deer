@@ -167,11 +167,23 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         ConsistencyLevel readConsistency = processing
                                            ? ConsistencyLevel.CL_QUORUM
                                            : ConsistencyLevel.CL_ONE;
-        this.contentStore = AstyanaxCassandraContentStore.builder(context,
+
+        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
+        this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                nullMessageSender(EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
+
+        this.contentStore = AstyanaxCassandraContentStore.builder(
+                context,
                 "content",
                 contentHasher,
                 sender(contentChanges, ResourceUpdatedMessage.class),
-                contentIdGenerator
+                contentIdGenerator,
+                contentEquivalenceGraphStore
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
@@ -185,20 +197,13 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 "content",
                 content -> UUID.randomUUID().toString(),
                 nullMessageSender(ResourceUpdatedMessage.class),
-                contentIdGenerator
+                contentIdGenerator,
+                contentEquivalenceGraphStore
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
 
-        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
-                sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
-                session, read, write
-        );
-        this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
-                nullMessageSender(EquivalenceGraphUpdateMessage.class),
-                session, read, write
-        );
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(
                 contentEquivalenceGraphStore,
                 contentStore,
