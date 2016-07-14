@@ -14,6 +14,7 @@ import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.CassandraPersistenceException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -65,10 +66,16 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     private static final int RESOLVE_TIMEOUT = 10;
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    public static final Builder builder(AstyanaxContext<Keyspace> context,
-            String name, ContentHasher hasher, MessageSender<ResourceUpdatedMessage> sender,
-            IdGenerator idGenerator) {
-        return new Builder(context, name, hasher, sender, idGenerator);
+    public static Builder builder(
+            AstyanaxContext<Keyspace> context,
+            String name, ContentHasher hasher,
+            MessageSender<ResourceUpdatedMessage> sender,
+            IdGenerator idGenerator,
+            EquivalenceGraphStore graphStore
+    ) {
+        return new Builder(
+                context, name, hasher, sender, idGenerator, graphStore
+        );
     }
 
     public static final class Builder {
@@ -78,19 +85,26 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         private final ContentHasher hasher;
         private final MessageSender<ResourceUpdatedMessage> sender;
         private final IdGenerator idGenerator;
+        private final EquivalenceGraphStore graphStore;
 
         private ConsistencyLevel readCl = ConsistencyLevel.CL_QUORUM;
         private ConsistencyLevel writeCl = ConsistencyLevel.CL_QUORUM;
         private Clock clock = new SystemClock();
 
-        public Builder(AstyanaxContext<Keyspace> context, String name,
-                ContentHasher hasher, MessageSender<ResourceUpdatedMessage> sender,
-                IdGenerator idGenerator) {
+        public Builder(
+                AstyanaxContext<Keyspace> context,
+                String name,
+                ContentHasher hasher,
+                MessageSender<ResourceUpdatedMessage> sender,
+                IdGenerator idGenerator,
+                EquivalenceGraphStore graphStore
+        ) {
             this.context = context;
             this.name = name;
             this.hasher = hasher;
             this.sender = sender;
             this.idGenerator = idGenerator;
+            this.graphStore = graphStore;
         }
 
         public Builder withReadConsistency(ConsistencyLevel readCl) {
@@ -109,8 +123,8 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         }
 
         public AstyanaxCassandraContentStore build() {
-            return new AstyanaxCassandraContentStore(context, name, readCl, writeCl,
-                    hasher, idGenerator, sender, clock
+            return new AstyanaxCassandraContentStore(
+                    context, name, readCl, writeCl, hasher, idGenerator, sender, graphStore, clock
             );
         }
 
@@ -153,11 +167,17 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                     .transform(rowToContent)
                     .filter(Predicates.notNull()));
 
-    public AstyanaxCassandraContentStore(AstyanaxContext<Keyspace> context,
-            String cfName, ConsistencyLevel readConsistency, ConsistencyLevel writeConsistency,
+    private AstyanaxCassandraContentStore(
+            AstyanaxContext<Keyspace> context,
+            String cfName,
+            ConsistencyLevel readConsistency,
+            ConsistencyLevel writeConsistency,
             ContentHasher hasher, IdGenerator idGenerator,
-            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
-        super(hasher, idGenerator, sender, clock);
+            MessageSender<ResourceUpdatedMessage> sender,
+            EquivalenceGraphStore graphStore,
+            Clock clock
+    ) {
+        super(hasher, idGenerator, sender, graphStore, clock);
         this.keyspace = checkNotNull(context.getClient());
         this.readConsistency = checkNotNull(readConsistency);
         this.writeConsistency = checkNotNull(writeConsistency);

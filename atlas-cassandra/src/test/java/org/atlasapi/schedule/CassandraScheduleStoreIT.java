@@ -16,11 +16,13 @@ import org.atlasapi.entity.CassandraHelper;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.util.CassandraInit;
 
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.ids.SequenceGenerator;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
@@ -58,6 +60,7 @@ import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -75,10 +78,10 @@ public abstract class CassandraScheduleStoreIT {
     private static final String keyspace = "atlas_testing";
     private static DatastaxCassandraService cassandraService;
 
-    //hasher is mock till we have a non-Mongo based one.
     @Mock protected ContentHasher hasher;
     @Mock protected MessageSender<ResourceUpdatedMessage> contentUpdateSender;
     @Mock protected MessageSender<ScheduleUpdateMessage> scheduleUpdateSender;
+    @Mock protected EquivalenceGraphStore graphStore;
 
     protected final Clock clock = new TimeMachine();
 
@@ -121,13 +124,17 @@ public abstract class CassandraScheduleStoreIT {
                         CONTENT_CF_NAME,
                         hasher,
                         contentUpdateSender,
-                        new SequenceGenerator()
+                        new SequenceGenerator(),
+                        graphStore
                 )
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)
                 .build();
         store = provideScheduleStore();
+
+        when(graphStore.resolveIds(anyCollectionOf(Id.class)))
+                .thenReturn(Futures.immediateFuture(ImmutableOptionalMap.of()));
     }
 
     @After

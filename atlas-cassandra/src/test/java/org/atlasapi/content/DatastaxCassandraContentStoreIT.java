@@ -27,6 +27,7 @@ public class DatastaxCassandraContentStoreIT extends CassandraContentStoreIT {
                 hasher,
                 idGenerator,
                 sender,
+                graphStore,
                 clock,
                 session,
                 writeConsistency,

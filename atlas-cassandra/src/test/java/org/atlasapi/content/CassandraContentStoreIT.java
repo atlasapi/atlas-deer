@@ -14,11 +14,14 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
@@ -66,9 +69,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,6 +86,7 @@ public abstract class CassandraContentStoreIT {
     @Mock protected ContentHasher hasher;
     @Mock protected IdGenerator idGenerator;
     @Mock protected MessageSender<ResourceUpdatedMessage> sender;
+    @Mock protected EquivalenceGraphStore graphStore;
     @Mock protected Clock clock;
 
     private ContentStore store;
@@ -92,6 +98,9 @@ public abstract class CassandraContentStoreIT {
     @Before
     public void before() {
         store = provideContentStore();
+
+        when(graphStore.resolveIds(anyCollectionOf(Id.class)))
+                .thenReturn(Futures.immediateFuture(ImmutableOptionalMap.of()));
     }
 
     static Logger root = Logger.getRootLogger();
@@ -1989,5 +1998,34 @@ public abstract class CassandraContentStoreIT {
                 eq(Longs.toByteArray(1234L))
         );
         assertThat(messageCaptor.getValue().getUpdatedResource().getId().longValue(), is(1234L));
+    }
+
+    @Test
+    public void resourceUpdatedMessageUsesEquivalenceGraphIdAsPartitionKey() throws Exception {
+        Id contentId = Id.valueOf(1234L);
+        Id setId = Id.valueOf(4321L);
+
+        Content content = create(new Item());
+        content.setTitle("title");
+
+        when(clock.now()).thenReturn(new DateTime(DateTimeZones.UTC));
+        when(idGenerator.generateRaw()).thenReturn(contentId.longValue());
+        reset(graphStore);
+        when(graphStore.resolveIds(ImmutableSet.of(contentId)))
+                .thenReturn(Futures.immediateFuture(
+                        ImmutableOptionalMap.of(
+                                contentId,
+                                EquivalenceGraph.valueOf(new ItemRef(
+                                        setId, Publisher.METABROADCAST, "", DateTime.now()
+                                ))
+                        )
+                ));
+
+        store.writeContent(content);
+
+        verify(sender).sendMessage(
+                any(ResourceUpdatedMessage.class),
+                eq(Longs.toByteArray(setId.longValue()))
+        );
     }
 }

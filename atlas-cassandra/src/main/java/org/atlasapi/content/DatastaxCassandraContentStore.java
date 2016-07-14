@@ -13,6 +13,7 @@ import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.entity.CassandraPersistenceException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -74,13 +75,14 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
             ContentHasher hasher,
             IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
+            EquivalenceGraphStore graphStore,
             Clock clock,
             Session session,
             ConsistencyLevel writeConsistency,
             ConsistencyLevel readConsistency,
             AliasIndex<Content> aliasIndex
     ) {
-        super(hasher, idGenerator, sender, clock);
+        super(hasher, idGenerator, sender, graphStore, clock);
         this.aliasIndex = checkNotNull(aliasIndex);
         this.session = checkNotNull(session);
         this.marshaller = new DatastaxProtobufContentMarshaller(new ContentSerializer(new ContentSerializationVisitor(

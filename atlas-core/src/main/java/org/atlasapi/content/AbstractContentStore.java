@@ -1,7 +1,11 @@
 package org.atlasapi.content;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
@@ -9,17 +13,23 @@ import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.RuntimeWriteException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Longs;
 import org.joda.time.DateTime;
@@ -285,15 +295,22 @@ public abstract class AbstractContentStore implements ContentStore {
     private final IdGenerator idGenerator;
     private final MessageSender<ResourceUpdatedMessage> sender;
     private final Clock clock;
+    private final EquivalenceGraphStore graphStore;
 
     private final ContentWritingVisitor writingVisitor;
 
-    public AbstractContentStore(ContentHasher hasher, IdGenerator idGenerator,
-            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
+    protected AbstractContentStore(
+            ContentHasher hasher,
+            IdGenerator idGenerator,
+            MessageSender<ResourceUpdatedMessage> sender,
+            EquivalenceGraphStore graphStore,
+            Clock clock
+    ) {
         this.hasher = checkNotNull(hasher);
         this.idGenerator = checkNotNull(idGenerator);
-        this.clock = checkNotNull(clock);
         this.sender = checkNotNull(sender);
+        this.graphStore = checkNotNull(graphStore);
+        this.clock = checkNotNull(clock);
         this.writingVisitor = new ContentWritingVisitor();
     }
 
@@ -303,14 +320,16 @@ public abstract class AbstractContentStore implements ContentStore {
             throws WriteException {
         checkNotNull(content, "write null content");
         checkNotNull(content.getSource(), "write unsourced content");
+
         try {
-            WriteResult<C, Content> result = (WriteResult<C, Content>) content.accept(writingVisitor);
+            WriteResult<C, Content> result =
+                    (WriteResult<C, Content>) content.accept(writingVisitor);
             if (result.written()) {
-                sendResourceUpdatedMessages(result);
+                sendResourceUpdatedMessages(createEntityUpdatedMessages(result));
             }
             return result;
-        } catch (RuntimeWriteException rwe) {
-            throw rwe.getCause();
+        } catch (RuntimeWriteException e) {
+            throw e.getCause();
         }
     }
 
@@ -322,28 +341,78 @@ public abstract class AbstractContentStore implements ContentStore {
             Broadcast broadcast
     ) {
         doWriteBroadcast(itemRef, containerRef, seriesRef, broadcast);
-        ResourceUpdatedMessage message = new ResourceUpdatedMessage(
-                UUID.randomUUID().toString(),
-                Timestamp.of(itemRef.getUpdated()),
-                itemRef
-        );
+
         try {
-            Id resourceId = message.getUpdatedResource().getId();
-            sender.sendMessage(message, Longs.toByteArray(resourceId.longValue()));
+            sendResourceUpdatedMessages(
+                    ImmutableList.of(
+                        new ResourceUpdatedMessage(
+                            UUID.randomUUID().toString(),
+                            Timestamp.of(itemRef.getUpdated()),
+                            itemRef
+                        )
+                    )
+            );
         } catch (Exception e) {
-            log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
+            log.error("Failed to send message " + itemRef.toString(), e);
         }
     }
 
-    private <C extends Content> void sendResourceUpdatedMessages(WriteResult<C, Content> result) {
-        Iterable<ResourceUpdatedMessage> messages = createEntityUpdatedMessages(result);
+    private void sendResourceUpdatedMessages(Iterable<ResourceUpdatedMessage> messages) {
+        Map<Id, Id> resourceGraphIds = getResourceGraphIds(messages);
+
         for (ResourceUpdatedMessage message : messages) {
             try {
+                // Downstream workers are processing the entire equivalence graph for every
+                // updated content. Therefore we want to use the graph ID as the partition key
+                // to ensure each graph is only processed by a single worker thread.
+                // We default to using the updated resource id as the partition key if we can't
+                // resolve the resource's graph.
                 Id resourceId = message.getUpdatedResource().getId();
-                sender.sendMessage(message, Longs.toByteArray(resourceId.longValue()));
+
+                Id partitionId =
+                        resourceGraphIds.containsKey(resourceId)
+                        ? resourceGraphIds.get(resourceId)
+                        : resourceId;
+
+                sender.sendMessage(message, Longs.toByteArray(partitionId.longValue()));
             } catch (Exception e) {
                 log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
             }
+        }
+    }
+
+    private Map<Id, Id> getResourceGraphIds(Iterable<ResourceUpdatedMessage> messages) {
+        ImmutableSet<Id> messageResourceIds = StreamSupport.stream(messages.spliterator(), false)
+                .map(message -> message.getUpdatedResource().getId())
+                .distinct()
+                .collect(MoreCollectors.toImmutableSet());
+
+        return getResourceGraphIds(
+                messageResourceIds,
+                getGraphMap(messageResourceIds)
+        );
+    }
+
+    private ImmutableMap<Id, Id> getResourceGraphIds(
+            Iterable<Id> updatedResourceIds,
+            OptionalMap<Id, EquivalenceGraph> graphMap
+    ) {
+        return StreamSupport.stream(updatedResourceIds.spliterator(), false)
+                .distinct()
+                .filter(resourceId -> graphMap.get(resourceId).isPresent())
+                .collect(MoreCollectors.toImmutableMap(
+                        Function.identity(),
+                        resourceId -> graphMap.get(resourceId)
+                                .get()
+                                .getId()
+                ));
+    }
+
+    private OptionalMap<Id, EquivalenceGraph> getGraphMap(Iterable<Id> messageResourceIds) {
+        try {
+            return graphStore.resolveIds(messageResourceIds).get();
+        } catch (InterruptedException | ExecutionException e) {
+            return ImmutableOptionalMap.of();
         }
     }
 
