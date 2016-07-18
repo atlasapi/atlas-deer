@@ -34,6 +34,7 @@ import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
+import org.atlasapi.util.GroupLock;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
@@ -114,6 +115,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final PreparedStatement broadcastEquivUpdate;
     private final PreparedStatement broadcastScheduleUpdate;
     private final PreparedStatement broadcastSelect;
+
+    private final GroupLock<String> lock = GroupLock.natural();
 
     public CassandraEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
@@ -228,105 +231,148 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    protected synchronized void writeSchedule(ScheduleUpdate update,
-            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
-            throws WriteException {
-        DateTime now = clock.now();
-
-        ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule().getScheduleEntries()
+    protected void writeSchedule(
+            ScheduleUpdate update,
+            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
+    ) throws WriteException {
+        List<Date> daysInSchedule = daysIn(update.getSchedule().getInterval());
+        ImmutableList<Date> staleBroadcastDays = update.getStaleBroadcasts()
                 .stream()
-                .map(ScheduleRef.Entry::getBroadcast)
-                .collect(MoreCollectors.toImmutableSet());
+                .map(broadcastRef -> broadcastRef.getTransmissionInterval()
+                        .getStart()
+                        .toLocalDate()
+                        .toDate())
+                .collect(MoreCollectors.toImmutableList());
 
-        Set<String> updateBroadcastIds = updateBroadcastRefs
-                .stream()
-                .map(BroadcastRef::getSourceId)
-                .collect(MoreCollectors.toImmutableSet());
-
-        Set<BroadcastRef> currentBroadcastRefs = resolveBroadcasts(
-                update.getSource(),
+        ImmutableSet<String> lockKeys = getLockKeys(
                 update.getSchedule().getChannel(),
-                update.getSchedule().getInterval()
-        );
-
-        Set<BroadcastRef> staleBroadcasts = currentBroadcastRefs.stream()
-                .filter(broadcastRef -> !updateBroadcastIds.contains(broadcastRef.getSourceId()))
-                .collect(MoreCollectors.toImmutableSet());
-
-        List<Statement> deletes = deleteStatements(
                 update.getSource(),
-                Sets.union(staleBroadcasts, update.getStaleBroadcasts())
+                ImmutableSet.<Date>builder()
+                        .addAll(daysInSchedule)
+                        .addAll(staleBroadcastDays)
+                        .build()
         );
-
-        log.info(
-                "Processing equivalent schedule update for {} {} {}: currentEntries:{}, update:{}, "
-                        + "stale broadcasts from update: {}, stale broadcasts from store: {}",
-                update.getSource(),
-                update.getSchedule().getChannel().longValue(),
-                update.getSchedule().getInterval(),
-                updateLog(currentBroadcastRefs),
-                updateLog(updateBroadcastRefs),
-                updateLog(update.getStaleBroadcasts()),
-                updateLog(staleBroadcasts)
-        );
-
-        List<Statement> updates = updateStatements(
-                update.getSource(),
-                update.getSchedule(),
-                content,
-                now
-        );
-
-        if (updates.isEmpty() && deletes.isEmpty()) {
-            return;
-        }
-
-        BatchStatement updateBatch = new BatchStatement();
-        updateBatch.addAll(Iterables.concat(updates, deletes));
 
         try {
-            session.execute(updateBatch.setConsistencyLevel(write));
+            lock.lock(lockKeys);
+
+            DateTime now = clock.now();
+
+            ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule()
+                    .getScheduleEntries()
+                    .stream()
+                    .map(ScheduleRef.Entry::getBroadcast)
+                    .collect(MoreCollectors.toImmutableSet());
+
+            Set<String> updateBroadcastIds = updateBroadcastRefs
+                    .stream()
+                    .map(BroadcastRef::getSourceId)
+                    .collect(MoreCollectors.toImmutableSet());
+
+            Set<BroadcastRef> currentBroadcastRefs = resolveBroadcasts(
+                    update.getSource(),
+                    update.getSchedule().getChannel(),
+                    update.getSchedule().getInterval()
+            );
+
+            Set<BroadcastRef> staleBroadcasts = currentBroadcastRefs.stream()
+                    .filter(broadcast -> !updateBroadcastIds.contains(broadcast.getSourceId()))
+                    .collect(MoreCollectors.toImmutableSet());
+
+            List<Statement> deletes = deleteStatements(
+                    update.getSource(),
+                    Sets.union(staleBroadcasts, update.getStaleBroadcasts())
+            );
+
             log.info(
-                    "Processed equivalent schedule update for {} {} {}, updates: {}, deletes: {}",
+                    "Processing equivalent schedule update for {} {} {}: currentEntries:{}, "
+                            + "update:{}, stale broadcasts from update: {}, stale broadcasts "
+                            + "from store: {}",
                     update.getSource(),
                     update.getSchedule().getChannel().longValue(),
                     update.getSchedule().getInterval(),
-                    updates.size(),
-                    deletes.size()
+                    updateLog(currentBroadcastRefs),
+                    updateLog(updateBroadcastRefs),
+                    updateLog(update.getStaleBroadcasts()),
+                    updateLog(staleBroadcasts)
             );
-        } catch (NoHostAvailableException | QueryExecutionException e) {
-            throw new WriteException(e);
+
+            List<Statement> updates = updateStatements(
+                    update.getSource(),
+                    update.getSchedule(),
+                    content,
+                    now
+            );
+
+            if (updates.isEmpty() && deletes.isEmpty()) {
+                return;
+            }
+
+            BatchStatement updateBatch = new BatchStatement();
+            updateBatch.addAll(Iterables.concat(updates, deletes));
+
+            try {
+                session.execute(updateBatch.setConsistencyLevel(write));
+                log.info(
+                        "Processed equivalent schedule update for {} {} {}, updates: {}, "
+                                + "deletes: {}",
+                        update.getSource(),
+                        update.getSchedule().getChannel().longValue(),
+                        update.getSchedule().getInterval(),
+                        updates.size(),
+                        deletes.size()
+                );
+            } catch (NoHostAvailableException | QueryExecutionException e) {
+                throw new WriteException(e);
+            }
+        } catch (InterruptedException e) {
+            throw Throwables.propagate(e);
+        } finally {
+            lock.unlock(lockKeys);
         }
     }
 
     @Override
-    protected synchronized void updateEquivalentContent(
+    protected void updateEquivalentContent(
             Publisher publisher,
             Broadcast broadcast,
             EquivalenceGraph graph,
             ImmutableSet<Item> content
     ) throws WriteException {
+        List<Date> daysInInterval = daysIn(broadcast.getTransmissionInterval());
 
-        Date broadcastStart = broadcast.getTransmissionTime().toDate();
-        ByteBuffer broadcastBytes = serialize(broadcast);
-        ByteBuffer graphBytes = graphSerializer.serialize(graph);
-        ByteBuffer contentBytes = serialize(content);
+        ImmutableSet<String> lockKeys = getLockKeys(
+                broadcast.getChannelId(), publisher, daysInInterval
+        );
 
-        daysIn(broadcast.getTransmissionInterval())
-                .stream()
-                .map(day -> broadcastEquivUpdate.bind()
-                        .setString("source", publisher.key())
-                        .setLong("channel", broadcast.getChannelId().longValue())
-                        .setDate("day", day)
-                        .setString("broadcast", broadcast.getSourceId())
-                        .setBytes("broadcastData", broadcastBytes)
-                        .setDate("broadcastStartData", broadcastStart)
-                        .setBytes("graphData", graphBytes)
-                        .setLong("contentCountData", content.size())
-                        .setBytes("contentData", contentBytes)
-                        .setDate("now", clock.now().toDate()))
-                .map(statement -> statement.setConsistencyLevel(write))
-                .forEach(session::execute);
+        try {
+            lock.lock(lockKeys);
+
+            Date broadcastStart = broadcast.getTransmissionTime().toDate();
+            ByteBuffer broadcastBytes = serialize(broadcast);
+            ByteBuffer graphBytes = graphSerializer.serialize(graph);
+            ByteBuffer contentBytes = serialize(content);
+
+            daysInInterval
+                    .stream()
+                    .map(day -> broadcastEquivUpdate.bind()
+                            .setString("source", publisher.key())
+                            .setLong("channel", broadcast.getChannelId().longValue())
+                            .setDate("day", day)
+                            .setString("broadcast", broadcast.getSourceId())
+                            .setBytes("broadcastData", broadcastBytes)
+                            .setDate("broadcastStartData", broadcastStart)
+                            .setBytes("graphData", graphBytes)
+                            .setLong("contentCountData", content.size())
+                            .setBytes("contentData", contentBytes)
+                            .setDate("now", clock.now().toDate()))
+                    .map(statement -> statement.setConsistencyLevel(write))
+                    .forEach(session::execute);
+        } catch (InterruptedException e) {
+            throw Throwables.propagate(e);
+        } finally {
+            lock.unlock(lockKeys);
+        }
     }
 
     @Override
@@ -551,6 +597,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             }
         }
         return broadcasts.build();
+    }
+
+    private ImmutableSet<String> getLockKeys(Id channelId, Publisher source,
+            Iterable<Date> dates) {
+        return StreamSupport.stream(dates.spliterator(), false)
+                .map(date -> getLockKey(channelId, source, date))
+                .collect(MoreCollectors.toImmutableSet());
+    }
+
+    private String getLockKey(Id channelId, Publisher source, Date date) {
+        return channelId.longValue() + "|" + source.key() + "|" + date.toInstant().toEpochMilli();
     }
 
     private final class ToEquivalentSchedule implements Function<List<ResultSet>,
