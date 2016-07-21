@@ -1,7 +1,6 @@
 package org.atlasapi.neo4j;
 
 import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Session;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -13,16 +12,21 @@ public class Neo4jModule {
         this.sessionFactory = checkNotNull(sessionFactory);
     }
 
-    public static Neo4jModule create(String neo4jHost, int neo4jPort) {
-        Neo4jSessionFactory sessionFactory = Neo4jSessionFactory.createWithHttpDriver(
+    public static Neo4jModule create(String neo4jHost, int neo4jPort, int maxIdleSessions) {
+        Neo4jSessionFactory sessionFactory = Neo4jSessionFactory.create(
                 neo4jHost,
                 neo4jPort,
-                AuthTokens.none()
+                AuthTokens.none(),
+                maxIdleSessions
         );
         return new Neo4jModule(sessionFactory);
     }
 
-    public Session session() {
-        return sessionFactory.getSession();
+    public Neo4jSessionFactory sessionFactory() {
+        return sessionFactory;
+    }
+
+    public void close() {
+        sessionFactory.close();
     }
 }
