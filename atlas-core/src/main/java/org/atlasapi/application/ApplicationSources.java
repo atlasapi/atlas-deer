@@ -249,7 +249,7 @@ public class ApplicationSources {
         private Boolean imagePrecedenceEnabled = true;
         private List<SourceReadEntry> reads = Lists.newLinkedList();
         private List<Publisher> writes = Lists.newLinkedList();
-        private Set<ApplicationAccessRole> accessRoles;
+        private Set<ApplicationAccessRole> accessRoles = Sets.newHashSet();
 
         public Builder withPrecedence(boolean precedence) {
             this.precedence = precedence;
