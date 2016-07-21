@@ -17,6 +17,8 @@ package org.atlasapi.content;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.hashing.Hashable;
@@ -98,6 +100,7 @@ public class Policy extends Identified implements Hashable {
         availableCountries.add(country);
     }
 
+    @Nullable
     @FieldName("availability_start")
     public DateTime getAvailabilityStart() {
         return availabilityStart;
@@ -108,6 +111,7 @@ public class Policy extends Identified implements Hashable {
         return drmPlayableFrom;
     }
 
+    @Nullable
     @FieldName("availability_end")
     public DateTime getAvailabilityEnd() {
         return availabilityEnd;
@@ -128,11 +132,11 @@ public class Policy extends Identified implements Hashable {
         return actualAvailabilityStart;
     }
 
-    public void setAvailabilityEnd(DateTime availabilityEnd) {
+    public void setAvailabilityEnd(@Nullable DateTime availabilityEnd) {
         this.availabilityEnd = availabilityEnd;
     }
 
-    public void setAvailabilityStart(DateTime availabilityStart) {
+    public void setAvailabilityStart(@Nullable DateTime availabilityStart) {
         this.availabilityStart = availabilityStart;
     }
 

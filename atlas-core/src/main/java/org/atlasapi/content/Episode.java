@@ -51,6 +51,7 @@ public class Episode extends Item {
         return this.partNumber;
     }
 
+    @Nullable
     @FieldName("episode_number")
     public Integer getEpisodeNumber() {
         return episodeNumber;
