@@ -28,6 +28,7 @@ public class ApplicationSources {
     private final Optional<List<Publisher>> contentHierarchyPrecedence;
     private final ImmutableSet<Publisher> enabledReadSources;
     private final Boolean imagePrecedenceEnabled;
+    private final ImmutableSet<ApplicationAccessRole> accessRoles;
 
     private static final Comparator<SourceReadEntry> SORT_READS_BY_PUBLISHER =
             (a, b) -> a.getPublisher().compareTo(b.getPublisher());
@@ -45,6 +46,7 @@ public class ApplicationSources {
                 .filter(input -> input.getSourceStatus().isEnabled())
                 .map(SourceReadEntry::getPublisher)
                 .collect(MoreCollectors.toImmutableSet());
+        this.accessRoles = ImmutableSet.copyOf(builder.accessRoles);
     }
 
     public boolean isPrecedenceEnabled() {
@@ -149,6 +151,10 @@ public class ApplicationSources {
         return Optional.of(ordering.onResultOf(Sourceds.toPublisher()));
     }
 
+    public ImmutableSet<ApplicationAccessRole> getAccessRoles() {
+        return accessRoles;
+    }
+
     private static final ApplicationSources dflts = createDefaults();
 
     private static ApplicationSources createDefaults() {
@@ -228,7 +234,8 @@ public class ApplicationSources {
                 .withReadableSources(this.getReads())
                 .withImagePrecedenceEnabled(this.imagePrecedenceEnabled)
                 .withContentHierarchyPrecedence(this.contentHierarchyPrecedence().orNull())
-                .withWritableSources(this.getWrites());
+                .withWritableSources(this.getWrites())
+                .withAccessRoles(this.getAccessRoles());
     }
 
     public static Builder builder() {
@@ -242,6 +249,7 @@ public class ApplicationSources {
         private Boolean imagePrecedenceEnabled = true;
         private List<SourceReadEntry> reads = Lists.newLinkedList();
         private List<Publisher> writes = Lists.newLinkedList();
+        private Set<ApplicationAccessRole> accessRoles;
 
         public Builder withPrecedence(boolean precedence) {
             this.precedence = precedence;
@@ -252,8 +260,9 @@ public class ApplicationSources {
                 @Nullable List<Publisher> contentHierarchyPrecedence
         ) {
             if (contentHierarchyPrecedence != null) {
-                this.contentHierarchyPrecedence = Optional.of(ImmutableList.copyOf(
-                        contentHierarchyPrecedence));
+                this.contentHierarchyPrecedence = Optional.of(
+                        ImmutableList.copyOf(contentHierarchyPrecedence)
+                );
             } else {
                 this.contentHierarchyPrecedence = Optional.absent();
             }
@@ -272,6 +281,11 @@ public class ApplicationSources {
 
         public Builder withImagePrecedenceEnabled(Boolean imagePrecedenceEnabled) {
             this.imagePrecedenceEnabled = imagePrecedenceEnabled;
+            return this;
+        }
+
+        public Builder withAccessRoles(Set<ApplicationAccessRole> accessRoles) {
+            this.accessRoles = accessRoles;
             return this;
         }
 

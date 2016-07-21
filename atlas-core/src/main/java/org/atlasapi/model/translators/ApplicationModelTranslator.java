@@ -4,12 +4,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.atlasapi.application.Application;
+import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationCredentials;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.v3.ApplicationConfiguration;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -19,15 +22,6 @@ import com.google.common.collect.Maps;
 
 public class ApplicationModelTranslator
         implements Function<org.atlasapi.application.v3.Application, Application> {
-
-    public static final Function<SourceReadEntry, Publisher> SOURCEREADENTRY_TO_PUBLISHER = new Function<SourceReadEntry, Publisher>() {
-
-        @Override
-        public Publisher apply(SourceReadEntry input) {
-            return input.getPublisher();
-        }
-
-    };
 
     public Iterable<Application> transform(
             Iterable<org.atlasapi.application.v3.Application> inputs) {
@@ -65,6 +59,11 @@ public class ApplicationModelTranslator
                 .withImagePrecedenceEnabled(input.imagePrecedenceEnabled())
                 .withWritableSources(input.writableSources().asList())
                 .withContentHierarchyPrecedence(input.contentHierarchyPrecedence().orNull())
+                .withAccessRoles(input.getAccessRoles()
+                        .stream()
+                        .map(role -> ApplicationAccessRole.from(role.getRole()))
+                        .collect(MoreCollectors.toImmutableSet())
+                )
                 .build()
                 .copyWithMissingSourcesPopulated();
     }
@@ -101,20 +100,37 @@ public class ApplicationModelTranslator
     }
 
     private ApplicationConfiguration transformSources4to3(ApplicationSources input) {
-        Map<Publisher, org.atlasapi.application.v3.SourceStatus> sourceStatuses = readsAsMap(input.getReads());
+        Map<Publisher, org.atlasapi.application.v3.SourceStatus> sourceStatuses =
+                readsAsMap(input.getReads());
+
         ApplicationConfiguration configuration = ApplicationConfiguration.defaultConfiguration()
                 .withSources(sourceStatuses);
+
         if (input.isPrecedenceEnabled()) {
             List<Publisher> precedence = Lists.transform(
                     input.getReads(),
-                    SOURCEREADENTRY_TO_PUBLISHER
+                    SourceReadEntry::getPublisher
             );
             configuration = configuration.copyWithPrecedence(precedence);
         }
-        configuration = configuration.copyWithWritableSources(input.getWrites());
-        configuration = configuration.copyWithContentHierarchyPrecedence(input.contentHierarchyPrecedence()
-                .orNull());
-        configuration = configuration.copyWithImagePrecedenceEnabled(input.imagePrecedenceEnabled());
+
+        configuration = configuration.copyWithWritableSources(
+                input.getWrites()
+        );
+        configuration = configuration.copyWithContentHierarchyPrecedence(
+                input.contentHierarchyPrecedence().orNull()
+        );
+        configuration = configuration.copyWithImagePrecedenceEnabled(
+                input.imagePrecedenceEnabled()
+        );
+        configuration = configuration.copyWithAccessRoles(
+                input.getAccessRoles()
+                        .stream()
+                        .map(role -> org.atlasapi.application.v3.ApplicationAccessRole
+                                .from(role.getRole()))
+                        .collect(MoreCollectors.toImmutableSet())
+        );
+
         return configuration;
     }
 

@@ -248,9 +248,22 @@ public class ApplicationsController {
             Optional<Application> existing = applicationStore.applicationFor(application.getId());
             checkSourceStatusChanges(userAccounts, application, existing);
 
+            Application existingApplication = existing.get();
+
+            ApplicationSources existingApplicationSources = existingApplication.getSources();
+            ApplicationSources applicationSources = application.getSources();
+
+            // Disallow modification of access roles
+            ApplicationSources updatedApplicationSources = applicationSources.copy()
+                    .withAccessRoles(existingApplicationSources.getAccessRoles())
+                    .build();
+
             // Copy across slug and disallow modification of credentials
-            application = application.copy().withSlug(existing.get().getSlug())
-                    .withCredentials(existing.get().getCredentials()).build();
+            application = application.copy()
+                    .withSlug(existingApplication.getSlug())
+                    .withCredentials(existingApplication.getCredentials())
+                    .withSources(updatedApplicationSources)
+                    .build();
 
             application = applicationStore.updateApplication(application);
 
