@@ -17,6 +17,8 @@ public abstract class AbstractNeo4jIT {
                 "localhost", EmbeddedNeo4j.BOLT_PORT, 1
         );
         session = module.sessionFactory().getSession();
+
+        session.run("MATCH (n) DETACH DELETE n");
     }
 
     @After

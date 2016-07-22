@@ -15,10 +15,10 @@ import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.atlasapi.neo4j.service.writers.ContentWriter.CONTENT_ID;
-import static org.atlasapi.neo4j.service.writers.ContentWriter.CONTENT_SOURCE;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_SOURCE;
 
-public class EquivalenceWriter {
+public class EquivalenceWriter extends Neo4jWriter {
 
     private static final String SOURCE_ID = "sourceId";
     private static final String TARGET_ID = "targetId";
@@ -33,8 +33,7 @@ public class EquivalenceWriter {
                 + "MATCH "
                 + "(sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID) + " }), "
                 + "(targetNode { " + CONTENT_ID + ": " + parameter(TARGET_ID) + " }) "
-                + "MERGE (sourceNode)-[r:IS_EQUIVALENT]->(targetNode) "
-                + "RETURN id(r)");
+                + "MERGE (sourceNode)-[r:IS_EQUIVALENT]->(targetNode)");
 
         removeNotAssertedEdgesStatement = new Statement(""
                 + "MATCH (sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID) + " })"
@@ -101,7 +100,7 @@ public class EquivalenceWriter {
                 TARGET_ID, targetNodeId
         );
 
-        runner.run(writeEdgeStatement.withParameters(statementParameters));
+        write(writeEdgeStatement.withParameters(statementParameters), runner);
     }
 
     private void removeNotAssertedEdges(Long sourceNodeId, ImmutableSet<Long> assertedAdjacentIds,
@@ -112,10 +111,6 @@ public class EquivalenceWriter {
                 SOURCES, sources
         );
 
-        runner.run(removeNotAssertedEdgesStatement.withParameters(statementParameters));
-    }
-
-    private String parameter(String parameterName) {
-        return "{" + parameterName + "}";
+        write(removeNotAssertedEdgesStatement.withParameters(statementParameters), runner);
     }
 }
