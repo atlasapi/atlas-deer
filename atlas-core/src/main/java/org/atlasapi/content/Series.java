@@ -35,6 +35,7 @@ public class Series extends Container {
         return this;
     }
 
+    @Nullable
     @FieldName("series_number")
     public Integer getSeriesNumber() {
         return seriesNumber;
