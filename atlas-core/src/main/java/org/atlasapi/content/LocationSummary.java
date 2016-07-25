@@ -3,6 +3,8 @@ package org.atlasapi.content;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.hashing.Hashable;
 
 import org.joda.time.DateTime;
@@ -21,8 +23,8 @@ public class LocationSummary implements Hashable {
     public LocationSummary(
             Boolean available,
             String uri,
-            DateTime availabilityStart,
-            DateTime availabilityEnd
+            @Nullable DateTime availabilityStart,
+            @Nullable DateTime availabilityEnd
     ) {
         this.available = available;
         this.uri = uri;

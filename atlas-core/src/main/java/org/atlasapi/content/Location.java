@@ -15,6 +15,8 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Identified;
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
@@ -42,6 +44,7 @@ public class Location extends Identified implements Hashable {
 
     private Policy policy;
 
+    @Nullable
     @FieldName("policy")
     public Policy getPolicy() {
         return this.policy;
@@ -71,7 +74,7 @@ public class Location extends Identified implements Hashable {
         this.available = available;
     }
 
-    public void setPolicy(Policy policy) {
+    public void setPolicy(@Nullable Policy policy) {
         this.policy = policy;
     }
 
@@ -143,13 +146,7 @@ public class Location extends Identified implements Hashable {
         return copy;
     }
 
-    public static final Function<Location, Location> COPY = new Function<Location, Location>() {
-
-        @Override
-        public Location apply(Location input) {
-            return input.copy();
-        }
-    };
+    public static final Function<Location, Location> COPY = Location::copy;
 
     public static final Predicate<Location> AVAILABLE = l -> {
         DateTime now = DateTime.now(DateTimeZone.UTC);
