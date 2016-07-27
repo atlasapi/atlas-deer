@@ -201,7 +201,11 @@ public class AtlasPersistenceModule {
                 cassandraService,
                 cassandraKeyspace,
                 idGeneratorBuilder(),
-                ContentHashGenerator.create(HashGenerator.create()),
+                ContentHashGenerator.create(
+                        HashGenerator.create(),
+                        metricsModule.metrics().meter("ContentHashGenerated"),
+                        metricsModule.metrics().meter("ContentHashGenerationFailed")
+                ),
                 eventV2 -> UUID.randomUUID().toString(),
                 seeds,
                 metricsModule.metrics()

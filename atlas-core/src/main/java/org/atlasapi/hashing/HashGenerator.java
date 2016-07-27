@@ -13,6 +13,15 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * This class is responsible for taking an instance of {@link Hashable}, serialising it into a
+ * string and then hash that string using a cryptographic hash algorithm. The intent is to detect
+ * whether the instance of {@link Hashable} has changed by comparing its hash to an older version
+ * of it.
+ * <p>
+ * It is safe to use only this generated hash to detect changes because this code uses the SHA-256
+ * algorithm which is considered collision resistant (as of this commit).
+ */
 public class HashGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(HashGenerator.class);
