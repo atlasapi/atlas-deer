@@ -26,9 +26,15 @@ public class LocationWriter extends Neo4jWriter {
     private static final String START_DATE_TIME = "startDateTime";
     private static final String END_DATE_TIME = "endDateTime";
 
+    private final Statement removeAllLocationsStatement;
     private final Statement addLocationStatement;
 
     private LocationWriter() {
+        removeAllLocationsStatement = new Statement(""
+                + "MATCH (content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " })"
+                + "-[r:HAS_LOCATION]->(location:Location) "
+                + "DELETE r, location");
+
         addLocationStatement = new Statement(""
                 + "MATCH (content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
                 + "OPTIONAL MATCH (content)-[r:HAS_LOCATION]->(existing:Location) "
@@ -52,13 +58,22 @@ public class LocationWriter extends Neo4jWriter {
                 .filter(location -> location.getPolicy() != null)
                 .collect(MoreCollectors.toImmutableSet());
 
-        locations.stream()
-                .map(location -> addLocationStatement.withParameters(ImmutableMap.of(
-                        CONTENT_ID, content.getId().longValue(),
-                        START_DATE_TIME, getAvailabilityStart(location),
-                        END_DATE_TIME, getAvailabilityEnd(location)
-                )))
-                .forEach(statement -> write(statement, runner));
+        if (locations.isEmpty()) {
+            write(
+                    removeAllLocationsStatement.withParameters(ImmutableMap.of(
+                            CONTENT_ID, content.getId().longValue()
+                    )),
+                    runner
+            );
+        } else {
+            locations.stream()
+                    .map(location -> addLocationStatement.withParameters(ImmutableMap.of(
+                            CONTENT_ID, content.getId().longValue(),
+                            START_DATE_TIME, getAvailabilityStart(location),
+                            END_DATE_TIME, getAvailabilityEnd(location)
+                    )))
+                    .forEach(statement -> write(statement, runner));
+        }
     }
 
     private String getAvailabilityStart(Location location) {
