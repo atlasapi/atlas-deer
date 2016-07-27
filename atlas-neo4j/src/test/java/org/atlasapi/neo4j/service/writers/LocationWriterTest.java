@@ -27,6 +27,7 @@ public class LocationWriterTest extends AbstractNeo4jIT {
     private ContentWriter contentWriter;
     private LocationWriter locationWriter;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -180,6 +181,37 @@ public class LocationWriterTest extends AbstractNeo4jIT {
                 is(updatedLocation.getPolicy().getAvailabilityStart().toString()));
         assertThat(record.get("endDateTime").asString(),
                 is(updatedLocation.getPolicy().getAvailabilityEnd().toString()));
+
+        assertThat(result.hasNext(), is(false));
+    }
+
+    @Test
+    public void removeAllExistingLocations() throws Exception {
+        Location location = getLocation(true, getPolicy(
+                DateTime.now(DateTimeZone.UTC).minusDays(1),
+                DateTime.now(DateTimeZone.UTC).plusDays(1)
+        ));
+        Item item = getItem(
+                0L,
+                Publisher.METABROADCAST,
+                ImmutableSet.of(location)
+        );
+
+        contentWriter.writeContent(item, session);
+        locationWriter.write(item, session);
+        Item updatedItem = getItem(
+                0L,
+                Publisher.METABROADCAST,
+                ImmutableSet.of()
+        );
+
+        locationWriter.write(updatedItem, session);
+
+        StatementResult result = session.run(
+                "MATCH (n:Content { id: {id} })-[:HAS_LOCATION]->(l:Location)"
+                        + "RETURN l.startDateTime AS startDateTime, l.endDateTime AS endDateTime",
+                ImmutableMap.of("id", updatedItem.getId().longValue())
+        );
 
         assertThat(result.hasNext(), is(false));
     }
