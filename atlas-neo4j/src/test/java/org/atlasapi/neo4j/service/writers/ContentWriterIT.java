@@ -31,6 +31,7 @@ public class ContentWriterIT extends AbstractNeo4jIT {
 
     private ContentWriter contentWriter;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
