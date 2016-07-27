@@ -33,6 +33,7 @@ public class EquivalenceWriterIT extends AbstractNeo4jIT {
     private ContentRef contentRefB;
     private ContentRef contentRefC;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
