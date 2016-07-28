@@ -45,7 +45,7 @@ public class Series extends Container {
         this.brandRef = brand.toRef();
     }
 
-    public void setBrandRef(BrandRef brandRef) {
+    public void setBrandRef(@Nullable BrandRef brandRef) {
         this.brandRef = brandRef;
     }
 
