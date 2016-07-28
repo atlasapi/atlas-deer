@@ -53,6 +53,7 @@ public class ContentGraphService {
                 );
 
                 graphWriter.writeEquivalences(subject, assertedAdjacents, sources, transaction);
+                // TODO Add locations/broadcasts/hierarchy writing
                 transaction.success();
             } catch (Exception e) {
                 log.error("Failed to write equivalences", e);

@@ -95,6 +95,7 @@ public class ContentWriter extends Neo4jWriter {
         );
     }
 
+    // TODO Move visitor to the service
     public void writeContent(Content content, StatementRunner runner) {
         ImmutableMap<String, Object> statementParameters = ImmutableMap.of(
                 CONTENT_ID, content.getId().longValue(),
