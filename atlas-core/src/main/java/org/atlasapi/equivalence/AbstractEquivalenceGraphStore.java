@@ -5,6 +5,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -21,6 +22,7 @@ import com.metabroadcast.common.collect.MoreSets;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
 
@@ -332,10 +334,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private Adjacents updateAdjacents(Adjacents adj, ResourceRef subject,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
         Adjacents result = adj;
-        if (subject.equals(adj.getRef())) {
+        if (subject.getId().equals(adj.getRef().getId())) {
             result = updateSubjectAdjacents(adj, assertedAdjacents, sources);
         } else if (sources.contains(adj.getSource())) {
-            if (assertedAdjacents.contains(adj.getRef())) {
+            Set<Id> ids = assertedAdjacents
+                    .stream()
+                    .map(ResourceRef::getId)
+                    .distinct()
+                    .collect(MoreCollectors.toImmutableSet());
+            if (ids.contains(adj.getRef().getId())) {
                 result = adj.copyWithAfferent(subject);
             } else if (adj.hasAfferentAdjacent(subject)) {
                 result = adj.copyWithoutAfferent(subject);

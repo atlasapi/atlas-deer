@@ -1,5 +1,7 @@
 package org.atlasapi.equivalence;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +18,7 @@ import com.metabroadcast.common.collect.MoreSets;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -58,8 +61,12 @@ public final class EquivalenceGraph implements Identifiable {
             this.created = checkNotNull(created);
             checkArgument(efferent.contains(subject));
             checkArgument(afferent.contains(subject));
-            this.efferent = efferent.stream().collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
-            this.afferent = afferent.stream().collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
+            this.efferent = efferent
+                    .stream()
+                    .collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
+            this.afferent = afferent
+                    .stream()
+                    .collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
         }
 
         @Override
@@ -117,9 +124,11 @@ public final class EquivalenceGraph implements Identifiable {
         }
 
         public Adjacents copyWithAfferent(ResourceRef ref) {
+            HashMap<Id, ResourceRef> map = new HashMap<>();
+            map.putAll(afferent);
+            map.put(ref.getId(), ref);
             return new Adjacents(subject, created,
-                    ImmutableSet.copyOf(efferent.values()),
-                    MoreSets.add(ImmutableSet.copyOf(afferent.values()), ref));
+                    ImmutableSet.copyOf(efferent.values()), ImmutableSet.copyOf(map.values()));
         }
 
         public Adjacents copyWithoutAfferent(ResourceRef ref) {

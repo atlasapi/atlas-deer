@@ -25,6 +25,7 @@ import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.base.Function;
@@ -61,6 +62,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -125,6 +127,79 @@ public class AbstractEquivalenceGraphStoreTest {
         assertAfferentAdjacent(paItem, bbcItem);
         assertAfferentAdjacent(c4Item, bbcItem);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
+    }
+
+    @Test
+    public void testThatChangingTypeOfItemDoesntChangeEquivalence() throws WriteException {
+        Item subject = new Item(Id.valueOf(10), Publisher.AMAZON_UK);
+        subject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(subject, paItem);
+        Episode changedSubject = new Episode(Id.valueOf(10), Publisher.AMAZON_UK);
+        changedSubject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(changedSubject, paItem);
+
+        assertAfferentAdjacent(paItem, subject);
+        assertAfferentAdjacent(paItem, changedSubject);
+        assertEfferentAdjacents(subject, paItem);
+        assertEfferentAdjacents(changedSubject, paItem);
+    }
+
+    @Test
+    public void testThatChangingTypeOfItemTwiceDoesntChangeEquivalence() throws WriteException {
+        Item subject = new Item(Id.valueOf(10), Publisher.AMAZON_UK);
+        subject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(subject, paItem);
+        Episode changedSubject = new Episode(Id.valueOf(10), Publisher.AMAZON_UK);
+        changedSubject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(changedSubject, paItem);
+        Item changedSubject2 = new Item(Id.valueOf(10), Publisher.AMAZON_UK);
+        changedSubject2.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(changedSubject2, paItem);
+
+        assertAfferentAdjacent(paItem, subject);
+        assertAfferentAdjacent(paItem, changedSubject);
+        assertAfferentAdjacent(paItem, changedSubject2);
+    }
+
+    @Test
+    public void testAddingAnEquivalentResourceWithChangedType() throws WriteException {
+        Item subject = new Item(Id.valueOf(10), Publisher.AMAZON_UK);
+        subject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(subject, paItem);
+        Episode changedSubject = new Episode(Id.valueOf(10), Publisher.AMAZON_UK);
+        changedSubject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(changedSubject, paItem);
+
+        assertEfferentAdjacents(subject, paItem);
+        assertAfferentAdjacent(paItem, subject);
+        assertEfferentAdjacents(changedSubject, paItem);
+        assertAfferentAdjacent(paItem, changedSubject);
+
+
+        makeEquivalent(subject, paItem, c4Item);
+        makeEquivalent(changedSubject, paItem);
+
+        assertEfferentAdjacents(subject, paItem, c4Item);
+        assertAfferentAdjacent(paItem, subject);
+        assertAfferentAdjacent(c4Item, subject);
+        assertOnlyTransitivelyEquivalent(paItem, c4Item);
+        assertEfferentAdjacents(changedSubject, paItem, c4Item);
+        assertAfferentAdjacent(paItem, changedSubject);
+        assertAfferentAdjacent(c4Item, changedSubject);
+        assertOnlyTransitivelyEquivalent(paItem, c4Item);
+    }
+
+    @Test
+    public void testMakingExistingEquivalenceToEquivalateToItemWithChangedType() throws WriteException {
+        Item subject = new Item(Id.valueOf(10), Publisher.AMAZON_UK);
+        subject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(paItem, subject);
+        Episode changedSubject = new Episode(Id.valueOf(10), Publisher.AMAZON_UK);
+        changedSubject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
+        makeEquivalent(paItem, changedSubject);
+
+        assertAfferentAdjacent(subject, paItem);
+        assertAfferentAdjacent(changedSubject, paItem);
     }
 
     @Test
@@ -270,11 +345,11 @@ public class AbstractEquivalenceGraphStoreTest {
 
         assertThat(graphOf(c4Item), adjacents(
                 c4Item.getId(),
-                afferents(ImmutableSet.of(c4Item.toRef()))
+                afferents(ImmutableSet.of(c4Item.toRef().getId()))
         ));
         assertThat(graphOf(c4Item), adjacents(
                 c4Item.getId(),
-                efferents(ImmutableSet.of(c4Item.toRef()))
+                efferents(ImmutableSet.of(c4Item.toRef().getId()))
         ));
 
         assertThat(graphOf(bbcItem), adjacencyList(not(hasKey(c4Item.getId()))));
@@ -411,10 +486,10 @@ public class AbstractEquivalenceGraphStoreTest {
         assertThat(graphOf(paItem).getAdjacencyList().size(), is(82));
         assertThat(
                 graphOf(bbcItem),
-                adjacents(bbcItem.getId(), efferents(hasItem(paItem.toRef())))
+                adjacents(bbcItem.getId(), efferents(hasItem(paItem.toRef().getId())))
         );
         assertThat(graphOf(bbcItem), adjacencyList(hasKey(paItem.getId())));
-        assertThat(graphOf(paItem), adjacents(paItem.getId(), afferents(hasItem(bbcItem.toRef()))));
+        assertThat(graphOf(paItem), adjacents(paItem.getId(), afferents(hasItem(bbcItem.toRef().getId()))));
         assertThat(graphOf(paItem), adjacencyList(hasKey(bbcItem.getId())));
 
         update = makeEquivalent(bbcItem, sources(bbcItem, paItem));
@@ -426,12 +501,12 @@ public class AbstractEquivalenceGraphStoreTest {
         assertThat(graphOf(paItem).getAdjacencyList().size(), is(41));
         assertThat(graphOf(bbcItem), adjacents(
                 bbcItem.getId(),
-                efferents(not(hasItem(paItem.toRef())))
+                efferents(not(hasItem(paItem.toRef().getId())))
         ));
         assertThat(graphOf(bbcItem), adjacencyList(not(hasKey(paItem.getId()))));
         assertThat(graphOf(paItem), adjacents(
                 paItem.getId(),
-                afferents(not(hasItem(bbcItem.toRef())))
+                afferents(not(hasItem(bbcItem.toRef().getId())))
         ));
         assertThat(graphOf(paItem), adjacencyList(not(hasKey(bbcItem.getId()))));
 
@@ -559,31 +634,31 @@ public class AbstractEquivalenceGraphStoreTest {
     }
 
     private void assertAfferentAdjacent(Item subj, Item... adjacents) {
-        assertThat(graphOf(subj), adjacents(subj.getId(), afferents(hasItem(subj.toRef()))));
-        assertThat(graphOf(subj), adjacents(subj.getId(), efferents(hasItem(subj.toRef()))));
+        assertThat(graphOf(subj), adjacents(subj.getId(), afferents(hasItem(subj.toRef().getId()))));
+        assertThat(graphOf(subj), adjacents(subj.getId(), efferents(hasItem(subj.toRef().getId()))));
         for (Item adjacent : adjacents) {
             assertThat(
                     graphOf(subj),
-                    adjacents(subj.getId(), afferents(hasItem(adjacent.toRef())))
+                    adjacents(subj.getId(), afferents(hasItem(adjacent.toRef().getId())))
             );
             assertThat(graphOf(subj), adjacencyList(hasEntry(
                     is(adjacent.getId()),
-                    efferents(hasItems((ResourceRef) subj.toRef(), adjacent.toRef()))
+                    efferents(hasItems(subj.toRef().getId(), adjacent.toRef().getId()))
             )));
         }
     }
 
     private void assertEfferentAdjacents(Item subj, Item... adjacents) {
-        assertThat(graphOf(subj), adjacents(subj.getId(), afferents(hasItem(subj.toRef()))));
-        assertThat(graphOf(subj), adjacents(subj.getId(), efferents(hasItem(subj.toRef()))));
+        assertThat(graphOf(subj), adjacents(subj.getId(), afferents(hasItem(subj.toRef().getId()))));
+        assertThat(graphOf(subj), adjacents(subj.getId(), efferents(hasItem(subj.toRef().getId()))));
         for (Item adjacent : adjacents) {
             assertThat(
                     graphOf(subj),
-                    adjacents(subj.getId(), efferents(hasItem(adjacent.toRef())))
+                    adjacents(subj.getId(), efferents(hasItem(adjacent.toRef().getId())))
             );
             assertThat(graphOf(subj), adjacencyList(hasEntry(
                     is(adjacent.getId()),
-                    afferents(hasItems((ResourceRef) subj.toRef(), adjacent.toRef()))
+                    afferents(hasItems(subj.toRef().getId(), adjacent.toRef().getId()))
             )));
         }
     }
@@ -628,48 +703,48 @@ public class AbstractEquivalenceGraphStoreTest {
     }
 
     private static Matcher<? super Adjacents> afferents(
-            Matcher<? super Set<ResourceRef>> subMatcher) {
+            Matcher<? super Set<Id>> subMatcher) {
         return new AdjacentsAfferentsMatcher(subMatcher);
     }
 
-    private static Matcher<? super Adjacents> afferents(Set<? extends ResourceRef> set) {
-        Set<ResourceRef> sets = ImmutableSet.copyOf(set);
+    private static Matcher<? super Adjacents> afferents(Set<? extends Id> set) {
+        Set<Id> sets = ImmutableSet.copyOf(set);
         return afferents(equalTo(sets));
     }
 
     private static class AdjacentsAfferentsMatcher
-            extends FeatureMatcher<Adjacents, Set<ResourceRef>> {
+            extends FeatureMatcher<Adjacents, Set<Id>> {
 
-        public AdjacentsAfferentsMatcher(Matcher<? super Set<ResourceRef>> subMatcher) {
+        public AdjacentsAfferentsMatcher(Matcher<? super Set<Id>> subMatcher) {
             super(subMatcher, "with afferent edges", "afferents set");
         }
 
         @Override
-        protected Set<ResourceRef> featureValueOf(Adjacents actual) {
-            return actual.getAfferent();
+        protected Set<Id> featureValueOf(Adjacents actual) {
+            return actual.getAfferent().stream().map(ResourceRef::getId).collect(MoreCollectors.toImmutableSet());
         }
     }
 
     private static Matcher<? super Adjacents> efferents(
-            Matcher<? super Set<ResourceRef>> subMatcher) {
+            Matcher<? super Set<Id>> subMatcher) {
         return new AdjacentsEfferentsMatcher(subMatcher);
     }
 
-    private static Matcher<? super Adjacents> efferents(Set<? extends ResourceRef> set) {
-        Set<ResourceRef> sets = ImmutableSet.copyOf(set);
+    private static Matcher<? super Adjacents> efferents(Set<? extends Id> set) {
+        Set<Id> sets = ImmutableSet.copyOf(set);
         return efferents(equalTo(sets));
     }
 
     public static class AdjacentsEfferentsMatcher
-            extends FeatureMatcher<Adjacents, Set<ResourceRef>> {
+            extends FeatureMatcher<Adjacents, Set<Id>> {
 
-        public AdjacentsEfferentsMatcher(Matcher<? super Set<ResourceRef>> subMatcher) {
+        public AdjacentsEfferentsMatcher(Matcher<? super Set<Id>> subMatcher) {
             super(subMatcher, "with efferent edges", "efferents set");
         }
 
         @Override
-        protected Set<ResourceRef> featureValueOf(Adjacents actual) {
-            return actual.getEfferent();
+        protected Set<Id> featureValueOf(Adjacents actual) {
+            return actual.getEfferent().stream().map(ResourceRef::getId).collect(MoreCollectors.toImmutableSet());
         }
     }
 
