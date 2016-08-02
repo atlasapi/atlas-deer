@@ -1,8 +1,11 @@
 package org.atlasapi.equivalence;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -12,8 +15,10 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.collect.MoreSets;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -47,8 +52,8 @@ public final class EquivalenceGraph implements Identifiable {
 
         private final ResourceRef subject;
         private final DateTime created;
-        private final ImmutableSet<ResourceRef> efferent;
-        private final ImmutableSet<ResourceRef> afferent;
+        private final ImmutableMap<Id, ResourceRef> efferent;
+        private final ImmutableMap<Id, ResourceRef> afferent;
 
         public Adjacents(ResourceRef subject, DateTime created, Set<ResourceRef> efferent,
                 Set<ResourceRef> afferent) {
@@ -56,10 +61,12 @@ public final class EquivalenceGraph implements Identifiable {
             this.created = checkNotNull(created);
             checkArgument(efferent.contains(subject));
             checkArgument(afferent.contains(subject));
-            this.efferent = ImmutableSet.copyOf(Identifiables.orderById()
-                    .immutableSortedCopy(efferent));
-            this.afferent = ImmutableSet.copyOf(Identifiables.orderById()
-                    .immutableSortedCopy(afferent));
+            this.efferent = efferent
+                    .stream()
+                    .collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
+            this.afferent = afferent
+                    .stream()
+                    .collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
         }
 
         @Override
@@ -81,45 +88,55 @@ public final class EquivalenceGraph implements Identifiable {
         }
 
         public SetView<ResourceRef> getAdjacent() {
-            return Sets.union(efferent, afferent);
+            return Sets.union(ImmutableSet.copyOf(efferent.values()), ImmutableSet.copyOf(afferent.values()));
         }
 
         public SetView<ResourceRef> getStrongAdjacent() {
-            return Sets.intersection(efferent, afferent);
+            return Sets.intersection(ImmutableSet.copyOf(efferent.values()), ImmutableSet.copyOf(afferent.values()));
         }
 
         public ImmutableSet<ResourceRef> getEfferent() {
-            return efferent;
+            return ImmutableSet.copyOf(efferent.values());
         }
 
         public ImmutableSet<ResourceRef> getAfferent() {
-            return afferent;
+            return ImmutableSet.copyOf(afferent.values());
         }
 
         public boolean hasEfferentAdjacent(ResourceRef ref) {
-            return efferent.contains(ref);
+            return efferent.containsKey(ref.getId());
         }
 
         public boolean hasAfferentAdjacent(ResourceRef ref) {
-            return afferent.contains(ref);
+            return afferent.containsKey(ref.getId());
         }
 
         public Adjacents copyWithEfferent(ResourceRef ref) {
-            return new Adjacents(subject, created, MoreSets.add(efferent, ref), afferent);
+            return new Adjacents(subject, created, MoreSets.add(
+                    ImmutableSet.copyOf(efferent.values()), ref),
+                    ImmutableSet.copyOf(afferent.values()));
         }
 
         public Adjacents copyWithEfferents(Iterable<ResourceRef> refs) {
-            return new Adjacents(subject, created, ImmutableSet.copyOf(refs), afferent);
+            return new Adjacents(subject, created,
+                    ImmutableSet.copyOf(refs),
+                    ImmutableSet.copyOf(afferent.values()));
         }
 
         public Adjacents copyWithAfferent(ResourceRef ref) {
-            return new Adjacents(subject, created, efferent, MoreSets.add(afferent, ref));
+            HashMap<Id, ResourceRef> map = new HashMap<>();
+            map.putAll(afferent);
+            map.put(ref.getId(), ref);
+            return new Adjacents(subject, created,
+                    ImmutableSet.copyOf(efferent.values()), ImmutableSet.copyOf(map.values()));
         }
 
         public Adjacents copyWithoutAfferent(ResourceRef ref) {
-            return new Adjacents(subject, created, efferent,
-                    Sets.filter(afferent, Predicates.not(Predicates.equalTo(ref)))
-            );
+            ImmutableSet<ResourceRef> collected = afferent.values()
+                    .stream()
+                    .filter(value -> !value.getId().equals(ref.getId()))
+                    .collect(MoreCollectors.toImmutableSet());
+            return new Adjacents(subject, created, ImmutableSet.copyOf(efferent.values()), collected);
         }
 
         @Override
@@ -145,7 +162,7 @@ public final class EquivalenceGraph implements Identifiable {
         public String toString() {
             StringBuilder builder = new StringBuilder();
             appendRef(builder, subject);
-            Iterator<ResourceRef> adjs = efferent.iterator();
+            Iterator<ResourceRef> adjs = efferent.values().iterator();
             builder.append(" -> [");
             if (adjs.hasNext()) {
                 appendRef(builder, adjs.next());

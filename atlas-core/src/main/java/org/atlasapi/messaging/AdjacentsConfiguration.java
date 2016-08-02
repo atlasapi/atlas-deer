@@ -6,9 +6,10 @@ import org.atlasapi.entity.ResourceRef;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 
-public class AdjacentsConfiguration {
+public abstract class AdjacentsConfiguration {
 
     @JsonCreator
     public AdjacentsConfiguration(
@@ -19,4 +20,9 @@ public class AdjacentsConfiguration {
 
     }
 
+    @JsonProperty("efferent")
+    public abstract ImmutableSet<ResourceRef> getEfferent();
+
+    @JsonProperty("afferent")
+    public abstract ImmutableSet<ResourceRef> getAfferent();
 }
