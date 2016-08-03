@@ -61,12 +61,16 @@ public final class EquivalenceGraph implements Identifiable {
             this.created = checkNotNull(created);
             checkArgument(efferent.contains(subject));
             checkArgument(afferent.contains(subject));
-            this.efferent = efferent
-                    .stream()
-                    .collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
-            this.afferent = afferent
-                    .stream()
-                    .collect(MoreCollectors.toImmutableMap(ResourceRef::getId, Function.identity()));
+            Map<Id, ResourceRef> efferentMap = new HashMap<>();
+            for (ResourceRef resourceRef : efferent) {
+                efferentMap.put(resourceRef.getId(), resourceRef);
+            }
+            this.efferent = ImmutableMap.copyOf(efferentMap);
+            Map<Id, ResourceRef> afferentMap = new HashMap<>();
+            for (ResourceRef resourceRef : afferent) {
+                afferentMap.put(resourceRef.getId(), resourceRef);
+            }
+            this.afferent = ImmutableMap.copyOf(afferentMap);
         }
 
         @Override
