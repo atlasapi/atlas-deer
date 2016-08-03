@@ -51,6 +51,7 @@ ENV JETTY_HOME="/usr/local/jetties/atlas" \
     ROOT_LOG_LEVEL="INFO"
 
 COPY atlas-api/target/atlas-api.war /usr/local/jetties/atlas/lib/atlas-api.war
+COPY ./log4j.properties /usr/local/jetties/atlas/work/log4j.properties
 
 WORKDIR /usr/local/jetties/atlas
 
