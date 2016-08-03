@@ -59,8 +59,6 @@ public final class EquivalenceGraph implements Identifiable {
                 Set<ResourceRef> afferent) {
             this.subject = checkNotNull(subject);
             this.created = checkNotNull(created);
-            checkArgument(efferent.contains(subject));
-            checkArgument(afferent.contains(subject));
             Map<Id, ResourceRef> efferentMap = new HashMap<>();
             for (ResourceRef resourceRef : efferent) {
                 efferentMap.put(resourceRef.getId(), resourceRef);
@@ -71,6 +69,8 @@ public final class EquivalenceGraph implements Identifiable {
                 afferentMap.put(resourceRef.getId(), resourceRef);
             }
             this.afferent = ImmutableMap.copyOf(afferentMap);
+            checkArgument(this.efferent.containsKey(subject.getId()));
+            checkArgument(this.afferent.containsKey(subject.getId()));
         }
 
         @Override
