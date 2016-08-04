@@ -13,7 +13,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ReleaseDate implements Hashable {
 
     public enum ReleaseType {
-        GENERAL
+        ORIGINAL,
+        GENERAL,
+        FIRST_BROADCAST,
+        LIMITED,
+        SCREENING,
+        WIDE,
+        EXPANDED,
+        SUBSEQUENT,
+        SCHEDULED
     }
 
     private final LocalDate date;
