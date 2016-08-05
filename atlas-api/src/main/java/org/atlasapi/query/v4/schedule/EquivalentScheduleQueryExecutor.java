@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -19,6 +20,7 @@ import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.Resource;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.EquivalentChannelSchedule;
 import org.atlasapi.schedule.EquivalentSchedule;
@@ -194,7 +196,8 @@ public class EquivalentScheduleQueryExecutor
 
             @Override
             public Schedule apply(EquivalentSchedule input) {
-                if (context.getApplicationSources().isPrecedenceEnabled()) {
+                boolean hasNonMergedAnnotation = context.getAnnotations().containsValue(Annotation.NON_MERGED);
+                if (context.getApplicationSources().isPrecedenceEnabled() && !hasNonMergedAnnotation) {
                     return mergeItemsInSchedule(input, context.getApplicationSources());
                 }
                 return selectBroadcastItems(input);
