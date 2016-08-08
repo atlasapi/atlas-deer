@@ -5,7 +5,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -71,6 +70,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 = ImmutableSet.copyOf(Iterables.transform(assertedAdjacents, Identifiables.toId()));
         Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
         Set<Id> transitiveSetsIds = null;
+
         try {
             LOG.debug(
                     "Thread {} is trying to enter synchronized block to lock graph IDs",
@@ -110,6 +110,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         } catch (StoreException e) {
             Throwables.propagateIfPossible(e, WriteException.class);
             throw new WriteException(e);
+        } catch (IllegalArgumentException e) {
+            log().error(e.getMessage());
+            return Optional.absent();
         } finally {
             unlock(subjectAndAdjacents, transitiveSetsIds);
         }
@@ -167,6 +170,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds)
             throws InterruptedException, StoreException {
+        // Temporary blacklist to deal with queue backlog on bad graph
+        if (adjacentsIds.contains(Id.valueOf(42959503L))) {
+            throw new IllegalArgumentException("Blacklisted ID found. Skipping...");
+        }
+
         if (!lock().tryLock(adjacentsIds)) {
             LOG.debug(
                     "Thread {} failed to lock adjacents {}",
@@ -177,6 +185,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
+
+        // Temporary blacklist to deal with queue backlog on bad graph
+        if (allIds.contains(Id.valueOf(42959503L))) {
+            throw new IllegalArgumentException("Blacklisted ID found. Skipping...");
+        }
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
@@ -194,7 +207,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 get(resolveIds(adjacentsIds)).values(),
                 input -> input.isPresent()
                          ? input.get().getAdjacencyList().keySet()
-                         : ImmutableSet.<Id>of()
+                         : ImmutableSet.of()
         ));
     }
 
@@ -366,7 +379,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private ImmutableSet.Builder<Adjacents> currentTransitiveAdjacents(
             Map<ResourceRef, EquivalenceGraph> resolved)
             throws StoreException {
-        ImmutableSet.Builder<Adjacents> result = ImmutableSet.<Adjacents>builder();
+        ImmutableSet.Builder<Adjacents> result = ImmutableSet.builder();
         for (EquivalenceGraph graph : resolved.values()) {
             result.addAll(graph.getAdjacencyList().values());
         }
