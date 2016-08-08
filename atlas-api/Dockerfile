@@ -113,5 +113,5 @@ CMD java \
 #    -XX:+PrintTenuringDistribution \
     -Xmx$JMX_MEMORY \
     -Xms$JMX_MEMORY \
-    JMX_OPTS \
+    $JMX_OPTS \
     -jar lib/atlas-api.war
