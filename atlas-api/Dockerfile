@@ -45,7 +45,9 @@ ENV JETTY_HOME="/usr/local/jetties/atlas" \
     JSSE_ENABLESNIEXTENSION="false" \
     LOG4J_CONFIGURATION="file:////usr/local/jetties/atlas/work/log4j.properties" \
     NIMROD_LOG_LEVEL="INFO" \
-    ROOT_LOG_LEVEL="INFO"
+    ROOT_LOG_LEVEL="INFO" \
+    JMX_MEMORY="2G" \
+    JMX_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=2000"
 
 COPY atlas-api/target/atlas-api.war /usr/local/jetties/atlas/lib/atlas-api.war
 COPY atlas-api/log4j.properties /usr/local/jetties/atlas/work/log4j.properties
@@ -54,14 +56,14 @@ WORKDIR /usr/local/jetties/atlas
 
 CMD java \
     -Djetty.home="$JETTY_HOME" \
-    -server \
+#    -server \
     -Dcom.sun.management.jmxremote.port="$COM_SUN_MANAGEMENT_JMXREMOTE_PORT" \
     -Dcom.sun.management.jmxremote.rmi.port="$COM_SUN_MANAGEMENT_JMXREMOTE_RMI_PORT" \
     -Dcom.sun.management.jmxremote.authenticate="$COM_SUN_MANAGEMENT_JMXREMOTE_AUTHENTICATE" \
     -Dcom.sun.management.jmxremote.ssl="$COM_SUN_MANAGEMENT_JMXREMOTE_SSL" \
     -Djava.rmi.server.hostname="$JAVA_RMI_SERVER_HOSTNAME" \
-    -XX:+UseG1GC \
-    -XX:MaxGCPauseMillis=2000 \
+#    -XX:+UseG1GC \
+#    -XX:MaxGCPauseMillis=2000 \
     -Dsun.net.inetaddr.ttl="$SUN_NET_INETADDR_TTL" \
     -DMBST_PLATFORM="$MBST_PLATFORM" \
     -Dcassandra.clientThreads="$CASSANDRA_CLIENTTHREADS" \
@@ -108,5 +110,8 @@ CMD java \
 #    -XX:+PrintGCDetails \
 #    -XX:+PrintGCDateStamps \
 #    -verbose:gc \
-    -XX:+PrintTenuringDistribution \
+#    -XX:+PrintTenuringDistribution \
+    -Xmx$JMX_MEMORY \
+    -Xms$JMX_MEMORY \
+    JMX_OPTS \
     -jar lib/atlas-api.war
