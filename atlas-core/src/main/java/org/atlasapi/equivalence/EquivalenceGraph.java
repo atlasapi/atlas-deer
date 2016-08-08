@@ -116,8 +116,10 @@ public final class EquivalenceGraph implements Identifiable {
         }
 
         public Adjacents copyWithEfferent(ResourceRef ref) {
-            return new Adjacents(subject, created, MoreSets.add(
-                    ImmutableSet.copyOf(efferent.values()), ref),
+            HashMap<Id, ResourceRef> map = new HashMap<>();
+            map.putAll(efferent);
+            map.put(ref.getId(), ref);
+            return new Adjacents(subject, created, ImmutableSet.copyOf(map.values()),
                     ImmutableSet.copyOf(afferent.values()));
         }
 
