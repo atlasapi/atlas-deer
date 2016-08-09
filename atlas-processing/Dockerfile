@@ -64,7 +64,7 @@ ENV JETTY_HOME="/usr/local/jetties/atlas-processing" \
     NIMROD_LOG_LEVEL="INFO" \
     ROOT_LOG_LEVEL="INFO" \
     JMX_MEMORY="2G" \
-    JMX_OPTS="-XX:+UseG1GC" -XX:MaxGCPauseMillis="2000" \
+    JMX_OPTS="-XX:+UseG1GC" -XX:MaxGCPauseMillis="2000"
 
 COPY atlas-processing/target/atlas-processing.war /usr/local/jetties/atlas-processing/lib/atlas-processing.war
 COPY atlas-processing/log4j.properties /usr/local/jetties/atlas-processing/work/log4j.properties
