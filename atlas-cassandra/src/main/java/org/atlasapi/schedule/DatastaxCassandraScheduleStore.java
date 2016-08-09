@@ -165,7 +165,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             batch.add(scheduleUpdate.bind()
                     .setString("source", source.key())
                     .setLong("channel", channelId)
-                    .setDate(
+                    .setTimestamp(
                             "day",
                             block.getInterval()
                                     .getStart()
@@ -175,7 +175,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                     )
                     .setMap("broadcastsData", broadcasts)
                     .setSet("broadcastsIdsData", broadcasts.keySet())
-                    .setDate("updatedData", clock.now().toDate()));
+                    .setTimestamp("updatedData", clock.now().toDate()));
         }
         session.execute(batch);
     }
@@ -210,7 +210,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                 selects.add(scheduleSelect.bind()
                         .setString("source", source.key())
                         .setLong("channel", channel.getId().longValue())
-                        .setDate("day", date));
+                        .setTimestamp("day", date));
             }
         }
 
@@ -282,7 +282,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                     String.class,
                     ByteBuffer.class
             );
-            Date scheduleDate = row.getDate(DAY_COLUMN);
+            Date scheduleDate = row.getTimestamp(DAY_COLUMN);
             for (String broadcastId : broadcastIds) {
                 ItemAndBroadcast itemAndBroadcast = deserialize(broadcasts.get(broadcastId));
                 if (filter.apply(itemAndBroadcast.getBroadcast())) {
@@ -319,7 +319,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                     String.class,
                     ByteBuffer.class
             );
-            Date scheduleDate = row.getDate(DAY_COLUMN);
+            Date scheduleDate = row.getTimestamp(DAY_COLUMN);
             for (Map.Entry<String, ByteBuffer> broadcastsEntry : broadcasts.entrySet()) {
                 if (broadcastIds.contains(broadcastsEntry.getKey())) {
                     continue;

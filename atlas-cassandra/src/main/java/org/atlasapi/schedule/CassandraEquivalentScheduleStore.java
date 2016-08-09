@@ -358,14 +358,14 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     .map(day -> broadcastEquivUpdate.bind()
                             .setString("source", publisher.key())
                             .setLong("channel", broadcast.getChannelId().longValue())
-                            .setDate("day", day)
+                            .setTimestamp("day", day)
                             .setString("broadcast", broadcast.getSourceId())
                             .setBytes("broadcastData", broadcastBytes)
-                            .setDate("broadcastStartData", broadcastStart)
+                            .setTimestamp("broadcastStartData", broadcastStart)
                             .setBytes("graphData", graphBytes)
                             .setLong("contentCountData", content.size())
                             .setBytes("contentData", contentBytes)
-                            .setDate("now", clock.now().toDate()))
+                            .setTimestamp("now", clock.now().toDate()))
                     .map(statement -> statement.setConsistencyLevel(write))
                     .forEach(session::execute);
         } catch (InterruptedException e) {
@@ -426,7 +426,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .map(day -> contentUpdate.bind()
                         .setString("source", src.key())
                         .setLong("channel", broadcast.getChannelId().longValue())
-                        .setDate("day", day)
+                        .setTimestamp("day", day)
                         .setString("broadcast", broadcast.getSourceId())
                         .setLong("contentCount", contentCount)
                         .setBytes("data", serializedContent));
@@ -442,7 +442,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 selects.add(scheduleSelect.bind()
                         .setString("source", src.key())
                         .setLong("channel", channel.getId().longValue())
-                        .setDate("day", day));
+                        .setTimestamp("day", day));
             }
         }
         return selects.build();
@@ -504,17 +504,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .map(day -> broadcastScheduleUpdate.bind()
                         .setString("source", source.key())
                         .setLong("channel", entry.getBroadcast().getChannelId().longValue())
-                        .setDate("day", day)
+                        .setTimestamp("day", day)
                         .setString("broadcast", entry.getBroadcast().getSourceId())
                         .setBytes("broadcastData", broadcast)
-                        .setDate(
+                        .setTimestamp(
                                 "broadcastStartData",
                                 entry.getBroadcast().getTransmissionInterval().getStart().toDate()
                         )
                         .setBytes("graphData", graph)
                         .setLong("contentCountData", contentCount)
                         .setBytes("contentData", serializedContent)
-                        .setDate("now", now.toDate()))
+                        .setTimestamp("now", now.toDate()))
                 .collect(MoreCollectors.toImmutableList());
     }
 
@@ -544,7 +544,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .map(broadcastRef -> broadcastDelete.bind()
                         .setString("source", src.key())
                         .setLong("channel", broadcastRef.getChannelId().longValue())
-                        .setDate("day", broadcastRef.getTransmissionInterval()
+                        .setTimestamp("day", broadcastRef.getTransmissionInterval()
                                 .getStart()
                                 .toLocalDate()
                                 .toDate())
@@ -560,7 +560,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     broadcastSelect.bind()
                             .setString("source", publisher.key())
                             .setLong("channel", channelId.longValue())
-                            .setDate("day", day)));
+                            .setTimestamp("day", day)));
         }
 
         ImmutableList<Row> rows = Futures.get(
