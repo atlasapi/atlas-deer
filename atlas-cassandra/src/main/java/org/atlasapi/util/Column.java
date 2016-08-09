@@ -140,7 +140,7 @@ public abstract class Column<T> {
 
         @Override
         public java.util.Date valueFrom(Row row) {
-            return row.getDate(name());
+            return row.getTimestamp(name());
         }
 
     }
