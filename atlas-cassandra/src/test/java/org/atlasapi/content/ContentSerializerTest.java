@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
@@ -29,14 +30,17 @@ import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Test;
+import org.springframework.context.annotation.Bean;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 public class ContentSerializerTest {
 
-    private final Serializer<Content, ContentProtos.Content> serializer = new ContentSerializer(new ContentSerializationVisitor(
+    private final ContentSerializer serializer = new ContentSerializer(new ContentSerializationVisitor(
             new NoOpContentResolver()));
 
     @Test
@@ -192,6 +196,101 @@ public class ContentSerializerTest {
 
         assertThat(actual, is(instanceOf(Series.class)));
         checkContainerProperties((Series) actual, expected);
+    }
+
+    @Test
+    public void testDeserializationWithoutBroadcastAnnotation() throws Exception {
+        Episode episode = new Episode();
+        setItemProperties(episode);
+        ContentProtos.Content serialized = serializer.serialize(episode);
+        Episode deserialized = (Episode) serializer.deserialize(
+                serialized,
+                ImmutableSet.of(Annotation.DESCRIPTION, Annotation.LOCATIONS)
+        );
+
+        assertNull(deserialized.getBroadcasts());
+        assertNotNull(deserialized.getManifestedAs());
+    }
+
+    @Test
+    public void testDeserializationWithoutLocationAnnotation() throws Exception {
+        Episode episode = new Episode();
+        setItemProperties(episode);
+        ContentProtos.Content serialized = serializer.serialize(episode);
+        Episode deserialized = (Episode) serializer.deserialize(
+                serialized,
+                ImmutableSet.of(Annotation.DESCRIPTION, Annotation.BROADCASTS)
+        );
+
+        assertNull(deserialized.getManifestedAs());
+        assertNotNull(deserialized.getBroadcasts());
+    }
+
+    @Test
+    public void testDeserializationWithoutSubItemsAnnotation() throws Exception {
+        Brand brand = new Brand();
+        setContainerProperties(brand);
+
+        ContentProtos.Content serialized = serializer.serialize(brand);
+        Brand deserialized = (Brand) serializer.deserialize(
+                serialized,
+                ImmutableSet.of(Annotation.DESCRIPTION, Annotation.AVAILABLE_CONTENT, Annotation.UPCOMING_CONTENT_DETAIL)
+        );
+
+        assertNull(deserialized.getItemRefs());
+        assertNotNull(deserialized.getAvailableContent());
+        assertNotNull(deserialized.getUpcomingContent());
+    }
+
+    @Test
+    public void testDeserializationWithoutSubItemsSummariesAnnotation() throws Exception {
+        Brand brand = new Brand();
+        setContainerProperties(brand);
+
+        ContentProtos.Content serialized = serializer.serialize(brand);
+        Brand deserialized = (Brand) serializer.deserialize(
+                serialized,
+                ImmutableSet.of(Annotation.DESCRIPTION, Annotation.SUB_ITEMS, Annotation.AVAILABLE_CONTENT, Annotation.UPCOMING_CONTENT_DETAIL)
+        );
+
+        assertNull(deserialized.getItemSummaries());
+        assertNotNull(deserialized.getItemRefs());
+        assertNotNull(deserialized.getAvailableContent());
+        assertNotNull(deserialized.getUpcomingContent());
+    }
+
+    @Test
+    public void testDeserializationWithoutUpcomingContentAnnotation() throws Exception {
+        Brand brand = new Brand();
+        setContainerProperties(brand);
+
+        ContentProtos.Content serialized = serializer.serialize(brand);
+        Brand deserialized = (Brand) serializer.deserialize(
+                serialized,
+                ImmutableSet.of(Annotation.DESCRIPTION, Annotation.SUB_ITEMS, Annotation.AVAILABLE_CONTENT)
+        );
+
+        assertNull(deserialized.getUpcomingContent());
+        assertNotNull(deserialized.getItemRefs());
+        assertNotNull(deserialized.getAvailableContent());
+    }
+
+    @Test
+    public void testDeserializationWithoutAnnotations() throws Exception {
+        Brand brand = new Brand();
+        setContainerProperties(brand);
+
+        ContentProtos.Content serialized = serializer.serialize(brand);
+        Brand deserialized = (Brand) serializer.deserialize(
+                serialized,
+                ImmutableSet.of()
+        );
+
+        assertNull(deserialized.getAvailableContent());
+        assertNull(deserialized.getItemRefs());
+        assertNull(deserialized.getItemSummaries());
+        assertNull(deserialized.getUpcomingContent());
+        assertNotNull(deserialized.getDescription());
     }
 
     private void serializeAndCheck(Series series) {

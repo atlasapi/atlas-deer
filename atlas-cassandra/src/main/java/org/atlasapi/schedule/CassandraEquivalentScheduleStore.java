@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -629,13 +630,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         @Override
         public EquivalentSchedule apply(List<ResultSet> input) {
-            return new EquivalentSchedule(toChannelSchedules(input, channels, interval), interval);
+            return new EquivalentSchedule(toChannelSchedules(input, channels, interval, Annotation.all()), interval);
+        }
+
+        public EquivalentSchedule apply(List<ResultSet> input, Set<Annotation> annotations) {
+            return new EquivalentSchedule(toChannelSchedules(input, channels, interval, annotations), interval);
         }
 
         private List<EquivalentChannelSchedule> toChannelSchedules(List<ResultSet> input,
-                Iterable<Channel> channels, Interval interval) {
+                Iterable<Channel> channels, Interval interval, Set<Annotation> annotations) {
             SetMultimap<Id, EquivalentScheduleEntry> entriesByChannel = transformToEntries(
-                    input, interval
+                    input, interval, annotations
             );
 
             ImmutableList.Builder<EquivalentChannelSchedule> channelSchedules =
@@ -648,7 +653,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
 
         private SetMultimap<Id, EquivalentScheduleEntry> transformToEntries(List<ResultSet> input,
-                Interval interval) {
+                Interval interval, Set<Annotation> annotations) {
             ScheduleBroadcastFilter broadcastFilter = ScheduleBroadcastFilter.valueOf(interval);
             ImmutableSetMultimap.Builder<Id, EquivalentScheduleEntry> channelEntries =
                     ImmutableSetMultimap.builder();
@@ -664,7 +669,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     );
                     continue;
                 }
-                deserializeRow(channelEntries, row, broadcastFilter);
+                deserializeRow(channelEntries, row, broadcastFilter, annotations);
             }
             return channelEntries.build();
         }
@@ -672,12 +677,13 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         private void deserializeRow(
                 ImmutableSetMultimap.Builder<Id, EquivalentScheduleEntry> channelEntries,
                 Row row,
-                ScheduleBroadcastFilter broadcastFilter
+                ScheduleBroadcastFilter broadcastFilter,
+                Set<Annotation> annotations
         ) {
             try {
                 Broadcast broadcast = deserialize(BROADCAST.valueFrom(row));
                 if (broadcastFilter.apply(broadcast.getTransmissionInterval())) {
-                    Equivalent<Item> equivItems = deserialize(row);
+                    Equivalent<Item> equivItems = deserialize(row, annotations);
                     channelEntries.put(
                             Id.valueOf(CHANNEL.valueFrom(row)),
                             new EquivalentScheduleEntry(broadcast, equivItems)
@@ -688,7 +694,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             }
         }
 
-        private Equivalent<Item> deserialize(Row row) throws IOException {
+        private Equivalent<Item> deserialize(Row row, Set<Annotation> annotations) throws IOException {
             EquivalenceGraph graph = graphSerializer.deserialize(GRAPH.valueFrom(row));
             Long itemCount = CONTENT_COUNT.valueFrom(row);
             ByteBuffer itemsBytes = CONTENT.valueFrom(row);
@@ -699,7 +705,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ImmutableSet.Builder<Item> itemsBuilder = ImmutableSet.builder();
             for (int i = 0; i < itemCount; i++) {
                 ContentProtos.Content msg = ContentProtos.Content.parseDelimitedFrom(itemsStream);
-                Item item = (Item) contentSerializer.deserialize(msg);
+                Item item = (Item) contentSerializer.deserialize(msg, annotations);
                 if (selectedSources.contains(item.getSource())) {
                     itemsBuilder.add(item);
                 }

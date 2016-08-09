@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Serializer;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.serialization.protobuf.ContentProtos.Content.Builder;
@@ -61,6 +62,17 @@ public final class ContentSerializer implements Serializer<Content, ContentProto
             Class<? extends Content> cls = typeNameMap.get(type);
             Content content = cls.newInstance();
             return content.accept(new ContentDeserializationVisitor(p));
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    public Content deserialize(ContentProtos.Content p, Set<Annotation> activeAnnotations) {
+        try {
+            String type = p.getType();
+            Class<? extends Content> cls = typeNameMap.get(type);
+            Content content = cls.newInstance();
+            return content.accept(new ContentDeserializationVisitor(p, activeAnnotations));
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }

@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.AwardSerializer;
@@ -27,7 +28,21 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
 import org.joda.time.Duration;
 
+import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
+import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
+import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
+import static org.atlasapi.annotation.Annotation.BROADCASTS;
+import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.LOCATIONS;
+import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
+import static org.atlasapi.annotation.Annotation.SUB_ITEM_SUMMARIES;
+import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
+
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
@@ -53,11 +68,26 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final ReviewSerializer reviewSerializer = new ReviewSerializer();
     private final RatingSerializer ratingSerializer = new RatingSerializer();
 
+    private static final Set<Annotation> BROADCAST_ANNOTATIONS = ImmutableSet.of(BROADCASTS,
+            UPCOMING_BROADCASTS, CURRENT_AND_FUTURE_BROADCASTS, FIRST_BROADCASTS, NEXT_BROADCASTS);
+    private static final Annotation SUB_ITEMS_ANNOTATIONS = SUB_ITEMS;
+    private static final Annotation SUB_ITEM_SUMMARIES_ANNOTATION = SUB_ITEM_SUMMARIES;
+    private static final Set<Annotation> LOCATIONS_ANNOTATIONS = ImmutableSet.of(LOCATIONS, AVAILABLE_LOCATIONS);
+    private static final Annotation UPCOMING_CONTENT_DETAIL = Annotation.UPCOMING_CONTENT_DETAIL;
+    private static final Set<Annotation> AVAILABLE_CONTENT_ANNOTATIONS =
+            ImmutableSet.of(AVAILABLE_CONTENT, AVAILABLE_CONTENT_DETAIL);
 
+    private Set<Annotation> annotations;
     private ContentProtos.Content msg;
+
+    public ContentDeserializationVisitor(ContentProtos.Content msg, Set<Annotation> activeAnnotations) {
+        this.msg = msg;
+        this.annotations = activeAnnotations;
+    }
 
     public ContentDeserializationVisitor(ContentProtos.Content msg) {
         this.msg = msg;
+        this.annotations = Annotation.all();
     }
 
     private <I extends Identified> I visitIdentified(I identified) {
@@ -239,7 +269,14 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasYear()) {
             content.setYear(msg.getYear());
         }
-        content.setManifestedAs(getEncodings());
+
+        boolean hasLocationAnnotation = annotations.stream().anyMatch(LOCATIONS_ANNOTATIONS::contains);
+
+        if (hasLocationAnnotation) {
+            content.setManifestedAs(getEncodings());
+        } else {
+            content.setManifestedAs(null);
+        }
         if (msg.hasGenericDescription()) {
             content.setGenericDescription(msg.getGenericDescription());
         }
@@ -249,39 +286,59 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private <C extends Container> C visitContainer(C container) {
         container = visitContent(container);
         ContentRefSerializer refSerializer = new ContentRefSerializer(container.getSource());
-        ImmutableSet.Builder<ItemRef> childRefs = ImmutableSet.builder();
-        for (int i = 0; i < msg.getChildrenCount(); i++) {
-            childRefs.add((ItemRef) refSerializer.deserialize(msg.getChildren(i)));
+        if (annotations.contains(SUB_ITEMS_ANNOTATIONS)) {
+            ImmutableSet.Builder<ItemRef> childRefs = ImmutableSet.builder();
+            for (int i = 0; i < msg.getChildrenCount(); i++) {
+                childRefs.add((ItemRef) refSerializer.deserialize(msg.getChildren(i)));
+            }
+            container.setItemRefs(Ordering.natural().immutableSortedCopy(childRefs.build()));
+        } else {
+            container.setItemRefs(null);
         }
-        container.setItemRefs(Ordering.natural().immutableSortedCopy(childRefs.build()));
-        ImmutableList.Builder<ContentProtos.ItemAndBroadcastRef> itemAndBroadcastRefBuilder = ImmutableList.<ContentProtos.ItemAndBroadcastRef>builder();
-        for (int i = 0; i < msg.getUpcomingContentCount(); i++) {
-            itemAndBroadcastRefBuilder.add(msg.getUpcomingContent(i));
-        }
-        container.setUpcomingContent(
-                itemAndBroadcastRefSerializer.deserialize(
-                        itemAndBroadcastRefBuilder.build()
-                )
-        );
 
-        ImmutableList.Builder<ContentProtos.ItemAndLocationSummary> itemAndBroadcastSummaries = ImmutableList
-                .builder();
-        for (int i = 0; i < msg.getAvailableContentCount(); i++) {
-            itemAndBroadcastSummaries.add(msg.getAvailableContent(i));
+        if (annotations.contains(UPCOMING_CONTENT_DETAIL)) {
+            ImmutableList.Builder<ContentProtos.ItemAndBroadcastRef> itemAndBroadcastRefBuilder = ImmutableList.<ContentProtos.ItemAndBroadcastRef>builder();
+            for (int i = 0; i < msg.getUpcomingContentCount(); i++) {
+                itemAndBroadcastRefBuilder.add(msg.getUpcomingContent(i));
+            }
+            container.setUpcomingContent(
+                    itemAndBroadcastRefSerializer.deserialize(
+                            itemAndBroadcastRefBuilder.build()
+                    )
+            );
+        } else {
+            container.setUpcomingContent(null);
         }
-        container.setAvailableContent(
-                itemAndLocationSummarySerializer.deserialize(
-                        itemAndBroadcastSummaries.build()
-                )
-        );
-        ImmutableList.Builder<ContentProtos.ItemSummary> itemSummaries = ImmutableList.builder();
 
-        for (int i = 0; i < msg.getItemSummariesCount(); i++) {
-            itemSummaries.add(msg.getItemSummaries(i));
+        boolean hasAvailableContentAnnotation =
+                annotations.stream().anyMatch(AVAILABLE_CONTENT_ANNOTATIONS::contains);
+        if (hasAvailableContentAnnotation) {
+            ImmutableList.Builder<ContentProtos.ItemAndLocationSummary> itemAndLocationSummaries = ImmutableList
+                    .builder();
+            for (int i = 0; i < msg.getAvailableContentCount(); i++) {
+                itemAndLocationSummaries.add(msg.getAvailableContent(i));
+            }
+            container.setAvailableContent(
+                    itemAndLocationSummarySerializer.deserialize(
+                            itemAndLocationSummaries.build()
+                    )
+            );
+        } else {
+            container.setAvailableContent(null);
         }
-        container.setItemSummaries(
-                itemSummarySerializer.deserialize(itemSummaries.build())
-        );
+
+        if (annotations.contains(SUB_ITEM_SUMMARIES_ANNOTATION)) {
+            ImmutableList.Builder<ContentProtos.ItemSummary> itemSummaries = ImmutableList.builder();
+
+            for (int i = 0; i < msg.getItemSummariesCount(); i++) {
+                itemSummaries.add(msg.getItemSummaries(i));
+            }
+            container.setItemSummaries(
+                    itemSummarySerializer.deserialize(itemSummaries.build())
+            );
+        } else {
+            container.setItemSummaries(null);
+        }
 
         return container;
     }
@@ -375,7 +432,15 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
         if (msg.hasLongform()) {
             item.setIsLongForm(msg.getLongform());
         }
-        item.setBroadcasts(getBroadcasts());
+
+        boolean hasBroadcastAnnotation = annotations
+                .stream()
+                .anyMatch(BROADCAST_ANNOTATIONS::contains);
+        if (hasBroadcastAnnotation) {
+            item.setBroadcasts(getBroadcasts());
+        } else {
+            item.setBroadcasts(null);
+        }
         item.setSegmentEvents(getSegmentEvents());
         item.setRestrictions(getRestrictions());
         return item;

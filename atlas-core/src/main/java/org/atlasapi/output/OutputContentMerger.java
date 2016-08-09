@@ -65,7 +65,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                             content.getImages()
                     );
 
-    private static final Predicate<Item> HAS_BROADCASTS = input -> !input.getBroadcasts().isEmpty();
+    private static final Predicate<Item> HAS_BROADCASTS = input -> input.getBroadcasts()!= null && !input.getBroadcasts().isEmpty();
 
     private static final Predicate<Film> HAS_PEOPLE =
             film -> film.getPeople() != null && !film.getPeople().isEmpty();
@@ -444,7 +444,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
-        if (!chosen.getBroadcasts().isEmpty()) {
+        if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
             for (Broadcast chosenBroadcast : chosen.getBroadcasts()) {
                 matchAndMerge(chosenBroadcast, notChosenOrdered);
             }
@@ -458,9 +458,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Content> void mergeEncodings(ApplicationSources sources, T chosen,
             Iterable<T> notChosen) {
         List<T> notChosenOrdered = sources.getSourcedReadOrdering().sortedCopy(notChosen);
-        HashSet<Encoding> encodings = Sets.newHashSet(chosen.getManifestedAs());
+        HashSet<Encoding> encodings = Sets.newHashSet();
+        if (chosen.getManifestedAs() != null) {
+            encodings.addAll(chosen.getManifestedAs());
+        }
         for (T notChosenItem : notChosenOrdered) {
-            encodings.addAll(notChosenItem.getManifestedAs());
+            if (notChosenItem.getManifestedAs() != null) {
+                encodings.addAll(notChosenItem.getManifestedAs());
+            }
         }
         chosen.setManifestedAs(encodings);
     }
@@ -470,12 +475,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         List<Broadcast> equivBroadcasts = Lists.newArrayList();
         for (T notChosenItem : notChosen) {
             Iterable<Broadcast> notChosenBroadcasts = notChosenItem.getBroadcasts();
-            Optional<Broadcast> matched = Iterables.tryFind(
-                    notChosenBroadcasts,
-                    input -> broadcastsMatch(chosenBroadcast, input)
-            );
-            if (matched.isPresent()) {
-                equivBroadcasts.add(matched.get());
+            if (notChosenBroadcasts != null) {
+                Optional<Broadcast> matched = Iterables.tryFind(
+                        notChosenBroadcasts,
+                        input -> broadcastsMatch(chosenBroadcast, input)
+                );
+                if (matched.isPresent()) {
+                    equivBroadcasts.add(matched.get());
+                }
             }
         }
         // equivB'casts = list of matched broadcasts, ordered by precedence
@@ -590,7 +597,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 orderedEquivalents,
                 Container.class
         );
-        if (chosen.getUpcomingContent().isEmpty()) {
+        if (chosen.getUpcomingContent() != null && chosen.getUpcomingContent().isEmpty()) {
             chosen.setUpcomingContent(
                     first(
                             contentHierarchySourceOrderedContainers,
@@ -635,8 +642,11 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             ((Brand) chosen).setSeriesRefs(ImmutableList.of());
         }
 
-        Map<ItemRef, Iterable<LocationSummary>> availableContent =
-                Maps.newHashMap(chosen.getAvailableContent());
+        Map<ItemRef, Iterable<LocationSummary>> availableContent = Maps.newHashMap();
+
+        if (chosen.getAvailableContent() != null) {
+            availableContent.putAll(chosen.getAvailableContent());
+        }
 
         for (Container equiv : contentHierarchySourceOrderedContainers) {
             for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary
