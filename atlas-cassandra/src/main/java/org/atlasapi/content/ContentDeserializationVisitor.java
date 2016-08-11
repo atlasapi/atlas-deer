@@ -33,6 +33,7 @@ import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
 import static org.atlasapi.annotation.Annotation.BROADCASTS;
 import static org.atlasapi.annotation.Annotation.CURRENT_AND_FUTURE_BROADCASTS;
+import static org.atlasapi.annotation.Annotation.EXTENDED_DESCRIPTION;
 import static org.atlasapi.annotation.Annotation.FIRST_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.LOCATIONS;
 import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
@@ -327,7 +328,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
             container.setAvailableContent(null);
         }
 
-        if (annotations.contains(SUB_ITEM_SUMMARIES_ANNOTATION)) {
+        if (annotations.contains(SUB_ITEM_SUMMARIES_ANNOTATION) || annotations.contains(EXTENDED_DESCRIPTION)) {
             ImmutableList.Builder<ContentProtos.ItemSummary> itemSummaries = ImmutableList.builder();
 
             for (int i = 0; i < msg.getItemSummariesCount(); i++) {
