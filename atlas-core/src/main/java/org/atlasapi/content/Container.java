@@ -36,12 +36,17 @@ public abstract class Container extends Content {
     public Container() {
     }
 
+    @Nullable
     @FieldName("item_refs")
     public ImmutableList<ItemRef> getItemRefs() {
         return itemRefs;
     }
 
-    public void setItemRefs(Iterable<ItemRef> itemRefs) {
+    public void setItemRefs(@Nullable Iterable<ItemRef> itemRefs) {
+        if (itemRefs == null) {
+            this.itemRefs = null;
+            return;
+        }
         this.itemRefs = ImmutableList.copyOf(itemRefs);
     }
 
@@ -61,11 +66,16 @@ public abstract class Container extends Content {
         return accept((ContainerVisitor<V>) visitor);
     }
 
+    @Nullable
     public Map<ItemRef, Iterable<BroadcastRef>> getUpcomingContent() {
         return upcomingContent;
     }
 
-    public void setUpcomingContent(Map<ItemRef, Iterable<BroadcastRef>> upcomingContent) {
+    public void setUpcomingContent(@Nullable Map<ItemRef, Iterable<BroadcastRef>> upcomingContent) {
+        if (upcomingContent == null) {
+            this.upcomingContent = null;
+            return;
+        }
         this.upcomingContent = ImmutableMap.copyOf(
                 Maps.filterValues(
                         Maps.transformValues(
@@ -89,11 +99,16 @@ public abstract class Container extends Content {
         );
     }
 
+    @Nullable
     public Map<ItemRef, Iterable<LocationSummary>> getAvailableContent() {
         return availableContent;
     }
 
-    public void setAvailableContent(Map<ItemRef, Iterable<LocationSummary>> availableContent) {
+    public void setAvailableContent(@Nullable Map<ItemRef, Iterable<LocationSummary>> availableContent) {
+        if (availableContent == null) {
+            this.availableContent = null;
+            return;
+        }
         this.availableContent = ImmutableMap.copyOf(
                 Maps.filterValues(
                         Maps.transformValues(
@@ -117,11 +132,16 @@ public abstract class Container extends Content {
         );
     }
 
+    @Nullable
     public List<ItemSummary> getItemSummaries() {
         return itemSummaries;
     }
 
-    public void setItemSummaries(List<ItemSummary> itemSummaries) {
+    public void setItemSummaries(@Nullable List<ItemSummary> itemSummaries) {
+        if (itemSummaries == null) {
+            this.itemSummaries = null;
+            return;
+        }
         this.itemSummaries = itemSummaries.stream()
                 .sorted(ItemSummary.ORDERING)
                 .collect(MoreCollectors.toImmutableList());

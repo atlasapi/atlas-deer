@@ -233,11 +233,12 @@ public abstract class Content extends Described
     }
 
     @FieldName("manifested_as")
+    @Nullable
     public Set<Encoding> getManifestedAs() {
         return manifestedAs;
     }
 
-    public void setManifestedAs(Set<Encoding> manifestedAs) {
+    public void setManifestedAs(@Nullable Set<Encoding> manifestedAs) {
         this.manifestedAs = manifestedAs;
     }
 

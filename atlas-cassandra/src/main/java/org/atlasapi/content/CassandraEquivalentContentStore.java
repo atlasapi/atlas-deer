@@ -162,7 +162,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
 
         final SettableFuture<ResolvedEquivalents<Content>> result = SettableFuture.create();
 
-        resolveWithConsistency(result, ids, selectedSources, readConsistency);
+        resolveWithConsistency(result, ids, selectedSources, activeAnnotations, readConsistency);
 
         return result;
     }
@@ -201,7 +201,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private void resolveWithConsistency(final SettableFuture<ResolvedEquivalents<Content>> result,
-            final Iterable<Id> ids, final Set<Publisher> selectedSources,
+            final Iterable<Id> ids, final Set<Publisher> selectedSources, Set<Annotation> activeAnnotations,
             final ConsistencyLevel readConsistency) {
         ListenableFuture<ImmutableMap<Long, Long>> setsToResolve =
                 index.lookup(Iterables.transform(ids, Id.toLongValue()), readConsistency);
@@ -209,7 +209,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         Futures.addCallback(
                 Futures.transform(
                         setsToResolve,
-                        toEquivalentsSets(selectedSources, readConsistency)
+                        toEquivalentsSets(selectedSources, activeAnnotations, readConsistency)
                 ),
                 new FutureCallback<Optional<ResolvedEquivalents<Content>>>() {
 
@@ -226,6 +226,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                                     result,
                                     ids,
                                     selectedSources,
+                                    activeAnnotations,
                                     ConsistencyLevel.QUORUM
                             );
                         } else {
@@ -243,17 +244,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
-            final Set<Publisher> selectedSources, final ConsistencyLevel readConsistency) {
+            final Set<Publisher> selectedSources, final Set<Annotation> annotations, final ConsistencyLevel readConsistency) {
         return index -> Futures.transform(
                 resultOf(selectSetsQueries(index.values()), readConsistency),
-                toEquivalentsSets(index, selectedSources)
+                toEquivalentsSets(index, annotations, selectedSources)
         );
     }
 
     private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
-            final Map<Long, Long> index, final Set<Publisher> selectedSources) {
+            final Map<Long, Long> index, Set<Annotation> activeAnnotations, final Set<Publisher> selectedSources) {
         return setsRows -> {
-            Multimap<Long, Content> sets = deserialize(setsRows, selectedSources);
+            Multimap<Long, Content> sets = deserialize(setsRows, activeAnnotations, selectedSources);
             if (sets == null) {
                 return Optional.absent();
             }
@@ -267,6 +268,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private Multimap<Long, Content> deserialize(Iterable<ResultSet> setsRows,
+            Set<Annotation> activeAnnotations,
             Set<Publisher> selectedSources) {
         ImmutableSetMultimap.Builder<Long, Content> sets = ImmutableSetMultimap.builder();
         ImmutableList<Row> allRows = StreamSupport.stream(setsRows.spliterator(), false)
@@ -276,7 +278,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         for (Row row : allRows) {
             long setId = row.getLong(SET_ID_KEY);
 
-            Content content = deserialize(row);
+            Content content = deserializeInternal(row, activeAnnotations);
 
             if (contentSelected(content, selectedSources)
                     && containedInGraph(content.getId(), row)) {
@@ -287,6 +289,10 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private Content deserialize(Row row) {
+        return deserializeInternal(row, Annotation.all());
+    }
+
+    private Content deserializeInternal(Row row, Set<Annotation> annotations) {
         long setId = row.getLong(SET_ID_KEY);
         try {
             //This is a workaround for a 'data' column being null for some old pieces of content.
@@ -306,7 +312,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             }
             ByteString bytes = ByteString.copyFrom(row.getBytes(DATA_KEY));
             ContentProtos.Content buffer = ContentProtos.Content.parseFrom(bytes);
-            Content content = contentSerializer.deserialize(buffer);
+            Content content = contentSerializer.deserialize(buffer, annotations);
             if (content instanceof Item) {
                 Item item = (Item) content;
                 for (SegmentEvent segmentEvent : item.getSegmentEvents()) {
