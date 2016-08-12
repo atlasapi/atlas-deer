@@ -19,12 +19,12 @@ import org.atlasapi.neo4j.AbstractNeo4jIT;
 import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 public class ContentWriterIT extends AbstractNeo4jIT {
@@ -140,17 +140,13 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         writeContent(getContent(new Song(), 0L, Publisher.METABROADCAST));
     }
 
-    // TODO Deal with null values human
-    @Ignore("Deal with null values")
     @Test
-    public void writeEpisode() throws Exception {
+    public void writeEpisodeWithNoEpisodeNumber() throws Exception {
         Episode episode = getContent(new Episode(), 0L, Publisher.METABROADCAST);
 
-        Record record = writeContent(
-                episode, "episodeNumber"
-        );
+        Record record = writeEpisode(episode);
 
-        assertThat(record.get("episodeNumber").asInt(), is(episode.getEpisodeNumber()));
+        assertThat(record.get("episodeNumber").asObject(), is(nullValue()));
     }
 
     @Test
@@ -158,9 +154,7 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         Episode episode = getContent(new Episode(), 0L, Publisher.METABROADCAST);
         episode.setEpisodeNumber(5);
 
-        Record record = writeContent(
-                episode, "episodeNumber"
-        );
+        Record record = writeEpisode(episode);
 
         assertThat(record.get("episodeNumber").asInt(), is(episode.getEpisodeNumber()));
     }
@@ -170,9 +164,7 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         Episode episode = getContent(new Episode(), 0L, Publisher.METABROADCAST);
         episode.setEpisodeNumber(2);
 
-        writeContent(
-                episode, "episodeNumber"
-        );
+        writeEpisode(episode);
 
         Record updatedRecord = writeContent(
                 getContent(new Item(), 0L, Publisher.METABROADCAST)
@@ -181,17 +173,13 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         assertThat(updatedRecord.containsKey("episodeNumber"), is(false));
     }
 
-    // TODO Deal with null values human
-    @Ignore("Deal with null values")
     @Test
-    public void writeSeries() throws Exception {
+    public void writeSeriesWithNoSeriesNumber() throws Exception {
         Series series = getContent(new Series(), 0L, Publisher.METABROADCAST);
 
-        Record record = writeContent(
-                series, "seriesNumber"
-        );
+        Record record = writeSeries(series);
 
-        assertThat(record.get("seriesNumber").asInt(), is(series.getSeriesNumber()));
+        assertThat(record.get("seriesNumber").asObject(), is(nullValue()));
     }
 
     @Test
@@ -199,9 +187,7 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         Series series = getContent(new Series(), 0L, Publisher.METABROADCAST);
         series.withSeriesNumber(2);
 
-        Record record = writeContent(
-                series, "seriesNumber"
-        );
+        Record record = writeSeries(series);
 
         assertThat(record.get("seriesNumber").asInt(), is(series.getSeriesNumber()));
     }
@@ -211,9 +197,7 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         Series series = getContent(new Series(), 0L, Publisher.METABROADCAST);
         series.withSeriesNumber(2);
 
-        writeContent(
-                series, "seriesNumber"
-        );
+        writeSeries(series);
 
         Record updatedRecord = writeContent(
                 getContent(new Item(), 0L, Publisher.METABROADCAST)
@@ -222,9 +206,22 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         assertThat(updatedRecord.containsKey("seriesNumber"), is(false));
     }
 
-    private Record writeContent(Content content, String... customFields) {
+    private Record writeContent(Content content) {
         contentWriter.writeContent(content, session);
+        return getWrittenRecord(content);
+    }
 
+    private Record writeSeries(Series series) {
+        contentWriter.writeSeries(series, session);
+        return getWrittenRecord(series, "seriesNumber");
+    }
+
+    private Record writeEpisode(Episode episode) {
+        contentWriter.writeEpisode(episode, session);
+        return getWrittenRecord(episode, "episodeNumber");
+    }
+
+    private Record getWrittenRecord(Content content, String... customFields) {
         String customFieldsReturn = "";
         if (customFields.length > 0) {
             customFieldsReturn += ", ";

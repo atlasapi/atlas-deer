@@ -81,17 +81,17 @@ public class HierarchyWriter extends Neo4jWriter {
         removeChildren(contentRef, runner);
     }
 
-    public void write(Brand brand, StatementRunner runner) {
+    public void writeBrand(Brand brand, StatementRunner runner) {
         writeNoHierarchy(brand, runner);
         writeBrandHierarchy(brand, runner);
     }
 
-    public void write(Series series, StatementRunner runner) {
+    public void writeSeries(Series series, StatementRunner runner) {
         writeNoHierarchy(series, runner);
         writeSeriesHierarchy(series, runner);
     }
 
-    public void write(Episode episode, StatementRunner runner) {
+    public void writeEpisode(Episode episode, StatementRunner runner) {
         writeNoHierarchy(episode, runner);
         writeEpisodeHierarchy(episode, runner);
     }

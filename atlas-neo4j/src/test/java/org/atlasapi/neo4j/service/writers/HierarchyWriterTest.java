@@ -53,7 +53,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
                 episodeB.toRef()
         ));
 
-        hierarchyWriter.write(brand, session);
+        hierarchyWriter.writeBrand(brand, session);
 
         checkChildren(brand, Series.class, ImmutableList.of(series));
         checkChildren(brand, Episode.class, ImmutableList.of(episodeA, episodeB));
@@ -65,7 +65,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         contentWriter.writeContentRef(brand.toRef(), session);
 
-        hierarchyWriter.write(brand, session);
+        hierarchyWriter.writeBrand(brand, session);
 
         checkChildren(brand, Series.class, ImmutableList.of());
         checkChildren(brand, Episode.class, ImmutableList.of());
@@ -86,12 +86,12 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
                 episodeB.toRef()
         ));
 
-        hierarchyWriter.write(brand, session);
+        hierarchyWriter.writeBrand(brand, session);
 
         brand.setSeriesRefs(ImmutableList.of());
         brand.setItemRefs(ImmutableList.of(episodeA.toRef()));
 
-        hierarchyWriter.write(brand, session);
+        hierarchyWriter.writeBrand(brand, session);
 
         checkChildren(brand, Series.class, ImmutableList.of());
         checkChildren(brand, Episode.class, ImmutableList.of(episodeA));
@@ -112,12 +112,12 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
                 episodeB.toRef()
         ));
 
-        hierarchyWriter.write(brand, session);
+        hierarchyWriter.writeBrand(brand, session);
 
         brand.setSeriesRefs(ImmutableList.of());
         brand.setItemRefs(ImmutableList.of());
 
-        hierarchyWriter.write(brand, session);
+        hierarchyWriter.writeBrand(brand, session);
 
         checkChildren(brand, Series.class, ImmutableList.of());
         checkChildren(brand, Episode.class, ImmutableList.of());
@@ -136,15 +136,15 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
         contentWriter.writeContentRef(episode.toRef(), session);
 
         series.setBrand(oldParent);
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         episode.setContainer(oldParent);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         brand.setSeriesRefs(ImmutableList.of(series.toRef()));
         brand.setItemRefs(ImmutableList.of(episode.toRef()));
 
-        hierarchyWriter.write(brand, session);
+        hierarchyWriter.writeBrand(brand, session);
 
         checkParent(series, brand);
         checkParent(episode, brand);
@@ -165,7 +165,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
                 episodeB.toRef()
         ));
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         checkParent(series, brand);
         checkChildren(series, Episode.class, ImmutableList.of(episodeA, episodeB));
@@ -179,7 +179,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         series.setItemRefs(ImmutableList.of());
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         checkNoParent(series);
         checkChildren(series, Episode.class, ImmutableList.of());
@@ -200,12 +200,12 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
                 episodeB.toRef()
         ));
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         series.setBrandRef(null);
         series.setItemRefs(ImmutableList.of(episodeA.toRef()));
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         checkNoParent(series);
         checkChildren(series, Episode.class, ImmutableList.of(episodeA));
@@ -226,12 +226,12 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
                 episodeB.toRef()
         ));
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         series.setBrandRef(null);
         series.setItemRefs(ImmutableList.of());
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         checkNoParent(series);
         checkChildren(series, Episode.class, ImmutableList.of());
@@ -250,15 +250,15 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
         contentWriter.writeContentRef(episode.toRef(), session);
 
         series.setBrand(oldSeriesBrand);
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         episode.setContainer(oldEpisodeSeries);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         series.setBrand(brand);
         series.setItemRefs(ImmutableList.of(episode.toRef()));
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         checkParent(series, brand);
         checkParent(episode, series);
@@ -273,7 +273,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         episode.setContainer(brand);
 
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkParent(episode, brand);
     }
@@ -287,7 +287,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         episode.setContainer(series);
 
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkParent(episode, series);
     }
@@ -298,7 +298,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         contentWriter.writeContentRef(episode.toRef(), session);
 
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkNoParent(episode);
     }
@@ -312,11 +312,11 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         episode.setContainer(series);
 
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         episode.setContainerRef(null);
 
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkNoParent(episode);
     }
@@ -330,10 +330,10 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
         contentWriter.writeContentRef(episode.toRef(), session);
 
         episode.setContainerRef(oldParent.toRef());
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         episode.setContainerRef(newParent.toRef());
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkParent(episode, newParent);
     }
@@ -349,7 +349,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
         episode.setContainer(brand);
         episode.setSeries(series);
 
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkParent(episode, brand);
         checkParent(episode, series);
@@ -367,10 +367,10 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         episode.setContainer(oldBrand);
         episode.setSeries(series);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         episode.setContainer(newBrand);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkParent(episode, newBrand);
         checkParent(episode, series);
@@ -386,10 +386,10 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         episode.setContainer(oldBrand);
         episode.setSeries(series);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         episode.setContainerRef(null);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkNoParent(episode, Brand.class);
         checkParent(episode, series);
@@ -407,10 +407,10 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         episode.setContainer(brand);
         episode.setSeries(oldSeries);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         episode.setSeries(newSeries);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkParent(episode, brand);
         checkParent(episode, newSeries);
@@ -426,10 +426,10 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
 
         episode.setContainer(brand);
         episode.setSeries(oldSeries);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         episode.setSeriesRef(null);
-        hierarchyWriter.write(episode, session);
+        hierarchyWriter.writeEpisode(episode, session);
 
         checkParent(episode, brand);
         checkNoParent(episode, Series.class);
@@ -446,7 +446,7 @@ public class HierarchyWriterTest extends AbstractNeo4jIT {
         series.setBrand(brand);
         series.setItemRefs(ImmutableList.of(episode.toRef()));
 
-        hierarchyWriter.write(series, session);
+        hierarchyWriter.writeSeries(series, session);
 
         hierarchyWriter.writeNoHierarchy(series, session);
 
