@@ -56,6 +56,7 @@ public class ContentDescriptionAnnotation extends DescriptionAnnotation<Content>
             public Void visit(Series series) {
                 writeField("series_number", series.getSeriesNumber());
                 writeField("total_episodes", series.getTotalEpisodes());
+                writeField("year", series.getYear());
                 return null;
             }
 
