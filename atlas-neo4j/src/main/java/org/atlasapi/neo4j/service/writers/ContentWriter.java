@@ -1,16 +1,10 @@
 package org.atlasapi.neo4j.service.writers;
 
-import org.atlasapi.content.Brand;
-import org.atlasapi.content.Clip;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentType;
-import org.atlasapi.content.ContentVisitor;
 import org.atlasapi.content.Episode;
-import org.atlasapi.content.Film;
-import org.atlasapi.content.Item;
 import org.atlasapi.content.Series;
-import org.atlasapi.content.Song;
 import org.atlasapi.entity.ResourceRef;
 
 import com.google.common.collect.ImmutableMap;
@@ -95,86 +89,59 @@ public class ContentWriter extends Neo4jWriter {
         );
     }
 
-    // TODO Move visitor to the service
+    public void writeSeries(Series series, StatementRunner runner) {
+        ImmutableMap<String, Object> commonParameters = getCommonParameters(series);
+
+        if (series.getSeriesNumber() != null) {
+            write(
+                    writeSeriesStatement.withParameters(ImmutableMap.<String, Object>builder()
+                            .putAll(commonParameters)
+                            .put(CONTENT_SERIES_NUMBER, series.getSeriesNumber())
+                            .build()),
+                    runner
+            );
+        } else {
+            write(
+                    writeContentStatement.withParameters(commonParameters),
+                    runner
+            );
+        }
+    }
+
+    public void writeEpisode(Episode episode, StatementRunner runner) {
+        ImmutableMap<String, Object> commonParameters = getCommonParameters(episode);
+
+        if (episode.getEpisodeNumber() != null) {
+            write(
+                    writeEpisodeStatement.withParameters(
+                            ImmutableMap.<String, Object>builder()
+                                    .putAll(commonParameters)
+                                    .put(CONTENT_EPISODE_NUMBER, episode.getEpisodeNumber())
+                                    .build()
+                    ),
+                    runner
+            );
+        } else {
+            write(
+                    writeContentStatement.withParameters(commonParameters),
+                    runner
+            );
+        }
+    }
+
     public void writeContent(Content content, StatementRunner runner) {
-        ImmutableMap<String, Object> statementParameters = ImmutableMap.of(
-                CONTENT_ID, content.getId().longValue(),
-                CONTENT_SOURCE, content.getSource().key(),
-                CONTENT_TYPE, ContentType.fromContent(content).get().getKey()
+        ImmutableMap<String, Object> commonParameters = getCommonParameters(content);
+        write(
+                writeContentStatement.withParameters(commonParameters),
+                runner
         );
+    }
 
-        content.accept(new ContentVisitor<Void>() {
-
-            @Override
-            public Void visit(Brand brand) {
-                write(
-                        writeContentStatement.withParameters(statementParameters),
-                        runner
-                );
-                return null;
-            }
-
-            @Override
-            public Void visit(Series series) {
-                write(
-                        writeSeriesStatement.withParameters(ImmutableMap.<String, Object>builder()
-                                .putAll(statementParameters)
-                                .put(CONTENT_SERIES_NUMBER, series.getSeriesNumber())
-                                .build()),
-                        runner
-                );
-                return null;
-            }
-
-            @Override
-            public Void visit(Episode episode) {
-                write(
-                        writeEpisodeStatement.withParameters(
-                                ImmutableMap.<String, Object>builder()
-                                        .putAll(statementParameters)
-                                        .put(CONTENT_EPISODE_NUMBER, episode.getEpisodeNumber())
-                                        .build()
-                        ),
-                        runner
-                );
-                return null;
-            }
-
-            @Override
-            public Void visit(Film film) {
-                write(
-                        writeContentStatement.withParameters(statementParameters),
-                        runner
-                );
-                return null;
-            }
-
-            @Override
-            public Void visit(Song song) {
-                write(
-                        writeContentStatement.withParameters(statementParameters),
-                        runner
-                );
-                return null;
-            }
-
-            @Override
-            public Void visit(Item item) {
-                write(
-                        writeContentStatement.withParameters(statementParameters),
-                        runner
-                );
-                return null;
-            }
-
-            @Override
-            public Void visit(Clip clip) {
-                write(
-                        writeContentStatement.withParameters(statementParameters),
-                        runner
-                );
-                return null;
-            }
-        });
+    private ImmutableMap<String, Object> getCommonParameters(Content content) {
+        return ImmutableMap.of(
+                    CONTENT_ID, content.getId().longValue(),
+                    CONTENT_SOURCE, content.getSource().key(),
+                    CONTENT_TYPE, ContentType.fromContent(content).get().getKey()
+            );
     }
 }
