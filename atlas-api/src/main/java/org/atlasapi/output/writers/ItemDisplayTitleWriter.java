@@ -75,7 +75,7 @@ public final class ItemDisplayTitleWriter implements EntityWriter<Item> {
         if (episodeNumber != null) {
             return String.format("Episode %s", episodeNumber);
         }
-        if (!item.getBroadcasts().isEmpty()) {
+        if (item.getBroadcasts() !=null && !item.getBroadcasts().isEmpty()) {
             return firstBroadcast(item).getTransmissionTime().toString("dd/MM/yyyy");
         }
         return null;
