@@ -26,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ContentBootstrapWorker.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentBootstrapWorker.class);
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
@@ -63,27 +63,35 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
         Id contentId = message.getUpdatedResource().getId();
-        LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
+        log.debug("Processing message on id {}, took: PT{}S, message: {}",
                 contentId, getTimeToProcessInSeconds(message), message);
+        try {
+            process(contentId);
+        } catch (Exception e) {
+            log.error("Failed to bootstrap content {}", message.getUpdatedResource(), e);
+            failureMeter.mark();
+            throw Throwables.propagate(e);
+        }
+    }
 
+    private void process(Id contentId) throws org.atlasapi.entity.util.WriteException {
         Timer.Context time = metricsTimer.time();
         Resolved<Content> content = resolveContent(contentId);
 
-        try {
-            WriteResult<Content, Content> result =
-                    writer.writeContent(content.getResources().first().get());
+        if (content.getResources().isEmpty()) {
+            log.error("Failed to resolve content {}", contentId);
+            throw new IllegalArgumentException("Failed to resolve content " + contentId);
+        }
 
-            if (result.written()) {
-                LOG.debug("Bootstrapped content {}", result.toString());
-                time.stop();
-            } else {
-                LOG.debug("Content has not been written: {}", result.toString());
-                contentNotWrittenMeter.mark();
-            }
-        } catch (Exception e) {
-            LOG.error("Failed to bootstrap content {}", message.getUpdatedResource(), e);
-            failureMeter.mark();
-            throw Throwables.propagate(e);
+        WriteResult<Content, Content> result =
+                writer.writeContent(content.getResources().first().get());
+
+        if (result.written()) {
+            log.debug("Bootstrapped content {}", result.toString());
+            time.stop();
+        } else {
+            log.debug("Content has not been written: {}", result.toString());
+            contentNotWrittenMeter.mark();
         }
     }
 
