@@ -649,12 +649,14 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         for (Container equiv : contentHierarchySourceOrderedContainers) {
-            for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary
-                    : equiv.getAvailableContent().entrySet()) {
-                availableContent.putIfAbsent(
-                        itemRefAndLocationSummary.getKey(),
-                        itemRefAndLocationSummary.getValue()
-                );
+            if (equiv.getAvailableContent() != null) {
+                for (Map.Entry<ItemRef, Iterable<LocationSummary>> itemRefAndLocationSummary
+                        : equiv.getAvailableContent().entrySet()) {
+                    availableContent.putIfAbsent(
+                            itemRefAndLocationSummary.getKey(),
+                            itemRefAndLocationSummary.getValue()
+                    );
+                }
             }
         }
 
