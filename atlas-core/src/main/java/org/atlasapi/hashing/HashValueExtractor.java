@@ -4,31 +4,47 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
 
-import org.atlasapi.application.v3.SourceStatus;
-
-import com.metabroadcast.common.currency.Price;
-import com.metabroadcast.common.intl.Country;
+import org.atlasapi.hashing.extractors.CountryExtractor;
+import org.atlasapi.hashing.extractors.EnumExtractor;
+import org.atlasapi.hashing.extractors.Extractor;
+import org.atlasapi.hashing.extractors.LocaleExtractor;
+import org.atlasapi.hashing.extractors.NativeExtractor;
+import org.atlasapi.hashing.extractors.PriceExtractor;
+import org.atlasapi.hashing.extractors.SourceStatusExtractor;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This class is responsible for taking an instance of {@link Hashable}, serialising it into a
+ * string that can be used to generate a hash value representing the {@link Hashable}. This class
+ * will traverse all fields in the {@link Hashable} and all their fields recursively as long as
+ * finds data types that it knows how to deal with.
+ * <p>
+ * This code uses reflection to attempt to serialise different types in a generic fashion. The
+ * list of types it supports is not exhaustive however and it is intended that this code should be
+ * updated with support for new types as they are needed.
+ * <p>
+ * This code is fail-fast and will conservatively return absent if it finds a data type it does
+ * not explicitly know how to handle. This is to avoid accidentally missing data and returning
+ * a partial serialisation that does not fully represent the {@link Hashable}'s state.
+ * <p>
+ * The generated serialised value is designed to be human readable. This behaviour is only
+ * intended to facilitate easier debugging in case of issues and should not be relied upon as
+ * guaranteed.
+ */
 public class HashValueExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(HashValueExtractor.class);
@@ -40,26 +56,18 @@ public class HashValueExtractor {
     private static final String MAP_DELIMITER = "/";
     private static final String CLASS_TYPE_VALUE_FORMAT_STRING = "%s: { %s }";
 
-    // These are the classes from which a valid hash value can be extracted by just
-    // calling <code>#toString()</code>
-    private final ImmutableList<Class<?>> nativelySupportedTypes = ImmutableList.<Class<?>>builder()
-            .add(Boolean.class)
-            .add(Byte.class)
-            .add(Character.class)
-            .add(Short.class)
-            .add(Integer.class)
-            .add(Long.class)
-            .add(Float.class)
-            .add(Double.class)
-            .add(String.class)
-            .add(Interval.class)
-            .add(Duration.class)
-            .add(LocalDate.class)
-            .add(LocalTime.class)
-            .add(DateTime.class)
-            .build();
+    private final ImmutableList<Extractor> extractors;
 
-    private HashValueExtractor() { }
+    private HashValueExtractor() {
+        extractors = ImmutableList.<Extractor>builder()
+                .add(NativeExtractor.create())
+                .add(EnumExtractor.create())
+                .add(CountryExtractor.create())
+                .add(PriceExtractor.create())
+                .add(LocaleExtractor.create())
+                .add(SourceStatusExtractor.create())
+                .build();
+    }
 
     public static HashValueExtractor create() {
         return new HashValueExtractor();
@@ -80,7 +88,7 @@ public class HashValueExtractor {
         if (object == null) {
             return "";
         }
-        return getValueToHashFromObject(object);
+        return extractValue(object);
     }
 
     private String wrapValueWithTypeInformation(Object object, String valueToHash) {
@@ -91,7 +99,7 @@ public class HashValueExtractor {
         );
     }
 
-    private String getValueToHashFromFields(Object fieldContainingObject) {
+    private String extractValueFromFields(Object fieldContainingObject) {
         // We are using Java reflection APIs directly rather than via Apache BeanUtils because
         // we need to access private fields as well which is out of scope for that lib
         return getFields(fieldContainingObject)
@@ -100,7 +108,7 @@ public class HashValueExtractor {
                 .filter(field -> !field.isAnnotationPresent(ExcludeFromHash.class))
                 .map(field -> getFieldObject(field, fieldContainingObject))
                 .filter(Objects::nonNull)
-                .map(this::getValueToHashFromObject)
+                .map(this::extractValue)
                 .collect(Collectors.joining(FIELD_DELIMITER));
     }
 
@@ -120,92 +128,38 @@ public class HashValueExtractor {
         return fieldsBuilder.build();
     }
 
-    private String getValueToHashFromObject(Object object) {
-        Optional<String> extractedValue;
+    private String extractValue(Object object) {
+        // Try to obtain a value from self-contained (non-recursive) extractors
+        Optional<String> extractedValueOptional = extractors.stream()
+                .map(extractor -> extractor.extractValue(object))
+                .flatMap(value -> value.isPresent() ? Stream.of(value.get()) : Stream.empty())
+                .findFirst();
 
-        if (object instanceof Hashable) {
-            extractedValue = Optional.of(getValueToHashFromFields(object));
-        } else if (object.getClass().isPrimitive() ||
-                nativelySupportedTypes.contains(object.getClass())) {
-            extractedValue = Optional.of(object.toString());
-        } else if (object instanceof Enum) {
-            extractedValue = Optional.of(((Enum) object).name().toLowerCase());
-        } else if (object instanceof Iterable) {
-            extractedValue = Optional.of(NESTED_HASHABLE_START
-                    + StreamSupport.stream(((Iterable<?>) object).spliterator(), false)
-                    .map(this::getValueToHashInternal)
-                    .collect(Collectors.joining(ITERABLE_DELIMITER))
-                    + NESTED_HASHABLE_END
-            );
-        } else if (object instanceof Map) {
-            extractedValue = Optional.of(NESTED_HASHABLE_START
-                    + ((Map<?,?>) object).entrySet().stream()
-                    .map(entry -> getValueToHashFromObject(entry.getKey())
-                            + MAP_DELIMITER
-                            + getValueToHashInternal(entry.getValue()))
-                    .collect(Collectors.joining(ITERABLE_DELIMITER))
-                    + NESTED_HASHABLE_END
-            );
-        } else if (object.getClass().isArray()) {
-            List<Object> values = Lists.newArrayList();
-
-            int length = Array.getLength(object);
-            for (int i = 0; i < length; i ++) {
-                values.add(Array.get(object, i));
-            }
-
-            extractedValue = Optional.of(NESTED_HASHABLE_START
-                    + values.stream()
-                    .map(this::getValueToHashInternal)
-                    .collect(Collectors.joining(ITERABLE_DELIMITER))
-                    + NESTED_HASHABLE_END
-            );
-        } else {
-            extractedValue = getValueUsingCustomExtractor(object);
+        if (extractedValueOptional.isPresent()) {
+            return wrapValueWithTypeInformation(object, extractedValueOptional.get());
         }
 
-        if (!extractedValue.isPresent()) {
+        String extractedValue;
+
+        // Try to obtain a value from extractors that recursively call methods in this class
+        if (object instanceof Hashable) {
+            extractedValue = extractValueFromFields(object);
+        } else if (object instanceof Iterable) {
+            extractedValue = getIterableValue((Iterable<?>) object);
+        } else if (object instanceof Map) {
+            extractedValue = getMapValue((Map<?, ?>) object);
+        } else if (object.getClass().isArray()) {
+            extractedValue = getArrayValue(object);
+        } else if (object instanceof com.google.common.base.Optional) {
+            extractedValue = getGuavaOptionalValue((com.google.common.base.Optional<?>) object);
+        } else if (object instanceof Optional) {
+            extractedValue = getOptionalValue((Optional<?>) object);
+        } else {
             throw new IllegalArgumentException("Failed to extract value from field of type "
                     + object.getClass().getCanonicalName());
         }
-        return wrapValueWithTypeInformation(object, extractedValue.get());
-    }
 
-    private Optional<String> getValueUsingCustomExtractor(Object object) {
-        String extractedValue;
-
-        if (object instanceof com.google.common.base.Optional) {
-            com.google.common.base.Optional optionalObject =
-                    (com.google.common.base.Optional) object;
-            if (optionalObject.isPresent()) {
-                extractedValue = getValueToHashInternal(optionalObject.get());
-            } else {
-                extractedValue = "";
-            }
-        } else if (object instanceof Optional) {
-            Optional optionalObject = (Optional) object;
-            if (optionalObject.isPresent()) {
-                extractedValue = getValueToHashInternal(optionalObject.get());
-            } else {
-                extractedValue = "";
-            }
-        } else if (object instanceof Country) {
-            Country country = (Country) object;
-            extractedValue = country.getName() + country.code();
-        } else if (object instanceof Price) {
-            Price price = (Price) object;
-            extractedValue = price.getAmount() + price.getCurrency().getCurrencyCode();
-        } else if (object instanceof Locale) {
-            Locale locale = (Locale) object;
-            extractedValue = locale.getLanguage();
-        } else if (object instanceof SourceStatus) {
-            SourceStatus sourceStatus = (SourceStatus) object;
-            extractedValue = sourceStatus.getState().name() + sourceStatus.isEnabled();
-        } else {
-            return Optional.empty();
-        }
-
-        return Optional.of(extractedValue);
+        return wrapValueWithTypeInformation(object, extractedValue);
     }
 
     @Nullable
@@ -221,6 +175,56 @@ public class HashValueExtractor {
             // We have already called setAccessible before this. If a SecurityException was
             // going to be thrown it would have been thrown before we get here.
             field.setAccessible(false);
+        }
+    }
+
+    private String getIterableValue(Iterable<?> object) {
+        return NESTED_HASHABLE_START
+                + StreamSupport.stream(object.spliterator(), false)
+                .map(this::getValueToHashInternal)
+                .collect(Collectors.joining(ITERABLE_DELIMITER))
+                + NESTED_HASHABLE_END;
+    }
+
+    private String getMapValue(Map<?, ?> object) {
+        return NESTED_HASHABLE_START
+                + object.entrySet().stream()
+                .map(entry -> extractValue(entry.getKey())
+                        + MAP_DELIMITER
+                        + getValueToHashInternal(entry.getValue()))
+                .collect(Collectors.joining(ITERABLE_DELIMITER))
+                + NESTED_HASHABLE_END;
+    }
+
+    private String getArrayValue(Object object) {
+        List<Object> values = Lists.newArrayList();
+
+        int length = Array.getLength(object);
+        for (int i = 0; i < length; i ++) {
+            values.add(Array.get(object, i));
+        }
+
+        return NESTED_HASHABLE_START
+                + values.stream()
+                .map(this::getValueToHashInternal)
+                .collect(Collectors.joining(ITERABLE_DELIMITER))
+                + NESTED_HASHABLE_END;
+    }
+
+    @SuppressWarnings("Guava")
+    private String getGuavaOptionalValue(com.google.common.base.Optional<?> object) {
+        if (object.isPresent()) {
+            return getValueToHashInternal(object.get());
+        } else {
+            return "";
+        }
+    }
+
+    private String getOptionalValue(Optional<?> object) {
+        if (object.isPresent()) {
+            return getValueToHashInternal(object.get());
+        } else {
+            return "";
         }
     }
 }
