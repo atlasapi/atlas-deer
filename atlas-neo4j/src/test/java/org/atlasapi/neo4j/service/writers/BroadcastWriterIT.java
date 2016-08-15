@@ -18,7 +18,7 @@ import org.neo4j.driver.v1.StatementResult;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-public class BroadcastWriterTest extends AbstractNeo4jIT {
+public class BroadcastWriterIT extends AbstractNeo4jIT {
 
     private ContentWriter contentWriter;
     private BroadcastWriter broadcastWriter;
