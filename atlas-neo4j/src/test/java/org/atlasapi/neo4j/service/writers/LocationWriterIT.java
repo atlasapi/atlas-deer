@@ -22,7 +22,7 @@ import org.neo4j.driver.v1.StatementResult;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-public class LocationWriterTest extends AbstractNeo4jIT {
+public class LocationWriterIT extends AbstractNeo4jIT {
 
     private ContentWriter contentWriter;
     private LocationWriter locationWriter;

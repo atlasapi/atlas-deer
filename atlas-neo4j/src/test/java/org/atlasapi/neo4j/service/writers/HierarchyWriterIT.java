@@ -25,7 +25,7 @@ import org.neo4j.driver.v1.StatementResult;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-public class HierarchyWriterTest extends AbstractNeo4jIT {
+public class HierarchyWriterIT extends AbstractNeo4jIT {
 
     private ContentWriter contentWriter;
     private HierarchyWriter hierarchyWriter;
