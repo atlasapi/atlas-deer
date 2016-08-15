@@ -20,10 +20,10 @@ import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_SOURCE;
 
 public class EquivalenceWriter extends Neo4jWriter {
 
-    private static final String SOURCE_ID = "sourceId";
-    private static final String TARGET_ID = "targetId";
-    private static final String ASSERTED_IDS = "assertedIds";
-    private static final String SOURCES = "sources";
+    private static final String SOURCE_ID_PARAM = "sourceId";
+    private static final String TARGET_ID_PARAM = "targetId";
+    private static final String ASSERTED_IDS_PARAM = "assertedIds";
+    private static final String SOURCES_PARAM = "sources";
 
     private final Statement writeEdgeStatement;
     private final Statement removeNotAssertedEdgesStatement;
@@ -31,16 +31,16 @@ public class EquivalenceWriter extends Neo4jWriter {
     private EquivalenceWriter() {
         writeEdgeStatement = new Statement(""
                 + "MATCH "
-                + "(sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID) + " }), "
-                + "(targetNode { " + CONTENT_ID + ": " + parameter(TARGET_ID) + " }) "
+                + "(sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID_PARAM) + " }), "
+                + "(targetNode { " + CONTENT_ID + ": " + parameter(TARGET_ID_PARAM) + " }) "
                 + "MERGE (sourceNode)-[r:IS_EQUIVALENT]->(targetNode)");
 
         removeNotAssertedEdgesStatement = new Statement(""
-                + "MATCH (sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID) + " })"
+                + "MATCH (sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID_PARAM) + " })"
                 + "-[r:IS_EQUIVALENT]->(targetNode) "
                 + "WHERE "
-                + "NOT targetNode." + CONTENT_ID + " IN " + parameter(ASSERTED_IDS) + " "
-                + "AND targetNode." + CONTENT_SOURCE + " IN " + parameter(SOURCES) + " "
+                + "NOT targetNode." + CONTENT_ID + " IN " + parameter(ASSERTED_IDS_PARAM) + " "
+                + "AND targetNode." + CONTENT_SOURCE + " IN " + parameter(SOURCES_PARAM) + " "
                 + "DELETE r");
     }
 
@@ -96,8 +96,8 @@ public class EquivalenceWriter extends Neo4jWriter {
 
     private void writeEdge(Long sourceNodeId, Long targetNodeId, StatementRunner runner) {
         ImmutableMap<String, Object> statementParameters = ImmutableMap.of(
-                SOURCE_ID, sourceNodeId,
-                TARGET_ID, targetNodeId
+                SOURCE_ID_PARAM, sourceNodeId,
+                TARGET_ID_PARAM, targetNodeId
         );
 
         write(writeEdgeStatement.withParameters(statementParameters), runner);
@@ -106,9 +106,9 @@ public class EquivalenceWriter extends Neo4jWriter {
     private void removeNotAssertedEdges(Long sourceNodeId, ImmutableSet<Long> assertedAdjacentIds,
             Iterable<String> sources, StatementRunner runner) {
         ImmutableMap<String, Object> statementParameters = ImmutableMap.of(
-                SOURCE_ID, sourceNodeId,
-                ASSERTED_IDS, assertedAdjacentIds,
-                SOURCES, sources
+                SOURCE_ID_PARAM, sourceNodeId,
+                ASSERTED_IDS_PARAM, assertedAdjacentIds,
+                SOURCES_PARAM, sources
         );
 
         write(removeNotAssertedEdgesStatement.withParameters(statementParameters), runner);

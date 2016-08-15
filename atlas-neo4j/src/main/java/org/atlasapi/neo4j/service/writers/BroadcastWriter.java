@@ -6,13 +6,12 @@ import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
+import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.CHANNEL_ID;
+import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.END_DATE_TIME;
+import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.START_DATE_TIME;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 
 public class BroadcastWriter extends Neo4jWriter {
-
-    private static final String CHANNEL_ID = "channelId";
-    private static final String START_DATE_TIME = "startDateTime";
-    private static final String END_DATE_TIME = "endDateTime";
 
     private final Statement removeAllBroadcastsStatement;
     private final Statement addBroadcastStatement;

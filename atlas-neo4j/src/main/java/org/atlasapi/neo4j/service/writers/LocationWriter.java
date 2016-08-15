@@ -15,6 +15,8 @@ import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
+import static org.atlasapi.neo4j.service.model.Neo4jLocation.END_DATE_TIME;
+import static org.atlasapi.neo4j.service.model.Neo4jLocation.START_DATE_TIME;
 
 public class LocationWriter extends Neo4jWriter {
 
@@ -22,9 +24,6 @@ public class LocationWriter extends Neo4jWriter {
             new DateTime(1900, 1, 1, 0, 0, DateTimeZone.UTC);
     public static final DateTime AVAILABLE_UNTIL_FOREVER =
             new DateTime(3000, 1, 1, 0, 0, DateTimeZone.UTC);
-
-    private static final String START_DATE_TIME = "startDateTime";
-    private static final String END_DATE_TIME = "endDateTime";
 
     private final Statement removeAllLocationsStatement;
     private final Statement addLocationStatement;
