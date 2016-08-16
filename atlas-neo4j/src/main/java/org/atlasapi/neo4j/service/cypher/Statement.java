@@ -1,28 +1,21 @@
 package org.atlasapi.neo4j.service.cypher;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Statement {
 
-    private final List<Clause> clauses;
+    private final ImmutableList<Clause> clauses;
 
-    private Statement() {
-        this.clauses = Lists.newArrayList();
+    private Statement(Clause... clauses) {
+        this.clauses = ImmutableList.copyOf(clauses);
     }
 
-    public static Statement statement() {
-        return new Statement();
-    }
-
-    public Statement clause(Clause clause) {
-        this.clauses.add(checkNotNull(clause));
-        return this;
+    public static Statement statement(Clause... clauses) {
+        return new Statement(clauses);
     }
 
     public String build() {

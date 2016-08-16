@@ -26,15 +26,12 @@ public class StatementTest {
 
     @Test
     public void deleteStatement() throws Exception {
-        String statement = statement()
-                .clause(
-                        match(pattern(
-                                node().name("a")
-                        ))
-                )
-                .clause(
-                        delete("a")
-                )
+        String statement = statement(
+                match(pattern(
+                        node().name("a")
+                )),
+                delete("a")
+        )
                 .build();
 
         assertThat(statement, is("MATCH (a) DELETE a"));
