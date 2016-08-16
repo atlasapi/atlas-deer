@@ -19,6 +19,7 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
+import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
@@ -368,13 +369,33 @@ public class CqlContentStore implements ContentStore {
 
         if (content instanceof Item) {
             Item item = (Item) content;
+
             ContainerRef containerRef = item.getContainerRef();
+            ItemRef ref = item.toRef();
+            ItemSummary summary = item.toSummary();
+
+            SeriesRef seriesRef = null;
+
+            if (content instanceof Episode) {
+                Episode episode = (Episode) content;
+                seriesRef = episode.getSeriesRef();
+            }
+
+            org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
+            org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
+
             if (containerRef != null) {
                 result.add(accessor.addItemRefsToContainer(
                         containerRef.getId().longValue(),
-                        ImmutableSet.of(itemRefTranslator.serialize(item.toRef())),
-                        ImmutableSet.of(itemSummaryTranslator.serialize(item.toSummary()))
+                        ImmutableSet.of(itemRef)
                 ));
+
+                if (seriesRef == null) {
+                    result.add(accessor.addItemSummariesToContainer(
+                            containerRef.getId().longValue(),
+                            ImmutableSet.of(itemSummary)
+                    ));
+                }
 
                 messages.add(new ResourceUpdatedMessage(
                         UUID.randomUUID().toString(),
@@ -382,16 +403,16 @@ public class CqlContentStore implements ContentStore {
                         containerRef
                 ));
             }
-        }
 
-        if (content instanceof Episode) {
-            Episode episode = (Episode) content;
-            SeriesRef seriesRef = episode.getSeriesRef();
             if (seriesRef != null) {
                 result.add(accessor.addItemRefsToContainer(
                         seriesRef.getId().longValue(),
-                        ImmutableSet.of(itemRefTranslator.serialize(episode.toRef())),
-                        ImmutableSet.of(itemSummaryTranslator.serialize(episode.toSummary()))
+                        ImmutableSet.of(itemRef)
+                ));
+
+                result.add(accessor.addItemSummariesToContainer(
+                        seriesRef.getId().longValue(),
+                        ImmutableSet.of(itemSummary)
                 ));
 
                 messages.add(new ResourceUpdatedMessage(
@@ -400,7 +421,6 @@ public class CqlContentStore implements ContentStore {
                         seriesRef
                 ));
             }
-
         }
 
         return result;

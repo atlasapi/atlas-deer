@@ -1,4 +1,4 @@
-CREATE TABLE event_aliases_v2 (
+CREATE TABLE IF NOT EXISTS event_aliases_v2 (
   key text,
   column1 text,
   value bigint,
