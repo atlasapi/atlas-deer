@@ -24,10 +24,15 @@ public interface ContentAccessor {
     @Query("UPDATE content_v2 SET toclu = :now WHERE id = :id")
     Statement setLastUpdated(@Param("id") Long id, @Param("now") Instant now);
 
-    @Query("UPDATE content_v2 SET itr = itr + :refs, its = its + :summaries WHERE id = :id")
+    @Query("UPDATE content_v2 SET itr = itr + :refs WHERE id = :id")
     Statement addItemRefsToContainer(
             @Param("id") Long id,
-            @Param("refs") Set<ItemRef> itemRefs,
+            @Param("refs") Set<ItemRef> itemRefs
+    );
+
+    @Query("UPDATE content_v2 SET its = its + :summaries WHERE id = :id")
+    Statement addItemSummariesToContainer(
+            @Param("id") Long id,
             @Param("summaries") Set<ItemSummary> itemSummaries
     );
 
