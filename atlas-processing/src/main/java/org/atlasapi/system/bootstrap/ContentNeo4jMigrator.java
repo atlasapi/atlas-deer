@@ -8,7 +8,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.neo4j.service.ContentNeo4jStore;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -24,27 +24,27 @@ public class ContentNeo4jMigrator {
 
     private static final Logger log = LoggerFactory.getLogger(ContentNeo4jMigrator.class);
 
-    private final ContentNeo4jStore contentNeo4jStore;
+    private final Neo4jContentStore neo4JContentStore;
     private final ContentStore contentStore;
     private final EquivalenceGraphStore equivalenceGraphStore;
 
     private ContentNeo4jMigrator(
-            ContentNeo4jStore contentNeo4jStore,
+            Neo4jContentStore neo4JContentStore,
             ContentStore contentStore,
             EquivalenceGraphStore equivalenceGraphStore
     ) {
-        this.contentNeo4jStore = checkNotNull(contentNeo4jStore);
+        this.neo4JContentStore = checkNotNull(neo4JContentStore);
         this.contentStore = checkNotNull(contentStore);
         this.equivalenceGraphStore = checkNotNull(equivalenceGraphStore);
     }
 
     public static ContentNeo4jMigrator create(
-            ContentNeo4jStore contentNeo4jStore,
+            Neo4jContentStore neo4JContentStore,
             ContentStore contentStore,
             EquivalenceGraphStore equivalenceGraphStore
     ) {
         return new ContentNeo4jMigrator(
-                contentNeo4jStore, contentStore, equivalenceGraphStore
+                neo4JContentStore, contentStore, equivalenceGraphStore
         );
     }
 
@@ -67,7 +67,7 @@ public class ContentNeo4jMigrator {
     }
 
     private Result migrateInternal(Content content, boolean migrateEntireGraph) {
-        contentNeo4jStore.writeContent(content);
+        neo4JContentStore.writeContent(content);
 
         Optional<EquivalenceGraph> graphOptional = resolveEquivalenceGraph(content.getId());
 
@@ -94,7 +94,7 @@ public class ContentNeo4jMigrator {
     }
 
     private void migrateGraph(ResourceRef resourceRef, Sets.SetView<ResourceRef> adjacents) {
-        contentNeo4jStore.writeEquivalences(
+        neo4JContentStore.writeEquivalences(
                 resourceRef,
                 adjacents,
                 Publisher.all()

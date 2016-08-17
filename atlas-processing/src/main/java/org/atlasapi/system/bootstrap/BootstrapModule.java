@@ -106,7 +106,7 @@ public class BootstrapModule {
                 persistence.nullMessageSendingEquivalentContentStore(),
                 persistence.nullMessageSendingEquivalenceGraphStore(),
                 persistence.contentStore(),
-                persistence.contentNeo4jStore()
+                persistence.neo4jContentStore()
         );
     }
 

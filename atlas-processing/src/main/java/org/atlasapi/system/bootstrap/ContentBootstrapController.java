@@ -28,7 +28,7 @@ import org.atlasapi.entity.ResourceLister;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.neo4j.service.ContentNeo4jStore;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.ProgressStore;
@@ -84,7 +84,7 @@ public class ContentBootstrapController {
             EquivalentContentStore equivalentContentStore,
             EquivalenceGraphStore equivalenceGraphStore,
             ContentStore contentStore,
-            ContentNeo4jStore contentNeo4jStore
+            Neo4jContentStore neo4JContentStore
     ) {
         this.maxSourceBootstrapThreads = maxSourceBootstrapThreads;
         this.read = checkNotNull(read);
@@ -109,7 +109,7 @@ public class ContentBootstrapController {
                 .build();
 
         this.contentNeo4jMigrator = ContentNeo4jMigrator.create(
-                contentNeo4jStore,
+                neo4JContentStore,
                 contentStore,
                 equivalenceGraphStore
         );

@@ -1,6 +1,6 @@
 package org.atlasapi.neo4j;
 
-import org.atlasapi.neo4j.service.ContentNeo4jStore;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.neo4j.service.writers.BroadcastWriter;
 import org.atlasapi.neo4j.service.writers.ContentWriter;
 import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
@@ -30,10 +30,10 @@ public class Neo4jModule {
         return new Neo4jModule(sessionFactory);
     }
 
-    public ContentNeo4jStore contentNeo4jStore() {
+    public Neo4jContentStore neo4jContentStore() {
         ContentWriter contentWriter = ContentWriter.create();
 
-        return ContentNeo4jStore.create(
+        return Neo4jContentStore.create(
                 sessionFactory,
                 EquivalenceWriter.create(),
                 contentWriter,

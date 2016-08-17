@@ -32,7 +32,7 @@ import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.neo4j.Neo4jModule;
-import org.atlasapi.neo4j.service.ContentNeo4jStore;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
@@ -595,7 +595,7 @@ public class AtlasPersistenceModule {
     }
 
     @Bean
-    public ContentNeo4jStore contentNeo4jStore() {
-        return neo4jModule().contentNeo4jStore();
+    public Neo4jContentStore neo4jContentStore() {
+        return neo4jModule().neo4jContentStore();
     }
 }

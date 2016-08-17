@@ -24,7 +24,7 @@ public class DebugModule {
                 explicitEquivalenceMigrator(),
                 persistenceModule.contentIndex(),
                 persistenceModule.esContentTranslator(),
-                persistenceModule.contentNeo4jStore(),
+                persistenceModule.neo4jContentStore(),
                 persistenceModule.contentStore(),
                 persistenceModule.getContentEquivalenceGraphStore(),
                 persistenceModule.getEquivalentContentStore()

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ContentNeo4jStoreTest {
+public class Neo4JContentStoreTest {
 
     @Rule public ExpectedException exception = ExpectedException.none();
 
@@ -50,14 +50,14 @@ public class ContentNeo4jStoreTest {
     @Mock private Session session;
     @Mock private Transaction transaction;
 
-    private ContentNeo4jStore graphService;
+    private Neo4jContentStore graphService;
 
     private ContentRef contentRefA;
     private ContentRef contentRefB;
 
     @Before
     public void setUp() throws Exception {
-        graphService = ContentNeo4jStore.create(
+        graphService = Neo4jContentStore.create(
                 sessionFactory,
                 equivalenceWriter,
                 contentWriter,
