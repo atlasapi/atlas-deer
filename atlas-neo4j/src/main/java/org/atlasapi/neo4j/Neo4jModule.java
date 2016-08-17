@@ -1,5 +1,13 @@
 package org.atlasapi.neo4j;
 
+import org.atlasapi.neo4j.service.ContentNeo4jStore;
+import org.atlasapi.neo4j.service.writers.BroadcastWriter;
+import org.atlasapi.neo4j.service.writers.ContentWriter;
+import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
+import org.atlasapi.neo4j.service.writers.HierarchyWriter;
+import org.atlasapi.neo4j.service.writers.LocationWriter;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.neo4j.driver.v1.AuthTokens;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -22,7 +30,21 @@ public class Neo4jModule {
         return new Neo4jModule(sessionFactory);
     }
 
-    public Neo4jSessionFactory sessionFactory() {
+    public ContentNeo4jStore contentGraphService() {
+        ContentWriter contentWriter = ContentWriter.create();
+
+        return ContentNeo4jStore.create(
+                sessionFactory,
+                EquivalenceWriter.create(),
+                contentWriter,
+                BroadcastWriter.create(),
+                LocationWriter.create(),
+                HierarchyWriter.create(contentWriter)
+        );
+    }
+
+    @VisibleForTesting
+    Neo4jSessionFactory sessionFactory() {
         return sessionFactory;
     }
 

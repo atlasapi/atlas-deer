@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ContentGraphService {
+public class ContentNeo4jStore {
 
-    private static final Logger log = LoggerFactory.getLogger(ContentGraphService.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentNeo4jStore.class);
 
     private final Neo4jSessionFactory sessionFactory;
     private final EquivalenceWriter graphWriter;
@@ -39,7 +39,7 @@ public class ContentGraphService {
     private final LocationWriter locationWriter;
     private final HierarchyWriter hierarchyWriter;
 
-    private ContentGraphService(
+    private ContentNeo4jStore(
             Neo4jSessionFactory sessionFactory,
             EquivalenceWriter graphWriter,
             ContentWriter contentWriter,
@@ -55,7 +55,7 @@ public class ContentGraphService {
         this.hierarchyWriter = checkNotNull(hierarchyWriter);
     }
 
-    public static ContentGraphService create(
+    public static ContentNeo4jStore create(
             Neo4jSessionFactory sessionFactory,
             EquivalenceWriter graphWriter,
             ContentWriter contentWriter,
@@ -63,7 +63,7 @@ public class ContentGraphService {
             LocationWriter locationWriter,
             HierarchyWriter hierarchyWriter
     ) {
-        return new ContentGraphService(
+        return new ContentNeo4jStore(
                 sessionFactory,
                 graphWriter,
                 contentWriter,
