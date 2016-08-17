@@ -50,20 +50,29 @@ public class ContentNeo4jMigrator {
 
     public Result migrate(Id id, boolean migrateEntireGraph) {
         try {
-            return migrateInternal(id, migrateEntireGraph);
+            return migrateInternal(resolveContent(id), migrateEntireGraph);
         } catch (Exception e) {
             log.error("Failed to migrate content", e);
             return Result.failure(id, Throwables.getStackTraceAsString(e));
         }
     }
 
-    private Result migrateInternal(Id id, boolean migrateEntireGraph) {
-        migrateContent(id);
+    public Result migrate(Content content, boolean migrateEntireGraph) {
+        try {
+            return migrateInternal(content, migrateEntireGraph);
+        } catch (Exception e) {
+            log.error("Failed to migrate content", e);
+            return Result.failure(content.getId(), Throwables.getStackTraceAsString(e));
+        }
+    }
 
-        Optional<EquivalenceGraph> graphOptional = resolveEquivalenceGraph(id);
+    private Result migrateInternal(Content content, boolean migrateEntireGraph) {
+        contentNeo4jStore.writeContent(content);
+
+        Optional<EquivalenceGraph> graphOptional = resolveEquivalenceGraph(content.getId());
 
         if (!graphOptional.isPresent()) {
-            return Result.successWithNoGraph(id);
+            return Result.successWithNoGraph(content.getId());
         }
 
         EquivalenceGraph graph = graphOptional.get();
@@ -75,12 +84,12 @@ public class ContentNeo4jMigrator {
                             adjacents -> migrateGraph(adjacents.getRef(), adjacents.getAdjacent())
                     );
 
-            return Result.successWithFullGraph(id);
+            return Result.successWithFullGraph(content.getId());
         } else {
-            EquivalenceGraph.Adjacents adjacents = graph.getAdjacents(id);
+            EquivalenceGraph.Adjacents adjacents = graph.getAdjacents(content.getId());
             migrateGraph(adjacents.getRef(), adjacents.getAdjacent());
 
-            return Result.successWithGraph(id);
+            return Result.successWithGraph(content.getId());
         }
     }
 
@@ -90,11 +99,6 @@ public class ContentNeo4jMigrator {
                 adjacents,
                 Publisher.all()
         );
-    }
-
-    private void migrateContent(Id id) {
-        Content content = resolveContent(id);
-        contentNeo4jStore.writeContent(content);
     }
 
     private Content resolveContent(Id id) {

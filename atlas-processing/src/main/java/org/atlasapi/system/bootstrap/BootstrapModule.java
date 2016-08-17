@@ -99,11 +99,14 @@ public class BootstrapModule {
                 persistence.legacyContentLister(),
                 persistence.nullMessageSendingContentStore(),
                 search.equivContentIndex(),
-                persistence,
                 explicitEquivalenceMigrator,
                 NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
                 progressStore(),
-                metrics
+                metrics,
+                persistence.nullMessageSendingEquivalentContentStore(),
+                persistence.nullMessageSendingEquivalenceGraphStore(),
+                persistence.contentStore(),
+                persistence.contentNeo4jStore()
         );
     }
 
