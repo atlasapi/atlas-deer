@@ -25,7 +25,7 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.neo4j.service.ContentNeo4jStore;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.system.bootstrap.ContentBootstrapListener;
 import org.atlasapi.system.bootstrap.ContentNeo4jMigrator;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
@@ -88,7 +88,7 @@ public class ContentDebugController {
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             ContentIndex index,
             EsContentTranslator esContentTranslator,
-            ContentNeo4jStore contentNeo4jStore, ContentStore contentStore,
+            Neo4jContentStore neo4JContentStore, ContentStore contentStore,
             EquivalenceGraphStore contentEquivalenceGraphStore,
             EquivalentContentStore equivalentContentStore
     ) {
@@ -117,7 +117,7 @@ public class ContentDebugController {
                 .build();
 
         this.contentNeo4jMigrator = ContentNeo4jMigrator.create(
-                contentNeo4jStore, contentStore, contentEquivalenceGraphStore
+                neo4JContentStore, contentStore, contentEquivalenceGraphStore
         );
     }
 

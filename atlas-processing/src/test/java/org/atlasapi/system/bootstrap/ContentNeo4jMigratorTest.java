@@ -9,7 +9,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.neo4j.service.ContentNeo4jStore;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ContentNeo4jMigratorTest {
 
-    @Mock private ContentNeo4jStore contentNeo4jStore;
+    @Mock private Neo4jContentStore neo4JContentStore;
     @Mock private ContentStore contentStore;
     @Mock private EquivalenceGraphStore equivalenceGraphStore;
 
@@ -49,7 +49,7 @@ public class ContentNeo4jMigratorTest {
     @Before
     public void setUp() throws Exception {
         migrator = ContentNeo4jMigrator.create(
-                contentNeo4jStore, contentStore, equivalenceGraphStore
+                neo4JContentStore, contentStore, equivalenceGraphStore
         );
 
         id = Id.valueOf(0L);
@@ -62,9 +62,9 @@ public class ContentNeo4jMigratorTest {
 
         ContentNeo4jMigrator.Result result = migrator.migrate(id, false);
 
-        verify(contentNeo4jStore).writeContent(content);
+        verify(neo4JContentStore).writeContent(content);
         //noinspection unchecked
-        verify(contentNeo4jStore, never()).writeEquivalences(
+        verify(neo4JContentStore, never()).writeEquivalences(
                 any(ResourceRef.class), anySet(), anySet()
         );
 
@@ -93,8 +93,8 @@ public class ContentNeo4jMigratorTest {
 
         ContentNeo4jMigrator.Result result = migrator.migrate(id, false);
 
-        verify(contentNeo4jStore).writeContent(content);
-        verify(contentNeo4jStore).writeEquivalences(
+        verify(neo4JContentStore).writeContent(content);
+        verify(neo4JContentStore).writeEquivalences(
                 resourceRef, ImmutableSet.of(resourceRef, adjacentRef), Publisher.all()
         );
 
@@ -124,11 +124,11 @@ public class ContentNeo4jMigratorTest {
 
         ContentNeo4jMigrator.Result result = migrator.migrate(id, true);
 
-        verify(contentNeo4jStore).writeContent(content);
-        verify(contentNeo4jStore).writeEquivalences(
+        verify(neo4JContentStore).writeContent(content);
+        verify(neo4JContentStore).writeEquivalences(
                 resourceRef, ImmutableSet.of(resourceRef, adjacentRef), Publisher.all()
         );
-        verify(contentNeo4jStore).writeEquivalences(
+        verify(neo4JContentStore).writeEquivalences(
                 adjacentRef, ImmutableSet.of(adjacentRef), Publisher.all()
         );
 
@@ -147,9 +147,9 @@ public class ContentNeo4jMigratorTest {
 
         ContentNeo4jMigrator.Result result = migrator.migrate(id, false);
 
-        verify(contentNeo4jStore, never()).writeContent(content);
+        verify(neo4JContentStore, never()).writeContent(content);
         //noinspection unchecked
-        verify(contentNeo4jStore, never()).writeEquivalences(
+        verify(neo4JContentStore, never()).writeEquivalences(
                 any(ResourceRef.class), anySet(), anySet()
         );
 
@@ -172,9 +172,9 @@ public class ContentNeo4jMigratorTest {
 
         ContentNeo4jMigrator.Result result = migrator.migrate(id, false);
 
-        verify(contentNeo4jStore).writeContent(content);
+        verify(neo4JContentStore).writeContent(content);
         //noinspection unchecked
-        verify(contentNeo4jStore, never()).writeEquivalences(
+        verify(neo4JContentStore, never()).writeEquivalences(
                 any(ResourceRef.class), anySet(), anySet()
         );
 
