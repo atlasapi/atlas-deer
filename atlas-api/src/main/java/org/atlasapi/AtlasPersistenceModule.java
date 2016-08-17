@@ -31,6 +31,8 @@ import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.neo4j.Neo4jModule;
+import org.atlasapi.neo4j.service.ContentNeo4jStore;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
@@ -151,6 +153,10 @@ public class AtlasPersistenceModule {
     private final String esIndex = Configurer.get("elasticsearch.index").get();
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
+
+    private final String neo4jHost = Configurer.get("neo4j.host").get();
+    private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();
+    private final Integer neo4jMaxIdleSessions = Configurer.get("neo4j.maxIdleSessions").toInt();
 
     private String equivalentContentChanges = Configurer.get(
             "messaging.destination.equivalent.content.changes").get();
@@ -579,5 +585,17 @@ public class AtlasPersistenceModule {
                 ),
                 legacyContentTransformer()
         );
+    }
+
+    @Bean
+    public Neo4jModule neo4jModule() {
+        return Neo4jModule.create(
+            neo4jHost, neo4jPort, neo4jMaxIdleSessions
+        );
+    }
+
+    @Bean
+    public ContentNeo4jStore contentNeo4jStore() {
+        return neo4jModule().contentNeo4jStore();
     }
 }
