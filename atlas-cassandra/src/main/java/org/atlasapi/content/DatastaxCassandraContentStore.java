@@ -18,8 +18,6 @@ import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -320,36 +318,6 @@ public class DatastaxCassandraContentStore extends AbstractContentStore {
         }
 
         session.execute(batchStatement);
-    }
-
-    @Override
-    public OptionalMap<Alias, Content> resolveAliases(Iterable<Alias> aliases, Publisher source) {
-        try {
-            Set<Alias> uniqueAliases = ImmutableSet.copyOf(aliases);
-            Set<Id> ids = aliasIndex.readAliases(source, uniqueAliases)
-                    .stream()
-                    .map(Id::valueOf)
-                    .collect(Collectors.toSet());
-            if (ids.isEmpty()) {
-                return ImmutableOptionalMap.of();
-            }
-            Iterable<Content> resources = resolveIds(ids).get(1, TimeUnit.MINUTES).getResources();
-
-            ImmutableMap.Builder<Alias, Optional<Content>> aliasMap = ImmutableMap.builder();
-            for (Content content : resources) {
-                Set<Alias> contentAliases = content.getAliases()
-                        .stream()
-                        .filter(uniqueAliases::contains)
-                        .collect(Collectors.toSet());
-                for (Alias contentAlias : contentAliases) {
-                    aliasMap.put(contentAlias, Optional.of(content));
-                }
-
-            }
-            return ImmutableOptionalMap.copyOf(aliasMap.build());
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
     }
 
     @Override

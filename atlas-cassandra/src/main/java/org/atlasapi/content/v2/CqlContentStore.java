@@ -28,16 +28,13 @@ import org.atlasapi.content.v2.serialization.ContentSerializationImpl;
 import org.atlasapi.content.v2.serialization.ItemRefSerialization;
 import org.atlasapi.content.v2.serialization.ItemSummarySerialization;
 import org.atlasapi.content.v2.serialization.SeriesRefSerialization;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
-import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
@@ -100,11 +97,6 @@ public class CqlContentStore implements ContentStore {
         this.accessor = mappingManager.createAccessor(ContentAccessor.class);
 
         this.sender = checkNotNull(sender);
-    }
-
-    @Override
-    public OptionalMap<Alias, Content> resolveAliases(Iterable<Alias> aliases, Publisher source) {
-        throw new UnsupportedOperationException("herp derp");
     }
 
     @Override

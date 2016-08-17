@@ -24,7 +24,6 @@ import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.CassandraInit;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
@@ -32,6 +31,7 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
@@ -135,10 +135,15 @@ public abstract class CassandraContentStoreIT {
                 .build();
 
         cassandraService.startAsync().awaitRunning();
-        session = cassandraService.getCluster().connect(KEYSPACE);
+        Cluster cluster = cassandraService.getCluster();
+
+        session = cluster.connect();
 
         CassandraInit.createTables(session, context);
         CassandraInit.truncate(session, context);
+
+        session.close();
+        session = cluster.connect(KEYSPACE);
     }
 
     @After
@@ -305,45 +310,6 @@ public abstract class CassandraContentStoreIT {
         assertThat(item.getLastUpdated(), is(next));
         assertThat(item.getThisOrChildLastUpdated(), is(next));
 
-    }
-
-    @Test
-    public void testResolvesExistingContentByAlias() throws Exception {
-
-        Item bbcItem = new Item();
-        bbcItem.setPublisher(Publisher.BBC);
-        bbcItem.addAlias(new Alias("shared", "alias"));
-        bbcItem.setTitle("title");
-
-        Item c4Item = new Item();
-        c4Item.setPublisher(Publisher.C4);
-        c4Item.addAlias(new Alias("shared", "alias"));
-
-        when(clock.now()).thenReturn(new DateTime(DateTimeZones.UTC));
-        when(idGenerator.generateRaw())
-                .thenReturn(1234L)
-                .thenReturn(1235L);
-        when(hasher.hash(argThat(isA(Content.class))))
-                .thenReturn("different")
-                .thenReturn("differentAgain");
-
-        store.writeContent(bbcItem);
-        store.writeContent(c4Item);
-
-        Item resolvedItem = (Item) resolve(1234L);
-        assertThat(resolvedItem.getTitle(), is(bbcItem.getTitle()));
-
-        bbcItem.setTitle("newTitle");
-        bbcItem.setId(null);
-        WriteResult<Item, Content> writtenContent = store.writeContent(bbcItem);
-        assertThat(writtenContent.getPrevious().get().getTitle(), is("title"));
-
-        resolvedItem = (Item) resolve(1234L);
-        assertThat(resolvedItem.getTitle(), is(bbcItem.getTitle()));
-
-        verify(clock, times(3)).now();
-        verify(idGenerator, times(2)).generateRaw();
-        verify(hasher, times(2)).hash(argThat(isA(Content.class)));
     }
 
     @Test(expected = WriteException.class)
@@ -631,78 +597,6 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
-    public void testResolvingByAlias() throws Exception {
-
-        DateTime now = new DateTime(DateTimeZones.UTC);
-
-        Alias bbcBrandAlias = new Alias("brand", "alias");
-        Alias bbcSeriesAlias = new Alias("series", "alias");
-
-        Brand brand = create(new Brand());
-        brand.addAlias(bbcBrandAlias);
-
-        when(clock.now()).thenReturn(now);
-        when(idGenerator.generateRaw()).thenReturn(1234L);
-        store.writeContent(brand);
-
-        OptionalMap<Alias, Content> resolved = store.resolveAliases(
-                ImmutableSet.of(bbcBrandAlias, bbcSeriesAlias), Publisher.BBC);
-
-        assertThat(resolved.size(), is(1));
-        assertThat(resolved.get(bbcBrandAlias).get().getId(), is(Id.valueOf(1234L)));
-
-        Series series = create(new Series());
-        series.addAlias(bbcSeriesAlias);
-
-        when(clock.now()).thenReturn(now);
-        when(idGenerator.generateRaw()).thenReturn(1235L);
-        store.writeContent(series);
-
-        resolved = store.resolveAliases(
-                ImmutableSet.of(bbcBrandAlias, bbcSeriesAlias), Publisher.BBC);
-
-        assertThat(resolved.size(), is(2));
-        assertThat(resolved.get(bbcBrandAlias).get().getId(), is(Id.valueOf(1234L)));
-        assertThat(resolved.get(bbcSeriesAlias).get().getId(), is(Id.valueOf(1235L)));
-
-    }
-
-    @Test
-    public void testResolvingByAliasDoesntResolveContentFromAnotherSource() throws Exception {
-
-        DateTime now = new DateTime(DateTimeZones.UTC);
-
-        Brand bbcBrand = create(new Brand());
-        Alias sharedAlias = new Alias("shared", "alias");
-        bbcBrand.addAlias(sharedAlias);
-
-        Brand c4Brand = create(new Brand());
-        c4Brand.setPublisher(Publisher.C4);
-        c4Brand.addAlias(sharedAlias);
-
-        when(clock.now()).thenReturn(now);
-        when(idGenerator.generateRaw()).thenReturn(1234L);
-        store.writeContent(bbcBrand);
-
-        when(clock.now()).thenReturn(now);
-        when(idGenerator.generateRaw()).thenReturn(1235L);
-        store.writeContent(c4Brand);
-
-        OptionalMap<Alias, Content> resolved = store.resolveAliases(
-                ImmutableSet.of(sharedAlias), Publisher.BBC);
-
-        assertThat(resolved.size(), is(1));
-        assertThat(resolved.get(sharedAlias).get().getId(), is(Id.valueOf(1234L)));
-
-        resolved = store.resolveAliases(
-                ImmutableSet.of(sharedAlias), Publisher.C4);
-
-        assertThat(resolved.size(), is(1));
-        assertThat(resolved.get(sharedAlias).get().getId(), is(Id.valueOf(1235L)));
-
-    }
-
-    @Test
     public void testResolvingMissingContentReturnsEmptyResolved() throws Exception {
 
         ListenableFuture<Resolved<Content>> resolved = store.resolveIds(ImmutableSet.of(Id.valueOf(
@@ -710,18 +604,6 @@ public abstract class CassandraContentStoreIT {
 
         assertTrue(resolved.get(1, TimeUnit.SECONDS).getResources().isEmpty());
 
-    }
-
-    @Test
-    public void testResolvingMissingContentByAliasReturnsNothing() throws Exception {
-
-        Alias alias = new Alias("missing", "alias");
-        OptionalMap<Alias, Content> resolveAliases = store.resolveAliases(
-                ImmutableList.of(alias),
-                Publisher.BBC
-        );
-
-        assertThat(resolveAliases.get(alias), is(Optional.<Content>absent()));
     }
 
     @Test
