@@ -53,6 +53,7 @@ public class ContentNeo4jMigratorTest {
         );
 
         id = Id.valueOf(0L);
+        when(content.getId()).thenReturn(id);
     }
 
     @Test
