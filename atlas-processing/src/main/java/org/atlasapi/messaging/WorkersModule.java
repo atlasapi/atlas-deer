@@ -69,6 +69,8 @@ public class WorkersModule {
             Configurer.get("messaging.deer.content.indexer.consumers").toInt();
     private final Integer contentIndexingEquivalenceGraphChangesNumOfConsumers =
             Configurer.get("messaging.deer.content.indexer.graph.changes.consumers").toInt();
+    private final Integer neo4jContentStoreContentUpdateNumOfConsumers =
+            Configurer.get("messaging.deer.content.neo4j.content.changes.consumers").toInt();
 
     private final String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private final String equivTopic = Configurer.get("equiv.update.producer.topic").get();
@@ -91,6 +93,8 @@ public class WorkersModule {
             Configurer.get("messaging.deer.topic.indexer.enabled").toBoolean();
     private final Boolean equivalenceGraphEnabled =
             Configurer.get("messaging.deer.equivalence.content.graph.changes.enabled").toBoolean();
+    private final Boolean neo4jContentStoreContentUpdateEnabled =
+            Configurer.get("messaging.deer.content.neo4j.content.changes.enabled").toBoolean();
 
     @Autowired
     private KafkaMessagingModule messaging;
@@ -338,6 +342,32 @@ public class WorkersModule {
                 .build();
     }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer neo4jContentStoreContentUpdateMessageListener() {
+        String workerName = "Neo4jContentStoreContentUpdateWorker";
+
+        Neo4jContentStoreContentUpdateWorker worker = Neo4jContentStoreContentUpdateWorker
+                .create(
+                        persistence.contentStore(),
+                        persistence.neo4jContentStore(),
+                        metricsModule.metrics().timer(workerName)
+                );
+
+        return messaging.messageConsumerFactory()
+                .createConsumer(
+                        worker,
+                        serializer(EquivalentContentUpdatedMessage.class),
+                        equivalentContentChanges,
+                        workerName
+                )
+                .withMaxConsumers(neo4jContentStoreContentUpdateNumOfConsumers)
+                .withDefaultConsumers(neo4jContentStoreContentUpdateNumOfConsumers)
+                .withConsumerSystem(consumerSystem)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .build();
+    }
+
     @PostConstruct
     public void start() throws TimeoutException {
         ImmutableList.Builder<Service> services = ImmutableList.builder();
@@ -366,6 +396,9 @@ public class WorkersModule {
         }
         if (equivalenceGraphEnabled) {
             services.add(equivUpdateListener());
+        }
+        if (neo4jContentStoreContentUpdateEnabled) {
+            services.add(neo4jContentStoreContentUpdateMessageListener());
         }
 
         consumerManager = new ServiceManager(services.build());
