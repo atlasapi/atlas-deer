@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({ AtlasPersistenceModule.class})
+@Import({ AtlasPersistenceModule.class })
 public class DebugModule {
 
     @Autowired
@@ -23,7 +23,11 @@ public class DebugModule {
                 persistenceModule,
                 explicitEquivalenceMigrator(),
                 persistenceModule.contentIndex(),
-                persistenceModule.esContentTranslator()
+                persistenceModule.esContentTranslator(),
+                persistenceModule.contentNeo4jStore(),
+                persistenceModule.contentStore(),
+                persistenceModule.getContentEquivalenceGraphStore(),
+                persistenceModule.getEquivalentContentStore()
         );
     }
 
@@ -32,19 +36,19 @@ public class DebugModule {
         return new EventDebugController(persistenceModule.legacyEventResolver(), persistenceModule);
     }
 
-    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
-        return new DirectAndExplicitEquivalenceMigrator(
-                persistenceModule.legacyContentResolver(),
-                persistenceModule.legacyEquivalenceStore(),
-                persistenceModule.nullMessageSendingGraphStore()
-        );
-    }
-
     @Bean
     public ScheduleDebugController scheduleDebugController() {
         return new ScheduleDebugController(
                 persistenceModule.channelResolver(),
                 persistenceModule.getEquivalentScheduleStore(),
                 persistenceModule.scheduleStore());
+    }
+
+    private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
+                persistenceModule.legacyContentResolver(),
+                persistenceModule.legacyEquivalenceStore(),
+                persistenceModule.nullMessageSendingGraphStore()
+        );
     }
 }
