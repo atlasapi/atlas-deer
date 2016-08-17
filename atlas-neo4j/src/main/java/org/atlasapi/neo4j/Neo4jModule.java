@@ -30,7 +30,7 @@ public class Neo4jModule {
         return new Neo4jModule(sessionFactory);
     }
 
-    public ContentNeo4jStore contentGraphService() {
+    public ContentNeo4jStore contentNeo4jStore() {
         ContentWriter contentWriter = ContentWriter.create();
 
         return ContentNeo4jStore.create(
