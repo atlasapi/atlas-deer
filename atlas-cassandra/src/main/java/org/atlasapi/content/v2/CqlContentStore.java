@@ -1,8 +1,10 @@
 package org.atlasapi.content.v2;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -401,9 +403,6 @@ public class CqlContentStore implements ContentStore {
             Item item = (Item) content;
 
             ContainerRef containerRef = item.getContainerRef();
-            ItemRef ref = item.toRef();
-            ItemSummary summary = item.toSummary();
-
             SeriesRef seriesRef = null;
 
             if (content instanceof Episode) {
@@ -411,84 +410,158 @@ public class CqlContentStore implements ContentStore {
                 seriesRef = episode.getSeriesRef();
             }
 
-            ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcoming = ImmutableMap.of(
-                    item.toRef(), item.getUpcomingBroadcastRefs()
-            );
-
-            Map<
-                    org.atlasapi.content.v2.model.udt.ItemRef,
-                    List<org.atlasapi.content.v2.model.udt.BroadcastRef>
-            > upcomingSerialised = MapStream
-                    .of(upcoming)
-                    .mapEntries(
-                            itemRefTranslator::serialize,
-                            vals -> StreamSupport.stream(vals.spliterator(), false)
-                                    .map(broadcastRefTranslator::serialize)
-                                    .collect(Collectors.toList())
-                    )
-                    .collect();
-
-            ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
-                    item.toRef(), item.getAvailableLocations()
-            );
-
-            Map<
-                    org.atlasapi.content.v2.model.udt.ItemRef,
-                    List<org.atlasapi.content.v2.model.udt.LocationSummary>
-            > availableLocationsSerialised = MapStream
-                    .of(availableLocations)
-                    .mapEntries(
-                            itemRefTranslator::serialize,
-                            vals -> StreamSupport.stream(vals.spliterator(), false)
-                                    .map(locationSummaryTranslator::serialize)
-                                    .collect(Collectors.toList())
-                    )
-                    .collect();
-
-            org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
-            org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
-
-            if (containerRef != null) {
-                result.add(accessor.addItemRefsToContainer(
-                        containerRef.getId().longValue(),
-                        ImmutableSet.of(itemRef),
-                        upcomingSerialised,
-                        availableLocationsSerialised
-                ));
-
-                if (seriesRef == null) {
-                    result.add(accessor.addItemSummariesToContainer(
-                            containerRef.getId().longValue(),
-                            ImmutableSet.of(itemSummary)
-                    ));
-                }
-
-                messages.add(new ResourceUpdatedMessage(
-                        UUID.randomUUID().toString(),
-                        Timestamp.of(DateTime.now()),
-                        containerRef
-                ));
+            if (!item.isActivelyPublished() || (item.isGenericDescription() != null
+                    && item.isGenericDescription())) {
+                result.addAll(removeItemRefsFromContainers(item, containerRef, seriesRef));
+                return result;
             }
 
-            if (seriesRef != null) {
-                result.add(accessor.addItemRefsToContainer(
-                        seriesRef.getId().longValue(),
-                        ImmutableSet.of(itemRef),
-                        upcomingSerialised,
-                        availableLocationsSerialised
-                ));
+            result.addAll(addItemRefsToContainers(messages, item, containerRef, seriesRef));
+        }
 
+        return result;
+    }
+
+    private List<Statement> addItemRefsToContainers(
+            ImmutableList.Builder<ResourceUpdatedMessage> messages,
+            Item item,
+            ContainerRef containerRef,
+            SeriesRef seriesRef
+    ) {
+        List<Statement> result = Lists.newArrayList();
+
+        ItemRef ref = item.toRef();
+        ItemSummary summary = item.toSummary();
+
+        ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcoming = ImmutableMap.of(
+                item.toRef(), item.getUpcomingBroadcastRefs()
+        );
+
+        Map<
+                org.atlasapi.content.v2.model.udt.ItemRef,
+                List<org.atlasapi.content.v2.model.udt.BroadcastRef>
+        > upcomingSerialised = MapStream
+                .of(upcoming)
+                .mapEntries(
+                        itemRefTranslator::serialize,
+                        vals -> StreamSupport.stream(vals.spliterator(), false)
+                                .map(broadcastRefTranslator::serialize)
+                                .collect(Collectors.toList())
+                )
+                .collect();
+
+        ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
+                item.toRef(), item.getAvailableLocations()
+        );
+
+        Map<
+                org.atlasapi.content.v2.model.udt.ItemRef,
+                List<org.atlasapi.content.v2.model.udt.LocationSummary>
+        > availableLocationsSerialised = MapStream
+                .of(availableLocations)
+                .mapEntries(
+                        itemRefTranslator::serialize,
+                        vals -> StreamSupport.stream(vals.spliterator(), false)
+                                .map(locationSummaryTranslator::serialize)
+                                .collect(Collectors.toList())
+                )
+                .collect();
+
+        org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
+        org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
+
+        if (containerRef != null) {
+            result.add(accessor.addItemRefsToContainer(
+                    containerRef.getId().longValue(),
+                    ImmutableSet.of(itemRef),
+                    upcomingSerialised,
+                    availableLocationsSerialised
+            ));
+
+            if (seriesRef == null) {
                 result.add(accessor.addItemSummariesToContainer(
-                        seriesRef.getId().longValue(),
+                        containerRef.getId().longValue(),
                         ImmutableSet.of(itemSummary)
                 ));
-
-                messages.add(new ResourceUpdatedMessage(
-                        UUID.randomUUID().toString(),
-                        Timestamp.of(DateTime.now()),
-                        seriesRef
-                ));
             }
+
+            messages.add(new ResourceUpdatedMessage(
+                    UUID.randomUUID().toString(),
+                    Timestamp.of(DateTime.now()),
+                    containerRef
+            ));
+        }
+
+        if (seriesRef != null) {
+            result.add(accessor.addItemRefsToContainer(
+                    seriesRef.getId().longValue(),
+                    ImmutableSet.of(itemRef),
+                    upcomingSerialised,
+                    availableLocationsSerialised
+            ));
+
+            result.add(accessor.addItemSummariesToContainer(
+                    seriesRef.getId().longValue(),
+                    ImmutableSet.of(itemSummary)
+            ));
+
+            messages.add(new ResourceUpdatedMessage(
+                    UUID.randomUUID().toString(),
+                    Timestamp.of(DateTime.now()),
+                    seriesRef
+            ));
+        }
+
+        return result;
+    }
+
+    private Collection<? extends Statement> removeItemRefsFromContainers(
+            Item item,
+            ContainerRef... containerRefs
+    ) {
+        List<Statement> result = Lists.newArrayList();
+
+        ItemRef ref = item.toRef();
+        ItemSummary summary = item.toSummary();
+
+        ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcoming = ImmutableMap.of(
+                item.toRef(), item.getUpcomingBroadcastRefs()
+        );
+
+        Set<org.atlasapi.content.v2.model.udt.ItemRef> upcomingSerialised = upcoming.keySet()
+                .stream()
+                .map(itemRefTranslator::serialize)
+                .collect(Collectors.toSet());
+
+        ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
+                item.toRef(), item.getAvailableLocations()
+        );
+
+        Set<org.atlasapi.content.v2.model.udt.ItemRef> availableLocationsSerialised = availableLocations
+                .keySet()
+                .stream()
+                .map(itemRefTranslator::serialize)
+                .collect(Collectors.toSet());
+
+        org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
+        org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
+
+        for (ContainerRef containerRef : containerRefs) {
+            if (containerRef == null) {
+                continue;
+            }
+
+            result.add(accessor.removeItemRefsFromContainer(
+                    containerRef.getId().longValue(),
+                    ImmutableSet.of(itemRef),
+                    upcomingSerialised,
+                    availableLocationsSerialised
+            ));
+
+            result.add(accessor.removeItemSummariesFromContainer(
+                    containerRef.getId().longValue(),
+                    ImmutableSet.of(itemSummary)
+            ));
         }
 
         return result;

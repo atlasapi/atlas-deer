@@ -40,8 +40,26 @@ public interface ContentAccessor {
             @Param("available") Map<ItemRef, List<LocationSummary>> available
     );
 
+    @Query("UPDATE content_v2 SET "
+            + "itr = itr - :refs, "
+            + "upc = upc - :upcoming, "
+            + "avc = avc - :available "
+            + "WHERE id = :id")
+    Statement removeItemRefsFromContainer(
+            @Param("id") Long id,
+            @Param("refs") Set<ItemRef> itemRefs,
+            @Param("upcoming") Set<ItemRef> upcoming,
+            @Param("available") Set<ItemRef> available
+    );
+
     @Query("UPDATE content_v2 SET its = its + :summaries WHERE id = :id")
     Statement addItemSummariesToContainer(
+            @Param("id") Long id,
+            @Param("summaries") Set<ItemSummary> itemSummaries
+    );
+
+    @Query("UPDATE content_v2 SET its = its - :summaries WHERE id = :id")
+    Statement removeItemSummariesFromContainer(
             @Param("id") Long id,
             @Param("summaries") Set<ItemSummary> itemSummaries
     );
