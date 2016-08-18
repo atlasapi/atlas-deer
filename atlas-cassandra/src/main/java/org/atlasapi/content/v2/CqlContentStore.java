@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -12,6 +13,7 @@ import java.util.stream.StreamSupport;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
+import org.atlasapi.content.BroadcastRef;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.ContainerSummary;
@@ -21,13 +23,16 @@ import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
+import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
+import org.atlasapi.content.v2.serialization.BroadcastRefSerialization;
 import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
 import org.atlasapi.content.v2.serialization.ContentSerialization;
 import org.atlasapi.content.v2.serialization.ContentSerializationImpl;
 import org.atlasapi.content.v2.serialization.ItemRefSerialization;
 import org.atlasapi.content.v2.serialization.ItemSummarySerialization;
+import org.atlasapi.content.v2.serialization.LocationSummarySerialization;
 import org.atlasapi.content.v2.serialization.SeriesRefSerialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -43,6 +48,7 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codepoetics.protonpack.maps.MapStream;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
@@ -51,6 +57,7 @@ import com.datastax.driver.mapping.MappingManager;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -80,7 +87,9 @@ public class CqlContentStore implements ContentStore {
     private final ContentSerialization translator = new ContentSerializationImpl();
     private final SeriesRefSerialization seriesRefTranslator = new SeriesRefSerialization();
     private final ItemRefSerialization itemRefTranslator = new ItemRefSerialization();
+    private final BroadcastRefSerialization broadcastRefTranslator = new BroadcastRefSerialization();
     private final ItemSummarySerialization itemSummaryTranslator = new ItemSummarySerialization();
+    private final LocationSummarySerialization locationSummaryTranslator = new LocationSummarySerialization();
     private final ContainerSummarySerialization containerSummaryTranslator =
             new ContainerSummarySerialization();
     private final ContentHasher hasher;
@@ -131,7 +140,7 @@ public class CqlContentStore implements ContentStore {
 
         batch.addAll(updateWriteDates(content, now));
         batch.addAll(updateContainerSummary(content, messages));
-        batch.addAll(updateParentRefs(content, messages));
+        batch.addAll(updateContainerDenormalizedInfo(content, messages));
         batch.addAll(updateChildrenSummaries(content, previous, messages));
 
         org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
@@ -226,7 +235,8 @@ public class CqlContentStore implements ContentStore {
                                 .get(
                                         READ_TIMEOUT_SECONDS,
                                         TimeUnit.SECONDS
-                                ).getResources()
+                                ).getResources(),
+                        null
                 );
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 throw new WriteException(
@@ -363,7 +373,7 @@ public class CqlContentStore implements ContentStore {
         return result;
     }
 
-    private List<Statement> updateParentRefs(
+    private List<Statement> updateContainerDenormalizedInfo(
             Content content,
             ImmutableList.Builder<ResourceUpdatedMessage> messages
     ) {
@@ -401,13 +411,49 @@ public class CqlContentStore implements ContentStore {
                 seriesRef = episode.getSeriesRef();
             }
 
+            ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcoming = ImmutableMap.of(
+                    item.toRef(), item.getUpcomingBroadcastRefs()
+            );
+
+            Map<
+                    org.atlasapi.content.v2.model.udt.ItemRef,
+                    List<org.atlasapi.content.v2.model.udt.BroadcastRef>
+            > upcomingSerialised = MapStream
+                    .of(upcoming)
+                    .mapEntries(
+                            itemRefTranslator::serialize,
+                            vals -> StreamSupport.stream(vals.spliterator(), false)
+                                    .map(broadcastRefTranslator::serialize)
+                                    .collect(Collectors.toList())
+                    )
+                    .collect();
+
+            ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
+                    item.toRef(), item.getAvailableLocations()
+            );
+
+            Map<
+                    org.atlasapi.content.v2.model.udt.ItemRef,
+                    List<org.atlasapi.content.v2.model.udt.LocationSummary>
+            > availableLocationsSerialised = MapStream
+                    .of(availableLocations)
+                    .mapEntries(
+                            itemRefTranslator::serialize,
+                            vals -> StreamSupport.stream(vals.spliterator(), false)
+                                    .map(locationSummaryTranslator::serialize)
+                                    .collect(Collectors.toList())
+                    )
+                    .collect();
+
             org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
             org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
 
             if (containerRef != null) {
                 result.add(accessor.addItemRefsToContainer(
                         containerRef.getId().longValue(),
-                        ImmutableSet.of(itemRef)
+                        ImmutableSet.of(itemRef),
+                        upcomingSerialised,
+                        availableLocationsSerialised
                 ));
 
                 if (seriesRef == null) {
@@ -427,7 +473,9 @@ public class CqlContentStore implements ContentStore {
             if (seriesRef != null) {
                 result.add(accessor.addItemRefsToContainer(
                         seriesRef.getId().longValue(),
-                        ImmutableSet.of(itemRef)
+                        ImmutableSet.of(itemRef),
+                        upcomingSerialised,
+                        availableLocationsSerialised
                 ));
 
                 result.add(accessor.addItemSummariesToContainer(

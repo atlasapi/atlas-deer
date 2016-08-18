@@ -15,8 +15,7 @@ public class LocationSummarySerialization {
             return null;
         }
 
-        LocationSummary internal =
-                new LocationSummary();
+        LocationSummary internal = new LocationSummary();
 
         internal.setAvailable(locationSummary.getAvailable());
         internal.setUri(locationSummary.getUri());

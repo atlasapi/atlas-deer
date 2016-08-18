@@ -1,11 +1,15 @@
 package org.atlasapi.content.v2;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.Content;
+import org.atlasapi.content.v2.model.udt.BroadcastRef;
 import org.atlasapi.content.v2.model.udt.ContainerSummary;
 import org.atlasapi.content.v2.model.udt.ItemRef;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
+import org.atlasapi.content.v2.model.udt.LocationSummary;
 import org.atlasapi.content.v2.model.udt.SeriesRef;
 
 import com.datastax.driver.core.Statement;
@@ -24,10 +28,16 @@ public interface ContentAccessor {
     @Query("UPDATE content_v2 SET toclu = :now WHERE id = :id")
     Statement setLastUpdated(@Param("id") Long id, @Param("now") Instant now);
 
-    @Query("UPDATE content_v2 SET itr = itr + :refs WHERE id = :id")
+    @Query("UPDATE content_v2 SET "
+            + "itr = itr + :refs, "
+            + "upc = upc + :upcoming, "
+            + "avc = avc + :available "
+            + "WHERE id = :id")
     Statement addItemRefsToContainer(
             @Param("id") Long id,
-            @Param("refs") Set<ItemRef> itemRefs
+            @Param("refs") Set<ItemRef> itemRefs,
+            @Param("upcoming") Map<ItemRef, List<BroadcastRef>> upcoming,
+            @Param("available") Map<ItemRef, List<LocationSummary>> available
     );
 
     @Query("UPDATE content_v2 SET its = its + :summaries WHERE id = :id")
