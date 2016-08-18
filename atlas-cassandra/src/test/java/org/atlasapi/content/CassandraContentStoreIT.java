@@ -37,6 +37,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
 import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
 import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -88,6 +89,7 @@ public abstract class CassandraContentStoreIT {
 
     private static final ImmutableSet<String> SEEDS = ImmutableSet.of("localhost");
     private static final String KEYSPACE = "atlas_testing";
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     protected static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();
@@ -129,8 +131,14 @@ public abstract class CassandraContentStoreIT {
                 .withCodecRegistry(new CodecRegistry()
                         .register(InstantCodec.instance)
                         .register(LocalDateCodec.instance)
-                        .register(new JacksonJsonCodec<>(org.atlasapi.content.v2.model.Clip.Wrapper.class))
-                        .register(new JacksonJsonCodec<>(org.atlasapi.content.v2.model.Encoding.Wrapper.class))
+                        .register(new JacksonJsonCodec<>(
+                                org.atlasapi.content.v2.model.Clip.Wrapper.class,
+                                MAPPER
+                        ))
+                        .register(new JacksonJsonCodec<>(
+                                org.atlasapi.content.v2.model.Encoding.Wrapper.class,
+                                MAPPER
+                        ))
                 )
                 .build();
 
