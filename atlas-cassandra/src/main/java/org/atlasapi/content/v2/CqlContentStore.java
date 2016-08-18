@@ -9,6 +9,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Container;
@@ -156,7 +157,24 @@ public class CqlContentStore implements ContentStore {
             }
         }
 
+        setExistingItemRefs(content, previous);
+
         return new WriteResult<>(content, true, DateTime.now(), previous);
+    }
+
+    private void setExistingItemRefs(Content content, Content previous) {
+        if (content instanceof Container && previous instanceof Container) {
+            Container previousContainer = (Container) previous;
+            Container currentContainer = (Container) content;
+
+            currentContainer.setItemRefs(previousContainer.getItemRefs());
+
+            if (content instanceof Brand && previousContainer instanceof Brand) {
+                Brand previousBrand = (Brand) previousContainer;
+                Brand currentBrand = (Brand) currentContainer;
+                currentBrand.setSeriesRefs(previousBrand.getSeriesRefs());
+            }
+        }
     }
 
     private Iterable<? extends Statement> updateChildrenSummaries(
