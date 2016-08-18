@@ -215,7 +215,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 session,
                 sender(contentChanges, ResourceUpdatedMessage.class),
                 contentIdGenerator,
-                new SystemClock()
+                new SystemClock(),
+                contentHasher
         );
 
         this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(

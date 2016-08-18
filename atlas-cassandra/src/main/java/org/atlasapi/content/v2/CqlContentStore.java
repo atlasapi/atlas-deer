@@ -33,6 +33,7 @@ import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
 import com.metabroadcast.common.ids.IdGenerator;
@@ -81,12 +82,14 @@ public class CqlContentStore implements ContentStore {
     private final ItemSummarySerialization itemSummaryTranslator = new ItemSummarySerialization();
     private final ContainerSummarySerialization containerSummaryTranslator =
             new ContainerSummarySerialization();
+    private final ContentHasher hasher;
 
     public CqlContentStore(
             Session session,
             MessageSender<ResourceUpdatedMessage> sender,
             IdGenerator idGenerator,
-            Clock clock
+            Clock clock,
+            ContentHasher hasher
     ) {
         this.idGenerator = checkNotNull(idGenerator);
         this.session = checkNotNull(session);
@@ -97,6 +100,7 @@ public class CqlContentStore implements ContentStore {
         this.accessor = mappingManager.createAccessor(ContentAccessor.class);
 
         this.sender = checkNotNull(sender);
+        this.hasher = checkNotNull(hasher);
     }
 
     @Override
@@ -107,6 +111,12 @@ public class CqlContentStore implements ContentStore {
         );
 
         Content previous = resolvePrevious(content);
+
+        if (previous != null && hasher.hash(content).equals(hasher.hash(previous))) {
+            return WriteResult.<Content, Content>result(content, false)
+                    .withPrevious(previous)
+                    .build();
+        }
 
         BatchStatement batch = new BatchStatement();
 
