@@ -59,7 +59,7 @@ public class Attributes {
             Identified.class
     );
     public static final Attribute<String> LOCATIONS_ALIASES_VALUE = stringListAttribute(
-            "locations.aliases.namespace",
+            "locations.aliases.value",
             Identified.class
     );
     public static final Attribute<Id> REGION = idListAttribute("region", Region.class);
