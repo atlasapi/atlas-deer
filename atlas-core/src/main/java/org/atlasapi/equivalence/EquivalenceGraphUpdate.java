@@ -1,11 +1,14 @@
 package org.atlasapi.equivalence;
 
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.Identifiables;
+import java.util.Objects;
 
-import com.google.common.base.Objects;
+import javax.annotation.Nullable;
+
+import org.atlasapi.entity.Id;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -22,11 +25,32 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>e.g. assuming a, b, c, d are separate to begin with:</p> <ol> <li>a -> b, c : a is updated, b,
  * c are deleted.</li> <li>a -> c, d : a is updated, b is created, d is deleted.</li> <li>a -> ∅ : a
  * is updated, c, d are created.</li> </ol>
- */
-/*
+ * <p>
  * N.B. the terms updated/created/deleted are used because they are cruddy.
+ * <p>
+ * This update also contains the equivalence assertion that triggered the graph recomputation.
  */
 public class EquivalenceGraphUpdate {
+
+    private final EquivalenceGraph updated;
+    private final ImmutableSet<EquivalenceGraph> created;
+    private final ImmutableSet<Id> deleted;
+    private final EquivalenceAssertion assertion;
+
+    // Visible for Jackson
+    @SuppressWarnings("WeakerAccess")
+    @JsonCreator
+    EquivalenceGraphUpdate(
+            @JsonProperty("updated") EquivalenceGraph updated,
+            @JsonProperty("created") Iterable<EquivalenceGraph> created,
+            @JsonProperty("deleted") Iterable<Id> deleted,
+            @Nullable @JsonProperty("assertion") EquivalenceAssertion assertion
+    ) {
+        this.updated = checkNotNull(updated);
+        this.created = ImmutableSet.copyOf(created);
+        this.deleted = ImmutableSet.copyOf(deleted);
+        this.assertion = assertion;
+    }
 
     /**
      * Returns a {@link Builder} for an {@link EquivalenceGraphUpdate} based on the provided updated
@@ -39,48 +63,15 @@ public class EquivalenceGraphUpdate {
         return new Builder(updated);
     }
 
-    public static class Builder {
-
-        private EquivalenceGraph updated;
-        private ImmutableSet<EquivalenceGraph> created = ImmutableSet.of();
-        private ImmutableSet<Id> deleted = ImmutableSet.of();
-
-        public Builder(EquivalenceGraph updated) {
-            this.updated = checkNotNull(updated);
-        }
-
-        public Builder withCreated(Iterable<EquivalenceGraph> created) {
-            this.created = ImmutableSet.copyOf(created);
-            return this;
-        }
-
-        public Builder withDeleted(Iterable<Id> deleted) {
-            this.deleted = ImmutableSet.copyOf(deleted);
-            return this;
-        }
-
-        public EquivalenceGraphUpdate build() {
-            return new EquivalenceGraphUpdate(updated, created, deleted);
-        }
-
-    }
-
-    private final EquivalenceGraph updated;
-    private final ImmutableSet<EquivalenceGraph> created;
-    private final ImmutableSet<Id> deleted;
-
-    public EquivalenceGraphUpdate(EquivalenceGraph updated,
-            Iterable<EquivalenceGraph> created,
-            Iterable<Id> deleted) {
-        this.updated = checkNotNull(updated);
-        this.created = ImmutableSet.copyOf(created);
-        this.deleted = ImmutableSet.copyOf(deleted);
+    public Builder copy() {
+        return new Builder(this);
     }
 
     /**
      * Returns the graph updated in this update, containing the subject of the assertion that caused
      * this update.
      */
+    @JsonProperty("updated")
     public EquivalenceGraph getUpdated() {
         return updated;
     }
@@ -89,6 +80,7 @@ public class EquivalenceGraphUpdate {
      * Returns the graphs created in this update because they've been split out of the updated
      * graph
      */
+    @JsonProperty("created")
     public ImmutableSet<EquivalenceGraph> getCreated() {
         return created;
     }
@@ -106,36 +98,89 @@ public class EquivalenceGraphUpdate {
     /**
      * Returns the graphs deleted in this update because they've been merged into the updated graph
      */
+    @JsonProperty("deleted")
     public ImmutableSet<Id> getDeleted() {
         return deleted;
     }
 
+    /**
+     * This value may be null because older messages do not contain this data.
+     *
+     * @return the equivalence assertion that triggered the graph recomputation.
+     */
+    @Nullable
+    @JsonProperty("assertion")
+    public EquivalenceAssertion getAssertion() {
+        return assertion;
+    }
+
     @Override
-    public boolean equals(Object that) {
-        if (this == that) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (that instanceof EquivalenceGraphUpdate) {
-            EquivalenceGraphUpdate other = (EquivalenceGraphUpdate) that;
-            return updated.equals(other.updated)
-                    && created.equals(other.created)
-                    && deleted.equals(other.deleted);
+        if (o == null || getClass() != o.getClass()) {
+            return false;
         }
-        return false;
+        EquivalenceGraphUpdate that = (EquivalenceGraphUpdate) o;
+        return Objects.equals(updated, that.updated) &&
+                Objects.equals(created, that.created) &&
+                Objects.equals(deleted, that.deleted) &&
+                Objects.equals(assertion, that.assertion);
     }
 
     @Override
     public int hashCode() {
-        return updated.hashCode();
+        return Objects.hash(updated, created, deleted, assertion);
     }
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(getClass())
-                .add("updated", updated.getId())
-                .add("created", Iterables.transform(created, Identifiables.toId()))
+        return com.google.common.base.Objects.toStringHelper(this)
+                .add("updated", updated)
+                .add("created", created)
                 .add("deleted", deleted)
+                .add("assertion", assertion)
                 .toString();
     }
 
+    public static class Builder {
+
+        private EquivalenceGraph updated;
+        private ImmutableSet<EquivalenceGraph> created = ImmutableSet.of();
+        private ImmutableSet<Id> deleted = ImmutableSet.of();
+        private EquivalenceAssertion assertion;
+
+        private Builder(EquivalenceGraph updated) {
+            this.updated = checkNotNull(updated);
+        }
+
+        private Builder(EquivalenceGraphUpdate update) {
+            this.updated = update.getUpdated();
+            this.created = update.getCreated();
+            this.deleted = update.getDeleted();
+            this.assertion = update.getAssertion();
+        }
+
+        public Builder withCreated(Iterable<EquivalenceGraph> created) {
+            this.created = ImmutableSet.copyOf(created);
+            return this;
+        }
+
+        public Builder withDeleted(Iterable<Id> deleted) {
+            this.deleted = ImmutableSet.copyOf(deleted);
+            return this;
+        }
+
+        public Builder withAssertion(EquivalenceAssertion equivalenceAssertion) {
+            this.assertion = equivalenceAssertion;
+            return this;
+        }
+
+        public EquivalenceGraphUpdate build() {
+            return new EquivalenceGraphUpdate(
+                    updated, created, deleted, assertion
+            );
+        }
+    }
 }

@@ -50,6 +50,8 @@ public class WorkersModule {
             Configurer.get("messaging.destination.equivalence.content.graph.changes").get();
     private final String equivalentContentChanges =
             Configurer.get("messaging.destination.equivalent.content.changes").get();
+    private final String equivalentContentGraphChanges = Configurer
+            .get("messaging.destination.equivalent.content.graph.changes").get();
 
     private final Integer topicIndexingNumOfConsumers =
             Configurer.get("messaging.deer.topic.indexer.consumers").toInt();
@@ -71,6 +73,8 @@ public class WorkersModule {
             Configurer.get("messaging.deer.content.indexer.graph.changes.consumers").toInt();
     private final Integer neo4jContentStoreContentUpdateNumOfConsumers =
             Configurer.get("messaging.deer.content.neo4j.content.changes.consumers").toInt();
+    private final Integer neo4jContentStoreGraphUpdateNumOfConsumers =
+            Configurer.get("messaging.deer.content.neo4j.graph.changes.consumers").toInt();
 
     private final String equivSystem = Configurer.get("equiv.update.producer.system").get();
     private final String equivTopic = Configurer.get("equiv.update.producer.topic").get();
@@ -95,6 +99,8 @@ public class WorkersModule {
             Configurer.get("messaging.deer.equivalence.content.graph.changes.enabled").toBoolean();
     private final Boolean neo4jContentStoreContentUpdateEnabled =
             Configurer.get("messaging.deer.content.neo4j.content.changes.enabled").toBoolean();
+    private final Boolean neo4jContentStoreGraphUpdateEnabled =
+            Configurer.get("messaging.deer.content.neo4j.graph.changes.enabled").toBoolean();
 
     @Autowired
     private KafkaMessagingModule messaging;
@@ -368,6 +374,31 @@ public class WorkersModule {
                 .build();
     }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer neo4jContentStoreGraphUpdateMessageListener() {
+        String workerName = "Neo4jContentStoreGraphUpdateWorker";
+
+        Neo4jContentStoreGraphUpdateWorker worker = Neo4jContentStoreGraphUpdateWorker
+                .create(
+                        persistence.neo4jContentStore(),
+                        metricsModule.metrics().timer(workerName)
+                );
+
+        return messaging.messageConsumerFactory()
+                .createConsumer(
+                        worker,
+                        serializer(EquivalenceGraphUpdateMessage.class),
+                        equivalentContentGraphChanges,
+                        workerName
+                )
+                .withMaxConsumers(neo4jContentStoreGraphUpdateNumOfConsumers)
+                .withDefaultConsumers(neo4jContentStoreGraphUpdateNumOfConsumers)
+                .withConsumerSystem(consumerSystem)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .build();
+    }
+
     @PostConstruct
     public void start() throws TimeoutException {
         ImmutableList.Builder<Service> services = ImmutableList.builder();
@@ -399,6 +430,9 @@ public class WorkersModule {
         }
         if (neo4jContentStoreContentUpdateEnabled) {
             services.add(neo4jContentStoreContentUpdateMessageListener());
+        }
+        if (neo4jContentStoreGraphUpdateEnabled) {
+            services.add(neo4jContentStoreGraphUpdateMessageListener());
         }
 
         consumerManager = new ServiceManager(services.build());

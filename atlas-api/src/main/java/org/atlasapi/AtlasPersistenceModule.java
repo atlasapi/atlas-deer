@@ -16,6 +16,7 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
 import org.atlasapi.hashing.HashGenerator;
@@ -158,8 +159,10 @@ public class AtlasPersistenceModule {
     private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();
     private final Integer neo4jMaxIdleSessions = Configurer.get("neo4j.maxIdleSessions").toInt();
 
-    private String equivalentContentChanges = Configurer.get(
-            "messaging.destination.equivalent.content.changes").get();
+    private String equivalentContentChanges = Configurer
+            .get("messaging.destination.equivalent.content.changes").get();
+    private String equivalentContentGraphChanges = Configurer
+            .get("messaging.destination.equivalent.content.graph.changes").get();
 
     private @Autowired MessagingModule messaging;
     private @Autowired MetricsModule metricsModule;
@@ -285,6 +288,10 @@ public class AtlasPersistenceModule {
                         equivalentContentChanges,
                         EquivalentContentUpdatedMessage.class
                 ),
+                persistenceModule().sender(
+                        equivalentContentGraphChanges,
+                        EquivalenceGraphUpdateMessage.class
+                ),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel()
@@ -298,6 +305,7 @@ public class AtlasPersistenceModule {
                 legacyContentResolver(),
                 persistenceModule().contentEquivalenceGraphStore(),
                 persistenceModule().nullMessageSender(EquivalentContentUpdatedMessage.class),
+                persistenceModule().nullMessageSender(EquivalenceGraphUpdateMessage.class),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel()
@@ -357,7 +365,7 @@ public class AtlasPersistenceModule {
         return mongo;
     }
 
-    public IdGeneratorBuilder idGeneratorBuilder() {
+    private IdGeneratorBuilder idGeneratorBuilder() {
         return sequenceIdentifier -> new MongoSequentialIdGenerator(
                 databasedWriteMongo(),
                 sequenceIdentifier
@@ -480,7 +488,7 @@ public class AtlasPersistenceModule {
         return new LegacySegmentMigrator(legacySegmentResolver(), segmentStore());
     }
 
-    public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
+    private org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
         return new MongoSegmentResolver(databasedReadMongo(), new SubstitutionTableNumberCodec());
     }
 
