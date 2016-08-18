@@ -41,7 +41,6 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.api.client.util.Lists;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -182,8 +181,9 @@ public class ChannelIntervalScheduleBootstrapTask implements Callable<UpdateProg
             for (Id id : ids) {
                 Optional<EquivalenceGraph> graph = graphs.get(id);
                 if (graph.isPresent()) {
-                    EquivalenceGraphUpdate update = new EquivalenceGraphUpdate(
-                            graph.get(), Lists.newArrayList(), Lists.newArrayList());
+                    EquivalenceGraphUpdate update = EquivalenceGraphUpdate
+                            .builder(graph.get())
+                            .build();
                     updater.updateEquivalences(update.getAllGraphs());
                 } else {
                     log.warn("Failed to resolve graph for {}", id);

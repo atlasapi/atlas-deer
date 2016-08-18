@@ -99,8 +99,17 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
             Optional<EquivalenceGraphUpdate> updated
                     = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
+
             if (updated.isPresent()) {
-                sendUpdateMessage(subject, updated);
+                EquivalenceGraphUpdate graphUpdate = updated.get().copy()
+                        .withAssertion(
+                                EquivalenceAssertion.create(
+                                        subject, assertedAdjacents, sources
+                                )
+                        )
+                        .build();
+
+                sendUpdateMessage(subject, graphUpdate);
             }
             return updated;
 
@@ -153,15 +162,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     protected abstract Logger log();
 
-    private void sendUpdateMessage(ResourceRef subject, Optional<EquivalenceGraphUpdate> updated) {
+    private void sendUpdateMessage(ResourceRef subject, EquivalenceGraphUpdate updatedGraphs) {
         try {
             messageSender.sendMessage(
                     new EquivalenceGraphUpdateMessage(
                             UUID.randomUUID().toString(),
                             Timestamp.of(DateTime.now(DateTimeZones.UTC)),
-                            updated.get()
+                            updatedGraphs
                     ),
-                    Longs.toByteArray(updated.get().getUpdated().getId().longValue())
+                    Longs.toByteArray(updatedGraphs.getUpdated().getId().longValue())
             );
         } catch (MessagingException e) {
             log().warn("messaging failed for equivalence update of " + subject, e);
@@ -261,17 +270,24 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             Map<Id, Adjacents> updatedAdjacents) {
         Map<Id, EquivalenceGraph> updatedGraphs = computeUpdatedGraphs(updatedAdjacents);
         EquivalenceGraph updatedGraph = graphFor(subject, updatedGraphs);
-        return new EquivalenceGraphUpdate(
-                updatedGraph,
-                Collections2.filter(
-                        updatedGraphs.values(),
-                        Predicates.not(Predicates.equalTo(updatedGraph))
-                ),
-                Iterables.filter(
-                        Iterables.transform(assertedAdjacentGraphs.values(), Identifiables.toId()),
-                        Predicates.not(Predicates.in(updatedGraphs.keySet()))
+
+        return EquivalenceGraphUpdate.builder(updatedGraph)
+                .withCreated(
+                        Collections2.filter(
+                                updatedGraphs.values(),
+                                Predicates.not(Predicates.equalTo(updatedGraph))
+                        )
                 )
-        );
+                .withDeleted(
+                        Iterables.filter(
+                                Iterables.transform(
+                                        assertedAdjacentGraphs.values(),
+                                        Identifiables.toId()
+                                ),
+                                Predicates.not(Predicates.in(updatedGraphs.keySet()))
+                        )
+                )
+                .build();
     }
 
     private EquivalenceGraph graphFor(ResourceRef subject,

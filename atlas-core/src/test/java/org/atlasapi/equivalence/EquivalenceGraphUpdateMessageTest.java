@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import org.atlasapi.content.BrandRef;
+import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.JacksonMessageSerializer;
@@ -14,6 +15,7 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.collect.ImmutableSet;
+import org.joda.time.DateTime;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -24,49 +26,83 @@ import static org.junit.Assert.assertThat;
 
 public class EquivalenceGraphUpdateMessageTest {
 
-    JacksonMessageSerializer<EquivalenceGraphUpdateMessage> serializer
+    private JacksonMessageSerializer<EquivalenceGraphUpdateMessage> serializer
             = JacksonMessageSerializer.forType(EquivalenceGraphUpdateMessage.class);
 
     @Test
     public void testDeSerializationWithoutCreatedDeleted() throws Exception {
-        testSerializingMessageWith(new EquivalenceGraphUpdate(
-                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC)),
-                ImmutableSet.<EquivalenceGraph>of(),
-                ImmutableSet.<Id>of()
-        ));
+        testSerializingMessageWith(
+                EquivalenceGraphUpdate.builder(
+                        EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC))
+                )
+                        .build()
+        );
     }
 
     @Test
     public void testDeSerializationWithoutDeleted() throws Exception {
-        testSerializingMessageWith(new EquivalenceGraphUpdate(
-                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC)),
-                ImmutableSet.of(EquivalenceGraph.valueOf(new BrandRef(
-                        Id.valueOf(2),
-                        Publisher.BBC
-                ))),
-                ImmutableSet.<Id>of()
-        ));
+        testSerializingMessageWith(EquivalenceGraphUpdate
+                .builder(EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC)))
+                .withCreated(
+                        ImmutableSet.of(EquivalenceGraph.valueOf(new BrandRef(
+                                Id.valueOf(2),
+                                Publisher.BBC
+                        )))
+                )
+                .build()
+        );
     }
 
     @Test
     public void testDeSerializationWithoutCreated() throws Exception {
-        testSerializingMessageWith(new EquivalenceGraphUpdate(
-                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC)),
-                ImmutableSet.<EquivalenceGraph>of(),
-                ImmutableSet.of(Id.valueOf(1))
-        ));
+        testSerializingMessageWith(
+                EquivalenceGraphUpdate
+                        .builder(
+                                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC))
+                        )
+                        .withDeleted(ImmutableSet.of(Id.valueOf(1)))
+                        .build()
+        );
     }
 
     @Test
     public void testDeSerialization() throws Exception {
-        testSerializingMessageWith(new EquivalenceGraphUpdate(
-                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC)),
-                ImmutableSet.of(EquivalenceGraph.valueOf(new BrandRef(
-                        Id.valueOf(2),
-                        Publisher.BBC
-                ))),
-                ImmutableSet.of(Id.valueOf(1))
-        ));
+        testSerializingMessageWith(
+                EquivalenceGraphUpdate
+                    .builder(EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC)))
+                    .withCreated(
+                            ImmutableSet.of(EquivalenceGraph.valueOf(new BrandRef(
+                                    Id.valueOf(2),
+                                    Publisher.BBC
+                            )))
+                    )
+                    .withDeleted(
+                            ImmutableSet.of(Id.valueOf(1))
+                    )
+                    .build()
+        );
+    }
+
+    @Test
+    public void testDeserialisationWithEquivalenceAssertion() throws Exception {
+        EquivalenceGraph updatedGraph = EquivalenceGraph.valueOf(
+                new BrandRef(Id.valueOf(1), Publisher.BBC)
+        );
+
+        EquivalenceAssertion equivalenceAssertion = EquivalenceAssertion.create(
+                new ItemRef(Id.valueOf(100L), Publisher.BBC, "", DateTime.now()),
+                ImmutableSet.of(
+                        new ItemRef(Id.valueOf(101L), Publisher.BBC, "", DateTime.now())
+                ),
+                ImmutableSet.of(Publisher.BBC)
+        );
+
+        testSerializingMessageWith(
+                EquivalenceGraphUpdate
+                        .builder(updatedGraph)
+                        .withAssertion(equivalenceAssertion)
+                        .build()
+        );
     }
 
     @Test
