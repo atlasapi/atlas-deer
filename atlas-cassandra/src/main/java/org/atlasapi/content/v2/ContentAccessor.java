@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.Content;
+import org.atlasapi.content.v2.model.udt.Broadcast;
 import org.atlasapi.content.v2.model.udt.BroadcastRef;
 import org.atlasapi.content.v2.model.udt.ContainerSummary;
 import org.atlasapi.content.v2.model.udt.ItemRef;
@@ -27,6 +28,9 @@ public interface ContentAccessor {
 
     @Query("UPDATE content_v2 SET toclu = :now WHERE id = :id")
     Statement setLastUpdated(@Param("id") Long id, @Param("now") Instant now);
+
+    @Query("UPDATE content_v2 SET bc = bc + :bc WHERE id = :id")
+    Statement addBroadcastToContent(@Param("id") Long id, @Param("bc") Set<Broadcast> broadcasts);
 
     @Query("UPDATE content_v2 SET "
             + "itr = itr + :refs, "
