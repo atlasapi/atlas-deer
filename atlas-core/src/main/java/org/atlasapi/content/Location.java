@@ -15,8 +15,6 @@ permissions and limitations under the License. */
 
 package org.atlasapi.content;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.entity.Identified;
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.meta.annotations.FieldName;
@@ -44,7 +42,6 @@ public class Location extends Identified implements Hashable {
 
     private Policy policy;
 
-    @Nullable
     @FieldName("policy")
     public Policy getPolicy() {
         return this.policy;
