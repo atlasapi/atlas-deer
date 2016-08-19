@@ -30,6 +30,7 @@ import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.v2.serialization.BroadcastRefSerialization;
+import org.atlasapi.content.v2.serialization.BroadcastSerialization;
 import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
 import org.atlasapi.content.v2.serialization.ContentSerialization;
 import org.atlasapi.content.v2.serialization.ContentSerializationImpl;
@@ -59,6 +60,7 @@ import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -68,6 +70,7 @@ import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
+import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +91,7 @@ public class CqlContentStore implements ContentStore {
     private final Clock clock;
 
     private final ContentSerialization translator = new ContentSerializationImpl();
+    private final BroadcastSerialization broadcastTranslator = new BroadcastSerialization();
     private final SeriesRefSerialization seriesRefTranslator = new SeriesRefSerialization();
     private final ItemRefSerialization itemRefTranslator = new ItemRefSerialization();
     private final BroadcastRefSerialization broadcastRefTranslator =
@@ -174,6 +178,102 @@ public class CqlContentStore implements ContentStore {
         setExistingItemRefs(content, previous);
 
         return new WriteResult<>(content, true, DateTime.now(), previous);
+    }
+
+    @Override
+    public void writeBroadcast(ItemRef item, Optional<ContainerRef> containerRef,
+            Optional<SeriesRef> seriesRef, Broadcast broadcast) {
+        BatchStatement batch = new BatchStatement();
+
+        Instant now = clock.now().toInstant();
+
+        org.atlasapi.content.v2.model.udt.Broadcast serialized =
+                broadcastTranslator.serialize(broadcast);
+
+        ImmutableSet<org.atlasapi.content.v2.model.udt.Broadcast> broadcasts =
+                ImmutableSet.of(serialized);
+
+        batch.add(accessor.addBroadcastToContent(
+                item.getId().longValue(),
+                broadcasts
+        ));
+        batch.add(accessor.setLastUpdated(item.getId().longValue(), now));
+
+        // we only denormalize upcoming broadcasts on containers. If this is stale, just add to
+        // item and return early
+        if (broadcast.isActivelyPublished() && broadcast.isUpcoming()) {
+            org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(item);
+
+            Map<
+                    org.atlasapi.content.v2.model.udt.ItemRef,
+                    List<org.atlasapi.content.v2.model.udt.BroadcastRef>
+            > upcomingBroadcasts = ImmutableMap.of(
+                    itemRef,
+                    ImmutableList.of(broadcastRefTranslator.serialize(broadcast.toRef()))
+            );
+
+            if (containerRef.isPresent()) {
+                long id = containerRef.get().getId().longValue();
+
+                batch.add(accessor.addItemRefsToContainer(
+                        id,
+                        ImmutableSet.of(),
+                        upcomingBroadcasts,
+                        ImmutableMap.of()
+                ));
+                batch.add(accessor.setLastUpdated(id, now));
+            }
+
+            if (seriesRef.isPresent()) {
+                long id = seriesRef.get().getId().longValue();
+                batch.add(accessor.addItemRefsToContainer(
+                        id,
+                        ImmutableSet.of(itemRef),
+                        upcomingBroadcasts,
+                        ImmutableMap.of()
+                ));
+                batch.add(accessor.setLastUpdated(id, now));
+            }
+        }
+
+        session.execute(batch);
+
+        try {
+            sender.sendMessage(new ResourceUpdatedMessage(
+                    UUID.randomUUID().toString(),
+                    Timestamp.of(clock.now()),
+                    item
+            ));
+        } catch (MessagingException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    @Override
+    public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
+        List<ListenableFuture<Content>> futures = StreamSupport.stream(
+                ids.spliterator(),
+                false
+        )
+                .map(Id::longValue)
+                .map(accessor::getContent)
+                .map(contentFuture -> Futures.transform(
+                        contentFuture,
+                        (org.atlasapi.content.v2.model.Content content) -> content != null ? translator.deserialize(content) : null
+                ))
+                .collect(Collectors.toList());
+
+        ListenableFuture<List<Content>> contentList = Futures.transform(
+                Futures.allAsList(futures),
+                (List<Content> input) -> input.stream()
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList())
+        );
+
+        return Futures.transform(
+                contentList,
+                (Function<List<Content>, Resolved<Content>>) Resolved::valueOf
+        );
     }
 
     private void setExistingItemRefs(Content content, Content previous) {
@@ -590,39 +690,6 @@ public class CqlContentStore implements ContentStore {
                                 ImmutableSet.of(itemSummary)
                         )
                 ).stream()).collect(Collectors.toList());
-    }
-
-    @Override
-    public void writeBroadcast(ItemRef item, Optional<ContainerRef> containerRef,
-            Optional<SeriesRef> seriesRef, Broadcast broadcast) {
-        throw new UnsupportedOperationException("herp derp");
-    }
-
-    @Override
-    public ListenableFuture<Resolved<Content>> resolveIds(Iterable<Id> ids) {
-        List<ListenableFuture<Content>> futures = StreamSupport.stream(
-                ids.spliterator(),
-                false
-        )
-                .map(Id::longValue)
-                .map(accessor::getContent)
-                .map(contentFuture -> Futures.transform(
-                        contentFuture,
-                        (org.atlasapi.content.v2.model.Content content) -> content != null ? translator.deserialize(content) : null
-                ))
-                .collect(Collectors.toList());
-
-        ListenableFuture<List<Content>> contentList = Futures.transform(
-                Futures.allAsList(futures),
-                (List<Content> input) -> input.stream()
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList())
-        );
-
-        return Futures.transform(
-                contentList,
-                (Function<List<Content>, Resolved<Content>>) Resolved::valueOf
-        );
     }
 
     private void ensureId(Content content) {
