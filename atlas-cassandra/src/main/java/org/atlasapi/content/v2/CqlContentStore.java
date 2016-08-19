@@ -1,5 +1,6 @@
 package org.atlasapi.content.v2;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -89,9 +90,11 @@ public class CqlContentStore implements ContentStore {
     private final ContentSerialization translator = new ContentSerializationImpl();
     private final SeriesRefSerialization seriesRefTranslator = new SeriesRefSerialization();
     private final ItemRefSerialization itemRefTranslator = new ItemRefSerialization();
-    private final BroadcastRefSerialization broadcastRefTranslator = new BroadcastRefSerialization();
+    private final BroadcastRefSerialization broadcastRefTranslator =
+            new BroadcastRefSerialization();
     private final ItemSummarySerialization itemSummaryTranslator = new ItemSummarySerialization();
-    private final LocationSummarySerialization locationSummaryTranslator = new LocationSummarySerialization();
+    private final LocationSummarySerialization locationSummaryTranslator =
+            new LocationSummarySerialization();
     private final ContainerSummarySerialization containerSummaryTranslator =
             new ContainerSummarySerialization();
     private final ContentHasher hasher;
@@ -386,10 +389,18 @@ public class CqlContentStore implements ContentStore {
             Series series = (Series) content;
             BrandRef brandRef = series.getBrandRef();
             if (brandRef != null) {
-                result.add(accessor.addSeriesRefToBrand(
-                        brandRef.getId().longValue(),
-                        ImmutableSet.of(seriesRefTranslator.serialize(series.toRef()))
-                ));
+
+                if (!series.isActivelyPublished()) {
+                    result.add(accessor.removeSeriesRefFromBrand(
+                            brandRef.getId().longValue(),
+                            ImmutableSet.of(seriesRefTranslator.serialize(series.toRef()))
+                    ));
+                } else {
+                    result.add(accessor.addSeriesRefToBrand(
+                            brandRef.getId().longValue(),
+                            ImmutableSet.of(seriesRefTranslator.serialize(series.toRef()))
+                    ));
+                }
 
                 messages.add(new ResourceUpdatedMessage(
                         UUID.randomUUID().toString(),
@@ -519,8 +530,6 @@ public class CqlContentStore implements ContentStore {
             Item item,
             ContainerRef... containerRefs
     ) {
-        List<Statement> result = Lists.newArrayList();
-
         ItemRef ref = item.toRef();
         ItemSummary summary = item.toSummary();
 
@@ -546,25 +555,20 @@ public class CqlContentStore implements ContentStore {
         org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
         org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
 
-        for (ContainerRef containerRef : containerRefs) {
-            if (containerRef == null) {
-                continue;
-            }
-
-            result.add(accessor.removeItemRefsFromContainer(
-                    containerRef.getId().longValue(),
-                    ImmutableSet.of(itemRef),
-                    upcomingSerialised,
-                    availableLocationsSerialised
-            ));
-
-            result.add(accessor.removeItemSummariesFromContainer(
-                    containerRef.getId().longValue(),
-                    ImmutableSet.of(itemSummary)
-            ));
-        }
-
-        return result;
+        return Arrays.stream(containerRefs)
+                .filter(Objects::nonNull)
+                .flatMap(containerRef -> Lists.newArrayList(
+                        accessor.removeItemRefsFromContainer(
+                                containerRef.getId().longValue(),
+                                ImmutableSet.of(itemRef),
+                                upcomingSerialised,
+                                availableLocationsSerialised
+                        ),
+                        accessor.removeItemSummariesFromContainer(
+                                containerRef.getId().longValue(),
+                                ImmutableSet.of(itemSummary)
+                        )
+                ).stream()).collect(Collectors.toList());
     }
 
     @Override

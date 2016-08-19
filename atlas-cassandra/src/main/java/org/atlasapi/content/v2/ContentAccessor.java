@@ -70,6 +70,12 @@ public interface ContentAccessor {
             @Param("refs") Set<SeriesRef> seriesRefs
     );
 
+    @Query("UPDATE content_v2 SET ser = ser - :refs WHERE id = :id")
+    Statement removeSeriesRefFromBrand(
+            @Param("id") Long brandId,
+            @Param("refs") Set<SeriesRef> seriesRefs
+    );
+
     @Query("UPDATE content_v2 SET cns = :summary WHERE id = :id")
     Statement updateContainerSummaryInChild(
             @Param("id") Long childId,
