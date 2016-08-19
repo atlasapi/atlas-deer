@@ -113,9 +113,6 @@ public class EsContentTranslator {
         if (policy.getAvailabilityEnd() != null) {
             location.availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
         }
-
-        location.aliases(policy.getAliases());
-
         return location;
     }
 

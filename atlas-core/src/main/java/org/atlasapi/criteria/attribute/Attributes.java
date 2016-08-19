@@ -53,15 +53,6 @@ public class Attributes {
             "aliases.value",
             Identified.class
     );
-
-    public static final Attribute<String> LOCATIONS_ALIASES_NAMESPACE = stringListAttribute(
-            "locations.aliases.namespace",
-            Identified.class
-    );
-    public static final Attribute<String> LOCATIONS_ALIASES_VALUE = stringListAttribute(
-            "locations.aliases.value",
-            Identified.class
-    );
     public static final Attribute<Id> REGION = idListAttribute("region", Region.class);
 
     public static final Attribute<Id> TOPIC_ID = idListAttribute(

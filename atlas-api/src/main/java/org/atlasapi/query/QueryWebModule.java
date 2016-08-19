@@ -472,14 +472,6 @@ public class QueryWebModule {
                                 AttributeCoercers.stringCoercer()
                         ),
                         QueryAtomParser.valueOf(
-                                Attributes.LOCATIONS_ALIASES_NAMESPACE,
-                                AttributeCoercers.stringCoercer()
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.LOCATIONS_ALIASES_VALUE,
-                                AttributeCoercers.stringCoercer()
-                        ),
-                        QueryAtomParser.valueOf(
                                 Attributes.TAG_RELATIONSHIP,
                                 AttributeCoercers.stringCoercer()
                         ),
