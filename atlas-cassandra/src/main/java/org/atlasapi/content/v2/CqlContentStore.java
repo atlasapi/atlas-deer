@@ -145,7 +145,7 @@ public class CqlContentStore implements ContentStore {
 
         batch.addAll(updateWriteDates(content, now));
         batch.addAll(updateContainerSummary(content, messages));
-        batch.addAll(updateContainerDenormalizedInfo(content, messages));
+        batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
         batch.addAll(updateChildrenSummaries(content, previous, messages));
 
         org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
@@ -380,6 +380,7 @@ public class CqlContentStore implements ContentStore {
 
     private List<Statement> updateContainerDenormalizedInfo(
             Content content,
+            Content previous,
             ImmutableList.Builder<ResourceUpdatedMessage> messages
     ) {
         List<Statement> result = Lists.newArrayList();
@@ -388,8 +389,8 @@ public class CqlContentStore implements ContentStore {
             // update brand series ref
             Series series = (Series) content;
             BrandRef brandRef = series.getBrandRef();
-            if (brandRef != null) {
 
+            if (brandRef != null) {
                 if (!series.isActivelyPublished()) {
                     result.add(accessor.removeSeriesRefFromBrand(
                             brandRef.getId().longValue(),
@@ -412,16 +413,36 @@ public class CqlContentStore implements ContentStore {
 
         if (content instanceof Item) {
             Item item = (Item) content;
+            Item previousItem = (Item) previous;
 
             ContainerRef containerRef = item.getContainerRef();
+            ContainerRef previousContainerRef = previousItem != null
+                                                ? previousItem.getContainerRef()
+                                                : null;
+
             SeriesRef seriesRef = null;
+            SeriesRef previousSeriesRef = null;
 
             if (content instanceof Episode) {
                 Episode episode = (Episode) content;
                 seriesRef = episode.getSeriesRef();
             }
 
-            if (!item.isActivelyPublished() || (item.isGenericDescription() != null
+            if (previousItem instanceof Episode) {
+                Episode previousEpisode = (Episode) previousItem;
+                previousSeriesRef = previousEpisode.getSeriesRef();
+            }
+
+            if (!Objects.equals(containerRef, previousContainerRef)) {
+                result.addAll(removeItemRefsFromContainers(item, previousContainerRef));
+            }
+
+            if (!Objects.equals(seriesRef, previousSeriesRef)) {
+                result.addAll(removeItemRefsFromContainers(item, previousSeriesRef));
+            }
+
+            if (!item.isActivelyPublished()
+                    || (item.isGenericDescription() != null
                     && item.isGenericDescription())) {
                 result.addAll(removeItemRefsFromContainers(item, containerRef, seriesRef));
                 return result;

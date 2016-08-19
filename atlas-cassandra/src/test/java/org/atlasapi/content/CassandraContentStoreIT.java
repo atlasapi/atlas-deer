@@ -1766,10 +1766,10 @@ public abstract class CassandraContentStoreIT {
 
         resolvedBrand = (Brand) resolve(1234L);
 
-        assertThat(resolvedBrand.getItemRefs().isEmpty(), is(true));
-        assertThat(resolvedBrand.getItemSummaries().isEmpty(), is(true));
-        assertThat(resolvedBrand.getUpcomingContent().isEmpty(), is(true));
-        assertThat(resolvedBrand.getAvailableContent().isEmpty(), is(true));
+        assertThat(resolvedBrand.getItemRefs(), is(empty()));
+        assertThat(resolvedBrand.getItemSummaries(), is(empty()));
+        assertThat(resolvedBrand.getUpcomingContent().entrySet(), is(empty()));
+        assertThat(resolvedBrand.getAvailableContent().entrySet(), is(empty()));
 
         resolvedBrand2 = (Brand) resolve(12345L);
 
