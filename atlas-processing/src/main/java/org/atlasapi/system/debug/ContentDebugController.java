@@ -39,6 +39,7 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
@@ -76,6 +77,7 @@ public class ContentDebugController {
     private final ContentStore contentStore;
     private final EquivalenceGraphStore equivalenceGraphStore;
     private final EquivalentContentStore equivalentContentStore;
+    private final Neo4jContentStore neo4jContentStore;
 
     private final ContentBootstrapListener contentBootstrapListener;
     private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
@@ -88,7 +90,8 @@ public class ContentDebugController {
             DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
             ContentIndex index,
             EsContentTranslator esContentTranslator,
-            Neo4jContentStore neo4JContentStore, ContentStore contentStore,
+            Neo4jContentStore neo4jContentStore,
+            ContentStore contentStore,
             EquivalenceGraphStore contentEquivalenceGraphStore,
             EquivalentContentStore equivalentContentStore
     ) {
@@ -98,6 +101,7 @@ public class ContentDebugController {
         this.contentStore = checkNotNull(contentStore);
         this.equivalenceGraphStore = checkNotNull(contentEquivalenceGraphStore);
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
+        this.neo4jContentStore = checkNotNull(neo4jContentStore);
 
         this.contentBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(persistence.nullMessageSendingContentStore())
@@ -117,7 +121,7 @@ public class ContentDebugController {
                 .build();
 
         this.contentNeo4jMigrator = ContentNeo4jMigrator.create(
-                neo4JContentStore, contentStore, contentEquivalenceGraphStore
+                neo4jContentStore, contentStore, contentEquivalenceGraphStore
         );
     }
 
@@ -324,7 +328,7 @@ public class ContentDebugController {
 
     @RequestMapping(value = "/system/debug/content/{id}/neo4j", method = RequestMethod.POST)
     public void updateContentInNeo4j(@PathVariable("id") String id, HttpServletResponse response)
-            throws IOException{
+            throws IOException {
         PrintWriter writer = response.getWriter();
 
         try {
@@ -356,8 +360,37 @@ public class ContentDebugController {
 
         } catch (Exception e) {
             response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            writer.println("Failure\n");
-            writer.println(Throwables.getStackTraceAsString(e));
+        }
+        response.flushBuffer();
+    }
+
+    @RequestMapping(value = "/system/debug/content/{id}/neo4j", method = RequestMethod.GET)
+    public void getContentGraphFromNeo4j(
+            @PathVariable("id") String id,
+            HttpServletResponse response
+    ) throws IOException {
+        try {
+            Id decodedId = decodeId(id);
+
+            ImmutableSet<Id> equivalentSet = neo4jContentStore.getEquivalentSet(decodedId);
+
+            jackson.writeValue(
+                    response.getWriter(),
+                    ImmutableMap.of(
+                            "requestedId", decodedId,
+                            "equivalentSet", equivalentSet
+                    )
+            );
+        } catch (Exception e) {
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            jackson.writeValue(
+                    response.getWriter(),
+                    ImmutableMap.of(
+                            "error", e.getMessage(),
+                            "type", e.getClass().getCanonicalName(),
+                            "stackTrace", Throwables.getStackTraceAsString(e)
+                    )
+            );
         }
         response.flushBuffer();
     }
@@ -372,5 +405,4 @@ public class ContentDebugController {
     private Id decodeId(String id) {
         return Id.valueOf(lowercase.decode(id).longValue());
     }
-
 }
