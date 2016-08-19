@@ -43,12 +43,16 @@ import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
+import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
+import com.metabroadcast.common.collect.ImmutableOptionalMap;
+import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
-import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
@@ -60,7 +64,6 @@ import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -102,14 +105,15 @@ public class CqlContentStore implements ContentStore {
     private final ContainerSummarySerialization containerSummaryTranslator =
             new ContainerSummarySerialization();
     private final ContentHasher hasher;
+    private final EquivalenceGraphStore graphStore;
 
     public CqlContentStore(
             Session session,
             MessageSender<ResourceUpdatedMessage> sender,
             IdGenerator idGenerator,
             Clock clock,
-            ContentHasher hasher
-    ) {
+            ContentHasher hasher,
+            EquivalenceGraphStore graphStore) {
         this.idGenerator = checkNotNull(idGenerator);
         this.session = checkNotNull(session);
         this.clock = checkNotNull(clock);
@@ -120,6 +124,7 @@ public class CqlContentStore implements ContentStore {
 
         this.sender = checkNotNull(sender);
         this.hasher = checkNotNull(hasher);
+        this.graphStore = checkNotNull(graphStore);
     }
 
     @Override
@@ -164,20 +169,70 @@ public class CqlContentStore implements ContentStore {
                 content.toRef()
         ));
 
-        for (ResourceUpdatedMessage message : messages.build()) {
-            try {
-                sender.sendMessage(
-                        message,
-                        Longs.toByteArray(message.getUpdatedResource().getId().longValue())
-                );
-            } catch (MessagingException e) {
-                log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
-            }
-        }
+        sendMessages(messages.build());
 
         setExistingItemRefs(content, previous);
 
         return new WriteResult<>(content, true, DateTime.now(), previous);
+    }
+
+    private void sendMessages(ImmutableList<ResourceUpdatedMessage> messages) {
+        Map<Id, Id> resourceGraphIds = getResourceGraphIds(messages);
+
+        for (ResourceUpdatedMessage message : messages) {
+            try {
+                // Downstream workers are processing the entire equivalence graph for every
+                // updated content. Therefore we want to use the graph ID as the partition key
+                // to ensure each graph is only processed by a single worker thread.
+                // We default to using the updated resource id as the partition key if we can't
+                // resolve the resource's graph.
+                Id resourceId = message.getUpdatedResource().getId();
+
+                Id partitionId =
+                        resourceGraphIds.containsKey(resourceId)
+                        ? resourceGraphIds.get(resourceId)
+                        : resourceId;
+
+                sender.sendMessage(message, Longs.toByteArray(partitionId.longValue()));
+            } catch (Exception e) {
+                log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
+            }
+        }
+    }
+
+    private Map<Id, Id> getResourceGraphIds(Iterable<ResourceUpdatedMessage> messages) {
+        ImmutableSet<Id> messageResourceIds = StreamSupport.stream(messages.spliterator(), false)
+                .map(message -> message.getUpdatedResource().getId())
+                .distinct()
+                .collect(MoreCollectors.toImmutableSet());
+
+        return getResourceGraphIds(
+                messageResourceIds,
+                getGraphMap(messageResourceIds)
+        );
+    }
+
+    private ImmutableMap<Id, Id> getResourceGraphIds(
+            Iterable<Id> updatedResourceIds,
+            OptionalMap<Id, EquivalenceGraph> graphMap
+    ) {
+        return StreamSupport.stream(updatedResourceIds.spliterator(), false)
+                .distinct()
+                .filter(resourceId -> graphMap.get(resourceId).isPresent())
+                .collect(MoreCollectors.toImmutableMap(
+                        java.util.function.Function.identity(),
+                        resourceId -> graphMap.get(resourceId)
+                                .get()
+                                .getId()
+                ));
+    }
+
+    private OptionalMap<Id, EquivalenceGraph> getGraphMap(Iterable<Id> messageResourceIds) {
+        try {
+            return graphStore.resolveIds(messageResourceIds).get();
+        } catch (InterruptedException | ExecutionException e) {
+            return ImmutableOptionalMap.of();
+        }
     }
 
     @Override
@@ -238,15 +293,11 @@ public class CqlContentStore implements ContentStore {
 
         session.execute(batch);
 
-        try {
-            sender.sendMessage(new ResourceUpdatedMessage(
-                    UUID.randomUUID().toString(),
-                    Timestamp.of(clock.now()),
-                    item
-            ));
-        } catch (MessagingException e) {
-            throw Throwables.propagate(e);
-        }
+        sendMessages(ImmutableList.of(new ResourceUpdatedMessage(
+                UUID.randomUUID().toString(),
+                Timestamp.of(clock.now()),
+                item
+        )));
     }
 
     @Override
