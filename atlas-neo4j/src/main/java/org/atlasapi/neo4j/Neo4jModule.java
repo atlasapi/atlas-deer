@@ -1,6 +1,7 @@
 package org.atlasapi.neo4j;
 
 import org.atlasapi.neo4j.service.Neo4jContentStore;
+import org.atlasapi.neo4j.service.resolvers.EquivalentSetResolver;
 import org.atlasapi.neo4j.service.writers.BroadcastWriter;
 import org.atlasapi.neo4j.service.writers.ContentWriter;
 import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
@@ -33,14 +34,15 @@ public class Neo4jModule {
     public Neo4jContentStore neo4jContentStore() {
         ContentWriter contentWriter = ContentWriter.create();
 
-        return Neo4jContentStore.create(
-                sessionFactory,
-                EquivalenceWriter.create(),
-                contentWriter,
-                BroadcastWriter.create(),
-                LocationWriter.create(),
-                HierarchyWriter.create(contentWriter)
-        );
+        return Neo4jContentStore.builder()
+                .withSessionFactory(sessionFactory)
+                .withGraphWriter(EquivalenceWriter.create())
+                .withContentWriter(contentWriter)
+                .withBroadcastWriter(BroadcastWriter.create())
+                .withLocationWriter(LocationWriter.create())
+                .withHierarchyWriter(HierarchyWriter.create(contentWriter))
+                .withEquivalentSetResolver(EquivalentSetResolver.create())
+                .build();
     }
 
     @VisibleForTesting

@@ -12,6 +12,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.Neo4jSessionFactory;
 import org.atlasapi.neo4j.service.model.Neo4jPersistenceException;
+import org.atlasapi.neo4j.service.resolvers.EquivalentSetResolver;
 import org.atlasapi.neo4j.service.writers.BroadcastWriter;
 import org.atlasapi.neo4j.service.writers.ContentWriter;
 import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
@@ -31,6 +32,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
@@ -42,11 +45,15 @@ public class Neo4JContentStoreTest {
     @Rule public ExpectedException exception = ExpectedException.none();
 
     @Mock private Neo4jSessionFactory sessionFactory;
+
     @Mock private EquivalenceWriter equivalenceWriter;
     @Mock private ContentWriter contentWriter;
     @Mock private BroadcastWriter broadcastWriter;
     @Mock private LocationWriter locationWriter;
     @Mock private HierarchyWriter hierarchyWriter;
+
+    @Mock private EquivalentSetResolver equivalentSetResolver;
+
     @Mock private Session session;
     @Mock private Transaction transaction;
 
@@ -57,14 +64,15 @@ public class Neo4JContentStoreTest {
 
     @Before
     public void setUp() throws Exception {
-        graphService = Neo4jContentStore.create(
-                sessionFactory,
-                equivalenceWriter,
-                contentWriter,
-                broadcastWriter,
-                locationWriter,
-                hierarchyWriter
-        );
+        graphService = Neo4jContentStore.builder()
+                .withSessionFactory(sessionFactory)
+                .withGraphWriter(equivalenceWriter)
+                .withContentWriter(contentWriter)
+                .withBroadcastWriter(broadcastWriter)
+                .withLocationWriter(locationWriter)
+                .withHierarchyWriter(hierarchyWriter)
+                .withEquivalentSetResolver(equivalentSetResolver)
+                .build();
 
         contentRefA = getContentRef(new Item(), 900L, Publisher.METABROADCAST);
         contentRefB = getContentRef(new Episode(), 901L, Publisher.BBC);
@@ -223,6 +231,20 @@ public class Neo4JContentStoreTest {
         verify(hierarchyWriter).writeNoHierarchy(clip, transaction);
         verify(locationWriter).write(clip, transaction);
         verify(broadcastWriter).write(clip, transaction);
+    }
+
+    @Test
+    public void getEquivalentSetCallsDelegate() throws Exception {
+        Id id = Id.valueOf(0L);
+
+        when(equivalentSetResolver.getEquivalentSet(id, session))
+                .thenReturn(ImmutableSet.of(id));
+
+        ImmutableSet<Id> equivalentSet = graphService.getEquivalentSet(id);
+
+        verify(equivalentSetResolver).getEquivalentSet(id, session);
+
+        assertThat(equivalentSet, is(ImmutableSet.of(id)));
     }
 
     private ContentRef getContentRef(Item content, long id, Publisher source) {
