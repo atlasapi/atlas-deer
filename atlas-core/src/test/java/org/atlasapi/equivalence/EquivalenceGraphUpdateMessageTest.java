@@ -1,9 +1,6 @@
 package org.atlasapi.equivalence;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.ItemRef;
@@ -15,12 +12,11 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.collect.ImmutableSet;
-import org.joda.time.DateTime;
 import org.apache.commons.io.IOUtils;
+import org.joda.time.DateTime;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -107,22 +103,30 @@ public class EquivalenceGraphUpdateMessageTest {
 
     @Test
     public void testDeSerializationOfOldGraphUpdateModel() throws Exception {
-        EquivalenceGraphUpdate equivalenceGraphUpdate = new EquivalenceGraphUpdate(
-                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC)),
-                ImmutableSet.of(EquivalenceGraph.valueOf(new BrandRef(
-                        Id.valueOf(2),
-                        Publisher.BBC
-                ))),
-                ImmutableSet.of(Id.valueOf(1))
-        );
+        EquivalenceGraphUpdate equivalenceGraphUpdate = EquivalenceGraphUpdate.builder(
+                EquivalenceGraph.valueOf(new BrandRef(Id.valueOf(1), Publisher.BBC))
+        )
+                .withCreated(
+                        ImmutableSet.of(EquivalenceGraph.valueOf(new BrandRef(
+                                Id.valueOf(2),
+                                Publisher.BBC
+                        )))
+                )
+                .withDeleted(ImmutableSet.of(Id.valueOf(1)))
+                .build();
 
-        EquivalenceGraphUpdateMessage latestModel =
-                new EquivalenceGraphUpdateMessage("message", Timestamp.of(0), equivalenceGraphUpdate);
+        EquivalenceGraphUpdateMessage latestModel = new EquivalenceGraphUpdateMessage(
+                "message", Timestamp.of(0), equivalenceGraphUpdate
+        );
 
         InputStream model = getClass().getResourceAsStream(
                 "/old_equiv_graph_model_byte_array.txt");
-        EquivalenceGraphUpdateMessage oldModel = serializer.deserialize(IOUtils.toByteArray(model));
-        EquivalenceGraphUpdateMessage newModel = serializer.deserialize(serializer.serialize(latestModel));
+        EquivalenceGraphUpdateMessage oldModel = serializer.deserialize(
+                IOUtils.toByteArray(model)
+        );
+        EquivalenceGraphUpdateMessage newModel = serializer.deserialize(
+                serializer.serialize(latestModel)
+        );
         assertEquals(oldModel, newModel);
     }
 
