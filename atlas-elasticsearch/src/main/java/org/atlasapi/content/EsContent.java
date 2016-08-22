@@ -109,6 +109,7 @@ public class EsContent extends EsObject {
                 .endObject()
                 .startObject(EsContent.LOCATIONS)
                 .field("type").value("nested")
+                .rawField("properties", EsLocation.getMapping().bytes())
                 .endObject()
                 .startObject(EsContent.GENRE)
                 .field("type").value("string")

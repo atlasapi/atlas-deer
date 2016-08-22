@@ -105,15 +105,21 @@ public class EsContentTranslator {
         return transmissionTime.toDateTime(DateTimeZones.UTC);
     }
 
-    private EsLocation toEsLocation(Policy policy) {
-        EsLocation location = new EsLocation();
+    private EsLocation toEsLocation(Location location) {
+        Policy policy = location.getPolicy();
+
+        EsLocation esLocation = new EsLocation();
+
         if (policy.getAvailabilityStart() != null) {
-            location.availabilityTime(toUtc(policy.getAvailabilityStart()).toDate());
+            esLocation.availabilityTime(toUtc(policy.getAvailabilityStart()).toDate());
         }
         if (policy.getAvailabilityEnd() != null) {
-            location.availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
+            esLocation.availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
         }
-        return location;
+
+        esLocation.aliases(location.getAliases());
+
+        return esLocation;
     }
 
     private Collection<EsLocation> makeESLocations(Content content) {
@@ -123,7 +129,7 @@ public class EsContentTranslator {
                 if (location.getPolicy() != null
                         && location.getPolicy().getAvailabilityStart() != null
                         && location.getPolicy().getAvailabilityEnd() != null) {
-                    esLocations.add(toEsLocation(location.getPolicy()));
+                    esLocations.add(toEsLocation(location));
                 }
             }
         }
@@ -321,12 +327,11 @@ public class EsContentTranslator {
 
     private List<Map<String, Object>> dedupeAndMergeLocations(Content episode,
             List<Map<String, Object>> existingLocations) {
-        ImmutableSet<Policy> policies = episode.getManifestedAs().stream()
+        ImmutableSet<Location> locations = episode.getManifestedAs().stream()
                 .filter(encoding -> encoding != null)
                 .flatMap(encoding -> encoding.getAvailableAt().stream())
                 .filter(location -> location != null)
-                .map(Location::getPolicy)
-                .filter(policy -> policy != null)
+                .filter(location -> location.getPolicy() != null)
                 .collect(MoreCollectors.toImmutableSet());
 
         List<Map<String, Object>> nonNullExistingLocations = existingLocations != null
@@ -336,15 +341,15 @@ public class EsContentTranslator {
                 fromEsLocations(nonNullExistingLocations)
         );
 
-        ImmutableList<Map<String, Object>> newPolicies = policies.stream()
-                .filter(filter::apply)
+        ImmutableList<Map<String, Object>> newLocations = locations.stream()
+                .filter(location -> filter.apply(location.getPolicy()))
                 .map(this::toEsLocation)
                 .map(EsObject::toMap)
                 .collect(MoreCollectors.toImmutableList());
 
         return ImmutableList.<Map<String, Object>>builder()
                 .addAll(nonNullExistingLocations)
-                .addAll(newPolicies)
+                .addAll(newLocations)
                 .build();
     }
 
