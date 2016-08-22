@@ -3,14 +3,25 @@ package org.atlasapi.util;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
+
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 
 public class CassandraInit {
+
+    private static final ImmutableSet<String> SEEDS = ImmutableSet.of("localhost");
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     public static void createTables(Session session, AstyanaxContext<Keyspace> context)
             throws ConnectionException, IOException {
@@ -65,5 +76,25 @@ public class CassandraInit {
         for (String table : tables) {
             session.execute(String.format("TRUNCATE %s", table));
         }
+    }
+
+    public static DatastaxCassandraService datastaxCassandraService() {
+        return DatastaxCassandraService.builder()
+                    .withNodes(SEEDS)
+                    .withConnectionsPerHostLocal(8)
+                    .withConnectionsPerHostRemote(2)
+                    .withCodecRegistry(new CodecRegistry()
+                            .register(InstantCodec.instance)
+                            .register(LocalDateCodec.instance)
+                            .register(new JacksonJsonCodec<>(
+                                    org.atlasapi.content.v2.model.Clip.Wrapper.class,
+                                    MAPPER
+                            ))
+                            .register(new JacksonJsonCodec<>(
+                                    org.atlasapi.content.v2.model.Encoding.Wrapper.class,
+                                    MAPPER
+                            ))
+                    )
+                    .build();
     }
 }

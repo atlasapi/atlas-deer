@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS event_aliases_v2 (
   column1 text,
   value bigint,
   PRIMARY KEY (key, column1)
-) WITH
+) WITH COMPACT STORAGE AND
   caching='KEYS_ONLY' AND
   comment='event aliases store' AND
   compaction={'class': 'LeveledCompactionStrategy'} AND

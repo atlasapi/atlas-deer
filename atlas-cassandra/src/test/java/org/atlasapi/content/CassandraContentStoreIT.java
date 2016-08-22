@@ -32,12 +32,7 @@ import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 
 import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.extras.codecs.joda.InstantCodec;
-import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
-import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -87,9 +82,7 @@ import static org.mockito.Mockito.when;
 
 public abstract class CassandraContentStoreIT {
 
-    private static final ImmutableSet<String> SEEDS = ImmutableSet.of("localhost");
     private static final String KEYSPACE = "atlas_testing";
-    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     protected static final AstyanaxContext<Keyspace> context =
             CassandraHelper.testCassandraContext();
@@ -124,23 +117,7 @@ public abstract class CassandraContentStoreIT {
         root.setLevel(Level.WARN);
         context.start();
 
-        DatastaxCassandraService cassandraService = DatastaxCassandraService.builder()
-                .withNodes(SEEDS)
-                .withConnectionsPerHostLocal(8)
-                .withConnectionsPerHostRemote(2)
-                .withCodecRegistry(new CodecRegistry()
-                        .register(InstantCodec.instance)
-                        .register(LocalDateCodec.instance)
-                        .register(new JacksonJsonCodec<>(
-                                org.atlasapi.content.v2.model.Clip.Wrapper.class,
-                                MAPPER
-                        ))
-                        .register(new JacksonJsonCodec<>(
-                                org.atlasapi.content.v2.model.Encoding.Wrapper.class,
-                                MAPPER
-                        ))
-                )
-                .build();
+        DatastaxCassandraService cassandraService = CassandraInit.datastaxCassandraService();
 
         cassandraService.startAsync().awaitRunning();
         Cluster cluster = cassandraService.getCluster();
@@ -156,8 +133,6 @@ public abstract class CassandraContentStoreIT {
 
     @After
     public void clearCf() throws ConnectionException {
-        context.getClient().truncateColumnFamily(CONTENT_TABLE);
-        context.getClient().truncateColumnFamily("content_aliases");
         CassandraInit.truncate(session, context);
     }
 

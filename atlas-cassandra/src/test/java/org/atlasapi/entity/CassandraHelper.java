@@ -20,7 +20,7 @@ import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 public class CassandraHelper {
 
     private static final String CLUSTER_NAME = "Build";
-    private static final String KEYSPACE_NAME = "atlas_testing";
+    public static final String KEYSPACE_NAME = "atlas_testing";
     private static final String SEEDS = "127.0.0.1";
     private static final int CLIENT_THREADS = 5;
     private static final int CONNECTION_TIMEOUT = 1000;
