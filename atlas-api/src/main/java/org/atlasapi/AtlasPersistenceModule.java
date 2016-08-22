@@ -93,6 +93,7 @@ import com.metabroadcast.common.properties.Parameter;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 
+import com.datastax.driver.core.CodecRegistry;
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -191,6 +192,7 @@ public class AtlasPersistenceModule {
                 .withNodes(seeds)
                 .withConnectionsPerHostLocal(cassandraConnectionsPerHostLocal)
                 .withConnectionsPerHostRemote(cassandraConnectionsPerHostRemote)
+                .withCodecRegistry(CodecRegistry.DEFAULT_INSTANCE)
                 .withConnectTimeoutMillis(cassandraDatastaxConnectionTimeout)
                 .withReadTimeoutMillis(cassandraDatastaxReadTimeout)
                 .build();

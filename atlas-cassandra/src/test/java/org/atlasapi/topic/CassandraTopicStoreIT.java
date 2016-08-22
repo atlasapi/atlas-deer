@@ -1,5 +1,6 @@
 package org.atlasapi.topic;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.Alias;
@@ -9,22 +10,23 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.util.CassandraInit;
 
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 import com.google.common.base.Equivalence;
 import com.google.common.collect.ImmutableList;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.model.ConsistencyLevel;
-import com.netflix.astyanax.serializers.LongSerializer;
-import com.netflix.astyanax.serializers.StringSerializer;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
@@ -85,26 +87,19 @@ public class CassandraTopicStoreIT {
     }
 
     @BeforeClass
-    public static void setup() throws ConnectionException {
+    public static void setup() throws ConnectionException, IOException {
         context.start();
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) {
-            // Nothing to do
-        }
-        CassandraHelper.createKeyspace(context);
-        CassandraHelper.createColumnFamily(
-                context,
-                "topics",
-                LongSerializer.get(),
-                StringSerializer.get()
-        );
-        CassandraHelper.createColumnFamily(
-                context,
-                "topics_aliases",
-                StringSerializer.get(),
-                StringSerializer.get()
-        );
+
+        DatastaxCassandraService service = CassandraInit.datastaxCassandraService();
+        service.startAsync().awaitRunning();
+        Cluster cluster = service.getCluster();
+
+        Session session = cluster.connect();
+
+        CassandraInit.createTables(session, context);
+        CassandraInit.truncate(session, context);
+
+        session.close();
     }
 
     @After
