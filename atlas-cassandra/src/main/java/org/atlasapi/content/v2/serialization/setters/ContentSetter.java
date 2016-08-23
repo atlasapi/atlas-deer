@@ -1,4 +1,4 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,6 +16,16 @@ import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.content.v2.model.udt.Tag;
+import org.atlasapi.content.v2.serialization.CertificateSerialization;
+import org.atlasapi.content.v2.serialization.ClipSerialization;
+import org.atlasapi.content.v2.serialization.ContentGroupRefSerialization;
+import org.atlasapi.content.v2.serialization.CrewMemberSerialization;
+import org.atlasapi.content.v2.serialization.EncodingSerialization;
+import org.atlasapi.content.v2.serialization.EventRefSerialization;
+import org.atlasapi.content.v2.serialization.KeyPhraseSerialization;
+import org.atlasapi.content.v2.serialization.RatingSerialization;
+import org.atlasapi.content.v2.serialization.ReviewSerialization;
+import org.atlasapi.content.v2.serialization.TagSerialization;
 
 public class ContentSetter {
 

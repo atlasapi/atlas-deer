@@ -9,23 +9,12 @@ import org.joda.time.Instant;
 @UDT(name = "seriesref")
 public class SeriesRef {
 
-    @Field(name = "r")
-    private Ref ref;
-
-    @Field(name = "t")
-    private String title;
-
-    @Field(name = "u")
-    private Instant updated;
-
-    @Field(name = "sn")
-    private Integer seriesNumber;
-
-    @Field(name = "ry")
-    private Integer releaseYear;
-
-    @Field(name = "cr")
-    private Set<Certificate> certificates;
+    @Field(name = "ref") private Ref ref;
+    @Field(name = "title") private String title;
+    @Field(name = "updated") private Instant updated;
+    @Field(name = "series_nr") private Integer seriesNumber;
+    @Field(name = "release_year") private Integer releaseYear;
+    @Field(name = "certificates") private Set<Certificate> certificates;
 
     public Ref getRef() {
         return ref;

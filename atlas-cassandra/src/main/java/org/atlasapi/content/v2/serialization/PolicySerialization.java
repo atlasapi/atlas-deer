@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.content.v2.model.udt.Policy;
 import org.atlasapi.content.v2.model.udt.Pricing;
+import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 import org.atlasapi.entity.Id;
 
 import com.metabroadcast.common.intl.Countries;

@@ -7,6 +7,14 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.Song;
+import org.atlasapi.content.v2.serialization.setters.BrandSetter;
+import org.atlasapi.content.v2.serialization.setters.ContainerSetter;
+import org.atlasapi.content.v2.serialization.setters.ContentSetter;
+import org.atlasapi.content.v2.serialization.setters.EpisodeSetter;
+import org.atlasapi.content.v2.serialization.setters.FilmSetter;
+import org.atlasapi.content.v2.serialization.setters.ItemSetter;
+import org.atlasapi.content.v2.serialization.setters.SeriesSetter;
+import org.atlasapi.content.v2.serialization.setters.SongSetter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

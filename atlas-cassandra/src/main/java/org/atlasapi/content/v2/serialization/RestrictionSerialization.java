@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2.serialization;
 
 import org.atlasapi.content.v2.model.udt.Restriction;
+import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 
 public class RestrictionSerialization {
 

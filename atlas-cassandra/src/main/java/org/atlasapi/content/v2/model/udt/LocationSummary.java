@@ -7,17 +7,10 @@ import org.joda.time.Instant;
 @UDT(name = "locationsummary")
 public class LocationSummary {
 
-    @Field(name = "a")
-    private Boolean available;
-
-    @Field(name = "u")
-    private String uri;
-
-    @Field(name = "s")
-    private Instant start;
-
-    @Field(name = "e")
-    private Instant end;
+    @Field(name = "available") private Boolean available;
+    @Field(name = "uri") private String uri;
+    @Field(name = "start") private Instant start;
+    @Field(name = "end") private Instant end;
 
     public Boolean getAvailable() {
         return available;

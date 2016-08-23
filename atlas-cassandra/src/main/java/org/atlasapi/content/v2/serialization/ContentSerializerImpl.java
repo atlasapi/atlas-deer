@@ -1,6 +1,14 @@
 package org.atlasapi.content.v2.serialization;
 
 import org.atlasapi.content.v2.model.Content;
+import org.atlasapi.content.v2.serialization.setters.BrandSetter;
+import org.atlasapi.content.v2.serialization.setters.ContainerSetter;
+import org.atlasapi.content.v2.serialization.setters.ContentSetter;
+import org.atlasapi.content.v2.serialization.setters.EpisodeSetter;
+import org.atlasapi.content.v2.serialization.setters.FilmSetter;
+import org.atlasapi.content.v2.serialization.setters.ItemSetter;
+import org.atlasapi.content.v2.serialization.setters.SeriesSetter;
+import org.atlasapi.content.v2.serialization.setters.SongSetter;
 
 public class ContentSerializerImpl implements ContentSerializer {
 

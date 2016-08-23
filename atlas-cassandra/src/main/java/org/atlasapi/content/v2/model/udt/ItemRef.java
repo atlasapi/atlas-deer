@@ -7,17 +7,10 @@ import org.joda.time.Instant;
 @UDT(name = "itemref")
 public class ItemRef {
 
-    @Field(name = "r")
-    private Ref ref;
-
-    @Field(name = "sk")
-    private String sortKey;
-
-    @Field(name = "u")
-    private Instant updated;
-
-    @Field(name = "t")
-    private String type;
+    @Field(name = "ref") private Ref ref;
+    @Field(name = "sort_key") private String sortKey;
+    @Field(name = "updated") private Instant updated;
+    @Field(name = "type") private String type;
 
     public Ref getRef() {
         return ref;

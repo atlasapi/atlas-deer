@@ -6,11 +6,8 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "keyphrase")
 public class KeyPhrase {
 
-    @Field(name = "p")
-    private String phrase;
-
-    @Field(name = "w")
-    private Double weighting;
+    @Field(name = "phrase") private String phrase;
+    @Field(name = "weighting") private Double weighting;
 
     public String getPhrase() {
         return phrase;

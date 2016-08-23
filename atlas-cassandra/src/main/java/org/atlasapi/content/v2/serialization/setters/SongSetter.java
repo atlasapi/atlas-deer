@@ -1,4 +1,4 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import org.atlasapi.content.Song;
 import org.atlasapi.content.v2.model.Content;

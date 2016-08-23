@@ -1,4 +1,4 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import java.util.Objects;
 import java.util.Set;
@@ -8,6 +8,7 @@ import org.atlasapi.content.Film;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.v2.model.Content;
 import org.atlasapi.content.v2.model.udt.ReleaseDate;
+import org.atlasapi.content.v2.serialization.ReleaseDateSerialization;
 
 public class FilmSetter {
 

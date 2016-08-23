@@ -6,9 +6,9 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "rating")
 public class Rating {
 
-    @Field(name = "v") private float value;
-    @Field(name = "t") private String type;
-    @Field(name = "p") private String publisher;
+    @Field(name = "value") private float value;
+    @Field(name = "type") private String type;
+    @Field(name = "publisher") private String publisher;
 
     public float getValue() {
         return value;

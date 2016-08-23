@@ -8,29 +8,14 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "itemsummary")
 public class ItemSummary {
 
-    @Field(name = "r")
-    private ItemRef ref;
-
-    @Field(name = "t")
-    private String title;
-
-    @Field(name = "d")
-    private String description;
-
-    @Field(name = "i")
-    private String image;
-
-    @Field(name = "ry")
-    private Integer releaseYear;
-
-    @Field(name = "c")
-    private Set<Certificate> certificate;
-
-    @Field(name = "tp")
-    private String type;
-
-    @Field(name = "en")
-    private Integer episodeNumber;
+    @Field(name = "ref") private ItemRef ref;
+    @Field(name = "title") private String title;
+    @Field(name = "descr") private String description;
+    @Field(name = "image") private String image;
+    @Field(name = "release_year") private Integer releaseYear;
+    @Field(name = "certs") private Set<Certificate> certificate;
+    @Field(name = "type") private String type;
+    @Field(name = "episode_nr") private Integer episodeNumber;
 
     public ItemRef getRef() {
         return ref;

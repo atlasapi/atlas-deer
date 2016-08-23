@@ -7,18 +7,18 @@ import org.joda.time.Instant;
 @UDT(name = "image")
 public class Image {
 
-    @Field(name = "u") private String uri;
-    @Field(name = "t") private String type;
-    @Field(name = "c") private String color;
-    @Field(name = "th") private String theme;
-    @Field(name = "h") private Integer height;
-    @Field(name = "w") private Integer width;
-    @Field(name = "ar") private String aspectRatio;
-    @Field(name = "mt") private String mimeType;
-    @Field(name = "as") private Instant availabilityStart;
-    @Field(name = "ae") private Instant availabilityEnd;
-    @Field(name = "hta") private Boolean hasTitleArt;
-    @Field(name = "s") private String source;
+    @Field(name = "uri") private String uri;
+    @Field(name = "type") private String type;
+    @Field(name = "color") private String color;
+    @Field(name = "theme") private String theme;
+    @Field(name = "height") private Integer height;
+    @Field(name = "width") private Integer width;
+    @Field(name = "aspect") private String aspectRatio;
+    @Field(name = "mime") private String mimeType;
+    @Field(name = "avail_start") private Instant availabilityStart;
+    @Field(name = "avail_end") private Instant availabilityEnd;
+    @Field(name = "has_title_art") private Boolean hasTitleArt;
+    @Field(name = "src") private String source;
 
     public String getUri() {
         return uri;

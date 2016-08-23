@@ -6,14 +6,9 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "synopses")
 public class Synopses {
 
-    @Field(name = "s")
-    private String shortDescr;
-
-    @Field(name = "m")
-    private String mediumDescr;
-
-    @Field(name = "l")
-    private String longDescr;
+    @Field(name = "short") private String shortDescr;
+    @Field(name = "medium") private String mediumDescr;
+    @Field(name = "long") private String longDescr;
 
     public String getShortDescr() {
         return shortDescr;

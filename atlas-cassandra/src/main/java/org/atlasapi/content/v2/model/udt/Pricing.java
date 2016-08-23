@@ -7,14 +7,9 @@ import org.joda.time.Instant;
 @UDT(name = "pricing")
 public class Pricing {
 
-    @Field(name = "s")
-    private Instant start;
-
-    @Field(name = "e")
-    private Instant end;
-
-    @Field(name = "p")
-    private Price price;
+    @Field(name = "start") private Instant start;
+    @Field(name = "end") private Instant end;
+    @Field(name = "price") private Price price;
 
     public Instant getStart() {
         return start;

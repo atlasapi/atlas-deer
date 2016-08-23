@@ -1,4 +1,4 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import java.util.List;
 import java.util.Map;
@@ -13,6 +13,10 @@ import org.atlasapi.content.v2.model.udt.BroadcastRef;
 import org.atlasapi.content.v2.model.udt.ItemRef;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
 import org.atlasapi.content.v2.model.udt.LocationSummary;
+import org.atlasapi.content.v2.serialization.BroadcastRefSerialization;
+import org.atlasapi.content.v2.serialization.ItemRefSerialization;
+import org.atlasapi.content.v2.serialization.ItemSummarySerialization;
+import org.atlasapi.content.v2.serialization.LocationSummarySerialization;
 
 import com.codepoetics.protonpack.maps.MapStream;
 import com.google.common.collect.ImmutableList;

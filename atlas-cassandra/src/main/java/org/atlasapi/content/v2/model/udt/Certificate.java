@@ -6,10 +6,8 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "certificate")
 public class Certificate {
 
-    @Field(name = "cc")
-    private String countryCode;
-    @Field(name = "cls")
-    private String classification;
+    @Field(name = "country_code") private String countryCode;
+    @Field(name = "classification") private String classification;
 
     public String getCountryCode() {
         return countryCode;

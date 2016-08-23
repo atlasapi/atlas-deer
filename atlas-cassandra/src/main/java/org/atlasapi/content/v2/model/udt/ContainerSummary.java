@@ -6,11 +6,11 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "containersummary")
 public class ContainerSummary {
 
-    @Field(name = "t") private String type;
-    @Field(name = "tt") private String title;
-    @Field(name = "d") private String description;
-    @Field(name = "s") private Integer seriesNumber;
-    @Field(name = "te") private Integer totalEpisodes;
+    @Field(name = "type") private String type;
+    @Field(name = "title") private String title;
+    @Field(name = "descr") private String description;
+    @Field(name = "series_nr") private Integer seriesNumber;
+    @Field(name = "total_episodes") private Integer totalEpisodes;
 
     public String getType() {
         return type;

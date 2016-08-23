@@ -1,4 +1,4 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import java.util.Objects;
 import java.util.Set;
@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.content.v2.model.Identified;
 import org.atlasapi.content.v2.model.udt.Ref;
+import org.atlasapi.content.v2.serialization.AliasSerialization;
+import org.atlasapi.content.v2.serialization.DateTimeUtils;
+import org.atlasapi.content.v2.serialization.EquivalenceRefSerialization;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceRef;

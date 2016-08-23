@@ -26,16 +26,16 @@ public interface ContentAccessor {
     @Query("SELECT * FROM content_v2 WHERE id = :id")
     ListenableFuture<Content> getContent(@Param("id") Long id);
 
-    @Query("UPDATE content_v2 SET toclu = :now WHERE id = :id")
+    @Query("UPDATE content_v2 SET this_or_child_last_updated = :now WHERE id = :id")
     Statement setLastUpdated(@Param("id") Long id, @Param("now") Instant now);
 
-    @Query("UPDATE content_v2 SET bc = bc + :bc WHERE id = :id")
+    @Query("UPDATE content_v2 SET broadcasts = broadcasts + :bc WHERE id = :id")
     Statement addBroadcastToContent(@Param("id") Long id, @Param("bc") Set<Broadcast> broadcasts);
 
     @Query("UPDATE content_v2 SET "
-            + "itr = itr + :refs, "
-            + "upc = upc + :upcoming, "
-            + "avc = avc + :available "
+            + "item_refs = item_refs + :refs, "
+            + "upcoming = upcoming + :upcoming, "
+            + "available = available + :available "
             + "WHERE id = :id")
     Statement addItemRefsToContainer(
             @Param("id") Long id,
@@ -45,9 +45,9 @@ public interface ContentAccessor {
     );
 
     @Query("UPDATE content_v2 SET "
-            + "itr = itr - :refs, "
-            + "upc = upc - :upcoming, "
-            + "avc = avc - :available "
+            + "item_refs = item_refs - :refs, "
+            + "upcoming = upcoming - :upcoming, "
+            + "available = available - :available "
             + "WHERE id = :id")
     Statement removeItemRefsFromContainer(
             @Param("id") Long id,
@@ -56,31 +56,31 @@ public interface ContentAccessor {
             @Param("available") Set<ItemRef> available
     );
 
-    @Query("UPDATE content_v2 SET its = its + :summaries WHERE id = :id")
+    @Query("UPDATE content_v2 SET item_summaries = item_summaries + :summaries WHERE id = :id")
     Statement addItemSummariesToContainer(
             @Param("id") Long id,
             @Param("summaries") Set<ItemSummary> itemSummaries
     );
 
-    @Query("UPDATE content_v2 SET its = its - :summaries WHERE id = :id")
+    @Query("UPDATE content_v2 SET item_summaries = item_summaries - :summaries WHERE id = :id")
     Statement removeItemSummariesFromContainer(
             @Param("id") Long id,
             @Param("summaries") Set<ItemSummary> itemSummaries
     );
 
-    @Query("UPDATE content_v2 SET ser = ser + :refs WHERE id = :id")
+    @Query("UPDATE content_v2 SET series_refs = series_refs + :refs WHERE id = :id")
     Statement addSeriesRefToBrand(
             @Param("id") Long brandId,
             @Param("refs") Set<SeriesRef> seriesRefs
     );
 
-    @Query("UPDATE content_v2 SET ser = ser - :refs WHERE id = :id")
+    @Query("UPDATE content_v2 SET series_refs = series_refs - :refs WHERE id = :id")
     Statement removeSeriesRefFromBrand(
             @Param("id") Long brandId,
             @Param("refs") Set<SeriesRef> seriesRefs
     );
 
-    @Query("UPDATE content_v2 SET cns = :summary WHERE id = :id")
+    @Query("UPDATE content_v2 SET container_summary = :summary WHERE id = :id")
     Statement updateContainerSummaryInChild(
             @Param("id") Long childId,
             @Param("summary") ContainerSummary containerSummary

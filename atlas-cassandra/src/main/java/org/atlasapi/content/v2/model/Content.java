@@ -44,235 +44,235 @@ public class Content implements ContentIface {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "t")
+    @Column(name = "type")
     private String type;
 
-    @Column(name = "c")
+    @Column(name = "canonical_uri")
     private String canonicalUri;
 
-    @Column(name = "cu")
+    @Column(name = "curie")
     private String curie;
 
-    @Column(name = "au")
+    @Column(name = "alias_urls")
     private Set<String> aliasUrls;
 
     @FrozenValue
-    @Column(name = "a")
+    @Column(name = "aliases")
     private Set<Alias> aliases;
 
     @FrozenValue
-    @Column(name = "e")
+    @Column(name = "equiv_to")
     private Set<Ref> equivalentTo;
 
-    @Column(name = "lu")
+    @Column(name = "last_updated")
     private Instant lastUpdated;
 
-    @Column(name = "eu")
+    @Column(name = "equiv_update")
     private Instant equivalenceUpdate;
 
-    @Column(name = "tt")
+    @Column(name = "title")
     private String title;
 
-    @Column(name = "sd")
+    @Column(name = "short_descr")
     private String shortDescription;
 
-    @Column(name = "md")
+    @Column(name = "medium_descr")
     private String mediumDescription;
 
-    @Column(name = "ld")
+    @Column(name = "long_descr")
     private String longDescription;
 
     @Frozen
-    @Column(name = "sn")
+    @Column(name = "synopses")
     private Synopses synopses;
 
-    @Column(name = "ds")
+    @Column(name = "descr")
     private String description;
 
-    @Column(name = "mt")
+    @Column(name = "media_type")
     private String mediaType;
 
-    @Column(name = "sp")
+    @Column(name = "specialization")
     private String specialization;
 
-    @Column(name = "g")
+    @Column(name = "genres")
     private Set<String> genres;
 
-    @Column(name = "pb")
+    @Column(name = "publisher")
     private String publisher;
 
-    @Column(name = "im")
+    @Column(name = "image")
     private String image;
 
     @FrozenValue
-    @Column(name = "ims")
+    @Column(name = "images")
     private Set<Image> images;
 
-    @Column(name = "th")
+    @Column(name = "thumbnail")
     private String thumbnail;
 
-    @Column(name = "fs")
+    @Column(name = "first_seen")
     private Instant firstSeen;
 
-    @Column(name = "lf")
+    @Column(name = "last_fetched")
     private Instant lastFetched;
 
-    @Column(name = "toclu")
+    @Column(name = "this_or_child_last_updated")
     private Instant thisOrChildLastUpdated;
 
-    @Column(name = "so")
+    @Column(name = "schedule_only")
     private Boolean scheduleOnly;
 
-    @Column(name = "ap")
+    @Column(name = "actively_published")
     private Boolean activelyPublished;
 
-    @Column(name = "pc")
+    @Column(name = "presentation_channel")
     private String presentationChannel;
 
     @Frozen
-    @Column(name = "pr")
+    @Column(name = "priority")
     private Priority priority;
 
     @FrozenValue
-    @Column(name = "rl")
+    @Column(name = "related_links")
     private Set<RelatedLink> relatedLinks;
 
     @FrozenValue
-    @Column(name = "aw")
+    @Column(name = "awards")
     private Set<Award> awards;
 
     @FrozenValue
-    @Column(name = "kp")
+    @Column(name = "key_phrases")
     private Set<KeyPhrase> keyPhrases;
 
     @FrozenValue
-    @Column(name = "tg")
+    @Column(name = "tags")
     private List<Tag> tags;
 
     @FrozenValue
-    @Column(name = "cgr")
+    @Column(name = "content_group_refs")
     private Set<ContentGroupRef> contentGroupRefs;
 
     @FrozenValue
-    @Column(name = "pp")
+    @Column(name = "people")
     private List<CrewMember> people;
 
-    @Column(name = "ln")
+    @Column(name = "languages")
     private Set<String> languages;
 
     @FrozenValue
-    @Column(name = "cr")
+    @Column(name = "certificates")
     private Set<Certificate> certificates;
 
-    @Column(name = "yr")
+    @Column(name = "year")
     private Integer year;
 
-    @Column(name = "gd")
+    @Column(name = "generic_description")
     private Boolean genericDescription;
 
     @FrozenValue
-    @Column(name = "er")
+    @Column(name = "event_refs")
     private Set<Ref> eventRefs;
 
     @Column(name = "isrc")
     private String isrc;
 
-    @Column(name = "dr")
+    @Column(name = "duration")
     private Long duration;
 
-    @Column(name = "snb")
+    @Column(name = "series_nr")
     private Integer seriesNumber;
 
-    @Column(name = "te")
+    @Column(name = "total_episodes")
     private Integer totalEpisodes;
 
     @Frozen
-    @Column(name = "br")
+    @Column(name = "brand_ref")
     private Ref brandRef;
 
     @Frozen
-    @Column(name = "cnr")
+    @Column(name = "container_ref")
     private ContainerRef containerRef;
 
-    @Column(name = "ilf")
+    @Column(name = "is_long_form")
     private Boolean isLongForm;
 
-    @Column(name = "bnw")
+    @Column(name = "black_and_white")
     private Boolean blackAndWhite;
 
-    @Column(name = "coo")
+    @Column(name = "countries_of_origin")
     private Set<String> countriesOfOrigin;
 
-    @Column(name = "sk")
+    @Column(name = "sort_key")
     private String sortKey;
 
     @Frozen
-    @Column(name = "cns")
+    @Column(name = "container_summary")
     private ContainerSummary containerSummary;
 
     @FrozenValue
-    @Column(name = "bc")
+    @Column(name = "broadcasts")
     private Set<Broadcast> broadcasts;
 
     @FrozenValue
-    @Column(name = "sev")
+    @Column(name = "segment_events")
     private List<SegmentEvent> segmentEvents;
 
     @FrozenValue
-    @Column(name = "rr")
+    @Column(name = "restrictions")
     private Set<Restriction> restrictions;
 
-    @Column(name = "wu")
+    @Column(name = "website_url")
     private String websiteUrl;
 
-    @Column(name = "sub")
+    @Column(name = "subtitles")
     private Set<String> subtitles;
 
     @FrozenValue
-    @Column(name = "rd")
+    @Column(name = "release_dates")
     private Set<ReleaseDate> releaseDates;
 
-    @Column(name = "en")
+    @Column(name = "episode_nr")
     private Integer episodeNumber;
 
-    @Column(name = "pn")
+    @Column(name = "part_nr")
     private Integer partNumber;
 
-    @Column(name = "spc")
+    @Column(name = "special")
     private Boolean special;
 
     @FrozenValue
-    @Column(name = "ser")
+    @Column(name = "series_refs")
     private Set<SeriesRef> seriesRefs;
 
     @FrozenValue
-    @Column(name = "itr")
+    @Column(name = "item_refs")
     private Set<ItemRef> itemRefs;
 
     @Frozen("map<frozen<ItemRef>, frozen<list<BroadcastRef>>>")
-    @Column(name = "upc")
+    @Column(name = "upcoming")
     private Map<ItemRef, List<BroadcastRef>> upcomingContent;
 
     @Frozen("map<frozen<ItemRef>, frozen<list<LocationSummary>>>")
-    @Column(name = "avc")
+    @Column(name = "available")
     private Map<ItemRef, List<LocationSummary>> availableContent;
 
     @FrozenValue
-    @Column(name = "its")
+    @Column(name = "item_summaries")
     private Set<ItemSummary> itemSummaries;
 
     @FrozenValue
-    @Column(name = "rv")
+    @Column(name = "reviews")
     private Set<Review> reviews;
 
     @FrozenValue
-    @Column(name = "rt")
+    @Column(name = "ratings")
     private Set<Rating> ratings;
 
-    @Column(name = "cl")
+    @Column(name = "clips")
     private Clip.Wrapper clips;
 
-    @Column(name = "enc")
+    @Column(name = "encodings")
     private Encoding.Wrapper encodings;
 
     @Override

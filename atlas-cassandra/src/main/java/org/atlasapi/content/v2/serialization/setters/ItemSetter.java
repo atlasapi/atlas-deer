@@ -1,4 +1,4 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import java.util.List;
 import java.util.Objects;
@@ -9,6 +9,11 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.v2.model.Content;
 import org.atlasapi.content.v2.model.udt.Restriction;
 import org.atlasapi.content.v2.model.udt.SegmentEvent;
+import org.atlasapi.content.v2.serialization.BroadcastSerialization;
+import org.atlasapi.content.v2.serialization.ContainerRefSerialization;
+import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
+import org.atlasapi.content.v2.serialization.RestrictionSerialization;
+import org.atlasapi.content.v2.serialization.SegmentEventSerialization;
 
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.intl.Country;

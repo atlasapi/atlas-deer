@@ -6,8 +6,8 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "review")
 public class Review {
 
-    @Field(name = "l") private String locale;
-    @Field(name = "r") private String review;
+    @Field(name = "locale") private String locale;
+    @Field(name = "review") private String review;
 
     public String getLocale() {
         return locale;
