@@ -46,19 +46,19 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     private final ContentResolver contentResolver;
 
     private final EquivalenceGraphStore graphStore;
-    private final MessageSender<EquivalentContentUpdatedMessage> contentUpdatedMessageSender;
-    private final MessageSender<EquivalenceGraphUpdateMessage> graphUpdatedMessageSender;
+    private final MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender;
+    private final MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender;
 
     protected AbstractEquivalentContentStore(
             ContentResolver contentResolver,
             EquivalenceGraphStore graphStore,
-            MessageSender<EquivalentContentUpdatedMessage> contentUpdatedMessageSender,
-            MessageSender<EquivalenceGraphUpdateMessage> graphUpdatedMessageSender
+            MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender,
+            MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.graphStore = checkNotNull(graphStore);
-        this.contentUpdatedMessageSender = checkNotNull(contentUpdatedMessageSender);
-        this.graphUpdatedMessageSender = checkNotNull(graphUpdatedMessageSender);
+        this.equivContentUpdatedMessageSender = checkNotNull(equivContentUpdatedMessageSender);
+        this.equivGraphUpdatedMessageSender = checkNotNull(equivGraphUpdatedMessageSender);
     }
 
     @Override
@@ -175,7 +175,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     private void sendEquivalentContentGraphChangedMessage(EquivalenceGraphUpdate graphUpdate)
             throws MessagingException {
-        graphUpdatedMessageSender.sendMessage(
+        equivGraphUpdatedMessageSender.sendMessage(
                 new EquivalenceGraphUpdateMessage(
                         UUID.randomUUID().toString(),
                         Timestamp.of(DateTime.now(DateTimeZone.UTC)),
@@ -189,7 +189,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     private void sendEquivalentContentChangedMessage(Content content, EquivalenceGraph graph)
             throws MessagingException {
-        contentUpdatedMessageSender.sendMessage(
+        equivContentUpdatedMessageSender.sendMessage(
                 new EquivalentContentUpdatedMessage(
                         UUID.randomUUID().toString(),
                         Timestamp.of(DateTime.now(DateTimeZone.UTC)),
