@@ -1,4 +1,4 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import java.util.Objects;
 import java.util.Set;
@@ -8,6 +8,12 @@ import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.content.v2.model.Described;
 import org.atlasapi.content.v2.model.udt.Award;
+import org.atlasapi.content.v2.serialization.AwardSerialization;
+import org.atlasapi.content.v2.serialization.DateTimeUtils;
+import org.atlasapi.content.v2.serialization.ImageSerialization;
+import org.atlasapi.content.v2.serialization.PrioritySerialization;
+import org.atlasapi.content.v2.serialization.RelatedLinkSerialization;
+import org.atlasapi.content.v2.serialization.SynopsesSerialization;
 import org.atlasapi.media.entity.Publisher;
 
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;

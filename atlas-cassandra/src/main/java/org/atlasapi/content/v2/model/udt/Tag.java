@@ -6,23 +6,12 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "tag")
 public class Tag {
 
-    @Field(name = "t")
-    private Long topic;
-
-    @Field(name = "p")
-    private String publisher;
-
-    @Field(name = "s")
-    private Boolean supervised;
-
-    @Field(name = "w")
-    private Float weighting;
-
-    @Field(name = "r")
-    private String relationship;
-
-    @Field(name = "o")
-    private Integer offset;
+    @Field(name = "topic") private Long topic;
+    @Field(name = "publisher") private String publisher;
+    @Field(name = "supervised") private Boolean supervised;
+    @Field(name = "weighting") private Float weighting;
+    @Field(name = "relationship") private String relationship;
+    @Field(name = "offset") private Integer offset;
 
     public Long getTopic() {
         return topic;

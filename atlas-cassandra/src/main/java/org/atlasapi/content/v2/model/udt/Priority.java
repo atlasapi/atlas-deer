@@ -8,14 +8,9 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "priority")
 public class Priority {
 
-    @Field(name = "p")
-    private List<String> positive;
-
-    @Field(name = "n")
-    private List<String> negative;
-
-    @Field(name = "pr")
-    private Double priority;
+    @Field(name = "positive") private List<String> positive;
+    @Field(name = "negative") private List<String> negative;
+    @Field(name = "priority") private Double priority;
 
     public List<String> getPositive() {
         return positive;

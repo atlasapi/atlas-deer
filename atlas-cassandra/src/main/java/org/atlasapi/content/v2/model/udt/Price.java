@@ -6,11 +6,8 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "price")
 public class Price {
 
-    @Field(name = "c")
-    private String currency;
-
-    @Field(name = "p")
-    private Integer price;
+    @Field(name = "currency") private String currency;
+    @Field(name = "price") private Integer price;
 
     public String getCurrency() {
         return currency;

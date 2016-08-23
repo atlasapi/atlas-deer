@@ -1,10 +1,11 @@
-package org.atlasapi.content.v2.serialization;
+package org.atlasapi.content.v2.serialization.setters;
 
 import java.util.Set;
 
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.v2.model.Content;
 import org.atlasapi.content.v2.model.udt.SeriesRef;
+import org.atlasapi.content.v2.serialization.SeriesRefSerialization;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;

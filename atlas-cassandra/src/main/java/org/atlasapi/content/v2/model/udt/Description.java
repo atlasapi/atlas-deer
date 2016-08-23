@@ -6,10 +6,10 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "description")
 public class Description {
 
-    @Field(name = "t") private String title;
-    @Field(name = "s") private String synopsis;
-    @Field(name = "i") private String image;
-    @Field(name = "th") private String thumbnail;
+    @Field(name = "title") private String title;
+    @Field(name = "synopsis") private String synopsis;
+    @Field(name = "image") private String image;
+    @Field(name = "thumbnail") private String thumbnail;
 
     public String getTitle() {
         return title;

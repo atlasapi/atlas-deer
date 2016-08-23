@@ -11,23 +11,23 @@ import org.joda.time.Instant;
 @UDT(name = "location")
 public class Location implements Identified {
 
-    @Field(name = "i") private Long id;
-    @Field(name = "c") private String canonicalUri;
-    @Field(name = "cu") private String curie;
-    @Field(name = "au") private Set<String> aliasUrls;
-    @Field(name = "a") private Set<Alias> aliases;
-    @Field(name = "e") private Set<Ref> equivalentTo;
-    @Field(name = "lu") private Instant lastUpdated;
-    @Field(name = "eu") private Instant equivalenceUpdate;
+    @Field(name = "id") private Long id;
+    @Field(name = "canonical_uri") private String canonicalUri;
+    @Field(name = "curie") private String curie;
+    @Field(name = "alias_urls") private Set<String> aliasUrls;
+    @Field(name = "aliases") private Set<Alias> aliases;
+    @Field(name = "equiv_to") private Set<Ref> equivalentTo;
+    @Field(name = "last_updated") private Instant lastUpdated;
+    @Field(name = "equiv_update") private Instant equivalenceUpdate;
 
-    @Field(name = "av") private Boolean available;
-    @Field(name = "til") private Boolean transportIsLive;
-    @Field(name = "tst") private String transportSubType;
-    @Field(name = "tt") private String transportType;
-    @Field(name = "u") private String uri;
-    @Field(name = "ec") private String embedCode;
-    @Field(name = "ei") private String embedId;
-    @Field(name = "p") private Policy policy;
+    @Field(name = "available") private Boolean available;
+    @Field(name = "transport_is_live") private Boolean transportIsLive;
+    @Field(name = "transport_subtype") private String transportSubType;
+    @Field(name = "transport_type") private String transportType;
+    @Field(name = "uri") private String uri;
+    @Field(name = "embed_code") private String embedCode;
+    @Field(name = "embed_id") private String embedId;
+    @Field(name = "policy") private Policy policy;
 
     public Long getId() {
         return id;

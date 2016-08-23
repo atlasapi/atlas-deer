@@ -9,6 +9,7 @@ import org.atlasapi.content.v2.model.Clip;
 import org.atlasapi.content.v2.model.Encoding;
 import org.atlasapi.content.v2.model.udt.Restriction;
 import org.atlasapi.content.v2.model.udt.SegmentEvent;
+import org.atlasapi.content.v2.serialization.setters.ContentSetter;
 
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.intl.Country;

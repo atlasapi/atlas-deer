@@ -9,23 +9,15 @@ import org.joda.time.Instant;
 @UDT(name = "containerref")
 public class ContainerRef {
 
-    @Field(name = "id")
-    private Long id;
-    @Field(name = "src")
-    private String source;
-    @Field(name = "t")
-    private String type;
+    @Field(name = "id") private Long id;
+    @Field(name = "src") private String source;
+    @Field(name = "type") private String type;
 
-    @Field(name = "tt")
-    private String title;
-    @Field(name = "sn")
-    private Integer seriesNumber;
-    @Field(name = "upd")
-    private Instant updated;
-    @Field(name = "ry")
-    private Integer releaseYear;
-    @Field(name = "cr")
-    private Set<Certificate> certificates;
+    @Field(name = "title") private String title;
+    @Field(name = "series_nr") private Integer seriesNumber;
+    @Field(name = "updated") private Instant updated;
+    @Field(name = "release_year") private Integer releaseYear;
+    @Field(name = "certificates") private Set<Certificate> certificates;
 
     public Long getId() {
         return id;

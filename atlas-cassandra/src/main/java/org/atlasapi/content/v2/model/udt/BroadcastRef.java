@@ -7,17 +7,10 @@ import org.joda.time.Instant;
 @UDT(name = "broadcastref")
 public class BroadcastRef {
 
-    @Field(name = "s")
-    private String sourceId;
-
-    @Field(name = "c")
-    private Long channelId;
-
-    @Field(name = "st")
-    private Instant start;
-
-    @Field(name = "e")
-    private Instant end;
+    @Field(name = "src_id") private String sourceId;
+    @Field(name = "channel_id") private Long channelId;
+    @Field(name = "start") private Instant start;
+    @Field(name = "end") private Instant end;
 
     public String getSourceId() {
         return sourceId;

@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2.serialization;
 
 import org.atlasapi.content.v2.model.udt.Broadcast;
+import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 import org.atlasapi.entity.Id;
 
 import org.joda.time.DateTime;

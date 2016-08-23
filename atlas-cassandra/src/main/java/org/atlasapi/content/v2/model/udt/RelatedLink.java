@@ -6,29 +6,14 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "relatedlink")
 public class RelatedLink {
 
-    @Field(name = "u")
-    private String url;
-
-    @Field(name = "t")
-    private String type;
-
-    @Field(name = "si")
-    private String sourceId;
-
-    @Field(name = "sn")
-    private String shortName;
-
-    @Field(name = "tt")
-    private String title;
-
-    @Field(name = "d")
-    private String description;
-
-    @Field(name = "i")
-    private String image;
-
-    @Field(name = "th")
-    private String thumbnail;
+    @Field(name = "url") private String url;
+    @Field(name = "type") private String type;
+    @Field(name = "src_id") private String sourceId;
+    @Field(name = "short_name") private String shortName;
+    @Field(name = "title") private String title;
+    @Field(name = "descr") private String description;
+    @Field(name = "image") private String image;
+    @Field(name = "thumbnail") private String thumbnail;
 
     public String getUrl() {
         return url;

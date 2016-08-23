@@ -12,28 +12,29 @@ import org.joda.time.Instant;
 @UDT(name = "policy")
 public class Policy implements Identified {
 
-    @Field(name = "i") private Long id;
-    @Field(name = "c") private String canonicalUri;
-    @Field(name = "cu") private String curie;
-    @Field(name = "au") private Set<String> aliasUrls;
-    @Field(name = "a") private Set<Alias> aliases;
-    @Field(name = "e") private Set<Ref> equivalentTo;
-    @Field(name = "lu") private Instant lastUpdated;
-    @Field(name = "eu") private Instant equivalenceUpdate;
-    @Field(name = "as") private Instant availabilityStart;
-    @Field(name = "ae") private Instant availabilityEnd;
-    @Field(name = "dpf") private Instant drmPlayableFrom;
-    @Field(name = "ac") private Set<String> availableCountries;
-    @Field(name = "al") private Integer availabilityLength;
-    @Field(name = "rc") private String revenueContract;
-    @Field(name = "sp") private Set<String> subscriptionPackages;
-    @Field(name = "p") private Price price;
-    @Field(name = "pr") private List<Pricing> pricing;
-    @Field(name = "si") private Long serviceId;
-    @Field(name = "pi") private Long playerId;
-    @Field(name = "pl") private String platform;
-    @Field(name = "n") private String network;
-    @Field(name = "aas") private Instant actualAvailabilityStart;
+    @Field(name = "id") private Long id;
+    @Field(name = "canonical_uri") private String canonicalUri;
+    @Field(name = "curie") private String curie;
+    @Field(name = "alias_urls") private Set<String> aliasUrls;
+    @Field(name = "aliases") private Set<Alias> aliases;
+    @Field(name = "equiv_to") private Set<Ref> equivalentTo;
+    @Field(name = "last_updated") private Instant lastUpdated;
+    @Field(name = "equiv_update") private Instant equivalenceUpdate;
+
+    @Field(name = "avail_start") private Instant availabilityStart;
+    @Field(name = "avail_end") private Instant availabilityEnd;
+    @Field(name = "drm_playable_from") private Instant drmPlayableFrom;
+    @Field(name = "avail_countries") private Set<String> availableCountries;
+    @Field(name = "avail_length") private Integer availabilityLength;
+    @Field(name = "revenue_contract") private String revenueContract;
+    @Field(name = "subscr_packages") private Set<String> subscriptionPackages;
+    @Field(name = "price") private Price price;
+    @Field(name = "pricing") private List<Pricing> pricing;
+    @Field(name = "service_id") private Long serviceId;
+    @Field(name = "player_id") private Long playerId;
+    @Field(name = "platform") private String platform;
+    @Field(name = "network") private String network;
+    @Field(name = "actual_avail_start") private Instant actualAvailabilityStart;
 
     public Long getId() {
         return id;

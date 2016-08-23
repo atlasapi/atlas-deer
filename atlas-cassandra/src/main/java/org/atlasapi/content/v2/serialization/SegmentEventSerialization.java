@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2.serialization;
 
 import org.atlasapi.content.v2.model.udt.SegmentEvent;
+import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 import org.atlasapi.media.entity.Publisher;
 
 import org.joda.time.Duration;

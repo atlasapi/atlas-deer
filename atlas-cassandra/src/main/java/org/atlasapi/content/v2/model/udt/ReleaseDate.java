@@ -7,9 +7,9 @@ import org.joda.time.LocalDate;
 @UDT(name = "releasedate")
 public class ReleaseDate {
 
-    @Field(name = "c") private String country;
-    @Field(name = "t") private String type;
-    @Field(name = "r") private LocalDate releaseDate;
+    @Field(name = "country") private String country;
+    @Field(name = "type") private String type;
+    @Field(name = "release_date") private LocalDate releaseDate;
 
     public String getCountry() {
         return country;

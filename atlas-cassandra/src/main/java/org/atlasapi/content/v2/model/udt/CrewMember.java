@@ -11,38 +11,17 @@ import org.joda.time.Instant;
 @UDT(name = "crewmember")
 public class CrewMember implements Identified {
 
-    @Field(name = "i")
-    private Long id;
-
-    @Field(name = "c")
-    private String canonicalUri;
-
-    @Field(name = "cu")
-    private String curie;
-
-    @Field(name = "au")
-    private Set<String> aliasUrls;
-
-    @Field(name = "a")
-    private Set<Alias> aliases;
-
-    @Field(name = "e")
-    private Set<Ref> equivalentTo;
-
-    @Field(name = "lu")
-    private Instant lastUpdated;
-
-    @Field(name = "eu")
-    private Instant equivalenceUpdate;
-
-    @Field(name = "r")
-    private String role;
-
-    @Field(name = "n")
-    private String name;
-
-    @Field(name = "p")
-    private String publisher;
+    @Field(name = "id") private Long id;
+    @Field(name = "canonical_uri") private String canonicalUri;
+    @Field(name = "curie") private String curie;
+    @Field(name = "alias_urls") private Set<String> aliasUrls;
+    @Field(name = "aliases") private Set<Alias> aliases;
+    @Field(name = "equiv_to") private Set<Ref> equivalentTo;
+    @Field(name = "last_updated") private Instant lastUpdated;
+    @Field(name = "equiv_update") private Instant equivalenceUpdate;
+    @Field(name = "role") private String role;
+    @Field(name = "name") private String name;
+    @Field(name = "publisher") private String publisher;
 
     public Long getId() {
         return id;

@@ -11,19 +11,20 @@ import org.joda.time.Instant;
 @UDT(name = "restriction")
 public class Restriction implements Identified {
 
-    @Field(name = "i") private Long id;
-    @Field(name = "c") private String canonicalUri;
-    @Field(name = "cu") private String curie;
-    @Field(name = "au") private Set<String> aliasUrls;
-    @Field(name = "a") private Set<Alias> aliases;
-    @Field(name = "e") private Set<Ref> equivalentTo;
-    @Field(name = "lu") private Instant lastUpdated;
-    @Field(name = "eu") private Instant equivalenceUpdate;
-    @Field(name = "r") private Boolean restricted;
-    @Field(name = "ma") private Integer minimumAge;
-    @Field(name = "msg") private String message;
-    @Field(name = "ath") private String authority;
-    @Field(name = "rt") private String rating;
+    @Field(name = "id") private Long id;
+    @Field(name = "canonical_uri") private String canonicalUri;
+    @Field(name = "curie") private String curie;
+    @Field(name = "alias_urls") private Set<String> aliasUrls;
+    @Field(name = "aliases") private Set<Alias> aliases;
+    @Field(name = "equiv_to") private Set<Ref> equivalentTo;
+    @Field(name = "last_updated") private Instant lastUpdated;
+    @Field(name = "equiv_update") private Instant equivalenceUpdate;
+
+    @Field(name = "restricted") private Boolean restricted;
+    @Field(name = "minimum_age") private Integer minimumAge;
+    @Field(name = "message") private String message;
+    @Field(name = "authority") private String authority;
+    @Field(name = "rating") private String rating;
 
     public Long getId() {
         return id;

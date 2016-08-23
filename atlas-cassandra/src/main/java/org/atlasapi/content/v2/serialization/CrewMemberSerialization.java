@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2.serialization;
 
 import org.atlasapi.content.v2.model.udt.CrewMember;
+import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 import org.atlasapi.media.entity.Publisher;
 
 public class CrewMemberSerialization {
