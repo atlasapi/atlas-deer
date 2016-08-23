@@ -64,7 +64,7 @@ public class Neo4jContentStoreContentUpdateWorker
         Id contentId = message.getContentRef().getId();
 
         log.debug("Processing message on id {}, took PT{}S, message: {}",
-                contentId, getTimeToProcessInSeconds(message));
+                contentId, getTimeToProcessInSeconds(message), message);
 
         Timer.Context time = timer.time();
         try {

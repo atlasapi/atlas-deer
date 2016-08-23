@@ -73,7 +73,8 @@ public class Neo4jContentStoreGraphUpdateWorker
                         .collect(MoreCollectors.toImmutableSet()),
                 assertion.getSources().stream()
                         .map(Publisher::key)
-                        .collect(MoreCollectors.toImmutableSet())
+                        .collect(MoreCollectors.toImmutableSet()),
+                message
         );
 
         Timer.Context time = timer.time();

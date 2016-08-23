@@ -39,7 +39,7 @@ public class ContentWriterIT extends AbstractNeo4jIT {
     }
 
     @Test
-    public void writeResourceRef() throws Exception {
+    public void writeResourceRefSucceeds() throws Exception {
         ContentRef contentRef = getContentRef(new Item(), 0L, Publisher.METABROADCAST);
 
         contentWriter.writeResourceRef(contentRef, session);
@@ -79,7 +79,7 @@ public class ContentWriterIT extends AbstractNeo4jIT {
     }
 
     @Test
-    public void writeContentRef() throws Exception {
+    public void writeContentRefSucceeds() throws Exception {
         ContentRef contentRef = getContentRef(new Item(), 0L, Publisher.METABROADCAST);
 
         contentWriter.writeContentRef(contentRef, session);
@@ -121,27 +121,27 @@ public class ContentWriterIT extends AbstractNeo4jIT {
     }
 
     @Test
-    public void writeBrand() throws Exception {
+    public void writeBrandSucceeds() throws Exception {
         writeContent(getContent(new Brand(), 0L, Publisher.METABROADCAST));
     }
 
     @Test
-    public void writeItem() throws Exception {
+    public void writeItemSucceeds() throws Exception {
         writeContent(getContent(new Item(), 0L, Publisher.METABROADCAST));
     }
 
     @Test
-    public void writeFilm() throws Exception {
+    public void writeFilmSucceeds() throws Exception {
         writeContent(getContent(new Film(), 0L, Publisher.METABROADCAST));
     }
 
     @Test
-    public void writeSong() throws Exception {
+    public void writeSongSucceeds() throws Exception {
         writeContent(getContent(new Song(), 0L, Publisher.METABROADCAST));
     }
 
     @Test
-    public void writeEpisodeWithNoEpisodeNumber() throws Exception {
+    public void writeEpisodeWithNoEpisodeNumberSucceeds() throws Exception {
         Episode episode = getContent(new Episode(), 0L, Publisher.METABROADCAST);
 
         Record record = writeEpisode(episode);
