@@ -10,6 +10,7 @@ import org.atlasapi.neo4j.service.Neo4jContentStore;
 
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
@@ -28,6 +29,7 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
 
     @Mock private Neo4jContentStore neo4JContentStore;
     @Mock private Timer timer;
+    @Mock private Meter failureMeter;
     @Mock private Timer.Context timerContext;
 
     @Mock private EquivalenceGraphUpdate graphUpdate;
@@ -59,7 +61,7 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
 
         when(timer.time()).thenReturn(timerContext);
 
-        worker = Neo4jContentStoreGraphUpdateWorker.create(neo4JContentStore, timer);
+        worker = Neo4jContentStoreGraphUpdateWorker.create(neo4JContentStore, timer, failureMeter);
     }
 
     @Test

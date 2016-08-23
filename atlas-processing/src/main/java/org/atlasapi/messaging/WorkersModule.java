@@ -357,7 +357,8 @@ public class WorkersModule {
                 .create(
                         persistence.contentStore(),
                         persistence.neo4jContentStore(),
-                        metricsModule.metrics().timer(workerName)
+                        metricsModule.metrics().timer(workerName),
+                        metricsModule.metrics().meter(workerName + "-failure")
                 );
 
         return messaging.messageConsumerFactory()
@@ -382,7 +383,8 @@ public class WorkersModule {
         Neo4jContentStoreGraphUpdateWorker worker = Neo4jContentStoreGraphUpdateWorker
                 .create(
                         persistence.neo4jContentStore(),
-                        metricsModule.metrics().timer(workerName)
+                        metricsModule.metrics().timer(workerName),
+                        metricsModule.metrics().meter(workerName + "-failure")
                 );
 
         return messaging.messageConsumerFactory()

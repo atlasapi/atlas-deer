@@ -13,6 +13,7 @@ import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Optional;
@@ -33,24 +34,28 @@ public class Neo4jContentStoreContentUpdateWorker
     private final ContentResolver contentResolver;
     private final Neo4jContentStore neo4JContentStore;
     private final Timer timer;
+    private final Meter failureMeter;
 
     private Neo4jContentStoreContentUpdateWorker(
             ContentResolver contentResolver,
             Neo4jContentStore neo4JContentStore,
-            Timer timer
+            Timer timer,
+            Meter failureMeter
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.neo4JContentStore = checkNotNull(neo4JContentStore);
         this.timer = checkNotNull(timer);
+        this.failureMeter = checkNotNull(failureMeter);
     }
 
     public static Neo4jContentStoreContentUpdateWorker create(
             ContentResolver contentResolver,
             Neo4jContentStore neo4JContentStore,
-            Timer timer
+            Timer timer,
+            Meter failureMeter
     ) {
         return new Neo4jContentStoreContentUpdateWorker(
-                contentResolver, neo4JContentStore, timer
+                contentResolver, neo4JContentStore, timer, failureMeter
         );
     }
 
@@ -68,6 +73,7 @@ public class Neo4jContentStoreContentUpdateWorker
 
             time.stop();
         } catch (Exception e) {
+            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }

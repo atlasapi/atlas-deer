@@ -11,6 +11,7 @@ import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import org.slf4j.Logger;
@@ -26,17 +27,26 @@ public class Neo4jContentStoreGraphUpdateWorker
 
     private final Neo4jContentStore neo4JContentStore;
     private final Timer timer;
+    private final Meter failureMeter;
 
-    private Neo4jContentStoreGraphUpdateWorker(Neo4jContentStore neo4JContentStore, Timer timer) {
+    private Neo4jContentStoreGraphUpdateWorker(
+            Neo4jContentStore neo4JContentStore,
+            Timer timer,
+            Meter failureMeter
+    ) {
         this.neo4JContentStore = checkNotNull(neo4JContentStore);
         this.timer = checkNotNull(timer);
+        this.failureMeter = checkNotNull(failureMeter);
     }
 
     public static Neo4jContentStoreGraphUpdateWorker create(
             Neo4jContentStore neo4JContentStore,
-            Timer timer
+            Timer timer,
+            Meter failureMeter
     ) {
-        return new Neo4jContentStoreGraphUpdateWorker(neo4JContentStore, timer);
+        return new Neo4jContentStoreGraphUpdateWorker(
+                neo4JContentStore, timer, failureMeter
+        );
     }
 
     // We can't remove the deprecated exception from the method description because it's on the
@@ -77,6 +87,7 @@ public class Neo4jContentStoreGraphUpdateWorker
 
             time.stop();
         } catch (Exception e) {
+            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }

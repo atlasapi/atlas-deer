@@ -9,6 +9,7 @@ import org.atlasapi.neo4j.service.Neo4jContentStore;
 
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -29,6 +30,7 @@ public class Neo4jContentStoreContentUpdateWorkerTest {
     @Mock private ContentResolver contentResolver;
     @Mock private Neo4jContentStore neo4JContentStore;
     @Mock private Timer timer;
+    @Mock private Meter failureMeter;
     @Mock private Timer.Context timerContext;
 
     @Mock private ContentRef contentRef;
@@ -55,7 +57,7 @@ public class Neo4jContentStoreContentUpdateWorkerTest {
         when(timer.time()).thenReturn(timerContext);
 
         worker = Neo4jContentStoreContentUpdateWorker.create(
-                contentResolver, neo4JContentStore, timer
+                contentResolver, neo4JContentStore, timer, failureMeter
         );
     }
 
