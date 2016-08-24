@@ -2,6 +2,8 @@ package org.atlasapi.equivalence;
 
 import java.util.Objects;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.media.entity.Publisher;
 
@@ -22,12 +24,16 @@ public class EquivalenceAssertion {
     @JsonCreator
     EquivalenceAssertion(
             @JsonProperty("subject") ResourceRef subject,
-            @JsonProperty("assertedAdjacents") Iterable<ResourceRef> assertedAdjacents,
-            @JsonProperty("sources") Iterable<Publisher> sources
+            @Nullable @JsonProperty("assertedAdjacents") Iterable<ResourceRef> assertedAdjacents,
+            @Nullable @JsonProperty("sources") Iterable<Publisher> sources
     ) {
         this.subject = checkNotNull(subject);
-        this.assertedAdjacents = ImmutableSet.copyOf(assertedAdjacents);
-        this.sources = ImmutableSet.copyOf(sources);
+        this.assertedAdjacents = assertedAdjacents == null
+                                 ? ImmutableSet.of()
+                                 : ImmutableSet.copyOf(assertedAdjacents);
+        this.sources = sources == null
+                       ? ImmutableSet.of()
+                       : ImmutableSet.copyOf(sources);
     }
 
     public static EquivalenceAssertion create(
