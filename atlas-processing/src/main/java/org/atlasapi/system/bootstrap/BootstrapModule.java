@@ -14,6 +14,8 @@ import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.SchedulerModule;
 import org.atlasapi.content.Content;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.MessagingModule;
+import org.atlasapi.system.MetricsModule;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
@@ -58,6 +60,10 @@ public class BootstrapModule {
     @Autowired private ElasticSearchContentIndexModule search;
     @Autowired private MetricRegistry metrics;
     @Autowired private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+
+    @Autowired private MessagingModule messaging;
+    @Autowired private MetricsModule metricsModule;
+
 
     @Bean
     BootstrapController bootstrapController() {
@@ -120,6 +126,17 @@ public class BootstrapModule {
         return new IndividualTopicBootstrapController(
                 persistence.legacyTopicResolver(),
                 persistence.topicStore()
+        );
+    }
+
+    @Bean
+    CqlContentBootstrapController cqlContentBootstrapController() {
+        return CqlContentBootstrapController.create(
+                executorService(1, "cql-content-bootstrap"),
+                progressStore(),
+                persistence.legacyContentLister(),
+                messaging.messageSenderFactory(),
+                messaging.messageConsumerFactory()
         );
     }
 
