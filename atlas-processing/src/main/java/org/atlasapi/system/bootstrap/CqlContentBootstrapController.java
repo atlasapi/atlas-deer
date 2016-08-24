@@ -1,6 +1,7 @@
 package org.atlasapi.system.bootstrap;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -15,6 +16,8 @@ import org.atlasapi.content.ContainerRef;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentGroup;
 import org.atlasapi.content.ContentRef;
+import org.atlasapi.content.ContentResolver;
+import org.atlasapi.content.ContentWriter;
 import org.atlasapi.content.Described;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.EpisodeRef;
@@ -53,25 +56,32 @@ public class CqlContentBootstrapController {
     private static final String TASK_NAME = "cql-mongo-id-bootstrap";
     private static final long PROGRESS_SAVE_FREQUENCY = 100L;
     private static final String KAFKA_SENDER_NAME = "cql-mondo-id-bootstrap-sender";
+    private static final int APPROXIMATE_MAX_ID = 50_000_000;
 
     private final ListeningExecutorService listeningExecutorService;
     private final ProgressStore progressStore;
     private final ResourceLister<Content> contentLister;
     private final MessageSenderFactory messageSenderFactory;
     private final MessageConsumerFactory<?> messageConsumerFactory;
+    private final ContentResolver contentResolver;
+    private final ContentWriter contentWriter;
 
     private MessageSender<ResourceUpdatedMessage> sender;
 
     public static CqlContentBootstrapController create(
             ListeningExecutorService listeningExecutorService,
             ProgressStore progressStore,
+            ContentResolver legacyContentResolver,
+            ContentWriter cqlContentStore,
             ResourceLister<Content> contentLister,
             MessageSenderFactory messageSenderFactory,
             MessageConsumerFactory<?> messageConsumerFactory
-    ) {
+    ){
         return new CqlContentBootstrapController(
                 listeningExecutorService,
                 progressStore,
+                legacyContentResolver,
+                cqlContentStore,
                 contentLister,
                 messageSenderFactory,
                 messageConsumerFactory
@@ -81,6 +91,8 @@ public class CqlContentBootstrapController {
     private CqlContentBootstrapController(
             ListeningExecutorService listeningExecutorService,
             ProgressStore progressStore,
+            ContentResolver legacyContentResolver,
+            ContentWriter cqlContentStore,
             ResourceLister<Content> contentLister,
             MessageSenderFactory messageSenderFactory,
             MessageConsumerFactory<?> messageConsumerFactory
@@ -88,12 +100,22 @@ public class CqlContentBootstrapController {
         this.contentLister = checkNotNull(contentLister);
         this.listeningExecutorService = checkNotNull(listeningExecutorService);
         this.progressStore = checkNotNull(progressStore);
+        this.contentResolver = checkNotNull(legacyContentResolver);
+        this.contentWriter = checkNotNull(cqlContentStore);
         this.messageSenderFactory = checkNotNull(messageSenderFactory);
         this.messageConsumerFactory = checkNotNull(messageConsumerFactory);
     }
 
+    @RequestMapping(value = "/write-mongo-ids", method = RequestMethod.POST)
+    public void writeIdsToCqlStore(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+
+    }
+
     @RequestMapping(value = "/list-mongo-ids", method = RequestMethod.POST)
-    public void migrate(
+    public void writeIdsToQueue(
             HttpServletRequest request,
             HttpServletResponse response
     ) throws ExecutionException, InterruptedException, WriteException {
@@ -103,10 +125,17 @@ public class CqlContentBootstrapController {
         initSender();
 
         listeningExecutorService.submit(() -> {
+            // Let's avoid sending brands and whatnot many times. Since each episode will reference
+            // its brand and series, this could be costly if we don't take care.
+            //
+            // For 50kk IDs, this should take
+            // about 6.25M of memory, which we can easily afford.
+            BitSet sentAlready = new BitSet(APPROXIMATE_MAX_ID);
+
             long numProcessed = 0L;
 
             for (Content content : contentLister.list(progress)) {
-                bootstrap(content);
+                bootstrap(content, sentAlready);
 
                 numProcessed++;
 
@@ -130,7 +159,7 @@ public class CqlContentBootstrapController {
         );
     }
 
-    private void bootstrap(Content content) {
+    private void bootstrap(Content content, BitSet sentAlready) {
         if (content instanceof Episode) {
             Episode episode = (Episode) content;
 
@@ -140,9 +169,18 @@ public class CqlContentBootstrapController {
 
             ContentRef partition = ObjectUtils.firstNonNull(brand, series, episodeRef);
 
-            sendMessage(brand, partition);
-            sendMessage(series, partition);
+            if (brand != null && ! sentAlready.get(toInt(brand))) {
+                sendMessage(brand, partition);
+                sentAlready.set(toInt(brand));
+            }
+
+            if (series != null && ! sentAlready.get(toInt(series))) {
+                sendMessage(series, partition);
+                sentAlready.set(toInt(series));
+            }
+
             sendMessage(episodeRef, partition);
+            sentAlready.set(toInt(episodeRef));
         } else if (content instanceof Series) {
             Series series = (Series) content;
 
@@ -151,13 +189,23 @@ public class CqlContentBootstrapController {
 
             ContentRef partition = ObjectUtils.firstNonNull(brand, seriesRef);
 
-            sendMessage(brand, partition);
+            if (brand != null && ! sentAlready.get(toInt(brand))) {
+                sendMessage(brand, partition);
+                sentAlready.set(toInt(brand));
+            }
+
             sendMessage(seriesRef, partition);
+            sentAlready.set(toInt(seriesRef));
         } else {
             ContentRef contentRef = content.toRef();
 
             sendMessage(contentRef, contentRef);
+            sentAlready.set(toInt(contentRef));
         }
+    }
+
+    private int toInt(ContentRef brand) {
+        return Math.toIntExact(brand.getId().longValue());
     }
 
     private void sendMessage(@Nullable ContentRef contentRef, ContentRef partition) {
