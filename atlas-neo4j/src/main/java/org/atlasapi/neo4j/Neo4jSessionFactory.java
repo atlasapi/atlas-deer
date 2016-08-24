@@ -21,8 +21,8 @@ public class Neo4jSessionFactory {
     ) {
         return new Neo4jSessionFactory(GraphDatabase
                 .driver(
-                        "bolt://" + host + ":" + port,
-                        authToken,
+                        "bolt://" + checkNotNull(host) + ":" + port,
+                        checkNotNull(authToken),
                         Config.build()
                                 .withMaxIdleSessions(maxIdleSessions)
                                 .withEncryptionLevel(Config.EncryptionLevel.NONE)
