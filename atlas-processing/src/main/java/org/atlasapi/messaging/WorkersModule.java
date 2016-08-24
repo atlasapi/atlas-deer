@@ -382,6 +382,8 @@ public class WorkersModule {
 
         Neo4jContentStoreGraphUpdateWorker worker = Neo4jContentStoreGraphUpdateWorker
                 .create(
+                        persistence.legacyContentResolver(),
+                        persistence.legacyEquivalenceStore(),
                         persistence.neo4jContentStore(),
                         metricsModule.metrics().timer(workerName),
                         metricsModule.metrics().meter(workerName + "-failure")
