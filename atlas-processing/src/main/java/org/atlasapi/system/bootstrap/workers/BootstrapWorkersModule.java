@@ -70,9 +70,10 @@ public class BootstrapWorkersModule {
             Configurer.get("messaging.destination.organisation.changes").get();
 
     private final Boolean v2ScheduleEnabled = Configurer.get("schedule.v2.enabled").toBoolean();
-
     private final Boolean contentBootstrapEnabled =
             Configurer.get("messaging.bootstrap.content.changes.enabled").toBoolean();
+    private final Boolean cqlContentBootstrapEnabled =
+            Configurer.get("messaging.bootstrap.cql-content.changes.enabled").toBoolean();
     private final Boolean scheduleBootstrapEnabled =
             Configurer.get("messaging.bootstrap.schedule.changes.enabled").toBoolean();
     private final Boolean topicBootstrapEnabled =
@@ -120,6 +121,30 @@ public class BootstrapWorkersModule {
                         new EntityUpdatedLegacyMessageSerializer(),
                         contentChanges,
                         "ContentBootstrap"
+                )
+                .withConsumerSystem(consumerSystem)
+                .withDefaultConsumers(contentChangesNumOfConsumers)
+                .withMaxConsumers(contentChangesNumOfConsumers)
+                .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .build();
+    }
+
+    @Bean
+    @Lazy
+    KafkaConsumer cqlContentBootstrapWorker() {
+        ContentBootstrapWorker worker = ContentBootstrapWorker.create(
+                persistence.legacyContentResolver(),
+                persistence.cqlContentStore(),
+                metricsModule.metrics().timer("CqlContentBootstrapWorker"),
+                metricsModule.metrics().meter("CqlContentBootstrapWorker.notWritten"),
+                metricsModule.metrics().meter("CqlContentBootstrapWorker.errorRate")
+        );
+        return bootstrapQueueFactory()
+                .createConsumer(
+                        worker,
+                        new EntityUpdatedLegacyMessageSerializer(),
+                        contentChanges,
+                        "CqlContentBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(contentChangesNumOfConsumers)
@@ -255,6 +280,9 @@ public class BootstrapWorkersModule {
 
         if (contentBootstrapEnabled) {
             services.add(contentBootstrapWorker());
+        }
+        if (cqlContentBootstrapEnabled) {
+            services.add(cqlContentBootstrapWorker());
         }
         if (scheduleBootstrapEnabled) {
             services.add(scheduleReadWriter());
