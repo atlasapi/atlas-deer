@@ -35,8 +35,10 @@ import org.atlasapi.util.EsObject;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -69,7 +71,7 @@ public class ContentDebugController {
             (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString())
     )
             .create();
-    private final ObjectMapper jackson = new ObjectMapper();
+    private final ObjectMapper jackson;
 
     private final ContentResolver legacyContentResolver;
     private final ContentIndex index;
@@ -123,6 +125,9 @@ public class ContentDebugController {
         this.contentNeo4jMigrator = ContentNeo4jMigrator.create(
                 neo4jContentStore, contentStore, contentEquivalenceGraphStore
         );
+
+        this.jackson = new ObjectMapper();
+        this.jackson.registerModule(new GuavaModule());
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
@@ -377,8 +382,10 @@ public class ContentDebugController {
             jackson.writeValue(
                     response.getWriter(),
                     ImmutableMap.of(
-                            "requestedId", decodedId,
-                            "equivalentSet", equivalentSet
+                            "requestedId", decodedId.longValue(),
+                            "equivalentSet", equivalentSet.stream()
+                                    .map(Id::longValue)
+                                    .collect(MoreCollectors.toImmutableSet())
                     )
             );
         } catch (Exception e) {
