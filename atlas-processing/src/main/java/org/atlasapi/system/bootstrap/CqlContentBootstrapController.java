@@ -5,6 +5,8 @@ import java.util.BitSet;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +27,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.ResourceLister;
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.messaging.JacksonMessageSerializer;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
@@ -32,13 +35,17 @@ import org.atlasapi.persistence.content.ContentCategory;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.legacy.ProgressStore;
 
+import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
 import com.metabroadcast.common.queue.MessageConsumerFactory;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenderFactory;
 import com.metabroadcast.common.queue.MessagingException;
+import com.metabroadcast.common.queue.RecoverableException;
+import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import org.elasticsearch.common.lang3.ObjectUtils;
@@ -54,9 +61,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CqlContentBootstrapController {
 
     private static final String TASK_NAME = "cql-mongo-id-bootstrap";
+    private static final String KAFKA_TOPIC_NAME = "CqlMondoIdBootstrapSender";
     private static final long PROGRESS_SAVE_FREQUENCY = 100L;
-    private static final String KAFKA_SENDER_NAME = "cql-mondo-id-bootstrap-sender";
     private static final int APPROXIMATE_MAX_ID = 50_000_000;
+    private static final String KAFKA_CONSUMER_GROUP = "CqlMongoBootstrapConsumer";
 
     private final ListeningExecutorService listeningExecutorService;
     private final ProgressStore progressStore;
@@ -65,11 +73,13 @@ public class CqlContentBootstrapController {
     private final MessageConsumerFactory<?> messageConsumerFactory;
     private final ContentResolver contentResolver;
     private final ContentWriter contentWriter;
+    private final DatabasedMongo mongo;
 
     private MessageSender<ResourceUpdatedMessage> sender;
 
     public static CqlContentBootstrapController create(
             ListeningExecutorService listeningExecutorService,
+            DatabasedMongo databasedMongo,
             ProgressStore progressStore,
             ContentResolver legacyContentResolver,
             ContentWriter cqlContentStore,
@@ -79,6 +89,7 @@ public class CqlContentBootstrapController {
     ){
         return new CqlContentBootstrapController(
                 listeningExecutorService,
+                databasedMongo,
                 progressStore,
                 legacyContentResolver,
                 cqlContentStore,
@@ -90,6 +101,7 @@ public class CqlContentBootstrapController {
 
     private CqlContentBootstrapController(
             ListeningExecutorService listeningExecutorService,
+            DatabasedMongo databasedMongo,
             ProgressStore progressStore,
             ContentResolver legacyContentResolver,
             ContentWriter cqlContentStore,
@@ -98,6 +110,7 @@ public class CqlContentBootstrapController {
             MessageConsumerFactory<?> messageConsumerFactory
     ) {
         this.contentLister = checkNotNull(contentLister);
+        this.mongo = checkNotNull(databasedMongo);
         this.listeningExecutorService = checkNotNull(listeningExecutorService);
         this.progressStore = checkNotNull(progressStore);
         this.contentResolver = checkNotNull(legacyContentResolver);
@@ -111,7 +124,19 @@ public class CqlContentBootstrapController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+        messageConsumerFactory.createConsumer(
+                new CqlWritingConsumer(),
+                JacksonMessageSerializer.forType(ResourceUpdatedMessage.class),
+                KAFKA_TOPIC_NAME,
+                KAFKA_CONSUMER_GROUP
+        ).withFailedMessagePersistence(mongo);
 
+        response.setStatus(200);
+        try {
+            response.getWriter().write("Started Mongo to CQL consumer");
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     @RequestMapping(value = "/list-mongo-ids", method = RequestMethod.POST)
@@ -152,9 +177,8 @@ public class CqlContentBootstrapController {
     }
 
     private void initSender() {
-        this.sender = checkNotNull(
-                messageSenderFactory).makeMessageSender(
-                KAFKA_SENDER_NAME,
+        this.sender = checkNotNull(messageSenderFactory).makeMessageSender(
+                KAFKA_TOPIC_NAME,
                 JacksonMessageSerializer.forType(ResourceUpdatedMessage.class)
         );
     }
@@ -259,6 +283,32 @@ public class CqlContentBootstrapController {
             return ContentCategory.CONTENT_GROUP;
         } else {
             return null;
+        }
+    }
+
+    private class CqlWritingConsumer implements Worker<ResourceUpdatedMessage> {
+
+        @Override
+        public void process(ResourceUpdatedMessage message) throws RecoverableException {
+            ResourceRef updated = message.getUpdatedResource();
+            try {
+                com.google.common.base.Optional<Content> contentInMongo = contentResolver
+                        .resolveIds(ImmutableList.of(updated.getId()))
+                        .get(30L, TimeUnit.SECONDS)
+                        .getResources()
+                        .first();
+
+                if (! contentInMongo.isPresent()) {
+                    throw new IllegalArgumentException(String.format(
+                            "Content %d not found in Mongo",
+                            updated.getId().longValue()
+                    ));
+                }
+
+                contentWriter.writeContent(contentInMongo.get());
+            } catch (WriteException | InterruptedException | ExecutionException | TimeoutException e) {
+                throw Throwables.propagate(e);
+            }
         }
     }
 }

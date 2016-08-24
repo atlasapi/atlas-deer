@@ -133,9 +133,10 @@ public class BootstrapModule {
     CqlContentBootstrapController cqlContentBootstrapController() {
         return CqlContentBootstrapController.create(
                 executorService(1, "cql-content-bootstrap"),
+                persistence.databasedWriteMongo(),
                 progressStore(),
                 persistence.legacyContentResolver(),
-                persistence.cqlContentStore(),
+                persistence.forceCqlContentWriter(),
                 persistence.legacyContentLister(),
                 messaging.messageSenderFactory(),
                 messaging.messageConsumerFactory()

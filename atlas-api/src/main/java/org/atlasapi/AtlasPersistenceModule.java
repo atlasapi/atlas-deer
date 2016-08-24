@@ -16,6 +16,7 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.v2.CqlContentStore;
+import org.atlasapi.content.v2.NonValidatingCqlWriter;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.event.EventResolver;
@@ -232,6 +233,11 @@ public class AtlasPersistenceModule {
     @Bean
     public CqlContentStore cqlContentStore() {
         return persistenceModule().cqlContentStore();
+    }
+
+    @Bean
+    public NonValidatingCqlWriter forceCqlContentWriter() {
+        return persistenceModule().forceCqlContentWriter();
     }
 
     public ContentStore nullMessageSendingContentStore() {
