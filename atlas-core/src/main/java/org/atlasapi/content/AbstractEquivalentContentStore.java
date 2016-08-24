@@ -9,6 +9,7 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.util.GroupLock;
 
@@ -40,21 +41,24 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
 
+    private static final GroupLock<Id> lock = GroupLock.natural();
+
     private final ContentResolver contentResolver;
 
     private final EquivalenceGraphStore graphStore;
-    private final MessageSender<EquivalentContentUpdatedMessage> equivalentContentUpdatedMessageSender;
-    private static final GroupLock<Id> lock = GroupLock.natural();
+    private final MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender;
+    private final MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender;
 
-    public AbstractEquivalentContentStore(
+    protected AbstractEquivalentContentStore(
             ContentResolver contentResolver,
             EquivalenceGraphStore graphStore,
-            MessageSender<EquivalentContentUpdatedMessage> equivalentContentUpdatedMessageSender
+            MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender,
+            MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.graphStore = checkNotNull(graphStore);
-        this.equivalentContentUpdatedMessageSender = checkNotNull(
-                equivalentContentUpdatedMessageSender);
+        this.equivContentUpdatedMessageSender = checkNotNull(equivContentUpdatedMessageSender);
+        this.equivGraphUpdatedMessageSender = checkNotNull(equivGraphUpdatedMessageSender);
     }
 
     @Override
@@ -86,7 +90,9 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             );
 
             update(graphsAndContent, update);
-        } catch (InterruptedException e) {
+
+            sendEquivalentContentGraphChangedMessage(update);
+        } catch (MessagingException | InterruptedException e) {
             throw new WriteException("Updating " + ids, e);
         } finally {
             lock.unlock(ids);
@@ -167,17 +173,35 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
         return Futures.get(future, 1, TimeUnit.MINUTES, WriteException.class);
     }
 
+    private void sendEquivalentContentGraphChangedMessage(EquivalenceGraphUpdate graphUpdate)
+            throws MessagingException {
+        equivGraphUpdatedMessageSender.sendMessage(
+                new EquivalenceGraphUpdateMessage(
+                        UUID.randomUUID().toString(),
+                        Timestamp.of(DateTime.now(DateTimeZone.UTC)),
+                        graphUpdate
+                ),
+                graphUpdate.getAssertion() != null
+                ? getPartitionKey(graphUpdate.getAssertion().getSubject().getId())
+                : getPartitionKey(graphUpdate.getUpdated().getId())
+        );
+    }
+
     private void sendEquivalentContentChangedMessage(Content content, EquivalenceGraph graph)
             throws MessagingException {
-        equivalentContentUpdatedMessageSender.sendMessage(
+        equivContentUpdatedMessageSender.sendMessage(
                 new EquivalentContentUpdatedMessage(
                         UUID.randomUUID().toString(),
                         Timestamp.of(DateTime.now(DateTimeZone.UTC)),
                         graph.getId().longValue(),
                         content.toRef()
                 ),
-                Longs.toByteArray(graph.getId().longValue())
+                getPartitionKey(graph.getId())
         );
+    }
+
+    private byte[] getPartitionKey(Id id) {
+        return Longs.toByteArray(id.longValue());
     }
 
     // This will resolve all content in the graphs that are about to be deleted and then check

@@ -16,6 +16,7 @@ import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
 import org.atlasapi.hashing.HashGenerator;
@@ -31,6 +32,8 @@ import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
 import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.messaging.MessagingModule;
 import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
+import org.atlasapi.neo4j.Neo4jModule;
+import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationStore;
 import org.atlasapi.persistence.audit.NoLoggingPersistenceAuditLog;
@@ -152,8 +155,14 @@ public class AtlasPersistenceModule {
     private final String esRequestTimeout = Configurer.get("elasticsearch.requestTimeout").get();
     private final Parameter processingConfig = Configurer.get("processing.config");
 
-    private String equivalentContentChanges = Configurer.get(
-            "messaging.destination.equivalent.content.changes").get();
+    private final String neo4jHost = Configurer.get("neo4j.host").get();
+    private final Integer neo4jPort = Configurer.get("neo4j.port").toInt();
+    private final Integer neo4jMaxIdleSessions = Configurer.get("neo4j.maxIdleSessions").toInt();
+
+    private String equivalentContentChanges = Configurer
+            .get("messaging.destination.equivalent.content.changes").get();
+    private String equivalentContentGraphChanges = Configurer
+            .get("messaging.destination.equivalent.content.graph.changes").get();
 
     private @Autowired MessagingModule messaging;
     private @Autowired MetricsModule metricsModule;
@@ -279,6 +288,10 @@ public class AtlasPersistenceModule {
                         equivalentContentChanges,
                         EquivalentContentUpdatedMessage.class
                 ),
+                persistenceModule().sender(
+                        equivalentContentGraphChanges,
+                        EquivalenceGraphUpdateMessage.class
+                ),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel()
@@ -292,6 +305,7 @@ public class AtlasPersistenceModule {
                 legacyContentResolver(),
                 persistenceModule().contentEquivalenceGraphStore(),
                 persistenceModule().nullMessageSender(EquivalentContentUpdatedMessage.class),
+                persistenceModule().nullMessageSender(EquivalenceGraphUpdateMessage.class),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel()
@@ -351,7 +365,7 @@ public class AtlasPersistenceModule {
         return mongo;
     }
 
-    public IdGeneratorBuilder idGeneratorBuilder() {
+    private IdGeneratorBuilder idGeneratorBuilder() {
         return sequenceIdentifier -> new MongoSequentialIdGenerator(
                 databasedWriteMongo(),
                 sequenceIdentifier
@@ -474,7 +488,7 @@ public class AtlasPersistenceModule {
         return new LegacySegmentMigrator(legacySegmentResolver(), segmentStore());
     }
 
-    public org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
+    private org.atlasapi.media.segment.SegmentResolver legacySegmentResolver() {
         return new MongoSegmentResolver(databasedReadMongo(), new SubstitutionTableNumberCodec());
     }
 
@@ -579,5 +593,17 @@ public class AtlasPersistenceModule {
                 ),
                 legacyContentTransformer()
         );
+    }
+
+    @Bean
+    public Neo4jModule neo4jModule() {
+        return Neo4jModule.create(
+            neo4jHost, neo4jPort, neo4jMaxIdleSessions
+        );
+    }
+
+    @Bean
+    public Neo4jContentStore neo4jContentStore() {
+        return neo4jModule().neo4jContentStore();
     }
 }

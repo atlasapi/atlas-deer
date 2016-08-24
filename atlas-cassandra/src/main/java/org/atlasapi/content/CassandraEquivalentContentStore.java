@@ -19,6 +19,7 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
+import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
@@ -103,12 +104,18 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             ContentResolver contentResolver,
             LegacyContentResolver legacyContentResolver,
             EquivalenceGraphStore graphStore,
-            MessageSender<EquivalentContentUpdatedMessage> equivalentContentUpdatedMessageSender,
+            MessageSender<EquivalentContentUpdatedMessage> contentUpdatedMessageSender,
+            MessageSender<EquivalenceGraphUpdateMessage> graphUpdatedMessageSender,
             Session session,
             ConsistencyLevel read,
             ConsistencyLevel write
     ) {
-        super(contentResolver, graphStore, equivalentContentUpdatedMessageSender);
+        super(
+                contentResolver,
+                graphStore,
+                contentUpdatedMessageSender,
+                graphUpdatedMessageSender
+        );
         this.legacyContentResolver = checkNotNull(legacyContentResolver);
         this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(
                 contentResolver));

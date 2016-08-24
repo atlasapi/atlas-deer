@@ -71,7 +71,7 @@ public class Item extends Content {
         );
     }
 
-    public void setContainerRef(ContainerRef containerRef) {
+    public void setContainerRef(@Nullable ContainerRef containerRef) {
         this.containerRef = containerRef;
     }
 

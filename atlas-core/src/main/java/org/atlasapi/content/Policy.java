@@ -132,11 +132,11 @@ public class Policy extends Identified implements Hashable {
         return actualAvailabilityStart;
     }
 
-    public void setAvailabilityEnd(DateTime availabilityEnd) {
+    public void setAvailabilityEnd(@Nullable DateTime availabilityEnd) {
         this.availabilityEnd = availabilityEnd;
     }
 
-    public void setAvailabilityStart(DateTime availabilityStart) {
+    public void setAvailabilityStart(@Nullable DateTime availabilityStart) {
         this.availabilityStart = availabilityStart;
     }
 

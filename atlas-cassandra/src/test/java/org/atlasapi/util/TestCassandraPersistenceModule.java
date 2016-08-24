@@ -136,7 +136,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
         clearTables(session, context);
     }
 
-    protected void clearTables(Session session, AstyanaxContext<Keyspace> context)
+    private void clearTables(Session session, AstyanaxContext<Keyspace> context)
             throws ConnectionException {
         CassandraInit.truncate(session, context);
     }
@@ -182,6 +182,7 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
                 new NoOpLegacyContentResolver(),
                 persistenceModule.contentEquivalenceGraphStore(),
                 messageSenderFactory.makeMessageSender("EquivContentUpdates", null),
+                messageSenderFactory.makeMessageSender("EquivContentGraphUpdates", null),
                 cassandraService.getCluster().connect(keyspace),
                 ConsistencyLevel.ONE,
                 ConsistencyLevel.ONE
