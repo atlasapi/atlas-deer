@@ -86,6 +86,7 @@ public class CqlContentBootstrapController {
     private final AtomicBoolean runConsumer = new AtomicBoolean(false);
     private final Meter mongoSenderMeter;
     private final Meter cqlWriterMeter;
+    private final Meter cqlWriterErrorMeter;
 
     private MessageSender<ResourceUpdatedMessage> sender = null;
     private KafkaConsumer cqlConsumer = null;
@@ -139,6 +140,10 @@ public class CqlContentBootstrapController {
         ));
         this.cqlWriterMeter = checkNotNull(metrics).meter(String.format(
                 "%s.cql-writer",
+                getClass().getSimpleName()
+        ));
+        this.cqlWriterErrorMeter = checkNotNull(metrics).meter(String.format(
+                "%s.cql-writer-errors",
                 getClass().getSimpleName()
         ));
     }
@@ -411,6 +416,7 @@ public class CqlContentBootstrapController {
 
                 cqlWriterMeter.mark();
             } catch (WriteException | InterruptedException | ExecutionException | TimeoutException e) {
+                cqlWriterErrorMeter.mark();
                 throw Throwables.propagate(e);
             }
         }
