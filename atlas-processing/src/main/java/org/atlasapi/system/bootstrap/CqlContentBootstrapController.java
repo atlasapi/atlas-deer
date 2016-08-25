@@ -83,7 +83,7 @@ public class CqlContentBootstrapController {
     private final ContentWriter contentWriter;
     private final DatabasedMongo mongo;
 
-    private final AtomicBoolean runConsumer = new AtomicBoolean(true);
+    private final AtomicBoolean runConsumer = new AtomicBoolean(false);
     private final Meter mongoSenderMeter;
     private final Meter cqlWriterMeter;
 
@@ -211,6 +211,7 @@ public class CqlContentBootstrapController {
         Optional<ContentListingProgress> storedProgress = progressStore.progressForTask(TASK_NAME);
         ContentListingProgress progress = storedProgress.orElse(ContentListingProgress.START);
 
+        runConsumer.set(true);
         initSender();
 
         listeningExecutorService.submit(() -> {
