@@ -138,7 +138,8 @@ public class BootstrapModule {
                 persistence.forceCqlContentWriter(),
                 persistence.legacyContentLister(),
                 messaging.messageSenderFactory(),
-                (MessageConsumerFactory<KafkaConsumer>) messaging.messageConsumerFactory()
+                (MessageConsumerFactory<KafkaConsumer>) messaging.messageConsumerFactory(),
+                metrics
         );
     }
 

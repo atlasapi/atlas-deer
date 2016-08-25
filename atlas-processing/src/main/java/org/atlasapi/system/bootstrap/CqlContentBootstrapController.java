@@ -46,6 +46,8 @@ import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Longs;
@@ -82,6 +84,9 @@ public class CqlContentBootstrapController {
     private final DatabasedMongo mongo;
 
     private final AtomicBoolean runConsumer = new AtomicBoolean(true);
+    private final Meter mongoSenderMeter;
+    private final Meter cqlWriterMeter;
+
     private MessageSender<ResourceUpdatedMessage> sender = null;
     private KafkaConsumer cqlConsumer = null;
 
@@ -93,8 +98,9 @@ public class CqlContentBootstrapController {
             ContentWriter cqlContentStore,
             ResourceLister<Content> contentLister,
             MessageSenderFactory messageSenderFactory,
-            MessageConsumerFactory<KafkaConsumer> messageConsumerFactory
-    ){
+            MessageConsumerFactory<KafkaConsumer> messageConsumerFactory,
+            MetricRegistry metrics
+    ) {
         return new CqlContentBootstrapController(
                 listeningExecutorService,
                 databasedMongo,
@@ -103,7 +109,8 @@ public class CqlContentBootstrapController {
                 cqlContentStore,
                 contentLister,
                 messageSenderFactory,
-                messageConsumerFactory
+                messageConsumerFactory,
+                metrics
         );
     }
 
@@ -115,7 +122,8 @@ public class CqlContentBootstrapController {
             ContentWriter cqlContentStore,
             ResourceLister<Content> contentLister,
             MessageSenderFactory messageSenderFactory,
-            MessageConsumerFactory<KafkaConsumer> messageConsumerFactory
+            MessageConsumerFactory<KafkaConsumer> messageConsumerFactory,
+            MetricRegistry metrics
     ) {
         this.contentLister = checkNotNull(contentLister);
         this.mongo = checkNotNull(databasedMongo);
@@ -125,6 +133,14 @@ public class CqlContentBootstrapController {
         this.contentWriter = checkNotNull(cqlContentStore);
         this.messageSenderFactory = checkNotNull(messageSenderFactory);
         this.messageConsumerFactory = checkNotNull(messageConsumerFactory);
+        this.mongoSenderMeter = checkNotNull(metrics).meter(String.format(
+                "%s.mongo-id-sender",
+                getClass().getSimpleName()
+        ));
+        this.cqlWriterMeter = checkNotNull(metrics).meter(String.format(
+                "%s.cql-writer",
+                getClass().getSimpleName()
+        ));
     }
 
     @RequestMapping(value = "/write-mongo-ids", method = RequestMethod.POST)
@@ -213,6 +229,8 @@ public class CqlContentBootstrapController {
                 numProcessed++;
 
                 storeProgress(numProcessed, content);
+
+                mongoSenderMeter.mark();
 
                 if (!runConsumer.get()) {
                     log.info("Stopping CQL bootstrap Mongo ID producer");
@@ -389,6 +407,8 @@ public class CqlContentBootstrapController {
                 }
 
                 contentWriter.writeContent(contentInMongo.get());
+
+                cqlWriterMeter.mark();
             } catch (WriteException | InterruptedException | ExecutionException | TimeoutException e) {
                 throw Throwables.propagate(e);
             }
