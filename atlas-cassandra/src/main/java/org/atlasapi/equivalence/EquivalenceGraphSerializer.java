@@ -24,6 +24,12 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.joda.time.DateTime;
 
+/**
+ * For legacy reasons we need to refer to outgoing edges as efferent and incoming edges as
+ * afferent. This is because {@link org.atlasapi.equivalence.EquivalenceGraph.Adjacents} used to
+ * use those names and since it is serialised into / deserialised from protobuf there will be
+ * database entries that still use those names.
+ */
 public class EquivalenceGraphSerializer implements Serializer<EquivalenceGraph, ByteBuffer> {
 
     ResourceRefSerializer serializer = new ResourceRefSerializer();
@@ -40,14 +46,17 @@ public class EquivalenceGraphSerializer implements Serializer<EquivalenceGraph, 
 
     private Adjacency.Builder serialize(Adjacents adjs) {
         Adjacency.Builder dest = Adjacency.newBuilder();
+
         dest.setRef(serializer.serialize(adjs.getRef()));
         dest.setCreated(serialize(adjs.getCreated()));
-        for (ResourceRef eff : adjs.getEfferent()) {
-            dest.addEfferent(serializer.serialize(eff));
+
+        for (ResourceRef outgoingEdge : adjs.getOutgoingEdges()) {
+            dest.addEfferent(serializer.serialize(outgoingEdge));
         }
-        for (ResourceRef aff : adjs.getAfferent()) {
-            dest.addAfferent(serializer.serialize(aff));
+        for (ResourceRef incomingEdge : adjs.getIncomingEdges()) {
+            dest.addAfferent(serializer.serialize(incomingEdge));
         }
+
         return dest;
     }
 
@@ -82,9 +91,9 @@ public class EquivalenceGraphSerializer implements Serializer<EquivalenceGraph, 
     private Adjacents deserialize(Adjacency adjacency) {
         ResourceRef subj = serializer.deserialize(adjacency.getRef());
         DateTime deserialize = deserialize(adjacency.getCreated());
-        Set<ResourceRef> efferent = deserializeRefs(adjacency.getEfferentList());
-        Set<ResourceRef> afferent = deserializeRefs(adjacency.getAfferentList());
-        return new Adjacents(subj, deserialize, efferent, afferent);
+        Set<ResourceRef> outgoingEdges = deserializeRefs(adjacency.getEfferentList());
+        Set<ResourceRef> incomingEdges = deserializeRefs(adjacency.getAfferentList());
+        return new Adjacents(subj, deserialize, outgoingEdges, incomingEdges);
     }
 
     private Set<ResourceRef> deserializeRefs(List<Reference> refList) {

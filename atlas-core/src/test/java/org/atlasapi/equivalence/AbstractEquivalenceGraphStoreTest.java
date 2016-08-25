@@ -62,7 +62,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -96,8 +95,8 @@ public class AbstractEquivalenceGraphStoreTest {
     public void testMakingTwoResourcesEquivalent() throws WriteException {
         makeEquivalent(bbcItem, paItem, bbcItem, paItem);
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertAfferentAdjacent(paItem, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertIncomingAdjacent(paItem, bbcItem);
     }
 
     private EquivalenceGraph graphOf(Item item) {
@@ -108,9 +107,9 @@ public class AbstractEquivalenceGraphStoreTest {
     public void testMakingThreeResourcesEquivalent() throws WriteException {
         makeEquivalent(bbcItem, paItem, c4Item);
 
-        assertEfferentAdjacents(bbcItem, paItem, c4Item);
-        assertAfferentAdjacent(paItem, bbcItem);
-        assertAfferentAdjacent(c4Item, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem, c4Item);
+        assertIncomingAdjacent(paItem, bbcItem);
+        assertIncomingAdjacent(c4Item, bbcItem);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
     }
 
@@ -118,14 +117,14 @@ public class AbstractEquivalenceGraphStoreTest {
     public void testAddingAnEquivalentResource() throws WriteException {
         makeEquivalent(bbcItem, paItem);
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertAfferentAdjacent(paItem, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertIncomingAdjacent(paItem, bbcItem);
 
         makeEquivalent(bbcItem, paItem, c4Item);
 
-        assertEfferentAdjacents(bbcItem, paItem, c4Item);
-        assertAfferentAdjacent(paItem, bbcItem);
-        assertAfferentAdjacent(c4Item, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem, c4Item);
+        assertIncomingAdjacent(paItem, bbcItem);
+        assertIncomingAdjacent(c4Item, bbcItem);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
     }
 
@@ -138,10 +137,10 @@ public class AbstractEquivalenceGraphStoreTest {
         changedSubject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
         makeEquivalent(changedSubject, paItem);
 
-        assertAfferentAdjacent(paItem, subject);
-        assertAfferentAdjacent(paItem, changedSubject);
-        assertEfferentAdjacents(subject, paItem);
-        assertEfferentAdjacents(changedSubject, paItem);
+        assertIncomingAdjacent(paItem, subject);
+        assertIncomingAdjacent(paItem, changedSubject);
+        assertOutgoingAdjacents(subject, paItem);
+        assertOutgoingAdjacents(changedSubject, paItem);
     }
 
     @Test
@@ -156,9 +155,9 @@ public class AbstractEquivalenceGraphStoreTest {
         changedSubject2.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
         makeEquivalent(changedSubject2, paItem);
 
-        assertAfferentAdjacent(paItem, subject);
-        assertAfferentAdjacent(paItem, changedSubject);
-        assertAfferentAdjacent(paItem, changedSubject2);
+        assertIncomingAdjacent(paItem, subject);
+        assertIncomingAdjacent(paItem, changedSubject);
+        assertIncomingAdjacent(paItem, changedSubject2);
     }
 
     @Test
@@ -170,22 +169,22 @@ public class AbstractEquivalenceGraphStoreTest {
         changedSubject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
         makeEquivalent(changedSubject, paItem);
 
-        assertEfferentAdjacents(subject, paItem);
-        assertAfferentAdjacent(paItem, subject);
-        assertEfferentAdjacents(changedSubject, paItem);
-        assertAfferentAdjacent(paItem, changedSubject);
+        assertOutgoingAdjacents(subject, paItem);
+        assertIncomingAdjacent(paItem, subject);
+        assertOutgoingAdjacents(changedSubject, paItem);
+        assertIncomingAdjacent(paItem, changedSubject);
 
 
         makeEquivalent(subject, paItem, c4Item);
         makeEquivalent(changedSubject, paItem);
 
-        assertEfferentAdjacents(subject, paItem, c4Item);
-        assertAfferentAdjacent(paItem, subject);
-        assertAfferentAdjacent(c4Item, subject);
+        assertOutgoingAdjacents(subject, paItem, c4Item);
+        assertIncomingAdjacent(paItem, subject);
+        assertIncomingAdjacent(c4Item, subject);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
-        assertEfferentAdjacents(changedSubject, paItem, c4Item);
-        assertAfferentAdjacent(paItem, changedSubject);
-        assertAfferentAdjacent(c4Item, changedSubject);
+        assertOutgoingAdjacents(changedSubject, paItem, c4Item);
+        assertIncomingAdjacent(paItem, changedSubject);
+        assertIncomingAdjacent(c4Item, changedSubject);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
     }
 
@@ -198,8 +197,8 @@ public class AbstractEquivalenceGraphStoreTest {
         changedSubject.setThisOrChildLastUpdated(new DateTime(DateTimeZone.UTC));
         makeEquivalent(paItem, changedSubject);
 
-        assertAfferentAdjacent(subject, paItem);
-        assertAfferentAdjacent(changedSubject, paItem);
+        assertIncomingAdjacent(subject, paItem);
+        assertIncomingAdjacent(changedSubject, paItem);
     }
 
     @Test
@@ -207,9 +206,9 @@ public class AbstractEquivalenceGraphStoreTest {
 
         makeEquivalent(bbcItem, paItem, c4Item);
 
-        assertEfferentAdjacents(bbcItem, paItem, c4Item);
-        assertAfferentAdjacent(paItem, bbcItem);
-        assertAfferentAdjacent(c4Item, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem, c4Item);
+        assertIncomingAdjacent(paItem, bbcItem);
+        assertIncomingAdjacent(c4Item, bbcItem);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
         
         /*    BBC ----> PA
@@ -220,12 +219,12 @@ public class AbstractEquivalenceGraphStoreTest {
          */
         makeEquivalent(c4Item, paItem, itvItem);
 
-        assertEfferentAdjacents(bbcItem, paItem, c4Item);
-        assertEfferentAdjacents(c4Item, paItem, itvItem);
-        assertAfferentAdjacent(paItem, bbcItem);
-        assertAfferentAdjacent(paItem, c4Item);
-        assertAfferentAdjacent(c4Item, bbcItem);
-        assertAfferentAdjacent(itvItem, c4Item);
+        assertOutgoingAdjacents(bbcItem, paItem, c4Item);
+        assertOutgoingAdjacents(c4Item, paItem, itvItem);
+        assertIncomingAdjacent(paItem, bbcItem);
+        assertIncomingAdjacent(paItem, c4Item);
+        assertIncomingAdjacent(c4Item, bbcItem);
+        assertIncomingAdjacent(itvItem, c4Item);
         assertOnlyTransitivelyEquivalent(bbcItem, itvItem);
         assertOnlyTransitivelyEquivalent(paItem, itvItem);
     }
@@ -235,10 +234,10 @@ public class AbstractEquivalenceGraphStoreTest {
         makeEquivalent(paItem, c4Item);
         makeEquivalent(itvItem, fiveItem);
 
-        assertEfferentAdjacents(paItem, c4Item);
-        assertAfferentAdjacent(c4Item, paItem);
-        assertEfferentAdjacents(itvItem, fiveItem);
-        assertAfferentAdjacent(fiveItem, itvItem);
+        assertOutgoingAdjacents(paItem, c4Item);
+        assertIncomingAdjacent(c4Item, paItem);
+        assertOutgoingAdjacents(itvItem, fiveItem);
+        assertIncomingAdjacent(fiveItem, itvItem);
 
         makeEquivalent(bbcItem, paItem, itvItem);
 
@@ -331,25 +330,25 @@ public class AbstractEquivalenceGraphStoreTest {
 
         makeEquivalent(bbcItem, paItem, c4Item);
 
-        assertEfferentAdjacents(bbcItem, paItem, c4Item);
-        assertAfferentAdjacent(paItem, bbcItem);
-        assertAfferentAdjacent(c4Item, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem, c4Item);
+        assertIncomingAdjacent(paItem, bbcItem);
+        assertIncomingAdjacent(c4Item, bbcItem);
         assertOnlyTransitivelyEquivalent(paItem, c4Item);
 
         makeEquivalent(bbcItem,
                 ImmutableSet.of(bbcItem.getSource(), paItem.getSource(), c4Item.getSource()), paItem
         );
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertAfferentAdjacent(paItem, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertIncomingAdjacent(paItem, bbcItem);
 
         assertThat(graphOf(c4Item), adjacents(
                 c4Item.getId(),
-                afferents(ImmutableSet.of(c4Item.toRef().getId()))
+                incomingEdges(ImmutableSet.of(c4Item.toRef().getId()))
         ));
         assertThat(graphOf(c4Item), adjacents(
                 c4Item.getId(),
-                efferents(ImmutableSet.of(c4Item.toRef().getId()))
+                outgoingEdges(ImmutableSet.of(c4Item.toRef().getId()))
         ));
 
         assertThat(graphOf(bbcItem), adjacencyList(not(hasKey(c4Item.getId()))));
@@ -362,28 +361,28 @@ public class AbstractEquivalenceGraphStoreTest {
     public void testDoesntWriteEquivalentsForIgnoredPublishers() throws WriteException {
         makeEquivalent(bbcItem, paItem, bbcItem, paItem);
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertAfferentAdjacent(paItem, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertIncomingAdjacent(paItem, bbcItem);
 
         makeEquivalent(paItem, c4Item, paItem, bbcItem);
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertAfferentAdjacent(paItem, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertIncomingAdjacent(paItem, bbcItem);
     }
 
     @Test
     public void testDoesntOverWriteEquivalentsForIgnoredPublishers() throws WriteException {
         makeEquivalent(bbcItem, paItem, bbcItem, paItem);
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertAfferentAdjacent(paItem, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertIncomingAdjacent(paItem, bbcItem);
 
         makeEquivalent(paItem, c4Item, paItem, c4Item);
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertEfferentAdjacents(paItem, c4Item);
-        assertAfferentAdjacent(paItem, bbcItem);
-        assertAfferentAdjacent(c4Item, paItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertOutgoingAdjacents(paItem, c4Item);
+        assertIncomingAdjacent(paItem, bbcItem);
+        assertIncomingAdjacent(c4Item, paItem);
         assertOnlyTransitivelyEquivalent(bbcItem, c4Item);
     }
 
@@ -418,25 +417,25 @@ public class AbstractEquivalenceGraphStoreTest {
         start.countDown();
         assertTrue(finish.await(10, TimeUnit.SECONDS));
 
-        assertEfferentAdjacents(one, two);
+        assertOutgoingAdjacents(one, two);
         assertOnlyTransitivelyEquivalent(one, three);
         assertOnlyTransitivelyEquivalent(one, four);
         assertOnlyTransitivelyEquivalent(one, five);
 
-        assertAfferentAdjacent(two, one, three);
+        assertIncomingAdjacent(two, one, three);
         assertOnlyTransitivelyEquivalent(two, four);
         assertOnlyTransitivelyEquivalent(two, five);
 
-        assertEfferentAdjacents(three, two, four);
+        assertOutgoingAdjacents(three, two, four);
         assertOnlyTransitivelyEquivalent(three, one);
         assertOnlyTransitivelyEquivalent(three, five);
 
-        assertAfferentAdjacent(four, three);
-        assertEfferentAdjacents(four, five);
+        assertIncomingAdjacent(four, three);
+        assertOutgoingAdjacents(four, five);
         assertOnlyTransitivelyEquivalent(four, one);
         assertOnlyTransitivelyEquivalent(four, two);
 
-        assertAfferentAdjacent(five, four);
+        assertIncomingAdjacent(five, four);
         assertOnlyTransitivelyEquivalent(five, one);
         assertOnlyTransitivelyEquivalent(five, two);
         assertOnlyTransitivelyEquivalent(five, three);
@@ -486,10 +485,10 @@ public class AbstractEquivalenceGraphStoreTest {
         assertThat(graphOf(paItem).getAdjacencyList().size(), is(82));
         assertThat(
                 graphOf(bbcItem),
-                adjacents(bbcItem.getId(), efferents(hasItem(paItem.toRef().getId())))
+                adjacents(bbcItem.getId(), outgoingEdges(hasItem(paItem.toRef().getId())))
         );
         assertThat(graphOf(bbcItem), adjacencyList(hasKey(paItem.getId())));
-        assertThat(graphOf(paItem), adjacents(paItem.getId(), afferents(hasItem(bbcItem.toRef().getId()))));
+        assertThat(graphOf(paItem), adjacents(paItem.getId(), incomingEdges(hasItem(bbcItem.toRef().getId()))));
         assertThat(graphOf(paItem), adjacencyList(hasKey(bbcItem.getId())));
 
         update = makeEquivalent(bbcItem, sources(bbcItem, paItem));
@@ -501,12 +500,12 @@ public class AbstractEquivalenceGraphStoreTest {
         assertThat(graphOf(paItem).getAdjacencyList().size(), is(41));
         assertThat(graphOf(bbcItem), adjacents(
                 bbcItem.getId(),
-                efferents(not(hasItem(paItem.toRef().getId())))
+                outgoingEdges(not(hasItem(paItem.toRef().getId())))
         ));
         assertThat(graphOf(bbcItem), adjacencyList(not(hasKey(paItem.getId()))));
         assertThat(graphOf(paItem), adjacents(
                 paItem.getId(),
-                afferents(not(hasItem(bbcItem.toRef().getId())))
+                incomingEdges(not(hasItem(bbcItem.toRef().getId())))
         ));
         assertThat(graphOf(paItem), adjacencyList(not(hasKey(bbcItem.getId()))));
 
@@ -553,8 +552,8 @@ public class AbstractEquivalenceGraphStoreTest {
         EquivalenceGraph initialBbcGraph = graphOf(bbcItem);
         EquivalenceGraph initialPaGraph = graphOf(paItem);
 
-        assertEfferentAdjacents(bbcItem, paItem);
-        assertAfferentAdjacent(paItem, bbcItem);
+        assertOutgoingAdjacents(bbcItem, paItem);
+        assertIncomingAdjacent(paItem, bbcItem);
 
         assertTrue(makeEquivalent(bbcItem, paItem).isPresent());
 
@@ -623,42 +622,42 @@ public class AbstractEquivalenceGraphStoreTest {
     private void assertOnlyTransitivelyEquivalent(Item left, Item right) {
         EquivalenceGraph lg = graphOf(left);
         Adjacents la = lg.getAdjacents(left.getId());
-        assertFalse(la.hasAfferentAdjacent(right.toRef()));
-        assertFalse(la.hasEfferentAdjacent(right.toRef()));
+        assertFalse(la.hasIncomingAdjacent(right.toRef()));
+        assertFalse(la.hasOutgoingAdjacent(right.toRef()));
         assertTrue(lg.getEquivalenceSet().contains(right.getId()));
         EquivalenceGraph rg = graphOf(right);
         Adjacents ra = rg.getAdjacents(right.getId());
-        assertFalse(ra.hasAfferentAdjacent(left.toRef()));
-        assertFalse(ra.hasEfferentAdjacent(left.toRef()));
+        assertFalse(ra.hasIncomingAdjacent(left.toRef()));
+        assertFalse(ra.hasOutgoingAdjacent(left.toRef()));
         assertTrue(rg.getEquivalenceSet().contains(left.getId()));
     }
 
-    private void assertAfferentAdjacent(Item subj, Item... adjacents) {
-        assertThat(graphOf(subj), adjacents(subj.getId(), afferents(hasItem(subj.toRef().getId()))));
-        assertThat(graphOf(subj), adjacents(subj.getId(), efferents(hasItem(subj.toRef().getId()))));
+    private void assertIncomingAdjacent(Item subj, Item... adjacents) {
+        assertThat(graphOf(subj), adjacents(subj.getId(), incomingEdges(hasItem(subj.toRef().getId()))));
+        assertThat(graphOf(subj), adjacents(subj.getId(), outgoingEdges(hasItem(subj.toRef().getId()))));
         for (Item adjacent : adjacents) {
             assertThat(
                     graphOf(subj),
-                    adjacents(subj.getId(), afferents(hasItem(adjacent.toRef().getId())))
+                    adjacents(subj.getId(), incomingEdges(hasItem(adjacent.toRef().getId())))
             );
             assertThat(graphOf(subj), adjacencyList(hasEntry(
                     is(adjacent.getId()),
-                    efferents(hasItems(subj.toRef().getId(), adjacent.toRef().getId()))
+                    outgoingEdges(hasItems(subj.toRef().getId(), adjacent.toRef().getId()))
             )));
         }
     }
 
-    private void assertEfferentAdjacents(Item subj, Item... adjacents) {
-        assertThat(graphOf(subj), adjacents(subj.getId(), afferents(hasItem(subj.toRef().getId()))));
-        assertThat(graphOf(subj), adjacents(subj.getId(), efferents(hasItem(subj.toRef().getId()))));
+    private void assertOutgoingAdjacents(Item subj, Item... adjacents) {
+        assertThat(graphOf(subj), adjacents(subj.getId(), incomingEdges(hasItem(subj.toRef().getId()))));
+        assertThat(graphOf(subj), adjacents(subj.getId(), outgoingEdges(hasItem(subj.toRef().getId()))));
         for (Item adjacent : adjacents) {
             assertThat(
                     graphOf(subj),
-                    adjacents(subj.getId(), efferents(hasItem(adjacent.toRef().getId())))
+                    adjacents(subj.getId(), outgoingEdges(hasItem(adjacent.toRef().getId())))
             );
             assertThat(graphOf(subj), adjacencyList(hasEntry(
                     is(adjacent.getId()),
-                    afferents(hasItems(subj.toRef().getId(), adjacent.toRef().getId()))
+                    incomingEdges(hasItems(subj.toRef().getId(), adjacent.toRef().getId()))
             )));
         }
     }
@@ -702,49 +701,49 @@ public class AbstractEquivalenceGraphStoreTest {
         assertThat("deleted", update.getDeleted(), is(deleted));
     }
 
-    private static Matcher<? super Adjacents> afferents(
+    private static Matcher<? super Adjacents> incomingEdges(
             Matcher<? super Set<Id>> subMatcher) {
-        return new AdjacentsAfferentsMatcher(subMatcher);
+        return new AdjacentsIncomingEdgesMatcher(subMatcher);
     }
 
-    private static Matcher<? super Adjacents> afferents(Set<? extends Id> set) {
+    private static Matcher<? super Adjacents> incomingEdges(Set<? extends Id> set) {
         Set<Id> sets = ImmutableSet.copyOf(set);
-        return afferents(equalTo(sets));
+        return incomingEdges(equalTo(sets));
     }
 
-    private static class AdjacentsAfferentsMatcher
+    private static class AdjacentsIncomingEdgesMatcher
             extends FeatureMatcher<Adjacents, Set<Id>> {
 
-        public AdjacentsAfferentsMatcher(Matcher<? super Set<Id>> subMatcher) {
-            super(subMatcher, "with afferent edges", "afferents set");
+        public AdjacentsIncomingEdgesMatcher(Matcher<? super Set<Id>> subMatcher) {
+            super(subMatcher, "with incoming edges", "incoming edges set");
         }
 
         @Override
         protected Set<Id> featureValueOf(Adjacents actual) {
-            return actual.getAfferent().stream().map(ResourceRef::getId).collect(MoreCollectors.toImmutableSet());
+            return actual.getIncomingEdges().stream().map(ResourceRef::getId).collect(MoreCollectors.toImmutableSet());
         }
     }
 
-    private static Matcher<? super Adjacents> efferents(
+    private static Matcher<? super Adjacents> outgoingEdges(
             Matcher<? super Set<Id>> subMatcher) {
-        return new AdjacentsEfferentsMatcher(subMatcher);
+        return new AdjacentsOutgoingEdgesMatcher(subMatcher);
     }
 
-    private static Matcher<? super Adjacents> efferents(Set<? extends Id> set) {
+    private static Matcher<? super Adjacents> outgoingEdges(Set<? extends Id> set) {
         Set<Id> sets = ImmutableSet.copyOf(set);
-        return efferents(equalTo(sets));
+        return outgoingEdges(equalTo(sets));
     }
 
-    public static class AdjacentsEfferentsMatcher
+    public static class AdjacentsOutgoingEdgesMatcher
             extends FeatureMatcher<Adjacents, Set<Id>> {
 
-        public AdjacentsEfferentsMatcher(Matcher<? super Set<Id>> subMatcher) {
-            super(subMatcher, "with efferent edges", "efferents set");
+        public AdjacentsOutgoingEdgesMatcher(Matcher<? super Set<Id>> subMatcher) {
+            super(subMatcher, "with outgoing edges", "outgoing edges set");
         }
 
         @Override
         protected Set<Id> featureValueOf(Adjacents actual) {
-            return actual.getEfferent().stream().map(ResourceRef::getId).collect(MoreCollectors.toImmutableSet());
+            return actual.getOutgoingEdges().stream().map(ResourceRef::getId).collect(MoreCollectors.toImmutableSet());
         }
     }
 

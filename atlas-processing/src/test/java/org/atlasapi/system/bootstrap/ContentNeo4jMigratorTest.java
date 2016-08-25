@@ -86,7 +86,7 @@ public class ContentNeo4jMigratorTest {
 
         EquivalenceGraph graph = EquivalenceGraph.valueOf(ImmutableSet.of(
                 EquivalenceGraph.Adjacents.valueOf(resourceRef)
-                        .copyWithEfferent(adjacentRef)
+                        .copyWithOutgoing(adjacentRef)
         ));
 
         setupMocks(ImmutableOptionalMap.of(id, graph));
@@ -116,7 +116,7 @@ public class ContentNeo4jMigratorTest {
 
         EquivalenceGraph graph = EquivalenceGraph.valueOf(ImmutableSet.of(
                 EquivalenceGraph.Adjacents.valueOf(resourceRef)
-                        .copyWithEfferent(adjacentRef),
+                        .copyWithOutgoing(adjacentRef),
                 EquivalenceGraph.Adjacents.valueOf(adjacentRef)
         ));
 

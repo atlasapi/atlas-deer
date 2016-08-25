@@ -113,40 +113,40 @@ public final class EquivalenceGraph implements Identifiable {
      * An entry in an equivalence adjacency list. A subject resource reference and sets of
      * references:
      * <ul>
-     *     <li><i>efferent</i> - resources asserted as equivalent to the subject.</li>
-     *     <li><i>afferent</i> - resources which asserted the subject as equivalent.</li>
+     *     <li><i>outgoingEdges</i> - resources asserted as equivalent to the subject.</li>
+     *     <li><i>incomingEdges</i> - resources which asserted the subject as equivalent.</li>
      * </ul>
      */
     public static final class Adjacents implements Identifiable, Sourced {
 
         private final ResourceRef subject;
         private final DateTime created;
-        private final ImmutableMap<Id, ResourceRef> efferent;
-        private final ImmutableMap<Id, ResourceRef> afferent;
+        private final ImmutableMap<Id, ResourceRef> outgoingEdges;
+        private final ImmutableMap<Id, ResourceRef> incomingEdges;
 
         public Adjacents(
                 ResourceRef subject,
                 DateTime created,
-                Set<ResourceRef> efferent,
-                Set<ResourceRef> afferent
+                Set<ResourceRef> outgoingEdges,
+                Set<ResourceRef> incomingEdges
         ) {
             this.subject = checkNotNull(subject);
             this.created = checkNotNull(created);
 
-            Map<Id, ResourceRef> efferentMap = new HashMap<>();
-            for (ResourceRef resourceRef : efferent) {
-                efferentMap.put(resourceRef.getId(), resourceRef);
+            Map<Id, ResourceRef> outgoingEdgesMap = new HashMap<>();
+            for (ResourceRef resourceRef : outgoingEdges) {
+                outgoingEdgesMap.put(resourceRef.getId(), resourceRef);
             }
-            this.efferent = ImmutableMap.copyOf(efferentMap);
+            this.outgoingEdges = ImmutableMap.copyOf(outgoingEdgesMap);
 
-            Map<Id, ResourceRef> afferentMap = new HashMap<>();
-            for (ResourceRef resourceRef : afferent) {
-                afferentMap.put(resourceRef.getId(), resourceRef);
+            Map<Id, ResourceRef> incomingEdgesMap = new HashMap<>();
+            for (ResourceRef resourceRef : incomingEdges) {
+                incomingEdgesMap.put(resourceRef.getId(), resourceRef);
             }
-            this.afferent = ImmutableMap.copyOf(afferentMap);
+            this.incomingEdges = ImmutableMap.copyOf(incomingEdgesMap);
 
-            checkArgument(this.efferent.containsKey(subject.getId()));
-            checkArgument(this.afferent.containsKey(subject.getId()));
+            checkArgument(this.outgoingEdges.containsKey(subject.getId()));
+            checkArgument(this.incomingEdges.containsKey(subject.getId()));
         }
 
         public static Adjacents valueOf(ResourceRef subject) {
@@ -178,64 +178,64 @@ public final class EquivalenceGraph implements Identifiable {
 
         public SetView<ResourceRef> getAdjacent() {
             return Sets.union(
-                    ImmutableSet.copyOf(efferent.values()),
-                    ImmutableSet.copyOf(afferent.values())
+                    ImmutableSet.copyOf(outgoingEdges.values()),
+                    ImmutableSet.copyOf(incomingEdges.values())
             );
         }
 
-        public ImmutableSet<ResourceRef> getEfferent() {
-            return ImmutableSet.copyOf(efferent.values());
+        public ImmutableSet<ResourceRef> getOutgoingEdges() {
+            return ImmutableSet.copyOf(outgoingEdges.values());
         }
 
-        public ImmutableSet<ResourceRef> getAfferent() {
-            return ImmutableSet.copyOf(afferent.values());
+        public ImmutableSet<ResourceRef> getIncomingEdges() {
+            return ImmutableSet.copyOf(incomingEdges.values());
         }
 
-        public boolean hasEfferentAdjacent(ResourceRef ref) {
-            return efferent.containsKey(ref.getId());
+        public boolean hasOutgoingAdjacent(ResourceRef ref) {
+            return outgoingEdges.containsKey(ref.getId());
         }
 
-        public boolean hasAfferentAdjacent(ResourceRef ref) {
-            return afferent.containsKey(ref.getId());
+        public boolean hasIncomingAdjacent(ResourceRef ref) {
+            return incomingEdges.containsKey(ref.getId());
         }
 
-        public Adjacents copyWithEfferent(ResourceRef ref) {
+        public Adjacents copyWithOutgoing(ResourceRef ref) {
             HashMap<Id, ResourceRef> map = new HashMap<>();
-            map.putAll(efferent);
+            map.putAll(outgoingEdges);
             map.put(ref.getId(), ref);
 
             return new Adjacents(
                     subject,
                     created,
                     ImmutableSet.copyOf(map.values()),
-                    ImmutableSet.copyOf(afferent.values())
+                    ImmutableSet.copyOf(incomingEdges.values())
             );
         }
 
-        public Adjacents copyWithEfferents(Iterable<ResourceRef> refs) {
+        public Adjacents copyWithOutgoing(Iterable<ResourceRef> refs) {
             return new Adjacents(
                     subject,
                     created,
                     ImmutableSet.copyOf(refs),
-                    ImmutableSet.copyOf(afferent.values())
+                    ImmutableSet.copyOf(incomingEdges.values())
             );
         }
 
-        public Adjacents copyWithAfferent(ResourceRef ref) {
+        public Adjacents copyWithIncoming(ResourceRef ref) {
             HashMap<Id, ResourceRef> map = new HashMap<>();
-            map.putAll(afferent);
+            map.putAll(incomingEdges);
             map.put(ref.getId(), ref);
 
             return new Adjacents(
                     subject,
                     created,
-                    ImmutableSet.copyOf(efferent.values()),
+                    ImmutableSet.copyOf(outgoingEdges.values()),
                     ImmutableSet.copyOf(map.values())
             );
         }
 
-        public Adjacents copyWithoutAfferent(ResourceRef ref) {
-            ImmutableSet<ResourceRef> collected = afferent.values()
+        public Adjacents copyWithoutIncoming(ResourceRef ref) {
+            ImmutableSet<ResourceRef> collected = incomingEdges.values()
                     .stream()
                     .filter(value -> !value.getId().equals(ref.getId()))
                     .collect(MoreCollectors.toImmutableSet());
@@ -243,7 +243,7 @@ public final class EquivalenceGraph implements Identifiable {
             return new Adjacents(
                     subject,
                     created,
-                    ImmutableSet.copyOf(efferent.values()),
+                    ImmutableSet.copyOf(outgoingEdges.values()),
                     collected
             );
         }
@@ -256,8 +256,8 @@ public final class EquivalenceGraph implements Identifiable {
             if (that instanceof Adjacents) {
                 Adjacents other = (Adjacents) that;
                 return subject.equals(other.subject)
-                        && afferent.equals(other.afferent)
-                        && efferent.equals(other.efferent);
+                        && incomingEdges.equals(other.incomingEdges)
+                        && outgoingEdges.equals(other.outgoingEdges);
             }
             return false;
         }
@@ -271,7 +271,7 @@ public final class EquivalenceGraph implements Identifiable {
         public String toString() {
             StringBuilder builder = new StringBuilder();
             appendRef(builder, subject);
-            Iterator<ResourceRef> adjs = efferent.values().iterator();
+            Iterator<ResourceRef> adjs = outgoingEdges.values().iterator();
             builder.append(" -> [");
             if (adjs.hasNext()) {
                 appendRef(builder, adjs.next());
