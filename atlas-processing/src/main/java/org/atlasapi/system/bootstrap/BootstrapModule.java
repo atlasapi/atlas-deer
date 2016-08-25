@@ -14,6 +14,8 @@ import org.atlasapi.ElasticSearchContentIndexModule;
 import org.atlasapi.SchedulerModule;
 import org.atlasapi.content.Content;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.MessagingModule;
+import org.atlasapi.system.MetricsModule;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
@@ -23,6 +25,8 @@ import org.atlasapi.system.legacy.ProgressStore;
 import org.atlasapi.topic.Topic;
 
 import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.MessageConsumerFactory;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.scheduling.RepetitionRules;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 import com.metabroadcast.common.time.DayRangeGenerator;
@@ -58,6 +62,10 @@ public class BootstrapModule {
     @Autowired private ElasticSearchContentIndexModule search;
     @Autowired private MetricRegistry metrics;
     @Autowired private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator;
+
+    @Autowired private MessagingModule messaging;
+    @Autowired private MetricsModule metricsModule;
+
 
     @Bean
     BootstrapController bootstrapController() {
@@ -117,6 +125,21 @@ public class BootstrapModule {
         return new IndividualTopicBootstrapController(
                 persistence.legacyTopicResolver(),
                 persistence.topicStore()
+        );
+    }
+
+    @Bean
+    CqlContentBootstrapController cqlContentBootstrapController() {
+        return CqlContentBootstrapController.create(
+                executorService(1, "cql-content-bootstrap"),
+                persistence.databasedWriteMongo(),
+                progressStore(),
+                persistence.legacyContentResolver(),
+                persistence.forceCqlContentWriter(),
+                persistence.legacyContentLister(),
+                messaging.messageSenderFactory(),
+                (MessageConsumerFactory<KafkaConsumer>) messaging.messageConsumerFactory(),
+                metrics
         );
     }
 

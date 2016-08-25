@@ -41,7 +41,6 @@ public class Broadcast implements Identified {
     @Field(name = "ne") private Boolean newEpisode;
     @Field(name = "p") private Boolean premiere;
     @Field(name = "thd") private Boolean is3d;
-    // TODO: fix this
     @Field(name = "br") private Boolean blackoutRestriction;
 
     public Long getId() {

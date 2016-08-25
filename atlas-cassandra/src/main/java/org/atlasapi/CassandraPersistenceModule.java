@@ -6,6 +6,7 @@ import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.v2.CqlContentStore;
+import org.atlasapi.content.v2.NonValidatingCqlWriter;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -106,6 +107,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private OrganisationStore idSettingOrganisationStore;
 
     private MessageSenderFactory messageSenderFactory;
+    private NonValidatingCqlWriter forceCqlContentWriter;
 
     public CassandraPersistenceModule(
             MessageSenderFactory messageSenderFactory,
@@ -219,6 +221,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 contentHasher,
                 contentEquivalenceGraphStore
         );
+
+        this.forceCqlContentWriter = NonValidatingCqlWriter.create(session, new SystemClock());
 
         this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(EquivalenceGraphUpdateMessage.class),
@@ -335,6 +339,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public CqlContentStore cqlContentStore() {
         return cqlContentStore;
+    }
+
+    public NonValidatingCqlWriter forceCqlContentWriter() {
+        return forceCqlContentWriter;
     }
 
     public AstyanaxCassandraContentStore nullMessageSendingContentStore() {

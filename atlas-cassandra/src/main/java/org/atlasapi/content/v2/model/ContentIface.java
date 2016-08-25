@@ -10,9 +10,6 @@ import org.atlasapi.content.v2.model.udt.KeyPhrase;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.model.udt.Tag;
 
-/**
- * Created by emils on 04/04/2016.
- */
 public interface ContentIface extends Described {
 
     Set<KeyPhrase> getKeyPhrases();
