@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -19,8 +18,6 @@ import org.atlasapi.hashing.content.ContentHasher;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
-import com.metabroadcast.common.collect.ImmutableOptionalMap;
-import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
@@ -63,7 +60,6 @@ import static org.atlasapi.content.ContentColumn.TYPE;
 
 public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
-    private static final int RESOLVE_TIMEOUT = 10;
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     public static Builder builder(
@@ -220,37 +216,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                         input -> input.stream()
                                 .collect(Collectors.toMap(KeyValue::getKey, KeyValue::getValue))
         );
-    }
-
-    @Override
-    public OptionalMap<Alias, Content> resolveAliases(Iterable<Alias> aliases, Publisher source) {
-        try {
-            Set<Alias> uniqueAliases = ImmutableSet.copyOf(aliases);
-            Set<Long> ids = aliasIndex.readAliases(source, uniqueAliases);
-            if (ids.isEmpty()) {
-                return ImmutableOptionalMap.of();
-            }
-            // TODO: move timeout to config
-            Map<Long, ColumnList<String>> resolved = resolveLongs(ids).get(
-                    RESOLVE_TIMEOUT,
-                    TimeUnit.SECONDS
-            );
-            Iterable<Content> contents = resolved.entrySet()
-                    .stream()
-                    .map(rowToContent::apply)
-                    .collect(Collectors.toList());
-            ImmutableMap.Builder<Alias, com.google.common.base.Optional<Content>> aliasMap = ImmutableMap
-                    .builder();
-            for (Content content : contents) {
-                content.getAliases()
-                        .stream()
-                        .filter(uniqueAliases::contains)
-                        .forEach(alias -> aliasMap.put(alias, Optional.of(content)));
-            }
-            return ImmutableOptionalMap.copyOf(aliasMap.build());
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
     }
 
     @Override

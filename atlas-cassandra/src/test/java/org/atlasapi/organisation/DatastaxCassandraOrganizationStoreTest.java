@@ -17,10 +17,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -54,7 +52,6 @@ public class DatastaxCassandraOrganizationStoreTest {
     public static void init() throws Exception {
         // Thrift init
         context.start();
-        cleanUp();
         CassandraHelper.createKeyspace(context);
         // CQL init
         DatastaxCassandraService cassandraService = new DatastaxCassandraService(seeds, 8, 2);
@@ -65,15 +62,6 @@ public class DatastaxCassandraOrganizationStoreTest {
                 .getResourceAsStream("/atlas_organisation.schema")));
         session.execute(IOUtils.toString(DatastaxCassandraOrganizationStoreTest.class.getResourceAsStream(
                 "/atlas_organisation_uri.schema")));
-    }
-
-    @AfterClass
-    public static void cleanUp() throws Exception {
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) {
-            // Nothing to do
-        }
     }
 
     @Before

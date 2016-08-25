@@ -5,6 +5,8 @@ import java.util.UUID;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
+import org.atlasapi.content.v2.CqlContentStore;
+import org.atlasapi.content.v2.NonValidatingCqlWriter;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -98,12 +100,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
+    private CqlContentStore cqlContentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
     private OrganisationStore organisationStore;
     private OrganisationStore idSettingOrganisationStore;
 
     private MessageSenderFactory messageSenderFactory;
+    private NonValidatingCqlWriter forceCqlContentWriter;
 
     public CassandraPersistenceModule(
             MessageSenderFactory messageSenderFactory,
@@ -203,6 +207,30 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
                 .build();
+
+        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
+
+        // The CQL content store isn't live yet and will run in parallel with the Astyanax store
+        // for testing. We pass in a dummy message sender to avoid sending content update messages
+        // from two different places
+        this.cqlContentStore = CqlContentStore.builder()
+                .withSession(session)
+                .withIdGenerator(contentIdGenerator)
+                .withClock(new SystemClock())
+                .withHasher(contentHasher)
+                .withGraphStore(contentEquivalenceGraphStore)
+                .withSender(nullMessageSender(ResourceUpdatedMessage.class))
+                .build();
+
+        this.forceCqlContentWriter = NonValidatingCqlWriter.create(session, new SystemClock());
+
+        this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
+                nullMessageSender(EquivalenceGraphUpdateMessage.class),
+                session, read, write
+        );
 
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(
                 contentEquivalenceGraphStore,
@@ -310,6 +338,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     @Override
     public AstyanaxCassandraContentStore contentStore() {
         return contentStore;
+    }
+
+    public CqlContentStore cqlContentStore() {
+        return cqlContentStore;
+    }
+
+    public NonValidatingCqlWriter forceCqlContentWriter() {
+        return forceCqlContentWriter;
     }
 
     public AstyanaxCassandraContentStore nullMessageSendingContentStore() {

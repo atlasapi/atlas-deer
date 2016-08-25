@@ -549,7 +549,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                                 .getStart()
                                 .toLocalDate()
                                 .toDate())
-                        .setString("broadcast", broadcastRef.getSourceId()))
+                        .setString("broadcast", broadcastRef.getSourceId())
+                )
                 .collect(MoreCollectors.toImmutableList());
     }
 

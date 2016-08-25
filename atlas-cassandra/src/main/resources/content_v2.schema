@@ -1,0 +1,378 @@
+CREATE TYPE IF NOT EXISTS Award(
+  outcome text,
+  title text,
+  description text,
+  year int
+);
+
+CREATE TYPE IF NOT EXISTS Alias (
+  namespace text,
+  value text
+);
+
+CREATE TYPE IF NOT EXISTS Certificate (
+  country_code text,
+  classification text
+);
+
+CREATE TYPE IF NOT EXISTS Ref (
+  id bigint,
+  src text
+);
+
+CREATE TYPE IF NOT EXISTS ContentGroupRef (
+  id bigint,
+  uri text
+);
+
+CREATE TYPE IF NOT EXISTS ContainerRef (
+  id bigint,
+  src text,
+  type text,
+  title text,
+  updated timestamp,
+  series_nr int,
+  release_year int,
+  certificates set<frozen<Certificate>>
+);
+
+CREATE TYPE IF NOT EXISTS Synopses (
+  short text,
+  medium text,
+  long text
+);
+
+CREATE TYPE IF NOT EXISTS SeriesRef (
+  ref frozen<Ref>,
+  title text,
+  updated timestamp,
+  series_nr int,
+  release_year int,
+  certificates set<frozen<Certificate>>
+);
+
+CREATE TYPE IF NOT EXISTS ItemRef (
+  ref frozen<Ref>,
+  sort_key text,
+  updated timestamp,
+  type text
+);
+
+CREATE TYPE IF NOT EXISTS Image (
+  uri text,
+  type text,
+  color text,
+  theme text,
+  height int,
+  width int,
+  aspect text,
+  mime text,
+  avail_start timestamp,
+  avail_end timestamp,
+  has_title_art boolean,
+  src text
+);
+
+CREATE TYPE IF NOT EXISTS Priority (
+  positive list<text>,
+  negative list<text>,
+  priority double
+);
+
+CREATE TYPE IF NOT EXISTS RelatedLink (
+  url text,
+  type text,
+  src_id text,
+  short_name text,
+  title text,
+  descr text,
+  image text,
+  thumbnail text
+);
+
+CREATE TYPE IF NOT EXISTS KeyPhrase (
+  phrase text,
+  weighting double
+);
+
+CREATE TYPE IF NOT EXISTS Tag (
+  topic bigint,
+  publisher text,
+  supervised boolean,
+  weighting float,
+  relationship text,
+  offset int
+);
+
+CREATE TYPE IF NOT EXISTS ItemSummary (
+  ref frozen<ItemRef>,
+  title text,
+  descr text,
+  image text,
+  release_year int,
+  certs set<frozen<Certificate>>,
+  type text,
+  episode_nr int
+);
+
+CREATE TYPE IF NOT EXISTS CrewMember (
+  id bigint,
+  canonical_uri text,
+  curie text,
+  alias_urls set<text>,
+  aliases set<frozen<Alias>>,
+  equiv_to set<frozen<Ref>>,
+  last_updated timestamp,
+  equiv_update timestamp,
+  role text,
+  name text,
+  publisher text
+);
+
+CREATE TYPE IF NOT EXISTS LocationSummary (
+  available boolean,
+  uri text,
+  start timestamp,
+  end timestamp
+);
+
+CREATE TYPE IF NOT EXISTS BroadcastRef (
+  src_id text,
+  channel_id bigint,
+  start timestamp,
+  end timestamp
+);
+
+CREATE TYPE IF NOT EXISTS Price (
+  currency text,
+  price int
+);
+
+CREATE TYPE IF NOT EXISTS Pricing (
+  start timestamp,
+  end timestamp,
+  price frozen<Price>
+);
+
+CREATE TYPE IF NOT EXISTS Policy (
+  id bigint,
+  canonical_uri text,
+  curie text,
+  alias_urls set<text>,
+  aliases set<frozen<Alias>>,
+  equiv_to set<frozen<Ref>>,
+  last_updated timestamp,
+  equiv_update timestamp,
+  avail_start timestamp,
+  avail_end timestamp,
+  drm_playable_from timestamp,
+  avail_countries set<text>,
+  avail_length int,
+  revenue_contract text,
+  subscr_packages set<text>,
+  price frozen<Price>,
+  pricing list<frozen<Pricing>>,
+  service_id bigint,
+  player_id bigint,
+  platform text,
+  network text,
+  actual_avail_start timestamp
+);
+
+CREATE TYPE IF NOT EXISTS Location (
+  id bigint,
+  canonical_uri text,
+  curie text,
+  alias_urls set<text>,
+  aliases set<frozen<Alias>>,
+  equiv_to set<frozen<Ref>>,
+  last_updated timestamp,
+  equiv_update timestamp,
+  available boolean,
+  transport_is_live boolean,
+  transport_subtype text,
+  transport_type text,
+  uri text,
+  embed_code text,
+  embed_id text,
+  policy frozen<Policy>
+);
+
+CREATE TYPE IF NOT EXISTS Broadcast (
+  i bigint,
+  c text,
+  cu text,
+  au set<text>,
+  a set<frozen<Alias>>,
+  e set<frozen<Ref>>,  
+  lu timestamp,
+  eu timestamp,
+  ci bigint,
+  ts timestamp,
+  te timestamp,
+  bd bigint,
+  sd date,
+  ap boolean,
+  si text,
+  vi text,
+  r boolean,
+  sub boolean,
+  sgn boolean,
+  ad boolean,
+  hd boolean,
+  w boolean,
+  sr boolean,
+  l boolean,
+  ns boolean,
+  ne boolean,
+  p boolean,
+  thd boolean,
+  br boolean
+);
+
+CREATE TYPE IF NOT EXISTS Description (
+  title text,
+  synopsis text,
+  image text,
+  thumbnail text
+);
+
+CREATE TYPE IF NOT EXISTS SegmentEvent (
+  id bigint,
+  canonical_uri text,
+  curie text,
+  alias_urls set<text>,
+  aliases set<frozen<Alias>>,
+  equiv_to set<frozen<Ref>>,
+  last_updated timestamp,
+  equiv_update timestamp,
+  position int,
+  offset bigint,
+  is_chapter boolean,
+  descr frozen<Description>,
+  segment_ref frozen<Ref>,
+  version_id text,
+  publisher text
+);
+
+CREATE TYPE IF NOT EXISTS Restriction (
+  id bigint,
+  canonical_uri text,
+  curie text,
+  alias_urls set<text>,
+  aliases set<frozen<Alias>>,
+  equiv_to set<frozen<Ref>>,
+  last_updated timestamp,
+  equiv_update timestamp,
+  restricted boolean,
+  minimum_age int,
+  message text,
+  authority text,
+  rating text
+);
+
+CREATE TYPE IF NOT EXISTS Review (
+  locale text,
+  review text
+);
+
+CREATE TYPE IF NOT EXISTS Rating (
+  value float,
+  type text,
+  publisher text
+);
+
+CREATE TYPE IF NOT EXISTS ContainerSummary (
+  type text,
+  title text,
+  descr text,
+  series_nr int,
+  total_episodes int
+);
+
+CREATE TYPE IF NOT EXISTS ReleaseDate (
+  release_date date,
+  country text,
+  type text
+);
+
+CREATE TABLE IF NOT EXISTS content_v2 (
+  type text,
+  id bigint PRIMARY KEY,
+  canonical_uri text,
+  curie text,
+  alias_urls set<text>,
+  aliases set<frozen<Alias>>,
+  equiv_to set<frozen<Ref>>,
+  last_updated timestamp,
+  equiv_update timestamp,
+  title text,
+  short_descr text,
+  medium_descr text,
+  long_descr text,
+  synopses frozen<Synopses>,
+  descr text,
+  media_type text,
+  specialization text,
+  genres set<text>,
+  publisher text,
+  image text,
+  images set<frozen<Image>>,
+  thumbnail text,
+  first_seen timestamp,
+  last_fetched timestamp,
+  this_or_child_last_updated timestamp,
+  schedule_only boolean,
+  actively_published boolean,
+  presentation_channel text,
+  priority frozen<Priority>,
+  related_links set<frozen<RelatedLink>>,
+  awards set<frozen<Award>>,
+  key_phrases set<frozen<KeyPhrase>>,
+  tags list<frozen<Tag>>,
+  content_group_refs set<frozen<ContentGroupRef>>,
+  people list<frozen<CrewMember>>,
+  languages set<text>,
+  certificates set<frozen<Certificate>>,
+  year int,
+  generic_description boolean,
+  event_refs set<frozen<Ref>>,
+  
+  isrc text,
+  duration bigint,
+
+  series_nr int,
+  total_episodes int,
+  brand_ref frozen<Ref>,
+
+  container_ref frozen<ContainerRef>,
+  is_long_form boolean,
+  black_and_white boolean,
+  countries_of_origin set<text>,
+  sort_key text,
+  container_summary frozen<ContainerSummary>,
+  broadcasts set<frozen<Broadcast>>,
+  segment_events list<frozen<SegmentEvent>>,
+  restrictions set<frozen<Restriction>>,
+
+  website_url text,
+  subtitles set<text>,
+  release_dates set<frozen<ReleaseDate>>,
+
+  episode_nr int,
+  part_nr int,
+  special boolean,
+
+  series_refs set<frozen<SeriesRef>>,
+
+  item_refs set<frozen<ItemRef>>,
+  upcoming map<frozen<ItemRef>, frozen<list<BroadcastRef>>>,
+  available map<frozen<ItemRef>, frozen<list<LocationSummary>>>,
+  item_summaries set<frozen<ItemSummary>>,
+
+  reviews set<frozen<Review>>,
+  ratings set<frozen<Rating>>,
+
+  clips text,
+  encodings text
+);

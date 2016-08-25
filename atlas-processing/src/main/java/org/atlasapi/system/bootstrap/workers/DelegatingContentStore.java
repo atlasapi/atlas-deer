@@ -8,14 +8,10 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.SeriesRef;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
-import org.atlasapi.media.entity.Publisher;
-
-import com.metabroadcast.common.collect.OptionalMap;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -28,12 +24,6 @@ public final class DelegatingContentStore implements ContentStore {
     public DelegatingContentStore(ContentResolver resolver, ContentWriter writer) {
         this.resolver = resolver;
         this.writer = writer;
-    }
-
-    @Override
-    public OptionalMap<Alias, Content> resolveAliases(Iterable<Alias> aliases,
-            Publisher source) {
-        return resolver.resolveAliases(aliases, source);
     }
 
     @Override

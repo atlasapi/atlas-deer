@@ -441,6 +441,18 @@ public abstract class AbstractContentStore implements ContentStore {
             }
         }
 
+        if (writtenResource instanceof Series) {
+            Series series = (Series) writtenResource;
+            BrandRef brandRef = series.getBrandRef();
+            if (brandRef != null) {
+                messages.add(new ResourceUpdatedMessage(
+                        UUID.randomUUID().toString(),
+                        Timestamp.of(result.getWriteTime().getMillis()),
+                        brandRef
+                ));
+            }
+        }
+
         if (writtenResource instanceof Item && ((Item) writtenResource).getContainerRef() != null) {
             messages.add(
                     new ResourceUpdatedMessage(

@@ -5,11 +5,9 @@ import java.io.IOException;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.system.legacy.LegacyContentResolver;
 
 import com.metabroadcast.common.collect.OptionalMap;
@@ -35,14 +33,6 @@ public class LegacyRetryingContentResolver implements ContentResolver {
         this.currentResolver = checkNotNull(currentResolver);
         this.legacyResolver = checkNotNull(legacyResolver);
         this.writer = checkNotNull(writer);
-    }
-
-    @Override
-    public OptionalMap<Alias, Content> resolveAliases(
-            Iterable<Alias> aliases,
-            Publisher source
-    ) {
-        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override

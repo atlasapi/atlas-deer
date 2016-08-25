@@ -23,6 +23,7 @@ import org.atlasapi.generation.EndpointClassInfoSingletonStore;
 import org.atlasapi.generation.ModelClassInfoSingletonStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
 import org.atlasapi.generation.model.ModelClassInfo;
+import org.atlasapi.messaging.KafkaMessagingModule;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
@@ -117,6 +118,7 @@ import org.atlasapi.query.v4.channelgroup.ChannelGroupController;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupListWriter;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupQueryResultWriter;
 import org.atlasapi.query.v4.content.ContentController;
+import org.atlasapi.query.v4.content.v2.CqlContentDebugController;
 import org.atlasapi.query.v4.event.EventController;
 import org.atlasapi.query.v4.event.EventListWriter;
 import org.atlasapi.query.v4.event.EventQueryResultWriter;
@@ -222,12 +224,15 @@ import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
 @Configuration
-@Import({ QueryModule.class, LicenseModule.class })
+@Import({ QueryModule.class, LicenseModule.class, KafkaMessagingModule.class })
 public class QueryWebModule {
 
     private static final String CONTAINER_FIELD = "container";
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
+
+    @Autowired
+    private KafkaMessagingModule messaging;
 
     private @Autowired DatabasedMongo mongo;
     private
@@ -344,6 +349,15 @@ public class QueryWebModule {
                         channelGroupResolver,
                         idCodec()
                 )
+        );
+    }
+
+    @Bean
+    CqlContentDebugController cqlController() {
+        return new CqlContentDebugController(
+                persistenceModule.legacyContentResolver(),
+                persistenceModule.contentStore(),
+                persistenceModule.cqlContentStore()
         );
     }
 

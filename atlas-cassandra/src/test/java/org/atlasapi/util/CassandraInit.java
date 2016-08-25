@@ -1,112 +1,64 @@
 package org.atlasapi.util;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
-import org.atlasapi.entity.CassandraHelper;
+import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Resources;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
-import com.netflix.astyanax.serializers.LongSerializer;
-import com.netflix.astyanax.serializers.StringSerializer;
-import org.apache.commons.io.IOUtils;
 
 public class CassandraInit {
+
+    private static final ImmutableSet<String> SEEDS = ImmutableSet.of("localhost");
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     public static void createTables(Session session, AstyanaxContext<Keyspace> context)
             throws ConnectionException, IOException {
         session.execute(
-                "CREATE KEYSPACE atlas_testing WITH replication = {'class': 'SimpleStrategy', 'replication_factor':1};");
+                "CREATE KEYSPACE IF NOT EXISTS atlas_testing "
+                        + "WITH replication = {"
+                        + "'class': 'SimpleStrategy', "
+                        + "'replication_factor':1"
+                        + "};");
         session.execute("USE atlas_testing");
 
-        session.execute("CREATE TABLE segments_aliases (\n" +
-                "    key text,\n" +
-                "    column1 text,\n" +
-                "    value bigint,\n" +
-                "    PRIMARY KEY (key, column1)\n" +
-                ") WITH COMPACT STORAGE AND\n" +
-                "    bloom_filter_fp_chance=0.010000 AND\n" +
-                "    caching='KEYS_ONLY' AND\n" +
-                "    comment='' AND\n" +
-                "    dclocal_read_repair_chance=0.000000 AND\n" +
-                "    gc_grace_seconds=864000 AND\n" +
-                "    read_repair_chance=0.100000 AND\n" +
-                "    replicate_on_write='true' AND\n" +
-                "    populate_io_cache_on_flush='false' AND\n" +
-                "    compaction={'class': 'SizeTieredCompactionStrategy'} AND\n" +
-                "    compression={'sstable_compression': 'SnappyCompressor'};");
+        executeFile(session, "atlas.schema");
+        executeFile(session, "content_v2.schema");
+        executeFile(session, "atlas_event_v2.schema");
+        executeFile(session, "atlas_event_aliases_v2.schema");
+        executeFile(session, "atlas_schedule_v2.schema");
+        executeFile(session, "atlas_organisation.schema");
+        executeFile(session, "atlas_organisation_uri.schema");
+    }
 
-        session.execute("CREATE TABLE segments (\n" +
-                "  key bigint,\n" +
-                "  column1 text,\n" +
-                "  value blob,\n" +
-                "  PRIMARY KEY (key, column1)\n" +
-                ") WITH COMPACT STORAGE AND\n" +
-                "  bloom_filter_fp_chance=0.010000 AND\n" +
-                "  caching='KEYS_ONLY' AND\n" +
-                "  comment='' AND\n" +
-                "  dclocal_read_repair_chance=0.000000 AND\n" +
-                "  gc_grace_seconds=864000 AND\n" +
-                "  read_repair_chance=0.100000 AND\n" +
-                "  replicate_on_write='true' AND\n" +
-                "  populate_io_cache_on_flush='false' AND\n" +
-                "  compaction={'class': 'SizeTieredCompactionStrategy'} AND\n" +
-                "  compression={'sstable_compression': 'SnappyCompressor'};");
-
-        session.execute(
-                "CREATE TABLE equivalence_graph_index (resource_id bigint, graph_id bigint, PRIMARY KEY (resource_id));");
-        session.execute(
-                "CREATE TABLE equivalence_graph (graph_id bigint, graph blob, PRIMARY KEY (graph_id));");
-        session.execute(
-                "CREATE TABLE equivalent_content_index (key bigint, value bigint, PRIMARY KEY (key));");
-        session.execute(
-                "CREATE TABLE equivalent_content (set_id bigint, content_id bigint, graph blob static, data blob, PRIMARY KEY (set_id,content_id));");
-        session.execute(
-                "CREATE TABLE equivalent_schedule (source text, channel bigint, day timestamp, broadcast_id text, broadcast_start timestamp, broadcast blob, graph blob, content_count bigint, content blob, schedule_update timestamp, equiv_update timestamp, PRIMARY KEY ((source, channel, day), broadcast_id)) ");
-
-        /*
-        TODO: this. It doesn't work atm because Dstax sessions can't execute files, they need separate statements
-        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream("/atlas.schema")));
-         */
-
-        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
-                "/atlas_event_v2.schema")));
-        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
-                "/atlas_schedule_v2.schema")));
-        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
-                "/atlas_organisation.schema")));
-        session.execute(
-                "CREATE INDEX inverse_equivalent_content_index ON equivalent_content_index(value);");
-        session.execute(IOUtils.toString(CassandraInit.class.getResourceAsStream(
-                "/atlas_organisation_uri.schema")));
-
-        CassandraHelper.createColumnFamily(
-                context,
-                "schedule",
-                StringSerializer.get(),
-                StringSerializer.get()
+    private static void executeFile(Session session, String resource) throws IOException {
+        String atlasSchema = Resources.toString(
+                Resources.getResource(resource),
+                Charset.defaultCharset()
         );
-        CassandraHelper.createColumnFamily(
-                context,
-                "event_aliases_v2",
-                StringSerializer.get(),
-                StringSerializer.get()
-        );
-        CassandraHelper.createColumnFamily(
-                context,
-                "content",
-                LongSerializer.get(),
-                StringSerializer.get()
-        );
-        CassandraHelper.createColumnFamily(
-                context,
-                "content_aliases",
-                StringSerializer.get(),
-                StringSerializer.get(),
-                LongSerializer.get()
-        );
+
+        executeStatementsString(session, atlasSchema);
+    }
+
+    private static void executeStatementsString(Session session, String statements) {
+        for (String stmt : statements.split(";")) {
+            stmt = stmt.trim();
+
+            if (!stmt.isEmpty()) {
+                session.execute(stmt);
+            }
+        }
     }
 
     public static void nukeIt(Session session) {
@@ -119,10 +71,30 @@ public class CassandraInit {
                 "content", "content_aliases", "equivalence_graph_index",
                 "equivalence_graph", "segments", "segments_aliases", "schedule_v2", "schedule",
                 "equivalent_content_index", "equivalent_content", "equivalent_schedule",
-                "organisation", "organisation_uri", "event_aliases_v2"
+                "organisation", "organisation_uri", "event_v2", "event_aliases_v2", "content_v2"
         );
         for (String table : tables) {
             session.execute(String.format("TRUNCATE %s", table));
         }
+    }
+
+    public static DatastaxCassandraService datastaxCassandraService() {
+        return DatastaxCassandraService.builder()
+                    .withNodes(SEEDS)
+                    .withConnectionsPerHostLocal(8)
+                    .withConnectionsPerHostRemote(2)
+                    .withCodecRegistry(new CodecRegistry()
+                            .register(InstantCodec.instance)
+                            .register(LocalDateCodec.instance)
+                            .register(new JacksonJsonCodec<>(
+                                    org.atlasapi.content.v2.model.Clip.Wrapper.class,
+                                    MAPPER
+                            ))
+                            .register(new JacksonJsonCodec<>(
+                                    org.atlasapi.content.v2.model.Encoding.Wrapper.class,
+                                    MAPPER
+                            ))
+                    )
+                    .build();
     }
 }

@@ -167,11 +167,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                     .setLong("channel", channelId)
                     .setTimestamp(
                             "day",
-                            block.getInterval()
-                                    .getStart()
-                                    .toLocalDate()
-                                    .toDateTimeAtStartOfDay(DateTimeZone.UTC)
-                                    .toDate()
+                            block.getInterval().getStart().toDate()
                     )
                     .setMap("broadcastsData", broadcasts)
                     .setSet("broadcastsIdsData", broadcasts.keySet())

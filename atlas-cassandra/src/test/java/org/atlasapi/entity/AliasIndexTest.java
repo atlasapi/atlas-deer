@@ -7,11 +7,9 @@ import org.atlasapi.media.entity.Publisher;
 import com.google.common.collect.ImmutableSet;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.connectionpool.exceptions.BadRequestException;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.serializers.StringSerializer;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,19 +29,10 @@ public class AliasIndexTest {
     @BeforeClass
     public static void setup() throws ConnectionException {
         context.start();
-        try {
-            context.getClient().dropKeyspace();
-        } catch (BadRequestException ire) {
-        }
         CassandraHelper.createKeyspace(context);
         CassandraHelper.createColumnFamily(context,
                 CF_NAME, StringSerializer.get(), StringSerializer.get()
         );
-    }
-
-    @AfterClass
-    public static void tearDown() throws ConnectionException {
-        context.getClient().dropKeyspace();
     }
 
     @After
