@@ -25,6 +25,8 @@ import org.atlasapi.system.legacy.ProgressStore;
 import org.atlasapi.topic.Topic;
 
 import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.MessageConsumerFactory;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.scheduling.RepetitionRules;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 import com.metabroadcast.common.time.DayRangeGenerator;
@@ -136,7 +138,7 @@ public class BootstrapModule {
                 persistence.forceCqlContentWriter(),
                 persistence.legacyContentLister(),
                 messaging.messageSenderFactory(),
-                messaging.messageConsumerFactory()
+                (MessageConsumerFactory<KafkaConsumer>) messaging.messageConsumerFactory()
         );
     }
 
