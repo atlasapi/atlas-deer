@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -42,6 +43,7 @@ import com.metabroadcast.common.queue.MessageSenderFactory;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.base.Throwables;
@@ -50,6 +52,8 @@ import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import org.elasticsearch.common.lang3.ObjectUtils;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -59,6 +63,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Controller
 @RequestMapping("/system/bootstrap/cql-content")
 public class CqlContentBootstrapController {
+
+    private static final Logger log = LoggerFactory.getLogger(CqlContentBootstrapController.class);
 
     private static final String TASK_NAME = "cql-mongo-id-bootstrap";
     private static final String KAFKA_TOPIC_NAME = "CqlMondoIdBootstrapSender";
@@ -70,12 +76,14 @@ public class CqlContentBootstrapController {
     private final ProgressStore progressStore;
     private final ResourceLister<Content> contentLister;
     private final MessageSenderFactory messageSenderFactory;
-    private final MessageConsumerFactory<?> messageConsumerFactory;
+    private final MessageConsumerFactory<KafkaConsumer> messageConsumerFactory;
     private final ContentResolver contentResolver;
     private final ContentWriter contentWriter;
     private final DatabasedMongo mongo;
 
-    private MessageSender<ResourceUpdatedMessage> sender;
+    private final AtomicBoolean runConsumer = new AtomicBoolean(true);
+    private MessageSender<ResourceUpdatedMessage> sender = null;
+    private KafkaConsumer cqlConsumer = null;
 
     public static CqlContentBootstrapController create(
             ListeningExecutorService listeningExecutorService,
@@ -85,7 +93,7 @@ public class CqlContentBootstrapController {
             ContentWriter cqlContentStore,
             ResourceLister<Content> contentLister,
             MessageSenderFactory messageSenderFactory,
-            MessageConsumerFactory<?> messageConsumerFactory
+            MessageConsumerFactory<KafkaConsumer> messageConsumerFactory
     ){
         return new CqlContentBootstrapController(
                 listeningExecutorService,
@@ -107,7 +115,7 @@ public class CqlContentBootstrapController {
             ContentWriter cqlContentStore,
             ResourceLister<Content> contentLister,
             MessageSenderFactory messageSenderFactory,
-            MessageConsumerFactory<?> messageConsumerFactory
+            MessageConsumerFactory<KafkaConsumer> messageConsumerFactory
     ) {
         this.contentLister = checkNotNull(contentLister);
         this.mongo = checkNotNull(databasedMongo);
@@ -124,16 +132,56 @@ public class CqlContentBootstrapController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        messageConsumerFactory.createConsumer(
-                new CqlWritingConsumer(),
-                JacksonMessageSerializer.forType(ResourceUpdatedMessage.class),
-                KAFKA_TOPIC_NAME,
-                KAFKA_CONSUMER_GROUP
-        ).withFailedMessagePersistence(mongo);
+        if (this.cqlConsumer == null) {
+            this.cqlConsumer = messageConsumerFactory.createConsumer(
+                    new CqlWritingConsumer(),
+                    JacksonMessageSerializer.forType(ResourceUpdatedMessage.class),
+                    KAFKA_TOPIC_NAME,
+                    KAFKA_CONSUMER_GROUP
+            ).withFailedMessagePersistence(mongo)
+                    .build();
+        }
+
+        cqlConsumer.startAsync().awaitRunning();
 
         response.setStatus(200);
         try {
             response.getWriter().write("Started Mongo to CQL consumer");
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    @RequestMapping(value = "/write-mongo-ids", method = RequestMethod.GET)
+    public void getCqlStoreWriterRunning(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        boolean isRunning = false;
+        if (cqlConsumer != null) {
+            isRunning = cqlConsumer.isRunning();
+        }
+
+        response.setStatus(200);
+        try {
+            response.getWriter().write(String.format("CQL writer running: %s%n", isRunning));
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    @RequestMapping(value = "/write-mongo-ids", method = RequestMethod.DELETE)
+    public void stopWritingIdsToCql(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        if (cqlConsumer != null) {
+            cqlConsumer.stopAsync().awaitTerminated();
+        }
+
+        response.setStatus(200);
+        try {
+            response.getWriter().write("Stopped Mongo to CQL consumer");
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
@@ -165,12 +213,48 @@ public class CqlContentBootstrapController {
                 numProcessed++;
 
                 storeProgress(numProcessed, content);
+
+                if (!runConsumer.get()) {
+                    log.info("Stopping CQL bootstrap Mongo ID producer");
+                    break;
+                }
             }
         });
 
         response.setStatus(200);
         try {
             response.getWriter().write("Started message sender");
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+    @RequestMapping(value = "/list-mongo-ids", method = RequestMethod.DELETE)
+    public void stopMongoIdWriter(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws ExecutionException, InterruptedException, WriteException {
+        runConsumer.set(false);
+
+        response.setStatus(200);
+        try {
+            response.getWriter().write("Stopped Mongo ID message sender");
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    @RequestMapping(value = "/list-mongo-ids", method = RequestMethod.GET)
+    public void isMongoIdSenderRunning(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws ExecutionException, InterruptedException, WriteException {
+        response.setStatus(200);
+        try {
+            response.getWriter()
+                    .write(String.format(
+                            "Mongo ID message sender running: %s%n",
+                            runConsumer.get()
+                    ));
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
@@ -204,7 +288,6 @@ public class CqlContentBootstrapController {
             }
 
             sendMessage(episodeRef, partition);
-            sentAlready.set(toInt(episodeRef));
         } else if (content instanceof Series) {
             Series series = (Series) content;
 
