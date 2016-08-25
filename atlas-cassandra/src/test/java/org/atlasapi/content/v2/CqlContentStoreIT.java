@@ -13,7 +13,14 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
 
     @Override
     protected ContentStore provideContentStore() {
-        return new CqlContentStore(session, sender, idGenerator, clock, hasher, graphStore);
+        return CqlContentStore.builder()
+                .withSession(session)
+                .withSender(sender)
+                .withIdGenerator(idGenerator)
+                .withClock(clock)
+                .withHasher(hasher)
+                .withGraphStore(graphStore)
+                .build();
     }
 
     @Ignore("this used to test that an exception was thrown for mangled protobuf rows")

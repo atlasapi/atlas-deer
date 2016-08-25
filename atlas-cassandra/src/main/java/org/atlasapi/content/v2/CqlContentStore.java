@@ -113,7 +113,8 @@ public class CqlContentStore implements ContentStore {
             IdGenerator idGenerator,
             Clock clock,
             ContentHasher hasher,
-            EquivalenceGraphStore graphStore) {
+            EquivalenceGraphStore graphStore
+    ) {
         this.idGenerator = checkNotNull(idGenerator);
         this.session = checkNotNull(session);
         this.clock = checkNotNull(clock);
@@ -125,6 +126,10 @@ public class CqlContentStore implements ContentStore {
         this.sender = checkNotNull(sender);
         this.hasher = checkNotNull(hasher);
         this.graphStore = checkNotNull(graphStore);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -176,65 +181,6 @@ public class CqlContentStore implements ContentStore {
         return new WriteResult<>(content, true, DateTime.now(), previous);
     }
 
-    private void sendMessages(ImmutableList<ResourceUpdatedMessage> messages) {
-        Map<Id, Id> resourceGraphIds = getResourceGraphIds(messages);
-
-        for (ResourceUpdatedMessage message : messages) {
-            try {
-                // Downstream workers are processing the entire equivalence graph for every
-                // updated content. Therefore we want to use the graph ID as the partition key
-                // to ensure each graph is only processed by a single worker thread.
-                // We default to using the updated resource id as the partition key if we can't
-                // resolve the resource's graph.
-                Id resourceId = message.getUpdatedResource().getId();
-
-                Id partitionId =
-                        resourceGraphIds.containsKey(resourceId)
-                        ? resourceGraphIds.get(resourceId)
-                        : resourceId;
-
-                sender.sendMessage(message, Longs.toByteArray(partitionId.longValue()));
-            } catch (Exception e) {
-                log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
-            }
-        }
-    }
-
-    private Map<Id, Id> getResourceGraphIds(Iterable<ResourceUpdatedMessage> messages) {
-        ImmutableSet<Id> messageResourceIds = StreamSupport.stream(messages.spliterator(), false)
-                .map(message -> message.getUpdatedResource().getId())
-                .distinct()
-                .collect(MoreCollectors.toImmutableSet());
-
-        return getResourceGraphIds(
-                messageResourceIds,
-                getGraphMap(messageResourceIds)
-        );
-    }
-
-    private ImmutableMap<Id, Id> getResourceGraphIds(
-            Iterable<Id> updatedResourceIds,
-            OptionalMap<Id, EquivalenceGraph> graphMap
-    ) {
-        return StreamSupport.stream(updatedResourceIds.spliterator(), false)
-                .distinct()
-                .filter(resourceId -> graphMap.get(resourceId).isPresent())
-                .collect(MoreCollectors.toImmutableMap(
-                        java.util.function.Function.identity(),
-                        resourceId -> graphMap.get(resourceId)
-                                .get()
-                                .getId()
-                ));
-    }
-
-    private OptionalMap<Id, EquivalenceGraph> getGraphMap(Iterable<Id> messageResourceIds) {
-        try {
-            return graphStore.resolveIds(messageResourceIds).get();
-        } catch (InterruptedException | ExecutionException e) {
-            return ImmutableOptionalMap.of();
-        }
-    }
-
     @Override
     public void writeBroadcast(ItemRef item, Optional<ContainerRef> containerRef,
             Optional<SeriesRef> seriesRef, Broadcast broadcast) {
@@ -262,7 +208,7 @@ public class CqlContentStore implements ContentStore {
             Map<
                     org.atlasapi.content.v2.model.udt.ItemRef,
                     List<org.atlasapi.content.v2.model.udt.BroadcastRef>
-            > upcomingBroadcasts = ImmutableMap.of(
+                    > upcomingBroadcasts = ImmutableMap.of(
                     itemRef,
                     ImmutableList.of(broadcastRefTranslator.serialize(broadcast.toRef()))
             );
@@ -325,6 +271,65 @@ public class CqlContentStore implements ContentStore {
                 contentList,
                 (Function<List<Content>, Resolved<Content>>) Resolved::valueOf
         );
+    }
+
+    private void sendMessages(ImmutableList<ResourceUpdatedMessage> messages) {
+        Map<Id, Id> resourceGraphIds = getResourceGraphIds(messages);
+
+        for (ResourceUpdatedMessage message : messages) {
+            try {
+                // Downstream workers are processing the entire equivalence graph for every
+                // updated content. Therefore we want to use the graph ID as the partition key
+                // to ensure each graph is only processed by a single worker thread.
+                // We default to using the updated resource id as the partition key if we can't
+                // resolve the resource's graph.
+                Id resourceId = message.getUpdatedResource().getId();
+
+                Id partitionId =
+                        resourceGraphIds.containsKey(resourceId)
+                        ? resourceGraphIds.get(resourceId)
+                        : resourceId;
+
+                sender.sendMessage(message, Longs.toByteArray(partitionId.longValue()));
+            } catch (Exception e) {
+                log.error("Failed to send message " + message.getUpdatedResource().toString(), e);
+            }
+        }
+    }
+
+    private Map<Id, Id> getResourceGraphIds(Iterable<ResourceUpdatedMessage> messages) {
+        ImmutableSet<Id> messageResourceIds = StreamSupport.stream(messages.spliterator(), false)
+                .map(message -> message.getUpdatedResource().getId())
+                .distinct()
+                .collect(MoreCollectors.toImmutableSet());
+
+        return getResourceGraphIds(
+                messageResourceIds,
+                getGraphMap(messageResourceIds)
+        );
+    }
+
+    private ImmutableMap<Id, Id> getResourceGraphIds(
+            Iterable<Id> updatedResourceIds,
+            OptionalMap<Id, EquivalenceGraph> graphMap
+    ) {
+        return StreamSupport.stream(updatedResourceIds.spliterator(), false)
+                .distinct()
+                .filter(resourceId -> graphMap.get(resourceId).isPresent())
+                .collect(MoreCollectors.toImmutableMap(
+                        java.util.function.Function.identity(),
+                        resourceId -> graphMap.get(resourceId)
+                                .get()
+                                .getId()
+                ));
+    }
+
+    private OptionalMap<Id, EquivalenceGraph> getGraphMap(Iterable<Id> messageResourceIds) {
+        try {
+            return graphStore.resolveIds(messageResourceIds).get();
+        } catch (InterruptedException | ExecutionException e) {
+            return ImmutableOptionalMap.of();
+        }
     }
 
     private void setExistingItemRefs(Content content, Content previous) {
@@ -746,6 +751,53 @@ public class CqlContentStore implements ContentStore {
     private void ensureId(Content content) {
         if (content.getId() == null) {
             content.setId(Id.valueOf(idGenerator.generateRaw()));
+        }
+    }
+
+    public static final class Builder {
+
+        private Session session;
+        private IdGenerator idGenerator;
+        private MessageSender<ResourceUpdatedMessage> sender;
+        private Clock clock;
+        private ContentHasher hasher;
+        private EquivalenceGraphStore graphStore;
+
+        private Builder() {
+        }
+
+        public Builder withSession(Session val) {
+            session = val;
+            return this;
+        }
+
+        public Builder withIdGenerator(IdGenerator val) {
+            idGenerator = val;
+            return this;
+        }
+
+        public Builder withSender(MessageSender<ResourceUpdatedMessage> val) {
+            sender = val;
+            return this;
+        }
+
+        public Builder withClock(Clock val) {
+            clock = val;
+            return this;
+        }
+
+        public Builder withHasher(ContentHasher val) {
+            hasher = val;
+            return this;
+        }
+
+        public Builder withGraphStore(EquivalenceGraphStore val) {
+            graphStore = val;
+            return this;
+        }
+
+        public CqlContentStore build() {
+            return new CqlContentStore(session, sender, idGenerator, clock, hasher, graphStore);
         }
     }
 }

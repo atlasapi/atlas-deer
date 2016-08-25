@@ -554,14 +554,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .collect(MoreCollectors.toImmutableList());
     }
 
-    private Statement delete(BroadcastRef ref, Publisher src, Date date) {
-        return broadcastDelete.bind()
-                .setString("source", src.key())
-                .setLong("channel", ref.getChannelId().longValue())
-                .setDate("day", com.datastax.driver.core.LocalDate.fromMillisSinceEpoch(date.getTime()))
-                .setString("broadcast", ref.getSourceId());
-    }
-
     private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId,
             Interval interval) throws WriteException {
         ImmutableList.Builder<ListenableFuture<ResultSet>> broadcastFutures = ImmutableList.builder();

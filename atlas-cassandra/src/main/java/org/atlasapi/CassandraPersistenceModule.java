@@ -216,14 +216,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         // The CQL content store isn't live yet and will run in parallel with the Astyanax store
         // for testing. We pass in a dummy message sender to avoid sending content update messages
         // from two different places
-        this.cqlContentStore = new CqlContentStore(
-                session,
-                nullMessageSender(ResourceUpdatedMessage.class),
-                contentIdGenerator,
-                new SystemClock(),
-                contentHasher,
-                contentEquivalenceGraphStore
-        );
+        this.cqlContentStore = CqlContentStore.builder()
+                .withSession(session)
+                .withIdGenerator(contentIdGenerator)
+                .withClock(new SystemClock())
+                .withHasher(contentHasher)
+                .withGraphStore(contentEquivalenceGraphStore)
+                .withSender(nullMessageSender(ResourceUpdatedMessage.class))
+                .build();
 
         this.forceCqlContentWriter = NonValidatingCqlWriter.create(session, new SystemClock());
 

@@ -157,7 +157,6 @@ import org.atlasapi.topic.TopicResolver;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.persistence.mongo.DatabasedMongo;
-import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
 import com.metabroadcast.common.time.SystemClock;
@@ -166,7 +165,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -232,10 +230,6 @@ public class QueryWebModule {
     private static final String CONTAINER_FIELD = "container";
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
-    private String originSystem = Configurer.get("messaging.bootstrap.system").get();
-    private String zookeeper = Configurer.get("messaging.zookeeper").get();
-    private Duration backOffBase = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
-    private Duration maxBackOff = Duration.millis(Configurer.get("messaging.maxBackOffMillis").toLong());
 
     @Autowired
     private KafkaMessagingModule messaging;

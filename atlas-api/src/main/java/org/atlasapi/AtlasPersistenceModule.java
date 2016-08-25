@@ -98,6 +98,10 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessageSenders;
 
 import com.datastax.driver.core.CodecRegistry;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicates;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -123,6 +127,7 @@ public class AtlasPersistenceModule {
 
     private static final String MONGO_COLLECTION_LOOKUP = "lookup";
     private static final String MONGO_COLLECTION_TOPICS = "topics";
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private static final PersistenceAuditLog persistenceAuditLog = new NoLoggingPersistenceAuditLog();
 
@@ -202,7 +207,17 @@ public class AtlasPersistenceModule {
                 .withNodes(seeds)
                 .withConnectionsPerHostLocal(cassandraConnectionsPerHostLocal)
                 .withConnectionsPerHostRemote(cassandraConnectionsPerHostRemote)
-                .withCodecRegistry(CodecRegistry.DEFAULT_INSTANCE)
+                .withCodecRegistry(new CodecRegistry()
+                        .register(InstantCodec.instance)
+                        .register(LocalDateCodec.instance)
+                        .register(new JacksonJsonCodec<>(
+                                org.atlasapi.content.v2.model.Clip.Wrapper.class,
+                                MAPPER
+                        ))
+                        .register(new JacksonJsonCodec<>(
+                                org.atlasapi.content.v2.model.Encoding.Wrapper.class,
+                                MAPPER
+                        )))
                 .withConnectTimeoutMillis(cassandraDatastaxConnectionTimeout)
                 .withReadTimeoutMillis(cassandraDatastaxReadTimeout)
                 .build();
