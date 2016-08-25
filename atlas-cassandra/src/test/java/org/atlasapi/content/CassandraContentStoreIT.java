@@ -94,7 +94,7 @@ public abstract class CassandraContentStoreIT {
     @Mock protected EquivalenceGraphStore graphStore;
     @Mock protected Clock clock;
 
-    private ContentStore store;
+    protected ContentStore store;
 
     protected static final String CONTENT_TABLE = "content";
 
@@ -1283,7 +1283,7 @@ public abstract class CassandraContentStoreIT {
         verify(sender, times(7)).sendMessage(captor.capture(), any());
     }
 
-    private <T extends Content> T create(T content) {
+    protected  <T extends Content> T create(T content) {
         content.setPublisher(Publisher.BBC);
         content.setTitle(content.getClass().getSimpleName());
         return content;

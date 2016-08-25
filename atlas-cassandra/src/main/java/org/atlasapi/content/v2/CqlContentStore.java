@@ -29,6 +29,7 @@ import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
+import org.atlasapi.content.v2.model.udt.Description;
 import org.atlasapi.content.v2.serialization.BroadcastRefSerialization;
 import org.atlasapi.content.v2.serialization.BroadcastSerialization;
 import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
@@ -120,6 +121,10 @@ public class CqlContentStore implements ContentStore {
         this.clock = checkNotNull(clock);
 
         MappingManager mappingManager = new MappingManager(session);
+
+        // TODO: bug in driver 3.1.0 prompting this hackaround. Remove when it's fixed. MBST-16715
+        mappingManager.udtCodec(Description.class);
+
         this.mapper = mappingManager.mapper(org.atlasapi.content.v2.model.Content.class);
         this.accessor = mappingManager.createAccessor(ContentAccessor.class);
 
