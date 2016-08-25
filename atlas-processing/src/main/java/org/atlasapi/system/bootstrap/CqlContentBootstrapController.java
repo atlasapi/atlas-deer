@@ -160,6 +160,8 @@ public class CqlContentBootstrapController {
                     KAFKA_TOPIC_NAME,
                     KAFKA_CONSUMER_GROUP
             ).withFailedMessagePersistence(mongo)
+                    .withDefaultConsumers(15)
+                    .withMaxConsumers(15)
                     .build();
         }
 
