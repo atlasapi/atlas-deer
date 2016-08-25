@@ -49,6 +49,8 @@ public class BootstrapWorkersModule {
 
     private final Integer contentChangesNumOfConsumers =
             Configurer.get("messaging.bootstrap.content.changes.consumers").toInt();
+    private final int cqlContentChangesNumOfConsumers =
+            Configurer.get("messaging.bootstrap.cql-content.changes.consumers").toInt();
     private final Integer topicChangesNumOfConsumers =
             Configurer.get("messaging.bootstrap.topics.changes.consumers").toInt();
     private final Integer scheduleChangesNumOfConsumers =
@@ -147,8 +149,8 @@ public class BootstrapWorkersModule {
                         "CqlContentBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
-                .withDefaultConsumers(contentChangesNumOfConsumers)
-                .withMaxConsumers(contentChangesNumOfConsumers)
+                .withDefaultConsumers(cqlContentChangesNumOfConsumers)
+                .withMaxConsumers(cqlContentChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .build();
     }
