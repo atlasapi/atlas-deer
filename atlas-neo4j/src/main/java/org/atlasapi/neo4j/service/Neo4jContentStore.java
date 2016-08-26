@@ -25,6 +25,7 @@ import org.atlasapi.neo4j.service.writers.LocationWriter;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +70,10 @@ public class Neo4jContentStore {
 
     public void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
             Set<Publisher> sources) {
-        try (Transaction transaction = sessionFactory.getSession().beginTransaction()) {
+        try (
+                Session session = sessionFactory.getSession();
+                Transaction transaction = session.beginTransaction()
+        ) {
             try {
                 writeEquivalences(subject, assertedAdjacents, sources, transaction);
                 transaction.success();
@@ -83,7 +87,10 @@ public class Neo4jContentStore {
     }
 
     public void writeContent(Content content) {
-        try (Transaction transaction = sessionFactory.getSession().beginTransaction()) {
+        try (
+                Session session = sessionFactory.getSession();
+                Transaction transaction = session.beginTransaction()
+        ) {
             try {
                 writeContent(content, transaction);
                 transaction.success();
