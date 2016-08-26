@@ -9,7 +9,7 @@ public abstract class Neo4jWriter {
         runner.run(statement).consume();
     }
 
-    protected String parameter(String parameterName) {
+    protected String param(String parameterName) {
         return "{" + parameterName + "}";
     }
 }

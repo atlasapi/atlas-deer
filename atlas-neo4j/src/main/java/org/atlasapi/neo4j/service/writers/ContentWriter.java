@@ -16,6 +16,7 @@ import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_SERIES_NUMBER;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_SOURCE;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_TYPE;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT;
 
 public class ContentWriter extends Neo4jWriter {
 
@@ -27,37 +28,42 @@ public class ContentWriter extends Neo4jWriter {
 
     private ContentWriter() {
         writeResourceRefStatement = new Statement(""
-                + "MERGE (content:Content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
-                + "SET content." + CONTENT_SOURCE + " = " + parameter(CONTENT_SOURCE));
+                + "MERGE (content:" + CONTENT
+                + " { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
+                + "SET content." + CONTENT_SOURCE + " = " + param(CONTENT_SOURCE));
 
         writeContentRefStatement = new Statement(""
-                + "MERGE (content:Content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
+                + "MERGE (content:" + CONTENT
+                + " { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
                 + "SET "
-                + "content." + CONTENT_SOURCE + " = " + parameter(CONTENT_SOURCE) + ", "
-                + "content." + CONTENT_TYPE + " = " + parameter(CONTENT_TYPE));
+                + "content." + CONTENT_SOURCE + " = " + param(CONTENT_SOURCE) + ", "
+                + "content." + CONTENT_TYPE + " = " + param(CONTENT_TYPE));
 
         writeContentStatement = new Statement(""
-                + "MERGE (content:Content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
+                + "MERGE (content:" + CONTENT
+                + " { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
                 + "SET "
-                + "content." + CONTENT_SOURCE + " = " + parameter(CONTENT_SOURCE) + ", "
-                + "content." + CONTENT_TYPE + " = " + parameter(CONTENT_TYPE) + " "
+                + "content." + CONTENT_SOURCE + " = " + param(CONTENT_SOURCE) + ", "
+                + "content." + CONTENT_TYPE + " = " + param(CONTENT_TYPE) + " "
                 + "REMOVE "
                 + "content." + CONTENT_EPISODE_NUMBER + ", "
                 + "content." + CONTENT_SERIES_NUMBER);
 
         writeSeriesStatement = new Statement(""
-                + "MERGE (content:Content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
+                + "MERGE (content:" + CONTENT
+                + " { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
                 + "SET "
-                + "content." + CONTENT_SOURCE + " = " + parameter(CONTENT_SOURCE) + ", "
-                + "content." + CONTENT_TYPE + " = " + parameter(CONTENT_TYPE) + ", "
-                + "content." + CONTENT_SERIES_NUMBER + " = " + parameter(CONTENT_SERIES_NUMBER));
+                + "content." + CONTENT_SOURCE + " = " + param(CONTENT_SOURCE) + ", "
+                + "content." + CONTENT_TYPE + " = " + param(CONTENT_TYPE) + ", "
+                + "content." + CONTENT_SERIES_NUMBER + " = " + param(CONTENT_SERIES_NUMBER));
 
         writeEpisodeStatement = new Statement(""
-                + "MERGE (content:Content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
+                + "MERGE (content:" + CONTENT
+                + " { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
                 + "SET "
-                + "content." + CONTENT_SOURCE + " = " + parameter(CONTENT_SOURCE) + ", "
-                + "content." + CONTENT_TYPE + " = " + parameter(CONTENT_TYPE) + ", "
-                + "content." + CONTENT_EPISODE_NUMBER + " = " + parameter(CONTENT_EPISODE_NUMBER));
+                + "content." + CONTENT_SOURCE + " = " + param(CONTENT_SOURCE) + ", "
+                + "content." + CONTENT_TYPE + " = " + param(CONTENT_TYPE) + ", "
+                + "content." + CONTENT_EPISODE_NUMBER + " = " + param(CONTENT_EPISODE_NUMBER));
     }
 
     public static ContentWriter create() {
