@@ -46,6 +46,7 @@ import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Throwables;
@@ -87,6 +88,9 @@ public class CqlContentBootstrapController {
     private final Meter mongoSenderMeter;
     private final Meter cqlWriterMeter;
     private final Meter cqlWriterErrorMeter;
+    private final Counter cqlWriterErrorCounter;
+    private final Counter mongoSenderCounter;
+    private final Counter cqlWriterCounter;
 
     private MessageSender<ResourceUpdatedMessage> sender = null;
     private KafkaConsumer cqlConsumer = null;
@@ -138,12 +142,24 @@ public class CqlContentBootstrapController {
                 "%s.mongo-id-sender",
                 getClass().getSimpleName()
         ));
+        this.mongoSenderCounter = checkNotNull(metrics).counter(String.format(
+                "%s.mongo-id-sender-count",
+                getClass().getSimpleName()
+        ));
         this.cqlWriterMeter = checkNotNull(metrics).meter(String.format(
                 "%s.cql-writer",
                 getClass().getSimpleName()
         ));
+        this.cqlWriterCounter = checkNotNull(metrics).counter(String.format(
+                "%s.cql-writer-count",
+                getClass().getSimpleName()
+        ));
         this.cqlWriterErrorMeter = checkNotNull(metrics).meter(String.format(
-                "%s.cql-writer-errors",
+                "%s.cql-writer-error-rate",
+                getClass().getSimpleName()
+        ));
+        this.cqlWriterErrorCounter = checkNotNull(metrics).counter(String.format(
+                "%s.cql-writer-error-count",
                 getClass().getSimpleName()
         ));
     }
@@ -239,6 +255,7 @@ public class CqlContentBootstrapController {
                 storeProgress(numProcessed, content);
 
                 mongoSenderMeter.mark();
+                mongoSenderCounter.inc();
 
                 if (!runConsumer.get()) {
                     log.info("Stopping CQL bootstrap Mongo ID producer");
@@ -417,8 +434,10 @@ public class CqlContentBootstrapController {
                 contentWriter.writeContent(contentInMongo.get());
 
                 cqlWriterMeter.mark();
+                cqlWriterCounter.inc();
             } catch (WriteException | InterruptedException | ExecutionException | TimeoutException e) {
                 cqlWriterErrorMeter.mark();
+                cqlWriterErrorCounter.inc();
                 throw Throwables.propagate(e);
             }
         }
