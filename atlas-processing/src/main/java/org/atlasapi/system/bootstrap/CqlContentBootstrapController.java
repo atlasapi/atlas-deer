@@ -231,13 +231,26 @@ public class CqlContentBootstrapController {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws ExecutionException, InterruptedException, WriteException {
-        Optional<ContentListingProgress> storedProgress = progressStore.progressForTask(TASK_NAME);
-        ContentListingProgress progress = storedProgress.orElse(ContentListingProgress.START);
 
         runConsumer.set(true);
         initSender();
 
+        startMongoIdProducer();
+
+        response.setStatus(200);
+        try {
+            response.getWriter().write("Started message sender");
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private void startMongoIdProducer() {
         listeningExecutorService.submit(() -> {
+            Optional<ContentListingProgress> storedProgress =
+                    progressStore.progressForTask(TASK_NAME);
+            ContentListingProgress progress = storedProgress.orElse(ContentListingProgress.START);
+
             // Let's avoid sending brands and whatnot many times. Since each episode will reference
             // its brand and series, this could be costly if we don't take care.
             //
@@ -247,30 +260,29 @@ public class CqlContentBootstrapController {
 
             long numProcessed = 0L;
 
-            for (Content content : contentLister.list(progress)) {
-                bootstrap(content, sentAlready);
+            try {
+                for (Content content : contentLister.list(progress)) {
+                    bootstrap(content, sentAlready);
 
-                numProcessed++;
+                    numProcessed++;
 
-                storeProgress(numProcessed, content);
+                    storeProgress(numProcessed, content);
 
-                mongoSenderMeter.mark();
-                mongoSenderCounter.inc();
+                    mongoSenderMeter.mark();
+                    mongoSenderCounter.inc();
 
-                if (!runConsumer.get()) {
-                    log.info("Stopping CQL bootstrap Mongo ID producer");
-                    break;
+                    if (!runConsumer.get()) {
+                        log.info("Stopping CQL bootstrap Mongo ID producer");
+                        break;
+                    }
                 }
+            } catch (Exception e) {
+                log.error("Error while listing Mongo IDs, restarting", e);
+                startMongoIdProducer();
             }
         });
-
-        response.setStatus(200);
-        try {
-            response.getWriter().write("Started message sender");
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
     }
+
     @RequestMapping(value = "/list-mongo-ids", method = RequestMethod.DELETE)
     public void stopMongoIdWriter(
             HttpServletRequest request,
