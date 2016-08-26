@@ -65,7 +65,7 @@ public class CqlContentDebugController {
         migrate(id, mongo);
     }
 
-    @RequestMapping("/migrate/astyanax/{id}", method = RequestMethod.POST)
+    @RequestMapping(value = "/migrate/astyanax/{id}", method = RequestMethod.POST)
     public void migrate(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -81,7 +81,7 @@ public class CqlContentDebugController {
         cql.writeContent(Iterables.getOnlyElement(content.getResources()));
     }
 
-    @RequestMapping("/{id}/cql")
+    @RequestMapping("/{id}")
     public void resolve(
             HttpServletRequest request,
             HttpServletResponse response,
