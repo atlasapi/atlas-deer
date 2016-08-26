@@ -101,6 +101,7 @@ public class Neo4JContentStoreTest {
         );
         order.verify(transaction).success();
         order.verify(transaction).close();
+        order.verify(session).close();
     }
 
     @Test
@@ -120,6 +121,7 @@ public class Neo4JContentStoreTest {
         order.verify(contentWriter).writeResourceRef(contentRefA, transaction);
         order.verify(transaction).failure();
         order.verify(transaction).close();
+        order.verify(session).close();
     }
 
     @Test
@@ -133,6 +135,7 @@ public class Neo4JContentStoreTest {
         order.verify(contentWriter).writeContent(item, transaction);
         order.verify(transaction).success();
         order.verify(transaction).close();
+        order.verify(session).close();
     }
 
     @Test
@@ -149,6 +152,7 @@ public class Neo4JContentStoreTest {
         order.verify(contentWriter).writeContent(item, transaction);
         order.verify(transaction).failure();
         order.verify(transaction).close();
+        order.verify(session).close();
     }
 
     @Test
