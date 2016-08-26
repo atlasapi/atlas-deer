@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 
 public class Neo4jContentStore {
 
@@ -66,6 +68,17 @@ public class Neo4jContentStore {
 
     public static SessionFactoryStep builder() {
         return new Builder();
+    }
+
+    public void createIndicesAndConstraints() {
+        try (Session session = sessionFactory.getSession()) {
+            // This will also create a unique index on the same property
+            session.run(
+                    "CREATE CONSTRAINT ON (c:" + CONTENT + ") "
+                            + "ASSERT c." + CONTENT_ID + " IS UNIQUE"
+            )
+                    .consume();
+        }
     }
 
     public void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
