@@ -27,6 +27,7 @@ import org.joda.time.DateTime;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -55,7 +56,7 @@ public class CqlContentDebugController {
         this.cql = checkNotNull(cql);
     }
 
-    @RequestMapping("/migrate/owl/{id}")
+    @RequestMapping(value = "/migrate/owl/{id}", method = RequestMethod.POST)
     public void migrateFromOwl(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -64,7 +65,7 @@ public class CqlContentDebugController {
         migrate(id, mongo);
     }
 
-    @RequestMapping("/migrate/astyanax/{id}")
+    @RequestMapping("/migrate/astyanax/{id}", method = RequestMethod.POST)
     public void migrate(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -80,7 +81,7 @@ public class CqlContentDebugController {
         cql.writeContent(Iterables.getOnlyElement(content.getResources()));
     }
 
-    @RequestMapping("/system/debug/content/{id}/cql")
+    @RequestMapping("/{id}/cql")
     public void resolve(
             HttpServletRequest request,
             HttpServletResponse response,
