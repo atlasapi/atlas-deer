@@ -78,6 +78,10 @@ public class Neo4jContentStore {
                             + "ASSERT c." + CONTENT_ID + " IS UNIQUE"
             )
                     .consume();
+        } catch (Exception e) {
+            // Given Neo4j is not part of the critical infrastructure yet we swallow any
+            // exceptions here to ensure Neo4j failures do not keep Atlas Deer from initialising
+            log.error("Failed to create indices/constraints on Neo4j", e);
         }
     }
 
