@@ -6,8 +6,7 @@ import org.neo4j.driver.v1.Session;
 
 public abstract class AbstractNeo4jIT {
 
-    private Neo4jModule module;
-
+    protected Neo4jModule module;
     protected Session session;
 
     @Before

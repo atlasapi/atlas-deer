@@ -30,10 +30,12 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.Transaction;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
@@ -57,14 +59,14 @@ public class Neo4JContentStoreTest {
     @Mock private Session session;
     @Mock private Transaction transaction;
 
-    private Neo4jContentStore graphService;
+    private Neo4jContentStore contentStore;
 
     private ContentRef contentRefA;
     private ContentRef contentRefB;
 
     @Before
     public void setUp() throws Exception {
-        graphService = Neo4jContentStore.builder()
+        contentStore = Neo4jContentStore.builder()
                 .withSessionFactory(sessionFactory)
                 .withGraphWriter(equivalenceWriter)
                 .withContentWriter(contentWriter)
@@ -82,8 +84,15 @@ public class Neo4JContentStoreTest {
     }
 
     @Test
+    public void failingToWriteIndicesAndConstraintsDoesNotPropagateException() throws Exception {
+        when(session.run(any(Statement.class))).thenThrow(new RuntimeException());
+
+        contentStore.createIndicesAndConstraints();
+    }
+
+    @Test
     public void writeEquivalencesCallsDelegatesInTransaction() throws Exception {
-        graphService.writeEquivalences(
+        contentStore.writeEquivalences(
                 contentRefA,
                 ImmutableSet.of(contentRefB),
                 ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)
@@ -110,7 +119,7 @@ public class Neo4JContentStoreTest {
                 .when(contentWriter).writeResourceRef(contentRefA, transaction);
 
         exception.expect(Neo4jPersistenceException.class);
-        graphService.writeEquivalences(
+        contentStore.writeEquivalences(
                 contentRefA,
                 ImmutableSet.of(contentRefB),
                 ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)
@@ -128,7 +137,7 @@ public class Neo4JContentStoreTest {
     public void writeContentCreatesTransaction() throws Exception {
         Item item = new Item(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(item);
+        contentStore.writeContent(item);
 
         InOrder order = inOrder(session, transaction, contentWriter);
         order.verify(session).beginTransaction();
@@ -145,7 +154,7 @@ public class Neo4JContentStoreTest {
         doThrow(new RuntimeException()).when(contentWriter).writeContent(item, transaction);
 
         exception.expect(Neo4jPersistenceException.class);
-        graphService.writeContent(item);
+        contentStore.writeContent(item);
 
         InOrder order = inOrder(session, transaction, contentWriter);
         order.verify(session).beginTransaction();
@@ -159,7 +168,7 @@ public class Neo4JContentStoreTest {
     public void writeBrand() throws Exception {
         Brand brand = new Brand(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(brand);
+        contentStore.writeContent(brand);
 
         verify(contentWriter).writeContent(brand, transaction);
         verify(hierarchyWriter).writeBrand(brand, transaction);
@@ -170,7 +179,7 @@ public class Neo4JContentStoreTest {
     public void writeSeries() throws Exception {
         Series series = new Series(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(series);
+        contentStore.writeContent(series);
 
         verify(contentWriter).writeSeries(series, transaction);
         verify(hierarchyWriter).writeSeries(series, transaction);
@@ -181,7 +190,7 @@ public class Neo4JContentStoreTest {
     public void writeEpisode() throws Exception {
         Episode episode = new Episode(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(episode);
+        contentStore.writeContent(episode);
 
         verify(contentWriter).writeEpisode(episode, transaction);
         verify(hierarchyWriter).writeEpisode(episode, transaction);
@@ -193,7 +202,7 @@ public class Neo4JContentStoreTest {
     public void writeFilm() throws Exception {
         Film film = new Film(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(film);
+        contentStore.writeContent(film);
 
         verify(contentWriter).writeContent(film, transaction);
         verify(hierarchyWriter).writeNoHierarchy(film, transaction);
@@ -205,7 +214,7 @@ public class Neo4JContentStoreTest {
     public void writeSong() throws Exception {
         Song song = new Song(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(song);
+        contentStore.writeContent(song);
 
         verify(contentWriter).writeContent(song, transaction);
         verify(hierarchyWriter).writeNoHierarchy(song, transaction);
@@ -217,7 +226,7 @@ public class Neo4JContentStoreTest {
     public void writeItem() throws Exception {
         Item item = new Item(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(item);
+        contentStore.writeContent(item);
 
         verify(contentWriter).writeContent(item, transaction);
         verify(hierarchyWriter).writeNoHierarchy(item, transaction);
@@ -229,7 +238,7 @@ public class Neo4JContentStoreTest {
     public void writeClip() throws Exception {
         Clip clip = new Clip(Id.valueOf(0L), Publisher.METABROADCAST);
 
-        graphService.writeContent(clip);
+        contentStore.writeContent(clip);
 
         verify(contentWriter).writeContent(clip, transaction);
         verify(hierarchyWriter).writeNoHierarchy(clip, transaction);
@@ -244,7 +253,7 @@ public class Neo4JContentStoreTest {
         when(equivalentSetResolver.getEquivalentSet(id, session))
                 .thenReturn(ImmutableSet.of(id));
 
-        ImmutableSet<Id> equivalentSet = graphService.getEquivalentSet(id);
+        ImmutableSet<Id> equivalentSet = contentStore.getEquivalentSet(id);
 
         verify(equivalentSetResolver).getEquivalentSet(id, session);
 

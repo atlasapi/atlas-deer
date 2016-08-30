@@ -15,7 +15,10 @@ import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.HAS_BRAND_RELATIONSHIP;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.HAS_SERIES_RELATIONSHIP;
 
 public class HierarchyWriter extends Neo4jWriter {
 
@@ -34,32 +37,34 @@ public class HierarchyWriter extends Neo4jWriter {
 
         this.addBrandParentStatement = new Statement(""
                 + "MATCH "
-                + "(parent:Content { " + CONTENT_ID + ": " + parameter(PARENT_ID_PARAM) + " }), "
-                + "(child:Content { " + CONTENT_ID + ": " + parameter(CHILD_ID_PARAM) + " }) "
-                + "OPTIONAL MATCH (existingParent:Content)<-[r:HAS_BRAND]-(child) "
+                + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " }), "
+                + "(child:"+ CONTENT + " { " + CONTENT_ID + ": " + param(CHILD_ID_PARAM) + " }) "
+                + "OPTIONAL MATCH (existingParent:"+ CONTENT
+                + ")<-[r:"+ HAS_BRAND_RELATIONSHIP + "]-(child) "
                 + "DELETE r "
-                + "MERGE (parent)<-[:HAS_BRAND]-(child)");
+                + "MERGE (parent)<-[:"+ HAS_BRAND_RELATIONSHIP + "]-(child)");
 
         this.addSeriesParentStatement = new Statement(""
                 + "MATCH "
-                + "(parent:Content { " + CONTENT_ID + ": " + parameter(PARENT_ID_PARAM) + " }), "
-                + "(child:Content { " + CONTENT_ID + ": " + parameter(CHILD_ID_PARAM) + " }) "
-                + "OPTIONAL MATCH (existingParent:Content)<-[r:HAS_SERIES]-(child) "
+                + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " }), "
+                + "(child:"+ CONTENT + " { " + CONTENT_ID + ": " + param(CHILD_ID_PARAM) + " }) "
+                + "OPTIONAL MATCH (existingParent:"+ CONTENT
+                + ")<-[r:"+ HAS_SERIES_RELATIONSHIP + "]-(child) "
                 + "DELETE r "
-                + "MERGE (parent)<-[:HAS_SERIES]-(child)");
+                + "MERGE (parent)<-[:"+ HAS_SERIES_RELATIONSHIP + "]-(child)");
 
         this.removeParentStatement = new Statement(""
                 + "MATCH "
-                + "(parent:Content)"
-                + "<-[r:HAS_BRAND|HAS_SERIES]-"
-                + "(child:Content { " + CONTENT_ID + ": " + parameter(CHILD_ID_PARAM) + " }) "
+                + "(parent:"+ CONTENT + ")"
+                + "<-[r:"+ HAS_BRAND_RELATIONSHIP + "|HAS_SERIES]-"
+                + "(child:"+ CONTENT + " { " + CONTENT_ID + ": " + param(CHILD_ID_PARAM) + " }) "
                 + "DELETE r");
 
         this.removeChildrenStatement = new Statement(""
                 + "MATCH "
-                + "(parent:Content { " + CONTENT_ID + ": " + parameter(PARENT_ID_PARAM) + " })"
-                + "<-[r:HAS_BRAND|HAS_SERIES]-"
-                + "(child:Content) "
+                + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " })"
+                + "<-[r:"+ HAS_BRAND_RELATIONSHIP + "|HAS_SERIES]-"
+                + "(child:"+ CONTENT + ") "
                 + "DELETE r");
     }
 

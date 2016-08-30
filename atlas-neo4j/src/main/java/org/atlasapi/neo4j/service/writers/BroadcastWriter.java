@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
+import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.BROADCAST;
+import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.HAS_BROADCAST_RELATIONSHIP;
 import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.CHANNEL_ID;
 import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.END_DATE_TIME;
 import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.START_DATE_TIME;
@@ -18,18 +20,24 @@ public class BroadcastWriter extends Neo4jWriter {
 
     private BroadcastWriter() {
         removeAllBroadcastsStatement = new Statement(""
-                + "MATCH (content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " })"
-                + "-[r:HAS_BROADCAST]->(broadcast:Broadcast) "
+                + "MATCH (content { " + CONTENT_ID + ": " + param(CONTENT_ID) + " })"
+                + "-[r:" + HAS_BROADCAST_RELATIONSHIP + "]->(broadcast:" + BROADCAST + ") "
                 + "DELETE r, broadcast");
 
         addBroadcastStatement = new Statement(""
-                + "MATCH (content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
-                + "OPTIONAL MATCH (content)-[r:HAS_BROADCAST]->(existingBroadcast:Broadcast) "
+                + "MATCH (content { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
+                + "OPTIONAL MATCH "
+                + "(content)"
+                + "-[r:" + HAS_BROADCAST_RELATIONSHIP + "]->"
+                + "(existingBroadcast:" + BROADCAST + ") "
                 + "DELETE r, existingBroadcast "
-                + "CREATE (content)-[:HAS_BROADCAST]->(broadcast:Broadcast { "
-                + CHANNEL_ID + ": " + parameter(CHANNEL_ID) + ", "
-                + START_DATE_TIME + ": " + parameter(START_DATE_TIME) + ", "
-                + END_DATE_TIME + ": " + parameter(END_DATE_TIME) + " "
+                + "CREATE "
+                + "(content)"
+                + "-[:" + HAS_BROADCAST_RELATIONSHIP + "]->"
+                + "(broadcast:" + BROADCAST + " { "
+                + CHANNEL_ID + ": " + param(CHANNEL_ID) + ", "
+                + START_DATE_TIME + ": " + param(START_DATE_TIME) + ", "
+                + END_DATE_TIME + ": " + param(END_DATE_TIME) + " "
                 + "})");
     }
 

@@ -16,6 +16,8 @@ import org.neo4j.driver.v1.StatementRunner;
 
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 import static org.atlasapi.neo4j.service.model.Neo4jLocation.END_DATE_TIME;
+import static org.atlasapi.neo4j.service.model.Neo4jLocation.HAS_LOCATION_RELATIONSHIP;
+import static org.atlasapi.neo4j.service.model.Neo4jLocation.LOCATION;
 import static org.atlasapi.neo4j.service.model.Neo4jLocation.START_DATE_TIME;
 
 public class LocationWriter extends Neo4jWriter {
@@ -30,17 +32,19 @@ public class LocationWriter extends Neo4jWriter {
 
     private LocationWriter() {
         removeAllLocationsStatement = new Statement(""
-                + "MATCH (content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " })"
-                + "-[r:HAS_LOCATION]->(location:Location) "
+                + "MATCH (content { " + CONTENT_ID + ": " + param(CONTENT_ID) + " })"
+                + "-[r:" + HAS_LOCATION_RELATIONSHIP + "]->(location:" + LOCATION + ") "
                 + "DELETE r, location");
 
         addLocationStatement = new Statement(""
-                + "MATCH (content { " + CONTENT_ID + ": " + parameter(CONTENT_ID) + " }) "
-                + "OPTIONAL MATCH (content)-[r:HAS_LOCATION]->(existing:Location) "
+                + "MATCH (content { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
+                + "OPTIONAL MATCH (content)-[r:" + HAS_LOCATION_RELATIONSHIP + "]->"
+                + "(existing:" + LOCATION + ") "
                 + "DELETE r, existing "
-                + "CREATE (content)-[:HAS_LOCATION]->(location:Location { "
-                + START_DATE_TIME + ": " + parameter(START_DATE_TIME) + ", "
-                + END_DATE_TIME + ": " + parameter(END_DATE_TIME) + " "
+                + "CREATE (content)-[:" + HAS_LOCATION_RELATIONSHIP + "]->"
+                + "(location:" + LOCATION + " { "
+                + START_DATE_TIME + ": " + param(START_DATE_TIME) + ", "
+                + END_DATE_TIME + ": " + param(END_DATE_TIME) + " "
                 + " })");
     }
 

@@ -17,6 +17,7 @@ import org.neo4j.driver.v1.StatementRunner;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_SOURCE;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.IS_EQUIVALENT_RELATIONSHIP;
 
 public class EquivalenceWriter extends Neo4jWriter {
 
@@ -31,16 +32,16 @@ public class EquivalenceWriter extends Neo4jWriter {
     private EquivalenceWriter() {
         writeEdgeStatement = new Statement(""
                 + "MATCH "
-                + "(sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID_PARAM) + " }), "
-                + "(targetNode { " + CONTENT_ID + ": " + parameter(TARGET_ID_PARAM) + " }) "
-                + "MERGE (sourceNode)-[r:IS_EQUIVALENT]->(targetNode)");
+                + "(sourceNode { " + CONTENT_ID + ": " + param(SOURCE_ID_PARAM) + " }), "
+                + "(targetNode { " + CONTENT_ID + ": " + param(TARGET_ID_PARAM) + " }) "
+                + "MERGE (sourceNode)-[r:" + IS_EQUIVALENT_RELATIONSHIP + "]->(targetNode)");
 
         removeNotAssertedEdgesStatement = new Statement(""
-                + "MATCH (sourceNode { " + CONTENT_ID + ": " + parameter(SOURCE_ID_PARAM) + " })"
-                + "-[r:IS_EQUIVALENT]->(targetNode) "
+                + "MATCH (sourceNode { " + CONTENT_ID + ": " + param(SOURCE_ID_PARAM) + " })"
+                + "-[r:" + IS_EQUIVALENT_RELATIONSHIP + "]->(targetNode) "
                 + "WHERE "
-                + "NOT targetNode." + CONTENT_ID + " IN " + parameter(ASSERTED_IDS_PARAM) + " "
-                + "AND targetNode." + CONTENT_SOURCE + " IN " + parameter(SOURCES_PARAM) + " "
+                + "NOT targetNode." + CONTENT_ID + " IN " + param(ASSERTED_IDS_PARAM) + " "
+                + "AND targetNode." + CONTENT_SOURCE + " IN " + param(SOURCES_PARAM) + " "
                 + "DELETE r");
     }
 
