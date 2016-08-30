@@ -172,8 +172,8 @@ public class CassandraEquivalenceGraphStoreIT {
 
         OptionalMap<Id, EquivalenceGraph> graphs = Futures.get(resolveIds, ResolveException.class);
         EquivalenceGraph graph = graphs.get(Id.valueOf(1)).get();
-        assertTrue(graph.getAdjacents(Id.valueOf(1)).getEfferent().contains(equiv));
-        assertTrue(graph.getAdjacents(Id.valueOf(2)).getAfferent().contains(subject));
+        assertTrue(graph.getAdjacents(Id.valueOf(1)).getOutgoingEdges().contains(equiv));
+        assertTrue(graph.getAdjacents(Id.valueOf(2)).getIncomingEdges().contains(subject));
     }
 
     @Test

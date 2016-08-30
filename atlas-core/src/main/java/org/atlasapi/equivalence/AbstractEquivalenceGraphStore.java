@@ -372,9 +372,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                     .distinct()
                     .collect(MoreCollectors.toImmutableSet());
             if (ids.contains(adj.getRef().getId())) {
-                result = adj.copyWithAfferent(subject);
-            } else if (adj.hasAfferentAdjacent(subject)) {
-                result = adj.copyWithoutAfferent(subject);
+                result = adj.copyWithIncoming(subject);
+            } else if (adj.hasIncomingAdjacent(subject)) {
+                result = adj.copyWithoutIncoming(subject);
             }
         }
         return result;
@@ -382,14 +382,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Adjacents updateSubjectAdjacents(Adjacents subj,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
-        ImmutableSet.Builder<ResourceRef> updatedEfferents = ImmutableSet.<ResourceRef>builder()
+        ImmutableSet.Builder<ResourceRef> updatedOutgoingEdges = ImmutableSet.<ResourceRef>builder()
                 .add(subj.getRef())
                 .addAll(assertedAdjacents)
                 .addAll(Sets.filter(
-                        subj.getEfferent(),
+                        subj.getOutgoingEdges(),
                         Predicates.not(Sourceds.sourceFilter(sources))
                 ));
-        return subj.copyWithEfferents(updatedEfferents.build());
+        return subj.copyWithOutgoing(updatedOutgoingEdges.build());
     }
 
     private ImmutableSet.Builder<Adjacents> currentTransitiveAdjacents(
@@ -434,7 +434,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private boolean changeInAdjacents(Adjacents subjAdjs,
             ImmutableSet<ResourceRef> assertedAdjacents, Set<Publisher> sources) {
         Set<ResourceRef> currentNeighbours
-                = Sets.filter(subjAdjs.getEfferent(), Sourceds.sourceFilter(sources));
+                = Sets.filter(subjAdjs.getOutgoingEdges(), Sourceds.sourceFilter(sources));
         Set<ResourceRef> subjectAndAsserted = MoreSets.add(assertedAdjacents, subjAdjs.getRef());
         boolean change = !currentNeighbours.equals(subjectAndAsserted);
         if (change) {
