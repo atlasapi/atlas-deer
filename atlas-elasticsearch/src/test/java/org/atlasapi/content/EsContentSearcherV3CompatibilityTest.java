@@ -277,10 +277,14 @@ public class EsContentSearcherV3CompatibilityTest {
     public void testFindingBrandsByTitleAfterUpdate() throws Exception {
 
         Brand theApprentice = brand("/apprentice", "The Apprentice");
-        Item theApprenticeItem = complexItem().withBrand(theApprentice)
+
+        Item theApprenticeItem = complexItem()
                 .withBroadcasts(broadcast().build())
                 .build();
-        Item apparent = complexItem().withTitle("Without Apparent Motive")
+
+        Item apparent = complexItem()
+                .withBrand(theApprentice)
+                .withTitle("Without Apparent Motive")
                 .withUri("/item/apparent")
                 .withBroadcasts(broadcast().build())
                 .build();
@@ -289,12 +293,11 @@ public class EsContentSearcherV3CompatibilityTest {
 
         check(searcher.search(title("aprentice")).get(), theApprentice);
 
-        Brand theApprentice2 = new Brand();
-        Brand.copyTo(theApprentice, theApprentice2);
-        theApprentice2.setTitle("Completely Different2");
+        Brand theApprentice2 = brand(theApprentice.getCanonicalUri(), "Compleletely Different2");
+        theApprentice2.setId(theApprentice.getId());
+        theApprentice2.setItemRefs(theApprentice.getItemRefs());
 
-        indexer.index(theApprentice2);
-        refresh(esClient.client());
+        indexAndWait(theApprentice2, theApprenticeItem, apparent);
 
         checkNot(searcher.search(title("aprentice")).get(), theApprentice);
         check(searcher.search(title("Completely Different2")).get(), theApprentice);
@@ -328,7 +331,6 @@ public class EsContentSearcherV3CompatibilityTest {
     }
 
     @Test
-    @Ignore
     public void testLimitingToPublishers() throws Exception {
 
         Brand eastenders = brand("/eastenders", "Eastenders");
@@ -399,7 +401,6 @@ public class EsContentSearcherV3CompatibilityTest {
     }
 
     @Test
-    @Ignore
     public void testLimitAndOffset() throws Exception {
         Brand eastendersWeddings = brand("/eastenders-weddings", "Eastenders Weddings");
         Item eastendersWeddingsItem = complexItem().withBrand(eastendersWeddings)
@@ -464,29 +465,6 @@ public class EsContentSearcherV3CompatibilityTest {
     }
 
     @Test
-    @Ignore
-    public void testBrandWithNoChildrenIsPickedWithTitleWeighting() throws Exception {
-        Item spookyTheCat = complexItem().withTitle("Spooky the Cat")
-                .withUri("/item/spookythecat")
-                .withBroadcasts(broadcast().build())
-                .build();
-        Item spooks = complexItem().withTitle("Spooks").withUri("/item/spooks")
-                .withBroadcasts(broadcast().withStartTime(new SystemClock().now()
-                        .minus(Duration.standardDays(28))).build()).build();
-
-        indexAndWait(spookyTheCat, spooks);
-        //        check(searcher.search(title("spook")).get(), spookyTheCat, spooks);
-
-        Brand spookie = new Brand("/spookie", "curie", Publisher.ARCHIVE_ORG);
-        spookie.setTitle("spookie");
-        spookie.setId(Id.valueOf(10000));
-        indexAndWait(spookie);
-
-        check(searcher.search(title("spook")).get(), spookie, spookyTheCat, spooks);
-    }
-
-    @Test
-    @Ignore
     public void testBrandWithNoChildrenIsNotPickedWithBroadcastWeighting() throws Exception {
         Item spookyTheCat = complexItem().withTitle("Spooky the Cat").withUri("/item/spookythecat")
                 .withBroadcasts(
@@ -532,7 +510,10 @@ public class EsContentSearcherV3CompatibilityTest {
     }
 
     protected static void check(SearchResults result, Identified... content) {
-        assertThat(result.getIds(), is(toIds(Arrays.asList(content))));
+        List<Id> expectedIds = toIds(Arrays.asList(content));
+
+        assertThat(result.getIds().size(), is(expectedIds.size()));
+        assertThat(result.getIds().containsAll(expectedIds), is(true));
     }
 
     protected static void checkNot(SearchResults result, Identified... content) {
