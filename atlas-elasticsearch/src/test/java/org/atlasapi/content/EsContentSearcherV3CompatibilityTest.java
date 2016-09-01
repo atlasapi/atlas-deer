@@ -36,7 +36,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.atlasapi.content.ComplexBroadcastTestDataBuilder.broadcast;
@@ -47,7 +46,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 
-@Ignore
 public class EsContentSearcherV3CompatibilityTest {
 
     private static final Node esClient = ElasticSearchHelper.testNode();
