@@ -9,8 +9,8 @@ import com.codahale.metrics.Clock;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
-import com.codahale.metrics.graphite.GraphiteUDP;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
@@ -26,10 +26,13 @@ public class ProcessingMetricsModule extends MetricsModule {
     @Override
     public MetricRegistry metrics() {
         MetricRegistry metrics = new MetricRegistry();
+
         registerMetrics("gc.", new GarbageCollectorMetricSet(), metrics);
         registerMetrics("memory.", new MemoryUsageGaugeSet(), metrics);
         registerMetrics("threads.", new ThreadStatesGaugeSet(), metrics);
-        graphiteReporterFor(metrics);
+
+        startGraphiteReporter(metrics);
+
         return metrics;
     }
 
@@ -39,12 +42,12 @@ public class ProcessingMetricsModule extends MetricsModule {
         }
     }
 
-    private GraphiteReporter graphiteReporterFor(MetricRegistry metrics) {
+    private void startGraphiteReporter(MetricRegistry metrics) {
         GraphiteReporter reporter = GraphiteReporter.forRegistry(metrics)
                 .prefixedWith("atlas.deer." + environmentPrefix + ".")
                 .withClock(new Clock.UserTimeClock())
-                .build(new GraphiteUDP(graphiteHost, graphitePort));
+                .build(new Graphite(graphiteHost, graphitePort));
+
         reporter.start(1, TimeUnit.MINUTES);
-        return reporter;
     }
 }
