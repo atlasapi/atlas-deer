@@ -14,6 +14,7 @@ import org.atlasapi.neo4j.AbstractNeo4jIT;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
@@ -34,8 +35,9 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        contentWriter = ContentWriter.create();
-        hierarchyWriter = HierarchyWriter.create(contentWriter);
+        contentWriter = ContentWriter.create(new Timer(), new Timer(), new Timer());
+        hierarchyWriter = HierarchyWriter.create(contentWriter, new Timer()
+        );
     }
 
     @Test

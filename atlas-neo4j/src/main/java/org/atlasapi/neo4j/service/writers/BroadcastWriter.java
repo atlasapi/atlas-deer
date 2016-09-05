@@ -2,10 +2,12 @@ package org.atlasapi.neo4j.service.writers;
 
 import org.atlasapi.content.Item;
 
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.BROADCAST;
 import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.HAS_BROADCAST_RELATIONSHIP;
 import static org.atlasapi.neo4j.service.model.Neo4jBroadcast.CHANNEL_ID;
@@ -15,16 +17,19 @@ import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 
 public class BroadcastWriter extends Neo4jWriter {
 
+    private final Timer timer;
     private final Statement removeAllBroadcastsStatement;
     private final Statement addBroadcastStatement;
 
-    private BroadcastWriter() {
-        removeAllBroadcastsStatement = new Statement(""
+    private BroadcastWriter(Timer timer) {
+        this.timer = checkNotNull(timer);
+
+        this.removeAllBroadcastsStatement = new Statement(""
                 + "MATCH (content { " + CONTENT_ID + ": " + param(CONTENT_ID) + " })"
                 + "-[r:" + HAS_BROADCAST_RELATIONSHIP + "]->(broadcast:" + BROADCAST + ") "
                 + "DELETE r, broadcast");
 
-        addBroadcastStatement = new Statement(""
+        this.addBroadcastStatement = new Statement(""
                 + "MATCH (content { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
                 + "OPTIONAL MATCH "
                 + "(content)"
@@ -41,11 +46,13 @@ public class BroadcastWriter extends Neo4jWriter {
                 + "})");
     }
 
-    public static BroadcastWriter create() {
-        return new BroadcastWriter();
+    public static BroadcastWriter create(Timer timer) {
+        return new BroadcastWriter(timer);
     }
 
     public void write(Item item, StatementRunner runner) {
+        Timer.Context time = timer.time();
+
         if (item.getBroadcasts().isEmpty()) {
             write(
                     removeAllBroadcastsStatement.withParameters(ImmutableMap.of(
@@ -64,5 +71,7 @@ public class BroadcastWriter extends Neo4jWriter {
                     )))
                     .forEach(statement -> write(statement, runner));
         }
+
+        time.stop();
     }
 }
