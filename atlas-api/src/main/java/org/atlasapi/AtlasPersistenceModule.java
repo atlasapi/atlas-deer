@@ -633,6 +633,6 @@ public class AtlasPersistenceModule {
 
     @Bean
     public Neo4jContentStore neo4jContentStore() {
-        return neo4jModule().neo4jContentStore();
+        return neo4jModule().neo4jContentStore(metricsModule.metrics());
     }
 }

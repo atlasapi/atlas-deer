@@ -12,6 +12,7 @@ import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -33,8 +34,8 @@ public class EquivalentSetResolverIT extends AbstractNeo4jIT {
         super.setUp();
 
         equivalentSetResolver = EquivalentSetResolver.create();
-        contentWriter = ContentWriter.create();
-        equivalenceWriter = EquivalenceWriter.create();
+        contentWriter = ContentWriter.create(new Timer(), new Timer(), new Timer());
+        equivalenceWriter = EquivalenceWriter.create(new Timer());
     }
 
     @Test

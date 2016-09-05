@@ -8,12 +8,15 @@ import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
 import org.atlasapi.neo4j.service.writers.HierarchyWriter;
 import org.atlasapi.neo4j.service.writers.LocationWriter;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import org.neo4j.driver.v1.AuthTokens;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Neo4jModule {
+
+    private static final String TIMER_PREFIX = "persistence.neo4j.";
 
     private final Neo4jSessionFactory sessionFactory;
 
@@ -31,26 +34,39 @@ public class Neo4jModule {
         return new Neo4jModule(sessionFactory);
     }
 
-    public Neo4jContentStore neo4jContentStore() {
-        ContentWriter contentWriter = ContentWriter.create();
+    public Neo4jContentStore neo4jContentStore(MetricRegistry metricRegistry) {
+        ContentWriter contentWriter = ContentWriter.create(
+                metricRegistry.timer(TIMER_PREFIX + "contentWriter.writeResourceRef"),
+                metricRegistry.timer(TIMER_PREFIX + "contentWriter.writeContentRef"),
+                metricRegistry.timer(TIMER_PREFIX + "contentWriter.writeContent")
+        );
 
         return Neo4jContentStore.builder()
                 .withSessionFactory(sessionFactory)
-                .withGraphWriter(EquivalenceWriter.create())
+                .withGraphWriter(EquivalenceWriter.create(
+                        metricRegistry.timer(TIMER_PREFIX + "equivalenceWriter.writeEquivalence")
+                ))
                 .withContentWriter(contentWriter)
-                .withBroadcastWriter(BroadcastWriter.create())
-                .withLocationWriter(LocationWriter.create())
-                .withHierarchyWriter(HierarchyWriter.create(contentWriter))
+                .withBroadcastWriter(BroadcastWriter.create(
+                        metricRegistry.timer(TIMER_PREFIX + "broadcastWriter.writeBroadcast")
+                ))
+                .withLocationWriter(LocationWriter.create(
+                        metricRegistry.timer(TIMER_PREFIX + "locationWriter.writeLocation")
+                ))
+                .withHierarchyWriter(HierarchyWriter.create(
+                        contentWriter,
+                        metricRegistry.timer(TIMER_PREFIX + "hierarchyWriter.writeHierarchy")
+                ))
                 .withEquivalentSetResolver(EquivalentSetResolver.create())
                 .build();
+    }
+
+    public void close() {
+        sessionFactory.close();
     }
 
     @VisibleForTesting
     Neo4jSessionFactory sessionFactory() {
         return sessionFactory;
-    }
-
-    public void close() {
-        sessionFactory.close();
     }
 }

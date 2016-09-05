@@ -10,6 +10,7 @@ import org.atlasapi.content.EpisodeRef;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
 
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
@@ -26,14 +27,16 @@ public class HierarchyWriter extends Neo4jWriter {
     private static final String CHILD_ID_PARAM = "childId";
 
     private final ContentWriter contentWriter;
+    private final Timer writeHierarchyTimer;
 
     private final Statement addBrandParentStatement;
     private final Statement addSeriesParentStatement;
     private final Statement removeParentStatement;
     private final Statement removeChildrenStatement;
 
-    private HierarchyWriter(ContentWriter contentWriter) {
+    private HierarchyWriter(ContentWriter contentWriter, Timer writeHierarchyTimer) {
         this.contentWriter = checkNotNull(contentWriter);
+        this.writeHierarchyTimer = checkNotNull(writeHierarchyTimer);
 
         this.addBrandParentStatement = new Statement(""
                 + "MATCH "
@@ -68,8 +71,8 @@ public class HierarchyWriter extends Neo4jWriter {
                 + "DELETE r");
     }
 
-    public static HierarchyWriter create(ContentWriter contentWriter) {
-        return new HierarchyWriter(contentWriter);
+    public static HierarchyWriter create(ContentWriter contentWriter, Timer writeHierarchyTimer) {
+        return new HierarchyWriter(contentWriter, writeHierarchyTimer);
     }
 
     /**
@@ -80,25 +83,41 @@ public class HierarchyWriter extends Neo4jWriter {
      * a brand its link to brand Y should be removed.
      */
     public void writeNoHierarchy(Content content, StatementRunner runner) {
+        Timer.Context time = writeHierarchyTimer.time();
+
         ContentRef contentRef = content.toRef();
 
         removeParent(contentRef, runner);
         removeChildren(contentRef, runner);
+
+        time.stop();
     }
 
     public void writeBrand(Brand brand, StatementRunner runner) {
+        Timer.Context time = writeHierarchyTimer.time();
+
         writeNoHierarchy(brand, runner);
         writeBrandHierarchy(brand, runner);
+
+        time.stop();
     }
 
     public void writeSeries(Series series, StatementRunner runner) {
+        Timer.Context time = writeHierarchyTimer.time();
+
         writeNoHierarchy(series, runner);
         writeSeriesHierarchy(series, runner);
+
+        time.stop();
     }
 
     public void writeEpisode(Episode episode, StatementRunner runner) {
+        Timer.Context time = writeHierarchyTimer.time();
+
         writeNoHierarchy(episode, runner);
         writeEpisodeHierarchy(episode, runner);
+
+        time.stop();
     }
 
     private void writeBrandHierarchy(Brand brand, StatementRunner runner) {
