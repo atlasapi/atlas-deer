@@ -4,6 +4,10 @@ import java.math.BigInteger;
 
 import org.atlasapi.hashing.Hashable;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Function;
 import com.google.common.primitives.Longs;
 
@@ -58,10 +62,13 @@ public final class Id implements Comparable<Id>, Hashable {
         this.longValue = longValue;
     }
 
+    @JsonCreator
     private Id(long longValue) {
         this.longValue = longValue;
     }
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+    @JsonSubTypes.Type(value = Long.class)
     public long longValue() {
         return longValue;
     }

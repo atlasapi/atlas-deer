@@ -9,6 +9,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
+import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
 
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
@@ -33,19 +34,22 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final Timer metricsTimer;
     private final Meter contentNotWrittenMeter;
     private final Meter failureMeter;
+    private final ColumbusTelescopeReporter columbusTelescopeReporter;
 
     private ContentBootstrapWorker(
             ContentResolver contentResolver,
             ContentWriter writer,
             Timer metricsTimer,
             Meter contentNotWrittenMeter,
-            Meter failureMeter
+            Meter failureMeter,
+            ColumbusTelescopeReporter columbusTelescopeReporter
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
         this.metricsTimer = checkNotNull(metricsTimer);
         this.contentNotWrittenMeter = checkNotNull(contentNotWrittenMeter);
         this.failureMeter = checkNotNull(failureMeter);
+        this.columbusTelescopeReporter = checkNotNull(columbusTelescopeReporter);
     }
 
     public static ContentBootstrapWorker create(
@@ -53,10 +57,16 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             ContentWriter writer,
             Timer metricsTimer,
             Meter contentNotWrittenMeter,
-            Meter failureMeter
+            Meter failureMeter,
+            ColumbusTelescopeReporter columbusTelescopeReporter
     ) {
         return new ContentBootstrapWorker(
-                contentResolver, writer, metricsTimer, contentNotWrittenMeter, failureMeter
+                contentResolver,
+                writer,
+                metricsTimer,
+                contentNotWrittenMeter,
+                failureMeter,
+                columbusTelescopeReporter
         );
     }
 
@@ -88,6 +98,9 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
         if (result.written()) {
             log.debug("Bootstrapped content {}", result.toString());
+            columbusTelescopeReporter.reportSuccessfulMigration(
+                    content.getResources().first().get()
+            );
             time.stop();
         } else {
             log.debug("Content has not been written: {}", result.toString());

@@ -5,6 +5,8 @@ import org.atlasapi.content.ContentRef;
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 public class EquivalentContentUpdatedMessage extends AbstractMessage {
@@ -12,21 +14,24 @@ public class EquivalentContentUpdatedMessage extends AbstractMessage {
     private final Long equivalentSetId;
     private final ContentRef contentRef;
 
+    @JsonCreator
     public EquivalentContentUpdatedMessage(
-            String messageId,
-            Timestamp timestamp,
-            Long equivalentSetId,
-            ContentRef contentRef
+            @JsonProperty("messageId") String messageId,
+            @JsonProperty("timestamp") Timestamp timestamp,
+            @JsonProperty("equivalentSetId") Long equivalentSetId,
+            @JsonProperty("contentRef") ContentRef contentRef
     ) {
         super(messageId, timestamp);
         this.equivalentSetId = equivalentSetId;
         this.contentRef = contentRef;
     }
 
+    @JsonProperty("equivalentSetId")
     public Long getEquivalentSetId() {
         return equivalentSetId;
     }
 
+    @JsonProperty("contentRef")
     public ContentRef getContentRef() {
         return contentRef;
     }

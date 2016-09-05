@@ -15,6 +15,8 @@ import org.atlasapi.media.entity.Publisher;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -124,11 +126,12 @@ public final class EquivalenceGraph implements Identifiable {
         private final ImmutableMap<Id, ResourceRef> outgoingEdges;
         private final ImmutableMap<Id, ResourceRef> incomingEdges;
 
+        @JsonCreator
         public Adjacents(
-                ResourceRef subject,
-                DateTime created,
-                Set<ResourceRef> outgoingEdges,
-                Set<ResourceRef> incomingEdges
+                @JsonProperty("subject") ResourceRef subject,
+                @JsonProperty("created") DateTime created,
+                @JsonProperty("outgoingEdges") Set<ResourceRef> outgoingEdges,
+                @JsonProperty("incomingEdges") Set<ResourceRef> incomingEdges
         ) {
             this.subject = checkNotNull(subject);
             this.created = checkNotNull(created);
@@ -168,10 +171,12 @@ public final class EquivalenceGraph implements Identifiable {
             return subject.getSource();
         }
 
+        @JsonProperty("subject")
         public ResourceRef getRef() {
             return subject;
         }
 
+        @JsonProperty("created")
         public DateTime getCreated() {
             return created;
         }
@@ -183,10 +188,12 @@ public final class EquivalenceGraph implements Identifiable {
             );
         }
 
+        @JsonProperty("outgoingEdges")
         public ImmutableSet<ResourceRef> getOutgoingEdges() {
             return ImmutableSet.copyOf(outgoingEdges.values());
         }
 
+        @JsonProperty("incomingEdges")
         public ImmutableSet<ResourceRef> getIncomingEdges() {
             return ImmutableSet.copyOf(incomingEdges.values());
         }
