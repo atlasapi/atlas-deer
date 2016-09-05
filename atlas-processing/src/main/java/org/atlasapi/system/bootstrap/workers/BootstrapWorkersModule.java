@@ -16,9 +16,13 @@ import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
 import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 
+import com.metabroadcast.columbus.telescope.client.IngestTelescopeClientImpl;
+import com.metabroadcast.columbus.telescope.client.TelescopeClient;
+import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
@@ -85,6 +89,9 @@ public class BootstrapWorkersModule {
     private final Boolean organisationBootstrapEnabled =
             Configurer.get("messaging.bootstrap.organisation.changes.enabled").toBoolean();
 
+    private final String columbusTelescopeHost =
+            Configurer.get("reporting.columbus-telescope.host").get();
+
     private final Set<Publisher> ignoredScheduleSources = Sets.difference(
             Publisher.all(),
             ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT)
@@ -115,7 +122,8 @@ public class BootstrapWorkersModule {
                 persistence.contentStore(),
                 metricsModule.metrics().timer("ContentBootstrapWorker"),
                 metricsModule.metrics().meter("ContentBootstrapWorker.notWritten"),
-                metricsModule.metrics().meter("ContentBootstrapWorker.errorRate")
+                metricsModule.metrics().meter("ContentBootstrapWorker.errorRate"),
+                new ColumbusTelescopeReporter(getTelescopeClient())
         );
         return bootstrapQueueFactory()
                 .createConsumer(
@@ -139,7 +147,8 @@ public class BootstrapWorkersModule {
                 persistence.cqlContentStore(),
                 metricsModule.metrics().timer("CqlContentBootstrapWorker"),
                 metricsModule.metrics().meter("CqlContentBootstrapWorker.notWritten"),
-                metricsModule.metrics().meter("CqlContentBootstrapWorker.errorRate")
+                metricsModule.metrics().meter("CqlContentBootstrapWorker.errorRate"),
+                new ColumbusTelescopeReporter(getTelescopeClient())
         );
         return bootstrapQueueFactory()
                 .createConsumer(
@@ -366,5 +375,10 @@ public class BootstrapWorkersModule {
                         persistence.contentStore()
                 )
         );
+    }
+
+    private IngestTelescopeClientImpl getTelescopeClient() {
+        TelescopeClient client = TelescopeClientImpl.create(columbusTelescopeHost);
+        return IngestTelescopeClientImpl.create(client);
     }
 }

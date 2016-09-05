@@ -108,6 +108,10 @@
     </plugins>
   </build>
 
+  <properties>
+    <telescope-client.version>1.0-SNAPSHOT</telescope-client.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -153,6 +157,21 @@
       <groupId>com.rabbitmq</groupId>
       <artifactId>amqp-client</artifactId>
       <version>3.3.5</version>
+    </dependency>
+    <dependency>
+        <groupId>com.metabroadcast.columbus.telescope</groupId>
+        <artifactId>telescope-client</artifactId>
+        <version>${telescope-client.version}</version>
+        <exclusions>
+            <exclusion>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-logging</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-testing</artifactId>
+            </exclusion>
+        </exclusions>
     </dependency>
   </dependencies>
 
