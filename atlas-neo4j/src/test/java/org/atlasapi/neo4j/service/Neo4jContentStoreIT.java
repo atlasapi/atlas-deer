@@ -21,20 +21,7 @@ public class Neo4jContentStoreIT extends AbstractNeo4jIT {
     }
 
     @Test
-    public void creatingIndicesAndConstraintsDoesNotFail() throws Exception {
-        contentStore.createIndicesAndConstraints();
-    }
-
-    @Test
-    public void creatingIndicesAndConstraintsMultipleTimeDoesNotFail() throws Exception {
-        contentStore.createIndicesAndConstraints();
-        contentStore.createIndicesAndConstraints();
-    }
-
-    @Test
     public void createGraphAndResolveEquivalentSet() throws Exception {
-        contentStore.createIndicesAndConstraints();
-
         contentStore.writeEquivalences(
                 new ItemRef(Id.valueOf(0L), Publisher.METABROADCAST, "", DateTime.now()),
                 ImmutableSet.of(

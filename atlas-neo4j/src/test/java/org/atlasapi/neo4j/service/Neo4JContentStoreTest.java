@@ -30,12 +30,10 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.Transaction;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
@@ -81,13 +79,6 @@ public class Neo4JContentStoreTest {
 
         when(sessionFactory.getSession()).thenReturn(session);
         when(session.beginTransaction()).thenReturn(transaction);
-    }
-
-    @Test
-    public void failingToWriteIndicesAndConstraintsDoesNotPropagateException() throws Exception {
-        when(session.run(any(Statement.class))).thenThrow(new RuntimeException());
-
-        contentStore.createIndicesAndConstraints();
     }
 
     @Test
