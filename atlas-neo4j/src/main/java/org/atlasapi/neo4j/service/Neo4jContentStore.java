@@ -31,9 +31,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT;
-import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 
+/**
+ * This stores requires the following index/constraint to be manually generated on the Neo4j
+ * cluster if it does not exist:
+ * <p>
+ * {@code CREATE CONSTRAINT ON (c:Content) ASSERT c.id IS UNIQUE}
+ */
 public class Neo4jContentStore {
 
     private static final Logger log = LoggerFactory.getLogger(Neo4jContentStore.class);
@@ -68,21 +72,6 @@ public class Neo4jContentStore {
 
     public static SessionFactoryStep builder() {
         return new Builder();
-    }
-
-    public void createIndicesAndConstraints() {
-        try (Session session = sessionFactory.getSession()) {
-            // This will also create a unique index on the same property
-            session.run(
-                    "CREATE CONSTRAINT ON (c:" + CONTENT + ") "
-                            + "ASSERT c." + CONTENT_ID + " IS UNIQUE"
-            )
-                    .consume();
-        } catch (Exception e) {
-            // Given Neo4j is not part of the critical infrastructure yet we swallow any
-            // exceptions here to ensure Neo4j failures do not keep Atlas Deer from initialising
-            log.error("Failed to create indices/constraints on Neo4j", e);
-        }
     }
 
     public void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,

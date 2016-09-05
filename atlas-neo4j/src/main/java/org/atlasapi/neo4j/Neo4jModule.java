@@ -34,7 +34,7 @@ public class Neo4jModule {
     public Neo4jContentStore neo4jContentStore() {
         ContentWriter contentWriter = ContentWriter.create();
 
-        Neo4jContentStore neo4jContentStore = Neo4jContentStore.builder()
+        return Neo4jContentStore.builder()
                 .withSessionFactory(sessionFactory)
                 .withGraphWriter(EquivalenceWriter.create())
                 .withContentWriter(contentWriter)
@@ -43,10 +43,6 @@ public class Neo4jModule {
                 .withHierarchyWriter(HierarchyWriter.create(contentWriter))
                 .withEquivalentSetResolver(EquivalentSetResolver.create())
                 .build();
-
-        neo4jContentStore.createIndicesAndConstraints();
-
-        return neo4jContentStore;
     }
 
     @VisibleForTesting
