@@ -1,6 +1,7 @@
 package org.atlasapi.neo4j.service;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Clip;
@@ -23,6 +24,7 @@ import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
 import org.atlasapi.neo4j.service.writers.HierarchyWriter;
 import org.atlasapi.neo4j.service.writers.LocationWriter;
 
+import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import org.neo4j.driver.v1.Session;
@@ -52,6 +54,9 @@ public class Neo4jContentStore {
 
     private final EquivalentSetResolver equivalentSetResolver;
 
+    private final Timer writeEquivalencesTimer;
+    private final Timer writeContentTimer;
+
     private Neo4jContentStore(
             Neo4jSessionFactory sessionFactory,
             EquivalenceWriter graphWriter,
@@ -59,7 +64,9 @@ public class Neo4jContentStore {
             BroadcastWriter broadcastWriter,
             LocationWriter locationWriter,
             HierarchyWriter hierarchyWriter,
-            EquivalentSetResolver equivalentSetResolver
+            EquivalentSetResolver equivalentSetResolver,
+            Timer writeEquivalencesTimer,
+            Timer writeContentTimer
     ) {
         this.sessionFactory = checkNotNull(sessionFactory);
         this.graphWriter = checkNotNull(graphWriter);
@@ -68,6 +75,8 @@ public class Neo4jContentStore {
         this.locationWriter = checkNotNull(locationWriter);
         this.hierarchyWriter = checkNotNull(hierarchyWriter);
         this.equivalentSetResolver = checkNotNull(equivalentSetResolver);
+        this.writeEquivalencesTimer = checkNotNull(writeEquivalencesTimer);
+        this.writeContentTimer = checkNotNull(writeContentTimer);
     }
 
     public static SessionFactoryStep builder() {
@@ -76,46 +85,49 @@ public class Neo4jContentStore {
 
     public void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
             Set<Publisher> sources) {
-        try (
-                Session session = sessionFactory.getSession();
-                Transaction transaction = session.beginTransaction()
-        ) {
-            try {
-                writeEquivalences(subject, assertedAdjacents, sources, transaction);
-                transaction.success();
-            } catch (Exception e) {
-                log.error("Failed to write equivalences", e);
-                transaction.failure();
-                Throwables.propagateIfInstanceOf(e, Neo4jPersistenceException.class);
-                throw Neo4jPersistenceException.create("Failed to write equivalences", e);
-            }
-        }
+        Timer.Context time = writeEquivalencesTimer.time();
+
+        executeInTransaction(
+                transaction -> writeEquivalences(subject, assertedAdjacents, sources, transaction),
+                "write equivalences"
+        );
+
+        time.stop();
     }
 
     public void writeContent(Content content) {
-        try (
-                Session session = sessionFactory.getSession();
-                Transaction transaction = session.beginTransaction()
-        ) {
-            try {
-                writeContent(content, transaction);
-                transaction.success();
-            } catch (Exception e) {
-                log.error("Failed to write content", e);
-                transaction.failure();
-                Throwables.propagateIfInstanceOf(e, Neo4jPersistenceException.class);
-                throw Neo4jPersistenceException.create("Failed to write content", e);
-            }
-        }
+        Timer.Context time = writeContentTimer.time();
+
+        executeInTransaction(
+                transaction -> writeContent(content, transaction),
+                "write content"
+        );
+
+        time.stop();
     }
 
     public ImmutableSet<Id> getEquivalentSet(Id id) {
         try {
             return equivalentSetResolver.getEquivalentSet(id, sessionFactory.getSession());
         } catch (Exception e) {
-            log.error("Failed to get graph for id {}", id, e);
             Throwables.propagateIfInstanceOf(e, Neo4jPersistenceException.class);
             throw Neo4jPersistenceException.create("Failed to get graph for id " + id, e);
+        }
+    }
+
+    private void executeInTransaction(Consumer<Transaction> consumer, String consumerDescription) {
+        try (
+                Session session = sessionFactory.getSession();
+                Transaction transaction = session.beginTransaction()
+        ) {
+            try {
+                consumer.accept(transaction);
+                transaction.success();
+            } catch (Exception e) {
+                transaction.failure();
+                Throwables.propagateIfInstanceOf(e, Neo4jPersistenceException.class);
+                throw Neo4jPersistenceException.create("Failed to " + consumerDescription, e);
+            }
         }
     }
 
@@ -222,7 +234,12 @@ public class Neo4jContentStore {
 
     public interface EquivalentSetResolverStep {
 
-        BuildStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver);
+        TimerStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver);
+    }
+
+    public interface TimerStep {
+
+        BuildStep withTimers(Timer writeEquivalencesTimer, Timer writeContentTimer);
     }
 
     public interface BuildStep {
@@ -230,9 +247,9 @@ public class Neo4jContentStore {
         Neo4jContentStore build();
     }
 
-    public static class Builder
-            implements SessionFactoryStep, GraphWriterStep, ContentWriterStep, BroadcastWriterStep,
-            LocationWriterStep, HierarchyWriterStep, EquivalentSetResolverStep, BuildStep {
+    public static class Builder implements SessionFactoryStep, GraphWriterStep, ContentWriterStep,
+            BroadcastWriterStep, LocationWriterStep, HierarchyWriterStep, EquivalentSetResolverStep,
+            TimerStep, BuildStep {
 
         private Neo4jSessionFactory sessionFactory;
         private EquivalenceWriter graphWriter;
@@ -241,6 +258,8 @@ public class Neo4jContentStore {
         private LocationWriter locationWriter;
         private HierarchyWriter hierarchyWriter;
         private EquivalentSetResolver equivalentSetResolver;
+        private Timer writeEquivalencesTimer;
+        private Timer writeContentTimer;
 
         private Builder() {
         }
@@ -282,8 +301,15 @@ public class Neo4jContentStore {
         }
 
         @Override
-        public BuildStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver) {
+        public TimerStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver) {
             this.equivalentSetResolver = equivalentSetResolver;
+            return this;
+        }
+
+        @Override
+        public BuildStep withTimers(Timer writeEquivalencesTimer, Timer writeContentTimer) {
+            this.writeEquivalencesTimer = writeEquivalencesTimer;
+            this.writeContentTimer = writeContentTimer;
             return this;
         }
 
@@ -296,7 +322,9 @@ public class Neo4jContentStore {
                     this.broadcastWriter,
                     this.locationWriter,
                     this.hierarchyWriter,
-                    this.equivalentSetResolver
+                    this.equivalentSetResolver,
+                    this.writeEquivalencesTimer,
+                    this.writeContentTimer
             );
         }
     }
