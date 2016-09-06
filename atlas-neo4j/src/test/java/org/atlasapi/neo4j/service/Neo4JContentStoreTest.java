@@ -19,6 +19,7 @@ import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
 import org.atlasapi.neo4j.service.writers.HierarchyWriter;
 import org.atlasapi.neo4j.service.writers.LocationWriter;
 
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -72,6 +73,7 @@ public class Neo4JContentStoreTest {
                 .withLocationWriter(locationWriter)
                 .withHierarchyWriter(hierarchyWriter)
                 .withEquivalentSetResolver(equivalentSetResolver)
+                .withTimers(new Timer(), new Timer())
                 .build();
 
         contentRefA = getContentRef(new Item(), 900L, Publisher.METABROADCAST);

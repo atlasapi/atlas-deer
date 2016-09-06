@@ -58,6 +58,10 @@ public class Neo4jModule {
                         metricRegistry.timer(TIMER_PREFIX + "hierarchyWriter.writeHierarchy")
                 ))
                 .withEquivalentSetResolver(EquivalentSetResolver.create())
+                .withTimers(
+                        metricRegistry.timer(TIMER_PREFIX + "contentStore.writeEquivalences"),
+                        metricRegistry.timer(TIMER_PREFIX + "contentStore.writeContent")
+                )
                 .build();
     }
 
