@@ -29,8 +29,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -41,8 +39,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * {@code CREATE CONSTRAINT ON (c:Content) ASSERT c.id IS UNIQUE}
  */
 public class Neo4jContentStore {
-
-    private static final Logger log = LoggerFactory.getLogger(Neo4jContentStore.class);
 
     private final Neo4jSessionFactory sessionFactory;
 
