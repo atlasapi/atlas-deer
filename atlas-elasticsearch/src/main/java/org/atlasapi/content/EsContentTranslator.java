@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
@@ -33,6 +36,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +44,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EsContentTranslator {
+
+    public static final DateTime AVAILABLE_FROM_FOREVER =
+            new DateTime(1900, 1, 1, 0, 0, DateTimeZone.UTC);
+    public static final DateTime AVAILABLE_UNTIL_FOREVER =
+            new DateTime(3000, 1, 1, 0, 0, DateTimeZone.UTC);
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Client esClient;
@@ -106,16 +115,29 @@ public class EsContentTranslator {
     }
 
     private EsLocation toEsLocation(Location location) {
-        Policy policy = location.getPolicy();
+        @SuppressWarnings("ConstantConditions")
+        @Nonnull Policy policy = location.getPolicy();
 
         EsLocation esLocation = new EsLocation();
 
-        if (policy.getAvailabilityStart() != null) {
-            esLocation.availabilityTime(toUtc(policy.getAvailabilityStart()).toDate());
-        }
-        if (policy.getAvailabilityEnd() != null) {
-            esLocation.availabilityEndTime(toUtc(policy.getAvailabilityEnd()).toDate());
-        }
+        DateTime availabilityStart = policy.getAvailabilityStart() != null
+                                     ? policy.getAvailabilityStart()
+                                     : AVAILABLE_FROM_FOREVER;
+
+        DateTime availabilityEnd = policy.getAvailabilityEnd() != null
+                                   ? policy.getAvailabilityEnd()
+                                   : AVAILABLE_UNTIL_FOREVER;
+
+        esLocation.availabilityTime(
+                availabilityStart
+                        .toDateTime(DateTimeZones.UTC)
+                        .toDate()
+        );
+        esLocation.availabilityEndTime(
+                availabilityEnd
+                        .toDateTime(DateTimeZones.UTC)
+                        .toDate()
+        );
 
         esLocation.aliases(location.getAliases());
 
@@ -123,17 +145,12 @@ public class EsContentTranslator {
     }
 
     private Collection<EsLocation> makeESLocations(Content content) {
-        Collection<EsLocation> esLocations = new LinkedList<>();
-        for (Encoding encoding : content.getManifestedAs()) {
-            for (Location location : encoding.getAvailableAt()) {
-                if (location.getPolicy() != null
-                        && location.getPolicy().getAvailabilityStart() != null
-                        && location.getPolicy().getAvailabilityEnd() != null) {
-                    esLocations.add(toEsLocation(location));
-                }
-            }
-        }
-        return esLocations;
+        return content.getManifestedAs()
+                .stream()
+                .flatMap(encoding -> encoding.getAvailableAt().stream())
+                .filter(location -> location.getPolicy() != null)
+                .map(this::toEsLocation)
+                .collect(Collectors.toList());
     }
 
     private Collection<EsTopicMapping> makeESTopics(Content content) {
