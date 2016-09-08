@@ -21,6 +21,12 @@ import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.HAS_BRAND_RELATIONSHIP;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.HAS_SERIES_RELATIONSHIP;
 
+/**
+ * This class creates/updates the hierarchy relationships between brands, series and episodes.
+ * Relationships are only updated "upwards", i.e. from episode to series to brand, but not in the
+ * opposite direction. This is for performance reasons because some large flat brands can have
+ * thousands of episodes and we don't want to have to update all those relationships every time
+ */
 public class HierarchyWriter extends Neo4jWriter {
 
     private static final String PARENT_ID_PARAM = "parentId";
@@ -59,14 +65,14 @@ public class HierarchyWriter extends Neo4jWriter {
         this.removeParentStatement = new Statement(""
                 + "MATCH "
                 + "(parent:"+ CONTENT + ")"
-                + "<-[r:"+ HAS_BRAND_RELATIONSHIP + "|HAS_SERIES]-"
+                + "<-[r:"+ HAS_BRAND_RELATIONSHIP + "|" + HAS_SERIES_RELATIONSHIP + "]-"
                 + "(child:"+ CONTENT + " { " + CONTENT_ID + ": " + param(CHILD_ID_PARAM) + " }) "
                 + "DELETE r");
 
         this.removeChildrenStatement = new Statement(""
                 + "MATCH "
                 + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " })"
-                + "<-[r:"+ HAS_BRAND_RELATIONSHIP + "|HAS_SERIES]-"
+                + "<-[r:"+ HAS_BRAND_RELATIONSHIP + "|" + HAS_SERIES_RELATIONSHIP + "]-"
                 + "(child:"+ CONTENT + ") "
                 + "DELETE r");
     }
@@ -96,8 +102,9 @@ public class HierarchyWriter extends Neo4jWriter {
     public void writeBrand(Brand brand, StatementRunner runner) {
         Timer.Context time = writeHierarchyTimer.time();
 
-        writeNoHierarchy(brand, runner);
-        writeBrandHierarchy(brand, runner);
+        // If this brand used to have a different type (e.g. series) it may have an
+        // existing parent. This removes it since brands can't have a parent
+        removeParent(brand.toRef(), runner);
 
         time.stop();
     }
@@ -105,8 +112,12 @@ public class HierarchyWriter extends Neo4jWriter {
     public void writeSeries(Series series, StatementRunner runner) {
         Timer.Context time = writeHierarchyTimer.time();
 
-        writeNoHierarchy(series, runner);
-        writeSeriesHierarchy(series, runner);
+        removeParent(series.toRef(), runner);
+
+        if (series.getBrandRef() != null) {
+            contentWriter.writeContentRef(series.getBrandRef(), runner);
+            addParent(series.toRef(), series.getBrandRef(), runner);
+        }
 
         time.stop();
     }
@@ -114,45 +125,15 @@ public class HierarchyWriter extends Neo4jWriter {
     public void writeEpisode(Episode episode, StatementRunner runner) {
         Timer.Context time = writeHierarchyTimer.time();
 
-        writeNoHierarchy(episode, runner);
+        // If this episode used to have a different type (e.g. series) it may have had
+        // existing children. This removes them since episodes can't have children.
+        removeChildren(episode.toRef(), runner);
+
+        removeParent(episode.toRef(), runner);
+
         writeEpisodeHierarchy(episode, runner);
 
         time.stop();
-    }
-
-    private void writeBrandHierarchy(Brand brand, StatementRunner runner) {
-        brand.getSeriesRefs()
-                .forEach(seriesRef -> contentWriter.writeContentRef(seriesRef, runner));
-
-        brand.getItemRefs()
-                .forEach(itemRef -> contentWriter.writeContentRef(itemRef, runner));
-
-        BrandRef brandRef = brand.toRef();
-
-        removeChildren(brandRef, runner);
-
-        brand.getSeriesRefs()
-                .forEach(seriesRef -> addParent(seriesRef, brandRef, runner));
-
-        brand.getItemRefs()
-                .forEach(itemRef -> addParent(itemRef, brandRef, runner));
-    }
-
-    private void writeSeriesHierarchy(Series series, StatementRunner runner) {
-        SeriesRef seriesRef = series.toRef();
-
-        if (series.getBrandRef() != null) {
-            contentWriter.writeContentRef(series.getBrandRef(), runner);
-            addParent(seriesRef, series.getBrandRef(), runner);
-        }
-
-        removeChildren(seriesRef, runner);
-
-        series.getItemRefs()
-                .forEach(itemRef -> contentWriter.writeContentRef(itemRef, runner));
-
-        series.getItemRefs()
-                .forEach(itemRef -> addParent(itemRef, seriesRef, runner));
     }
 
     private void writeEpisodeHierarchy(Episode episode, StatementRunner runner) {
