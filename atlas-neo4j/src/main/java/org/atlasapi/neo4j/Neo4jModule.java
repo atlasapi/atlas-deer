@@ -60,7 +60,10 @@ public class Neo4jModule {
                 .withEquivalentSetResolver(EquivalentSetResolver.create())
                 .withTimers(
                         metricRegistry.timer(TIMER_PREFIX + "contentStore.writeEquivalences"),
-                        metricRegistry.timer(TIMER_PREFIX + "contentStore.writeContent")
+                        metricRegistry.timer(TIMER_PREFIX + "contentStore.writeContent"),
+                        metricRegistry.histogram(
+                                TIMER_PREFIX + "contentStore.numOfAssertedEquivEdges"
+                        )
                 )
                 .build();
     }
@@ -70,7 +73,7 @@ public class Neo4jModule {
     }
 
     @VisibleForTesting
-    Neo4jSessionFactory sessionFactory() {
+    public Neo4jSessionFactory sessionFactory() {
         return sessionFactory;
     }
 }

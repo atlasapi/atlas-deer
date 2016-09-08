@@ -24,6 +24,7 @@ import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
 import org.atlasapi.neo4j.service.writers.HierarchyWriter;
 import org.atlasapi.neo4j.service.writers.LocationWriter;
 
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
@@ -52,6 +53,7 @@ public class Neo4jContentStore {
 
     private final Timer writeEquivalencesTimer;
     private final Timer writeContentTimer;
+    private final Histogram numOfAssertedEquivEdgesHistogram;
 
     private Neo4jContentStore(
             Neo4jSessionFactory sessionFactory,
@@ -62,7 +64,8 @@ public class Neo4jContentStore {
             HierarchyWriter hierarchyWriter,
             EquivalentSetResolver equivalentSetResolver,
             Timer writeEquivalencesTimer,
-            Timer writeContentTimer
+            Timer writeContentTimer,
+            Histogram numOfAssertedEquivEdgesHistogram
     ) {
         this.sessionFactory = checkNotNull(sessionFactory);
         this.graphWriter = checkNotNull(graphWriter);
@@ -73,6 +76,7 @@ public class Neo4jContentStore {
         this.equivalentSetResolver = checkNotNull(equivalentSetResolver);
         this.writeEquivalencesTimer = checkNotNull(writeEquivalencesTimer);
         this.writeContentTimer = checkNotNull(writeContentTimer);
+        this.numOfAssertedEquivEdgesHistogram = checkNotNull(numOfAssertedEquivEdgesHistogram);
     }
 
     public static SessionFactoryStep builder() {
@@ -129,6 +133,8 @@ public class Neo4jContentStore {
 
     private void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
             Set<Publisher> sources, Transaction transaction) {
+        numOfAssertedEquivEdgesHistogram.update(assertedAdjacents.size());
+
         contentWriter.writeResourceRef(subject, transaction);
         assertedAdjacents.forEach(
                 resourceRef -> contentWriter.writeResourceRef(resourceRef, transaction)
@@ -235,7 +241,11 @@ public class Neo4jContentStore {
 
     public interface TimerStep {
 
-        BuildStep withTimers(Timer writeEquivalencesTimer, Timer writeContentTimer);
+        BuildStep withTimers(
+                Timer writeEquivalencesTimer,
+                Timer writeContentTimer,
+                Histogram histogram
+        );
     }
 
     public interface BuildStep {
@@ -256,6 +266,7 @@ public class Neo4jContentStore {
         private EquivalentSetResolver equivalentSetResolver;
         private Timer writeEquivalencesTimer;
         private Timer writeContentTimer;
+        private Histogram numOfAssertedEquivEdgesHistogram;
 
         private Builder() {
         }
@@ -303,9 +314,14 @@ public class Neo4jContentStore {
         }
 
         @Override
-        public BuildStep withTimers(Timer writeEquivalencesTimer, Timer writeContentTimer) {
+        public BuildStep withTimers(
+                Timer writeEquivalencesTimer,
+                Timer writeContentTimer,
+                Histogram numOfAssertedEquivEdgesHistogram
+        ) {
             this.writeEquivalencesTimer = writeEquivalencesTimer;
             this.writeContentTimer = writeContentTimer;
+            this.numOfAssertedEquivEdgesHistogram = numOfAssertedEquivEdgesHistogram;
             return this;
         }
 
@@ -320,7 +336,8 @@ public class Neo4jContentStore {
                     this.hierarchyWriter,
                     this.equivalentSetResolver,
                     this.writeEquivalencesTimer,
-                    this.writeContentTimer
+                    this.writeContentTimer,
+                    this.numOfAssertedEquivEdgesHistogram
             );
         }
     }
