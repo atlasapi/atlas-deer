@@ -51,16 +51,34 @@ public class ChannelWriter implements EntityListWriter<Channel> {
     private final NumberToShortStringCodec idCode = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ChannelGroupSummaryWriter channelGroupSummaryWriter;
 
-    public ChannelWriter(
+    private final boolean channelGroupsSummaryAnnotationSupported;
+
+    private ChannelWriter(
             ChannelGroupResolver channelGroupResolver,
             String listName,
             String fieldName,
-            ChannelGroupSummaryWriter channelGroupSummaryWriter
+            ChannelGroupSummaryWriter channelGroupSummaryWriter,
+            boolean channelGroupsSummaryAnnotationSupported
     ) {
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.listName = checkNotNull(listName);
         this.fieldName = checkNotNull(fieldName);
         this.channelGroupSummaryWriter = checkNotNull(channelGroupSummaryWriter);
+        this.channelGroupsSummaryAnnotationSupported = channelGroupsSummaryAnnotationSupported;
+    }
+
+    public static ChannelWriter create(ChannelGroupResolver channelGroupResolver,
+            String listName,
+            String fieldName,
+            ChannelGroupSummaryWriter channelGroupSummaryWriter,
+            boolean channelGroupSummaryAnnotationSupported
+    ) {
+        return new ChannelWriter(channelGroupResolver,
+                listName,
+                fieldName,
+                channelGroupSummaryWriter,
+                channelGroupSummaryAnnotationSupported
+        );
     }
 
     @Nonnull
@@ -88,27 +106,28 @@ public class ChannelWriter implements EntityListWriter<Channel> {
         format.writeField("start_date", entity.getStartDate());
         format.writeField("advertised_from", entity.getAdvertiseFrom());
 
-        if (hasChannelGroupSummaryAnnotation(ctxt)) {
+        if (channelGroupsSummaryAnnotationSupported) {
+            if (hasChannelGroupSummaryAnnotation(ctxt)) {
 
-            ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
-                    .stream()
-                    .map(cg -> cg.getChannelGroup().getId())
-                    .collect(MoreCollectors.toImmutableList());
+                ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
+                        .stream()
+                        .map(cg -> cg.getChannelGroup().getId())
+                        .collect(MoreCollectors.toImmutableList());
 
-            List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
-                    Futures.get(
-                            channelGroupResolver.resolveIds(channelGroupIds),
-                            1, TimeUnit.MINUTES,
-                            IOException.class
-                    ).getResources().spliterator(), false
-            )
-                    .map(ChannelGroup::toSummary)
-                    .collect(MoreCollectors.toImmutableList());
+                List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
+                        Futures.get(
+                                channelGroupResolver.resolveIds(channelGroupIds),
+                                1, TimeUnit.MINUTES,
+                                IOException.class
+                        ).getResources().spliterator(), false
+                )
+                        .map(ChannelGroup::toSummary)
+                        .collect(MoreCollectors.toImmutableList());
 
-            format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
+                format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
 
+            }
         }
-
     }
 
     @Nonnull
