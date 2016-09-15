@@ -562,24 +562,21 @@ public class QueryWebModule {
     }
 
     private ChannelWriter channelWriterGroupSummaryAnnotationSupported() {
-        return ChannelWriter.create(
-                channelGroupResolver,
-                "channels",
-                "channel",
-                new ChannelGroupSummaryWriter(idCodec()),
-                true
-
-        );
+        return ChannelWriter.builder()
+                .channelGroupResolver(channelGroupResolver)
+                .listName("channels")
+                .fieldName("channel")
+                .channelGroupSummaryWriter(new ChannelGroupSummaryWriter(idCodec()))
+                .buildWithGroupSummaryAnnotationSupported();
     }
 
     private ChannelWriter channelWriterGroupSummaryAnnotationNotSupported() {
-        return ChannelWriter.create(
-                channelGroupResolver,
-                "channels",
-                "channel",
-                new ChannelGroupSummaryWriter(idCodec()),
-                false
-        );
+        return ChannelWriter.builder()
+                .channelGroupResolver(channelGroupResolver)
+                .listName("channels")
+                .fieldName("channel")
+                .channelGroupSummaryWriter(new ChannelGroupSummaryWriter(idCodec()))
+                .buildWithGroupSummaryAnnotationNotSupported();
     }
 
     private ChannelGroupListWriter channelGroupListWriter() {

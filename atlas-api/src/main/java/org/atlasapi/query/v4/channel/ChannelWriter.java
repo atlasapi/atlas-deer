@@ -1,6 +1,7 @@
 package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
@@ -31,6 +32,9 @@ import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import org.apache.http.HttpRequest;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;
@@ -67,18 +71,8 @@ public class ChannelWriter implements EntityListWriter<Channel> {
         this.channelGroupsSummaryAnnotationSupported = channelGroupsSummaryAnnotationSupported;
     }
 
-    public static ChannelWriter create(ChannelGroupResolver channelGroupResolver,
-            String listName,
-            String fieldName,
-            ChannelGroupSummaryWriter channelGroupSummaryWriter,
-            boolean channelGroupSummaryAnnotationSupported
-    ) {
-        return new ChannelWriter(channelGroupResolver,
-                listName,
-                fieldName,
-                channelGroupSummaryWriter,
-                channelGroupSummaryAnnotationSupported
-        );
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Nonnull
@@ -143,5 +137,61 @@ public class ChannelWriter implements EntityListWriter<Channel> {
                         .splitToList(
                                 ctxt.getRequest().getParameter("annotations")
                         ).contains(Annotation.CHANNEL_GROUPS_SUMMARY.toKey());
+    }
+
+    public static class Builder {
+
+        private ChannelGroupResolver channelGroupResolver;
+        private String listName;
+        private String fieldName;
+        private ChannelGroupSummaryWriter channelGroupSummaryWriter;
+        private boolean channelGroupSummaryAnnotationSupported;
+
+        public Builder() {
+        }
+
+        public Builder channelGroupResolver(
+                ChannelGroupResolver channelGroupResolver
+        ) {
+            this.channelGroupResolver = channelGroupResolver;
+            return this;
+        }
+
+        public Builder listName(String listName) {
+            this.listName = listName;
+            return this;
+        }
+
+        public Builder fieldName(String fieldName) {
+            this.fieldName = fieldName;
+            return this;
+        }
+
+        public Builder channelGroupSummaryWriter(
+                ChannelGroupSummaryWriter channelGroupSummaryWriter
+        ) {
+            this.channelGroupSummaryWriter = channelGroupSummaryWriter;
+            return this;
+        }
+
+        public ChannelWriter buildWithGroupSummaryAnnotationNotSupported() {
+            this.channelGroupSummaryAnnotationSupported = false;
+            return this.build();
+        }
+
+        public ChannelWriter buildWithGroupSummaryAnnotationSupported() {
+            this.channelGroupSummaryAnnotationSupported = true;
+            return this.build();
+        }
+
+        private ChannelWriter build() {
+            return new ChannelWriter(
+                    channelGroupResolver,
+                    listName,
+                    fieldName,
+                    channelGroupSummaryWriter,
+                    channelGroupSummaryAnnotationSupported
+            );
+        }
     }
 }
