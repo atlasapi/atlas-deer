@@ -561,22 +561,13 @@ public class QueryWebModule {
         );
     }
 
-    private ChannelWriter channelWriterGroupSummaryAnnotationSupported() {
-        return ChannelWriter.builder()
-                .channelGroupResolver(channelGroupResolver)
-                .listName("channels")
-                .fieldName("channel")
-                .channelGroupSummaryWriter(new ChannelGroupSummaryWriter(idCodec()))
-                .buildWithGroupSummaryAnnotationSupported();
-    }
-
-    private ChannelWriter channelWriterGroupSummaryAnnotationNotSupported() {
-        return ChannelWriter.builder()
-                .channelGroupResolver(channelGroupResolver)
-                .listName("channels")
-                .fieldName("channel")
-                .channelGroupSummaryWriter(new ChannelGroupSummaryWriter(idCodec()))
-                .buildWithGroupSummaryAnnotationNotSupported();
+    private ChannelWriter channelWriter() {
+        return new ChannelWriter(
+                channelGroupResolver,
+                "channels",
+                "channel",
+                new ChannelGroupSummaryWriter(idCodec())
+        );
     }
 
     private ChannelGroupListWriter channelGroupListWriter() {
@@ -586,7 +577,7 @@ public class QueryWebModule {
                         CHANNELS,
                         new ChannelGroupChannelsAnnotation(
                                 new ChannelGroupChannelWriter(
-                                        channelWriterGroupSummaryAnnotationNotSupported()
+                                        channelWriter()
                                 ),
                                 channelResolver
                         ),
@@ -603,7 +594,7 @@ public class QueryWebModule {
                 .register(
                         ADVERTISED_CHANNELS,
                         new ChannelGroupAdvertisedChannelsAnnotation(new ChannelGroupChannelWriter(
-                                channelWriterGroupSummaryAnnotationNotSupported()), channelResolver)
+                                channelWriter()), channelResolver)
                 )
                 .build());
     }
@@ -1121,12 +1112,7 @@ public class QueryWebModule {
     protected EntityListWriter<Channel> channelListWriter() {
         return new ChannelListWriter(
                 AnnotationRegistry.<Channel>builder()
-                        .registerDefault(
-                                CHANNEL,
-                                new ChannelAnnotation(
-                                        channelWriterGroupSummaryAnnotationSupported()
-                                )
-                        )
+                        .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))
                         .register(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
                         .register(
                                 CHANNEL_GROUPS,
@@ -1141,18 +1127,12 @@ public class QueryWebModule {
                         )
                         .register(
                                 PARENT,
-                                new ParentChannelAnnotation(
-                                        channelWriterGroupSummaryAnnotationSupported(),
-                                        channelResolver
-                                ),
+                                new ParentChannelAnnotation(channelWriter(), channelResolver),
                                 CHANNEL
                         )
                         .register(
                                 VARIATIONS,
-                                new ChannelVariationAnnotation(
-                                        channelResolver,
-                                        channelWriterGroupSummaryAnnotationSupported()
-                                ),
+                                new ChannelVariationAnnotation(channelResolver, channelWriter()),
                                 CHANNEL
                         )
                         .build());
