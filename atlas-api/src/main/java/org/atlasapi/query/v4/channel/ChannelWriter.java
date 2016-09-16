@@ -1,6 +1,7 @@
 package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
@@ -31,6 +32,9 @@ import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import org.apache.http.HttpRequest;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;
@@ -51,16 +55,24 @@ public class ChannelWriter implements EntityListWriter<Channel> {
     private final NumberToShortStringCodec idCode = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ChannelGroupSummaryWriter channelGroupSummaryWriter;
 
-    public ChannelWriter(
+    private final boolean channelGroupsSummaryAnnotationSupported;
+
+    private ChannelWriter(
             ChannelGroupResolver channelGroupResolver,
             String listName,
             String fieldName,
-            ChannelGroupSummaryWriter channelGroupSummaryWriter
+            ChannelGroupSummaryWriter channelGroupSummaryWriter,
+            boolean channelGroupsSummaryAnnotationSupported
     ) {
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.listName = checkNotNull(listName);
         this.fieldName = checkNotNull(fieldName);
         this.channelGroupSummaryWriter = checkNotNull(channelGroupSummaryWriter);
+        this.channelGroupsSummaryAnnotationSupported = channelGroupsSummaryAnnotationSupported;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Nonnull
@@ -88,27 +100,28 @@ public class ChannelWriter implements EntityListWriter<Channel> {
         format.writeField("start_date", entity.getStartDate());
         format.writeField("advertised_from", entity.getAdvertiseFrom());
 
-        if (hasChannelGroupSummaryAnnotation(ctxt)) {
+        if (channelGroupsSummaryAnnotationSupported) {
+            if (hasChannelGroupSummaryAnnotation(ctxt)) {
 
-            ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
-                    .stream()
-                    .map(cg -> cg.getChannelGroup().getId())
-                    .collect(MoreCollectors.toImmutableList());
+                ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
+                        .stream()
+                        .map(cg -> cg.getChannelGroup().getId())
+                        .collect(MoreCollectors.toImmutableList());
 
-            List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
-                    Futures.get(
-                            channelGroupResolver.resolveIds(channelGroupIds),
-                            1, TimeUnit.MINUTES,
-                            IOException.class
-                    ).getResources().spliterator(), false
-            )
-                    .map(ChannelGroup::toSummary)
-                    .collect(MoreCollectors.toImmutableList());
+                List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
+                        Futures.get(
+                                channelGroupResolver.resolveIds(channelGroupIds),
+                                1, TimeUnit.MINUTES,
+                                IOException.class
+                        ).getResources().spliterator(), false
+                )
+                        .map(ChannelGroup::toSummary)
+                        .collect(MoreCollectors.toImmutableList());
 
-            format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
+                format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
 
+            }
         }
-
     }
 
     @Nonnull
@@ -124,5 +137,61 @@ public class ChannelWriter implements EntityListWriter<Channel> {
                         .splitToList(
                                 ctxt.getRequest().getParameter("annotations")
                         ).contains(Annotation.CHANNEL_GROUPS_SUMMARY.toKey());
+    }
+
+    public static class Builder {
+
+        private ChannelGroupResolver channelGroupResolver;
+        private String listName;
+        private String fieldName;
+        private ChannelGroupSummaryWriter channelGroupSummaryWriter;
+        private boolean channelGroupSummaryAnnotationSupported;
+
+        public Builder() {
+        }
+
+        public Builder channelGroupResolver(
+                ChannelGroupResolver channelGroupResolver
+        ) {
+            this.channelGroupResolver = channelGroupResolver;
+            return this;
+        }
+
+        public Builder listName(String listName) {
+            this.listName = listName;
+            return this;
+        }
+
+        public Builder fieldName(String fieldName) {
+            this.fieldName = fieldName;
+            return this;
+        }
+
+        public Builder channelGroupSummaryWriter(
+                ChannelGroupSummaryWriter channelGroupSummaryWriter
+        ) {
+            this.channelGroupSummaryWriter = channelGroupSummaryWriter;
+            return this;
+        }
+
+        public ChannelWriter buildWithGroupSummaryAnnotationNotSupported() {
+            this.channelGroupSummaryAnnotationSupported = false;
+            return this.build();
+        }
+
+        public ChannelWriter buildWithGroupSummaryAnnotationSupported() {
+            this.channelGroupSummaryAnnotationSupported = true;
+            return this.build();
+        }
+
+        private ChannelWriter build() {
+            return new ChannelWriter(
+                    channelGroupResolver,
+                    listName,
+                    fieldName,
+                    channelGroupSummaryWriter,
+                    channelGroupSummaryAnnotationSupported
+            );
+        }
     }
 }
