@@ -52,16 +52,12 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         this.listName = checkNotNull(listName);
         this.codec = checkNotNull(codec);
         this.channelResolver = checkNotNull(channelResolver);
-        this.channelWriter = ChannelWriter.builder()
-                .channelGroupResolver(channelGroupResolver)
-                .listName("channels")
-                .fieldName("channel")
-                .channelGroupSummaryWriter(
-                        new ChannelGroupSummaryWriter(
-                                new SubstitutionTableNumberCodec()
-                        )
-                )
-                .buildWithGroupSummaryAnnotationSupported();
+        this.channelWriter = new ChannelWriter(
+                channelGroupResolver,
+                "channels",
+                "channel",
+                new ChannelGroupSummaryWriter(new SubstitutionTableNumberCodec())
+        );
     }
 
     public static BroadcastWriter create(
