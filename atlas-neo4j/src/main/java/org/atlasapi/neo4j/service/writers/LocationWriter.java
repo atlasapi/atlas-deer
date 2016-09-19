@@ -7,7 +7,6 @@ import org.atlasapi.content.Location;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
@@ -15,7 +14,6 @@ import org.joda.time.DateTimeZone;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 import static org.atlasapi.neo4j.service.model.Neo4jLocation.END_DATE_TIME;
 import static org.atlasapi.neo4j.service.model.Neo4jLocation.HAS_LOCATION_RELATIONSHIP;
@@ -29,13 +27,10 @@ public class LocationWriter extends Neo4jWriter {
     public static final DateTime AVAILABLE_UNTIL_FOREVER =
             new DateTime(3000, 1, 1, 0, 0, DateTimeZone.UTC);
 
-    private final Timer timer;
     private final Statement removeAllLocationsStatement;
     private final Statement addLocationStatement;
 
-    private LocationWriter(Timer timer) {
-        this.timer = checkNotNull(timer);
-
+    private LocationWriter() {
         this.removeAllLocationsStatement = new Statement(""
                 + "MATCH (content { " + CONTENT_ID + ": " + param(CONTENT_ID) + " })"
                 + "-[r:" + HAS_LOCATION_RELATIONSHIP + "]->(location:" + LOCATION + ") "
@@ -53,13 +48,11 @@ public class LocationWriter extends Neo4jWriter {
                 + " })");
     }
 
-    public static LocationWriter create(Timer timer) {
-        return new LocationWriter(timer);
+    public static LocationWriter create() {
+        return new LocationWriter();
     }
 
     public void write(Content content, StatementRunner runner) {
-        Timer.Context time = timer.time();
-
         ImmutableSet<Location> locations = content.getManifestedAs()
                 .stream()
                 .flatMap(encoding -> encoding.getAvailableAt().stream())
@@ -84,8 +77,6 @@ public class LocationWriter extends Neo4jWriter {
                     )))
                     .forEach(statement -> write(statement, runner));
         }
-
-        time.stop();
     }
 
     private String getAvailabilityStart(Location location) {

@@ -7,12 +7,10 @@ import org.atlasapi.content.Episode;
 import org.atlasapi.content.Series;
 import org.atlasapi.entity.ResourceRef;
 
-import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_EPISODE_NUMBER;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
@@ -22,20 +20,13 @@ import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_TYPE;
 
 public class ContentWriter extends Neo4jWriter {
 
-    private final Timer resourceRefTimer;
-    private final Timer contentRefTimer;
-    private final Timer contentTimer;
     private final Statement writeResourceRefStatement;
     private final Statement writeContentRefStatement;
     private final Statement writeContentStatement;
     private final Statement writeSeriesStatement;
     private final Statement writeEpisodeStatement;
 
-    private ContentWriter(Timer resourceRefTimer, Timer contentRefTimer, Timer contentTimer) {
-        this.resourceRefTimer = checkNotNull(resourceRefTimer);
-        this.contentRefTimer = checkNotNull(contentRefTimer);
-        this.contentTimer = checkNotNull(contentTimer);
-
+    private ContentWriter() {
         this.writeResourceRefStatement = new Statement(""
                 + "MERGE (content:" + CONTENT
                 + " { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
@@ -75,17 +66,11 @@ public class ContentWriter extends Neo4jWriter {
                 + "content." + CONTENT_EPISODE_NUMBER + " = " + param(CONTENT_EPISODE_NUMBER));
     }
 
-    public static ContentWriter create(
-            Timer resourceRefTimer,
-            Timer contentRefTimer,
-            Timer contentTimer
-    ) {
-        return new ContentWriter(resourceRefTimer, contentRefTimer, contentTimer);
+    public static ContentWriter create() {
+        return new ContentWriter();
     }
 
     public void writeResourceRef(ResourceRef resourceRef, StatementRunner runner) {
-        Timer.Context time = resourceRefTimer.time();
-
         ImmutableMap<String, Object> statementParameters = ImmutableMap.of(
                 CONTENT_ID, resourceRef.getId().longValue(),
                 CONTENT_SOURCE, resourceRef.getSource().key()
@@ -95,13 +80,9 @@ public class ContentWriter extends Neo4jWriter {
                 writeResourceRefStatement.withParameters(statementParameters),
                 runner
         );
-
-        time.stop();
     }
 
     public void writeContentRef(ContentRef contentRef, StatementRunner runner) {
-        Timer.Context time = contentRefTimer.time();
-
         ImmutableMap<String, Object> statementParameters = ImmutableMap.of(
                 CONTENT_ID, contentRef.getId().longValue(),
                 CONTENT_SOURCE, contentRef.getSource().key(),
@@ -112,13 +93,9 @@ public class ContentWriter extends Neo4jWriter {
                 writeContentRefStatement.withParameters(statementParameters),
                 runner
         );
-
-        time.stop();
     }
 
     public void writeSeries(Series series, StatementRunner runner) {
-        Timer.Context time = contentTimer.time();
-
         ImmutableMap<String, Object> commonParameters = getCommonParameters(series);
 
         if (series.getSeriesNumber() != null) {
@@ -135,13 +112,9 @@ public class ContentWriter extends Neo4jWriter {
                     runner
             );
         }
-
-        time.stop();
     }
 
     public void writeEpisode(Episode episode, StatementRunner runner) {
-        Timer.Context time = contentTimer.time();
-
         ImmutableMap<String, Object> commonParameters = getCommonParameters(episode);
 
         if (episode.getEpisodeNumber() != null) {
@@ -160,20 +133,14 @@ public class ContentWriter extends Neo4jWriter {
                     runner
             );
         }
-
-        time.stop();
     }
 
     public void writeContent(Content content, StatementRunner runner) {
-        Timer.Context time = contentTimer.time();
-
         ImmutableMap<String, Object> commonParameters = getCommonParameters(content);
         write(
                 writeContentStatement.withParameters(commonParameters),
                 runner
         );
-
-        time.stop();
     }
 
     private ImmutableMap<String, Object> getCommonParameters(Content content) {

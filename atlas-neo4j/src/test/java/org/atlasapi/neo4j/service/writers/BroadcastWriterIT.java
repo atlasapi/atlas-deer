@@ -6,7 +6,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.AbstractNeo4jIT;
 
-import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
@@ -28,8 +27,8 @@ public class BroadcastWriterIT extends AbstractNeo4jIT {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        contentWriter = ContentWriter.create(new Timer(), new Timer(), new Timer());
-        broadcastWriter = BroadcastWriter.create(new Timer());
+        contentWriter = ContentWriter.create();
+        broadcastWriter = BroadcastWriter.create();
     }
 
     @Test

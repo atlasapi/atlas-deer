@@ -24,7 +24,8 @@ import org.atlasapi.neo4j.service.writers.EquivalenceWriter;
 import org.atlasapi.neo4j.service.writers.HierarchyWriter;
 import org.atlasapi.neo4j.service.writers.LocationWriter;
 
-import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
@@ -41,6 +42,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class Neo4jContentStore {
 
+    private static final String TIMER_PREFIX = "persistence.neo4j.contentStore.timer.";
+    private static final String METER_PREFIX = "persistence.neo4j.contentStore.meter.";
+
+    private static final String WRITE_EQUIV_TIMER_PREFIX = TIMER_PREFIX + "writeEquivalences.";
+    private static final String WRITE_CONTENT_TIMER_PREFIX = TIMER_PREFIX + "writeContent.";
+
+    private static final String WRITE_EQUIV_METER_PREFIX = METER_PREFIX + "writeEquivalences.";
+    private static final String WRITE_CONTENT_METER_PREFIX = METER_PREFIX + "writeContent.";
+
     private final Neo4jSessionFactory sessionFactory;
 
     private final EquivalenceWriter graphWriter;
@@ -51,9 +61,21 @@ public class Neo4jContentStore {
 
     private final EquivalentSetResolver equivalentSetResolver;
 
-    private final Timer writeEquivalencesTimer;
-    private final Timer writeContentTimer;
-    private final Histogram numOfAssertedEquivEdgesHistogram;
+    private final Timer writeEquivalencesOverallTimer;
+    private final Timer writeEquivalencesStartTransactionTimer;
+    private final Timer writeEquivalencesContentRefsTimer;
+    private final Timer writeEquivalencesEquivalencesTimer;
+    private final Timer writeEquivalencesEndTransactionTimer;
+    private final Meter writeEquivalencesFailureMeter;
+
+    private final Timer writeContentOverallTimer;
+    private final Timer writeContentStartTransactionTimer;
+    private final Timer writeContentContentTimer;
+    private final Timer writeContentHierarchyTimer;
+    private final Timer writeContentLocationTimer;
+    private final Timer writeContentBroadcastTimer;
+    private final Timer writeContentEndTransactionTimer;
+    private final Meter writeContentFailureMeter;
 
     private Neo4jContentStore(
             Neo4jSessionFactory sessionFactory,
@@ -63,9 +85,7 @@ public class Neo4jContentStore {
             LocationWriter locationWriter,
             HierarchyWriter hierarchyWriter,
             EquivalentSetResolver equivalentSetResolver,
-            Timer writeEquivalencesTimer,
-            Timer writeContentTimer,
-            Histogram numOfAssertedEquivEdgesHistogram
+            MetricRegistry metricRegistry
     ) {
         this.sessionFactory = checkNotNull(sessionFactory);
         this.graphWriter = checkNotNull(graphWriter);
@@ -74,9 +94,50 @@ public class Neo4jContentStore {
         this.locationWriter = checkNotNull(locationWriter);
         this.hierarchyWriter = checkNotNull(hierarchyWriter);
         this.equivalentSetResolver = checkNotNull(equivalentSetResolver);
-        this.writeEquivalencesTimer = checkNotNull(writeEquivalencesTimer);
-        this.writeContentTimer = checkNotNull(writeContentTimer);
-        this.numOfAssertedEquivEdgesHistogram = checkNotNull(numOfAssertedEquivEdgesHistogram);
+
+        this.writeEquivalencesOverallTimer = metricRegistry.timer(
+                WRITE_EQUIV_TIMER_PREFIX + "overall"
+        );
+        this.writeEquivalencesStartTransactionTimer = metricRegistry.timer(
+                WRITE_EQUIV_TIMER_PREFIX + "startTransaction"
+        );
+        this.writeEquivalencesContentRefsTimer = metricRegistry.timer(
+                WRITE_EQUIV_TIMER_PREFIX + "contentRefs"
+        );
+        this.writeEquivalencesEquivalencesTimer = metricRegistry.timer(
+                WRITE_EQUIV_TIMER_PREFIX + "equivalences"
+        );
+        this.writeEquivalencesEndTransactionTimer = metricRegistry.timer(
+                WRITE_EQUIV_TIMER_PREFIX + "endTransaction"
+        );
+        this.writeEquivalencesFailureMeter = metricRegistry.meter(
+                WRITE_EQUIV_METER_PREFIX + "failure"
+        );
+
+        this.writeContentOverallTimer = metricRegistry.timer(
+                WRITE_CONTENT_TIMER_PREFIX + "overall"
+        );
+        this.writeContentStartTransactionTimer = metricRegistry.timer(
+                WRITE_CONTENT_TIMER_PREFIX + "startTransaction"
+        );
+        this.writeContentContentTimer = metricRegistry.timer(
+                WRITE_CONTENT_TIMER_PREFIX + "content"
+        );
+        this.writeContentHierarchyTimer = metricRegistry.timer(
+                WRITE_CONTENT_TIMER_PREFIX + "hierarchy"
+        );
+        this.writeContentLocationTimer = metricRegistry.timer(
+                WRITE_CONTENT_TIMER_PREFIX + "location"
+        );
+        this.writeContentBroadcastTimer = metricRegistry.timer(
+                WRITE_CONTENT_TIMER_PREFIX + "broadcast"
+        );
+        this.writeContentEndTransactionTimer = metricRegistry.timer(
+                WRITE_CONTENT_TIMER_PREFIX + "endTransaction"
+        );
+        this.writeContentFailureMeter = metricRegistry.meter(
+                WRITE_CONTENT_METER_PREFIX + "failure"
+        );
     }
 
     public static SessionFactoryStep builder() {
@@ -85,22 +146,28 @@ public class Neo4jContentStore {
 
     public void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
             Set<Publisher> sources) {
-        Timer.Context time = writeEquivalencesTimer.time();
+        Timer.Context time = writeEquivalencesOverallTimer.time();
 
         executeInTransaction(
                 transaction -> writeEquivalences(subject, assertedAdjacents, sources, transaction),
-                "write equivalences"
+                "write equivalences",
+                writeEquivalencesStartTransactionTimer,
+                writeEquivalencesEndTransactionTimer,
+                writeEquivalencesFailureMeter
         );
 
         time.stop();
     }
 
     public void writeContent(Content content) {
-        Timer.Context time = writeContentTimer.time();
+        Timer.Context time = writeContentOverallTimer.time();
 
         executeInTransaction(
                 transaction -> writeContent(content, transaction),
-                "write content"
+                "write content",
+                writeContentStartTransactionTimer,
+                writeContentEndTransactionTimer,
+                writeContentFailureMeter
         );
 
         time.stop();
@@ -115,16 +182,34 @@ public class Neo4jContentStore {
         }
     }
 
-    private void executeInTransaction(Consumer<Transaction> consumer, String consumerDescription) {
+    private void executeInTransaction(
+            Consumer<Transaction> consumer,
+            String consumerDescription,
+            Timer startTransactionTimer,
+            Timer endTransactionTimer,
+            Meter failureMeter
+    ) {
+        Timer.Context startTransactionTimerContext = startTransactionTimer.time();
         try (
                 Session session = sessionFactory.getSession();
                 Transaction transaction = session.beginTransaction()
         ) {
+            startTransactionTimerContext.stop();
+
             try {
                 consumer.accept(transaction);
-                transaction.success();
+
+                runWithTiming(
+                        transaction::success,
+                        startTransactionTimer
+                );
             } catch (Exception e) {
-                transaction.failure();
+                runWithTiming(
+                        transaction::failure,
+                        endTransactionTimer
+                );
+                failureMeter.mark();
+
                 Throwables.propagateIfInstanceOf(e, Neo4jPersistenceException.class);
                 throw Neo4jPersistenceException.create("Failed to " + consumerDescription, e);
             }
@@ -133,14 +218,22 @@ public class Neo4jContentStore {
 
     private void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
             Set<Publisher> sources, Transaction transaction) {
-        numOfAssertedEquivEdgesHistogram.update(assertedAdjacents.size());
-
-        contentWriter.writeResourceRef(subject, transaction);
-        assertedAdjacents.forEach(
-                resourceRef -> contentWriter.writeResourceRef(resourceRef, transaction)
+        runWithTiming(
+                () -> {
+                    contentWriter.writeResourceRef(subject, transaction);
+                    assertedAdjacents.forEach(
+                            resourceRef -> contentWriter.writeResourceRef(resourceRef, transaction)
+                    );
+                },
+                writeEquivalencesContentRefsTimer
         );
 
-        graphWriter.writeEquivalences(subject, assertedAdjacents, sources, transaction);
+        runWithTiming(
+                () -> graphWriter.writeEquivalences(
+                        subject, assertedAdjacents, sources, transaction
+                ),
+                writeEquivalencesEquivalencesTimer
+        );
     }
 
     private void writeContent(Content content, Transaction transaction) {
@@ -148,26 +241,56 @@ public class Neo4jContentStore {
 
             @Override
             public Void visit(Brand brand) {
-                contentWriter.writeContent(content, transaction);
-                hierarchyWriter.writeBrand(brand, transaction);
-                locationWriter.write(brand, transaction);
+                runWithTiming(
+                        () -> contentWriter.writeContent(content, transaction),
+                        writeContentContentTimer
+                );
+                runWithTiming(
+                        () -> hierarchyWriter.writeBrand(brand, transaction),
+                        writeContentHierarchyTimer
+                );
+                runWithTiming(
+                        () -> locationWriter.write(brand, transaction),
+                        writeContentLocationTimer
+                );
                 return null;
             }
 
             @Override
             public Void visit(Series series) {
-                contentWriter.writeSeries(series, transaction);
-                hierarchyWriter.writeSeries(series, transaction);
-                locationWriter.write(series, transaction);
+                runWithTiming(
+                        () -> contentWriter.writeSeries(series, transaction),
+                        writeContentContentTimer
+                );
+                runWithTiming(
+                        () -> hierarchyWriter.writeSeries(series, transaction),
+                        writeContentHierarchyTimer
+                );
+                runWithTiming(
+                        () -> locationWriter.write(series, transaction),
+                        writeContentLocationTimer
+                );
                 return null;
             }
 
             @Override
             public Void visit(Episode episode) {
-                contentWriter.writeEpisode(episode, transaction);
-                hierarchyWriter.writeEpisode(episode, transaction);
-                locationWriter.write(episode, transaction);
-                broadcastWriter.write(episode, transaction);
+                runWithTiming(
+                        () -> contentWriter.writeEpisode(episode, transaction),
+                        writeContentContentTimer
+                );
+                runWithTiming(
+                        () -> hierarchyWriter.writeEpisode(episode, transaction),
+                        writeContentHierarchyTimer
+                );
+                runWithTiming(
+                        () -> locationWriter.write(episode, transaction),
+                        writeContentLocationTimer
+                );
+                runWithTiming(
+                        () -> broadcastWriter.write(episode, transaction),
+                        writeContentBroadcastTimer
+                );
                 return null;
             }
 
@@ -198,10 +321,28 @@ public class Neo4jContentStore {
     }
 
     private void writeItem(Item item, Transaction transaction) {
-        contentWriter.writeContent(item, transaction);
-        hierarchyWriter.writeNoHierarchy(item, transaction);
-        locationWriter.write(item, transaction);
-        broadcastWriter.write(item, transaction);
+        runWithTiming(
+                () -> contentWriter.writeContent(item, transaction),
+                writeContentContentTimer
+        );
+        runWithTiming(
+                () -> hierarchyWriter.writeNoHierarchy(item, transaction),
+                writeContentHierarchyTimer
+        );
+        runWithTiming(
+                () -> locationWriter.write(item, transaction),
+                writeContentLocationTimer
+        );
+        runWithTiming(
+                () -> broadcastWriter.write(item, transaction),
+                writeContentBroadcastTimer
+        );
+    }
+
+    private void runWithTiming(TimeableAction writer, Timer timer) {
+        Timer.Context time = timer.time();
+        writer.invoke();
+        time.stop();
     }
 
     public interface SessionFactoryStep {
@@ -236,16 +377,12 @@ public class Neo4jContentStore {
 
     public interface EquivalentSetResolverStep {
 
-        TimerStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver);
+        MetricStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver);
     }
 
-    public interface TimerStep {
+    public interface MetricStep {
 
-        BuildStep withTimers(
-                Timer writeEquivalencesTimer,
-                Timer writeContentTimer,
-                Histogram histogram
-        );
+        BuildStep withMetricsRegistry(MetricRegistry metricRegistry);
     }
 
     public interface BuildStep {
@@ -255,7 +392,7 @@ public class Neo4jContentStore {
 
     public static class Builder implements SessionFactoryStep, GraphWriterStep, ContentWriterStep,
             BroadcastWriterStep, LocationWriterStep, HierarchyWriterStep, EquivalentSetResolverStep,
-            TimerStep, BuildStep {
+            MetricStep, BuildStep {
 
         private Neo4jSessionFactory sessionFactory;
         private EquivalenceWriter graphWriter;
@@ -264,9 +401,7 @@ public class Neo4jContentStore {
         private LocationWriter locationWriter;
         private HierarchyWriter hierarchyWriter;
         private EquivalentSetResolver equivalentSetResolver;
-        private Timer writeEquivalencesTimer;
-        private Timer writeContentTimer;
-        private Histogram numOfAssertedEquivEdgesHistogram;
+        private MetricRegistry metricRegistry;
 
         private Builder() {
         }
@@ -308,20 +443,14 @@ public class Neo4jContentStore {
         }
 
         @Override
-        public TimerStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver) {
+        public MetricStep withEquivalentSetResolver(EquivalentSetResolver equivalentSetResolver) {
             this.equivalentSetResolver = equivalentSetResolver;
             return this;
         }
 
         @Override
-        public BuildStep withTimers(
-                Timer writeEquivalencesTimer,
-                Timer writeContentTimer,
-                Histogram numOfAssertedEquivEdgesHistogram
-        ) {
-            this.writeEquivalencesTimer = writeEquivalencesTimer;
-            this.writeContentTimer = writeContentTimer;
-            this.numOfAssertedEquivEdgesHistogram = numOfAssertedEquivEdgesHistogram;
+        public BuildStep withMetricsRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
             return this;
         }
 
@@ -335,10 +464,13 @@ public class Neo4jContentStore {
                     this.locationWriter,
                     this.hierarchyWriter,
                     this.equivalentSetResolver,
-                    this.writeEquivalencesTimer,
-                    this.writeContentTimer,
-                    this.numOfAssertedEquivEdgesHistogram
+                    this.metricRegistry
             );
         }
+    }
+
+    private interface TimeableAction {
+
+        void invoke();
     }
 }
