@@ -10,7 +10,6 @@ import org.atlasapi.content.EpisodeRef;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
 
-import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
@@ -33,16 +32,14 @@ public class HierarchyWriter extends Neo4jWriter {
     private static final String CHILD_ID_PARAM = "childId";
 
     private final ContentWriter contentWriter;
-    private final Timer writeHierarchyTimer;
 
     private final Statement addBrandParentStatement;
     private final Statement addSeriesParentStatement;
     private final Statement removeParentStatement;
     private final Statement removeChildrenStatement;
 
-    private HierarchyWriter(ContentWriter contentWriter, Timer writeHierarchyTimer) {
+    private HierarchyWriter(ContentWriter contentWriter) {
         this.contentWriter = checkNotNull(contentWriter);
-        this.writeHierarchyTimer = checkNotNull(writeHierarchyTimer);
 
         this.addBrandParentStatement = new Statement(""
                 + "MATCH "
@@ -77,8 +74,8 @@ public class HierarchyWriter extends Neo4jWriter {
                 + "DELETE r");
     }
 
-    public static HierarchyWriter create(ContentWriter contentWriter, Timer writeHierarchyTimer) {
-        return new HierarchyWriter(contentWriter, writeHierarchyTimer);
+    public static HierarchyWriter create(ContentWriter contentWriter) {
+        return new HierarchyWriter(contentWriter);
     }
 
     /**
@@ -89,42 +86,28 @@ public class HierarchyWriter extends Neo4jWriter {
      * a brand its link to brand Y should be removed.
      */
     public void writeNoHierarchy(Content content, StatementRunner runner) {
-        Timer.Context time = writeHierarchyTimer.time();
-
         ContentRef contentRef = content.toRef();
 
         removeParent(contentRef, runner);
         removeChildren(contentRef, runner);
-
-        time.stop();
     }
 
     public void writeBrand(Brand brand, StatementRunner runner) {
-        Timer.Context time = writeHierarchyTimer.time();
-
         // If this brand used to have a different type (e.g. series) it may have an
         // existing parent. This removes it since brands can't have a parent
         removeParent(brand.toRef(), runner);
-
-        time.stop();
     }
 
     public void writeSeries(Series series, StatementRunner runner) {
-        Timer.Context time = writeHierarchyTimer.time();
-
         removeParent(series.toRef(), runner);
 
         if (series.getBrandRef() != null) {
             contentWriter.writeContentRef(series.getBrandRef(), runner);
             addParent(series.toRef(), series.getBrandRef(), runner);
         }
-
-        time.stop();
     }
 
     public void writeEpisode(Episode episode, StatementRunner runner) {
-        Timer.Context time = writeHierarchyTimer.time();
-
         // If this episode used to have a different type (e.g. series) it may have had
         // existing children. This removes them since episodes can't have children.
         removeChildren(episode.toRef(), runner);
@@ -132,8 +115,6 @@ public class HierarchyWriter extends Neo4jWriter {
         removeParent(episode.toRef(), runner);
 
         writeEpisodeHierarchy(episode, runner);
-
-        time.stop();
     }
 
     private void writeEpisodeHierarchy(Episode episode, StatementRunner runner) {

@@ -8,7 +8,6 @@ import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.codahale.metrics.Timer;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -16,7 +15,6 @@ import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_SOURCE;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.IS_EQUIVALENT_RELATIONSHIP;
@@ -28,13 +26,10 @@ public class EquivalenceWriter extends Neo4jWriter {
     private static final String ASSERTED_IDS_PARAM = "assertedIds";
     private static final String SOURCES_PARAM = "sources";
 
-    private final Timer writeEquivalencesTimer;
     private final Statement writeEdgeStatement;
     private final Statement removeNotAssertedEdgesStatement;
 
-    private EquivalenceWriter(Timer writeEquivalencesTimer) {
-        this.writeEquivalencesTimer = checkNotNull(writeEquivalencesTimer);
-
+    private EquivalenceWriter() {
         this.writeEdgeStatement = new Statement(""
                 + "MATCH "
                 + "(sourceNode { " + CONTENT_ID + ": " + param(SOURCE_ID_PARAM) + " }), "
@@ -50,8 +45,8 @@ public class EquivalenceWriter extends Neo4jWriter {
                 + "DELETE r");
     }
 
-    public static EquivalenceWriter create(Timer writeEquivalencesTimer) {
-        return new EquivalenceWriter(writeEquivalencesTimer);
+    public static EquivalenceWriter create() {
+        return new EquivalenceWriter();
     }
 
     public void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
@@ -62,8 +57,6 @@ public class EquivalenceWriter extends Neo4jWriter {
                         + "sources. Subject: <" + subject + ">, "
                         + "sources: <" + Joiner.on(", ").join(sources) + ">."
         );
-
-        Timer.Context time = writeEquivalencesTimer.time();
 
         // Add an edge from the subject to itself since a resource is always equivalent to itself
         ImmutableSet<ResourceRef> assertedAdjacentsPlusSubject = ImmutableSet.<ResourceRef>builder()
@@ -77,8 +70,6 @@ public class EquivalenceWriter extends Neo4jWriter {
                 sources,
                 runner
         );
-
-        time.stop();
     }
 
     private void writeOutgoingEdges(Id sourceNodeId, Set<ResourceRef> assertedAdjacents,

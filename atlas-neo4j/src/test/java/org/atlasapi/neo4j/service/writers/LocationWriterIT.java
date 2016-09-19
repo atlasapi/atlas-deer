@@ -10,7 +10,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.AbstractNeo4jIT;
 
-import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
@@ -32,8 +31,8 @@ public class LocationWriterIT extends AbstractNeo4jIT {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        contentWriter = ContentWriter.create(new Timer(), new Timer(), new Timer());
-        locationWriter = LocationWriter.create(new Timer());
+        contentWriter = ContentWriter.create();
+        locationWriter = LocationWriter.create();
     }
 
     @Test

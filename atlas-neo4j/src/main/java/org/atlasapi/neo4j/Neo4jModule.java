@@ -16,8 +16,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Neo4jModule {
 
-    private static final String TIMER_PREFIX = "persistence.neo4j.";
-
     private final Neo4jSessionFactory sessionFactory;
 
     private Neo4jModule(Neo4jSessionFactory sessionFactory) {
@@ -35,36 +33,17 @@ public class Neo4jModule {
     }
 
     public Neo4jContentStore neo4jContentStore(MetricRegistry metricRegistry) {
-        ContentWriter contentWriter = ContentWriter.create(
-                metricRegistry.timer(TIMER_PREFIX + "contentWriter.writeResourceRef"),
-                metricRegistry.timer(TIMER_PREFIX + "contentWriter.writeContentRef"),
-                metricRegistry.timer(TIMER_PREFIX + "contentWriter.writeContent")
-        );
+        ContentWriter contentWriter = ContentWriter.create();
 
         return Neo4jContentStore.builder()
                 .withSessionFactory(sessionFactory)
-                .withGraphWriter(EquivalenceWriter.create(
-                        metricRegistry.timer(TIMER_PREFIX + "equivalenceWriter.writeEquivalence")
-                ))
+                .withGraphWriter(EquivalenceWriter.create())
                 .withContentWriter(contentWriter)
-                .withBroadcastWriter(BroadcastWriter.create(
-                        metricRegistry.timer(TIMER_PREFIX + "broadcastWriter.writeBroadcast")
-                ))
-                .withLocationWriter(LocationWriter.create(
-                        metricRegistry.timer(TIMER_PREFIX + "locationWriter.writeLocation")
-                ))
-                .withHierarchyWriter(HierarchyWriter.create(
-                        contentWriter,
-                        metricRegistry.timer(TIMER_PREFIX + "hierarchyWriter.writeHierarchy")
-                ))
+                .withBroadcastWriter(BroadcastWriter.create())
+                .withLocationWriter(LocationWriter.create())
+                .withHierarchyWriter(HierarchyWriter.create(contentWriter))
                 .withEquivalentSetResolver(EquivalentSetResolver.create())
-                .withTimers(
-                        metricRegistry.timer(TIMER_PREFIX + "contentStore.writeEquivalences"),
-                        metricRegistry.timer(TIMER_PREFIX + "contentStore.writeContent"),
-                        metricRegistry.histogram(
-                                TIMER_PREFIX + "contentStore.numOfAssertedEquivEdges"
-                        )
-                )
+                .withMetricsRegistry(metricRegistry)
                 .build();
     }
 
