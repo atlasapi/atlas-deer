@@ -201,7 +201,7 @@ public class Neo4jContentStore {
 
                 runWithTiming(
                         transaction::success,
-                        startTransactionTimer
+                        endTransactionTimer
                 );
             } catch (Exception e) {
                 runWithTiming(
