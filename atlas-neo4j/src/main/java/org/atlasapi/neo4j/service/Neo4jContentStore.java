@@ -190,6 +190,8 @@ public class Neo4jContentStore {
             Meter failureMeter
     ) {
         Timer.Context startTransactionTimerContext = startTransactionTimer.time();
+        Timer.Context endTransactionTimerContext;
+
         try (
                 Session session = sessionFactory.getSession();
                 Transaction transaction = session.beginTransaction()
@@ -199,21 +201,18 @@ public class Neo4jContentStore {
             try {
                 consumer.accept(transaction);
 
-                runWithTiming(
-                        transaction::success,
-                        endTransactionTimer
-                );
+                endTransactionTimerContext = endTransactionTimer.time();
+                transaction.success();
             } catch (Exception e) {
-                runWithTiming(
-                        transaction::failure,
-                        endTransactionTimer
-                );
+                transaction.failure();
                 failureMeter.mark();
 
                 Throwables.propagateIfInstanceOf(e, Neo4jPersistenceException.class);
                 throw Neo4jPersistenceException.create("Failed to " + consumerDescription, e);
             }
         }
+
+        endTransactionTimerContext.stop();
     }
 
     private void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
@@ -339,9 +338,9 @@ public class Neo4jContentStore {
         );
     }
 
-    private void runWithTiming(TimeableAction writer, Timer timer) {
+    private void runWithTiming(TimeableAction action, Timer timer) {
         Timer.Context time = timer.time();
-        writer.invoke();
+        action.invoke();
         time.stop();
     }
 
