@@ -33,15 +33,13 @@ public class Neo4jModule {
     }
 
     public Neo4jContentStore neo4jContentStore(MetricRegistry metricRegistry) {
-        ContentWriter contentWriter = ContentWriter.create();
-
         return Neo4jContentStore.builder()
                 .withSessionFactory(sessionFactory)
                 .withGraphWriter(EquivalenceWriter.create())
-                .withContentWriter(contentWriter)
+                .withContentWriter(ContentWriter.create())
                 .withBroadcastWriter(BroadcastWriter.create())
                 .withLocationWriter(LocationWriter.create())
-                .withHierarchyWriter(HierarchyWriter.create(contentWriter))
+                .withHierarchyWriter(HierarchyWriter.create())
                 .withEquivalentSetResolver(EquivalentSetResolver.create())
                 .withMetricsRegistry(metricRegistry)
                 .build();

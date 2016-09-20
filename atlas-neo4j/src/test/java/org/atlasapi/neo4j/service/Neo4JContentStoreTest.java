@@ -9,6 +9,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.Song;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.Neo4jSessionFactory;
 import org.atlasapi.neo4j.service.model.Neo4jPersistenceException;
@@ -93,8 +94,6 @@ public class Neo4JContentStoreTest {
 
         InOrder order = inOrder(session, transaction, contentWriter, equivalenceWriter);
         order.verify(session).beginTransaction();
-        order.verify(contentWriter).writeResourceRef(contentRefA, transaction);
-        order.verify(contentWriter).writeResourceRef(contentRefB, transaction);
         order.verify(equivalenceWriter).writeEquivalences(
                 contentRefA,
                 ImmutableSet.of(contentRefB),
@@ -108,19 +107,24 @@ public class Neo4JContentStoreTest {
 
     @Test
     public void writeEquivalencesFailsTransactionIfDelegateFails() throws Exception {
+        ImmutableSet<ResourceRef> adjacents = ImmutableSet.of(contentRefB);
+        ImmutableSet<Publisher> sources = ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC);
+
         doThrow(new RuntimeException())
-                .when(contentWriter).writeResourceRef(contentRefA, transaction);
+                .when(equivalenceWriter)
+                .writeEquivalences(contentRefA, adjacents, sources, transaction);
 
         exception.expect(Neo4jPersistenceException.class);
         contentStore.writeEquivalences(
                 contentRefA,
-                ImmutableSet.of(contentRefB),
-                ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC)
+                adjacents,
+                sources
         );
 
         InOrder order = inOrder(session, transaction, contentWriter, equivalenceWriter);
         order.verify(session).beginTransaction();
-        order.verify(contentWriter).writeResourceRef(contentRefA, transaction);
+        order.verify(equivalenceWriter)
+                .writeEquivalences(contentRefA, adjacents, sources, transaction);
         order.verify(transaction).failure();
         order.verify(transaction).close();
         order.verify(session).close();

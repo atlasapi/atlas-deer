@@ -62,19 +62,9 @@ public class Neo4jContentStore {
     private final EquivalentSetResolver equivalentSetResolver;
 
     private final Timer writeEquivalencesOverallTimer;
-    private final Timer writeEquivalencesStartTransactionTimer;
-    private final Timer writeEquivalencesContentRefsTimer;
-    private final Timer writeEquivalencesEquivalencesTimer;
-    private final Timer writeEquivalencesEndTransactionTimer;
     private final Meter writeEquivalencesFailureMeter;
 
     private final Timer writeContentOverallTimer;
-    private final Timer writeContentStartTransactionTimer;
-    private final Timer writeContentContentTimer;
-    private final Timer writeContentHierarchyTimer;
-    private final Timer writeContentLocationTimer;
-    private final Timer writeContentBroadcastTimer;
-    private final Timer writeContentEndTransactionTimer;
     private final Meter writeContentFailureMeter;
 
     private Neo4jContentStore(
@@ -98,42 +88,12 @@ public class Neo4jContentStore {
         this.writeEquivalencesOverallTimer = metricRegistry.timer(
                 WRITE_EQUIV_TIMER_PREFIX + "overall"
         );
-        this.writeEquivalencesStartTransactionTimer = metricRegistry.timer(
-                WRITE_EQUIV_TIMER_PREFIX + "startTransaction"
-        );
-        this.writeEquivalencesContentRefsTimer = metricRegistry.timer(
-                WRITE_EQUIV_TIMER_PREFIX + "contentRefs"
-        );
-        this.writeEquivalencesEquivalencesTimer = metricRegistry.timer(
-                WRITE_EQUIV_TIMER_PREFIX + "equivalences"
-        );
-        this.writeEquivalencesEndTransactionTimer = metricRegistry.timer(
-                WRITE_EQUIV_TIMER_PREFIX + "endTransaction"
-        );
         this.writeEquivalencesFailureMeter = metricRegistry.meter(
                 WRITE_EQUIV_METER_PREFIX + "failure"
         );
 
         this.writeContentOverallTimer = metricRegistry.timer(
                 WRITE_CONTENT_TIMER_PREFIX + "overall"
-        );
-        this.writeContentStartTransactionTimer = metricRegistry.timer(
-                WRITE_CONTENT_TIMER_PREFIX + "startTransaction"
-        );
-        this.writeContentContentTimer = metricRegistry.timer(
-                WRITE_CONTENT_TIMER_PREFIX + "content"
-        );
-        this.writeContentHierarchyTimer = metricRegistry.timer(
-                WRITE_CONTENT_TIMER_PREFIX + "hierarchy"
-        );
-        this.writeContentLocationTimer = metricRegistry.timer(
-                WRITE_CONTENT_TIMER_PREFIX + "location"
-        );
-        this.writeContentBroadcastTimer = metricRegistry.timer(
-                WRITE_CONTENT_TIMER_PREFIX + "broadcast"
-        );
-        this.writeContentEndTransactionTimer = metricRegistry.timer(
-                WRITE_CONTENT_TIMER_PREFIX + "endTransaction"
         );
         this.writeContentFailureMeter = metricRegistry.meter(
                 WRITE_CONTENT_METER_PREFIX + "failure"
@@ -149,10 +109,10 @@ public class Neo4jContentStore {
         Timer.Context time = writeEquivalencesOverallTimer.time();
 
         executeInTransaction(
-                transaction -> writeEquivalences(subject, assertedAdjacents, sources, transaction),
+                transaction -> graphWriter.writeEquivalences(
+                        subject, assertedAdjacents, sources, transaction
+                ),
                 "write equivalences",
-                writeEquivalencesStartTransactionTimer,
-                writeEquivalencesEndTransactionTimer,
                 writeEquivalencesFailureMeter
         );
 
@@ -165,8 +125,6 @@ public class Neo4jContentStore {
         executeInTransaction(
                 transaction -> writeContent(content, transaction),
                 "write content",
-                writeContentStartTransactionTimer,
-                writeContentEndTransactionTimer,
                 writeContentFailureMeter
         );
 
@@ -185,23 +143,14 @@ public class Neo4jContentStore {
     private void executeInTransaction(
             Consumer<Transaction> consumer,
             String consumerDescription,
-            Timer startTransactionTimer,
-            Timer endTransactionTimer,
             Meter failureMeter
     ) {
-        Timer.Context startTransactionTimerContext = startTransactionTimer.time();
-        Timer.Context endTransactionTimerContext;
-
         try (
                 Session session = sessionFactory.getSession();
                 Transaction transaction = session.beginTransaction()
         ) {
-            startTransactionTimerContext.stop();
-
             try {
                 consumer.accept(transaction);
-
-                endTransactionTimerContext = endTransactionTimer.time();
                 transaction.success();
             } catch (Exception e) {
                 transaction.failure();
@@ -211,28 +160,6 @@ public class Neo4jContentStore {
                 throw Neo4jPersistenceException.create("Failed to " + consumerDescription, e);
             }
         }
-
-        endTransactionTimerContext.stop();
-    }
-
-    private void writeEquivalences(ResourceRef subject, Set<ResourceRef> assertedAdjacents,
-            Set<Publisher> sources, Transaction transaction) {
-        runWithTiming(
-                () -> {
-                    contentWriter.writeResourceRef(subject, transaction);
-                    assertedAdjacents.forEach(
-                            resourceRef -> contentWriter.writeResourceRef(resourceRef, transaction)
-                    );
-                },
-                writeEquivalencesContentRefsTimer
-        );
-
-        runWithTiming(
-                () -> graphWriter.writeEquivalences(
-                        subject, assertedAdjacents, sources, transaction
-                ),
-                writeEquivalencesEquivalencesTimer
-        );
     }
 
     private void writeContent(Content content, Transaction transaction) {
@@ -240,56 +167,26 @@ public class Neo4jContentStore {
 
             @Override
             public Void visit(Brand brand) {
-                runWithTiming(
-                        () -> contentWriter.writeContent(content, transaction),
-                        writeContentContentTimer
-                );
-                runWithTiming(
-                        () -> hierarchyWriter.writeBrand(brand, transaction),
-                        writeContentHierarchyTimer
-                );
-                runWithTiming(
-                        () -> locationWriter.write(brand, transaction),
-                        writeContentLocationTimer
-                );
+                contentWriter.writeContent(content, transaction);
+                hierarchyWriter.writeBrand(brand, transaction);
+                locationWriter.write(brand, transaction);
                 return null;
             }
 
             @Override
             public Void visit(Series series) {
-                runWithTiming(
-                        () -> contentWriter.writeSeries(series, transaction),
-                        writeContentContentTimer
-                );
-                runWithTiming(
-                        () -> hierarchyWriter.writeSeries(series, transaction),
-                        writeContentHierarchyTimer
-                );
-                runWithTiming(
-                        () -> locationWriter.write(series, transaction),
-                        writeContentLocationTimer
-                );
+                contentWriter.writeSeries(series, transaction);
+                hierarchyWriter.writeSeries(series, transaction);
+                locationWriter.write(series, transaction);
                 return null;
             }
 
             @Override
             public Void visit(Episode episode) {
-                runWithTiming(
-                        () -> contentWriter.writeEpisode(episode, transaction),
-                        writeContentContentTimer
-                );
-                runWithTiming(
-                        () -> hierarchyWriter.writeEpisode(episode, transaction),
-                        writeContentHierarchyTimer
-                );
-                runWithTiming(
-                        () -> locationWriter.write(episode, transaction),
-                        writeContentLocationTimer
-                );
-                runWithTiming(
-                        () -> broadcastWriter.write(episode, transaction),
-                        writeContentBroadcastTimer
-                );
+                contentWriter.writeEpisode(episode, transaction);
+                hierarchyWriter.writeEpisode(episode, transaction);
+                locationWriter.write(episode, transaction);
+                broadcastWriter.write(episode, transaction);
                 return null;
             }
 
@@ -320,28 +217,10 @@ public class Neo4jContentStore {
     }
 
     private void writeItem(Item item, Transaction transaction) {
-        runWithTiming(
-                () -> contentWriter.writeContent(item, transaction),
-                writeContentContentTimer
-        );
-        runWithTiming(
-                () -> hierarchyWriter.writeNoHierarchy(item, transaction),
-                writeContentHierarchyTimer
-        );
-        runWithTiming(
-                () -> locationWriter.write(item, transaction),
-                writeContentLocationTimer
-        );
-        runWithTiming(
-                () -> broadcastWriter.write(item, transaction),
-                writeContentBroadcastTimer
-        );
-    }
-
-    private void runWithTiming(TimeableAction action, Timer timer) {
-        Timer.Context time = timer.time();
-        action.invoke();
-        time.stop();
+        contentWriter.writeContent(item, transaction);
+        hierarchyWriter.writeNoHierarchy(item, transaction);
+        locationWriter.write(item, transaction);
+        broadcastWriter.write(item, transaction);
     }
 
     public interface SessionFactoryStep {
@@ -466,10 +345,5 @@ public class Neo4jContentStore {
                     this.metricRegistry
             );
         }
-    }
-
-    private interface TimeableAction {
-
-        void invoke();
     }
 }
