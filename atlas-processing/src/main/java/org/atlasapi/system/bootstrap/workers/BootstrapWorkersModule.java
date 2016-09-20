@@ -16,13 +16,20 @@ import org.atlasapi.messaging.v3.ScheduleUpdateMessage;
 import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.ChannelIntervalScheduleBootstrapTaskFactory;
+import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
 import org.atlasapi.system.bootstrap.EquivalenceWritingChannelIntervalScheduleBootstrapTaskFactory;
 import org.atlasapi.system.bootstrap.ScheduleBootstrapWithContentMigrationTaskFactory;
 
+import com.metabroadcast.columbus.telescope.client.TelescopeClientImpl;
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -85,6 +92,10 @@ public class BootstrapWorkersModule {
     private final Boolean organisationBootstrapEnabled =
             Configurer.get("messaging.bootstrap.organisation.changes.enabled").toBoolean();
 
+    private final String columbusTelescopeHost =
+            Configurer.get("reporting.columbus-telescope.host").get();
+    private final String reportingEnvironment = Configurer.getPlatform();
+
     private final Set<Publisher> ignoredScheduleSources = Sets.difference(
             Publisher.all(),
             ImmutableSet.of(Publisher.PA, Publisher.BBC_NITRO, Publisher.BT_BLACKOUT)
@@ -110,12 +121,18 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer contentBootstrapWorker() {
+        MetricRegistry metricRegistry = metricsModule.metrics();
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
                 persistence.contentStore(),
-                metricsModule.metrics().timer("ContentBootstrapWorker"),
-                metricsModule.metrics().meter("ContentBootstrapWorker.notWritten"),
-                metricsModule.metrics().meter("ContentBootstrapWorker.errorRate")
+                metricRegistry.timer("ContentBootstrapWorker"),
+                metricRegistry.meter("ContentBootstrapWorker.notWritten"),
+                metricRegistry.meter("ContentBootstrapWorker.errorRate"),
+                ColumbusTelescopeReporter.create(
+                        getTelescopeClient(),
+                        reportingEnvironment,
+                        getObjectMapper()
+                )
         );
         return bootstrapQueueFactory()
                 .createConsumer(
@@ -134,12 +151,18 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer cqlContentBootstrapWorker() {
+        MetricRegistry metricRegistry = metricsModule.metrics();
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
                 persistence.cqlContentStore(),
-                metricsModule.metrics().timer("CqlContentBootstrapWorker"),
-                metricsModule.metrics().meter("CqlContentBootstrapWorker.notWritten"),
-                metricsModule.metrics().meter("CqlContentBootstrapWorker.errorRate")
+                metricRegistry.timer("CqlContentBootstrapWorker"),
+                metricRegistry.meter("CqlContentBootstrapWorker.notWritten"),
+                metricRegistry.meter("CqlContentBootstrapWorker.errorRate"),
+                ColumbusTelescopeReporter.create(
+                        getTelescopeClient(),
+                        reportingEnvironment,
+                        getObjectMapper()
+                )
         );
         return bootstrapQueueFactory()
                 .createConsumer(
@@ -366,5 +389,19 @@ public class BootstrapWorkersModule {
                         persistence.contentStore()
                 )
         );
+    }
+
+    private TelescopeClientImpl getTelescopeClient() {
+        return TelescopeClientImpl.create(columbusTelescopeHost);
+    }
+
+    private ObjectMapper getObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.registerModule(new JodaModule());
+        mapper.registerModule(new GuavaModule());
+        mapper.registerModule(new JacksonMessageSerializer.MessagingModule());
+
+        return mapper;
     }
 }

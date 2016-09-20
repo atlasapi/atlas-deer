@@ -1,6 +1,7 @@
 package org.atlasapi.messaging;
 
 import java.io.IOException;
+import java.util.TimeZone;
 
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.BroadcastRef;
@@ -11,6 +12,7 @@ import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.SongRef;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
@@ -27,13 +29,19 @@ import com.metabroadcast.common.time.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleDeserializers;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.base.Objects;
@@ -176,6 +184,7 @@ public class JacksonMessageSerializer<M extends Message> implements MessageSeria
         mapper.setVisibility(PropertyAccessor.GETTER, Visibility.NONE);
         mapper.setVisibility(PropertyAccessor.IS_GETTER, Visibility.NONE);
         mapper.setVisibility(PropertyAccessor.SETTER, Visibility.NONE);
+
         return mapper;
     }
 
@@ -215,5 +224,4 @@ public class JacksonMessageSerializer<M extends Message> implements MessageSeria
                 .addValue(cls.getSimpleName())
                 .toString();
     }
-
 }

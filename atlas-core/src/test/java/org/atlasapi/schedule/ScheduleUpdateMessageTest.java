@@ -11,9 +11,12 @@ import com.metabroadcast.common.time.Timestamp;
 
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 
 public class ScheduleUpdateMessageTest {
@@ -26,13 +29,13 @@ public class ScheduleUpdateMessageTest {
 
         ScheduleUpdate update = new ScheduleUpdate(
                 Publisher.METABROADCAST,
-                ScheduleRef.forChannel(Id.valueOf(1), new Interval(1, 2))
+                ScheduleRef.forChannel(Id.valueOf(1), new Interval(1, 2, DateTimeZone.UTC))
                         .addEntry(
                                 Id.valueOf(1),
-                                new BroadcastRef("a", Id.valueOf(1), new Interval(1, 2))
+                                new BroadcastRef("a", Id.valueOf(1), new Interval(1, 2, DateTimeZone.UTC))
                         )
                         .build(),
-                ImmutableSet.of(new BroadcastRef("b", Id.valueOf(2), new Interval(1, 2)))
+                ImmutableSet.of(new BroadcastRef("b", Id.valueOf(2), new Interval(1, 2, DateTimeZone.UTC)))
         );
         ScheduleUpdateMessage msg
                 = new ScheduleUpdateMessage(
@@ -70,10 +73,10 @@ public class ScheduleUpdateMessageTest {
 
         ScheduleUpdate update = new ScheduleUpdate(
                 Publisher.METABROADCAST,
-                ScheduleRef.forChannel(Id.valueOf(1), new Interval(1, 2))
+                ScheduleRef.forChannel(Id.valueOf(1), new Interval(1, 2, DateTimeZone.UTC))
                         .addEntry(
                                 Id.valueOf(1),
-                                new BroadcastRef("a", Id.valueOf(1), new Interval(1, 2))
+                                new BroadcastRef("a", Id.valueOf(1), new Interval(1, 2, DateTimeZone.UTC))
                         )
                         .build(),
                 ImmutableSet.<BroadcastRef>of()

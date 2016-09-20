@@ -110,6 +110,10 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.metabroadcast.columbus.telescope</groupId>
+      <artifactId>telescope-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
     </dependency>

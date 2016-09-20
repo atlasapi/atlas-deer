@@ -133,10 +133,9 @@ public class EquivalenceGraphUpdateMessageTest {
     private void testSerializingMessageWith(EquivalenceGraphUpdate update)
             throws MessagingException {
         EquivalenceGraphUpdateMessage egum =
-                new EquivalenceGraphUpdateMessage("message", Timestamp.of(0), update);
+                new EquivalenceGraphUpdateMessage("message", Timestamp.of(DateTime.now().getMillisOfDay()), update);
 
         byte[] serialized = serializer.serialize(egum);
-
         EquivalenceGraphUpdateMessage deserialized = serializer.deserialize(serialized);
 
         assertThat(deserialized, is(egum));

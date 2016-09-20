@@ -5,6 +5,8 @@ import org.atlasapi.entity.ResourceRef;
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 /**
@@ -14,12 +16,17 @@ public class ResourceUpdatedMessage extends AbstractMessage {
 
     private ResourceRef updatedResource;
 
-    public ResourceUpdatedMessage(String messageId, Timestamp timestamp,
-            ResourceRef updatedResource) {
+    @JsonCreator
+    public ResourceUpdatedMessage(
+            @JsonProperty("messageId") String messageId,
+            @JsonProperty("timestamp") Timestamp timestamp,
+            @JsonProperty("updatedResource") ResourceRef updatedResource
+    ) {
         super(messageId, timestamp);
         this.updatedResource = updatedResource;
     }
 
+    @JsonProperty("updatedResource")
     public ResourceRef getUpdatedResource() {
         return updatedResource;
     }
