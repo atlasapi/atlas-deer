@@ -27,7 +27,6 @@ public class EquivalenceWriterIT extends AbstractNeo4jIT {
     @Rule public ExpectedException exception = ExpectedException.none();
 
     private EquivalenceWriter equivalenceWriter;
-    private ContentWriter contentWriter;
 
     private ContentRef contentRefA;
     private ContentRef contentRefB;
@@ -38,15 +37,10 @@ public class EquivalenceWriterIT extends AbstractNeo4jIT {
     public void setUp() throws Exception {
         super.setUp();
         equivalenceWriter = EquivalenceWriter.create();
-        contentWriter = ContentWriter.create();
 
         contentRefA = getContentRef(new Item(), 900L, Publisher.METABROADCAST);
         contentRefB = getContentRef(new Episode(), 901L, Publisher.BBC);
         contentRefC = getContentRef(new Item(), 902L, Publisher.PA);
-
-        contentWriter.writeResourceRef(contentRefA, session);
-        contentWriter.writeResourceRef(contentRefB, session);
-        contentWriter.writeResourceRef(contentRefC, session);
     }
 
     @Test

@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
-import org.atlasapi.content.ContentRef;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Film;
@@ -36,88 +35,6 @@ public class ContentWriterIT extends AbstractNeo4jIT {
     public void setUp() throws Exception {
         super.setUp();
         contentWriter = ContentWriter.create();
-    }
-
-    @Test
-    public void writeResourceRefSucceeds() throws Exception {
-        ContentRef contentRef = getContentRef(new Item(), 0L, Publisher.METABROADCAST);
-
-        contentWriter.writeResourceRef(contentRef, session);
-
-        StatementResult result = session.run(
-                "MATCH (n:Content { id: {id} }) "
-                        + "RETURN n.id as id, n.source AS source",
-                ImmutableMap.of("id", contentRef.getId().longValue())
-        );
-
-        assertThat(result.hasNext(), is(true));
-
-        Record record = result.next();
-        assertThat(record.get("id").asLong(), is(contentRef.getId().longValue()));
-        assertThat(record.get("source").asString(), is(contentRef.getSource().key()));
-    }
-
-    @Test
-    public void writeExistingResourceRefUpdatesFields() throws Exception {
-        ContentRef contentRef = getContentRef(new Item(), 0L, Publisher.METABROADCAST);
-        ContentRef updatedContentRef = getContentRef(new Episode(), 0L, Publisher.BBC);
-
-        contentWriter.writeResourceRef(contentRef, session);
-        contentWriter.writeResourceRef(updatedContentRef, session);
-
-        StatementResult result = session.run(
-                "MATCH (n:Content { id: {id} }) "
-                        + "RETURN n.id as id, n.source AS source",
-                ImmutableMap.of("id", contentRef.getId().longValue())
-        );
-
-        assertThat(result.hasNext(), is(true));
-
-        Record record = result.next();
-        assertThat(record.get("id").asLong(), is(updatedContentRef.getId().longValue()));
-        assertThat(record.get("source").asString(), is(updatedContentRef.getSource().key()));
-    }
-
-    @Test
-    public void writeContentRefSucceeds() throws Exception {
-        ContentRef contentRef = getContentRef(new Item(), 0L, Publisher.METABROADCAST);
-
-        contentWriter.writeContentRef(contentRef, session);
-
-        StatementResult result = session.run(
-                "MATCH (n:Content { id: {id} }) "
-                        + "RETURN n.id as id, n.source AS source, n.type AS type",
-                ImmutableMap.of("id", contentRef.getId().longValue())
-        );
-
-        assertThat(result.hasNext(), is(true));
-
-        Record record = result.next();
-        assertThat(record.get("id").asLong(), is(contentRef.getId().longValue()));
-        assertThat(record.get("source").asString(), is(contentRef.getSource().key()));
-        assertThat(record.get("type").asString(), is(contentRef.getContentType().getKey()));
-    }
-
-    @Test
-    public void writeExistingContentRefUpdatesFields() throws Exception {
-        ContentRef contentRef = getContentRef(new Item(), 0L, Publisher.METABROADCAST);
-        ContentRef updatedContentRef = getContentRef(new Episode(), 0L, Publisher.BBC);
-
-        contentWriter.writeContentRef(contentRef, session);
-        contentWriter.writeContentRef(updatedContentRef, session);
-
-        StatementResult result = session.run(
-                "MATCH (n:Content { id: {id} }) "
-                        + "RETURN n.id as id, n.source AS source, n.type AS type",
-                ImmutableMap.of("id", contentRef.getId().longValue())
-        );
-
-        assertThat(result.hasNext(), is(true));
-
-        Record record = result.next();
-        assertThat(record.get("id").asLong(), is(updatedContentRef.getId().longValue()));
-        assertThat(record.get("source").asString(), is(updatedContentRef.getSource().key()));
-        assertThat(record.get("type").asString(), is(updatedContentRef.getContentType().getKey()));
     }
 
     @Test
@@ -246,10 +163,6 @@ public class ContentWriterIT extends AbstractNeo4jIT {
                 is(ContentType.fromContent(content).get().getKey()));
 
         return record;
-    }
-
-    private ContentRef getContentRef(Content content, long id, Publisher source) {
-        return getContent(content, id, source).toRef();
     }
 
     private <T extends Content> T getContent(T content, long id, Publisher source) {

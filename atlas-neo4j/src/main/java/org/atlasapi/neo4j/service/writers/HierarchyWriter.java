@@ -14,9 +14,10 @@ import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
 import org.neo4j.driver.v1.StatementRunner;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_ID;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_SOURCE;
+import static org.atlasapi.neo4j.service.model.Neo4jContent.CONTENT_TYPE;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.HAS_BRAND_RELATIONSHIP;
 import static org.atlasapi.neo4j.service.model.Neo4jContent.HAS_SERIES_RELATIONSHIP;
 
@@ -30,33 +31,41 @@ public class HierarchyWriter extends Neo4jWriter {
 
     private static final String PARENT_ID_PARAM = "parentId";
     private static final String CHILD_ID_PARAM = "childId";
-
-    private final ContentWriter contentWriter;
+    private static final String PARENT_SOURCE_PARAM = "parentSource";
+    private static final String PARENT_TYPE_PARAM = "parentType";
 
     private final Statement addBrandParentStatement;
     private final Statement addSeriesParentStatement;
     private final Statement removeParentStatement;
     private final Statement removeChildrenStatement;
 
-    private HierarchyWriter(ContentWriter contentWriter) {
-        this.contentWriter = checkNotNull(contentWriter);
-
+    private HierarchyWriter() {
         this.addBrandParentStatement = new Statement(""
                 + "MATCH "
-                + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " }), "
                 + "(child:"+ CONTENT + " { " + CONTENT_ID + ": " + param(CHILD_ID_PARAM) + " }) "
                 + "OPTIONAL MATCH (existingParent:"+ CONTENT
                 + ")<-[r:"+ HAS_BRAND_RELATIONSHIP + "]-(child) "
                 + "DELETE r "
+                + "MERGE "
+                + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " }) "
+                + "ON CREATE SET "
+                + "parent." + CONTENT_SOURCE + " = " + param(PARENT_SOURCE_PARAM) + " "
+                + "SET "
+                + "parent." + CONTENT_TYPE + " = " + param(PARENT_TYPE_PARAM) + " "
                 + "MERGE (parent)<-[:"+ HAS_BRAND_RELATIONSHIP + "]-(child)");
 
         this.addSeriesParentStatement = new Statement(""
                 + "MATCH "
-                + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " }), "
                 + "(child:"+ CONTENT + " { " + CONTENT_ID + ": " + param(CHILD_ID_PARAM) + " }) "
                 + "OPTIONAL MATCH (existingParent:"+ CONTENT
                 + ")<-[r:"+ HAS_SERIES_RELATIONSHIP + "]-(child) "
                 + "DELETE r "
+                + "MERGE "
+                + "(parent:"+ CONTENT + " { " + CONTENT_ID + ": " + param(PARENT_ID_PARAM) + " }) "
+                + "ON CREATE SET "
+                + "parent." + CONTENT_SOURCE + " = " + param(PARENT_SOURCE_PARAM) + " "
+                + "SET "
+                + "parent." + CONTENT_TYPE + " = " + param(PARENT_TYPE_PARAM) + " "
                 + "MERGE (parent)<-[:"+ HAS_SERIES_RELATIONSHIP + "]-(child)");
 
         this.removeParentStatement = new Statement(""
@@ -74,8 +83,8 @@ public class HierarchyWriter extends Neo4jWriter {
                 + "DELETE r");
     }
 
-    public static HierarchyWriter create(ContentWriter contentWriter) {
-        return new HierarchyWriter(contentWriter);
+    public static HierarchyWriter create() {
+        return new HierarchyWriter();
     }
 
     /**
@@ -102,7 +111,6 @@ public class HierarchyWriter extends Neo4jWriter {
         removeParent(series.toRef(), runner);
 
         if (series.getBrandRef() != null) {
-            contentWriter.writeContentRef(series.getBrandRef(), runner);
             addParent(series.toRef(), series.getBrandRef(), runner);
         }
     }
@@ -122,13 +130,11 @@ public class HierarchyWriter extends Neo4jWriter {
 
         ContainerRef containerRef = episode.getContainerRef();
         if (containerRef != null) {
-            contentWriter.writeContentRef(containerRef, runner);
             addParent(episodeRef, containerRef, runner);
         }
 
         SeriesRef seriesRef = episode.getSeriesRef();
         if (seriesRef != null) {
-            contentWriter.writeContentRef(seriesRef, runner);
             addParent(episodeRef, seriesRef, runner);
         }
     }
@@ -147,7 +153,9 @@ public class HierarchyWriter extends Neo4jWriter {
         write(
                 addBrandParentStatement.withParameters(ImmutableMap.of(
                         PARENT_ID_PARAM, parent.getId().longValue(),
-                        CHILD_ID_PARAM, child.getId().longValue()
+                        CHILD_ID_PARAM, child.getId().longValue(),
+                        PARENT_SOURCE_PARAM, parent.getSource().key(),
+                        PARENT_TYPE_PARAM, parent.getContentType().getKey()
                 )),
                 runner
         );
@@ -157,7 +165,9 @@ public class HierarchyWriter extends Neo4jWriter {
         write(
                 addSeriesParentStatement.withParameters(ImmutableMap.of(
                         PARENT_ID_PARAM, parent.getId().longValue(),
-                        CHILD_ID_PARAM, child.getId().longValue()
+                        CHILD_ID_PARAM, child.getId().longValue(),
+                        PARENT_SOURCE_PARAM, parent.getSource().key(),
+                        PARENT_TYPE_PARAM, parent.getContentType().getKey()
                 )),
                 runner
         );

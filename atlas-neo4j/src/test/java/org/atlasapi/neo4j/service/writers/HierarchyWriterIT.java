@@ -35,7 +35,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
     public void setUp() throws Exception {
         super.setUp();
         contentWriter = ContentWriter.create();
-        hierarchyWriter = HierarchyWriter.create(contentWriter);
+        hierarchyWriter = HierarchyWriter.create();
     }
 
     @Test
@@ -45,7 +45,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Episode episodeA = getEpisode(2L);
         Episode episodeB = getEpisode(3L);
 
-        contentWriter.writeContentRef(brand.toRef(), session);
+        contentWriter.writeContent(brand, session);
 
         brand.setSeriesRefs(ImmutableList.of(series.toRef()));
         brand.setItemRefs(ImmutableList.of(
@@ -63,7 +63,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
     public void writeBrandWithNoHierarchy() throws Exception {
         Brand brand = getBrand(0L);
 
-        contentWriter.writeContentRef(brand.toRef(), session);
+        contentWriter.writeContent(brand, session);
 
         hierarchyWriter.writeBrand(brand, session);
 
@@ -78,7 +78,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         
         Brand oldParent = getBrand(1L);
         
-        contentWriter.writeContentRef(contentWithOldType.toRef(), session);
+        contentWriter.writeContent(contentWithOldType, session);
         
         contentWithOldType.setBrand(oldParent);
         hierarchyWriter.writeSeries(contentWithOldType, session);
@@ -95,8 +95,8 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series series = getSeries(1L);
         Episode episode = getEpisode(2L);
         
-        contentWriter.writeContentRef(series.toRef(), session);
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(series, session);
+        contentWriter.writeContent(episode, session);
 
         series.setBrand(brand);
         hierarchyWriter.writeSeries(series, session);
@@ -117,7 +117,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Episode episodeA = getEpisode(2L);
         Episode episodeB = getEpisode(3L);
 
-        contentWriter.writeContentRef(series.toRef(), session);
+        contentWriter.writeContent(series, session);
 
         series.setBrand(brand);
         series.setItemRefs(ImmutableList.of(
@@ -135,7 +135,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
     public void writeSeriesWithNoHierarchy() throws Exception {
         Series series = getSeries(0L);
 
-        contentWriter.writeContentRef(series.toRef(), session);
+        contentWriter.writeContent(series, session);
 
         series.setItemRefs(ImmutableList.of());
         hierarchyWriter.writeSeries(series, session);
@@ -150,7 +150,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Brand newParent = getBrand(2L);
         Series series = getSeries(3L);
         
-        contentWriter.writeContentRef(series.toRef(), session);
+        contentWriter.writeContent(series, session);
         
         series.setBrand(oldParent);
         hierarchyWriter.writeSeries(series, session);
@@ -167,8 +167,8 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series series = getSeries(1L);
         Episode episode = getEpisode(2L);
         
-        contentWriter.writeContentRef(series.toRef(), session);
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(series, session);
+        contentWriter.writeContent(episode, session);
 
         series.setBrand(parent);
         hierarchyWriter.writeSeries(series, session);
@@ -188,7 +188,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Brand brand = getBrand(0L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(brand);
 
@@ -202,7 +202,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series series = getSeries(1L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(series);
 
@@ -215,7 +215,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
     public void writeEpisodeWithNoHierarchy() throws Exception {
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         hierarchyWriter.writeEpisode(episode, session);
 
@@ -227,7 +227,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series series = getSeries(1L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(series);
 
@@ -246,7 +246,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series newParent = getSeries(1L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainerRef(oldParent.toRef());
         hierarchyWriter.writeEpisode(episode, session);
@@ -263,7 +263,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series series = getSeries(1L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(brand);
         episode.setSeries(series);
@@ -282,7 +282,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
 
         Brand newBrand = getBrand(3L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(oldBrand);
         episode.setSeries(series);
@@ -301,7 +301,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series series = getSeries(1L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(oldBrand);
         episode.setSeries(series);
@@ -322,7 +322,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
 
         Series newSeries = getSeries(3L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(brand);
         episode.setSeries(oldSeries);
@@ -341,7 +341,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series oldSeries = getSeries(1L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(brand);
         episode.setSeries(oldSeries);
@@ -361,7 +361,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
 
         Episode episode = getEpisode(1L);
 
-        contentWriter.writeContentRef(episode.toRef(), session);
+        contentWriter.writeContent(episode, session);
 
         episode.setContainer(contentWithOldType);
         hierarchyWriter.writeEpisode(episode, session);
@@ -379,7 +379,7 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
         Series series = getSeries(1L);
         Episode episode = getEpisode(2L);
 
-        contentWriter.writeContentRef(series.toRef(), session);
+        contentWriter.writeContent(series, session);
 
         series.setBrand(brand);
         hierarchyWriter.writeSeries(series, session);
@@ -391,6 +391,86 @@ public class HierarchyWriterIT extends AbstractNeo4jIT {
 
         checkNoParent(series);
         checkChildren(series, Episode.class, ImmutableList.of());
+    }
+
+    @Test
+    public void writingParentBrandWhenParentDoesNotExistWritesSourceAndType() throws Exception {
+        Brand parent = getBrand(0L);
+        Episode child = getEpisode(1L);
+
+        contentWriter.writeContent(child, session);
+
+        child.setContainer(parent);
+        hierarchyWriter.writeEpisode(child, session);
+
+        StatementResult result = session.run(
+                "MATCH (parent:Content)<-[:HAS_BRAND]-(child:Content { id: {id} }) "
+                        + "WHERE parent.type={type} AND parent.source={source}"
+                        + "RETURN parent.id AS id",
+                ImmutableMap.of(
+                        "id", child.getId().longValue(),
+                        "type", ContentType.fromContent(parent).get().getKey(),
+                        "source", parent.getSource().key()
+                )
+        );
+
+        assertThat(result.hasNext(), is(true));
+    }
+
+    @Test
+    public void writingBrandParentUpdatesParentType() throws Exception {
+        Series parentWithOldType = getSeries(0L);
+        Brand parentWithNewType = getBrand(0L);
+
+        Episode child = getEpisode(1L);
+
+        contentWriter.writeContent(parentWithOldType, session);
+        contentWriter.writeContent(child, session);
+
+        child.setContainer(parentWithNewType);
+        hierarchyWriter.writeEpisode(child, session);
+
+        checkParent(child, parentWithNewType);
+    }
+
+    @Test
+    public void writingParentSeriesWhenParentDoesNotExistWritesSourceAndType() throws Exception {
+        Series parent = getSeries(0L);
+        Episode child = getEpisode(1L);
+
+        contentWriter.writeContent(child, session);
+
+        child.setContainer(parent);
+        hierarchyWriter.writeEpisode(child, session);
+
+        StatementResult result = session.run(
+                "MATCH (parent:Content)<-[:HAS_SERIES]-(child:Content { id: {id} }) "
+                        + "WHERE parent.type={type} AND parent.source={source}"
+                        + "RETURN parent.id AS id",
+                ImmutableMap.of(
+                        "id", child.getId().longValue(),
+                        "type", ContentType.fromContent(parent).get().getKey(),
+                        "source", parent.getSource().key()
+                )
+        );
+
+        assertThat(result.hasNext(), is(true));
+    }
+
+    @Test
+    public void writingSeriesParentUpdatesParentType() throws Exception {
+        Brand parentWithOldType = getBrand(0L);
+        Series parentWithNewType = getSeries(0L);
+
+        Episode episode = getEpisode(1L);
+
+        contentWriter.writeContent(parentWithOldType, session);
+        contentWriter.writeContent(episode, session);
+
+        episode.setContainer(parentWithNewType);
+        hierarchyWriter.writeEpisode(episode, session);
+
+        checkParent(episode, parentWithNewType);
     }
 
     private void checkChildren(Container parent, Class<? extends Content> childClass,
