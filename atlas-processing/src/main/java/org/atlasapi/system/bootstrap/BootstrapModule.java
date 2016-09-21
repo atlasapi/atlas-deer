@@ -134,7 +134,7 @@ public class BootstrapModule {
     @Bean
     CqlContentBootstrapController cqlContentBootstrapController() {
         return CqlContentBootstrapController.create(
-                executorService(1, "cql-content-bootstrap"),
+                executorService(10, "cql-content-bootstrap"),
                 persistence.databasedWriteMongo(),
                 progressStore(),
                 persistence.legacyContentResolver(),
