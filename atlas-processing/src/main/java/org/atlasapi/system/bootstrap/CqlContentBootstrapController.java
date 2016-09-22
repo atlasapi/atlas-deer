@@ -262,6 +262,10 @@ public class CqlContentBootstrapController {
 
             try {
                 for (Content content : contentLister.list(progress)) {
+                    if (content == null) {
+                        continue;
+                    }
+
                     bootstrap(content, sentAlready);
 
                     numProcessed++;
