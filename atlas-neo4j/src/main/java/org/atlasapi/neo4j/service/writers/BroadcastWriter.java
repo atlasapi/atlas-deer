@@ -1,6 +1,7 @@
 package org.atlasapi.neo4j.service.writers;
 
 import org.atlasapi.content.Item;
+import org.atlasapi.entity.Id;
 
 import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
@@ -47,15 +48,14 @@ public class BroadcastWriter extends Neo4jWriter {
 
     public void write(Item item, StatementRunner runner) {
         if (item.getBroadcasts().isEmpty()) {
-            write(
-                    removeAllBroadcastsStatement.withParameters(ImmutableMap.of(
-                            CONTENT_ID, item.getId().longValue()
-                    )),
-                    runner
-            );
+            deleteBroadcasts(item.getId(), runner);
         } else {
             item.getBroadcasts()
                     .stream()
+                    .filter(broadcast -> {
+                        Boolean published = broadcast.isActivelyPublished();
+                        return published == null || published;
+                    })
                     .map(broadcast -> addBroadcastStatement.withParameters(ImmutableMap.of(
                             CONTENT_ID, item.getId().longValue(),
                             CHANNEL_ID, broadcast.getChannelId().longValue(),
@@ -64,5 +64,14 @@ public class BroadcastWriter extends Neo4jWriter {
                     )))
                     .forEach(statement -> write(statement, runner));
         }
+    }
+
+    public void deleteBroadcasts(Id itemId, StatementRunner runner) {
+        write(
+                removeAllBroadcastsStatement.withParameters(ImmutableMap.of(
+                        CONTENT_ID, itemId.longValue()
+                )),
+                runner
+        );
     }
 }

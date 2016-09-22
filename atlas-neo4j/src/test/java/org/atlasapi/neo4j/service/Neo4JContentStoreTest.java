@@ -244,6 +244,18 @@ public class Neo4JContentStoreTest {
     }
 
     @Test
+    public void deleteContentCallsDelegates() throws Exception {
+        Item item = new Item(Id.valueOf(0L), Publisher.METABROADCAST);
+        item.setActivelyPublished(false);
+
+        contentStore.writeContent(item);
+
+        verify(contentWriter).deleteContent(item.getId(), transaction);
+        verify(locationWriter).deleteLocations(item.getId(), transaction);
+        verify(broadcastWriter).deleteBroadcasts(item.getId(), transaction);
+    }
+
+    @Test
     public void getEquivalentSetCallsDelegate() throws Exception {
         Id id = Id.valueOf(0L);
 

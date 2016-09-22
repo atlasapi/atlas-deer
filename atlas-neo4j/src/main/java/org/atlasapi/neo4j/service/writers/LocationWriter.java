@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Location;
+import org.atlasapi.entity.Id;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 
@@ -62,12 +63,7 @@ public class LocationWriter extends Neo4jWriter {
                 .collect(MoreCollectors.toImmutableSet());
 
         if (locations.isEmpty()) {
-            write(
-                    removeAllLocationsStatement.withParameters(ImmutableMap.of(
-                            CONTENT_ID, content.getId().longValue()
-                    )),
-                    runner
-            );
+            deleteLocations(content.getId(), runner);
         } else {
             locations.stream()
                     .map(location -> addLocationStatement.withParameters(ImmutableMap.of(
@@ -77,6 +73,15 @@ public class LocationWriter extends Neo4jWriter {
                     )))
                     .forEach(statement -> write(statement, runner));
         }
+    }
+
+    public void deleteLocations(Id contentId, StatementRunner runner) {
+        write(
+                removeAllLocationsStatement.withParameters(ImmutableMap.of(
+                        CONTENT_ID, contentId.longValue()
+                )),
+                runner
+        );
     }
 
     private String getAvailabilityStart(Location location) {
