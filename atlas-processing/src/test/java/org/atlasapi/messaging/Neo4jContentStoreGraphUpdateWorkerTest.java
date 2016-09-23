@@ -18,8 +18,7 @@ import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
 import com.metabroadcast.common.time.Timestamp;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -27,13 +26,11 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySet;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,9 +41,6 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
     @Mock private ContentResolver legacyResolver;
     @Mock private LookupEntryStore legacyEquivalenceStore;
     @Mock private Neo4jContentStore neo4JContentStore;
-    @Mock private Timer timer;
-    @Mock private Meter failureMeter;
-    @Mock private Timer.Context timerContext;
 
     @Mock private EquivalenceGraphUpdate graphUpdate;
     @Mock private LookupEntry lookupEntry;
@@ -77,8 +71,6 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
         );
 
         when(graphUpdate.getAssertion()).thenReturn(assertion);
-
-        when(timer.time()).thenReturn(timerContext);
 
         when(
                 legacyEquivalenceStore.entriesForIds(
@@ -120,13 +112,13 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
                 legacyResolver,
                 legacyEquivalenceStore,
                 neo4JContentStore,
-                timer,
-                failureMeter
+                "",
+                new MetricRegistry()
         );
     }
 
     @Test
-    public void processMessageCallsDependenciesInOrder() throws Exception {
+    public void processMessageCallsDependencies() throws Exception {
         when(
                 legacyEquivalenceStore.entriesForIds(
                         ImmutableList.of(assertion.getSubject().getId().longValue())
@@ -136,15 +128,12 @@ public class Neo4jContentStoreGraphUpdateWorkerTest {
 
         worker.process(message);
 
-        InOrder order = inOrder(timer, timerContext, neo4JContentStore);
-        order.verify(timer).time();
         //noinspection unchecked
-        order.verify(neo4JContentStore).writeEquivalences(
+        verify(neo4JContentStore).writeEquivalences(
                 any(ResourceRef.class),
                 anySet(),
                 anySet()
         );
-        order.verify(timerContext).stop();
     }
 
     @Test
