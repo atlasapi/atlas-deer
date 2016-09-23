@@ -1,6 +1,5 @@
 package org.atlasapi;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.UUID;
 
@@ -454,13 +453,7 @@ public class AtlasPersistenceModule {
         Splitter splitter = Splitter.on(",").omitEmptyStrings().trimResults();
         return ImmutableList.copyOf(Iterables.filter(Iterables.transform(
                 splitter.split(mongoHost),
-                input -> {
-                    try {
-                        return new ServerAddress(input, mongoPort);
-                    } catch (UnknownHostException e) {
-                        return null;
-                    }
-                }
+                input -> new ServerAddress(input, mongoPort)
         ), Predicates.notNull()));
     }
 
