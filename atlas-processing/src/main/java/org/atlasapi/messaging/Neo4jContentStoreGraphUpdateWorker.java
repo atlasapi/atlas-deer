@@ -18,6 +18,7 @@ import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -39,36 +40,41 @@ public class Neo4jContentStoreGraphUpdateWorker
     private final ContentResolver legacyResolver;
     private final LookupEntryStore legacyEquivalenceStore;
     private final Neo4jContentStore neo4JContentStore;
-    private final Timer timer;
+
+    private final Timer executionTimer;
+    private final Meter messageReceivedMeter;
     private final Meter failureMeter;
 
     private Neo4jContentStoreGraphUpdateWorker(
             ContentResolver legacyResolver,
             LookupEntryStore legacyEquivalenceStore,
             Neo4jContentStore neo4JContentStore,
-            Timer timer,
-            Meter failureMeter
+            String metricPrefix,
+            MetricRegistry metricRegistry
+
     ) {
         this.legacyResolver = checkNotNull(legacyResolver);
         this.legacyEquivalenceStore = checkNotNull(legacyEquivalenceStore);
         this.neo4JContentStore = checkNotNull(neo4JContentStore);
-        this.timer = checkNotNull(timer);
-        this.failureMeter = checkNotNull(failureMeter);
+
+        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 
     public static Neo4jContentStoreGraphUpdateWorker create(
             ContentResolver legacyResolver,
             LookupEntryStore legacyEquivalenceStore,
             Neo4jContentStore neo4JContentStore,
-            Timer timer,
-            Meter failureMeter
+            String metricPrefix,
+            MetricRegistry metricRegistry
     ) {
         return new Neo4jContentStoreGraphUpdateWorker(
                 legacyResolver,
                 legacyEquivalenceStore,
                 neo4JContentStore,
-                timer,
-                failureMeter
+                metricPrefix,
+                metricRegistry
         );
     }
 
@@ -77,6 +83,8 @@ public class Neo4jContentStoreGraphUpdateWorker
     @SuppressWarnings("deprecation")
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        messageReceivedMeter.mark();
+
         EquivalenceAssertion assertion = message.getGraphUpdate().getAssertion();
 
         if (assertion == null) {
@@ -100,7 +108,7 @@ public class Neo4jContentStoreGraphUpdateWorker
                 message
         );
 
-        Timer.Context time = timer.time();
+        Timer.Context time = executionTimer.time();
 
         try {
             ImmutableSet<ResourceRef> adjacents = getAdjacents(
@@ -114,11 +122,11 @@ public class Neo4jContentStoreGraphUpdateWorker
                     adjacents,
                     Publisher.all()
             );
-
-            time.stop();
         } catch (Exception e) {
             failureMeter.mark();
             throw Throwables.propagate(e);
+        } finally {
+            time.stop();
         }
     }
 

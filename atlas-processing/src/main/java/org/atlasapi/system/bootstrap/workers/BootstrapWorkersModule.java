@@ -145,6 +145,7 @@ public class BootstrapWorkersModule {
                 .withDefaultConsumers(contentChangesNumOfConsumers)
                 .withMaxConsumers(contentChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -175,6 +176,7 @@ public class BootstrapWorkersModule {
                 .withDefaultConsumers(cqlContentChangesNumOfConsumers)
                 .withMaxConsumers(cqlContentChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -197,6 +199,7 @@ public class BootstrapWorkersModule {
                 .withDefaultConsumers(organisationChangesNumOfConsumers)
                 .withMaxConsumers(organisationChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -220,6 +223,7 @@ public class BootstrapWorkersModule {
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
                 .withMaxConsumers(scheduleChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -243,6 +247,7 @@ public class BootstrapWorkersModule {
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
                 .withMaxConsumers(scheduleChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -265,6 +270,7 @@ public class BootstrapWorkersModule {
                 .withDefaultConsumers(topicChangesNumOfConsumers)
                 .withMaxConsumers(topicChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -287,6 +293,7 @@ public class BootstrapWorkersModule {
                 .withDefaultConsumers(eventChangesNumOfConsumers)
                 .withMaxConsumers(eventChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 

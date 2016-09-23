@@ -14,6 +14,7 @@ import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.base.Optional;
@@ -33,48 +34,54 @@ public class Neo4jContentStoreContentUpdateWorker
 
     private final ContentResolver contentResolver;
     private final Neo4jContentStore neo4JContentStore;
-    private final Timer timer;
+
+    private final Timer executionTimer;
+    private final Meter messageReceivedMeter;
     private final Meter failureMeter;
 
     private Neo4jContentStoreContentUpdateWorker(
             ContentResolver contentResolver,
             Neo4jContentStore neo4JContentStore,
-            Timer timer,
-            Meter failureMeter
+            String metricPrefix,
+            MetricRegistry metricRegistry
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.neo4JContentStore = checkNotNull(neo4JContentStore);
-        this.timer = checkNotNull(timer);
-        this.failureMeter = checkNotNull(failureMeter);
+
+        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.messageReceived");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 
     public static Neo4jContentStoreContentUpdateWorker create(
             ContentResolver contentResolver,
             Neo4jContentStore neo4JContentStore,
-            Timer timer,
-            Meter failureMeter
+            String metricPrefix,
+            MetricRegistry metricRegistry
     ) {
         return new Neo4jContentStoreContentUpdateWorker(
-                contentResolver, neo4JContentStore, timer, failureMeter
+                contentResolver, neo4JContentStore, metricPrefix, metricRegistry
         );
     }
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
+        messageReceivedMeter.mark();
+
         Id contentId = message.getContentRef().getId();
 
         log.debug("Processing message on id {}, took PT{}S, message: {}",
                 contentId, getTimeToProcessInSeconds(message), message);
 
-        Timer.Context time = timer.time();
+        Timer.Context time = executionTimer.time();
         try {
             Content content = getContent(contentId);
             neo4JContentStore.writeContent(content);
-
-            time.stop();
         } catch (Exception e) {
             failureMeter.mark();
             throw Throwables.propagate(e);
+        } finally {
+            time.stop();
         }
     }
 

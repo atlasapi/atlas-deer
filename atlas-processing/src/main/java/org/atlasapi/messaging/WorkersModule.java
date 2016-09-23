@@ -38,6 +38,8 @@ import org.springframework.context.annotation.Lazy;
 })
 public class WorkersModule {
 
+    private static final String WORKER_METRIC_PREFIX = "messaging.worker.";
+
     private final String consumerSystem = Configurer.get("messaging.system").get();
 
     private final String contentChanges =
@@ -134,6 +136,7 @@ public class WorkersModule {
                 .withDefaultConsumers(topicIndexingNumOfConsumers)
                 .withMaxConsumers(topicIndexingNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -159,6 +162,7 @@ public class WorkersModule {
                 .withDefaultConsumers(equivContentGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivContentGraphChangesNumOfConsumers)
                 .withFailedMessagePersistence(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -189,6 +193,7 @@ public class WorkersModule {
                 .withDefaultConsumers(equivContentContentChangesNumOfConsumers)
                 .withMaxConsumers(equivContentContentChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -225,6 +230,7 @@ public class WorkersModule {
                 .withDefaultConsumers(equivScheduleGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleGraphChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -241,6 +247,7 @@ public class WorkersModule {
                 .withDefaultConsumers(equivScheduleContentChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleContentChangesNumOfConsumers)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -266,6 +273,7 @@ public class WorkersModule {
                 .withDefaultConsumers(equivScheduleScheduleChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleScheduleChangesNumOfConsumers)
                 .withFailedMessagePersistence(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -293,6 +301,7 @@ public class WorkersModule {
                 .withDefaultConsumers(contentEquivalenceGraphChangesNumOfConsumers)
                 .withMaxConsumers(contentEquivalenceGraphChangesNumOfConsumers)
                 .withFailedMessagePersistence(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -318,6 +327,7 @@ public class WorkersModule {
                 .withDefaultConsumers(contentIndexingNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -345,6 +355,7 @@ public class WorkersModule {
                 .withDefaultConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -357,8 +368,8 @@ public class WorkersModule {
                 .create(
                         persistence.contentStore(),
                         persistence.neo4jContentStore(),
-                        metricsModule.metrics().timer(workerName),
-                        metricsModule.metrics().meter(workerName + "-failure")
+                        WORKER_METRIC_PREFIX + workerName + ".",
+                        metricsModule.metrics()
                 );
 
         return messaging.messageConsumerFactory()
@@ -372,6 +383,7 @@ public class WorkersModule {
                 .withDefaultConsumers(neo4jContentStoreContentUpdateNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
@@ -385,8 +397,8 @@ public class WorkersModule {
                         persistence.legacyContentResolver(),
                         persistence.legacyEquivalenceStore(),
                         persistence.neo4jContentStore(),
-                        metricsModule.metrics().timer(workerName),
-                        metricsModule.metrics().meter(workerName + "-failure")
+                        WORKER_METRIC_PREFIX + workerName + ".",
+                        metricsModule.metrics()
                 );
 
         return messaging.messageConsumerFactory()
@@ -400,6 +412,7 @@ public class WorkersModule {
                 .withDefaultConsumers(neo4jContentStoreGraphUpdateNumOfConsumers)
                 .withConsumerSystem(consumerSystem)
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                .withMetricRegistry(metricsModule.metrics())
                 .build();
     }
 
