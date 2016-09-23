@@ -9,8 +9,7 @@ import org.atlasapi.neo4j.service.Neo4jContentStore;
 
 import com.metabroadcast.common.time.Timestamp;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
@@ -29,9 +28,6 @@ public class Neo4jContentStoreContentUpdateWorkerTest {
 
     @Mock private ContentResolver contentResolver;
     @Mock private Neo4jContentStore neo4JContentStore;
-    @Mock private Timer timer;
-    @Mock private Meter failureMeter;
-    @Mock private Timer.Context timerContext;
 
     @Mock private ContentRef contentRef;
     @Mock private Content content;
@@ -54,10 +50,9 @@ public class Neo4jContentStoreContentUpdateWorkerTest {
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(
                         ImmutableList.of(content)
                 )));
-        when(timer.time()).thenReturn(timerContext);
 
         worker = Neo4jContentStoreContentUpdateWorker.create(
-                contentResolver, neo4JContentStore, timer, failureMeter
+                contentResolver, neo4JContentStore, "", new MetricRegistry()
         );
     }
 
@@ -65,10 +60,8 @@ public class Neo4jContentStoreContentUpdateWorkerTest {
     public void processMessageCallsDependenciesInOrder() throws Exception {
         worker.process(message);
 
-        InOrder order = inOrder(contentResolver, timer, timerContext, neo4JContentStore);
-        order.verify(timer).time();
+        InOrder order = inOrder(contentResolver, neo4JContentStore);
         order.verify(contentResolver).resolveIds(ImmutableList.of(id));
         order.verify(neo4JContentStore).writeContent(content);
-        order.verify(timerContext).stop();
     }
 }
