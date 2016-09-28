@@ -1,7 +1,5 @@
 package org.atlasapi.messaging;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
@@ -12,6 +10,7 @@ import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import org.slf4j.Logger;
@@ -26,18 +25,39 @@ public class EquivalentContentStoreGraphUpdateWorker
             LoggerFactory.getLogger(EquivalentContentStoreGraphUpdateWorker.class);
 
     private final EquivalentContentStore equivalentContentStore;
-    private final Timer messageTimer;
 
-    public EquivalentContentStoreGraphUpdateWorker(EquivalentContentStore equivalentContentStore,
-            @Nullable
-            MetricRegistry metrics) {
+    private final Timer executionTimer;
+    private final Meter messageReceivedMeter;
+    private final Meter failureMeter;
+
+    private EquivalentContentStoreGraphUpdateWorker(
+            EquivalentContentStore equivalentContentStore,
+            String metricPrefix,
+            MetricRegistry metricRegistry
+    ) {
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
-        this.messageTimer = (metrics != null ? checkNotNull(metrics.timer(
-                "EquivalentContentStoreGraphUpdateWorker")) : null);
+
+        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+    }
+
+    public static EquivalentContentStoreGraphUpdateWorker create(
+            EquivalentContentStore equivalentContentStore,
+            String metricPrefix,
+            MetricRegistry metricRegistry
+    ) {
+        return new EquivalentContentStoreGraphUpdateWorker(
+                equivalentContentStore,
+                metricPrefix,
+                metricRegistry
+        );
     }
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        messageReceivedMeter.mark();
+
         if (LOG.isDebugEnabled()) {
             LOG.debug(
                     "Processing message on updated graph: {}, took: PT{}S, "
@@ -52,14 +72,10 @@ public class EquivalentContentStoreGraphUpdateWorker
             );
         }
 
+        Timer.Context time = executionTimer.time();
+
         try {
-            if (messageTimer != null) {
-                Timer.Context timer = messageTimer.time();
-                equivalentContentStore.updateEquivalences(message.getGraphUpdate());
-                timer.stop();
-            } else {
-                equivalentContentStore.updateEquivalences(message.getGraphUpdate());
-            }
+            equivalentContentStore.updateEquivalences(message.getGraphUpdate());
         } catch (WriteException e) {
             LOG.warn(
                     "Failed to process message on updated graph: {}, created graph(s): {},"
@@ -71,7 +87,11 @@ public class EquivalentContentStoreGraphUpdateWorker
                     message.getGraphUpdate().getDeleted(),
                     message
             );
+            failureMeter.mark();
+
             throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
+        } finally {
+            time.stop();
         }
     }
 

@@ -1,9 +1,6 @@
 package org.atlasapi.messaging;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 
@@ -15,6 +12,7 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,24 +25,40 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
 
     private final EquivalenceGraphStore graphStore;
     private final DirectAndExplicitEquivalenceMigrator equivMigrator;
-    @Nullable private final Timer messageTimer;
-    @Nullable private final Meter meter;
 
-    public ContentEquivalenceUpdatingWorker(EquivalenceGraphStore graphStore,
-            @Nullable MetricRegistry metrics,
-            DirectAndExplicitEquivalenceMigrator equivMigrator) {
+    private final Timer executionTimer;
+    private final Meter messageReceivedMeter;
+    private final Meter failureMeter;
+
+    private ContentEquivalenceUpdatingWorker(
+            EquivalenceGraphStore graphStore,
+            DirectAndExplicitEquivalenceMigrator equivMigrator,
+            String metricPrefix,
+            MetricRegistry metricRegistry
+    ) {
         this.graphStore = checkNotNull(graphStore);
-        this.messageTimer = (metrics != null ?
-                             checkNotNull(metrics.timer("ContentEquivalenceUpdatingWorker")) :
-                             null);
-        this.meter = (metrics != null ?
-                      checkNotNull(metrics.meter("ContentEquivalenceUpdatingWorker.errorRate")) :
-                      null);
         this.equivMigrator = checkNotNull(equivMigrator);
+
+        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+    }
+
+    public static ContentEquivalenceUpdatingWorker create(
+            EquivalenceGraphStore graphStore,
+            DirectAndExplicitEquivalenceMigrator equivMigrator,
+            String metricPrefix,
+            MetricRegistry metricRegistry
+    ) {
+        return new ContentEquivalenceUpdatingWorker(
+                graphStore, equivMigrator, metricPrefix, metricRegistry
+        );
     }
 
     @Override
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
+        messageReceivedMeter.mark();
+
         if (LOG.isDebugEnabled()) {
             LOG.debug(
                     "Processing message on id {}, took: PT{}S, asserted adjacents: {}, message: {}",
@@ -57,32 +71,15 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
             );
         }
 
+        Timer.Context time = executionTimer.time();
+
         try {
-            if (messageTimer != null) {
-                Timer.Context timer = messageTimer.time();
-                graphStore.updateEquivalences(message.getSubject(), message.getAssertedAdjacents(),
-                        message.getPublishers()
-                );
-                equivMigrator.migrateEquivalence(message.getSubject());
-                timer.stop();
-            } else {
-                graphStore.updateEquivalences(message.getSubject(), message.getAssertedAdjacents(),
-                        message.getPublishers()
-                );
-                equivMigrator.migrateEquivalence(message.getSubject());
-            }
-            LOG.debug("Successfully processed message {}", message.toString());
-        } catch (WriteException e) {
-            LOG.warn(
-                    "Failed to process message on id {}, asserted adjacents: {}, message: {}. "
-                            + "Retrying...",
-                    message.getSubject().getId(),
-                    message.getAssertedAdjacents().stream()
-                            .map(ResourceRef::getId)
-                            .collect(MoreCollectors.toImmutableList()),
-                    message
+            graphStore.updateEquivalences(message.getSubject(), message.getAssertedAdjacents(),
+                    message.getPublishers()
             );
-            throw new RecoverableException("update failed for " + message.toString(), e);
+            equivMigrator.migrateEquivalence(message.getSubject());
+
+            LOG.debug("Successfully processed message {}", message.toString());
         } catch (Exception e) {
             LOG.warn(
                     "Failed to process message on id {}, asserted adjacents: {}, message: {}",
@@ -92,9 +89,11 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                             .collect(MoreCollectors.toImmutableList()),
                     message
             );
-            if (meter != null) {
-                meter.mark();
-            }
+            failureMeter.mark();
+
+            throw Throwables.propagate(e);
+        } finally {
+            time.stop();
         }
     }
 
