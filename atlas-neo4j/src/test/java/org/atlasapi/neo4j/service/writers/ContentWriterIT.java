@@ -16,6 +16,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.neo4j.AbstractNeo4jIT;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,12 +30,14 @@ import static org.junit.Assert.assertThat;
 public class ContentWriterIT extends AbstractNeo4jIT {
 
     private ContentWriter contentWriter;
+    private EquivalenceWriter equivalenceWriter;
 
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
         contentWriter = ContentWriter.create();
+        equivalenceWriter = EquivalenceWriter.create();
     }
 
     @Test
@@ -121,6 +124,41 @@ public class ContentWriterIT extends AbstractNeo4jIT {
         );
 
         assertThat(updatedRecord.containsKey("seriesNumber"), is(false));
+    }
+
+    @Test
+    public void deleteContentRemovesNodeAndRelationships() throws Exception {
+        Item itemA = getContent(new Item(), 0L, Publisher.METABROADCAST);
+        Item itemB = getContent(new Item(), 1L, Publisher.BBC);
+
+        contentWriter.writeContent(itemA, session);
+        contentWriter.writeContent(itemB, session);
+        equivalenceWriter.writeEquivalences(
+                itemA.toRef(), ImmutableSet.of(itemB.toRef()), Publisher.all(), session
+        );
+
+        contentWriter.deleteContent(itemA.getId(), session);
+
+        StatementResult itemAResult = session.run(
+                "MATCH (n:Content { id: {id} }) RETURN n.id as id",
+                ImmutableMap.of("id", itemA.getId().longValue())
+        );
+
+        assertThat(itemAResult.hasNext(), is(false));
+
+        StatementResult itemBResult = session.run(
+                "MATCH (n:Content { id: {id} }) RETURN n.id as id",
+                ImmutableMap.of("id", itemB.getId().longValue())
+        );
+
+        assertThat(itemBResult.hasNext(), is(true));
+
+        StatementResult equivalenceResult = session.run(
+                "MATCH (n:Content { id: {id} })-[:IS_EQUIVALENT]-(k) RETURN k.id as id",
+                ImmutableMap.of("id", itemB.getId().longValue())
+        );
+
+        assertThat(equivalenceResult.hasNext(), is(false));
     }
 
     private Record writeContent(Content content) {

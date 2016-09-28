@@ -141,7 +141,8 @@ public class BroadcastWriterIT extends AbstractNeo4jIT {
         assertThat(result.hasNext(), is(true));
 
         Record record = result.next();
-        assertThat(record.get("channelId").asLong(), is(updatedBroadcast.getChannelId().longValue()));
+        assertThat(record.get("channelId").asLong(),
+                is(updatedBroadcast.getChannelId().longValue()));
         assertThat(record.get("startDateTime").asString(),
                 is(updatedBroadcast.getTransmissionTime().toString()));
         assertThat(record.get("endDateTime").asString(),
@@ -151,7 +152,7 @@ public class BroadcastWriterIT extends AbstractNeo4jIT {
     }
 
     @Test
-    public void removeAllExistingBroadcasts() throws Exception {
+    public void removeAllExistingBroadcastsWhenItemHasNone() throws Exception {
         Broadcast broadcast = new Broadcast(
                 Id.valueOf(0L),
                 DateTime.now(DateTimeZone.UTC).minusHours(1),
@@ -174,6 +175,115 @@ public class BroadcastWriterIT extends AbstractNeo4jIT {
                         + "b.startDateTime AS startDateTime, b.endDateTime AS endDateTime",
                 ImmutableMap.of("id", item.getId().longValue())
         );
+
+        assertThat(result.hasNext(), is(false));
+    }
+
+    @Test
+    public void removeAllExistingBroadcasts() throws Exception {
+        Broadcast broadcast = new Broadcast(
+                Id.valueOf(0L),
+                DateTime.now(DateTimeZone.UTC).minusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1)
+        );
+
+        Item item = new Item(Id.valueOf(10L), Publisher.METABROADCAST);
+        item.setBroadcasts(ImmutableSet.of(broadcast));
+
+        contentWriter.writeContent(item, session);
+        broadcastWriter.write(item, session);
+
+        broadcastWriter.deleteBroadcasts(item.getId(), session);
+
+        StatementResult result = session.run(
+                "MATCH (n:Content { id: {id} })-[:HAS_BROADCAST]->(b:Broadcast)"
+                        + "RETURN b.channelId AS channelId, "
+                        + "b.startDateTime AS startDateTime, b.endDateTime AS endDateTime",
+                ImmutableMap.of("id", item.getId().longValue())
+        );
+
+        assertThat(result.hasNext(), is(false));
+    }
+
+    @Test
+    public void doNotWriteBroadcastsThatAreNotActivelyPublished() throws Exception {
+        Broadcast nonPublishedBroadcast = new Broadcast(
+                Id.valueOf(0L),
+                DateTime.now(DateTimeZone.UTC).minusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1)
+        );
+        nonPublishedBroadcast.setIsActivelyPublished(false);
+
+        Broadcast publishedBroadcast = new Broadcast(
+                Id.valueOf(1L),
+                DateTime.now(DateTimeZone.UTC).plusHours(2),
+                DateTime.now(DateTimeZone.UTC).plusHours(3)
+        );
+
+        Item item = new Item(Id.valueOf(10L), Publisher.METABROADCAST);
+        item.setBroadcasts(ImmutableSet.of(
+                nonPublishedBroadcast, publishedBroadcast
+        ));
+
+        contentWriter.writeContent(item, session);
+        broadcastWriter.write(item, session);
+
+        StatementResult result = session.run(
+                "MATCH (n:Content { id: {id} })-[:HAS_BROADCAST]->(b:Broadcast)"
+                        + "RETURN b.channelId AS channelId, "
+                        + "b.startDateTime AS startDateTime, b.endDateTime AS endDateTime",
+                ImmutableMap.of("id", item.getId().longValue())
+        );
+
+        assertThat(result.hasNext(), is(true));
+
+        Record record = result.next();
+        assertThat(record.get("channelId").asLong(),
+                is(publishedBroadcast.getChannelId().longValue()));
+
+        assertThat(result.hasNext(), is(false));
+    }
+
+    @Test
+    public void removeExistingBroadcastsThatAreNoLongerActivelyPublished() throws Exception {
+        Broadcast broadcastA = new Broadcast(
+                Id.valueOf(0L),
+                DateTime.now(DateTimeZone.UTC).minusHours(1),
+                DateTime.now(DateTimeZone.UTC).plusHours(1)
+        );
+
+        Broadcast broadcastB = new Broadcast(
+                Id.valueOf(1L),
+                DateTime.now(DateTimeZone.UTC).plusHours(2),
+                DateTime.now(DateTimeZone.UTC).plusHours(3)
+        );
+
+        Item item = new Item(Id.valueOf(10L), Publisher.METABROADCAST);
+        item.setBroadcasts(ImmutableSet.of(
+                broadcastA, broadcastB
+        ));
+
+        contentWriter.writeContent(item, session);
+        broadcastWriter.write(item, session);
+
+        broadcastA.setIsActivelyPublished(false);
+
+        item.setBroadcasts(ImmutableSet.of(
+                broadcastA, broadcastB
+        ));
+
+        StatementResult result = session.run(
+                "MATCH (n:Content { id: {id} })-[:HAS_BROADCAST]->(b:Broadcast)"
+                        + "RETURN b.channelId AS channelId, "
+                        + "b.startDateTime AS startDateTime, b.endDateTime AS endDateTime",
+                ImmutableMap.of("id", item.getId().longValue())
+        );
+
+        assertThat(result.hasNext(), is(true));
+
+        Record record = result.next();
+        assertThat(record.get("channelId").asLong(),
+                is(broadcastB.getChannelId().longValue()));
 
         assertThat(result.hasNext(), is(false));
     }
