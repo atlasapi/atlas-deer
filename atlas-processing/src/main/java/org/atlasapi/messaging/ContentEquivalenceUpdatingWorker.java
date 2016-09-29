@@ -12,7 +12,7 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
