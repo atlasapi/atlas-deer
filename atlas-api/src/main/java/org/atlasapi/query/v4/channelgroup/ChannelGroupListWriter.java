@@ -5,7 +5,7 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
@@ -15,11 +15,11 @@ import org.atlasapi.query.common.Resource;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupListWriter implements EntityListWriter<ChannelGroup<?>> {
+public class ChannelGroupListWriter implements EntityListWriter<ResolvedChannelGroup> { //new writer implement EntityWriter
 
-    private final AnnotationRegistry<ChannelGroup<?>> annotationRegistry;
+    private final AnnotationRegistry<ResolvedChannelGroup> annotationRegistry;
 
-    public ChannelGroupListWriter(AnnotationRegistry<ChannelGroup<?>> annotationRegistry) {
+    public ChannelGroupListWriter(AnnotationRegistry<ResolvedChannelGroup> annotationRegistry) {
         this.annotationRegistry = checkNotNull(annotationRegistry);
     }
 
@@ -30,12 +30,12 @@ public class ChannelGroupListWriter implements EntityListWriter<ChannelGroup<?>>
     }
 
     @Override
-    public void write(@Nonnull ChannelGroup<?> entity, @Nonnull FieldWriter writer,
+    public void write(@Nonnull ResolvedChannelGroup entity, @Nonnull FieldWriter writer,
             @Nonnull OutputContext ctxt) throws IOException {
         ctxt.startResource(Resource.CHANNEL_GROUP);
-        List<OutputAnnotation<? super ChannelGroup<?>>> annotations = ctxt
+        List<OutputAnnotation<? super ResolvedChannelGroup>> annotations = ctxt
                 .getAnnotations(annotationRegistry);
-        for (OutputAnnotation<? super ChannelGroup<?>> annotation : annotations) {
+        for (OutputAnnotation<? super ResolvedChannelGroup> annotation : annotations) {
             annotation.write(entity, writer, ctxt);
         }
         ctxt.endResource();
@@ -43,7 +43,7 @@ public class ChannelGroupListWriter implements EntityListWriter<ChannelGroup<?>>
 
     @Nonnull
     @Override
-    public String fieldName(ChannelGroup entity) {
+    public String fieldName(ResolvedChannelGroup entity) {
         return "channel_group";
     }
 }

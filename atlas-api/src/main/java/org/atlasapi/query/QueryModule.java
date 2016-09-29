@@ -16,7 +16,7 @@ package org.atlasapi.query;
 
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
@@ -96,7 +96,7 @@ public class QueryModule {
     }
 
     @Bean
-    public QueryExecutor<ChannelGroup<?>> channelGroupQueryExecutor() {
+    public QueryExecutor<ResolvedChannelGroup> channelGroupQueryExecutor() {
         return new ChannelGroupQueryExecutor(persistenceModule.channelGroupResolver());
     }
 

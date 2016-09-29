@@ -38,7 +38,7 @@ public class AnnotationRegistryTest {
 
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final IdentificationSummaryAnnotation idSum = new IdentificationSummaryAnnotation(
-            idCodec);
+    );
     private final IdentificationAnnotation ident = new IdentificationAnnotation();
     private final ExtendedIdentificationAnnotation extIdent = new ExtendedIdentificationAnnotation(
             idCodec);

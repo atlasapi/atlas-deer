@@ -7,8 +7,8 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
@@ -31,7 +31,7 @@ import org.joda.time.LocalDate;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ChannelGroup<?>> {
+public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
 
     private final ChannelGroupChannelWriter channelWriter;
     private final ChannelResolver channelResolver;
@@ -43,10 +43,10 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ChannelGrou
     }
 
     @Override
-    public void write(ChannelGroup<?> entity, FieldWriter writer, OutputContext ctxt)
+    public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
-        Iterable<? extends ChannelGroupMembership> availableChannels = entity.getChannelsAvailable(
+        Iterable<? extends ChannelGroupMembership> availableChannels = entity.getChannelGroup().getChannelsAvailable(
                 LocalDate.now());
         List<Id> orderedIds = StreamSupport.stream(availableChannels.spliterator(), false)
                 //TODO fix channel appearing twice in ordering blowing this thing up

@@ -5,26 +5,20 @@ import java.io.IOException;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-
-import com.metabroadcast.common.ids.NumberToShortStringCodec;
+import org.atlasapi.output.writers.IdSummaryWriter;
 
 public class IdentificationSummaryAnnotation extends OutputAnnotation<Identified> {
 
-    private final NumberToShortStringCodec codec;
+    private IdSummaryWriter idSummaryWriter;
 
-    public IdentificationSummaryAnnotation(NumberToShortStringCodec codec) {
+    public IdentificationSummaryAnnotation() {
         super();
-        this.codec = codec;
+        this.idSummaryWriter = IdSummaryWriter.create();
     }
 
     @Override
-    public void write(Identified entity, FieldWriter formatter, OutputContext ctxt)
+    public void write(Identified entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
-        formatter.writeField("id", encodedIdOrNull(entity));
-    }
-
-    private String encodedIdOrNull(Identified entity) {
-        return entity.getId() != null ? codec.encode(entity.getId().toBigInteger())
-                                      : null;
+        idSummaryWriter.write(entity, writer, ctxt);
     }
 }

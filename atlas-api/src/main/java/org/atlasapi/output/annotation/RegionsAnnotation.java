@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.channel.Region;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -17,7 +18,7 @@ import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class RegionsAnnotation extends OutputAnnotation<ChannelGroup<?>> {
+public class RegionsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
             "regions",
@@ -32,12 +33,12 @@ public class RegionsAnnotation extends OutputAnnotation<ChannelGroup<?>> {
     }
 
     @Override
-    public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt)
+    public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
-        if (!(entity instanceof Region)) {
+        if (!(entity.getChannelGroup() instanceof Region)) {
             return;
         }
-        Region region = (Region) entity;
+        Region region = (Region) entity.getChannelGroup();
         if (region.getPlatform() == null) {
             writer.writeField("parent", null);
             return;

@@ -8,8 +8,8 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
@@ -41,6 +41,7 @@ import org.atlasapi.output.annotation.ChannelAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupAdvertisedChannelsAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
+import org.atlasapi.output.annotation.ChannelGroupIdSummaryAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipListWriter;
 import org.atlasapi.output.annotation.ChannelSummaryWriter;
@@ -83,6 +84,7 @@ import org.atlasapi.output.annotation.UpcomingBroadcastsAnnotation;
 import org.atlasapi.output.annotation.UpcomingContentDetailAnnotation;
 import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
+import org.atlasapi.output.writers.IdSummaryWriter;
 import org.atlasapi.output.writers.ItemDetailWriter;
 import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.output.writers.RatingsWriter;
@@ -272,7 +274,7 @@ public class QueryWebModule {
 
     private
     @Autowired
-    QueryExecutor<ChannelGroup<?>> channelGroupQueryExecutor;
+    QueryExecutor<ResolvedChannelGroup> channelGroupQueryExecutor;
 
     private
     @Autowired
@@ -571,7 +573,7 @@ public class QueryWebModule {
     }
 
     private ChannelGroupListWriter channelGroupListWriter() {
-        return new ChannelGroupListWriter(AnnotationRegistry.<ChannelGroup<?>>builder()
+        return new ChannelGroupListWriter(AnnotationRegistry.<ResolvedChannelGroup>builder()
                 .registerDefault(CHANNEL_GROUP, new ChannelGroupAnnotation())
                 .register(
                         CHANNELS,
@@ -583,12 +585,14 @@ public class QueryWebModule {
                         ),
                         CHANNEL_GROUP
                 )
-                .register(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
-                .register(REGIONS, new PlatformAnnotation(channelGroupResolver), CHANNEL_GROUP)
+                .register(ID_SUMMARY, new ChannelGroupIdSummaryAnnotation(
+                        IdSummaryWriter.create()
+                ))
+                .register(REGIONS, new PlatformAnnotation(), CHANNEL_GROUP)
                 .register(PLATFORM, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
                 .register(
                         CHANNEL_GROUPS_SUMMARY,
-                        NullWriter.create(ChannelGroup.class),
+                        NullWriter.create(ResolvedChannelGroup.class),
                         ImmutableList.of(CHANNELS, CHANNEL_GROUP)
                 )
                 .register(
@@ -599,7 +603,7 @@ public class QueryWebModule {
                 .build());
     }
 
-    private QueryParser<ChannelGroup<?>> channelGroupQueryParser() {
+    private QueryParser<ResolvedChannelGroup> channelGroupQueryParser() {
         QueryContextParser contextParser = new QueryContextParser(
                 configFetcher,
                 userFetcher,
@@ -844,7 +848,7 @@ public class QueryWebModule {
     private AnnotationRegistry<Content> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
         return AnnotationRegistry.<Content>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
+                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
                 .register(ID, new IdentificationAnnotation(), commonImplied)
                 .register(
                         EXTENDED_ID,
@@ -1000,7 +1004,7 @@ public class QueryWebModule {
                                                 channelGroupResolver
                                         ),
                                         new ItemDetailWriter(new IdentificationSummaryAnnotation(
-                                                idCodec()))
+                                        ))
                                 )
                         ), commonImplied
                 )
@@ -1009,7 +1013,7 @@ public class QueryWebModule {
                         new AvailableContentDetailAnnotation(
                                 queryModule.mergingContentResolver(),
                                 new ItemDetailWriter(
-                                        new IdentificationSummaryAnnotation(idCodec()),
+                                        new IdentificationSummaryAnnotation(),
                                         AvailableContentDetailAnnotation.AVAILABLE_CONTENT_DETAIL,
                                         new LocationsAnnotation(
                                                 persistenceModule.playerResolver(),
@@ -1047,7 +1051,7 @@ public class QueryWebModule {
     @Bean
     protected EntityListWriter<Topic> topicListWriter() {
         return new TopicListWriter(AnnotationRegistry.<Topic>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
+                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1061,7 +1065,7 @@ public class QueryWebModule {
     @Bean
     protected EntityListWriter<Event> eventListWriter() {
         return new EventListWriter(AnnotationRegistry.<Event>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
+                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1080,7 +1084,7 @@ public class QueryWebModule {
 
     private AnnotationRegistry<Topic> topicAnnotationRegistry() {
         return AnnotationRegistry.<Topic>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
+                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1113,7 +1117,7 @@ public class QueryWebModule {
         return new ChannelListWriter(
                 AnnotationRegistry.<Channel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))
-                        .register(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
+                        .register(ID_SUMMARY, new IdentificationSummaryAnnotation())
                         .register(
                                 CHANNEL_GROUPS,
                                 new ChannelGroupMembershipAnnotation(
