@@ -12,8 +12,6 @@ import org.atlasapi.organisation.OrganisationWriter;
 import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.Worker;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -29,45 +27,23 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
 
     private final OrganisationResolver resolver;
     private final OrganisationWriter writer;
+    private final Timer messagesTimer;
 
-    private final Timer executionTimer;
-    private final Meter messageReceivedMeter;
-    private final Meter failureMeter;
-
-    private OrganisationBootstrapWorker(
-            OrganisationResolver resolver,
-            OrganisationWriter writer,
-            String metricPrefix,
-            MetricRegistry metricRegistry
-    ) {
+    public OrganisationBootstrapWorker(OrganisationResolver resolver, OrganisationWriter writer,
+            Timer timer) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
-
-        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
-        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
-        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
-    }
-
-    public static OrganisationBootstrapWorker create(
-            OrganisationResolver resolver,
-            OrganisationWriter writer,
-            String metricPrefix,
-            MetricRegistry metricRegistry
-    ) {
-        return new OrganisationBootstrapWorker(resolver, writer, metricPrefix, metricRegistry);
+        this.messagesTimer = checkNotNull(timer);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) {
-        messageReceivedMeter.mark();
-
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
                 message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
         );
 
-        Timer.Context time = executionTimer.time();
-
         try {
+            Timer.Context time = messagesTimer.time();
             Id contentId = message.getUpdatedResource().getId();
             Resolved<Organisation> content = Futures.get(
                     resolver.resolveIds(ImmutableList.of(contentId)),
@@ -76,6 +52,7 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
             Organisation organisation = content.getResources().first().get();
             writer.write(organisation);
             LOG.debug("Bootstrapped organisation {}", organisation.toString());
+            time.stop();
         } catch (Exception e) {
             LOG.error(
                     "Failed to bootstrap organisation {} - {} {}",
@@ -84,9 +61,6 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
                     Throwables
                             .getStackTraceAsString(e)
             );
-            failureMeter.mark();
-        } finally {
-            time.stop();
         }
     }
 

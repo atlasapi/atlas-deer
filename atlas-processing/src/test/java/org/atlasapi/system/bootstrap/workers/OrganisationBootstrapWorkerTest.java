@@ -11,6 +11,7 @@ import org.atlasapi.organisation.OrganisationWriter;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
@@ -28,30 +29,25 @@ public class OrganisationBootstrapWorkerTest {
 
     private @Mock OrganisationResolver resolver;
     private @Mock OrganisationWriter writer;
+    private @Mock MetricRegistry metric;
     private @Mock ResourceRef updatedResource;
+    private ResourceUpdatedMessage message;
     private @Mock Organisation organisation;
 
-    private ResourceUpdatedMessage message;
     private OrganisationBootstrapWorker worker;
 
     @Before
     public void setUp() {
-        message = new ResourceUpdatedMessage(
-                "message", Timestamp.of(DateTime.now()), updatedResource
-        );
-        worker = OrganisationBootstrapWorker.create(
-                resolver,
+        message = new ResourceUpdatedMessage("message", Timestamp.of(DateTime.now()), updatedResource);
+        when(metric.timer("OrganisationBootstrapWorker")).thenReturn(new Timer());
+        worker = new OrganisationBootstrapWorker(resolver,
                 writer,
-                "prefix",
-                new MetricRegistry()
-        );
+                metric.timer("OrganisationBootstrapWorker"));
 
         Id id = Id.valueOf(0L);
         when(updatedResource.getId()).thenReturn(id);
         when(resolver.resolveIds(ImmutableList.of(id)))
-                .thenReturn(Futures.immediateFuture(
-                        Resolved.valueOf(ImmutableList.of(organisation))
-                ));
+                .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(organisation))));
     }
 
     @Test
@@ -59,4 +55,5 @@ public class OrganisationBootstrapWorkerTest {
         worker.process(message);
         verify(writer).write(organisation);
     }
+
 }

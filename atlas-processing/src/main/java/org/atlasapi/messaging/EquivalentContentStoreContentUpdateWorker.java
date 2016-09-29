@@ -1,5 +1,6 @@
 package org.atlasapi.messaging;
 
+import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.entity.util.WriteException;
 
@@ -7,7 +8,6 @@ import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import org.slf4j.Logger;
@@ -20,55 +20,35 @@ public class EquivalentContentStoreContentUpdateWorker implements Worker<Resourc
     private static final Logger LOG =
             LoggerFactory.getLogger(EquivalentContentStoreContentUpdateWorker.class);
 
+    private final ContentResolver contentResolver;
+
     private final EquivalentContentStore equivalentContentStore;
+    private final Timer messageTimer;
 
-    private final Timer executionTimer;
-    private final Meter messageReceivedMeter;
-    private final Meter failureMeter;
-
-    private EquivalentContentStoreContentUpdateWorker(
+    public EquivalentContentStoreContentUpdateWorker(
             EquivalentContentStore equivalentContentStore,
-            String metricPrefix,
-            MetricRegistry metricRegistry
+            ContentResolver contentResolver,
+            MetricRegistry metrics
     ) {
         this.equivalentContentStore = checkNotNull(equivalentContentStore);
-
-        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
-        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
-        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
-    }
-
-    public static EquivalentContentStoreContentUpdateWorker create(
-            EquivalentContentStore equivalentContentStore,
-            String metricPrefix,
-            MetricRegistry metricRegistry
-    ) {
-        return new EquivalentContentStoreContentUpdateWorker(
-                equivalentContentStore,
-                metricPrefix,
-                metricRegistry
-        );
+        this.contentResolver = checkNotNull(contentResolver);
+        this.messageTimer = (metrics != null ? checkNotNull(metrics.timer(
+                "EquivalentContentStoreContentUpdateWorker")) : null);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
-        messageReceivedMeter.mark();
-
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
                 message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
         );
 
-        Timer.Context time = executionTimer.time();
-
         try {
+            Timer.Context timer = messageTimer.time();
             equivalentContentStore.updateContent(message.getUpdatedResource().getId());
+            timer.stop();
         } catch (WriteException e) {
-            failureMeter.mark();
-
             throw new RecoverableException("update failed for content "
                     + message.getUpdatedResource(), e);
-        } finally {
-            time.stop();
         }
     }
 

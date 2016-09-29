@@ -10,7 +10,6 @@ import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableSet;
@@ -25,42 +24,35 @@ public class EquivalentScheduleStoreGraphUpdateWorker
     private static final Logger LOG =
             LoggerFactory.getLogger(EquivalentScheduleStoreGraphUpdateWorker.class);
 
-    private final EquivalentScheduleWriter scheduleWriter;
-    private final EquivalenceGraphUpdateResolver graphUpdateResolver;
+    private static final String METRICS_TIMER = "EquivalentScheduleStoreGraphUpdateWorker";
 
-    private final Timer executionTimer;
-    private final Meter messageReceivedMeter;
-    private final Meter failureMeter;
+    private final EquivalentScheduleWriter scheduleWriter;
+    private final Timer messageTimer;
+
+    private final EquivalenceGraphUpdateResolver graphUpdateResolver;
 
     private EquivalentScheduleStoreGraphUpdateWorker(
             EquivalentScheduleWriter scheduleWriter,
-            EquivalenceGraphUpdateResolver graphUpdateResolver,
-            String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metrics,
+            EquivalenceGraphUpdateResolver graphUpdateResolver
     ) {
         this.scheduleWriter = checkNotNull(scheduleWriter);
+        this.messageTimer = checkNotNull(metrics.timer(METRICS_TIMER));
         this.graphUpdateResolver = checkNotNull(graphUpdateResolver);
-
-        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
-        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
-        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 
     public static EquivalentScheduleStoreGraphUpdateWorker create(
             EquivalentScheduleWriter scheduleWriter,
-            EquivalenceGraphUpdateResolver graphUpdateResolver,
-            String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metrics,
+            EquivalenceGraphUpdateResolver graphUpdateResolver
     ) {
         return new EquivalentScheduleStoreGraphUpdateWorker(
-                scheduleWriter, graphUpdateResolver, metricPrefix, metricRegistry
+                scheduleWriter, metrics, graphUpdateResolver
         );
     }
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
-        messageReceivedMeter.mark();
-
         LOG.debug(
                 "Processing message on ids {}, took: PT{}S, message: {}",
                 message.getGraphUpdate().getAllGraphs().stream()
@@ -70,18 +62,17 @@ public class EquivalentScheduleStoreGraphUpdateWorker
                 message
         );
 
-        Timer.Context time = executionTimer.time();
-
         try {
+            Timer.Context timer = messageTimer.time();
+
             ImmutableSet<EquivalenceGraph> graphs =
                     graphUpdateResolver.resolve(message.getGraphUpdate());
 
             scheduleWriter.updateEquivalences(graphs);
+
+            timer.stop();
         } catch (WriteException e) {
-            failureMeter.mark();
             throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
-        } finally {
-            time.stop();
         }
     }
 

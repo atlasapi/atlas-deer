@@ -14,7 +14,6 @@ import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.util.concurrent.Futures;
@@ -31,56 +30,32 @@ public class EquivalentScheduleStoreContentUpdateWorker
 
     private final EquivalentContentStore contentStore;
     private final EquivalentScheduleWriter scheduleWriter;
+    private final Timer messageTimer;
 
-    private final Timer executionTimer;
-    private final Meter messageReceivedMeter;
-    private final Meter failureMeter;
-
-    private EquivalentScheduleStoreContentUpdateWorker(
+    public EquivalentScheduleStoreContentUpdateWorker(
             EquivalentContentStore contentStore,
             EquivalentScheduleWriter scheduleWriter,
-            String metricPrefix,
-            MetricRegistry metricRegistry
+            MetricRegistry metrics
     ) {
         this.contentStore = checkNotNull(contentStore);
         this.scheduleWriter = checkNotNull(scheduleWriter);
-
-        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
-        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
-        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
-    }
-
-    public static EquivalentScheduleStoreContentUpdateWorker create(
-            EquivalentContentStore contentStore,
-            EquivalentScheduleWriter scheduleWriter,
-            String metricPrefix,
-            MetricRegistry metricRegistry
-    ) {
-        return new EquivalentScheduleStoreContentUpdateWorker(
-                contentStore,
-                scheduleWriter,
-                metricPrefix,
-                metricRegistry
-        );
+        this.messageTimer = checkNotNull(metrics.timer("EquivalentScheduleStoreContentUpdateWorker"));
     }
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
-        messageReceivedMeter.mark();
-
         LOG.debug("Processing message on id: {}, took: PT{}S, message: {}",
                 message.getEquivalentSetId(),
                 getTimeToProcessInSeconds(message),
                 message
         );
 
-        Timer.Context time = executionTimer.time();
-
         Set<Content> content = Futures.get(
                 contentStore.resolveEquivalentSet(message.getEquivalentSetId()),
                 RecoverableException.class
         );
         try {
+            Timer.Context timer = messageTimer.time();
             scheduleWriter.updateContent(
                     content.stream()
                             .flatMap(c -> {
@@ -92,11 +67,9 @@ public class EquivalentScheduleStoreContentUpdateWorker
                             })
                             .collect(MoreCollectors.toImmutableSet())
             );
+            timer.stop();
         } catch (WriteException e) {
-            failureMeter.mark();
             throw new RecoverableException(e);
-        } finally {
-            time.stop();
         }
     }
 
