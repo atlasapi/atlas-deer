@@ -388,11 +388,7 @@ public class BootstrapWorkersModule {
                         persistence.contentStore()
                 ),
                 search.equivContentIndex(),
-                new DirectAndExplicitEquivalenceMigrator(
-                        persistence.legacyContentResolver(),
-                        persistence.legacyEquivalenceStore(),
-                        persistence.nullMessageSendingGraphStore()
-                ),
+                directAndExplicitEquivalenceMigrator(),
                 persistence,
                 persistence.legacySegmentMigrator(),
                 persistence.legacyContentResolver()
@@ -411,6 +407,15 @@ public class BootstrapWorkersModule {
                 ),
                 persistence.getEquivalentScheduleStore(),
                 persistence.getContentEquivalenceGraphStore()
+        );
+    }
+
+    @Bean
+    public DirectAndExplicitEquivalenceMigrator directAndExplicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
+                persistence.legacyContentResolver(),
+                persistence.legacyEquivalenceStore(),
+                persistence.nullMessageSendingGraphStore()
         );
     }
 
