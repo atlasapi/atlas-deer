@@ -12,7 +12,6 @@ import org.atlasapi.schedule.EquivalentScheduleWriter;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
@@ -22,7 +21,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,24 +33,16 @@ public class EquivalentScheduleStoreContentUpdateWorkerTest {
     @Mock
     private EquivalentScheduleWriter scheduleWriter;
 
-    @Mock
-    private MetricRegistry metrics;
-
-    @Mock
-    private Timer timer;
-
     private EquivalentScheduleStoreContentUpdateWorker objectUnderTest;
 
     @Before
     public void setUp() {
-        when(metrics.timer("EquivalentScheduleStoreContentUpdateWorker")).thenReturn(timer);
-        objectUnderTest = new EquivalentScheduleStoreContentUpdateWorker(
+        objectUnderTest = EquivalentScheduleStoreContentUpdateWorker.create(
                 contentStore,
                 scheduleWriter,
-                metrics
+                "prefix",
+                new MetricRegistry()
         );
-        Timer.Context context = mock(Timer.Context.class);
-        when(timer.time()).thenReturn(context);
     }
 
     @Test

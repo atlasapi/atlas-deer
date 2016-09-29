@@ -1,8 +1,7 @@
 package org.atlasapi.system.bootstrap.workers;
 
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.entity.util.WriteException;
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
@@ -12,12 +11,12 @@ import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,50 +28,63 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
 
     private final EventResolver resolver;
     private final EventWriter writer;
-    private final Timer metricsTimer;
 
-    public SeparatingEventReadWriteWorker(EventResolver resolver, EventWriter writer, Timer metricsTimer) {
+    private final Timer executionTimer;
+    private final Meter messageReceivedMeter;
+    private final Meter failureMeter;
+
+    private SeparatingEventReadWriteWorker(
+            EventResolver resolver,
+            EventWriter writer,
+            String metricPrefix,
+            MetricRegistry metricRegistry
+    ) {
         this.resolver = checkNotNull(resolver);
         this.writer = checkNotNull(writer);
-        this.metricsTimer = checkNotNull(metricsTimer);
+
+        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+    }
+
+    public static SeparatingEventReadWriteWorker create(
+            EventResolver resolver,
+            EventWriter writer,
+            String metricPrefix,
+            MetricRegistry metricRegistry
+    ) {
+        return new SeparatingEventReadWriteWorker(resolver, writer, metricPrefix, metricRegistry);
     }
 
     @Override
     public void process(ResourceUpdatedMessage message)
             throws RecoverableException {
+        messageReceivedMeter.mark();
+
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
                 message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
         );
 
-        ImmutableList<Id> ids = ImmutableList.of(message.getUpdatedResource().getId());
-        process(ids);
-    }
+        Timer.Context time = executionTimer.time();
 
-    public void process(Iterable<Id> ids) {
-        Timer.Context time = metricsTimer.time();
+        try {
+            Event event = Futures.get(
+                    resolver.resolveIds(ImmutableList.of(message.getUpdatedResource().getId())),
+                    1,
+                    TimeUnit.MINUTES,
+                    Exception.class
+            )
+                    .getResources()
+                    .first()
+                    .get();
 
-        ListenableFuture<Resolved<Event>> future = resolver.resolveIds(ids);
-        Futures.addCallback(future, new FutureCallback<Resolved<Event>>() {
-
-            @Override
-            public void onSuccess(Resolved<Event> result) {
-                for (Event event : result.getResources()) {
-                    try {
-                        writer.write(event);
-                    } catch (WriteException e) {
-                        LOG.warn("Failed to write event " + event.getId());
-                    } finally {
-                        time.stop();
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                time.stop();
-                throw Throwables.propagate(t);
-            }
-        });
+            writer.write(event);
+        } catch (Exception e) {
+            failureMeter.mark();
+            throw Throwables.propagate(e);
+        } finally {
+            time.stop();
+        }
     }
 
     private long getTimeToProcessInSeconds(AbstractMessage message) {
