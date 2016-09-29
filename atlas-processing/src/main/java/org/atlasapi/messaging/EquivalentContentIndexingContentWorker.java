@@ -14,7 +14,6 @@ import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Optional;
@@ -29,59 +28,35 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class EquivalentContentIndexingContentWorker
         implements Worker<EquivalentContentUpdatedMessage> {
 
+    private static final String METRICS_TIMER = "EquivalentContentIndexingContentWorker";
+
     private static final Logger LOG =
             LoggerFactory.getLogger(EquivalentContentIndexingContentWorker.class);
 
     private final ContentResolver contentResolver;
     private final ContentIndex contentIndex;
+    private final Timer timer;
 
-    private final Timer executionTimer;
-    private final Meter messageReceivedMeter;
-    private final Meter failureMeter;
-
-    private EquivalentContentIndexingContentWorker(
-            ContentResolver contentResolver,
-            ContentIndex contentIndex,
-            String metricPrefix,
-            MetricRegistry metricRegistry
-    ) {
+    public EquivalentContentIndexingContentWorker(ContentResolver contentResolver,
+            ContentIndex contentIndex, MetricRegistry metricRegistry) {
         this.contentResolver = checkNotNull(contentResolver);
         this.contentIndex = checkNotNull(contentIndex);
-
-        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
-        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
-        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
-    }
-
-    public static EquivalentContentIndexingContentWorker create(
-            ContentResolver contentResolver,
-            ContentIndex contentIndex,
-            String metricPrefix,
-            MetricRegistry metricRegistry
-    ) {
-        return new EquivalentContentIndexingContentWorker(
-                contentResolver, contentIndex, metricPrefix, metricRegistry
-        );
+        this.timer = checkNotNull(metricRegistry.timer(METRICS_TIMER));
     }
 
     @Override
     public void process(EquivalentContentUpdatedMessage message) throws RecoverableException {
-        messageReceivedMeter.mark();
-
         Id contentId = getContentId(message);
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
                 contentId, getTimeToProcessInSeconds(message), message);
 
-        Timer.Context time = executionTimer.time();
-
+        Timer.Context time = timer.time();
         try {
             indexContent(contentId);
-        } catch (TimeoutException | IndexException e) {
-            failureMeter.mark();
-            throw new RecoverableException("Failed to index content " + contentId, e);
-        } finally {
             time.stop();
+        } catch (TimeoutException | IndexException e) {
+            throw new RecoverableException("Failed to index content " + contentId, e);
         }
     }
 
@@ -93,7 +68,6 @@ public class EquivalentContentIndexingContentWorker
         Resolved<Content> results = Futures.get(
                 resolveContent(contentId), 30, TimeUnit.SECONDS, TimeoutException.class
         );
-        @SuppressWarnings("Guava")
         Optional<Content> contentOptional = results.getResources().first();
 
         if (contentOptional.isPresent()) {

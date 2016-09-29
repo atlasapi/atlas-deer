@@ -13,10 +13,12 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.ProcessingMetricsModule;
 import org.atlasapi.system.bootstrap.workers.ContentEquivalenceAssertionLegacyMessageSerializer;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.bootstrap.workers.LegacyRetryingContentResolver;
 
 import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.Message;
 import com.metabroadcast.common.queue.MessageSerializer;
+import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 import com.google.common.collect.ImmutableList;
@@ -113,20 +115,23 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer topicIndexerMessageListener() {
-        String workerName = "TopicIndexer";
+    public Worker<ResourceUpdatedMessage> topicIndexingWorker() {
+        return new TopicIndexingWorker(
+                persistence.topicStore(),
+                persistence.topicIndex(),
+                metricsModule.metrics()
+        );
+    }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer topicIndexerMessageListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        TopicIndexingWorker.create(
-                                persistence.topicStore(),
-                                persistence.topicIndex(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        topicIndexingWorker(),
                         serializer(ResourceUpdatedMessage.class),
                         topicChanges,
-                        workerName
+                        "TopicIndexer"
                 )
                 .withDefaultConsumers(topicIndexingNumOfConsumers)
                 .withMaxConsumers(topicIndexingNumOfConsumers)
@@ -137,19 +142,22 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer equivalentContentStoreGraphUpdateListener() {
-        String workerName = "EquivalentContentStoreGraphs";
+    public Worker<EquivalenceGraphUpdateMessage> equivalentContentStoreGraphUpdateWorker() {
+        return new EquivalentContentStoreGraphUpdateWorker(
+                persistence.getEquivalentContentStore(),
+                metricsModule.metrics()
+        );
+    }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer equivalentContentStoreGraphUpdateListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        EquivalentContentStoreGraphUpdateWorker.create(
-                                persistence.getEquivalentContentStore(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        equivalentContentStoreGraphUpdateWorker(),
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges,
-                        workerName
+                        "EquivalentContentStoreGraphs"
                 )
                 .withDefaultConsumers(equivContentGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivContentGraphChangesNumOfConsumers)
@@ -160,19 +168,27 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer equivalentContentStoreContentUpdateListener() {
-        String workerName = "EquivalentContentStoreContent";
+    public Worker<ResourceUpdatedMessage> equivalentContentStoreContentUpdateWorker() {
+        return new EquivalentContentStoreContentUpdateWorker(
+                persistence.getEquivalentContentStore(),
+                new LegacyRetryingContentResolver(
+                        persistence.contentStore(),
+                        persistence.legacyContentResolver(),
+                        persistence.nullMessageSendingContentStore()
+                ),
+                metricsModule.metrics()
+        );
+    }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer equivalentContentStoreContentUpdateListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        EquivalentContentStoreContentUpdateWorker.create(
-                                persistence.getEquivalentContentStore(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        equivalentContentStoreContentUpdateWorker(),
                         serializer(ResourceUpdatedMessage.class),
                         contentChanges,
-                        workerName
+                        "EquivalentContentStoreContent"
                 )
                 .withDefaultConsumers(equivContentContentChangesNumOfConsumers)
                 .withMaxConsumers(equivContentContentChangesNumOfConsumers)
@@ -183,22 +199,33 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer equivalentScheduleStoreGraphUpdateListener() {
-        String workerName = "EquivalentScheduleStoreGraphs";
+    public Worker<EquivalenceGraphUpdateMessage> equivalentScheduleStoreGraphUpdateWorker() {
+        return EquivalentScheduleStoreGraphUpdateWorker.create(
+                persistence.getEquivalentScheduleStore(),
+                metricsModule.metrics(),
+                EquivalenceGraphUpdateResolver.create(persistence.getContentEquivalenceGraphStore())
+        );
+    }
 
+    @Bean
+    @Lazy
+    public Worker<EquivalentContentUpdatedMessage> equivalentScheduleStoreContentUpdateWorker() {
+        return new EquivalentScheduleStoreContentUpdateWorker(
+                persistence.getEquivalentContentStore(),
+                persistence.getEquivalentScheduleStore(),
+                metricsModule.metrics()
+        );
+    }
+
+    @Bean
+    @Lazy
+    public KafkaConsumer equivalentScheduleStoreGraphUpdateListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        EquivalentScheduleStoreGraphUpdateWorker.create(
-                                persistence.getEquivalentScheduleStore(),
-                                EquivalenceGraphUpdateResolver.create(
-                                        persistence.getContentEquivalenceGraphStore()
-                                ),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        equivalentScheduleStoreGraphUpdateWorker(),
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges,
-                        workerName
+                        "EquivalentScheduleStoreGraphs"
                 )
                 .withDefaultConsumers(equivScheduleGraphChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleGraphChangesNumOfConsumers)
@@ -210,19 +237,12 @@ public class WorkersModule {
     @Bean
     @Lazy
     public KafkaConsumer equivalentScheduleStoreContentListener() {
-        String workerName = "EquivalentScheduleStoreContent";
-
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        EquivalentScheduleStoreContentUpdateWorker.create(
-                                persistence.getEquivalentContentStore(),
-                                persistence.getEquivalentScheduleStore(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        equivalentScheduleStoreContentUpdateWorker(),
                         serializer(EquivalentContentUpdatedMessage.class),
                         equivalentContentChanges,
-                        workerName
+                        "EquivalentScheduleStoreContent"
                 )
                 .withDefaultConsumers(equivScheduleContentChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleContentChangesNumOfConsumers)
@@ -233,19 +253,22 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer equivalentScheduleStoreScheduleUpdateListener() {
-        String workerName = "EquivalentScheduleStoreSchedule";
+    public Worker<ScheduleUpdateMessage> equivalentScheduleStoreScheduleUpdateWorker() {
+        return new EquivalentScheduleStoreScheduleUpdateWorker(
+                persistence.getEquivalentScheduleStore(),
+                metricsModule.metrics()
+        );
+    }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer equivalentScheduleStoreScheduleUpdateListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        EquivalentScheduleStoreScheduleUpdateWorker.create(
-                                persistence.getEquivalentScheduleStore(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        equivalentScheduleStoreScheduleUpdateWorker(),
                         serializer(ScheduleUpdateMessage.class),
                         scheduleChanges,
-                        workerName
+                        "EquivalentScheduleStoreSchedule"
                 )
                 .withDefaultConsumers(equivScheduleScheduleChangesNumOfConsumers)
                 .withMaxConsumers(equivScheduleScheduleChangesNumOfConsumers)
@@ -256,20 +279,23 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer equivUpdateListener() {
-        String workerName = "EquivGraphUpdate";
+    public Worker<EquivalenceAssertionMessage> contentEquivalenceUpdater() {
+        return new ContentEquivalenceUpdatingWorker(
+                persistence.getContentEquivalenceGraphStore(),
+                metricsModule.metrics(),
+                explicitEquivalenceMigrator()
+        );
+    }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer equivUpdateListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        ContentEquivalenceUpdatingWorker.create(
-                                persistence.getContentEquivalenceGraphStore(),
-                                explicitEquivalenceMigrator(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        contentEquivalenceUpdater(),
                         new ContentEquivalenceAssertionLegacyMessageSerializer(),
                         equivTopic,
-                        workerName
+                        "EquivGraphUpdate"
                 )
                 .withProducerSystem(equivSystem)
                 .withDefaultConsumers(contentEquivalenceGraphChangesNumOfConsumers)
@@ -281,20 +307,21 @@ public class WorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer equivalentContentIndexingMessageListener() {
-        String workerName = "EquivalentContentIndexer";
+    public EquivalentContentIndexingContentWorker equivalentContentIndexingWorker() {
+        return new EquivalentContentIndexingContentWorker(
+                persistence.contentStore(), persistence.contentIndex(), metricsModule.metrics()
+        );
+    }
 
+    @Bean
+    @Lazy
+    public KafkaConsumer equivalentContentIndexingMessageListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        EquivalentContentIndexingContentWorker.create(
-                                persistence.contentStore(),
-                                persistence.contentIndex(),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        equivalentContentIndexingWorker(),
                         serializer(EquivalentContentUpdatedMessage.class),
                         equivalentContentChanges,
-                        workerName
+                        "EquivalentContentIndexer"
                 )
                 .withMaxConsumers(contentIndexingNumOfConsumers)
                 .withDefaultConsumers(contentIndexingNumOfConsumers)
@@ -306,22 +333,23 @@ public class WorkersModule {
 
     @Bean
     @Lazy()
-    public KafkaConsumer equivalentContentIndexingGraphMessageListener() {
-        String workerName = "EquivalentContentIndexer";
+    public EquivalentContentIndexingGraphWorker equivalentContentIndexingGraphWorker() {
+        return EquivalentContentIndexingGraphWorker.create(
+                persistence.contentIndex(),
+                metricsModule.metrics(),
+                EquivalenceGraphUpdateResolver.create(persistence.getContentEquivalenceGraphStore())
+        );
+    }
 
+    @Bean
+    @Lazy()
+    public KafkaConsumer equivalentContentIndexingGraphMessageListener() {
         return messaging.messageConsumerFactory()
                 .createConsumer(
-                        EquivalentContentIndexingGraphWorker.create(
-                                persistence.contentIndex(),
-                                EquivalenceGraphUpdateResolver.create(
-                                        persistence.getContentEquivalenceGraphStore()
-                                ),
-                                WORKER_METRIC_PREFIX + workerName + ".",
-                                metricsModule.metrics()
-                        ),
+                        equivalentContentIndexingGraphWorker(),
                         serializer(EquivalenceGraphUpdateMessage.class),
                         contentEquivalenceGraphChanges,
-                        workerName
+                        "EquivalentContentIndexer"
                 )
                 .withMaxConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)
                 .withDefaultConsumers(contentIndexingEquivalenceGraphChangesNumOfConsumers)

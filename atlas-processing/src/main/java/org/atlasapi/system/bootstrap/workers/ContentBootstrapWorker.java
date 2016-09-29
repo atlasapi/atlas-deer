@@ -16,7 +16,6 @@ import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -32,70 +31,61 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
     private final ContentResolver contentResolver;
     private final ContentWriter writer;
-    private final ColumbusTelescopeReporter columbusTelescopeReporter;
-
-    private final Timer executionTimer;
-    private final Meter messageReceivedMeter;
+    private final Timer metricsTimer;
     private final Meter contentNotWrittenMeter;
     private final Meter failureMeter;
+    private final ColumbusTelescopeReporter columbusTelescopeReporter;
 
     private ContentBootstrapWorker(
             ContentResolver contentResolver,
             ContentWriter writer,
-            String metricPrefix,
-            MetricRegistry metricRegistry,
+            Timer metricsTimer,
+            Meter contentNotWrittenMeter,
+            Meter failureMeter,
             ColumbusTelescopeReporter columbusTelescopeReporter
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.writer = checkNotNull(writer);
-
-        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
-        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
-        this.contentNotWrittenMeter = metricRegistry.meter(metricPrefix + "meter.nop");
-        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
-
+        this.metricsTimer = checkNotNull(metricsTimer);
+        this.contentNotWrittenMeter = checkNotNull(contentNotWrittenMeter);
+        this.failureMeter = checkNotNull(failureMeter);
         this.columbusTelescopeReporter = checkNotNull(columbusTelescopeReporter);
     }
 
     public static ContentBootstrapWorker create(
             ContentResolver contentResolver,
             ContentWriter writer,
-            String metricPrefix,
-            MetricRegistry metricRegistry,
+            Timer metricsTimer,
+            Meter contentNotWrittenMeter,
+            Meter failureMeter,
             ColumbusTelescopeReporter columbusTelescopeReporter
     ) {
         return new ContentBootstrapWorker(
                 contentResolver,
                 writer,
-                metricPrefix,
-                metricRegistry,
+                metricsTimer,
+                contentNotWrittenMeter,
+                failureMeter,
                 columbusTelescopeReporter
         );
     }
 
     @Override
     public void process(ResourceUpdatedMessage message) throws RecoverableException {
-        messageReceivedMeter.mark();
-
         Id contentId = message.getUpdatedResource().getId();
         log.debug("Processing message on id {}, took: PT{}S, message: {}",
                 contentId, getTimeToProcessInSeconds(message), message);
-
-        Timer.Context time = executionTimer.time();
-
         try {
             process(contentId);
         } catch (Exception e) {
             log.error("Failed to bootstrap content {}", message.getUpdatedResource(), e);
             failureMeter.mark();
-
             throw Throwables.propagate(e);
-        } finally {
-            time.stop();
         }
     }
 
     private void process(Id contentId) throws org.atlasapi.entity.util.WriteException {
+        Timer.Context time = metricsTimer.time();
         Resolved<Content> content = resolveContent(contentId);
 
         if (content.getResources().isEmpty()) {
@@ -111,6 +101,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             columbusTelescopeReporter.reportSuccessfulMigration(
                     content.getResources().first().get()
             );
+            time.stop();
         } else {
             log.debug("Content has not been written: {}", result.toString());
             contentNotWrittenMeter.mark();

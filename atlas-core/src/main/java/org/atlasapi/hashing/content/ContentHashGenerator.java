@@ -7,7 +7,6 @@ import org.atlasapi.content.Content;
 import org.atlasapi.hashing.HashGenerator;
 
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,25 +26,22 @@ public class ContentHashGenerator implements ContentHasher {
 
     private ContentHashGenerator(
             HashGenerator hashGenerator,
-            String metricPrefix,
-            MetricRegistry metricRegistry
+            Meter hashGeneratedMeter,
+            Meter hashGenerationFailedMeter
     ) {
         this.hashGenerator = checkNotNull(hashGenerator);
-
-        this.hashGeneratedMeter = metricRegistry.meter(
-                metricPrefix + "contentHashGenerator.meter.generated"
-        );
-        this.hashGenerationFailedMeter = metricRegistry.meter(
-                metricPrefix + "contentHashGenerator.meter.failed"
-        );
+        this.hashGeneratedMeter = checkNotNull(hashGeneratedMeter);
+        this.hashGenerationFailedMeter = checkNotNull(hashGenerationFailedMeter);
     }
 
     public static ContentHashGenerator create(
             HashGenerator hashGenerator,
-            String metricPrefix,
-            MetricRegistry metricRegistry
+            Meter hashGeneratedMeter,
+            Meter hashGenerationFailedMeter
     ) {
-        return new ContentHashGenerator(hashGenerator, metricPrefix, metricRegistry);
+        return new ContentHashGenerator(
+                hashGenerator, hashGeneratedMeter, hashGenerationFailedMeter
+        );
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.atlasapi.media.entity.Publisher;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
@@ -24,6 +25,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
@@ -34,15 +36,20 @@ public class EquivalentContentIndexingContentWorkerTest {
 
     private @Mock ContentResolver contentResolver;
     private @Mock ContentIndex contentIndex;
+    private @Mock MetricRegistry metricRegistry;
+    private @Mock Timer timer;
+    private @Mock Timer.Context timerContext;
     private @Mock Content content;
 
     @Before
     public void setUp() throws Exception {
-        worker = EquivalentContentIndexingContentWorker.create(
+        when(metricRegistry.timer(anyString())).thenReturn(timer);
+        when(timer.time()).thenReturn(timerContext);
+
+        worker = new EquivalentContentIndexingContentWorker(
                 contentResolver,
                 contentIndex,
-                "prefix",
-                new MetricRegistry()
+                metricRegistry
         );
     }
 
@@ -66,8 +73,10 @@ public class EquivalentContentIndexingContentWorkerTest {
 
         worker.process(message);
 
-        InOrder order = inOrder(contentResolver, contentIndex);
+        InOrder order = inOrder(contentResolver, contentIndex, timer, timerContext);
+        order.verify(timer).time();
         order.verify(contentResolver).resolveIds(ids);
         order.verify(contentIndex).index(content);
+        order.verify(timerContext).stop();
     }
 }

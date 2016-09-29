@@ -25,6 +25,7 @@ import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 import com.metabroadcast.common.queue.kafka.KafkaMessageConsumerFactory;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -48,8 +49,6 @@ import org.springframework.context.annotation.Lazy;
         ProcessingHealthModule.class
 })
 public class BootstrapWorkersModule {
-
-    private static final String WORKER_METRIC_PREFIX = "messaging.worker.";
 
     private final String consumerSystem = Configurer.get("messaging.system").get();
     private final String zookeeper = Configurer.get("messaging.zookeeper").get();
@@ -121,27 +120,26 @@ public class BootstrapWorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer contentBootstrapWorker() {
-        String workerName = "ContentBootstrap";
-
+    KafkaConsumer contentBootstrapWorker() {
+        MetricRegistry metricRegistry = metricsModule.metrics();
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
                 persistence.contentStore(),
-                WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics(),
+                metricRegistry.timer("ContentBootstrapWorker"),
+                metricRegistry.meter("ContentBootstrapWorker.notWritten"),
+                metricRegistry.meter("ContentBootstrapWorker.errorRate"),
                 ColumbusTelescopeReporter.create(
-                        TelescopeClientImpl.create(columbusTelescopeHost),
+                        getTelescopeClient(),
                         reportingEnvironment,
                         getObjectMapper()
                 )
         );
-
         return bootstrapQueueFactory()
                 .createConsumer(
                         worker,
                         new EntityUpdatedLegacyMessageSerializer(),
                         contentChanges,
-                        workerName
+                        "ContentBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(contentChangesNumOfConsumers)
@@ -153,27 +151,26 @@ public class BootstrapWorkersModule {
 
     @Bean
     @Lazy
-    public KafkaConsumer cqlContentBootstrapWorker() {
-        String workerName = "CqlContentBootstrap";
-
+    KafkaConsumer cqlContentBootstrapWorker() {
+        MetricRegistry metricRegistry = metricsModule.metrics();
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
                 persistence.cqlContentStore(),
-                WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics(),
+                metricRegistry.timer("CqlContentBootstrapWorker"),
+                metricRegistry.meter("CqlContentBootstrapWorker.notWritten"),
+                metricRegistry.meter("CqlContentBootstrapWorker.errorRate"),
                 ColumbusTelescopeReporter.create(
-                        TelescopeClientImpl.create(columbusTelescopeHost),
+                        getTelescopeClient(),
                         reportingEnvironment,
                         getObjectMapper()
                 )
         );
-
         return bootstrapQueueFactory()
                 .createConsumer(
                         worker,
                         new EntityUpdatedLegacyMessageSerializer(),
                         contentChanges,
-                        workerName
+                        "CqlContentBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(cqlContentChangesNumOfConsumers)
@@ -186,21 +183,17 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer organisationBootstrapWorker() {
-        String workerName = "OrganisationBootstrap";
-
-        OrganisationBootstrapWorker worker = OrganisationBootstrapWorker.create(
+        OrganisationBootstrapWorker worker = new OrganisationBootstrapWorker(
                 persistence.legacyOrganisationResolver(),
                 persistence.idSettingOrganisationStore(),
-                WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics().timer("OrganisationBootstrapWorker")
         );
-
         return bootstrapQueueFactory()
                 .createConsumer(
                         worker,
                         new EntityUpdatedLegacyMessageSerializer(),
                         organisationChanges,
-                        workerName
+                        "OrganisationBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(organisationChangesNumOfConsumers)
@@ -213,22 +206,18 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer scheduleReadWriter() {
-        String workerName = "ScheduleBootstrap";
-
-        ScheduleReadWriteWorker worker = ScheduleReadWriteWorker.create(
+        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
                 scheduleBootstrapTaskFactory(),
                 persistence.channelResolver(),
                 ignoredScheduleSources,
-                WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics().timer("ScheduleBootstrapWorker")
         );
-
         return bootstrapQueueFactory()
                 .createConsumer(
                         worker,
                         JacksonMessageSerializer.forType(ScheduleUpdateMessage.class),
                         scheduleChanges,
-                        workerName
+                        "ScheduleBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
@@ -241,32 +230,18 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer scheduleV2ReadWriter() {
-        String workerName = "ScheduleBootstrapV2";
-
-        ChannelIntervalScheduleBootstrapTaskFactory scheduleV2BootstrapTaskFactory =
-                new ChannelIntervalScheduleBootstrapTaskFactory(
-                        persistence.legacyScheduleStore(),
-                        persistence.v2ScheduleStore(),
-                        new DelegatingContentStore(
-                                persistence.legacyContentResolver(),
-                                persistence.contentStore()
-                        )
-                );
-
-        ScheduleReadWriteWorker worker = ScheduleReadWriteWorker.create(
-                scheduleV2BootstrapTaskFactory,
+        ScheduleReadWriteWorker worker = new ScheduleReadWriteWorker(
+                scheduleV2BootstrapTaskFactory(),
                 persistence.channelResolver(),
                 ignoredScheduleSources,
-                WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics().timer("ScheduleV2BootstrapWorker")
         );
-
         return bootstrapQueueFactory()
                 .createConsumer(
                         worker,
                         JacksonMessageSerializer.forType(ScheduleUpdateMessage.class),
                         scheduleChanges,
-                        workerName
+                        "ScheduleBootstrapV2"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(scheduleChangesNumOfConsumers)
@@ -279,21 +254,17 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer topicReadWriter() {
-        String workerName = "TopicBootstrap";
-
-        TopicReadWriteWorker worker = TopicReadWriteWorker.create(
+        TopicReadWriteWorker worker = new TopicReadWriteWorker(
                 persistence.legacyTopicResolver(),
                 persistence.topicStore(),
-                WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics().timer("TopicBootstrapWorker")
         );
-
         return bootstrapQueueFactory()
                 .createConsumer(
                         worker,
                         new EntityUpdatedLegacyMessageSerializer(),
                         topicChanges,
-                        workerName
+                        "TopicBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(topicChangesNumOfConsumers)
@@ -306,21 +277,17 @@ public class BootstrapWorkersModule {
     @Bean
     @Lazy
     KafkaConsumer eventReadWriter() {
-        String workerName = "SeparatingEventBootstrap";
-
-        SeparatingEventReadWriteWorker worker = SeparatingEventReadWriteWorker.create(
+        SeparatingEventReadWriteWorker worker = new SeparatingEventReadWriteWorker(
                 persistence.legacyEventResolver(),
                 persistence.eventWriter(),
-                WORKER_METRIC_PREFIX + workerName + ".",
-                metricsModule.metrics()
+                metricsModule.metrics().timer("SeparatingEventBootstrapWorker")
         );
-
         return bootstrapQueueFactory()
                 .createConsumer(
                         worker,
                         new EntityUpdatedLegacyMessageSerializer(),
                         eventChanges,
-                        workerName
+                        "SeparatingEventBootstrap"
                 )
                 .withConsumerSystem(consumerSystem)
                 .withDefaultConsumers(eventChangesNumOfConsumers)
@@ -328,6 +295,15 @@ public class BootstrapWorkersModule {
                 .withPersistentRetryPolicy(persistence.databasedWriteMongo())
                 .withMetricRegistry(metricsModule.metrics())
                 .build();
+    }
+
+    @Bean
+    public DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
+        return new DirectAndExplicitEquivalenceMigrator(
+                persistence.legacyContentResolver(),
+                persistence.legacyEquivalenceStore(),
+                persistence.nullMessageSendingGraphStore()
+        );
     }
 
     @PostConstruct
@@ -388,11 +364,7 @@ public class BootstrapWorkersModule {
                         persistence.contentStore()
                 ),
                 search.equivContentIndex(),
-                new DirectAndExplicitEquivalenceMigrator(
-                        persistence.legacyContentResolver(),
-                        persistence.legacyEquivalenceStore(),
-                        persistence.nullMessageSendingGraphStore()
-                ),
+                explicitEquivalenceMigrator(),
                 persistence,
                 persistence.legacySegmentMigrator(),
                 persistence.legacyContentResolver()
@@ -412,6 +384,22 @@ public class BootstrapWorkersModule {
                 persistence.getEquivalentScheduleStore(),
                 persistence.getContentEquivalenceGraphStore()
         );
+    }
+
+    @Bean
+    public ChannelIntervalScheduleBootstrapTaskFactory scheduleV2BootstrapTaskFactory() {
+        return new ChannelIntervalScheduleBootstrapTaskFactory(
+                persistence.legacyScheduleStore(),
+                persistence.v2ScheduleStore(),
+                new DelegatingContentStore(
+                        persistence.legacyContentResolver(),
+                        persistence.contentStore()
+                )
+        );
+    }
+
+    private TelescopeClientImpl getTelescopeClient() {
+        return TelescopeClientImpl.create(columbusTelescopeHost);
     }
 
     private ObjectMapper getObjectMapper() {

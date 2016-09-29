@@ -21,7 +21,8 @@ import com.metabroadcast.common.media.MimeType;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.time.Timestamp;
 
-import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -46,35 +47,40 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ContentBootstrapWorkerTest {
 
-    private static final String TEST_RAW_STRING = "{ \"test\":\"test\"}";
-
-    @Captor private ArgumentCaptor<Event> columbusTelescopeEventCaptor;
-
     @Mock private ContentResolver contentResolver;
     @Mock private ContentWriter writer;
+    @Mock private Timer metricsTimer;
+    @Mock private Meter contentNotWrittenMeter;
+    @Mock private Meter failureMeter;
     @Mock private TelescopeClientImpl telescopeClient;
     @Mock private ResourceRef resourceRef;
+    @Mock private Timer.Context timerContext;
     @Mock private ResourceUpdatedMessage resourceUpdatedMessage;
     @Mock private ListenableFuture<Resolved<Content>> listenableFuture;
     @Mock private ObjectMapper objectMapper;
+    @Captor private ArgumentCaptor<Event> columbusTelescopeEventCaptor;
 
+    private ColumbusTelescopeReporter columbusTelescopeReporter;
     private ContentBootstrapWorker bootstrapWorker;
     private WriteResult<Content, Content> successfulWriteResult;
     private Content content;
+    private String environment = "PRODUCTION";
+    private static final String TEST_RAW_STRING = "{ \"test\":\"test\"}";
 
     @Before
     public void setUp() throws Exception {
-        ColumbusTelescopeReporter columbusTelescopeReporter = ColumbusTelescopeReporter.create(
+        this.columbusTelescopeReporter = ColumbusTelescopeReporter.create(
                 telescopeClient,
-                "PRODUCTION",
+                environment,
                 objectMapper
         );
 
         this.bootstrapWorker = ContentBootstrapWorker.create(
                 contentResolver,
                 writer,
-                "prefix",
-                new MetricRegistry(),
+                metricsTimer,
+                contentNotWrittenMeter,
+                failureMeter,
                 columbusTelescopeReporter
         );
         this.content = new org.atlasapi.content.Item("panda.com", "panda", Publisher.PA);
@@ -87,9 +93,9 @@ public class ContentBootstrapWorkerTest {
         ResourceUpdatedMessage updatedMessage = createUpdatedMessage();
 
         when(resourceRef.getId()).thenReturn(Id.valueOf(1));
-        when(contentResolver.resolveIds(any(Collection.class)))
-                .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(content))));
+        when(contentResolver.resolveIds(any(Collection.class))).thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(content))));
         when(writer.writeContent(content)).thenReturn(successfulWriteResult);
+        when(metricsTimer.time()).thenReturn(timerContext);
 
         bootstrapWorker.process(updatedMessage);
 
@@ -109,9 +115,9 @@ public class ContentBootstrapWorkerTest {
         ResourceUpdatedMessage updatedMessage = createUpdatedMessage();
 
         when(resourceRef.getId()).thenReturn(Id.valueOf(1));
-        when(contentResolver.resolveIds(any(Collection.class)))
-                .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(content))));
+        when(contentResolver.resolveIds(any(Collection.class))).thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableList.of(content))));
         when(writer.writeContent(content)).thenReturn(successfulWriteResult);
+        when(metricsTimer.time()).thenReturn(timerContext);
         when(objectMapper.writeValueAsString(any(Content.class))).thenReturn(TEST_RAW_STRING);
 
         bootstrapWorker.process(updatedMessage);
