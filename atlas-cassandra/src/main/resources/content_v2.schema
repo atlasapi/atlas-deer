@@ -1,4 +1,4 @@
-CREATE TYPE IF NOT EXISTS Award(
+CREATE TYPE IF NOT EXISTS Award (
   outcome text,
   title text,
   description text,
@@ -13,6 +13,16 @@ CREATE TYPE IF NOT EXISTS Alias (
 CREATE TYPE IF NOT EXISTS Certificate (
   country_code text,
   classification text
+);
+
+CREATE TYPE IF NOT EXISTS Interval (
+  start timestamp,
+  end timestamp
+);
+
+CREATE TYPE IF NOT EXISTS UpdateTimes (
+  last_updated timestamp,
+  equiv_update timestamp
 );
 
 CREATE TYPE IF NOT EXISTS Ref (
@@ -43,7 +53,6 @@ CREATE TYPE IF NOT EXISTS Synopses (
 );
 
 CREATE TYPE IF NOT EXISTS SeriesRef (
-  ref frozen<Ref>,
   title text,
   updated timestamp,
   series_nr int,
@@ -52,7 +61,6 @@ CREATE TYPE IF NOT EXISTS SeriesRef (
 );
 
 CREATE TYPE IF NOT EXISTS ItemRef (
-  ref frozen<Ref>,
   sort_key text,
   updated timestamp,
   type text
@@ -67,8 +75,6 @@ CREATE TYPE IF NOT EXISTS Image (
   width int,
   aspect text,
   mime text,
-  avail_start timestamp,
-  avail_end timestamp,
   has_title_art boolean,
   src text
 );
@@ -105,7 +111,6 @@ CREATE TYPE IF NOT EXISTS Tag (
 );
 
 CREATE TYPE IF NOT EXISTS ItemSummary (
-  ref frozen<ItemRef>,
   title text,
   descr text,
   image text,
@@ -132,70 +137,13 @@ CREATE TYPE IF NOT EXISTS CrewMember (
 CREATE TYPE IF NOT EXISTS LocationSummary (
   available boolean,
   uri text,
-  start timestamp,
-  end timestamp
+  interval Interval
 );
 
 CREATE TYPE IF NOT EXISTS BroadcastRef (
   src_id text,
   channel_id bigint,
-  start timestamp,
-  end timestamp
-);
-
-CREATE TYPE IF NOT EXISTS Price (
-  currency text,
-  price int
-);
-
-CREATE TYPE IF NOT EXISTS Pricing (
-  start timestamp,
-  end timestamp,
-  price frozen<Price>
-);
-
-CREATE TYPE IF NOT EXISTS Policy (
-  id bigint,
-  canonical_uri text,
-  curie text,
-  alias_urls set<text>,
-  aliases set<frozen<Alias>>,
-  equiv_to set<frozen<Ref>>,
-  last_updated timestamp,
-  equiv_update timestamp,
-  avail_start timestamp,
-  avail_end timestamp,
-  drm_playable_from timestamp,
-  avail_countries set<text>,
-  avail_length int,
-  revenue_contract text,
-  subscr_packages set<text>,
-  price frozen<Price>,
-  pricing list<frozen<Pricing>>,
-  service_id bigint,
-  player_id bigint,
-  platform text,
-  network text,
-  actual_avail_start timestamp
-);
-
-CREATE TYPE IF NOT EXISTS Location (
-  id bigint,
-  canonical_uri text,
-  curie text,
-  alias_urls set<text>,
-  aliases set<frozen<Alias>>,
-  equiv_to set<frozen<Ref>>,
-  last_updated timestamp,
-  equiv_update timestamp,
-  available boolean,
-  transport_is_live boolean,
-  transport_subtype text,
-  transport_type text,
-  uri text,
-  embed_code text,
-  embed_id text,
-  policy frozen<Policy>
+  interval Interval
 );
 
 CREATE TYPE IF NOT EXISTS Broadcast (
@@ -262,8 +210,6 @@ CREATE TYPE IF NOT EXISTS Restriction (
   alias_urls set<text>,
   aliases set<frozen<Alias>>,
   equiv_to set<frozen<Ref>>,
-  last_updated timestamp,
-  equiv_update timestamp,
   restricted boolean,
   minimum_age int,
   message text,
@@ -296,6 +242,16 @@ CREATE TYPE IF NOT EXISTS ReleaseDate (
   type text
 );
 
+CREATE TYPE IF NOT EXISTS ItemRefAndBroadcastRefs (
+  item ItemRef,
+  broadcasts list<frozen<BroadcastRef>>
+);
+
+CREATE TYPE IF NOT EXISTS ItemRefAndLocationSummaries (
+  item ItemRef,
+  location_summaries list<frozen<LocationSummary>>
+);
+
 CREATE TABLE IF NOT EXISTS content_v2 (
   type text,
   id bigint PRIMARY KEY,
@@ -317,7 +273,7 @@ CREATE TABLE IF NOT EXISTS content_v2 (
   genres set<text>,
   publisher text,
   image text,
-  images set<frozen<Image>>,
+  images map<frozen<Image>, frozen<Interval>>,
   thumbnail text,
   first_seen timestamp,
   last_fetched timestamp,
@@ -353,7 +309,7 @@ CREATE TABLE IF NOT EXISTS content_v2 (
   container_summary frozen<ContainerSummary>,
   broadcasts set<frozen<Broadcast>>,
   segment_events list<frozen<SegmentEvent>>,
-  restrictions set<frozen<Restriction>>,
+  restrictions map<frozen<Restriction>, frozen<UpdateTimes>>,
 
   website_url text,
   subtitles set<text>,
@@ -363,12 +319,12 @@ CREATE TABLE IF NOT EXISTS content_v2 (
   part_nr int,
   special boolean,
 
-  series_refs set<frozen<SeriesRef>>,
+  series_refs map<frozen<Ref>, frozen<SeriesRef>>,
 
-  item_refs set<frozen<ItemRef>>,
-  upcoming map<frozen<ItemRef>, frozen<list<BroadcastRef>>>,
-  available map<frozen<ItemRef>, frozen<list<LocationSummary>>>,
-  item_summaries set<frozen<ItemSummary>>,
+  item_refs map<frozen<Ref>. frozen<ItemRef>>,
+  upcoming map<frozen<Ref>, frozen<ItemRefAndBroadcastRefs>>,
+  available map<frozen<Ref>, frozen<ItemRefAndLocationSummaries>>,
+  item_summaries map<frozen<Ref>, frozen<ItemSummary>>,
 
   reviews set<frozen<Review>>,
   ratings set<frozen<Rating>>,

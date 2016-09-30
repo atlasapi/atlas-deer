@@ -1,9 +1,11 @@
 package org.atlasapi.content.v2.model;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Image;
+import org.atlasapi.content.v2.model.udt.Interval;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.RelatedLink;
@@ -58,9 +60,9 @@ public interface Described extends Identified {
 
     void setImage(String image);
 
-    Set<Image> getImages();
+    Map<Image, Interval> getImages();
 
-    void setImages(Set<Image> images);
+    void setImages(Map<Image, Interval> images);
 
     String getThumbnail();
 

@@ -5,8 +5,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.atlasapi.content.v2.model.udt.Policy;
-import org.atlasapi.content.v2.model.udt.Pricing;
+import org.atlasapi.content.v2.model.pojo.Policy;
+import org.atlasapi.content.v2.model.pojo.Price;
+import org.atlasapi.content.v2.model.pojo.Pricing;
 import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 import org.atlasapi.entity.Id;
 
@@ -110,7 +111,7 @@ public class PolicySerialization {
                     revenueContract));
         }
         policy.setSubscriptionPackages(internal.getSubscriptionPackages());
-        org.atlasapi.content.v2.model.udt.Price internalPrice = internal.getPrice();
+        Price internalPrice = internal.getPrice();
         if (internalPrice != null) {
             policy.setPrice(price.deserialize(internalPrice));
         }

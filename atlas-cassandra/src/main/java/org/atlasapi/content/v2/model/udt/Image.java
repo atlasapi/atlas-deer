@@ -2,7 +2,6 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
-import org.joda.time.Instant;
 
 @UDT(name = "image")
 public class Image {
@@ -15,8 +14,6 @@ public class Image {
     @Field(name = "width") private Integer width;
     @Field(name = "aspect") private String aspectRatio;
     @Field(name = "mime") private String mimeType;
-    @Field(name = "avail_start") private Instant availabilityStart;
-    @Field(name = "avail_end") private Instant availabilityEnd;
     @Field(name = "has_title_art") private Boolean hasTitleArt;
     @Field(name = "src") private String source;
 
@@ -82,22 +79,6 @@ public class Image {
 
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
-    }
-
-    public Instant getAvailabilityStart() {
-        return availabilityStart;
-    }
-
-    public void setAvailabilityStart(Instant availabilityStart) {
-        this.availabilityStart = availabilityStart;
-    }
-
-    public Instant getAvailabilityEnd() {
-        return availabilityEnd;
-    }
-
-    public void setAvailabilityEnd(Instant availabilityEnd) {
-        this.availabilityEnd = availabilityEnd;
     }
 
     public Boolean getHasTitleArt() {

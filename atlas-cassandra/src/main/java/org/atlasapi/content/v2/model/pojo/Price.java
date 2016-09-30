@@ -1,13 +1,9 @@
-package org.atlasapi.content.v2.model.udt;
+package org.atlasapi.content.v2.model.pojo;
 
-import com.datastax.driver.mapping.annotations.Field;
-import com.datastax.driver.mapping.annotations.UDT;
-
-@UDT(name = "price")
 public class Price {
 
-    @Field(name = "currency") private String currency;
-    @Field(name = "price") private Integer price;
+    private String currency;
+    private Integer price;
 
     public String getCurrency() {
         return currency;

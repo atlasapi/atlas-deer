@@ -2,15 +2,13 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
-import org.joda.time.Instant;
 
 @UDT(name = "broadcastref")
 public class BroadcastRef {
 
     @Field(name = "src_id") private String sourceId;
     @Field(name = "channel_id") private Long channelId;
-    @Field(name = "start") private Instant start;
-    @Field(name = "end") private Instant end;
+    @Field(name = "interval") private Interval interval;
 
     public String getSourceId() {
         return sourceId;
@@ -28,19 +26,11 @@ public class BroadcastRef {
         this.channelId = channelId;
     }
 
-    public Instant getStart() {
-        return start;
+    public Interval getInterval() {
+        return interval;
     }
 
-    public void setStart(Instant start) {
-        this.start = start;
-    }
-
-    public Instant getEnd() {
-        return end;
-    }
-
-    public void setEnd(Instant end) {
-        this.end = end;
+    public void setInterval(Interval interval) {
+        this.interval = interval;
     }
 }
