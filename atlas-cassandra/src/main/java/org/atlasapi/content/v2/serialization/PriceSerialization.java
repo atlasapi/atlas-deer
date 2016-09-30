@@ -2,7 +2,7 @@ package org.atlasapi.content.v2.serialization;
 
 import java.util.Currency;
 
-import org.atlasapi.content.v2.model.udt.Price;
+import org.atlasapi.content.v2.model.pojo.Price;
 
 public class PriceSerialization {
 

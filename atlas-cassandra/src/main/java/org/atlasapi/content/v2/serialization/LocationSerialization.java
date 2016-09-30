@@ -2,7 +2,7 @@ package org.atlasapi.content.v2.serialization;
 
 import org.atlasapi.content.TransportSubType;
 import org.atlasapi.content.TransportType;
-import org.atlasapi.content.v2.model.udt.Location;
+import org.atlasapi.content.v2.model.pojo.Location;
 import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 
 public class LocationSerialization {

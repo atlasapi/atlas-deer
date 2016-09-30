@@ -1,40 +1,38 @@
-package org.atlasapi.content.v2.model.udt;
+package org.atlasapi.content.v2.model.pojo;
 
 import java.util.List;
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.Identified;
+import org.atlasapi.content.v2.model.udt.Alias;
+import org.atlasapi.content.v2.model.udt.Ref;
 
-import com.datastax.driver.mapping.annotations.Field;
-import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
-@UDT(name = "policy")
 public class Policy implements Identified {
 
-    @Field(name = "id") private Long id;
-    @Field(name = "canonical_uri") private String canonicalUri;
-    @Field(name = "curie") private String curie;
-    @Field(name = "alias_urls") private Set<String> aliasUrls;
-    @Field(name = "aliases") private Set<Alias> aliases;
-    @Field(name = "equiv_to") private Set<Ref> equivalentTo;
-    @Field(name = "last_updated") private Instant lastUpdated;
-    @Field(name = "equiv_update") private Instant equivalenceUpdate;
-
-    @Field(name = "avail_start") private Instant availabilityStart;
-    @Field(name = "avail_end") private Instant availabilityEnd;
-    @Field(name = "drm_playable_from") private Instant drmPlayableFrom;
-    @Field(name = "avail_countries") private Set<String> availableCountries;
-    @Field(name = "avail_length") private Integer availabilityLength;
-    @Field(name = "revenue_contract") private String revenueContract;
-    @Field(name = "subscr_packages") private Set<String> subscriptionPackages;
-    @Field(name = "price") private Price price;
-    @Field(name = "pricing") private List<Pricing> pricing;
-    @Field(name = "service_id") private Long serviceId;
-    @Field(name = "player_id") private Long playerId;
-    @Field(name = "platform") private String platform;
-    @Field(name = "network") private String network;
-    @Field(name = "actual_avail_start") private Instant actualAvailabilityStart;
+    private Long id;
+    private String canonicalUri;
+    private String curie;
+    private Set<String> aliasUrls;
+    private Set<Alias> aliases;
+    private Set<Ref> equivalentTo;
+    private Instant lastUpdated;
+    private Instant equivalenceUpdate;
+    private Instant availabilityStart;
+    private Instant availabilityEnd;
+    private Instant drmPlayableFrom;
+    private Set<String> availableCountries;
+    private Integer availabilityLength;
+    private String revenueContract;
+    private Set<String> subscriptionPackages;
+    private Price price;
+    private List<Pricing> pricing;
+    private Long serviceId;
+    private Long playerId;
+    private String platform;
+    private String network;
+    private Instant actualAvailabilityStart;
 
     public Long getId() {
         return id;

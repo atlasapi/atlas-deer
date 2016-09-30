@@ -17,8 +17,6 @@ public class Restriction implements Identified {
     @Field(name = "alias_urls") private Set<String> aliasUrls;
     @Field(name = "aliases") private Set<Alias> aliases;
     @Field(name = "equiv_to") private Set<Ref> equivalentTo;
-    @Field(name = "last_updated") private Instant lastUpdated;
-    @Field(name = "equiv_update") private Instant equivalenceUpdate;
 
     @Field(name = "restricted") private Boolean restricted;
     @Field(name = "minimum_age") private Integer minimumAge;
@@ -74,6 +72,26 @@ public class Restriction implements Identified {
         this.equivalentTo = equivalentTo;
     }
 
+    @Override
+    public Instant getLastUpdated() {
+        throw new UnsupportedOperationException("stored as part of a map value against this key");
+    }
+
+    @Override
+    public void setLastUpdated(Instant lastUpdated) {
+        throw new UnsupportedOperationException("stored as part of a map value against this key");
+    }
+
+    @Override
+    public Instant getEquivalenceUpdate() {
+        throw new UnsupportedOperationException("stored as part of a map value against this key");
+    }
+
+    @Override
+    public void setEquivalenceUpdate(Instant equivalenceUpdate) {
+        throw new UnsupportedOperationException("stored as part of a map value against this key");
+    }
+
     public Boolean getRestricted() {
         return restricted;
     }
@@ -112,21 +130,5 @@ public class Restriction implements Identified {
 
     public void setRating(String rating) {
         this.rating = rating;
-    }
-
-    public Instant getEquivalenceUpdate() {
-        return equivalenceUpdate;
-    }
-
-    public void setEquivalenceUpdate(Instant equivalenceUpdate) {
-        this.equivalenceUpdate = equivalenceUpdate;
-    }
-
-    public Instant getLastUpdated() {
-        return lastUpdated;
-    }
-
-    public void setLastUpdated(Instant lastUpdated) {
-        this.lastUpdated = lastUpdated;
     }
 }

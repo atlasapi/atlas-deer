@@ -3,7 +3,7 @@ package org.atlasapi.content.v2.model;
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.udt.Alias;
-import org.atlasapi.content.v2.model.udt.Location;
+import org.atlasapi.content.v2.model.pojo.Location;
 import org.atlasapi.content.v2.model.udt.Ref;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

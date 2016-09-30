@@ -7,17 +7,18 @@ import java.util.Set;
 import org.atlasapi.content.v2.model.udt.Alias;
 import org.atlasapi.content.v2.model.udt.Award;
 import org.atlasapi.content.v2.model.udt.Broadcast;
-import org.atlasapi.content.v2.model.udt.BroadcastRef;
 import org.atlasapi.content.v2.model.udt.Certificate;
 import org.atlasapi.content.v2.model.udt.ContainerRef;
 import org.atlasapi.content.v2.model.udt.ContainerSummary;
 import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
 import org.atlasapi.content.v2.model.udt.Image;
+import org.atlasapi.content.v2.model.udt.Interval;
 import org.atlasapi.content.v2.model.udt.ItemRef;
+import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
+import org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
-import org.atlasapi.content.v2.model.udt.LocationSummary;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.Ref;
@@ -29,9 +30,11 @@ import org.atlasapi.content.v2.model.udt.SegmentEvent;
 import org.atlasapi.content.v2.model.udt.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
+import org.atlasapi.content.v2.model.udt.UpdateTimes;
 
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.Frozen;
+import com.datastax.driver.mapping.annotations.FrozenKey;
 import com.datastax.driver.mapping.annotations.FrozenValue;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
@@ -104,9 +107,10 @@ public class Content implements ContentIface {
     @Column(name = "image")
     private String image;
 
+    @FrozenKey
     @FrozenValue
     @Column(name = "images")
-    private Set<Image> images;
+    private Map<Image, Interval> images;
 
     @Column(name = "thumbnail")
     private String thumbnail;
@@ -218,9 +222,10 @@ public class Content implements ContentIface {
     @Column(name = "segment_events")
     private List<SegmentEvent> segmentEvents;
 
+    @FrozenKey
     @FrozenValue
     @Column(name = "restrictions")
-    private Set<Restriction> restrictions;
+    private Map<Restriction, UpdateTimes> restrictions;
 
     @Column(name = "website_url")
     private String websiteUrl;
@@ -241,25 +246,30 @@ public class Content implements ContentIface {
     @Column(name = "special")
     private Boolean special;
 
+    @FrozenKey
     @FrozenValue
     @Column(name = "series_refs")
-    private Set<SeriesRef> seriesRefs;
+    private Map<Ref, SeriesRef> seriesRefs;
 
+    @FrozenKey
     @FrozenValue
     @Column(name = "item_refs")
-    private Set<ItemRef> itemRefs;
+    private Map<Ref, ItemRef> itemRefs;
 
-    @Frozen("map<frozen<ItemRef>, frozen<list<BroadcastRef>>>")
+    @FrozenKey
+    @FrozenValue
     @Column(name = "upcoming")
-    private Map<ItemRef, List<BroadcastRef>> upcomingContent;
+    private Map<Ref, ItemRefAndBroadcastRefs> upcomingContent;
 
-    @Frozen("map<frozen<ItemRef>, frozen<list<LocationSummary>>>")
+    @FrozenKey
+    @FrozenValue
     @Column(name = "available")
-    private Map<ItemRef, List<LocationSummary>> availableContent;
+    private Map<Ref, ItemRefAndLocationSummaries> availableContent;
 
+    @FrozenKey
     @FrozenValue
     @Column(name = "item_summaries")
-    private Set<ItemSummary> itemSummaries;
+    private Map<Ref, ItemSummary> itemSummaries;
 
     @FrozenValue
     @Column(name = "reviews")
@@ -474,12 +484,12 @@ public class Content implements ContentIface {
     }
 
     @Override
-    public Set<Image> getImages() {
+    public Map<Image, Interval> getImages() {
         return images;
     }
 
     @Override
-    public void setImages(Set<Image> images) {
+    public void setImages(Map<Image, Interval> images) {
         this.images = images;
     }
 
@@ -820,12 +830,11 @@ public class Content implements ContentIface {
         this.segmentEvents = segmentEvents;
     }
 
-    public Set<Restriction> getRestrictions() {
+    public Map<Restriction, UpdateTimes> getRestrictions() {
         return restrictions;
     }
 
-    public void setRestrictions(
-            Set<Restriction> restrictions) {
+    public void setRestrictions(Map<Restriction, UpdateTimes> restrictions) {
         this.restrictions = restrictions;
     }
 
@@ -878,45 +887,43 @@ public class Content implements ContentIface {
         this.special = special;
     }
 
-    public Set<SeriesRef> getSeriesRefs() {
+    public Map<Ref, SeriesRef> getSeriesRefs() {
         return seriesRefs;
     }
 
-    public void setSeriesRefs(Set<SeriesRef> seriesRefs) {
+    public void setSeriesRefs(Map<Ref, SeriesRef> seriesRefs) {
         this.seriesRefs = seriesRefs;
     }
 
-    public Set<ItemRef> getItemRefs() {
+    public Map<Ref, ItemRef> getItemRefs() {
         return itemRefs;
     }
 
-    public void setItemRefs(Set<ItemRef> itemRefs) {
+    public void setItemRefs(Map<Ref, ItemRef> itemRefs) {
         this.itemRefs = itemRefs;
     }
 
-    public Map<ItemRef, List<BroadcastRef>> getUpcomingContent() {
+    public Map<Ref, ItemRefAndBroadcastRefs> getUpcomingContent() {
         return upcomingContent;
     }
 
-    public void setUpcomingContent(
-            Map<ItemRef, List<BroadcastRef>> upcomingContent) {
+    public void setUpcomingContent(Map<Ref, ItemRefAndBroadcastRefs> upcomingContent) {
         this.upcomingContent = upcomingContent;
     }
 
-    public Map<ItemRef, List<LocationSummary>> getAvailableContent() {
+    public Map<Ref, ItemRefAndLocationSummaries> getAvailableContent() {
         return availableContent;
     }
 
-    public void setAvailableContent(
-            Map<ItemRef, List<LocationSummary>> availableContent) {
+    public void setAvailableContent(Map<Ref, ItemRefAndLocationSummaries> availableContent) {
         this.availableContent = availableContent;
     }
 
-    public Set<ItemSummary> getItemSummaries() {
+    public Map<Ref, ItemSummary> getItemSummaries() {
         return itemSummaries;
     }
 
-    public void setItemSummaries(Set<ItemSummary> itemSummaries) {
+    public void setItemSummaries(Map<Ref, ItemSummary> itemSummaries) {
         this.itemSummaries = itemSummaries;
     }
 }

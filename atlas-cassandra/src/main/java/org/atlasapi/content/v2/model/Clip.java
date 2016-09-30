@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.udt.Alias;
@@ -12,6 +13,7 @@ import org.atlasapi.content.v2.model.udt.ContainerSummary;
 import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
 import org.atlasapi.content.v2.model.udt.Image;
+import org.atlasapi.content.v2.model.udt.Interval;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
@@ -48,7 +50,7 @@ public class Clip implements ContentIface {
     private Set<String> genres;
     private String publisher;
     private String image;
-    private Set<Image> images;
+    private Map<Image, Interval> images;
     private String thumbnail;
     private Instant firstSeen;
     private Instant lastFetched;
@@ -235,11 +237,11 @@ public class Clip implements ContentIface {
         this.image = image;
     }
 
-    public Set<Image> getImages() {
+    public Map<Image, Interval> getImages() {
         return images;
     }
 
-    public void setImages(Set<Image> images) {
+    public void setImages(Map<Image, Interval> images) {
         this.images = images;
     }
 

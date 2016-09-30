@@ -1,33 +1,31 @@
-package org.atlasapi.content.v2.model.udt;
+package org.atlasapi.content.v2.model.pojo;
 
 import java.util.Set;
 
 import org.atlasapi.content.v2.model.Identified;
+import org.atlasapi.content.v2.model.udt.Alias;
+import org.atlasapi.content.v2.model.udt.Ref;
 
-import com.datastax.driver.mapping.annotations.Field;
-import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
-@UDT(name = "location")
 public class Location implements Identified {
 
-    @Field(name = "id") private Long id;
-    @Field(name = "canonical_uri") private String canonicalUri;
-    @Field(name = "curie") private String curie;
-    @Field(name = "alias_urls") private Set<String> aliasUrls;
-    @Field(name = "aliases") private Set<Alias> aliases;
-    @Field(name = "equiv_to") private Set<Ref> equivalentTo;
-    @Field(name = "last_updated") private Instant lastUpdated;
-    @Field(name = "equiv_update") private Instant equivalenceUpdate;
-
-    @Field(name = "available") private Boolean available;
-    @Field(name = "transport_is_live") private Boolean transportIsLive;
-    @Field(name = "transport_subtype") private String transportSubType;
-    @Field(name = "transport_type") private String transportType;
-    @Field(name = "uri") private String uri;
-    @Field(name = "embed_code") private String embedCode;
-    @Field(name = "embed_id") private String embedId;
-    @Field(name = "policy") private Policy policy;
+    private Long id;
+    private String canonicalUri;
+    private String curie;
+    private Set<String> aliasUrls;
+    private Set<Alias> aliases;
+    private Set<Ref> equivalentTo;
+    private Instant lastUpdated;
+    private Instant equivalenceUpdate;
+    private Boolean available;
+    private Boolean transportIsLive;
+    private String transportSubType;
+    private String transportType;
+    private String uri;
+    private String embedCode;
+    private String embedId;
+    private Policy policy;
 
     public Long getId() {
         return id;

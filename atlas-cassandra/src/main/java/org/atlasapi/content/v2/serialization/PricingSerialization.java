@@ -1,6 +1,6 @@
 package org.atlasapi.content.v2.serialization;
 
-import org.atlasapi.content.v2.model.udt.Pricing;
+import org.atlasapi.content.v2.model.pojo.Pricing;
 
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;
 

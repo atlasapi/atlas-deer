@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.content.Quality;
 import org.atlasapi.content.v2.model.Encoding;
-import org.atlasapi.content.v2.model.udt.Location;
+import org.atlasapi.content.v2.model.pojo.Location;
 import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
 
 import com.metabroadcast.common.media.MimeType;

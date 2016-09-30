@@ -4,12 +4,11 @@ import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
-@UDT(name = "pricing")
-public class Pricing {
+@UDT(name = "interval")
+public class Interval {
 
     @Field(name = "start") private Instant start;
     @Field(name = "end") private Instant end;
-    @Field(name = "price") private Price price;
 
     public Instant getStart() {
         return start;
@@ -25,13 +24,5 @@ public class Pricing {
 
     public void setEnd(Instant end) {
         this.end = end;
-    }
-
-    public Price getPrice() {
-        return price;
-    }
-
-    public void setPrice(Price price) {
-        this.price = price;
     }
 }

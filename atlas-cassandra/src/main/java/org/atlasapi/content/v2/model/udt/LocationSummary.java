@@ -2,15 +2,13 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
-import org.joda.time.Instant;
 
 @UDT(name = "locationsummary")
 public class LocationSummary {
 
     @Field(name = "available") private Boolean available;
     @Field(name = "uri") private String uri;
-    @Field(name = "start") private Instant start;
-    @Field(name = "end") private Instant end;
+    @Field(name = "interval") private Interval interval;
 
     public Boolean getAvailable() {
         return available;
@@ -28,19 +26,11 @@ public class LocationSummary {
         this.uri = uri;
     }
 
-    public Instant getStart() {
-        return start;
+    public Interval getInterval() {
+        return interval;
     }
 
-    public void setStart(Instant start) {
-        this.start = start;
-    }
-
-    public Instant getEnd() {
-        return end;
-    }
-
-    public void setEnd(Instant end) {
-        this.end = end;
+    public void setInterval(Interval interval) {
+        this.interval = interval;
     }
 }
