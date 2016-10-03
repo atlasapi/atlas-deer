@@ -11,8 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
@@ -51,7 +49,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FutureCallback;
@@ -277,32 +274,21 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         };
     }
 
-    private Multimap<Long, Content> deserialize(
-            Iterable<ResultSet> setsRows,
+    private Multimap<Long, Content> deserialize(Iterable<ResultSet> setsRows,
             Set<Annotation> activeAnnotations,
-            Set<Publisher> selectedSources
-    ) {
+            Set<Publisher> selectedSources) {
         ImmutableSetMultimap.Builder<Long, Content> sets = ImmutableSetMultimap.builder();
         ImmutableList<Row> allRows = StreamSupport.stream(setsRows.spliterator(), false)
                 .flatMap(rs -> rs.all().stream())
                 .collect(MoreCollectors.toImmutableList());
-
-        Map<Long, EquivalenceGraph> graphs = Maps.newHashMap();
 
         for (Row row : allRows) {
             long setId = row.getLong(SET_ID_KEY);
 
             Content content = deserializeInternal(row, activeAnnotations);
 
-            if (!graphs.containsKey(setId) && row.getBytes(GRAPH_KEY) != null) {
-                graphs.put(
-                        setId,
-                        graphSerializer.deserialize(row.getBytes(GRAPH_KEY))
-                );
-            }
-
             if (contentSelected(content, selectedSources)
-                    && containedInGraph(content.getId(), graphs.get(setId))) {
+                    && containedInGraph(content.getId(), row)) {
                 sets.put(setId, content);
             }
         }
@@ -519,18 +505,9 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 session.executeAsync(equivSetSelect.bind(equivalentSetId)),
                 (ResultSet resultSet) -> {
                     ImmutableSet.Builder<Content> content = ImmutableSet.builder();
-                    EquivalenceGraph graph = null;
-
                     for (Row row : resultSet) {
                         Content deserialized = deserialize(row);
-
-                        if (graph == null && row.getBytes(GRAPH_KEY) != null) {
-                            graph = graphSerializer.deserialize(
-                                    row.getBytes(GRAPH_KEY)
-                            );
-                        }
-
-                        if (containedInGraph(deserialized.getId(), graph)) {
+                        if (containedInGraph(deserialized.getId(), row)) {
                             content.add(deserialized);
                         }
                     }
@@ -543,8 +520,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     // It might not be in case of stale entries that were removed from the graph, but
     // due to a bug or missed message the row did not get removed in this store.
     // In that case the row will currently never get removed
-    private boolean containedInGraph(Id contentId, @Nullable EquivalenceGraph graph) {
-        return graph == null || graph.getEquivalenceSet().contains(contentId);
+    private boolean containedInGraph(Id contentId, Row row) {
+        if (row.getBytes(GRAPH_KEY) == null) {
+            return true;
+        }
+        EquivalenceGraph graph = graphSerializer.deserialize(row.getBytes(GRAPH_KEY));
+        return graph.getEquivalenceSet().contains(contentId);
     }
 
     // This is effectively leaking implementation details to the abstract store which should not
