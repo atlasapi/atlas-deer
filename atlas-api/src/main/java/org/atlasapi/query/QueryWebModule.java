@@ -233,25 +233,36 @@ public class QueryWebModule {
     private @Value("${local.host.name}") String localHostName;
     private @Value("${atlas.uri}") String baseAtlasUri;
 
-    @Autowired
-    private KafkaMessagingModule messaging;
+    private IdSummaryWriter idSummaryWriter = IdSummaryWriter.create();
 
-    private @Autowired DatabasedMongo mongo;
+    private
+    @Autowired
+    KafkaMessagingModule messaging;
+
+    private
+    @Autowired
+    DatabasedMongo mongo;
+
     private
     @Autowired
     QueryModule queryModule;
+
     private
     @Autowired
     org.atlasapi.media.channel.ChannelResolver legacyChannelResolver;
+
     private
     @Autowired
     SearchResolver v4SearchResolver;
+
     private
     @Autowired
     TopicResolver topicResolver;
+
     private
     @Autowired
     PopularTopicIndex popularTopicIndex;
+
     private
     @Autowired
     UserFetcher userFetcher;
@@ -585,11 +596,9 @@ public class QueryWebModule {
                         ),
                         CHANNEL_GROUP
                 )
-                .register(ID_SUMMARY, new ChannelGroupIdSummaryAnnotation(
-                        IdSummaryWriter.create()
-                ))
+                .register(ID_SUMMARY, ChannelGroupIdSummaryAnnotation.create(idSummaryWriter))
                 .register(REGIONS, new PlatformAnnotation(), CHANNEL_GROUP)
-                .register(PLATFORM, new RegionsAnnotation(channelGroupResolver), CHANNEL_GROUP)
+                .register(PLATFORM, new RegionsAnnotation(), CHANNEL_GROUP)
                 .register(
                         CHANNEL_GROUPS_SUMMARY,
                         NullWriter.create(ResolvedChannelGroup.class),
@@ -597,8 +606,10 @@ public class QueryWebModule {
                 )
                 .register(
                         ADVERTISED_CHANNELS,
-                        new ChannelGroupAdvertisedChannelsAnnotation(new ChannelGroupChannelWriter(
-                                channelWriter()), channelResolver)
+                        new ChannelGroupAdvertisedChannelsAnnotation(
+                                new ChannelGroupChannelWriter(channelWriter()
+                                )
+                        )
                 )
                 .build());
     }
@@ -848,7 +859,7 @@ public class QueryWebModule {
     private AnnotationRegistry<Content> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
         return AnnotationRegistry.<Content>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
+                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
                 .register(ID, new IdentificationAnnotation(), commonImplied)
                 .register(
                         EXTENDED_ID,
@@ -1003,8 +1014,11 @@ public class QueryWebModule {
                                                 channelResolver,
                                                 channelGroupResolver
                                         ),
-                                        new ItemDetailWriter(new IdentificationSummaryAnnotation(
-                                        ))
+                                        new ItemDetailWriter(
+                                                IdentificationSummaryAnnotation.create(
+                                                        idSummaryWriter
+                                                )
+                                        )
                                 )
                         ), commonImplied
                 )
@@ -1013,7 +1027,7 @@ public class QueryWebModule {
                         new AvailableContentDetailAnnotation(
                                 queryModule.mergingContentResolver(),
                                 new ItemDetailWriter(
-                                        new IdentificationSummaryAnnotation(),
+                                        IdentificationSummaryAnnotation.create(idSummaryWriter),
                                         AvailableContentDetailAnnotation.AVAILABLE_CONTENT_DETAIL,
                                         new LocationsAnnotation(
                                                 persistenceModule.playerResolver(),
@@ -1051,7 +1065,7 @@ public class QueryWebModule {
     @Bean
     protected EntityListWriter<Topic> topicListWriter() {
         return new TopicListWriter(AnnotationRegistry.<Topic>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
+                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1065,7 +1079,7 @@ public class QueryWebModule {
     @Bean
     protected EntityListWriter<Event> eventListWriter() {
         return new EventListWriter(AnnotationRegistry.<Event>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
+                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1084,7 +1098,7 @@ public class QueryWebModule {
 
     private AnnotationRegistry<Topic> topicAnnotationRegistry() {
         return AnnotationRegistry.<Topic>builder()
-                .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation())
+                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1117,7 +1131,7 @@ public class QueryWebModule {
         return new ChannelListWriter(
                 AnnotationRegistry.<Channel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))
-                        .register(ID_SUMMARY, new IdentificationSummaryAnnotation())
+                        .register(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
                         .register(
                                 CHANNEL_GROUPS,
                                 new ChannelGroupMembershipAnnotation(

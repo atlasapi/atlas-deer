@@ -97,7 +97,9 @@ public class QueryModule {
 
     @Bean
     public QueryExecutor<ResolvedChannelGroup> channelGroupQueryExecutor() {
-        return new ChannelGroupQueryExecutor(persistenceModule.channelGroupResolver());
+        return new ChannelGroupQueryExecutor(
+                persistenceModule.channelGroupResolver(),
+                persistenceModule.channelResolver());
     }
 
     public MergingEquivalentsResolver<Content> mergingContentResolver() {

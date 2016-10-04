@@ -16,8 +16,10 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.ChannelWithChannelGroupMembership;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.common.MissingResolvedDataException;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -34,75 +36,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
 
     private final ChannelGroupChannelWriter channelWriter;
-    private final ChannelResolver channelResolver;
 
-    public ChannelGroupAdvertisedChannelsAnnotation(ChannelGroupChannelWriter channelWriter,
-            ChannelResolver channelResolver) {
+    public ChannelGroupAdvertisedChannelsAnnotation(ChannelGroupChannelWriter channelWriter) {
         this.channelWriter = checkNotNull(channelWriter);
-        this.channelResolver = checkNotNull(channelResolver);
     }
 
     @Override
-    public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt) throws
-            IOException {
-        final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
-        Iterable<? extends ChannelGroupMembership> availableChannels = entity.getChannelGroup().getChannelsAvailable(
-                LocalDate.now());
-        List<Id> orderedIds = StreamSupport.stream(availableChannels.spliterator(), false)
-                //TODO fix channel appearing twice in ordering blowing this thing up
-                .map(cm -> cm.getChannel().getId())
-                .distinct()
-                .collect(Collectors.toList());
-        Ordering<Id> idOrdering = Ordering.explicit(orderedIds);
-        for (ChannelGroupMembership channelGroupMembership : availableChannels) {
-            builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
+    public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
+
+        Optional<ImmutableSet<ChannelWithChannelGroupMembership>> channels =
+                entity.getAdvertisedChannels();
+        if (channels.isPresent()) {
+            writer.writeList(channelWriter, channels.get(), ctxt);
+        } else {
+            throw new MissingResolvedDataException(channelWriter.listName());
         }
-
-        ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
-        String genre = ctxt.getRequest()
-                .getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
-
-        Iterable<Channel> channels = Futures.get(
-                Futures.transform(
-                        this.channelResolver.resolveIds(channelGroupMemberships.keySet()),
-                        (Resolved<Channel> channelResolved) -> {
-                            return StreamSupport.stream(channelResolved.getResources()
-                                    .spliterator(), false)
-                                    .filter(channel -> channel.getAdvertiseFrom() == null || channel
-                                            .getAdvertiseFrom()
-                                            .isBeforeNow() || channel.getAdvertiseFrom()
-                                            .isEqualNow())
-                                    .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
-                                    .collect(Collectors.toList());
-                        }
-
-                ), 1, TimeUnit.MINUTES, IOException.class
-        );
-        if (!Strings.isNullOrEmpty(genre)) {
-            final ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',').split(genre));
-            channels = Iterables.filter(channels, new Predicate<Channel>() {
-
-                @Override
-                public boolean apply(Channel input) {
-                    return !Sets.intersection(input.getGenres(), genres).isEmpty();
-                }
-            });
-        }
-        ImmutableSet.Builder<ChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
-
-        for (Channel channel : channels) {
-            for (ChannelGroupMembership channelGroupMembership : channelGroupMemberships.get(channel
-                    .getId())) {
-                resultBuilder.add(
-                        new ChannelWithChannelGroupMembership(
-                                channel,
-                                channelGroupMembership
-                        )
-                );
-            }
-        }
-        ImmutableSet<ChannelWithChannelGroupMembership> result = resultBuilder.build();
-        writer.writeList(channelWriter, result, ctxt);
     }
 
 }
