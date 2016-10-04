@@ -39,10 +39,7 @@ public class RegionsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
             return;
         }
         Region region = (Region) entity.getChannelGroup();
-        if (region.getPlatform() == null) {
-            writer.writeField("parent", null);
-            return;
-        }
+
         Id platformId = region.getPlatform().getId();
 
         ChannelGroup channelGroup = Futures.get(

@@ -15,7 +15,7 @@ import org.atlasapi.query.common.Resource;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupListWriter implements EntityListWriter<ResolvedChannelGroup> { //new writer implement EntityWriter
+public class ChannelGroupListWriter implements EntityListWriter<ResolvedChannelGroup> {
 
     private final AnnotationRegistry<ResolvedChannelGroup> annotationRegistry;
 
@@ -30,8 +30,8 @@ public class ChannelGroupListWriter implements EntityListWriter<ResolvedChannelG
     }
 
     @Override
-    public void write(@Nonnull ResolvedChannelGroup entity, @Nonnull FieldWriter writer,
-            @Nonnull OutputContext ctxt) throws IOException {
+    public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
+            throws IOException {
         ctxt.startResource(Resource.CHANNEL_GROUP);
         List<OutputAnnotation<? super ResolvedChannelGroup>> annotations = ctxt
                 .getAnnotations(annotationRegistry);

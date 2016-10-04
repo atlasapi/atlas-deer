@@ -9,11 +9,15 @@ import org.atlasapi.output.writers.IdSummaryWriter;
 
 public class IdentificationSummaryAnnotation extends OutputAnnotation<Identified> {
 
-    private IdSummaryWriter idSummaryWriter;
+    private final IdSummaryWriter idSummaryWriter;
 
-    public IdentificationSummaryAnnotation() {
+    private IdentificationSummaryAnnotation(IdSummaryWriter idSummaryWriter) {
         super();
-        this.idSummaryWriter = IdSummaryWriter.create();
+        this.idSummaryWriter = idSummaryWriter;
+    }
+
+    public static IdentificationSummaryAnnotation create(IdSummaryWriter idSummaryWriter) {
+        return new IdentificationSummaryAnnotation(idSummaryWriter);
     }
 
     @Override

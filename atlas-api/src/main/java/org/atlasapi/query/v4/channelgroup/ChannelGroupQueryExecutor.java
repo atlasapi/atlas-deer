@@ -1,7 +1,9 @@
 package org.atlasapi.query.v4.channelgroup;
 
-import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
 
@@ -24,14 +26,10 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
 
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.promise.Promise;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
-import com.google.common.base.Function;
-import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -46,12 +44,12 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     @Nonnull
     @Override
-    public QueryResult<ResolvedChannelGroup> execute(@Nonnull Query<ResolvedChannelGroup> query)  //resolvedchannelgroup
+    public QueryResult<ResolvedChannelGroup> execute(Query<ResolvedChannelGroup> query)
             throws QueryExecutionException {
         return query.isListQuery() ? executeListQuery(query) : executeSingleQuery(query);
     }
 
-    private QueryResult<ResolvedChannelGroup> executeSingleQuery(final Query<ResolvedChannelGroup> query)
+    private QueryResult<ResolvedChannelGroup> executeSingleQuery(Query<ResolvedChannelGroup> query)
             throws QueryExecutionException {
         return Futures.get(
                 Futures.transform(
@@ -74,10 +72,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                             );
                         }
                 ), 1, TimeUnit.MINUTES, QueryExecutionException.class
-        );                                                                              // MESS THIS UP
+        );
     }
 
-    private QueryResult<ResolvedChannelGroup> executeListQuery(final Query<ResolvedChannelGroup> query)
+    private QueryResult<ResolvedChannelGroup> executeListQuery(Query<ResolvedChannelGroup> query)
             throws QueryExecutionException {
         Iterable<ChannelGroup<?>> channelGroups = Futures.get(
                 Futures.transform(
@@ -94,23 +92,21 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             if (attributeQuery.getAttributeName()
                     .equals(Attributes.CHANNEL_GROUP_TYPE.externalName())) {
                 final String channelGroupType = attributeQuery.getValue().get(0).toString();
-                channelGroups = Iterables.filter(
-                        channelGroups,
-                        channelGroup -> {
-                            return channelGroupType.equals(channelGroup.getType());
-                        }
-                );
+                channelGroups = StreamSupport.stream(channelGroups.spliterator(), false)
+                        .filter(channelGroup -> channelGroupType.equals(channelGroup.getType()))
+                        .collect(Collectors.toList());
 
             }
         }
-        ImmutableList<ChannelGroup<?>> filteredChannelGroups = ImmutableList.copyOf(Iterables.filter(
-                channelGroups,
-                input -> {
-                    return query.getContext()
-                            .getApplicationSources()
-                            .isReadEnabled(input.getSource());
-                }
-        ));
+
+        ImmutableList<ChannelGroup<?>> filteredChannelGroups = ImmutableList.copyOf(
+                StreamSupport.stream(
+                    channelGroups.spliterator(),
+                    false
+                ).filter(input -> query.getContext()
+                        .getApplicationSources()
+                        .isReadEnabled(input.getSource())
+                ).collect(Collectors.toList()));
 
         ImmutableList<ChannelGroup<?>> selectedChannelGroups =
                 query.getContext()
@@ -137,55 +133,39 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             QueryContext ctxt,
             ChannelGroup<?> channelGroup
     ) {
-        ResolvedChannelGroup resolvedChannelGroup =
-                ResolvedChannelGroup.create(channelGroup);
+        ResolvedChannelGroup.Builder resolvedChannelGroupBuilder =
+                ResolvedChannelGroup.builder(channelGroup);
 
         if (contextHasAnnotation(ctxt, Annotation.REGIONS)) {
-            resolvedChannelGroup.setRegions(
+            resolvedChannelGroupBuilder.withRegionChannelGroup(
                     resolveRegionChannelGroups(channelGroup)
             );
         }
 
-        return resolvedChannelGroup;
+        return resolvedChannelGroupBuilder.build();
     }
 
-    private Iterable<ChannelGroup<?>> resolveRegionChannelGroups(ChannelGroup entity) {
+    private Optional<Iterable<ChannelGroup<?>>> resolveRegionChannelGroups(ChannelGroup entity) {
 
-        try {
-            if (entity instanceof Platform){
-                Platform platform = (Platform) entity;
-                Iterable<Id> regionIds = Iterables.transform(
-                        platform.getRegions(),
-                        new Function<ChannelGroupRef, Id>() {
-
-                            @Override
-                            public Id apply(ChannelGroupRef input) {
-                                return input.getId();
-                            }
-                        }
-                );
-
-                return Futures.get(
-                        Futures.transform(
-                                resolver.resolveIds(regionIds),
-                                (Resolved<ChannelGroup<?>> input) -> {
-                                    return input.getResources();
-                                }
-                        ), 1, TimeUnit.MINUTES, IOException.class
-                );
-            }
-        } catch (IOException e) {
-            Throwables.propagate(e);
+        if(!(entity instanceof  Platform)) {
+            return Optional.empty();
         }
-        return null;
+
+        Platform platform = (Platform) entity;
+        Iterable<Id> regionIds = platform.getRegions()
+                .stream()
+                .map(ChannelGroupRef::getId)
+                .collect(MoreCollectors.toImmutableSet());
+
+        return Optional.of(Promise.wrap(resolver.resolveIds(regionIds))
+                .then(Resolved::getResources)
+                .get(1, TimeUnit.MINUTES));
     }
 
     private boolean contextHasAnnotation(QueryContext ctxt, Annotation annotation) {
-        return !Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
+
+        return (ctxt.getAnnotations().all().size() > 0)
             &&
-            Splitter.on(',')
-                    .splitToList(
-                            ctxt.getRequest().getParameter("annotations")
-                    ).contains(annotation.toKey());
+            ctxt.getAnnotations().all().contains(annotation);
     }
 }

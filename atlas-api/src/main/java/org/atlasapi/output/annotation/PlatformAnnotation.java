@@ -1,6 +1,7 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ResolvedChannelGroup;
@@ -8,8 +9,7 @@ import org.atlasapi.channel.Platform;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
-
-import com.google.common.base.Optional;
+import org.atlasapi.query.common.MissingResolvedDataException;
 
 public class PlatformAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
 
@@ -29,9 +29,7 @@ public class PlatformAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
         if (channelGroups.isPresent()) {
             writer.writeList(CHANNEL_GROUP_WRITER, channelGroups.get(), ctxt);
         } else {
-            throw new NullPointerException();
+            throw new MissingResolvedDataException(CHANNEL_GROUP_WRITER.listName());
         }
-
-
     }
 }

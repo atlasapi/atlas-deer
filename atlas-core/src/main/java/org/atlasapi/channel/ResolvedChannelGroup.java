@@ -1,26 +1,24 @@
 package org.atlasapi.channel;
 
-import javax.annotation.Nullable;
-
-import com.google.common.base.Optional;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ResolvedChannelGroup {
 
     private final ChannelGroup channelGroup;
-    private Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
+    private final Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
 
-    private ResolvedChannelGroup(ChannelGroup channelGroup) {
-        this.channelGroup = checkNotNull(channelGroup);
+    private ResolvedChannelGroup(
+            ChannelGroup channelGroup,
+            Optional<Iterable<ChannelGroup<?>>> regionChannelGroups
+            ) {
+        this.channelGroup = channelGroup;
+        this.regionChannelGroups = regionChannelGroups;
     }
 
-    public static ResolvedChannelGroup create(ChannelGroup channelGroup) {
-        return new ResolvedChannelGroup(channelGroup);
-    }
-
-    public void setRegions(@Nullable Iterable<ChannelGroup<?>> regionChannelGroups) {
-        this.regionChannelGroups = Optional.fromNullable(regionChannelGroups);
+    public static Builder builder(ChannelGroup channelGroup) {
+        return new Builder(channelGroup);
     }
 
     public ChannelGroup getChannelGroup() {
@@ -29,6 +27,28 @@ public class ResolvedChannelGroup {
 
     public Optional<Iterable<ChannelGroup<?>>> getRegionChannelGroups() {
         return regionChannelGroups;
+    }
+
+    public static class Builder {
+
+        ChannelGroup channelGroup;
+        Optional<Iterable<ChannelGroup<?>>> regionChannelGroup;
+
+        public Builder(ChannelGroup channelGroup) {
+            this.channelGroup = checkNotNull(channelGroup);
+        }
+
+        public Builder withRegionChannelGroup(Optional<Iterable<ChannelGroup<?>>> regionChannelGroup) {
+            this.regionChannelGroup = regionChannelGroup;
+            return this;
+        }
+
+        public ResolvedChannelGroup build() {
+            return new ResolvedChannelGroup(
+                    channelGroup,
+                    regionChannelGroup
+            );
+        }
     }
 
 }
