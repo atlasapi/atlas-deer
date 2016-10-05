@@ -30,7 +30,7 @@ public class RegionsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
         if (channelGroup.isPresent()) {
             writer.writeObject(CHANNEL_GROUP_WRITER, channelGroup.get(), ctxt);
         } else {
-            throw new MissingResolvedDataException(CHANNEL_GROUP_WRITER.listName());
+            throw new MissingResolvedDataException("regions");
         }
 
     }

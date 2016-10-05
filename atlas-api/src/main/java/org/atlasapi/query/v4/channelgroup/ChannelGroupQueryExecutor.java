@@ -1,6 +1,5 @@
 package org.atlasapi.query.v4.channelgroup;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -22,7 +21,6 @@ import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.output.ChannelWithChannelGroupMembership;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryContext;
@@ -35,14 +33,10 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.LocalDate;
 
@@ -132,9 +126,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         ImmutableList<ResolvedChannelGroup> resolvedChannelGroups =
                 selectedChannelGroups.stream()
-                        .map(channelGroup ->
-                                resolveAnnotationData(query.getContext(), channelGroup)
-                        )
+                        .map(channelGroup -> resolveAnnotationData(query.getContext(), channelGroup))
                         .collect(MoreCollectors.toImmutableList());
 
 
@@ -166,7 +158,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         if(contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveAdvertisedChannels(ctxt, channelGroup)
+                    resolveAdvertisedChannels(channelGroup)
             );
         }
 
@@ -203,9 +195,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .first();
     }
 
-    private Optional<ImmutableSet<ChannelWithChannelGroupMembership>> resolveAdvertisedChannels(
-            QueryContext ctxt, ChannelGroup<?> entity
-    ) {
+    private Optional<Iterable<Channel>> resolveAdvertisedChannels(ChannelGroup<?> entity) {
 
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
@@ -230,36 +220,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .then(Resolved::getResources)
                 .get(1, TimeUnit.MINUTES);
 
-        Iterable<Channel> filteredChannels = StreamSupport.stream(resolvedChannels.spliterator(), false)
-                .filter(channel -> channel.getAdvertiseFrom()
-                        .isBeforeNow() || channel.getAdvertiseFrom()
-                        .isEqualNow())
+        Iterable<Channel> sortedChannels = StreamSupport.stream(resolvedChannels.spliterator(), false)
                 .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
                 .collect(Collectors.toList());
 
-        String genre = ctxt.getRequest()
-                .getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
-
-        if (!Strings.isNullOrEmpty(genre)) {
-            final ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',').split(genre));
-            filteredChannels = Iterables.filter(filteredChannels,
-                    input -> !Sets.intersection(input.getGenres(), genres).isEmpty()
-            );
-        }
-        ImmutableSet.Builder<ChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
-
-        for (Channel channel : filteredChannels) {
-            for (ChannelGroupMembership channelGroupMembership : channelGroupMemberships.get(channel
-                    .getId())) {
-                resultBuilder.add(
-                        new ChannelWithChannelGroupMembership(
-                                channel,
-                                channelGroupMembership
-                        )
-                );
-            }
-        }
-        return Optional.of(resultBuilder.build());
+        return Optional.of(sortedChannels);
     }
 
     private boolean contextHasAnnotation(QueryContext ctxt, Annotation annotation) {

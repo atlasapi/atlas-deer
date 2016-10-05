@@ -1,9 +1,6 @@
 package org.atlasapi.channel;
 
-import org.atlasapi.output.ChannelWithChannelGroupMembership;
-
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -12,18 +9,18 @@ public class ResolvedChannelGroup {
     private final ChannelGroup<?> channelGroup;
     private final Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
     private final Optional<ChannelGroup<?>> platformChannelGroup;
-    private final Optional<ImmutableSet<ChannelWithChannelGroupMembership>> advertisedChannels;
+    private final Optional<Iterable<Channel>> channels;
 
     private ResolvedChannelGroup(
             ChannelGroup channelGroup,
             Optional<Iterable<ChannelGroup<?>>> regionChannelGroups,
             Optional<ChannelGroup<?>> platformChannelGroup,
-            Optional<ImmutableSet<ChannelWithChannelGroupMembership>> advertisedChannels
+            Optional<Iterable<Channel>> channels
             ) {
         this.channelGroup = channelGroup;
         this.regionChannelGroups = regionChannelGroups;
         this.platformChannelGroup = platformChannelGroup;
-        this.advertisedChannels = advertisedChannels;
+        this.channels = channels;
     }
 
     public static Builder builder(ChannelGroup channelGroup) {
@@ -42,8 +39,8 @@ public class ResolvedChannelGroup {
         return platformChannelGroup;
     }
 
-    public Optional<ImmutableSet<ChannelWithChannelGroupMembership>> getAdvertisedChannels() {
-        return advertisedChannels;
+    public Optional<Iterable<Channel>> getChannels() {
+        return channels;
     }
 
     public static class Builder {
@@ -51,7 +48,7 @@ public class ResolvedChannelGroup {
         ChannelGroup<?> channelGroup;
         Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
         Optional<ChannelGroup<?>> platformChannelGroup;
-        Optional<ImmutableSet<ChannelWithChannelGroupMembership>> advertisedChannels;
+        Optional<Iterable<Channel>> channels;
 
         public Builder(ChannelGroup<?> channelGroup) {
             this.channelGroup = checkNotNull(channelGroup);
@@ -67,8 +64,8 @@ public class ResolvedChannelGroup {
             return this;
         }
 
-        public Builder withAdvertisedChannels(Optional<ImmutableSet<ChannelWithChannelGroupMembership>> advertisedChannels) {
-            this.advertisedChannels = advertisedChannels;
+        public Builder withAdvertisedChannels(Optional<Iterable<Channel>> channels) {
+            this.channels = channels;
             return this;
         }
 
@@ -77,7 +74,7 @@ public class ResolvedChannelGroup {
                     channelGroup,
                     regionChannelGroups,
                     platformChannelGroup,
-                    advertisedChannels
+                    channels
             );
         }
     }

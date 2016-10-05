@@ -1,8 +1,12 @@
 package org.atlasapi.query.v4.channel;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -14,9 +18,12 @@ import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 
 import com.metabroadcast.common.query.Selection;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.api.client.util.Sets;
 import com.google.common.base.Optional;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import org.junit.Test;
@@ -47,7 +54,7 @@ public class ChannelQueryExecutorTest {
         Id channelId = Id.valueOf(1L);
         Channel result = mock(Channel.class);
         QueryContext context = mock(QueryContext.class);
-        Query<Channel> channelQuery = mock(Query.class);
+        Query<ResolvedChannel> channelQuery = mock(Query.class);
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelId);
         when(channelQuery.getContext()).thenReturn(context);
@@ -58,9 +65,9 @@ public class ChannelQueryExecutorTest {
                         )
                 );
 
-        QueryResult<Channel> queryResult = objectUnderTest.execute(channelQuery);
+        QueryResult<ResolvedChannel> queryResult = objectUnderTest.execute(channelQuery);
 
-        assertThat(queryResult.getOnlyResource(), is(result));
+        assertThat(queryResult.getOnlyResource().getChannel(), is(result));
 
     }
 
@@ -69,7 +76,7 @@ public class ChannelQueryExecutorTest {
         Channel result = mock(Channel.class);
         Channel result2 = mock(Channel.class);
         QueryContext context = mock(QueryContext.class);
-        Query<Channel> channelQuery = mock(Query.class);
+        Query<ResolvedChannel> channelQuery = mock(Query.class);
         ApplicationSources applicationSources = mock(ApplicationSources.class);
         Selection selection = Selection.ALL;
 
@@ -90,9 +97,13 @@ public class ChannelQueryExecutorTest {
                         )
                 );
 
-        QueryResult<Channel> queryResult = objectUnderTest.execute(channelQuery);
+        QueryResult<ResolvedChannel> queryResult = objectUnderTest.execute(channelQuery);
 
-        assertThat(queryResult.getResources(), containsInAnyOrder(result, result2));
+        ImmutableList<Channel> channels = queryResult.getResources().toList().stream()
+                .map(ResolvedChannel::getChannel)
+                .collect(MoreCollectors.toImmutableList());
+
+        assertThat(channels, containsInAnyOrder(result, result2));
     }
 
 }

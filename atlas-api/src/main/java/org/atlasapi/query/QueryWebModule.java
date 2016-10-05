@@ -9,6 +9,7 @@ import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.ContainerSummaryResolver;
@@ -44,6 +45,7 @@ import org.atlasapi.output.annotation.ChannelGroupChannelsAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupIdSummaryAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipListWriter;
+import org.atlasapi.output.annotation.ChannelIdSummaryAnnotation;
 import org.atlasapi.output.annotation.ChannelSummaryWriter;
 import org.atlasapi.output.annotation.ChannelVariationAnnotation;
 import org.atlasapi.output.annotation.ChannelsAnnotation;
@@ -111,6 +113,7 @@ import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.StandardQueryParser;
+import org.atlasapi.query.common.UncheckedQueryExecutionException;
 import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
@@ -277,7 +280,7 @@ public class QueryWebModule {
 
     private
     @Autowired
-    QueryExecutor<Channel> channelQueryExecutor;
+    QueryExecutor<ResolvedChannel> channelQueryExecutor;
 
     private
     @Autowired
@@ -322,8 +325,7 @@ public class QueryWebModule {
                         new BroadcastWriter(
                                 "broadcasts",
                                 idCodec(),
-                                channelResolver,
-                                channelGroupResolver
+                                channelResolver
                         )
                 );
         ScheduleListWriter scheduleWriter = new ScheduleListWriter(
@@ -576,7 +578,6 @@ public class QueryWebModule {
 
     private ChannelWriter channelWriter() {
         return new ChannelWriter(
-                channelGroupResolver,
                 "channels",
                 "channel",
                 new ChannelGroupSummaryWriter(idCodec())
@@ -589,10 +590,7 @@ public class QueryWebModule {
                 .register(
                         CHANNELS,
                         new ChannelGroupChannelsAnnotation(
-                                new ChannelGroupChannelWriter(
-                                        channelWriter()
-                                ),
-                                channelResolver
+                                new ChannelGroupChannelWriter(channelWriter())
                         ),
                         CHANNEL_GROUP
                 )
@@ -654,7 +652,7 @@ public class QueryWebModule {
         );
     }
 
-    private StandardQueryParser<Channel> channelQueryParser() {
+    private StandardQueryParser<ResolvedChannel> channelQueryParser() {
         QueryContextParser contextParser = new QueryContextParser(
                 configFetcher,
                 userFetcher,
@@ -935,7 +933,7 @@ public class QueryWebModule {
                 )
                 .register(
                         BROADCASTS,
-                        new BroadcastsAnnotation(idCodec(), channelResolver, channelGroupResolver),
+                        new BroadcastsAnnotation(idCodec(), channelResolver),
                         commonImplied
                 )
                 .register(
@@ -949,16 +947,14 @@ public class QueryWebModule {
                 .register(
                         CURRENT_AND_FUTURE_BROADCASTS,
                         new CurrentAndFutureBroadcastsAnnotation(idCodec(),
-                                channelResolver,
-                                channelGroupResolver
+                                channelResolver
                         ),
                         commonImplied
                 )
                 .register(
                         FIRST_BROADCASTS,
                         new FirstBroadcastAnnotation(idCodec(),
-                                channelResolver,
-                                channelGroupResolver
+                                channelResolver
                         ),
                         commonImplied
                 )
@@ -967,8 +963,7 @@ public class QueryWebModule {
                         new NextBroadcastAnnotation(
                                 new SystemClock(),
                                 idCodec(),
-                                channelResolver,
-                                channelGroupResolver
+                                channelResolver
                         ),
                         commonImplied
                 )
@@ -1011,8 +1006,7 @@ public class QueryWebModule {
                                         new BroadcastWriter(
                                                 "broadcasts",
                                                 idCodec(),
-                                                channelResolver,
-                                                channelGroupResolver
+                                                channelResolver
                                         ),
                                         new ItemDetailWriter(
                                                 IdentificationSummaryAnnotation.create(
@@ -1127,11 +1121,12 @@ public class QueryWebModule {
                 .build());
     }
 
-    protected EntityListWriter<Channel> channelListWriter() {
+    @SuppressWarnings("unchecked")
+    protected EntityListWriter<ResolvedChannel> channelListWriter() {
         return new ChannelListWriter(
-                AnnotationRegistry.<Channel>builder()
+                AnnotationRegistry.<ResolvedChannel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))
-                        .register(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
+                        .register(ID_SUMMARY, ChannelIdSummaryAnnotation.create(idSummaryWriter))
                         .register(
                                 CHANNEL_GROUPS,
                                 new ChannelGroupMembershipAnnotation(
@@ -1145,12 +1140,12 @@ public class QueryWebModule {
                         )
                         .register(
                                 PARENT,
-                                new ParentChannelAnnotation(channelWriter(), channelResolver),
+                                new ParentChannelAnnotation(channelWriter()),
                                 CHANNEL
                         )
                         .register(
                                 VARIATIONS,
-                                new ChannelVariationAnnotation(channelResolver, channelWriter()),
+                                new ChannelVariationAnnotation(channelWriter()),
                                 CHANNEL
                         )
                         .build());

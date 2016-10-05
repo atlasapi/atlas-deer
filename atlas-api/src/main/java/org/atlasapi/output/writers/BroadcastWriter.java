@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
@@ -42,8 +43,7 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     public BroadcastWriter(
             String listName,
             NumberToShortStringCodec codec,
-            ChannelResolver channelResolver,
-            ChannelGroupResolver channelGroupResolver
+            ChannelResolver channelResolver
     ) {
         this.aliasWriter = new AliasWriter();
         this.aliasMapping = new BroadcastIdAliasMapping();
@@ -53,7 +53,6 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         this.codec = checkNotNull(codec);
         this.channelResolver = checkNotNull(channelResolver);
         this.channelWriter = new ChannelWriter(
-                channelGroupResolver,
                 "channels",
                 "channel",
                 new ChannelGroupSummaryWriter(new SubstitutionTableNumberCodec())
@@ -63,10 +62,9 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
     public static BroadcastWriter create(
             String listName,
             NumberToShortStringCodec codec,
-            ChannelResolver channelResolver,
-            ChannelGroupResolver channelGroupResolver
+            ChannelResolver channelResolver
     ) {
-        return new BroadcastWriter(listName, codec, channelResolver, channelGroupResolver);
+        return new BroadcastWriter(listName, codec, channelResolver);
     }
 
     @Override
@@ -101,7 +99,12 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
 
         }
 
-        writer.writeObject(channelWriter, channel, ctxt);
+        // Little hack until Broadcasts have their own composite objects to deal with resolution of
+        // channels and channel groups outside annotation/writer logic
+
+        ResolvedChannel resolvedChannel = ResolvedChannel.builder(channel).build();
+
+        writer.writeObject(channelWriter, resolvedChannel, ctxt);
         writer.writeField("schedule_date", entity.getScheduleDate());
         writer.writeField("repeat", entity.getRepeat());
         writer.writeField("subtitled", entity.getSubtitled());
