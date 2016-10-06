@@ -1,12 +1,8 @@
 package org.atlasapi.query.v4.channel;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import javax.annotation.Nullable;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
@@ -36,6 +32,7 @@ import com.metabroadcast.promise.Promise;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -47,7 +44,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
@@ -205,17 +201,23 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         ResolvedChannel.Builder resolvedChannelBuilder =
                 ResolvedChannel.builder(channel);
 
-        if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
-            resolvedChannelBuilder.withChannelGroupSummaries(
-                    resolveChannelGroupSummaries(channel)
-            );
-        }
+        resolvedChannelBuilder.withChannelGroupSummaries(
+                contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ?
+                    resolveChannelGroupSummaries(channel) :
+                    Optional.absent()
+        );
 
-        if (contextHasAnnotation(ctxt, Annotation.PARENT)) {
-            resolvedChannelBuilder.withParentChannel(
-                    resolveParentChannel(channel)
-            );
-        }
+        resolvedChannelBuilder.withParentChannel(
+                contextHasAnnotation(ctxt, Annotation.PARENT) ?
+                    resolveParentChannel(channel) :
+                    Optional.absent()
+        );
+
+        resolvedChannelBuilder.withChannelVariations(
+                contextHasAnnotation(ctxt, Annotation.VARIATIONS) ?
+                    resolveChannelVariations(channel) :
+                    Optional.absent()
+        );
 
         return resolvedChannelBuilder.build();
     }
@@ -286,8 +288,11 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
     private boolean contextHasAnnotation(QueryContext ctxt, Annotation annotation) {
 
-        return (ctxt.getAnnotations().all().size() > 0)
+        return (!Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
                 &&
-                ctxt.getAnnotations().all().contains(annotation);
+                Splitter.on(',')
+                        .splitToList(
+                                ctxt.getRequest().getParameter("annotations")
+                        ).contains(annotation.toKey()));
     }
 }

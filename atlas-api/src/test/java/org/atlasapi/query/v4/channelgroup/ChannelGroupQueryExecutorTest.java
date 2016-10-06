@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -26,7 +25,6 @@ import org.atlasapi.query.common.QueryResult;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -60,6 +58,9 @@ public class ChannelGroupQueryExecutorTest {
         ChannelGroup result = mock(ChannelGroup.class);
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter("annotations")).thenReturn("banana");
+        when(context.getRequest()).thenReturn(request);
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.getContext()).thenReturn(context);
@@ -141,8 +142,8 @@ public class ChannelGroupQueryExecutorTest {
         Platform testChannelGroup = mock(Platform.class);
         ChannelGroup<?> testRegionChannelGroup = mock(ChannelGroup.class);
 
-        HttpServletRequest request = mock(HttpServletRequest.class);
         QueryContext context = mock(QueryContext.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
         ChannelGroupRef regionChannelGroupRef = mock(ChannelGroupRef.class);
         Set<ChannelGroupRef> regionChannelGroupRefSet = new HashSet<>();
@@ -151,6 +152,7 @@ public class ChannelGroupQueryExecutorTest {
 
         when(request.getParameter("annotations")).thenReturn("regions");
         when(context.getRequest()).thenReturn(request);
+
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOnlyId()).thenReturn(channelGroupId);
         when(channelQuery.isListQuery()).thenReturn(false);
@@ -180,10 +182,7 @@ public class ChannelGroupQueryExecutorTest {
         assert(queryResult.getOnlyResource().getRegionChannelGroups().isPresent());
         assertThat(queryResult.getOnlyResource().getRegionChannelGroups().get().iterator().next(),
                 is(testRegionChannelGroup));
+
+        assertThat(queryResult.getOnlyResource().getPlatformChannelGroup(), is(Optional.absent()));
     }
-
 }
-
-//if annotaiton is present make sure those resolved things come back
-// if theyre not present make sure they dont come back
-// IM POR TANT

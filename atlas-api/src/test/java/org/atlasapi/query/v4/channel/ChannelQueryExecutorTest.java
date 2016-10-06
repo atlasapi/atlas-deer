@@ -1,10 +1,10 @@
 package org.atlasapi.query.v4.channel;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
@@ -22,7 +22,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.api.client.util.Sets;
 import com.google.common.base.Optional;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -46,6 +45,9 @@ public class ChannelQueryExecutorTest {
     @Mock
     private ChannelResolver channelResolver;
 
+    @Mock
+    private ChannelGroupResolver channelGroupResolver;
+
     @InjectMocks
     private ChannelQueryExecutor objectUnderTest;
 
@@ -55,6 +57,9 @@ public class ChannelQueryExecutorTest {
         Channel result = mock(Channel.class);
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannel> channelQuery = mock(Query.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter("annotations")).thenReturn("banana");
+        when(context.getRequest()).thenReturn(request);
         when(channelQuery.isListQuery()).thenReturn(false);
         when(channelQuery.getOnlyId()).thenReturn(channelId);
         when(channelQuery.getContext()).thenReturn(context);
@@ -79,6 +84,9 @@ public class ChannelQueryExecutorTest {
         Query<ResolvedChannel> channelQuery = mock(Query.class);
         ApplicationSources applicationSources = mock(ApplicationSources.class);
         Selection selection = Selection.ALL;
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter("annotations")).thenReturn("banana");
+        when(context.getRequest()).thenReturn(request);
 
         when(applicationSources.isReadEnabled(any(Publisher.class))).thenReturn(true);
         when(context.getApplicationSources()).thenReturn(applicationSources);

@@ -97,14 +97,14 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         if (channel == null) {
             log.error("Unable to resolve channel {}", entity.getChannelId());
 
+        } else {
+            // Little hack until Broadcasts have their own composite objects to deal with resolution of
+            // channels and channel groups outside annotation/writer logic
+
+            ResolvedChannel resolvedChannel = ResolvedChannel.builder(channel).build();
+            writer.writeObject(channelWriter, resolvedChannel, ctxt);
         }
 
-        // Little hack until Broadcasts have their own composite objects to deal with resolution of
-        // channels and channel groups outside annotation/writer logic
-
-        ResolvedChannel resolvedChannel = ResolvedChannel.builder(channel).build();
-
-        writer.writeObject(channelWriter, resolvedChannel, ctxt);
         writer.writeField("schedule_date", entity.getScheduleDate());
         writer.writeField("repeat", entity.getRepeat());
         writer.writeField("subtitled", entity.getSubtitled());

@@ -2,18 +2,12 @@ package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
 
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelGroup;
-import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelGroupSummary;
 import org.atlasapi.channel.ResolvedChannel;
-import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
@@ -27,13 +21,10 @@ import org.atlasapi.query.common.MissingResolvedDataException;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
 
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;

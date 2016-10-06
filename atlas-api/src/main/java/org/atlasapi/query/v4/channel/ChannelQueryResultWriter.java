@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;

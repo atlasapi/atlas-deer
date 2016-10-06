@@ -14,9 +14,9 @@ import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.channel.ResolvedChannelGroup;
-import org.atlasapi.channel.Platform;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
@@ -33,6 +33,8 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -144,23 +146,23 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         ResolvedChannelGroup.Builder resolvedChannelGroupBuilder =
                 ResolvedChannelGroup.builder(channelGroup);
 
-        if (contextHasAnnotation(ctxt, Annotation.REGIONS)) {
-            resolvedChannelGroupBuilder.withRegionChannelGroups(
-                    resolveRegionChannelGroups(channelGroup)
-            );
-        }
+        resolvedChannelGroupBuilder.withRegionChannelGroups(
+                contextHasAnnotation(ctxt, Annotation.REGIONS) ?
+                    resolveRegionChannelGroups(channelGroup) :
+                    Optional.absent()
+        );
 
-        if(contextHasAnnotation(ctxt, Annotation.PLATFORM)) {
-            resolvedChannelGroupBuilder.withPlatformChannelGroup(
-                    resolvePlatformChannelGroup(channelGroup)
-            );
-        }
+        resolvedChannelGroupBuilder.withPlatformChannelGroup(
+                contextHasAnnotation(ctxt, Annotation.PLATFORM) ?
+                    resolvePlatformChannelGroup(channelGroup) :
+                    Optional.absent()
+        );
 
-        if(contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS)) {
-            resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveAdvertisedChannels(channelGroup)
-            );
-        }
+        resolvedChannelGroupBuilder.withAdvertisedChannels(
+                contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ?
+                    resolveAdvertisedChannels(channelGroup) :
+                    Optional.absent()
+        );
 
         return resolvedChannelGroupBuilder.build();
     }
@@ -229,8 +231,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private boolean contextHasAnnotation(QueryContext ctxt, Annotation annotation) {
 
-        return (ctxt.getAnnotations().all().size() > 0)
+        return (!Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
             &&
-            ctxt.getAnnotations().all().contains(annotation);
+                Splitter.on(',')
+                        .splitToList(
+                                ctxt.getRequest().getParameter("annotations")
+                        ).contains(annotation.toKey()));
     }
 }
