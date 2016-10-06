@@ -7,7 +7,6 @@ import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
@@ -113,7 +112,6 @@ import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.StandardQueryParser;
-import org.atlasapi.query.common.UncheckedQueryExecutionException;
 import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
@@ -166,8 +164,6 @@ import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
 import com.metabroadcast.common.time.SystemClock;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -695,14 +691,7 @@ public class QueryWebModule {
                         QueryAtomParser.valueOf(
                                 Attributes.MEDIA_TYPE,
                                 AttributeCoercers.enumCoercer(
-                                        new Function<String, Optional<MediaType>>() {
-
-                                            @Override
-                                            public Optional<MediaType> apply(
-                                                    String input) {
-                                                return MediaType.fromKey(input);
-                                            }
-                                        }
+                                        MediaType::fromKey
                                 )
                         )
                 )
@@ -715,28 +704,30 @@ public class QueryWebModule {
         );
 
         return new StandardQueryParser<Topic>(Resource.TOPIC,
-                new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                        QueryAtomParser.valueOf(
-                                Attributes.ID,
-                                AttributeCoercers.idCoercer(idCodec())
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.TOPIC_TYPE,
-                                AttributeCoercers.enumCoercer(Topic.Type.fromKey())
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.SOURCE,
-                                AttributeCoercers.enumCoercer(Sources.fromKey())
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.ALIASES_NAMESPACE,
-                                AttributeCoercers.stringCoercer()
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.ALIASES_VALUE,
-                                AttributeCoercers.stringCoercer()
+                new QueryAttributeParser(
+                        ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
+                            QueryAtomParser.valueOf(
+                                    Attributes.ID,
+                                    AttributeCoercers.idCoercer(idCodec())
+                            ),
+                            QueryAtomParser.valueOf(
+                                    Attributes.TOPIC_TYPE,
+                                    AttributeCoercers.enumCoercer(Topic.Type.fromKey())
+                            ),
+                            QueryAtomParser.valueOf(
+                                    Attributes.SOURCE,
+                                    AttributeCoercers.enumCoercer(Sources.fromKey())
+                            ),
+                            QueryAtomParser.valueOf(
+                                    Attributes.ALIASES_NAMESPACE,
+                                    AttributeCoercers.stringCoercer()
+                            ),
+                            QueryAtomParser.valueOf(
+                                    Attributes.ALIASES_VALUE,
+                                    AttributeCoercers.stringCoercer()
+                            )
                         )
-                )),
+                ),
                 idCodec(), contextParser
         );
     }
@@ -747,24 +738,26 @@ public class QueryWebModule {
         );
 
         return new StandardQueryParser<Event>(Resource.EVENT,
-                new QueryAttributeParser(ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                        QueryAtomParser.valueOf(
-                                Attributes.ID,
-                                AttributeCoercers.idCoercer(idCodec())
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.SOURCE,
-                                AttributeCoercers.enumCoercer(Sources.fromKey())
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.ALIASES_NAMESPACE,
-                                AttributeCoercers.stringCoercer()
-                        ),
-                        QueryAtomParser.valueOf(
-                                Attributes.ALIASES_VALUE,
-                                AttributeCoercers.stringCoercer()
+                new QueryAttributeParser(
+                        ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
+                            QueryAtomParser.valueOf(
+                                    Attributes.ID,
+                                    AttributeCoercers.idCoercer(idCodec())
+                            ),
+                            QueryAtomParser.valueOf(
+                                    Attributes.SOURCE,
+                                    AttributeCoercers.enumCoercer(Sources.fromKey())
+                            ),
+                            QueryAtomParser.valueOf(
+                                    Attributes.ALIASES_NAMESPACE,
+                                    AttributeCoercers.stringCoercer()
+                            ),
+                            QueryAtomParser.valueOf(
+                                    Attributes.ALIASES_VALUE,
+                                    AttributeCoercers.stringCoercer()
+                            )
                         )
-                )),
+                ),
                 idCodec(), contextParser
         );
     }
@@ -1051,8 +1044,12 @@ public class QueryWebModule {
                         NullWriter.create(Content.class)
                 )
                 .register(NON_MERGED, NullWriter.create(Content.class))
-                .register(REVIEWS, new ReviewsAnnotation(new ReviewsWriter(SourceWriter.sourceWriter("source"))))
-                .register(RATINGS, new RatingsAnnotation(new RatingsWriter(SourceWriter.sourceWriter("source"))))
+                .register(REVIEWS, new ReviewsAnnotation(
+                        new ReviewsWriter(SourceWriter.sourceWriter("source")))
+                )
+                .register(RATINGS, new RatingsAnnotation(
+                        new RatingsWriter(SourceWriter.sourceWriter("source")))
+                )
                 .build();
     }
 

@@ -15,7 +15,6 @@ permissions and limitations under the License. */
 package org.atlasapi.query;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.content.ContainerSummaryResolver;
@@ -144,7 +143,9 @@ public class QueryModule {
 
     @Bean
     public ContainerSummaryResolver containerSummaryResolver() {
-        return new MergingEquivalentsResolverBackedContainerSummaryResolver(mergingContentResolver());
+        return new MergingEquivalentsResolverBackedContainerSummaryResolver(
+                mergingContentResolver()
+        );
     }
 
 }
