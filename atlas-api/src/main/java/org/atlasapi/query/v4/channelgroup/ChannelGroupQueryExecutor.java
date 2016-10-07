@@ -13,9 +13,11 @@ import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ChannelGroupSummary;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
@@ -158,12 +160,16 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     Optional.absent()
         );
 
-        resolvedChannelGroupBuilder.withAdvertisedChannels(
-                contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
-                contextHasAnnotation(ctxt, Annotation.CHANNELS) ?
-                    resolveAdvertisedChannels(channelGroup) :
-                    Optional.absent()
-        );
+        if(contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
+                contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
+            resolvedChannelGroupBuilder.withAdvertisedChannels(
+                    contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ?
+                    resolveAdvertisedChannelsWithChannelGroups(channelGroup) :
+                    resolveAdvertisedChannels(channelGroup)
+            );
+        } else {
+            resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.absent());
+        }
 
         return resolvedChannelGroupBuilder.build();
     }
@@ -198,7 +204,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .first();
     }
 
-    private Optional<Iterable<Channel>> resolveAdvertisedChannels(ChannelGroup<?> entity) {
+    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannels(ChannelGroup<?> entity) {
 
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
 
@@ -223,11 +229,48 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .then(Resolved::getResources)
                 .get(1, TimeUnit.MINUTES);
 
-        Iterable<Channel> sortedChannels = StreamSupport.stream(resolvedChannels.spliterator(), false)
+        Iterable<ResolvedChannel> sortedChannels = StreamSupport.stream(resolvedChannels.spliterator(), false)
                 .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
+                .map(channel -> ResolvedChannel.builder(channel).build())
                 .collect(Collectors.toList());
 
         return Optional.of(sortedChannels);
+    }
+
+    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannelsWithChannelGroups(
+            ChannelGroup<?> entity
+    ) {
+        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
+        if (!channels.isPresent()) {
+            return Optional.absent();
+        }
+
+        return Optional.of(
+                StreamSupport.stream(channels.get().spliterator(), false)
+                .map(resolvedChannel -> ResolvedChannel.builder(resolvedChannel.getChannel())
+                        .withChannelGroupSummaries(
+                                resolveChannelGroupSummaries(resolvedChannel.getChannel()))
+                        .build()
+                )
+                .collect(Collectors.toList())
+        );
+    }
+
+    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(Channel channel) {
+
+        ImmutableList<Id> channelGroupIds = channel.getChannelGroups()
+                .stream()
+                .map(cg -> cg.getChannelGroup().getId())
+                .collect(MoreCollectors.toImmutableList());
+
+        Iterable<ChannelGroup<?>> channelGroups =
+                Promise.wrap(channelGroupResolver.resolveIds(channelGroupIds))
+                        .then(Resolved::getResources)
+                        .get(1, TimeUnit.MINUTES);
+
+        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
+                .map(ChannelGroup::toSummary)
+                .collect(MoreCollectors.toImmutableList()));
     }
 
     private boolean contextHasAnnotation(QueryContext ctxt, Annotation annotation) {

@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,6 +17,7 @@ import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -307,12 +309,19 @@ public class ChannelGroupQueryExecutorTest {
                 assertThat(resolvedChannelGroup.getRegionChannelGroups(), is(Optional.absent()));
             }
 
-            List<Channel> channelGroupsChannels = Lists.newArrayList(
-                    resolvedChannelGroup.getChannels().get()
-            );
+            List<Channel> channelGroupsChannels = StreamSupport.stream(
+                    resolvedChannelGroup.getChannels().get().spliterator(), false)
+                    .map(ResolvedChannel::getChannel)
+                    .collect(Collectors.toList());
+
             assert(channelGroupsChannels.containsAll(ImmutableList.of(channel, channel2)));
             assertThat(resolvedChannelGroup.getPlatformChannelGroup(), is(Optional.absent()));
         }
 
+    }
+
+    @Test
+    public void testChannelGroupChannelHasFilteredChannelGroups() throws Exception {
+        assert(true); // TODO: write me (MBST-17114)
     }
 }

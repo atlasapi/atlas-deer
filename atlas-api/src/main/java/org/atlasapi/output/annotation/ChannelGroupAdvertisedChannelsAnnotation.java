@@ -6,6 +6,7 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
@@ -38,12 +39,13 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
     public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
 
-        Optional<Iterable<Channel>> resolvedChannels = entity.getChannels();
+        Optional<Iterable<ResolvedChannel>> resolvedChannels = entity.getChannels();
         if (!resolvedChannels.isPresent()) {
             throw new MissingResolvedDataException(channelWriter.listName());
         }
 
         Iterable<Channel> filteredChannels = StreamSupport.stream(resolvedChannels.get().spliterator(), false)
+                .map(ResolvedChannel::getChannel)
                 .filter(channel -> channel.getAdvertiseFrom()
                         .isBeforeNow() || channel.getAdvertiseFrom()
                         .isEqualNow())

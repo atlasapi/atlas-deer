@@ -1,5 +1,7 @@
 package org.atlasapi.channel;
 
+import org.atlasapi.entity.util.Resolved;
+
 import com.google.common.base.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -9,13 +11,13 @@ public class ResolvedChannelGroup {
     private final ChannelGroup<?> channelGroup;
     private final Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
     private final Optional<ChannelGroup<?>> platformChannelGroup;
-    private final Optional<Iterable<Channel>> channels;
+    private final Optional<Iterable<ResolvedChannel>> channels;
 
     private ResolvedChannelGroup(
             ChannelGroup channelGroup,
             Optional<Iterable<ChannelGroup<?>>> regionChannelGroups,
             Optional<ChannelGroup<?>> platformChannelGroup,
-            Optional<Iterable<Channel>> channels
+            Optional<Iterable<ResolvedChannel>> channels
             ) {
         this.channelGroup = channelGroup;
         this.regionChannelGroups = regionChannelGroups;
@@ -39,7 +41,7 @@ public class ResolvedChannelGroup {
         return platformChannelGroup;
     }
 
-    public Optional<Iterable<Channel>> getChannels() {
+    public Optional<Iterable<ResolvedChannel>> getChannels() {
         return channels;
     }
 
@@ -48,7 +50,7 @@ public class ResolvedChannelGroup {
         ChannelGroup<?> channelGroup;
         Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
         Optional<ChannelGroup<?>> platformChannelGroup;
-        Optional<Iterable<Channel>> channels;
+        Optional<Iterable<ResolvedChannel>> channels;
 
         public Builder(ChannelGroup<?> channelGroup) {
             this.channelGroup = checkNotNull(channelGroup);
@@ -64,7 +66,7 @@ public class ResolvedChannelGroup {
             return this;
         }
 
-        public Builder withAdvertisedChannels(Optional<Iterable<Channel>> channels) {
+        public Builder withAdvertisedChannels(Optional<Iterable<ResolvedChannel>> channels) {
             this.channels = channels;
             return this;
         }

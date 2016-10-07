@@ -2,6 +2,7 @@ package org.atlasapi.query.v4.channel;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
@@ -9,6 +10,7 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelGroupSummary;
+import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
@@ -224,13 +226,11 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
     private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(Channel channel) {
 
-        ImmutableList<Id> channelGroupIds = channel.getChannelGroups()
-                .stream()
-                .map(cg -> cg.getChannelGroup().getId())
-                .collect(MoreCollectors.toImmutableList());
-
         Iterable<ChannelGroup<?>> channelGroups =
-                Promise.wrap(channelGroupResolver.resolveIds(channelGroupIds))
+                Promise.wrap(channelGroupResolver.resolveIds(
+                        channel.getChannelGroups().stream()
+                        .map(cg -> cg.getChannelGroup().getId())
+                        .collect(Collectors.toList())))
                         .then(Resolved::getResources)
                         .get(1, TimeUnit.MINUTES);
 
@@ -252,7 +252,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
     private Optional<Iterable<Channel>> resolveChannelVariations(Channel channel) {
 
-        Iterable<Id> ids = Iterables.transform(channel.getVariations(), ResourceRef::getId);
+        Iterable<Id> ids = Iterables.transform(channel.getVariations(), ChannelRef::getId);
 
         return Optional.of(Promise.wrap(channelResolver.resolveIds(ids))
         .then(Resolved::getResources)
