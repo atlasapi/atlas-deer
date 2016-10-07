@@ -6,6 +6,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupSummary;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.media.entity.Publisher;
@@ -63,21 +64,24 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
     @Override
     public void write(@Nonnull ResolvedChannel entity, @Nonnull FieldWriter format,
             @Nonnull OutputContext ctxt) throws IOException {
-        format.writeField("title", entity.getChannel().getTitle());
-        format.writeField("id", idCode.encode(entity.getChannel().getId().toBigInteger()));
-        format.writeField("uri", entity.getChannel().getCanonicalUri());
-        format.writeList(IMAGE_WRITER, entity.getChannel().getImages(), ctxt);
-        format.writeList(AVAILABLE_FROM_WRITER, entity.getChannel().getAvailableFrom(), ctxt);
-        format.writeObject(AVAILABLE_FROM_WRITER, entity.getChannel().getSource(), ctxt);
-        format.writeField("media_type", entity.getChannel().getMediaType());
-        format.writeObject(BROADCASTER_WRITER, entity.getChannel().getBroadcaster(), ctxt);
-        format.writeList(ALIAS_WRITER, entity.getChannel().getAliases(), ctxt);
-        format.writeList("genres", "genres", entity.getChannel().getGenres(), ctxt);
-        format.writeField("high_definition", entity.getChannel().getHighDefinition());
-        format.writeField("regional", entity.getChannel().getRegional());
-        format.writeList(RELATED_LINKS_WRITER, entity.getChannel().getRelatedLinks(), ctxt);
-        format.writeField("start_date", entity.getChannel().getStartDate());
-        format.writeField("advertised_from", entity.getChannel().getAdvertiseFrom());
+
+        Channel channel = entity.getChannel();
+
+        format.writeField("title", channel.getTitle());
+        format.writeField("id", idCode.encode(channel.getId().toBigInteger()));
+        format.writeField("uri", channel.getCanonicalUri());
+        format.writeList(IMAGE_WRITER, channel.getImages(), ctxt);
+        format.writeList(AVAILABLE_FROM_WRITER, channel.getAvailableFrom(), ctxt);
+        format.writeObject(AVAILABLE_FROM_WRITER, channel.getSource(), ctxt);
+        format.writeField("media_type", channel.getMediaType());
+        format.writeObject(BROADCASTER_WRITER, channel.getBroadcaster(), ctxt);
+        format.writeList(ALIAS_WRITER, channel.getAliases(), ctxt);
+        format.writeList("genres", "genres", channel.getGenres(), ctxt);
+        format.writeField("high_definition", channel.getHighDefinition());
+        format.writeField("regional", channel.getRegional());
+        format.writeList(RELATED_LINKS_WRITER, channel.getRelatedLinks(), ctxt);
+        format.writeField("start_date", channel.getStartDate());
+        format.writeField("advertised_from", channel.getAdvertiseFrom());
 
         if (hasChannelGroupSummaryAnnotation(ctxt)) {
 
@@ -89,9 +93,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
             } else {
                 throw new MissingResolvedDataException(channelGroupSummaryWriter.listName());
             }
-
         }
-
     }
 
     @Nonnull

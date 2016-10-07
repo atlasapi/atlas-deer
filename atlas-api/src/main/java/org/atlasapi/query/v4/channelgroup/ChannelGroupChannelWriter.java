@@ -36,8 +36,8 @@ public class ChannelGroupChannelWriter
         Channel channel = entity.getChannel();
         ChannelGroupMembership channelGroupMembership = entity.getChannelGroupMembership();
 
+        // Forced wrapping in a ResolvedChannel because of how the writer currently works.
         ResolvedChannel resolvedChannel = ResolvedChannel.builder(channel).build();
-        // Forced casting to resolvedChannel because of how writer works atm
 
         format.writeObject(channelWriter, "channel", resolvedChannel, ctxt);
 

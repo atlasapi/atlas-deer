@@ -16,7 +16,6 @@ import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
 import org.atlasapi.media.entity.Publisher;

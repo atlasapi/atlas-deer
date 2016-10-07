@@ -1,30 +1,17 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.Nullable;
-
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelRef;
-import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.common.MissingResolvedDataException;
 import org.atlasapi.query.v4.channel.ChannelWriter;
 
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import scala.concurrent.pilib;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -42,18 +29,19 @@ public class ChannelVariationAnnotation extends OutputAnnotation<ResolvedChannel
     public void write(ResolvedChannel entity, FieldWriter format, OutputContext ctxt) throws IOException {
 
         Optional<Iterable<Channel>> channelVariations = entity.getChannelVariations();
-        if (channelVariations.isPresent()) {
-            Iterable<ResolvedChannel> resolvedChannels =
-                    StreamSupport.stream(channelVariations.get().spliterator(), false)
-                    .map(input -> ResolvedChannel.builder(input).build())
-                    .collect(Collectors.toList());
-            // ^^ This is because the writer needs a ResolvedChannel as it does an annotation check
-            // for some reason so channels need to be converted to resolved channels before theyre
-            // written
-
-            format.writeList(channelWriter, resolvedChannels, ctxt);
-        } else {
+        if (!channelVariations.isPresent()) {
             throw new MissingResolvedDataException("channel variations");
         }
+
+        // Channels must be wrapped in a ResolvedChannel because of how the current writers work.
+        // The current writers have been changed to write ResolvedChannel so when one of the
+        // resolved channel fields (of type Channel) are pulled and sent to a writer, the types
+        // stop matching (ResolvedChannel != Channel)
+        Iterable<ResolvedChannel> resolvedChannels =
+                StreamSupport.stream(channelVariations.get().spliterator(), false)
+                .map(input -> ResolvedChannel.builder(input).build())
+                .collect(Collectors.toList());
+
+        format.writeList(channelWriter, resolvedChannels, ctxt);
     }
 }

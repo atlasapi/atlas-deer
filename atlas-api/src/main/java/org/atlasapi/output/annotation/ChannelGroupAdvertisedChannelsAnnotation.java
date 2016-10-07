@@ -46,9 +46,8 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
 
         Iterable<Channel> filteredChannels = StreamSupport.stream(resolvedChannels.get().spliterator(), false)
                 .map(ResolvedChannel::getChannel)
-                .filter(channel -> channel.getAdvertiseFrom()
-                        .isBeforeNow() || channel.getAdvertiseFrom()
-                        .isEqualNow())
+                .filter(channel -> channel.getAdvertiseFrom().isBeforeNow()
+                        || channel.getAdvertiseFrom().isEqualNow())
                 .collect(Collectors.toList());
 
         String genre = ctxt.getRequest()

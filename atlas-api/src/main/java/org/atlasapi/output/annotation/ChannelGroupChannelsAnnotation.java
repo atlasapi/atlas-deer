@@ -53,7 +53,7 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
                 .getParameter(Attributes.CHANNEL_GROUP_CHANNEL_GENRES.externalName());
 
         if (!Strings.isNullOrEmpty(genre)) {
-            final ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',')
+            ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',')
                     .split(genre));
             channels = Iterables.filter(channels,
                     input -> !Sets.intersection(input.getGenres(), genres).isEmpty()

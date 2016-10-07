@@ -20,9 +20,9 @@ public class ResolvedChannel {
             Optional<Iterable<Channel>> channelVariations
     ) {
         this.channel = checkNotNull(channel);
-        this.channelGroupSummaries = channelGroupSummaries;
-        this.parentChannel = parentChannel;
-        this.channelVariations = channelVariations;
+        this.channelGroupSummaries = checkNotNull(channelGroupSummaries);
+        this.parentChannel = checkNotNull(parentChannel);
+        this.channelVariations = checkNotNull(channelVariations);
     }
 
     public static Builder builder(Channel channel) {
@@ -47,7 +47,7 @@ public class ResolvedChannel {
 
     public static class Builder {
 
-        private Channel channel;
+        private final Channel channel;
         private Optional<List<ChannelGroupSummary>> channelGroupSummaries;
         private Optional<Channel> parentChannel;
         private Optional<Iterable<Channel>> channelVariations;

@@ -1,7 +1,5 @@
 package org.atlasapi.channel;
 
-import org.atlasapi.entity.util.Resolved;
-
 import com.google.common.base.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -19,10 +17,10 @@ public class ResolvedChannelGroup {
             Optional<ChannelGroup<?>> platformChannelGroup,
             Optional<Iterable<ResolvedChannel>> channels
             ) {
-        this.channelGroup = channelGroup;
-        this.regionChannelGroups = regionChannelGroups;
-        this.platformChannelGroup = platformChannelGroup;
-        this.channels = channels;
+        this.channelGroup = checkNotNull(channelGroup);
+        this.regionChannelGroups = checkNotNull(regionChannelGroups);
+        this.platformChannelGroup = checkNotNull(platformChannelGroup);
+        this.channels = checkNotNull(channels);
     }
 
     public static Builder builder(ChannelGroup channelGroup) {
@@ -47,10 +45,10 @@ public class ResolvedChannelGroup {
 
     public static class Builder {
 
-        ChannelGroup<?> channelGroup;
-        Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
-        Optional<ChannelGroup<?>> platformChannelGroup;
-        Optional<Iterable<ResolvedChannel>> channels;
+        private final ChannelGroup<?> channelGroup;
+        private Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
+        private Optional<ChannelGroup<?>> platformChannelGroup;
+        private Optional<Iterable<ResolvedChannel>> channels;
 
         public Builder(ChannelGroup<?> channelGroup) {
             this.channelGroup = checkNotNull(channelGroup);
