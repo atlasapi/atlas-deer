@@ -46,9 +46,9 @@ public class ResolvedChannelGroup {
     public static class Builder {
 
         private final ChannelGroup<?> channelGroup;
-        private Optional<Iterable<ChannelGroup<?>>> regionChannelGroups;
-        private Optional<ChannelGroup<?>> platformChannelGroup;
-        private Optional<Iterable<ResolvedChannel>> channels;
+        private Optional<Iterable<ChannelGroup<?>>> regionChannelGroups = Optional.absent();
+        private Optional<ChannelGroup<?>> platformChannelGroup = Optional.absent();
+        private Optional<Iterable<ResolvedChannel>> channels = Optional.absent();
 
         public Builder(ChannelGroup<?> channelGroup) {
             this.channelGroup = checkNotNull(channelGroup);

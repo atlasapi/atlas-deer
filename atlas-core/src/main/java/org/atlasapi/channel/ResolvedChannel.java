@@ -48,9 +48,9 @@ public class ResolvedChannel {
     public static class Builder {
 
         private final Channel channel;
-        private Optional<List<ChannelGroupSummary>> channelGroupSummaries;
-        private Optional<Channel> parentChannel;
-        private Optional<Iterable<Channel>> channelVariations;
+        private Optional<List<ChannelGroupSummary>> channelGroupSummaries = Optional.absent();
+        private Optional<Channel> parentChannel = Optional.absent();
+        private Optional<Iterable<Channel>> channelVariations = Optional.absent();
 
         private Builder(Channel channel) {
             this.channel = channel;
