@@ -535,21 +535,15 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return ByteBuffer.wrap(broadcastSerializer.serialize(broadcast).build().toByteArray());
     }
 
-    /**
-     * Delete stale broadcasts from the update interval. We need to delete the broadcasts from the
-     * update interval, rather than broadcast interval because we need to avoid incorrectly avoid
-     * broadcasts which were moved out of update interval
-     */
     private List<Statement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts) {
         return staleBroadcasts.stream()
-                .map(broadcastRef -> broadcastDelete.bind()
-                        .setString("source", src.key())
-                        .setLong("channel", broadcastRef.getChannelId().longValue())
-                        .setTimestamp("day", broadcastRef.getTransmissionInterval()
-                                .getStart()
-                                .toLocalDate()
-                                .toDate())
-                        .setString("broadcast", broadcastRef.getSourceId())
+                .flatMap(broadcastRef -> daysIn(broadcastRef.getTransmissionInterval())
+                        .stream()
+                        .map(day -> broadcastDelete.bind()
+                                .setString("source", src.key())
+                                .setLong("channel", broadcastRef.getChannelId().longValue())
+                                .setTimestamp("day", day)
+                                .setString("broadcast", broadcastRef.getSourceId()))
                 )
                 .collect(MoreCollectors.toImmutableList());
     }
