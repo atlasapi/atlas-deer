@@ -6,7 +6,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.meta.annotations.ProducesType;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
@@ -30,17 +29,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @ProducesType(type = Channel.class)
 public class ChannelController {
 
-    private final QueryParser<ResolvedChannel> requestParser;
-    private final QueryExecutor<ResolvedChannel> queryExecutor;
-    private final QueryResultWriter<ResolvedChannel> resultWriter;
+    private final QueryParser<Channel> requestParser;
+    private final QueryExecutor<Channel> queryExecutor;
+    private final QueryResultWriter<Channel> resultWriter;
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     private static Logger log = LoggerFactory.getLogger(ChannelController.class);
 
     public ChannelController(
-            QueryParser<ResolvedChannel> requestParser,
-            QueryExecutor<ResolvedChannel> queryExecutor,
-            QueryResultWriter<ResolvedChannel> resultWriter
+            QueryParser<Channel> requestParser,
+            QueryExecutor<Channel> queryExecutor,
+            QueryResultWriter<Channel> resultWriter
     ) {
         this.requestParser = checkNotNull(requestParser);
         this.queryExecutor = checkNotNull(queryExecutor);
@@ -53,8 +52,8 @@ public class ChannelController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            Query<ResolvedChannel> channelQuery = requestParser.parse(request);
-            QueryResult<ResolvedChannel> queryResult = queryExecutor.execute(channelQuery);
+            Query<Channel> channelQuery = requestParser.parse(request);
+            QueryResult<Channel> queryResult = queryExecutor.execute(channelQuery);
             resultWriter.write(queryResult, writer);
         } catch (Exception e) {
             log.error("Request exception " + request.getRequestURI(), e);

@@ -3,13 +3,12 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupMembershipAnnotation extends OutputAnnotation<ResolvedChannel> {
+public class ChannelGroupMembershipAnnotation extends OutputAnnotation<Channel> {
 
     private final ChannelGroupMembershipListWriter channelGroupMembershipWriter;
 
@@ -19,8 +18,8 @@ public class ChannelGroupMembershipAnnotation extends OutputAnnotation<ResolvedC
     }
 
     @Override
-    public void write(ResolvedChannel entity, FieldWriter format, OutputContext ctxt) throws IOException {
-        format.writeList(channelGroupMembershipWriter, entity.getChannel().getChannelGroups(), ctxt);
+    public void write(Channel entity, FieldWriter format, OutputContext ctxt) throws IOException {
+        format.writeList(channelGroupMembershipWriter, entity.getChannelGroups(), ctxt);
 
     }
 }

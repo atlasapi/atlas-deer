@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.channel.ResolvedChannel;
+import org.atlasapi.channel.Channel;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
@@ -16,12 +16,12 @@ import com.google.common.collect.FluentIterable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelQueryResultWriter extends QueryResultWriter<ResolvedChannel> {
+public class ChannelQueryResultWriter extends QueryResultWriter<Channel> {
 
-    private final EntityListWriter<ResolvedChannel> channelListWriter;
+    private final EntityListWriter<Channel> channelListWriter;
 
     public ChannelQueryResultWriter(
-            EntityListWriter<ResolvedChannel> channelListWriter,
+            EntityListWriter<Channel> channelListWriter,
             EntityWriter<Object> licenseWriter,
             EntityWriter<HttpServletRequest> requestWriter
     ) {
@@ -30,13 +30,13 @@ public class ChannelQueryResultWriter extends QueryResultWriter<ResolvedChannel>
     }
 
     @Override
-    protected void writeResult(QueryResult<ResolvedChannel> result, ResponseWriter writer)
+    protected void writeResult(QueryResult<Channel> result, ResponseWriter writer)
             throws IOException {
 
         OutputContext ctxt = OutputContext.valueOf(result.getContext());
 
         if (result.isListResult()) {
-            FluentIterable<ResolvedChannel> resources = result.getResources();
+            FluentIterable<Channel> resources = result.getResources();
             writer.writeList(channelListWriter, resources, ctxt);
         } else {
             writer.writeObject(channelListWriter, result.getOnlyResource(), ctxt);

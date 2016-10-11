@@ -15,8 +15,8 @@ permissions and limitations under the License. */
 package org.atlasapi.query;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.channel.ResolvedChannel;
-import org.atlasapi.channel.ResolvedChannelGroup;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.MergingEquivalentsResolverBackedContainerSummaryResolver;
@@ -91,18 +91,13 @@ public class QueryModule {
     }
 
     @Bean
-    public QueryExecutor<ResolvedChannel> channelQueryExecutor() {
-        return ChannelQueryExecutor.create(
-                persistenceModule.channelResolver(),
-                persistenceModule.channelGroupResolver()
-        );
+    public QueryExecutor<Channel> channelQueryExecutor() {
+        return ChannelQueryExecutor.create(persistenceModule.channelResolver());
     }
 
     @Bean
-    public QueryExecutor<ResolvedChannelGroup> channelGroupQueryExecutor() {
-        return new ChannelGroupQueryExecutor(
-                persistenceModule.channelGroupResolver(),
-                persistenceModule.channelResolver());
+    public QueryExecutor<ChannelGroup<?>> channelGroupQueryExecutor() {
+        return new ChannelGroupQueryExecutor(persistenceModule.channelGroupResolver());
     }
 
     public MergingEquivalentsResolver<Content> mergingContentResolver() {
@@ -143,9 +138,7 @@ public class QueryModule {
 
     @Bean
     public ContainerSummaryResolver containerSummaryResolver() {
-        return new MergingEquivalentsResolverBackedContainerSummaryResolver(
-                mergingContentResolver()
-        );
+        return new MergingEquivalentsResolverBackedContainerSummaryResolver(mergingContentResolver());
     }
 
 }

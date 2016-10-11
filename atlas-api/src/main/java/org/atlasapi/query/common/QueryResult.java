@@ -91,7 +91,7 @@ public abstract class QueryResult<T> {
 
         public T getOnlyResource() {
             throw new IllegalStateException(
-                    "QueryResult.getOnlyResource() cannot be called on list result");
+                    "QueryResult.getOnlyResource() cannot be called on single result");
         }
 
         @Override

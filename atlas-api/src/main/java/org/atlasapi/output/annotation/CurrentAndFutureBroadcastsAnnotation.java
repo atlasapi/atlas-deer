@@ -24,14 +24,13 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
 
-    public CurrentAndFutureBroadcastsAnnotation(
-            NumberToShortStringCodec codec,
-            ChannelResolver channelResolver
-    ) {
+    public CurrentAndFutureBroadcastsAnnotation(NumberToShortStringCodec codec,
+            ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
         this.broadcastWriter = new BroadcastWriter(
                 "broadcasts",
                 codec,
-                channelResolver
+                channelResolver,
+                channelGroupResolver
         );
     }
 

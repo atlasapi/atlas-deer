@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.channel.ResolvedChannelGroup;
+import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
@@ -16,7 +16,7 @@ import com.google.common.collect.FluentIterable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelGroupQueryResultWriter extends QueryResultWriter<ResolvedChannelGroup> {
+public class ChannelGroupQueryResultWriter extends QueryResultWriter<ChannelGroup<?>> {
 
     private final ChannelGroupListWriter channelGroupListWriter;
 
@@ -30,12 +30,12 @@ public class ChannelGroupQueryResultWriter extends QueryResultWriter<ResolvedCha
     }
 
     @Override
-    protected void writeResult(QueryResult<ResolvedChannelGroup> result, ResponseWriter writer)
+    protected void writeResult(QueryResult<ChannelGroup<?>> result, ResponseWriter writer)
             throws IOException {
         OutputContext ctxt = outputContext(result.getContext());
 
         if (result.isListResult()) {
-            FluentIterable<ResolvedChannelGroup> resources = result.getResources();
+            FluentIterable<ChannelGroup<?>> resources = result.getResources();
             writer.writeList(channelGroupListWriter, resources, ctxt);
         } else {
             writer.writeObject(channelGroupListWriter, result.getOnlyResource(), ctxt);

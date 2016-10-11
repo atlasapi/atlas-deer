@@ -21,11 +21,13 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
 
-    public BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver) {
+    public BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver,
+            ChannelGroupResolver channelGroupResolver) {
         broadcastWriter = new BroadcastWriter(
                 "broadcasts",
                 codec,
-                channelResolver
+                channelResolver,
+                channelGroupResolver
         );
     }
 
