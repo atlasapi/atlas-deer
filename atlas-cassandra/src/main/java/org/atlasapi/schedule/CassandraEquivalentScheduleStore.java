@@ -282,7 +282,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
             List<Statement> deletes = deleteStatements(
                     update.getSource(),
-                    Sets.union(staleBroadcasts, update.getStaleBroadcasts())
+                    Sets.union(staleBroadcasts, update.getStaleBroadcasts()),
+                    update.getSchedule().getInterval()
             );
 
             log.info(
@@ -535,9 +536,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return ByteBuffer.wrap(broadcastSerializer.serialize(broadcast).build().toByteArray());
     }
 
-    private List<Statement> deleteStatements(Publisher src, Set<BroadcastRef> staleBroadcasts) {
+    private List<Statement> deleteStatements(
+            Publisher src,
+            Set<BroadcastRef> staleBroadcasts,
+            Interval interval
+    ) {
         return staleBroadcasts.stream()
-                .flatMap(broadcastRef -> daysIn(broadcastRef.getTransmissionInterval())
+                .flatMap(broadcastRef ->
+                        Sets.intersection(
+                                ImmutableSet.copyOf(daysIn(broadcastRef.getTransmissionInterval())),
+                                ImmutableSet.copyOf(daysIn(interval))
+                        )
                         .stream()
                         .map(day -> broadcastDelete.bind()
                                 .setString("source", src.key())
