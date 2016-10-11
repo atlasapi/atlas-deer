@@ -19,7 +19,7 @@ import com.metabroadcast.common.stream.MoreCollectors;
 public class BroadcastsAnnotation extends OutputAnnotation<Content> {
 
     private final BroadcastWriter broadcastWriter;
-    private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
+    private final ChannelsBroadcastFilter channelsBroadcastFilter;
 
     public BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver) {
         broadcastWriter = new BroadcastWriter(
@@ -27,6 +27,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
                 codec,
                 channelResolver
         );
+        this.channelsBroadcastFilter = ChannelsBroadcastFilter.create();
     }
 
     @Override

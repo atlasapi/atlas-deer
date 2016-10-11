@@ -25,7 +25,7 @@ import org.joda.time.DateTimeZone;
 public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
 
     private final BroadcastWriter broadcastWriter;
-    private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
+    private final ChannelsBroadcastFilter channelsBroadcastFilter;
 
     public UpcomingBroadcastsAnnotation(NumberToShortStringCodec codec,
             ChannelResolver channelResolver, ChannelGroupResolver channelGroupResolver) {
@@ -34,6 +34,7 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
                 codec,
                 channelResolver
         );
+        this.channelsBroadcastFilter = ChannelsBroadcastFilter.create();
     }
 
     @Override
