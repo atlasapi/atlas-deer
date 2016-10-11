@@ -2,21 +2,22 @@ package org.atlasapi.output;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ResolvedChannel;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelWithChannelGroupMembership {
+public class ResolvedChannelWithChannelGroupMembership {
 
-    private final Channel channel;
+    private final ResolvedChannel channel;
     private final ChannelGroupMembership channelGroupMembership;
 
-    public ChannelWithChannelGroupMembership(Channel channel,
+    public ResolvedChannelWithChannelGroupMembership(ResolvedChannel channel,
             ChannelGroupMembership channelGroupMembership) {
         this.channel = checkNotNull(channel);
         this.channelGroupMembership = checkNotNull(channelGroupMembership);
     }
 
-    public Channel getChannel() {
+    public ResolvedChannel getResolvedChannel() {
         return channel;
     }
 
