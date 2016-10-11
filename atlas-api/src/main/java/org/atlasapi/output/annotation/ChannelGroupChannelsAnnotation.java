@@ -80,7 +80,7 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
                 );
             }
         }
-        ImmutableSet<ResolvedChannelWithChannelGroupMembership> result = resultBuilder.build(); // HERE?
+        ImmutableSet<ResolvedChannelWithChannelGroupMembership> result = resultBuilder.build();
         writer.writeList(channelWriter, result, ctxt);
     }
 }
