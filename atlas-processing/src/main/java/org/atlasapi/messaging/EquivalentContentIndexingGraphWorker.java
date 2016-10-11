@@ -9,6 +9,7 @@ import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.ImmutableSet;
@@ -19,38 +20,46 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceGraphUpdateMessage> {
 
-    private static final String METRICS_TIMER = "EquivalentContentIndexingGraphWorker";
-
     private static final Logger LOG =
             LoggerFactory.getLogger(EquivalentContentIndexingContentWorker.class);
 
     private final ContentIndex contentIndex;
-    private final Timer timer;
-
     private final EquivalenceGraphUpdateResolver graphUpdateResolver;
+
+    private final Timer executionTimer;
+    private final Meter messageReceivedMeter;
+    private final Meter failureMeter;
+
 
     private EquivalentContentIndexingGraphWorker(
             ContentIndex contentIndex,
-            MetricRegistry metricRegistry,
-            EquivalenceGraphUpdateResolver graphUpdateResolver
+            EquivalenceGraphUpdateResolver graphUpdateResolver,
+            String metricPrefix,
+            MetricRegistry metricRegistry
     ) {
         this.contentIndex = checkNotNull(contentIndex);
-        this.timer = checkNotNull(metricRegistry.timer(METRICS_TIMER));
         this.graphUpdateResolver = checkNotNull(graphUpdateResolver);
+
+        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 
     public static EquivalentContentIndexingGraphWorker create(
             ContentIndex contentIndex,
-            MetricRegistry metricRegistry,
-            EquivalenceGraphUpdateResolver graphUpdateResolver
+            EquivalenceGraphUpdateResolver graphUpdateResolver,
+            String metricPrefix,
+            MetricRegistry metricRegistry
     ) {
         return new EquivalentContentIndexingGraphWorker(
-                contentIndex, metricRegistry, graphUpdateResolver
+                contentIndex, graphUpdateResolver, metricPrefix, metricRegistry
         );
     }
 
     @Override
     public void process(EquivalenceGraphUpdateMessage message) throws RecoverableException {
+        messageReceivedMeter.mark();
+
         LOG.debug(
                 "Processing message on ids {}, took: PT{}S, message: {}",
                 message.getGraphUpdate().getAllGraphs().stream()
@@ -60,7 +69,8 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
                 message
         );
 
-        Timer.Context time = timer.time();
+        Timer.Context time = executionTimer.time();
+
         try {
             ImmutableSet<EquivalenceGraph> graphs =
                     graphUpdateResolver.resolve(message.getGraphUpdate());
@@ -68,10 +78,12 @@ public class EquivalentContentIndexingGraphWorker implements Worker<EquivalenceG
             for (EquivalenceGraph graph : graphs) {
                 contentIndex.updateCanonicalIds(graph.getId(), graph.getEquivalenceSet());
             }
-            time.stop();
         } catch (Exception e) {
+            failureMeter.mark();
             throw new RecoverableException("Failed to update canonical IDs for set"
                     + message.getGraphUpdate().getUpdated().getId(), e);
+        } finally {
+            time.stop();
         }
     }
 

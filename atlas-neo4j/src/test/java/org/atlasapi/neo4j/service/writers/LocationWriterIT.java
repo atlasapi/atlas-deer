@@ -186,7 +186,7 @@ public class LocationWriterIT extends AbstractNeo4jIT {
     }
 
     @Test
-    public void removeAllExistingLocations() throws Exception {
+    public void removeAllExistingLocationsWhenContentHasNone() throws Exception {
         Location location = getLocation(true, getPolicy(
                 DateTime.now(DateTimeZone.UTC).minusDays(1),
                 DateTime.now(DateTimeZone.UTC).plusDays(1)
@@ -211,6 +211,32 @@ public class LocationWriterIT extends AbstractNeo4jIT {
                 "MATCH (n:Content { id: {id} })-[:HAS_LOCATION]->(l:Location)"
                         + "RETURN l.startDateTime AS startDateTime, l.endDateTime AS endDateTime",
                 ImmutableMap.of("id", updatedItem.getId().longValue())
+        );
+
+        assertThat(result.hasNext(), is(false));
+    }
+
+    @Test
+    public void removeAllExistingLocations() throws Exception {
+        Location location = getLocation(true, getPolicy(
+                DateTime.now(DateTimeZone.UTC).minusDays(1),
+                DateTime.now(DateTimeZone.UTC).plusDays(1)
+        ));
+        Item item = getItem(
+                0L,
+                Publisher.METABROADCAST,
+                ImmutableSet.of(location)
+        );
+
+        contentWriter.writeContent(item, session);
+        locationWriter.write(item, session);
+
+        locationWriter.deleteLocations(item.getId(), session);
+
+        StatementResult result = session.run(
+                "MATCH (n:Content { id: {id} })-[:HAS_LOCATION]->(l:Location)"
+                        + "RETURN l.startDateTime AS startDateTime, l.endDateTime AS endDateTime",
+                ImmutableMap.of("id", item.getId().longValue())
         );
 
         assertThat(result.hasNext(), is(false));

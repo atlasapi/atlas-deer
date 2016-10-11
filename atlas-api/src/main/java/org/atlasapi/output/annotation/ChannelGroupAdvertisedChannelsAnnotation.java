@@ -10,7 +10,7 @@ import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
-import org.atlasapi.output.ChannelWithChannelGroupMembership;
+import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.common.MissingResolvedDataException;
@@ -41,13 +41,12 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
 
         Optional<Iterable<ResolvedChannel>> resolvedChannels = entity.getChannels();
         if (!resolvedChannels.isPresent()) {
-            throw new MissingResolvedDataException(channelWriter.listName());
+            throw new MissingResolvedDataException("channel group advertised channels annotation");
         }
 
-        Iterable<Channel> filteredChannels = StreamSupport.stream(resolvedChannels.get().spliterator(), false)
-                .map(ResolvedChannel::getChannel)
-                .filter(channel -> channel.getAdvertiseFrom().isBeforeNow()
-                        || channel.getAdvertiseFrom().isEqualNow())
+        Iterable<ResolvedChannel> filteredChannels = StreamSupport.stream(resolvedChannels.get().spliterator(), false)
+                .filter(resolvedChannel -> resolvedChannel.getChannel().getAdvertiseFrom().isBeforeNow()
+                        || resolvedChannel.getChannel().getAdvertiseFrom().isEqualNow())
                 .collect(Collectors.toList());
 
         String genre = ctxt.getRequest()
@@ -56,10 +55,10 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
         if (!Strings.isNullOrEmpty(genre)) {
             final ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',').split(genre));
             filteredChannels = Iterables.filter(filteredChannels,
-                    input -> !Sets.intersection(input.getGenres(), genres).isEmpty()
+                    input -> !Sets.intersection(input.getChannel().getGenres(), genres).isEmpty()
             );
         }
-        ImmutableSet.Builder<ChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
+        ImmutableSet.Builder<ResolvedChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
 
         ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
         for (ChannelGroupMembership channelGroupMembership :
@@ -68,11 +67,12 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
         }
         ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
 
-        for (Channel channel : filteredChannels) {
+        for (ResolvedChannel channel : filteredChannels) {
             for (ChannelGroupMembership channelGroupMembership : channelGroupMemberships.get(channel
+                    .getChannel()
                     .getId())) {
                 resultBuilder.add(
-                        new ChannelWithChannelGroupMembership(
+                        new ResolvedChannelWithChannelGroupMembership(
                                 channel,
                                 channelGroupMembership
                         )
@@ -80,7 +80,7 @@ public class ChannelGroupAdvertisedChannelsAnnotation extends OutputAnnotation<R
             }
         }
 
-        ImmutableSet<ChannelWithChannelGroupMembership> result = resultBuilder.build();
+        ImmutableSet<ResolvedChannelWithChannelGroupMembership> result = resultBuilder.build();
 
         writer.writeList(channelWriter,result,ctxt);
     }

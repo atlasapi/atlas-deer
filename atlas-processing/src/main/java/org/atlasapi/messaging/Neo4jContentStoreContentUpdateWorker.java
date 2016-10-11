@@ -49,7 +49,7 @@ public class Neo4jContentStoreContentUpdateWorker
         this.neo4JContentStore = checkNotNull(neo4JContentStore);
 
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
-        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.messageReceived");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 

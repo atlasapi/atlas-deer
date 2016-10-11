@@ -91,7 +91,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
             if(channelGroupSummaries.isPresent()) {
                 format.writeList(channelGroupSummaryWriter, channelGroupSummaries.get(), ctxt);
             } else {
-                throw new MissingResolvedDataException(channelGroupSummaryWriter.listName());
+                throw new MissingResolvedDataException("channel writer group summaries");
             }
         }
     }

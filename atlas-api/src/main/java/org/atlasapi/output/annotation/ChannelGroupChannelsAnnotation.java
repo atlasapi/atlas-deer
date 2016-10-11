@@ -4,13 +4,12 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
-import org.atlasapi.output.ChannelWithChannelGroupMembership;
+import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.common.MissingResolvedDataException;
@@ -42,11 +41,10 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
         Optional<Iterable<ResolvedChannel>> resolvedChannels = entity.getChannels();
 
         if(!resolvedChannels.isPresent()) {
-            throw new MissingResolvedDataException(channelWriter.listName());
+            throw new MissingResolvedDataException("channel group channels annotation");
         }
 
-        Iterable<Channel> channels = StreamSupport.stream(resolvedChannels.get().spliterator(), false)
-                .map(ResolvedChannel::getChannel)
+        Iterable<ResolvedChannel> channels = StreamSupport.stream(resolvedChannels.get().spliterator(), false)
                 .collect(Collectors.toList());
 
         String genre = ctxt.getRequest()
@@ -56,31 +54,33 @@ public class ChannelGroupChannelsAnnotation extends OutputAnnotation<ResolvedCha
             ImmutableSet<String> genres = ImmutableSet.copyOf(Splitter.on(',')
                     .split(genre));
             channels = Iterables.filter(channels,
-                    input -> !Sets.intersection(input.getGenres(), genres).isEmpty()
+                    input -> !Sets.intersection(input.getChannel().getGenres(), genres).isEmpty()
             );
         }
 
-        ImmutableSet.Builder<ChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
+        ImmutableSet.Builder<ResolvedChannelWithChannelGroupMembership> resultBuilder = ImmutableSet.builder();
 
         ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
+
         for (ChannelGroupMembership channelGroupMembership :
                 entity.getChannelGroup().getChannelsAvailable(LocalDate.now())) {
             builder.put(channelGroupMembership.getChannel().getId(), channelGroupMembership);
         }
+
         ImmutableMultimap<Id, ChannelGroupMembership> channelGroupMemberships = builder.build();
 
-        for (Channel channel : channels) {
+        for (ResolvedChannel channel : channels) {
             for (ChannelGroupMembership channelGroupMembership : channelGroupMemberships.get(
-                    channel.getId())) {
+                    channel.getChannel().getId())) {
                 resultBuilder.add(
-                        new ChannelWithChannelGroupMembership(
+                        new ResolvedChannelWithChannelGroupMembership(
                                 channel,
                                 channelGroupMembership
                         )
                 );
             }
         }
-        ImmutableSet<ChannelWithChannelGroupMembership> result = resultBuilder.build();
+        ImmutableSet<ResolvedChannelWithChannelGroupMembership> result = resultBuilder.build(); // HERE?
         writer.writeList(channelWriter, result, ctxt);
     }
 }

@@ -8,7 +8,7 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ResolvedChannel;
-import org.atlasapi.output.ChannelWithChannelGroupMembership;
+import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
@@ -17,7 +17,7 @@ import org.atlasapi.query.v4.channel.ChannelWriter;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelGroupChannelWriter
-        implements EntityListWriter<ChannelWithChannelGroupMembership> {
+        implements EntityListWriter<ResolvedChannelWithChannelGroupMembership> {
 
     private final ChannelWriter channelWriter;
 
@@ -31,15 +31,12 @@ public class ChannelGroupChannelWriter
     }
 
     @Override
-    public void write(@Nonnull ChannelWithChannelGroupMembership entity,
+    public void write(@Nonnull ResolvedChannelWithChannelGroupMembership entity,
             @Nonnull FieldWriter format, @Nonnull OutputContext ctxt) throws IOException {
-        Channel channel = entity.getChannel();
+
         ChannelGroupMembership channelGroupMembership = entity.getChannelGroupMembership();
 
-        // Forced wrapping in a ResolvedChannel because of how the writer currently works.
-        ResolvedChannel resolvedChannel = ResolvedChannel.builder(channel).build();
-
-        format.writeObject(channelWriter, "channel", resolvedChannel, ctxt);
+        format.writeObject(channelWriter, "channel", entity.getResolvedChannel(), ctxt);
 
         if (channelGroupMembership instanceof ChannelNumbering) {
             ChannelNumbering channelNumbering = ((ChannelNumbering) channelGroupMembership);
@@ -52,7 +49,7 @@ public class ChannelGroupChannelWriter
 
     @Nonnull
     @Override
-    public String fieldName(ChannelWithChannelGroupMembership entity) {
+    public String fieldName(ResolvedChannelWithChannelGroupMembership entity) {
         return "channel";
     }
 }

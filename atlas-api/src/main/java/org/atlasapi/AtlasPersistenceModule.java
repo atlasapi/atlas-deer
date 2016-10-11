@@ -230,8 +230,8 @@ public class AtlasPersistenceModule {
                 idGeneratorBuilder(),
                 ContentHashGenerator.create(
                         HashGenerator.create(),
-                        metricsModule.metrics().meter("ContentHashGenerated"),
-                        metricsModule.metrics().meter("ContentHashGenerationFailed")
+                        "persistence.util.",
+                        metricsModule.metrics()
                 ),
                 eventV2 -> UUID.randomUUID().toString(),
                 seeds,

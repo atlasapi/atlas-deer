@@ -4,6 +4,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Series;
+import org.atlasapi.entity.Id;
 
 import com.google.common.collect.ImmutableMap;
 import org.neo4j.driver.v1.Statement;
@@ -21,6 +22,7 @@ public class ContentWriter extends Neo4jWriter {
     private final Statement writeContentStatement;
     private final Statement writeSeriesStatement;
     private final Statement writeEpisodeStatement;
+    private final Statement deleteContentStatement;
 
     private ContentWriter() {
         this.writeContentStatement = new Statement(""
@@ -51,6 +53,11 @@ public class ContentWriter extends Neo4jWriter {
                 + "SET "
                 + "content." + CONTENT_TYPE + " = " + param(CONTENT_TYPE) + ", "
                 + "content." + CONTENT_EPISODE_NUMBER + " = " + param(CONTENT_EPISODE_NUMBER));
+
+        this.deleteContentStatement = new Statement(""
+                + "MATCH (content:" + CONTENT
+                + " { " + CONTENT_ID + ": " + param(CONTENT_ID) + " }) "
+                + "DETACH DELETE content");
     }
 
     public static ContentWriter create() {
@@ -101,6 +108,16 @@ public class ContentWriter extends Neo4jWriter {
         ImmutableMap<String, Object> commonParameters = getCommonParameters(content);
         write(
                 writeContentStatement.withParameters(commonParameters),
+                runner
+        );
+    }
+
+    public void deleteContent(Id contentId, StatementRunner runner) {
+        ImmutableMap<String, Object> parameters = ImmutableMap.of(
+                CONTENT_ID, contentId.longValue()
+        );
+        write(
+                deleteContentStatement.withParameters(parameters),
                 runner
         );
     }

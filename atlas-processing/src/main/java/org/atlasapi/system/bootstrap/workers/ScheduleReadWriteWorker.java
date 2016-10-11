@@ -18,7 +18,10 @@ import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.scheduling.UpdateProgress;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -39,22 +42,47 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory;
     private final ChannelResolver channelResolver;
     private final Set<Publisher> ignoredSources;
-    private final Timer metricsTimer;
 
-    public ScheduleReadWriteWorker(
+    private final Timer executionTimer;
+    private final Meter messageReceivedMeter;
+    private final Meter failureMeter;
+
+    private ScheduleReadWriteWorker(
             SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory,
             ChannelResolver channelResolver,
             Iterable<Publisher> ignoredSources,
-            Timer metricsTimer
+            String metricPrefix,
+            MetricRegistry metricRegistry
     ) {
         this.channelResolver = checkNotNull(channelResolver);
         this.taskFactory = checkNotNull(taskFactory);
         this.ignoredSources = ImmutableSet.copyOf(ignoredSources);
-        this.metricsTimer = checkNotNull(metricsTimer);
+
+        this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
+        this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+    }
+
+    public static ScheduleReadWriteWorker create(
+            SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory,
+            ChannelResolver channelResolver,
+            Iterable<Publisher> ignoredSources,
+            String metricPrefix,
+            MetricRegistry metricRegistry
+    ) {
+        return new ScheduleReadWriteWorker(
+                taskFactory,
+                channelResolver,
+                ignoredSources,
+                metricPrefix,
+                metricRegistry
+        );
     }
 
     @Override
     public void process(ScheduleUpdateMessage msg) {
+        messageReceivedMeter.mark();
+
         LOG.debug(
                 "Processing message on id {}, took: PT{}S, from: {}, to: {}",
                 msg.getChannel(),
@@ -82,10 +110,13 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
 
         LOG.debug("Processing message on id {}, message: {}", cid, msg);
 
-        Timer.Context time = metricsTimer.time();
-        ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(ImmutableList
-                .of(cid));
+        Timer.Context time = executionTimer.time();
+
         try {
+            ListenableFuture<Resolved<Channel>> channelFuture = channelResolver.resolveIds(
+                    ImmutableList.of(cid)
+            );
+
             Resolved<Channel> resolvedChannel = Futures.get(
                     channelFuture,
                     1,
@@ -109,7 +140,12 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
 
             time.stop();
         } catch (Exception e) {
+            failureMeter.mark();
             LOG.error("failed " + updateMsg, e);
+
+            throw Throwables.propagate(e);
+        } finally {
+            time.stop();
         }
     }
 

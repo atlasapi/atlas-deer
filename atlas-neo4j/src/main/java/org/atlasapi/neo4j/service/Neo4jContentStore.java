@@ -163,6 +163,14 @@ public class Neo4jContentStore {
     }
 
     private void writeContent(Content content, Transaction transaction) {
+        if (!content.isActivelyPublished()) {
+            contentWriter.deleteContent(content.getId(), transaction);
+            locationWriter.deleteLocations(content.getId(), transaction);
+            broadcastWriter.deleteBroadcasts(content.getId(), transaction);
+
+            return;
+        }
+
         content.accept(new ContentVisitor<Void>() {
 
             @Override
