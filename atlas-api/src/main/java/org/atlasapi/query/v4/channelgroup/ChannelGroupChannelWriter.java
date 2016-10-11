@@ -7,6 +7,7 @@ import javax.annotation.Nonnull;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.output.ChannelWithChannelGroupMembership;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
@@ -35,7 +36,11 @@ public class ChannelGroupChannelWriter
         Channel channel = entity.getChannel();
         ChannelGroupMembership channelGroupMembership = entity.getChannelGroupMembership();
 
-        format.writeObject(channelWriter, "channel", channel, ctxt);
+        // Forced wrapping in a ResolvedChannel because of how the writer currently works.
+        ResolvedChannel resolvedChannel = ResolvedChannel.builder(channel).build();
+
+        format.writeObject(channelWriter, "channel", resolvedChannel, ctxt);
+
         if (channelGroupMembership instanceof ChannelNumbering) {
             ChannelNumbering channelNumbering = ((ChannelNumbering) channelGroupMembership);
             format.writeField("channel_number", channelNumbering.getChannelNumber().orElse(null));

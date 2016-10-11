@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Episode;
@@ -46,14 +47,13 @@ public class ScheduleQueryResultWriterTest {
     private final ContainerSummaryResolver containerSummaryResolver = mock(ContainerSummaryResolver.class);
     private final AnnotationRegistry<Content> contentAnnotations = AnnotationRegistry.<Content>builder()
             .build();
-    private final AnnotationRegistry<Channel> channelAnnotations = AnnotationRegistry.<Channel>builder()
+    private final AnnotationRegistry<ResolvedChannel> channelAnnotations = AnnotationRegistry.<ResolvedChannel>builder()
             .build();
     private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
     private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter(
             "broadcasts",
             SubstitutionTableNumberCodec.lowerCaseOnly(),
-            new NoOpChannelResolver(),
-            new NoOpChannelGroupResolver()
+            new NoOpChannelResolver()
     );
     private final EntityListWriter<ChannelSchedule> scheduleWriter
             = new ScheduleListWriter(

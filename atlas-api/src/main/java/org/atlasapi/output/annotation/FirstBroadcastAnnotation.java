@@ -22,13 +22,14 @@ public class FirstBroadcastAnnotation extends OutputAnnotation<Content> {
 
     private final BroadcastWriter broadcastWriter;
 
-    public FirstBroadcastAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver,
-            ChannelGroupResolver channelGroupResolver) {
+    public FirstBroadcastAnnotation(
+            NumberToShortStringCodec codec,
+            ChannelResolver channelResolver
+    ) {
         broadcastWriter = new BroadcastWriter(
                 "first_broadcasts",
                 codec,
-                channelResolver,
-                channelGroupResolver
+                channelResolver
         );
     }
 
