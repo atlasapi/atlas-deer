@@ -71,7 +71,8 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
     }
 
     @Override
-    public QueryResult<ResolvedChannel> execute(Query<ResolvedChannel> query) throws QueryExecutionException {
+    public QueryResult<ResolvedChannel> execute(Query<ResolvedChannel> query)
+            throws QueryExecutionException {
         return query.isListQuery()
                ? executeListQuery(query)
                : executeSingleQuery(query);
@@ -166,7 +167,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         ImmutableList<ResolvedChannel> resolvedChannels =
                 selectedChannels.stream()
                         .map(channel -> resolveAnnotationData(query.getContext(), channel))
-                .collect(MoreCollectors.toImmutableList());
+                        .collect(MoreCollectors.toImmutableList());
 
         return QueryResult.listResult(
                 resolvedChannels,
@@ -204,20 +205,20 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
         resolvedChannelBuilder.withChannelGroupSummaries(
                 contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ?
-                    resolveChannelGroupSummaries(channel) :
-                    Optional.absent()
+                resolveChannelGroupSummaries(channel) :
+                Optional.absent()
         );
 
         resolvedChannelBuilder.withParentChannel(
                 contextHasAnnotation(ctxt, Annotation.PARENT) ?
-                    resolveParentChannel(channel) :
-                    Optional.absent()
+                resolveParentChannel(channel) :
+                Optional.absent()
         );
 
         resolvedChannelBuilder.withChannelVariations(
                 contextHasAnnotation(ctxt, Annotation.VARIATIONS) ?
-                    resolveChannelVariations(channel) :
-                    Optional.absent()
+                resolveChannelVariations(channel) :
+                Optional.absent()
         );
 
         return resolvedChannelBuilder.build();
@@ -227,9 +228,10 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
         Iterable<ChannelGroup<?>> channelGroups =
                 Promise.wrap(channelGroupResolver.resolveIds(
-                        channel.getChannelGroups().stream()
-                        .map(cg -> cg.getChannelGroup().getId())
-                        .collect(Collectors.toList())))
+                        channel.getChannelGroups()
+                                .stream()
+                                .map(cg -> cg.getChannelGroup().getId())
+                                .collect(Collectors.toList())))
                         .then(Resolved::getResources)
                         .get(1, TimeUnit.MINUTES);
 
@@ -254,8 +256,8 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         Iterable<Id> ids = Iterables.transform(channel.getVariations(), ChannelRef::getId);
 
         return Optional.of(Promise.wrap(channelResolver.resolveIds(ids))
-        .then(Resolved::getResources)
-        .get(1, TimeUnit.MINUTES));
+                .then(Resolved::getResources)
+                .get(1, TimeUnit.MINUTES));
 
     }
 
@@ -294,4 +296,5 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                                 ctxt.getRequest().getParameter("annotations")
                         ).contains(annotation.toKey()));
     }
+
 }
