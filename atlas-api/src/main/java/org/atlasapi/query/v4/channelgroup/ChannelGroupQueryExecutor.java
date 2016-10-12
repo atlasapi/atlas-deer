@@ -229,7 +229,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         // GENERIC_CHANNEL_GROUPS_SUMMARY implies CHANNEL_GROUPS_SUMMARY so it would be present
         // even if not explicitly requested. In the case where GENERIC_.. is called, filter the ids
         // by the whitelist before resolving, otherwise resolve all channel groups summaries.
-        if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
+        if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
+                contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
                     resolveChannelsWithChannelGroups(
                             channelGroup,
