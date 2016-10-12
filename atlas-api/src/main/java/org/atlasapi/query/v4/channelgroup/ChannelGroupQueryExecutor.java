@@ -2,6 +2,7 @@ package org.atlasapi.query.v4.channelgroup;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -227,11 +228,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveAdvertisedChannelsWithAllChannelGroups(channelGroup)
-            );
-        } else if (contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
-            resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveAdvertisedChannelsWithWhitelistedChannelGroups(channelGroup)
+                    resolveChannelsWithChannelGroups(channelGroup,
+                            contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY) ?
+                            this::idIsWhitelisted :
+                            id -> true
+                    )
             );
         } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
             contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
@@ -275,9 +276,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .first();
     }
 
-
-    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannelsWithWhitelistedChannelGroups(
-            ChannelGroup<?> entity
+    private Optional<Iterable<ResolvedChannel>> resolveChannelsWithChannelGroups(
+            ChannelGroup<?> entity, Function<Id, Boolean> whitelistedChannelGroupPredicate
     ) {
         Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
         if (!channels.isPresent()) {
@@ -288,8 +288,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 StreamSupport.stream(channels.get().spliterator(), false)
                         .map(resolvedChannel -> ResolvedChannel.builder(resolvedChannel.getChannel())
                                 .withChannelGroupSummaries(
-                                        resolveWhitelistedChannelGroupSummaries(
-                                                resolvedChannel.getChannel())
+                                        resolveChannelGroupSummaries(
+                                                resolvedChannel.getChannel(),
+                                                whitelistedChannelGroupPredicate
+                                        )
                                 )
                                 .build()
                         )
@@ -297,43 +299,13 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         );
     }
 
-    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannelsWithAllChannelGroups(
-            ChannelGroup<?> entity
-    ) {
-        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
-        if (!channels.isPresent()) {
-            return Optional.absent();
-        }
-
-        return Optional.of(
-                StreamSupport.stream(channels.get().spliterator(), false)
-                        .map(resolvedChannel -> ResolvedChannel.builder(resolvedChannel.getChannel())
-                                .withChannelGroupSummaries(
-                                        resolveAllChannelGroupSummaries(resolvedChannel.getChannel()))
-                                .build()
-                        )
-                        .collect(Collectors.toList())
-        );
-    }
-
-    private Optional<List<ChannelGroupSummary>> resolveAllChannelGroupSummaries(
-            Channel channel
+    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(
+            Channel channel,
+            Function<Id, Boolean> whitelistedChannelGroupPredicate
     ) {
         Iterable<Id> channelGroupIds = channel.getChannelGroups().stream()
                 .map(cg -> cg.getChannelGroup().getId())
-                .collect(MoreCollectors.toImmutableList());
-
-        return resolveChannelGroupSummaries(channelGroupIds);
-
-    }
-
-
-    private Optional<List<ChannelGroupSummary>> resolveWhitelistedChannelGroupSummaries(
-            Channel channel
-    ) {
-        Iterable<Id> channelGroupIds = channel.getChannelGroups().stream()
-                .map(cg -> cg.getChannelGroup().getId())
-                .filter(this::idIsWhitelisted)
+                .filter(whitelistedChannelGroupPredicate::apply)
                 .collect(MoreCollectors.toImmutableList());
 
         return resolveChannelGroupSummaries(channelGroupIds);
