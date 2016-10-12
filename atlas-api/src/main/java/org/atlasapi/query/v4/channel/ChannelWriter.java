@@ -83,7 +83,8 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         format.writeField("start_date", channel.getStartDate());
         format.writeField("advertised_from", channel.getAdvertiseFrom());
 
-        if (hasChannelGroupSummaryAnnotation(ctxt)) {
+        if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ||
+                contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
 
             Optional<List<ChannelGroupSummary>> channelGroupSummaries =
                     entity.getChannelGroupSummaries();
@@ -102,12 +103,13 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         return fieldName;
     }
 
-    private boolean hasChannelGroupSummaryAnnotation(OutputContext ctxt) {
-        return !Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
+    private boolean contextHasAnnotation(OutputContext ctxt, Annotation annotation) {
+
+        return (!com.google.common.base.Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
                 &&
                 Splitter.on(',')
                         .splitToList(
                                 ctxt.getRequest().getParameter("annotations")
-                        ).contains(Annotation.CHANNEL_GROUPS_SUMMARY.toKey());
+                        ).contains(annotation.toKey()));
     }
 }
