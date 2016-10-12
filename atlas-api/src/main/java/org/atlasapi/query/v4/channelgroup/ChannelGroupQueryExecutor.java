@@ -87,18 +87,36 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 //            "bt:tug"
 //    );
 
-    private final List<Long> btSubscriptionChannelGroupIds = Lists.newArrayList(103857L,104240L,104242L,104239L,104262L,104238L,104265L,104302L,104275L,104282L,104283L,104241L,104298L,104266L,104301L,104284L,104269L,104277L,104290L,104292L,104293L,104294L,104295L,104296L,104297L,104300L,104303L,104306L,104309L,104263L,104299L,104274L,104304L,104311L,104313L,104285L,104291L,104310L,104264L,104268L,104267L,104276L,104307L,104312L,104305L,104308L,104336L,104337L,104338L,104339L,104340L,104341L,104342L,104344L,104345L,104346L,104347L,104348L,104350L,104351L,104352L,104353L);
-    private final List<Long> btTargetUserGroupChannelGroupIds = Lists.newArrayList(103860L,104243L,104343L,104349L);
+    private final List<Long> btSubscriptionChannelGroupIds = Lists.newArrayList(
+            103857L,104240L,104242L,104239L,104262L,104238L,104265L,104302L,104275L,104282L,104283L,
+            104241L,104298L,104266L,104301L,104284L,104269L,104277L,104290L,104292L,104293L,104294L,
+            104295L,104296L,104297L,104300L,104303L,104306L,104309L,104263L,104299L,104274L,104304L,
+            104311L,104313L,104285L,104291L,104310L,104264L,104268L,104267L,104276L,104307L,104312L,
+            104305L,104308L,104336L,104337L,104338L,104339L,104340L,104341L,104342L,104344L,104345L,
+            104346L,104347L,104348L,104350L,104351L,104352L,104353L
+    );
 
-    private final ImmutableList<Long> whitelistedAliasLongs = ImmutableList.<Long>builder().addAll(btSubscriptionChannelGroupIds).addAll(btTargetUserGroupChannelGroupIds).build();
-    private final ImmutableList<Id> whitelistedAliasIds = whitelistedAliasLongs.stream().map(Id::valueOf).collect(MoreCollectors.toImmutableList());
+    private final List<Long> btTargetUserGroupChannelGroupIds = Lists.newArrayList(
+            103860L,104243L,104343L,104349L
+    );
+
+    private final ImmutableList<Long> whitelistedAliasLongs = ImmutableList.<Long>builder()
+            .addAll(btSubscriptionChannelGroupIds)
+            .addAll(btTargetUserGroupChannelGroupIds)
+            .build();
+    private final ImmutableList<Id> whitelistedAliasIds = whitelistedAliasLongs.stream()
+            .map(Id::valueOf)
+            .collect(MoreCollectors.toImmutableList());
 
     private final ImmutableList<Id> whitelistedIds = ImmutableList.<Id>builder()
             .addAll(whitelistedChannelGroupIds)
             .addAll(whitelistedAliasIds)
             .build();
 
-    public ChannelGroupQueryExecutor(ChannelGroupResolver channelGroupResolver, ChannelResolver channelResolver) {
+    public ChannelGroupQueryExecutor(
+            ChannelGroupResolver channelGroupResolver,
+            ChannelResolver channelResolver
+    ) {
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.channelResolver = channelResolver;
     }
@@ -280,10 +298,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .then(Resolved::getResources)
                 .get(1, TimeUnit.MINUTES);
 
-        Iterable<ResolvedChannel> sortedChannels = StreamSupport.stream(resolvedChannels.spliterator(), false)
-                .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
-                .map(channel -> ResolvedChannel.builder(channel).build())
-                .collect(Collectors.toList());
+        Iterable<ResolvedChannel> sortedChannels =
+                StreamSupport.stream(resolvedChannels.spliterator(), false)
+                    .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
+                    .map(channel -> ResolvedChannel.builder(channel).build())
+                    .collect(Collectors.toList());
 
         return Optional.of(sortedChannels);
     }
