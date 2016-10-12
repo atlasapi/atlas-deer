@@ -32,8 +32,7 @@ public class UpcomingBroadcastsAnnotation extends OutputAnnotation<Content> {
         this.broadcastWriter = new BroadcastWriter(
                 "broadcasts",
                 codec,
-                channelResolver,
-                channelGroupResolver
+                channelResolver
         );
     }
 
