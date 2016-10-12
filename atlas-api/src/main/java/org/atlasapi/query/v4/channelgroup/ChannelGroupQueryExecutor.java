@@ -78,7 +78,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             Id.valueOf(codec.decode("hk99")), // DTT + BT channel group
             Id.valueOf(codec.decode("hmb9")),
             Id.valueOf(codec.decode("hmck")),
-            Id.valueOf(codec.decode("hmcv"))
+            Id.valueOf(codec.decode("hmcv")),
+            Id.valueOf(codec.decode("ccjc9"))
     );
 
     private final List<String> whitelistedNamespaces = Lists.newArrayList(
