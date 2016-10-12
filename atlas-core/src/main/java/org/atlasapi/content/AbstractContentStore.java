@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -506,7 +508,7 @@ public abstract class AbstractContentStore implements ContentStore {
         }
     }
 
-    protected abstract void doWriteContent(Content content, Content previous);
+    protected abstract void doWriteContent(Content content, @Nullable Content previous);
 
     protected final ContainerSummary getSummary(ContainerRef primary) {
         ContainerSummary summary = summarize(primary);

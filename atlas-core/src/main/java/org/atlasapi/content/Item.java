@@ -120,14 +120,13 @@ public class Item extends Content {
         return blackAndWhite;
     }
 
-    @Nullable
     @FieldName("broadcasts")
     public Set<Broadcast> getBroadcasts() {
         return broadcasts;
     }
 
     public void setBroadcasts(@Nullable Set<Broadcast> broadcasts) {
-        this.broadcasts = broadcasts;
+        this.broadcasts = broadcasts != null ? broadcasts : Sets.newLinkedHashSet();
     }
 
     public void addBroadcast(Broadcast broadcast) {
