@@ -21,7 +21,6 @@ import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
-import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.NotFoundException;
@@ -55,7 +54,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     private final ChannelResolver channelResolver;
 
     private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private final List<Id> whitelistedIds = Lists.newArrayList(
+    private final List<Id> whitelistedChannelGroupIds = Lists.newArrayList(
             Id.valueOf(codec.decode("hk62")), // BT TV Platform channel group
             Id.valueOf(codec.decode("hk97")), // Watchable Live channel group
             Id.valueOf(codec.decode("hmb6")),
@@ -82,10 +81,22 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
             Id.valueOf(codec.decode("ccjc9"))
     );
 
-    private final List<String> whitelistedNamespaces = Lists.newArrayList(
-            "bt:subscription-code",
-            "bt:tug"
-    );
+//    Slow alias lookup fields, kept just in case new faster resolution doesn't work properly
+//    private final List<String> whitelistedNamespaces = Lists.newArrayList(
+//            "bt:subscription-code",
+//            "bt:tug"
+//    );
+
+    private final List<Long> btSubscriptionChannelGroupIds = Lists.newArrayList(103857L,104240L,104242L,104239L,104262L,104238L,104265L,104302L,104275L,104282L,104283L,104241L,104298L,104266L,104301L,104284L,104269L,104277L,104290L,104292L,104293L,104294L,104295L,104296L,104297L,104300L,104303L,104306L,104309L,104263L,104299L,104274L,104304L,104311L,104313L,104285L,104291L,104310L,104264L,104268L,104267L,104276L,104307L,104312L,104305L,104308L,104336L,104337L,104338L,104339L,104340L,104341L,104342L,104344L,104345L,104346L,104347L,104348L,104350L,104351L,104352L,104353L);
+    private final List<Long> btTargetUserGroupChannelGroupIds = Lists.newArrayList(103860L,104243L,104343L,104349L);
+
+    private final ImmutableList<Long> whitelistedAliasLongs = ImmutableList.<Long>builder().addAll(btSubscriptionChannelGroupIds).addAll(btTargetUserGroupChannelGroupIds).build();
+    private final ImmutableList<Id> whitelistedAliasIds = whitelistedAliasLongs.stream().map(Id::valueOf).collect(MoreCollectors.toImmutableList());
+
+    private final ImmutableList<Id> whitelistedIds = ImmutableList.<Id>builder()
+            .addAll(whitelistedChannelGroupIds)
+            .addAll(whitelistedAliasIds)
+            .build();
 
     public ChannelGroupQueryExecutor(ChannelGroupResolver channelGroupResolver, ChannelResolver channelResolver) {
         this.channelGroupResolver = checkNotNull(channelGroupResolver);
@@ -298,21 +309,17 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(Channel channel) {
 
+        Iterable<Id> channelGroupIds = channel.getChannelGroups().stream()
+                .map(cg -> cg.getChannelGroup().getId())
+                .filter(this::idIsWhitelisted)
+                .collect(MoreCollectors.toImmutableList());
+
         Iterable<ChannelGroup<?>> channelGroups =
-                Promise.wrap(channelGroupResolver.resolveIds(
-                        channel.getChannelGroups()
-                                .stream()
-                                .map(cg -> cg.getChannelGroup().getId())
-                                .collect(Collectors.toList())))
+                Promise.wrap(channelGroupResolver.resolveIds(channelGroupIds))
                         .then(Resolved::getResources)
                         .get(1, TimeUnit.MINUTES);
 
-        Iterable<ChannelGroup<?>> whitelistedChannelGroups =
-                StreamSupport.stream(channelGroups.spliterator(), false)
-                        .filter(this::channelGroupIsWhitelisted)
-                        .collect(MoreCollectors.toImmutableList());
-
-        return Optional.of(StreamSupport.stream(whitelistedChannelGroups.spliterator(), false)
+        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
                 .map(ChannelGroup::toSummary)
                 .collect(MoreCollectors.toImmutableList()));
     }
@@ -327,11 +334,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         ).contains(annotation.toKey()));
     }
 
-    private boolean channelGroupIsWhitelisted(ChannelGroup channelGroup) {
-        return whitelistedIds.contains(channelGroup.getId()) ||
-                channelGroup.getAliases()
-                        .stream()
-                        .map(Alias::getNamespace)
-                        .anyMatch(whitelistedNamespaces::contains);
+    private boolean idIsWhitelisted(Id id) {
+        return whitelistedIds.contains(id);
     }
 }
