@@ -295,7 +295,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
         );
     }
 
-    public Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(Channel channel) {
+    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(Channel channel) {
 
         Iterable<ChannelGroup<?>> channelGroups =
                 Promise.wrap(channelGroupResolver.resolveIds(
