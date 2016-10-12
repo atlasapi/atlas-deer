@@ -1,58 +1,37 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.channel.ChannelGroup;
-import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.channel.Region;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ChannelGroupWriter;
+import org.atlasapi.query.common.MissingResolvedDataException;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
+import com.google.common.base.Optional;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public class RegionsAnnotation extends OutputAnnotation<ChannelGroup<?>> {
+public class RegionsAnnotation extends OutputAnnotation<ResolvedChannelGroup> {
 
     private static final ChannelGroupWriter CHANNEL_GROUP_WRITER = new ChannelGroupWriter(
             "regions",
             "region"
     );
 
-    private final ChannelGroupResolver channelGroupResolver;
-
-    public RegionsAnnotation(ChannelGroupResolver channelGroupResolver) {
-
-        this.channelGroupResolver = checkNotNull(channelGroupResolver);
-    }
-
     @Override
-    public void write(ChannelGroup entity, FieldWriter writer, OutputContext ctxt)
+    public void write(ResolvedChannelGroup entity, FieldWriter writer, OutputContext ctxt)
             throws IOException {
-        if (!(entity instanceof Region)) {
+        if (!(entity.getChannelGroup() instanceof Region)) {
             return;
         }
-        Region region = (Region) entity;
-        if (region.getPlatform() == null) {
-            writer.writeField("parent", null);
-            return;
+
+        Optional<ChannelGroup<?>> channelGroup = entity.getPlatformChannelGroup();
+        if (channelGroup.isPresent()) {
+            writer.writeObject(CHANNEL_GROUP_WRITER, channelGroup.get(), ctxt);
+        } else {
+            throw new MissingResolvedDataException("missing regions for channel group");
         }
-        Id platformId = region.getPlatform().getId();
 
-        ChannelGroup channelGroup = Futures.get(
-                Futures.transform(
-                        channelGroupResolver.resolveIds(ImmutableSet.of(platformId)),
-                        (Resolved<ChannelGroup<?>> input) -> {
-                            return input.getResources().first().get();
-                        }
-                ), 1, TimeUnit.MINUTES, IOException.class
-        );
-
-        writer.writeObject(CHANNEL_GROUP_WRITER, channelGroup, ctxt);
     }
 }

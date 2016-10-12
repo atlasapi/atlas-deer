@@ -1,61 +1,47 @@
 package org.atlasapi.output.annotation;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelRef;
-import org.atlasapi.channel.ChannelResolver;
-import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.common.MissingResolvedDataException;
 import org.atlasapi.query.v4.channel.ChannelWriter;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
+import com.google.common.base.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ChannelVariationAnnotation extends OutputAnnotation<Channel> {
+public class ChannelVariationAnnotation extends OutputAnnotation<ResolvedChannel> {
 
-    private final ChannelResolver channelResolver;
     private final ChannelWriter channelWriter;
 
     public ChannelVariationAnnotation(
-            ChannelResolver channelResolver,
             ChannelWriter channelWriter
     ) {
-        this.channelResolver = checkNotNull(channelResolver);
-        this.channelWriter = channelWriter;
+        this.channelWriter = checkNotNull(channelWriter);
     }
 
     @Override
-    public void write(Channel entity, FieldWriter format, OutputContext ctxt) throws IOException {
-        Iterable<Id> ids = Iterables.transform(
-                entity.getVariations(),
-                new Function<ChannelRef, Id>() {
+    public void write(ResolvedChannel entity, FieldWriter format, OutputContext ctxt) throws IOException {
 
-                    @Override
-                    public Id apply(ChannelRef input) {
-                        return input.getId();
-                    }
-                }
-        );
+        Optional<Iterable<Channel>> channelVariations = entity.getChannelVariations();
+        if (!channelVariations.isPresent()) {
+            throw new MissingResolvedDataException("channel variations");
+        }
 
-        Iterable<Channel> channels = Futures.get(Futures.transform(
-                channelResolver.resolveIds(ids),
-                new Function<Resolved<Channel>, Iterable<Channel>>() {
+        // Channels must be wrapped in a ResolvedChannel because of how the current writers work.
+        // The current writers have been changed to write ResolvedChannel so when one of the
+        // resolved channel fields (of type Channel) are pulled and sent to a writer, the types
+        // stop matching (ResolvedChannel != Channel)
+        Iterable<ResolvedChannel> resolvedChannels =
+                StreamSupport.stream(channelVariations.get().spliterator(), false)
+                .map(input -> ResolvedChannel.builder(input).build())
+                .collect(Collectors.toList());
 
-                    @Override
-                    public Iterable<Channel> apply(@Nullable Resolved<Channel> input) {
-                        return input.getResources();
-                    }
-                }
-        ), 1, TimeUnit.MINUTES, IOException.class);
-        format.writeList(channelWriter, channels, ctxt);
+        format.writeList(channelWriter, resolvedChannels, ctxt);
     }
 }

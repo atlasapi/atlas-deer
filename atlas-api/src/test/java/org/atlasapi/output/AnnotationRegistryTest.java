@@ -13,6 +13,7 @@ import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.output.annotation.SeriesReferenceAnnotation;
 import org.atlasapi.output.writers.ContainerSummaryWriter;
+import org.atlasapi.output.writers.IdSummaryWriter;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -37,8 +38,9 @@ import static org.mockito.Mockito.mock;
 public class AnnotationRegistryTest {
 
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private final IdentificationSummaryAnnotation idSum = new IdentificationSummaryAnnotation(
-            idCodec);
+    private final IdentificationSummaryAnnotation idSum = IdentificationSummaryAnnotation.create(
+            IdSummaryWriter.create()
+    );
     private final IdentificationAnnotation ident = new IdentificationAnnotation();
     private final ExtendedIdentificationAnnotation extIdent = new ExtendedIdentificationAnnotation(
             idCodec);

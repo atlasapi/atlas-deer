@@ -39,7 +39,7 @@ public class BroadcastWriterTest {
     @Before
     public void setUp() throws Exception {
         broadcastWriter = BroadcastWriter.create(
-                "list", codec, channelResolver, channelGroupResolver
+                "list", codec, channelResolver
         );
 
         when(channelResolver.resolveIds(anyCollectionOf(Id.class)))

@@ -2,17 +2,13 @@ package org.atlasapi.query.v4.channel;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ChannelGroup;
-import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelGroupSummary;
-import org.atlasapi.entity.Id;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
 import org.atlasapi.output.EntityListWriter;
@@ -22,21 +18,20 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.ImageListWriter;
 import org.atlasapi.output.writers.RelatedLinkWriter;
+import org.atlasapi.query.common.MissingResolvedDataException;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
 
 import static org.atlasapi.output.writers.SourceWriter.sourceListWriter;
 import static org.atlasapi.output.writers.SourceWriter.sourceWriter;
 import static org.elasticsearch.common.base.Preconditions.checkNotNull;
 
-public class ChannelWriter implements EntityListWriter<Channel> {
+public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
 
     private static final EntityListWriter<Publisher> AVAILABLE_FROM_WRITER = sourceListWriter(
             "available_from");
@@ -44,7 +39,6 @@ public class ChannelWriter implements EntityListWriter<Channel> {
     private static final AliasWriter ALIAS_WRITER = new AliasWriter();
     private static final ImageListWriter IMAGE_WRITER = new ImageListWriter();
     private static final RelatedLinkWriter RELATED_LINKS_WRITER = new RelatedLinkWriter();
-    private final ChannelGroupResolver channelGroupResolver;
 
     private final String listName;
     private final String fieldName;
@@ -52,12 +46,10 @@ public class ChannelWriter implements EntityListWriter<Channel> {
     private final ChannelGroupSummaryWriter channelGroupSummaryWriter;
 
     public ChannelWriter(
-            ChannelGroupResolver channelGroupResolver,
             String listName,
             String fieldName,
             ChannelGroupSummaryWriter channelGroupSummaryWriter
     ) {
-        this.channelGroupResolver = checkNotNull(channelGroupResolver);
         this.listName = checkNotNull(listName);
         this.fieldName = checkNotNull(fieldName);
         this.channelGroupSummaryWriter = checkNotNull(channelGroupSummaryWriter);
@@ -70,50 +62,43 @@ public class ChannelWriter implements EntityListWriter<Channel> {
     }
 
     @Override
-    public void write(@Nonnull Channel entity, @Nonnull FieldWriter format,
+    public void write(@Nonnull ResolvedChannel entity, @Nonnull FieldWriter format,
             @Nonnull OutputContext ctxt) throws IOException {
-        format.writeField("title", entity.getTitle());
-        format.writeField("id", idCode.encode(entity.getId().toBigInteger()));
-        format.writeField("uri", entity.getCanonicalUri());
-        format.writeList(IMAGE_WRITER, entity.getImages(), ctxt);
-        format.writeList(AVAILABLE_FROM_WRITER, entity.getAvailableFrom(), ctxt);
-        format.writeObject(AVAILABLE_FROM_WRITER, entity.getSource(), ctxt);
-        format.writeField("media_type", entity.getMediaType());
-        format.writeObject(BROADCASTER_WRITER, entity.getBroadcaster(), ctxt);
-        format.writeList(ALIAS_WRITER, entity.getAliases(), ctxt);
-        format.writeList("genres", "genres", entity.getGenres(), ctxt);
-        format.writeField("high_definition", entity.getHighDefinition());
-        format.writeField("regional", entity.getRegional());
-        format.writeList(RELATED_LINKS_WRITER, entity.getRelatedLinks(), ctxt);
-        format.writeField("start_date", entity.getStartDate());
-        format.writeField("advertised_from", entity.getAdvertiseFrom());
+
+        Channel channel = entity.getChannel();
+
+        format.writeField("title", channel.getTitle());
+        format.writeField("id", idCode.encode(channel.getId().toBigInteger()));
+        format.writeField("uri", channel.getCanonicalUri());
+        format.writeList(IMAGE_WRITER, channel.getImages(), ctxt);
+        format.writeList(AVAILABLE_FROM_WRITER, channel.getAvailableFrom(), ctxt);
+        format.writeObject(AVAILABLE_FROM_WRITER, channel.getSource(), ctxt);
+        format.writeField("media_type", channel.getMediaType());
+        format.writeObject(BROADCASTER_WRITER, channel.getBroadcaster(), ctxt);
+        format.writeList(ALIAS_WRITER, channel.getAliases(), ctxt);
+        format.writeList("genres", "genres", channel.getGenres(), ctxt);
+        format.writeField("high_definition", channel.getHighDefinition());
+        format.writeField("regional", channel.getRegional());
+        format.writeList(RELATED_LINKS_WRITER, channel.getRelatedLinks(), ctxt);
+        format.writeField("start_date", channel.getStartDate());
+        format.writeField("advertised_from", channel.getAdvertiseFrom());
 
         if (hasChannelGroupSummaryAnnotation(ctxt)) {
 
-            ImmutableList<Id> channelGroupIds = entity.getChannelGroups()
-                    .stream()
-                    .map(cg -> cg.getChannelGroup().getId())
-                    .collect(MoreCollectors.toImmutableList());
+            Optional<List<ChannelGroupSummary>> channelGroupSummaries =
+                    entity.getChannelGroupSummaries();
 
-            List<ChannelGroupSummary> channelGroupSummaries = StreamSupport.stream(
-                    Futures.get(
-                            channelGroupResolver.resolveIds(channelGroupIds),
-                            1, TimeUnit.MINUTES,
-                            IOException.class
-                    ).getResources().spliterator(), false
-            )
-                    .map(ChannelGroup::toSummary)
-                    .collect(MoreCollectors.toImmutableList());
-
-            format.writeList(channelGroupSummaryWriter, channelGroupSummaries, ctxt);
-
+            if(channelGroupSummaries.isPresent()) {
+                format.writeList(channelGroupSummaryWriter, channelGroupSummaries.get(), ctxt);
+            } else {
+                throw new MissingResolvedDataException("channel writer group summaries");
+            }
         }
-
     }
 
     @Nonnull
     @Override
-    public String fieldName(Channel entity) {
+    public String fieldName(ResolvedChannel entity) {
         return fieldName;
     }
 
