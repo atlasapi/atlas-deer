@@ -226,12 +226,19 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     Optional.absent()
         );
 
+        // GENERIC_CHANNEL_GROUPS_SUMMARY implies CHANNEL_GROUPS_SUMMARY so it would be present
+        // even if not explicitly requested. In the case where GENERIC_.. is called, filter the ids
+        // by the whitelist before resolving, otherwise resolve all channel groups summaries.
         if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveChannelsWithChannelGroups(channelGroup,
-                            contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY) ?
-                            this::idIsWhitelisted :
-                            id -> true
+                    resolveChannelsWithChannelGroups(
+                            channelGroup,
+                            contextHasAnnotation(
+                                    ctxt,
+                                    Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY
+                            )
+                            ? this::idIsWhitelisted
+                            : id -> true
                     )
             );
         } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
