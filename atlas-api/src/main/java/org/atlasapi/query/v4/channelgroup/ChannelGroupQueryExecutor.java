@@ -225,16 +225,18 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     Optional.absent()
         );
 
-        if(contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
-                contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
+        if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ?
-                    resolveAdvertisedChannelsWithChannelGroups(channelGroup) :
-                    resolveAdvertisedChannels(channelGroup)
+                    resolveAdvertisedChannelsWithAllChannelGroups(channelGroup)
             );
-        } else if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
+        } else if (contextHasAnnotation(ctxt, Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY)) {
             resolvedChannelGroupBuilder.withAdvertisedChannels(
-                    resolveAdvertisedChannelsWithChannelGroups(channelGroup)
+                    resolveAdvertisedChannelsWithWhitelistedChannelGroups(channelGroup)
+            );
+        } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
+            contextHasAnnotation(ctxt, Annotation.CHANNELS)) {
+            resolvedChannelGroupBuilder.withAdvertisedChannels(
+                    resolveAdvertisedChannels(channelGroup)
             );
         } else {
             resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.absent());
@@ -273,6 +275,85 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                 .first();
     }
 
+
+    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannelsWithWhitelistedChannelGroups(
+            ChannelGroup<?> entity
+    ) {
+        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
+        if (!channels.isPresent()) {
+            return Optional.absent();
+        }
+
+        return Optional.of(
+                StreamSupport.stream(channels.get().spliterator(), false)
+                        .map(resolvedChannel -> ResolvedChannel.builder(resolvedChannel.getChannel())
+                                .withChannelGroupSummaries(
+                                        resolveWhitelistedChannelGroupSummaries(
+                                                resolvedChannel.getChannel())
+                                )
+                                .build()
+                        )
+                        .collect(Collectors.toList())
+        );
+    }
+
+    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannelsWithAllChannelGroups(
+            ChannelGroup<?> entity
+    ) {
+        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
+        if (!channels.isPresent()) {
+            return Optional.absent();
+        }
+
+        return Optional.of(
+                StreamSupport.stream(channels.get().spliterator(), false)
+                        .map(resolvedChannel -> ResolvedChannel.builder(resolvedChannel.getChannel())
+                                .withChannelGroupSummaries(
+                                        resolveAllChannelGroupSummaries(resolvedChannel.getChannel()))
+                                .build()
+                        )
+                        .collect(Collectors.toList())
+        );
+    }
+
+    private Optional<List<ChannelGroupSummary>> resolveAllChannelGroupSummaries(
+            Channel channel
+    ) {
+        Iterable<Id> channelGroupIds = channel.getChannelGroups().stream()
+                .map(cg -> cg.getChannelGroup().getId())
+                .collect(MoreCollectors.toImmutableList());
+
+        return resolveChannelGroupSummaries(channelGroupIds);
+
+    }
+
+
+    private Optional<List<ChannelGroupSummary>> resolveWhitelistedChannelGroupSummaries(
+            Channel channel
+    ) {
+        Iterable<Id> channelGroupIds = channel.getChannelGroups().stream()
+                .map(cg -> cg.getChannelGroup().getId())
+                .filter(this::idIsWhitelisted)
+                .collect(MoreCollectors.toImmutableList());
+
+        return resolveChannelGroupSummaries(channelGroupIds);
+
+    }
+
+    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(
+            Iterable<Id> channelGroupIds
+    ) {
+
+        Iterable<ChannelGroup<?>> channelGroups =
+                Promise.wrap(channelGroupResolver.resolveIds(channelGroupIds))
+                        .then(Resolved::getResources)
+                        .get(1, TimeUnit.MINUTES);
+
+        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
+                .map(ChannelGroup::toSummary)
+                .collect(MoreCollectors.toImmutableList()));
+    }
+
     private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannels(ChannelGroup<?> entity) {
 
         final ImmutableMultimap.Builder<Id, ChannelGroupMembership> builder = ImmutableMultimap.builder();
@@ -300,47 +381,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
         Iterable<ResolvedChannel> sortedChannels =
                 StreamSupport.stream(resolvedChannels.spliterator(), false)
-                    .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
-                    .map(channel -> ResolvedChannel.builder(channel).build())
-                    .collect(Collectors.toList());
+                        .sorted((o1, o2) -> idOrdering.compare(o1.getId(), o2.getId()))
+                        .map(channel -> ResolvedChannel.builder(channel).build())
+                        .collect(Collectors.toList());
 
         return Optional.of(sortedChannels);
-    }
-
-    private Optional<Iterable<ResolvedChannel>> resolveAdvertisedChannelsWithChannelGroups(
-            ChannelGroup<?> entity
-    ) {
-        Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
-        if (!channels.isPresent()) {
-            return Optional.absent();
-        }
-
-        return Optional.of(
-                StreamSupport.stream(channels.get().spliterator(), false)
-                .map(resolvedChannel -> ResolvedChannel.builder(resolvedChannel.getChannel())
-                        .withChannelGroupSummaries(
-                                resolveChannelGroupSummaries(resolvedChannel.getChannel()))
-                        .build()
-                )
-                .collect(Collectors.toList())
-        );
-    }
-
-    private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(Channel channel) {
-
-        Iterable<Id> channelGroupIds = channel.getChannelGroups().stream()
-                .map(cg -> cg.getChannelGroup().getId())
-                .filter(this::idIsWhitelisted)
-                .collect(MoreCollectors.toImmutableList());
-
-        Iterable<ChannelGroup<?>> channelGroups =
-                Promise.wrap(channelGroupResolver.resolveIds(channelGroupIds))
-                        .then(Resolved::getResources)
-                        .get(1, TimeUnit.MINUTES);
-
-        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
-                .map(ChannelGroup::toSummary)
-                .collect(MoreCollectors.toImmutableList()));
     }
 
     private boolean contextHasAnnotation(QueryContext ctxt, Annotation annotation) {
