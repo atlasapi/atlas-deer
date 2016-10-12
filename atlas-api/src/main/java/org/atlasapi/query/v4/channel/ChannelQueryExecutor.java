@@ -15,6 +15,7 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
@@ -28,6 +29,7 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
 
 import com.metabroadcast.common.base.MoreOrderings;
+import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
@@ -39,6 +41,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -54,6 +57,38 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
     private final ChannelResolver channelResolver;
     private final ChannelGroupResolver channelGroupResolver;
+
+    private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
+    private final List<Id> whitelistedIds = Lists.newArrayList(
+            Id.valueOf(codec.decode("hk62")), // BT TV Platform channel group
+            Id.valueOf(codec.decode("hk97")), // Watchable Live channel group
+            Id.valueOf(codec.decode("hmb6")),
+            Id.valueOf(codec.decode("hmcg")),
+            Id.valueOf(codec.decode("hmcr")),
+            Id.valueOf(codec.decode("hmbb")), // Output Protection channel group
+            Id.valueOf(codec.decode("jkzv")),
+            Id.valueOf(codec.decode("hmch")),
+            Id.valueOf(codec.decode("hmcs")),
+            Id.valueOf(codec.decode("hmb7")),
+            Id.valueOf(codec.decode("cbbd")), // On-demand location service
+            Id.valueOf(codec.decode("cbbb")),
+            Id.valueOf(codec.decode("cbbf")), // On-demand location player
+            Id.valueOf(codec.decode("cbbd")),
+            Id.valueOf(codec.decode("cbbb")),
+            Id.valueOf(codec.decode("hk98")), // BT channel group
+            Id.valueOf(codec.decode("hmb8")),
+            Id.valueOf(codec.decode("hmcj")),
+            Id.valueOf(codec.decode("hmct")),
+            Id.valueOf(codec.decode("hk99")), // DTT + BT channel group
+            Id.valueOf(codec.decode("hmb9")),
+            Id.valueOf(codec.decode("hmck")),
+            Id.valueOf(codec.decode("hmcv"))
+    );
+
+    private final List<String> whitelistedNamespaces = Lists.newArrayList(
+            "bt:subscription-code",
+            "bt:tug"
+    );
 
     private ChannelQueryExecutor(
             ChannelResolver channelResolver,
@@ -227,13 +262,19 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
         Iterable<ChannelGroup<?>> channelGroups =
                 Promise.wrap(channelGroupResolver.resolveIds(
-                        channel.getChannelGroups().stream()
-                        .map(cg -> cg.getChannelGroup().getId())
-                        .collect(Collectors.toList())))
+                        channel.getChannelGroups()
+                                .stream()
+                                .map(cg -> cg.getChannelGroup().getId())
+                                .collect(Collectors.toList())))
                         .then(Resolved::getResources)
                         .get(1, TimeUnit.MINUTES);
 
-        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
+        Iterable<ChannelGroup<?>> whitelistedChannelGroups =
+                StreamSupport.stream(channelGroups.spliterator(), false)
+                        .filter(this::channelGroupIsWhitelisted)
+                        .collect(MoreCollectors.toImmutableList());
+
+        return Optional.of(StreamSupport.stream(whitelistedChannelGroups.spliterator(), false)
                 .map(ChannelGroup::toSummary)
                 .collect(MoreCollectors.toImmutableList()));
 
@@ -293,5 +334,13 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                         .splitToList(
                                 ctxt.getRequest().getParameter("annotations")
                         ).contains(annotation.toKey()));
+    }
+
+    private boolean channelGroupIsWhitelisted(ChannelGroup channelGroup) {
+        return whitelistedIds.contains(channelGroup.getId()) ||
+                channelGroup.getAliases()
+                        .stream()
+                        .map(Alias::getNamespace)
+                        .anyMatch(whitelistedNamespaces::contains);
     }
 }
