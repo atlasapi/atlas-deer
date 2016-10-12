@@ -58,39 +58,6 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
     private final ChannelResolver channelResolver;
     private final ChannelGroupResolver channelGroupResolver;
 
-    private final SubstitutionTableNumberCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private final List<Id> whitelistedIds = Lists.newArrayList(
-            Id.valueOf(codec.decode("hk62")), // BT TV Platform channel group
-            Id.valueOf(codec.decode("hk97")), // Watchable Live channel group
-            Id.valueOf(codec.decode("hmb6")),
-            Id.valueOf(codec.decode("hmcg")),
-            Id.valueOf(codec.decode("hmcr")),
-            Id.valueOf(codec.decode("hmbb")), // Output Protection channel group
-            Id.valueOf(codec.decode("jkzv")),
-            Id.valueOf(codec.decode("hmch")),
-            Id.valueOf(codec.decode("hmcs")),
-            Id.valueOf(codec.decode("hmb7")),
-            Id.valueOf(codec.decode("cbbd")), // On-demand location service
-            Id.valueOf(codec.decode("cbbb")),
-            Id.valueOf(codec.decode("cbbf")), // On-demand location player
-            Id.valueOf(codec.decode("cbbd")),
-            Id.valueOf(codec.decode("cbbb")),
-            Id.valueOf(codec.decode("hk98")), // BT channel group
-            Id.valueOf(codec.decode("hmb8")),
-            Id.valueOf(codec.decode("hmcj")),
-            Id.valueOf(codec.decode("hmct")),
-            Id.valueOf(codec.decode("hk99")), // DTT + BT channel group
-            Id.valueOf(codec.decode("hmb9")),
-            Id.valueOf(codec.decode("hmck")),
-            Id.valueOf(codec.decode("hmcv")),
-            Id.valueOf(codec.decode("ccjc9"))
-    );
-
-    private final List<String> whitelistedNamespaces = Lists.newArrayList(
-            "bt:subscription-code",
-            "bt:tug"
-    );
-
     private ChannelQueryExecutor(
             ChannelResolver channelResolver,
             ChannelGroupResolver channelGroupResolver
@@ -107,7 +74,8 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
     }
 
     @Override
-    public QueryResult<ResolvedChannel> execute(Query<ResolvedChannel> query) throws QueryExecutionException {
+    public QueryResult<ResolvedChannel> execute(Query<ResolvedChannel> query)
+            throws QueryExecutionException {
         return query.isListQuery()
                ? executeListQuery(query)
                : executeSingleQuery(query);
@@ -202,7 +170,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         ImmutableList<ResolvedChannel> resolvedChannels =
                 selectedChannels.stream()
                         .map(channel -> resolveAnnotationData(query.getContext(), channel))
-                .collect(MoreCollectors.toImmutableList());
+                        .collect(MoreCollectors.toImmutableList());
 
         return QueryResult.listResult(
                 resolvedChannels,
@@ -240,20 +208,20 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
 
         resolvedChannelBuilder.withChannelGroupSummaries(
                 contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY) ?
-                    resolveChannelGroupSummaries(channel) :
-                    Optional.absent()
+                resolveChannelGroupSummaries(channel) :
+                Optional.absent()
         );
 
         resolvedChannelBuilder.withParentChannel(
                 contextHasAnnotation(ctxt, Annotation.PARENT) ?
-                    resolveParentChannel(channel) :
-                    Optional.absent()
+                resolveParentChannel(channel) :
+                Optional.absent()
         );
 
         resolvedChannelBuilder.withChannelVariations(
                 contextHasAnnotation(ctxt, Annotation.VARIATIONS) ?
-                    resolveChannelVariations(channel) :
-                    Optional.absent()
+                resolveChannelVariations(channel) :
+                Optional.absent()
         );
 
         return resolvedChannelBuilder.build();
@@ -270,12 +238,7 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                         .then(Resolved::getResources)
                         .get(1, TimeUnit.MINUTES);
 
-        Iterable<ChannelGroup<?>> whitelistedChannelGroups =
-                StreamSupport.stream(channelGroups.spliterator(), false)
-                        .filter(this::channelGroupIsWhitelisted)
-                        .collect(MoreCollectors.toImmutableList());
-
-        return Optional.of(StreamSupport.stream(whitelistedChannelGroups.spliterator(), false)
+        return Optional.of(StreamSupport.stream(channelGroups.spliterator(), false)
                 .map(ChannelGroup::toSummary)
                 .collect(MoreCollectors.toImmutableList()));
 
@@ -296,8 +259,8 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         Iterable<Id> ids = Iterables.transform(channel.getVariations(), ChannelRef::getId);
 
         return Optional.of(Promise.wrap(channelResolver.resolveIds(ids))
-        .then(Resolved::getResources)
-        .get(1, TimeUnit.MINUTES));
+                .then(Resolved::getResources)
+                .get(1, TimeUnit.MINUTES));
 
     }
 
@@ -337,11 +300,4 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                         ).contains(annotation.toKey()));
     }
 
-    private boolean channelGroupIsWhitelisted(ChannelGroup channelGroup) {
-        return whitelistedIds.contains(channelGroup.getId()) ||
-                channelGroup.getAliases()
-                        .stream()
-                        .map(Alias::getNamespace)
-                        .anyMatch(whitelistedNamespaces::contains);
-    }
 }
