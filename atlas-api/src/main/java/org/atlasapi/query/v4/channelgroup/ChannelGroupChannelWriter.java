@@ -4,10 +4,8 @@ import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelNumbering;
-import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;

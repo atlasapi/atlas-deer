@@ -167,6 +167,10 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     resolveAdvertisedChannelsWithChannelGroups(channelGroup) :
                     resolveAdvertisedChannels(channelGroup)
             );
+        } else if (contextHasAnnotation(ctxt, Annotation.CHANNEL_GROUPS_SUMMARY)) {
+            resolvedChannelGroupBuilder.withAdvertisedChannels(
+                    resolveAdvertisedChannelsWithChannelGroups(channelGroup)
+            );
         } else {
             resolvedChannelGroupBuilder.withAdvertisedChannels(Optional.absent());
         }
