@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import java.util.Optional;
+
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -21,8 +23,9 @@ import static org.mockito.Mockito.when;
 
 public class AstyanaxProtobufContentMarshallerTest {
 
-    private final ContentMarshaller marshaller = new AstyanaxProtobufContentMarshaller(new ContentSerializer(
-            new ContentSerializationVisitor(new NoOpContentResolver())));
+    private final ContentMarshaller marshaller = AstyanaxProtobufContentMarshaller.create(
+            new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver()))
+    );
 
     @Test
     @SuppressWarnings("unchecked")
@@ -37,7 +40,7 @@ public class AstyanaxProtobufContentMarshallerTest {
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
 
-        marshaller.marshallInto(content.getId(), mutation, content, false);
+        marshaller.marshallInto(content.getId(), mutation, content, Optional.empty(), false);
 
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);
@@ -92,7 +95,7 @@ public class AstyanaxProtobufContentMarshallerTest {
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
 
-        marshaller.marshallInto(content.getId(), mutation, content, true);
+        marshaller.marshallInto(content.getId(), mutation, content, Optional.empty(), true);
 
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);
@@ -163,7 +166,7 @@ public class AstyanaxProtobufContentMarshallerTest {
 
         ColumnListMutation<String> mutation = mock(ColumnListMutation.class);
 
-        marshaller.marshallInto(content.getId(), mutation, content, true);
+        marshaller.marshallInto(content.getId(), mutation, content, Optional.empty(), true);
 
         ArgumentCaptor<String> col = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<byte[]> val = ArgumentCaptor.forClass(byte[].class);

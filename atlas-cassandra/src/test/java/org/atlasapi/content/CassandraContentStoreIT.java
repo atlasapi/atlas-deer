@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -1283,19 +1284,6 @@ public abstract class CassandraContentStoreIT {
         verify(sender, times(7)).sendMessage(captor.capture(), any());
     }
 
-    protected  <T extends Content> T create(T content) {
-        content.setPublisher(Publisher.BBC);
-        content.setTitle(content.getClass().getSimpleName());
-        return content;
-    }
-
-    private Content resolve(Long id)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        Resolved<Content> resolved = store.resolveIds(ImmutableList.of(Id.valueOf(id)))
-                .get(1, TimeUnit.SECONDS);
-        return Iterables.getOnlyElement(resolved.getResources());
-    }
-
     @Test
     public void testDeletesItemReferencesFromContainersWhenContentIsNoLongerActivelyPublished()
             throws WriteException, InterruptedException, ExecutionException, TimeoutException {
@@ -1918,5 +1906,68 @@ public abstract class CassandraContentStoreIT {
                 any(ResourceUpdatedMessage.class),
                 eq(Longs.toByteArray(setId.longValue()))
         );
+    }
+
+    @Test
+    public void removingBroadcastsDeletesThem() throws Exception {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        when(clock.now()).thenReturn(now);
+        when(hasher.hash(any(Item.class))).thenReturn(
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString()
+        );
+
+        Item item = create(new Item());
+        item.setTitle("Title");
+        item.setId(0L);
+
+        Broadcast broadcast = new Broadcast(
+                Id.valueOf(1L),
+                new DateTime(2016, 1, 1, 0, 0, 0, DateTimeZone.UTC),
+                new DateTime(2016, 1, 1, 1, 0, 0, DateTimeZone.UTC)
+        );
+        broadcast.withId("A");
+
+        item.setBroadcasts(ImmutableSet.of(
+                broadcast
+        ));
+
+        WriteResult<Content, Content> firstWriteResult = store.writeContent(item);
+        assertThat(firstWriteResult.written(), is(true));
+        assertThat(firstWriteResult.getPrevious().isPresent(), is(false));
+
+        Broadcast updatedBroadcast = new Broadcast(
+                Id.valueOf(1L),
+                new DateTime(2016, 1, 1, 0, 0, 0, DateTimeZone.UTC),
+                new DateTime(2016, 1, 1, 1, 0, 0, DateTimeZone.UTC)
+        );
+        updatedBroadcast.withId("B");
+
+        item.setBroadcasts(ImmutableSet.of(
+                updatedBroadcast
+        ));
+
+        WriteResult<Content, Content> secondWriteResult = store.writeContent(item);
+        assertThat(secondWriteResult.written(), is(true));
+        assertThat(secondWriteResult.getPrevious().isPresent(), is(true));
+
+        Item resolvedItem = (Item) resolve(item.getId().longValue());
+
+        assertThat(resolvedItem.getBroadcasts().size(), is(1));
+        assertThat(Iterables.getOnlyElement(resolvedItem.getBroadcasts()).getSourceId(),
+                is(updatedBroadcast.getSourceId()));
+    }
+
+    protected  <T extends Content> T create(T content) {
+        content.setPublisher(Publisher.BBC);
+        content.setTitle(content.getClass().getSimpleName());
+        return content;
+    }
+
+    private Content resolve(Long id)
+            throws InterruptedException, ExecutionException, TimeoutException {
+        Resolved<Content> resolved = store.resolveIds(ImmutableList.of(Id.valueOf(id)))
+                .get(1, TimeUnit.SECONDS);
+        return Iterables.getOnlyElement(resolved.getResources());
     }
 }

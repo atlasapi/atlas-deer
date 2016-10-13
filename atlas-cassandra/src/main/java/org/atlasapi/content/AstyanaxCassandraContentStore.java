@@ -123,7 +123,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                     context, name, readCl, writeCl, hasher, idGenerator, sender, graphStore, clock
             );
         }
-
     }
 
     private final Keyspace keyspace;
@@ -132,8 +131,10 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Content> aliasIndex;
 
-    private final ContentMarshaller<ColumnListMutation<String>, ColumnList<String>> marshaller = new AstyanaxProtobufContentMarshaller(
-            new ContentSerializer(new ContentSerializationVisitor(this)));
+    private final ContentMarshaller<ColumnListMutation<String>, ColumnList<String>> marshaller =
+            AstyanaxProtobufContentMarshaller.create(
+                    new ContentSerializer(new ContentSerializationVisitor(this))
+            );
     private final Function<Map.Entry<Long, ColumnList<String>>, Content> rowToContent =
             input -> {
                 if (!input.getValue().isEmpty()) {
@@ -144,18 +145,19 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             };
 
     private void verifyRequiredColumns(Long id, ColumnList<String> columns) {
-        for (ContentColumn requiredColumn : ProtobufContentMarshaller.REQUIRED_CONTENT_COLUMNS) {
+        for (ContentColumn requiredColumn :
+                AstyanaxProtobufContentMarshaller.REQUIRED_CONTENT_COLUMNS) {
             if (columns.getColumnByName(requiredColumn.toString()) == null) {
                 throw new CorruptContentException(
                         String.format(
-                                "Missing required column '%s' in row with ID %s in CassandraContentStore.",
+                                "Missing required column '%s' in row with ID %s "
+                                        + "in CassandraContentStore.",
                                 requiredColumn.toString(),
                                 id
                         )
                 );
             }
         }
-
     }
 
     private final Function<Map<Long, ColumnList<String>>, Resolved<Content>> toResolvedContent =
@@ -168,7 +170,8 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             String cfName,
             ConsistencyLevel readConsistency,
             ConsistencyLevel writeConsistency,
-            ContentHasher hasher, IdGenerator idGenerator,
+            ContentHasher hasher,
+            IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
             EquivalenceGraphStore graphStore,
             Clock clock
@@ -219,14 +222,24 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void doWriteContent(Content content, Content previous) {
+    protected void doWriteContent(Content content, @Nullable Content previous) {
         try {
             long id = content.getId().longValue();
+
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
-            marshaller.marshallInto(content.getId(), batch.withRow(mainCf, id), content, true);
+
+            marshaller.marshallInto(
+                    content.getId(),
+                    batch.withRow(mainCf, id),
+                    content,
+                    java.util.Optional.ofNullable(previous),
+                    true
+            );
+
             batch.mergeShallow(aliasIndex.mutateAliases(content, previous));
             batch.execute();
+
             log.trace("Written content id " + id);
         } catch (Exception e) {
             throw new CassandraPersistenceException(content.toString(), e);
@@ -316,8 +329,11 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void writeSecondaryContainerRef(BrandRef primary, SeriesRef seriesRef,
-            Boolean activelyPublished) {
+    protected void writeSecondaryContainerRef(
+            BrandRef primary,
+            SeriesRef seriesRef,
+            Boolean activelyPublished
+    ) {
         try {
             if (!activelyPublished) {
                 MutationBatch batch = keyspace.prepareMutationBatch();
@@ -334,7 +350,15 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             MutationBatch batch = keyspace.prepareMutationBatch();
             batch.setConsistencyLevel(writeConsistency);
             ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-            marshaller.marshallInto(primary.getId(), mutation, container, false);
+
+            marshaller.marshallInto(
+                    primary.getId(),
+                    mutation,
+                    container,
+                    java.util.Optional.empty(),
+                    false
+            );
+
             batch.execute();
         } catch (Exception e) {
             throw Throwables.propagate(e);
@@ -353,24 +377,27 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             MutationBatch batch) {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-        mutation.deleteColumn(ProtobufContentMarshaller.buildItemSummaryKey(itemRef.getId()
-                .longValue()));
+        mutation.deleteColumn(AstyanaxProtobufContentMarshaller.buildItemSummaryKey(
+                itemRef.getId().longValue())
+        );
     }
 
     private void removeAvailableContent(ContainerRef containerRef, ItemRef itemRef,
             MutationBatch batch) {
         Long rowId = containerRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-        mutation.deleteColumn(ProtobufContentMarshaller.buildAvailableContentKey(itemRef.getId()
-                .longValue()));
+        mutation.deleteColumn(AstyanaxProtobufContentMarshaller.buildAvailableContentKey(
+                itemRef.getId().longValue())
+        );
     }
 
     private void removeUpcomingContent(ContainerRef brancontainerRefRef, ItemRef itemRef,
             MutationBatch batch) {
         Long rowId = brancontainerRefRef.getId().longValue();
         ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-        mutation.deleteColumn(ProtobufContentMarshaller.buildUpcomingContentKey(itemRef.getId()
-                .longValue()));
+        mutation.deleteColumn(AstyanaxProtobufContentMarshaller.buildUpcomingContentKey(
+                itemRef.getId().longValue())
+        );
     }
 
     @Override
@@ -406,7 +433,13 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 }
 
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(containerRef.getId(), mutation, container, false);
+                marshaller.marshallInto(
+                        containerRef.getId(),
+                        mutation,
+                        container,
+                        java.util.Optional.empty(),
+                        false
+                );
             }
 
             if (item instanceof Episode && ((Episode) item).getSeriesRef() != null) {
@@ -419,7 +452,14 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 container.setAvailableContent(availableLocations);
                 container.setItemSummaries(ImmutableList.of(episode.toSummary()));
                 ColumnListMutation<String> mutation = batch.withRow(mainCf, rowId);
-                marshaller.marshallInto(episode.getSeriesRef().getId(), mutation, container, false);
+
+                marshaller.marshallInto(
+                        episode.getSeriesRef().getId(),
+                        mutation,
+                        container,
+                        java.util.Optional.empty(),
+                        false
+                );
             }
             batch.execute();
 
@@ -429,8 +469,11 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     }
 
     @Override
-    protected void doWriteBroadcast(ItemRef itemRef, Optional<ContainerRef> containerRef,
-            Optional<SeriesRef> seriesRef, Broadcast broadcast) {
+    protected void doWriteBroadcast(
+            ItemRef itemRef, Optional<ContainerRef> containerRef,
+            Optional<SeriesRef> seriesRef,
+            Broadcast broadcast
+    ) {
         Item item = new Item();
         item.setId(itemRef.getId());
         item.setThisOrChildLastUpdated(itemRef.getUpdated());
@@ -442,7 +485,13 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 mainCf,
                 itemRef.getId().longValue()
         );
-        marshaller.marshallInto(item.getId(), itemMutation, item, false);
+        marshaller.marshallInto(
+                item.getId(),
+                itemMutation,
+                item,
+                java.util.Optional.empty(),
+                false
+        );
 
         try {
             if (!broadcast.isActivelyPublished() || !item.getUpcomingBroadcastRefs()
@@ -463,7 +512,13 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                         mainCf,
                         containerRef.get().getId().longValue()
                 );
-                marshaller.marshallInto(containerId, containerMutation, container, false);
+                marshaller.marshallInto(
+                        containerId,
+                        containerMutation,
+                        container,
+                        java.util.Optional.empty(),
+                        false
+                );
             }
 
             if (seriesRef.isPresent()) {
@@ -476,7 +531,13 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                         mainCf,
                         seriesRef.get().getId().longValue()
                 );
-                marshaller.marshallInto(containerId, seriesMutation, container, false);
+                marshaller.marshallInto(
+                        containerId,
+                        seriesMutation,
+                        container,
+                        java.util.Optional.empty(),
+                        false
+                );
             }
 
             batch.execute();
@@ -496,7 +557,13 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                     mainCf,
                     itemRef.getId().longValue()
             );
-            marshaller.marshallInto(itemRef.getId(), itemMutation, item, false);
+            marshaller.marshallInto(
+                    itemRef.getId(),
+                    itemMutation,
+                    item,
+                    java.util.Optional.empty(),
+                    false
+            );
         }
 
         try {
