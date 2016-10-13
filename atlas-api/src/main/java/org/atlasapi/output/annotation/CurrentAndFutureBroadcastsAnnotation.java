@@ -22,7 +22,7 @@ import org.joda.time.DateTimeZone;
 public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Content> {
 
     private final BroadcastWriter broadcastWriter;
-    private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
+    private final ChannelsBroadcastFilter channelsBroadcastFilter;
 
     public CurrentAndFutureBroadcastsAnnotation(
             NumberToShortStringCodec codec,
@@ -33,6 +33,7 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
                 codec,
                 channelResolver
         );
+        this.channelsBroadcastFilter = ChannelsBroadcastFilter.create();
     }
 
     @Override

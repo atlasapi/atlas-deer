@@ -1,8 +1,5 @@
 package org.atlasapi.content;
 
-import java.util.List;
-
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelGroupRef;
@@ -10,80 +7,116 @@ import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 
 public class ChannelsBroadcastFilterTest {
 
-    @Test
-    public void testSortAndFilter() {
-        Id channel1 = Id.valueOf(1L);
-        Id channel2 = Id.valueOf(2L);
-        Id channel3 = Id.valueOf(3L);
+    private Id channelIdA;
+    private Id channelIdB;
+    private Id channelIdC;
+    private ChannelGroup<ChannelGroupMembership> channelGroup;
+    private DateTime now;
 
-        ChannelGroup<?> channelGroup = new ChannelGroup(
+    private ChannelsBroadcastFilter filter;
+
+    @Before
+    public void setUp() throws Exception {
+        channelIdA = Id.valueOf(1L);
+        channelIdB = Id.valueOf(2L);
+        channelIdC = Id.valueOf(3L);
+
+        channelGroup = new ChannelGroup<>(
                 Id.valueOf(42L),
                 Publisher.METABROADCAST,
                 ImmutableSet.of(
-                        new ChannelGroupMembership(
-                                new ChannelGroupRef(Id.valueOf(42L), Publisher.METABROADCAST),
-                                new ChannelRef(channel1, Publisher.METABROADCAST),
-                                null,
-                                null
-                        ),
-                        new ChannelGroupMembership(
-                                new ChannelGroupRef(Id.valueOf(42L), Publisher.METABROADCAST),
-                                new ChannelRef(channel2, Publisher.METABROADCAST),
-                                null,
-                                null
-                        )
+                        getChannelGroupMembership(channelIdA),
+                        getChannelGroupMembership(channelIdB)
                 ),
                 ImmutableSet.of(),
                 ImmutableSet.of()
-
         );
 
-        DateTime now = DateTime.now();
+        now = DateTime.now();
+        filter = ChannelsBroadcastFilter.create();
+    }
 
-        Broadcast b1 = broadcast(channel1, now);
-        Broadcast b2 = broadcast(channel2, now);
-        Broadcast b3 = broadcast(channel1, now.plusHours(1));
-        Broadcast b4 = broadcast(channel1, now.plusHours(2));
-        Broadcast b5 = broadcast(channel2, now.plusHours(2));
-        Broadcast b6 = broadcast(channel2, now.plusHours(3));
-        Broadcast b7 = broadcast(channel3, now.plusHours(4));
+    @Test
+    public void broadcastsOnSameChannelWithSameStartDateTimeAreFilteredOut() throws Exception {
+        Broadcast broadcastA = broadcast(channelIdA, now);
+        Broadcast broadcastB = broadcast(channelIdA, now);
 
-        ImmutableList<Broadcast> broadcasts = ImmutableList.of(b1, b2, b3, b4, b5, b6, b7);
+        ImmutableList<Broadcast> filteredBroadcasts = filterBroadcasts(broadcastA, broadcastB);
 
-        ChannelsBroadcastFilter filter = new ChannelsBroadcastFilter();
-        List<Broadcast> expected = ImmutableList.of(b1, b3, b4, b6);
-        for (List<Broadcast> broadcastList : Collections2.permutations(broadcasts)) {
-            Iterable<Broadcast> orderedAndDeduped = filter.sortAndFilter(
-                    broadcastList,
+        assertThat(filteredBroadcasts.size(), is(1));
+    }
+
+    @Test
+    public void broadcastsOnDifferentChannelWithSameStartDateTimeAreFilteredOut() throws Exception {
+        Broadcast broadcastA = broadcast(channelIdA, now);
+        Broadcast broadcastB = broadcast(channelIdB, now);
+
+        ImmutableList<Broadcast> filteredBroadcasts = filterBroadcasts(broadcastA, broadcastB);
+
+        assertThat(filteredBroadcasts.size(), is(1));
+    }
+
+    @Test
+    public void broadcastsAreSortedByStartDateTime() throws Exception {
+        Broadcast broadcastA = broadcast(channelIdA, now.plusHours(1));
+        Broadcast broadcastB = broadcast(channelIdA, now);
+        Broadcast broadcastC = broadcast(channelIdB, now.plusHours(2));
+        Broadcast broadcastD = broadcast(channelIdB, now.minusHours(2));
+
+        ImmutableList<Broadcast> filteredBroadcasts = filterBroadcasts(
+                broadcastA,
+                broadcastB,
+                broadcastC,
+                broadcastD
+        );
+
+        assertThat(filteredBroadcasts.get(0), sameInstance(broadcastD));
+        assertThat(filteredBroadcasts.get(1), sameInstance(broadcastB));
+        assertThat(filteredBroadcasts.get(2), sameInstance(broadcastA));
+        assertThat(filteredBroadcasts.get(3), sameInstance(broadcastC));
+    }
+
+    @Test
+    public void broadcastsOnChannelNotOnChannelGroupAreFilteredOut() throws Exception {
+        Broadcast broadcastA = broadcast(channelIdA, now.plusHours(1));
+        Broadcast broadcastB = broadcast(channelIdC, now);
+
+        ImmutableList<Broadcast> filteredBroadcasts = filterBroadcasts(broadcastA, broadcastB);
+
+        assertThat(filteredBroadcasts.size(), is(1));
+        assertThat(filteredBroadcasts.get(0), sameInstance(broadcastA));
+    }
+
+    private ImmutableList<Broadcast> filterBroadcasts(Broadcast... broadcasts) {
+        return ImmutableList.copyOf(filter.sortAndFilter(
+                    ImmutableList.copyOf(broadcasts),
                     channelGroup
-            );
-            assertThat(orderedAndDeduped, is(expected));
-        }
+            ));
+    }
+
+    private ChannelGroupMembership getChannelGroupMembership(Id channelId) {
+        return new ChannelGroupMembership(
+                new ChannelGroupRef(Id.valueOf(42L), Publisher.METABROADCAST),
+                new ChannelRef(channelId, Publisher.METABROADCAST),
+                null,
+                null
+        );
     }
 
     private Broadcast broadcast(Id channel, DateTime transmissionTime) {
-        Broadcast broadcast = new Broadcast(channel, transmissionTime, Duration.standardMinutes(1));
-        return broadcast;
+        return new Broadcast(channel, transmissionTime, Duration.standardMinutes(1));
     }
-
-    private Channel channel(Long id, String key) {
-        return Channel.builder(Publisher.METABROADCAST)
-                .withId(id)
-                .withKey(key)
-                .withUri(key)
-                .build();
-    }
-
 }

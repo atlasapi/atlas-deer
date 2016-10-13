@@ -28,7 +28,7 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
 
     private final MergingEquivalentsResolver<Content> contentResolver;
     private final UpcomingContentDetailWriter upcomingContentDetailWriter;
-    private final ChannelsBroadcastFilter channelsBroadcastFilter = new ChannelsBroadcastFilter();
+    private final ChannelsBroadcastFilter channelsBroadcastFilter;
 
     public UpcomingContentDetailAnnotation(
             MergingEquivalentsResolver<Content> contentResolver,
@@ -36,6 +36,7 @@ public class UpcomingContentDetailAnnotation extends OutputAnnotation<Content> {
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.upcomingContentDetailWriter = checkNotNull(upcomingContentDetailWriter);
+        this.channelsBroadcastFilter = ChannelsBroadcastFilter.create();
     }
 
     @Override
