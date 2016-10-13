@@ -8,9 +8,9 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.auth.ApplicationSourcesFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
-import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentType;
@@ -916,7 +916,7 @@ public class QueryWebModule {
                 )
                 .register(
                         BROADCASTS,
-                        new BroadcastsAnnotation(idCodec(), channelResolver),
+                        BroadcastsAnnotation.create(idCodec(), channelResolver),
                         commonImplied
                 )
                 .register(

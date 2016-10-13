@@ -3,7 +3,6 @@ package org.atlasapi.output.annotation;
 import java.io.IOException;
 import java.util.stream.Stream;
 
-import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ChannelsBroadcastFilter;
@@ -21,13 +20,20 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter;
 
-    public BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver) {
+    private BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver) {
         broadcastWriter = new BroadcastWriter(
                 "broadcasts",
                 codec,
                 channelResolver
         );
         this.channelsBroadcastFilter = ChannelsBroadcastFilter.create();
+    }
+
+    public static BroadcastsAnnotation create(
+            NumberToShortStringCodec codec,
+            ChannelResolver channelResolver
+    ) {
+        return new BroadcastsAnnotation(codec, channelResolver);
     }
 
     @Override
