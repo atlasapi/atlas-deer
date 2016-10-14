@@ -36,7 +36,6 @@ import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
-import org.atlasapi.util.GroupLock;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
@@ -69,7 +68,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
-import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,8 +117,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final PreparedStatement broadcastEquivUpdate;
     private final PreparedStatement broadcastScheduleUpdate;
     private final PreparedStatement broadcastSelect;
-
-    private final GroupLock<String> lock = GroupLock.natural();
 
     public CassandraEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
@@ -306,38 +302,33 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                             .collect(MoreCollectors.toImmutableSet()))
             );
 
-            List<Statement> updates = updateStatements(
+        List<Statement> updates = updateStatements(
+                update.getSource(),
+                update.getSchedule(),
+                content,
+                now
+        );
+
+        if (updates.isEmpty() && deletes.isEmpty()) {
+            return;
+        }
+
+        BatchStatement updateBatch = new BatchStatement();
+        updateBatch.addAll(Iterables.concat(updates, deletes));
+
+        try {
+            session.execute(updateBatch.setConsistencyLevel(write));
+            log.info(
+                    "Processed equivalent schedule update for {} {} {}, updates: {}, "
+                            + "deletes: {}",
                     update.getSource(),
-                    update.getSchedule(),
-                    content,
-                    now
+                    update.getSchedule().getChannel().longValue(),
+                    update.getSchedule().getInterval(),
+                    updates.size(),
+                    deletes.size()
             );
-
-            if (updates.isEmpty() && deletes.isEmpty()) {
-                return;
-            }
-
-            BatchStatement updateBatch = new BatchStatement();
-            updateBatch.addAll(Iterables.concat(updates, deletes));
-
-            try {
-                session.execute(updateBatch.setConsistencyLevel(write));
-                log.info(
-                        "Processed equivalent schedule update for {} {} {}, updates: {}, "
-                                + "deletes: {}",
-                        update.getSource(),
-                        update.getSchedule().getChannel().longValue(),
-                        update.getSchedule().getInterval(),
-                        updates.size(),
-                        deletes.size()
-                );
-            } catch (NoHostAvailableException | QueryExecutionException e) {
-                throw new WriteException(e);
-            }
-        } catch (InterruptedException e) {
-            throw Throwables.propagate(e);
-        } finally {
-            lock.unlock(lockKeys);
+        } catch (NoHostAvailableException | QueryExecutionException e) {
+            throw new WriteException(e);
         }
     }
 
@@ -346,7 +337,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             Publisher publisher,
             Broadcast broadcast,
             EquivalenceGraph graph,
-            ImmutableSet<Item> content
+            ImmutableSet<Item> content,
+            List<Date> daysInInterval
     ) throws WriteException {
         List<LocalDate> daysInInterval = daysIn(broadcast.getTransmissionInterval());
 

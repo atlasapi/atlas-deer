@@ -3,6 +3,7 @@ package org.atlasapi.equivalence;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.atlasapi.entity.Id;
@@ -89,21 +90,22 @@ public final class EquivalenceGraph implements Identifiable {
     }
 
     @Override
-    public boolean equals(Object that) {
-        if (this == that) {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (that instanceof EquivalenceGraph) {
-            EquivalenceGraph other = (EquivalenceGraph) that;
-            return adjacencyList.equals(other.adjacencyList)
-                    && updated.equals(other.updated);
+        if (o == null || getClass() != o.getClass()) {
+            return false;
         }
-        return false;
+        EquivalenceGraph that = (EquivalenceGraph) o;
+        return Objects.equals(adjacencyList, that.adjacencyList) &&
+                Objects.equals(updated, that.updated) &&
+                Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return updated.hashCode();
+        return Objects.hash(adjacencyList, updated, id);
     }
 
     @Override

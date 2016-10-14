@@ -1,10 +1,12 @@
 package org.atlasapi.schedule;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -23,11 +25,14 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.util.GroupLock;
 
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -35,6 +40,8 @@ import com.google.common.collect.Multimaps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +57,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     private final FlexibleBroadcastMatcher broadcastMatcher
             = new FlexibleBroadcastMatcher(Duration.standardMinutes(10));
 
+    private final GroupLock<String> lock = GroupLock.natural();
+
     public AbstractEquivalentScheduleStore(EquivalenceGraphStore graphStore,
             ContentResolver contentStore) {
         this.graphStore = checkNotNull(graphStore);
@@ -58,49 +67,135 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
-        writeSchedule(update, contentFor(update.getSchedule()));
+        List<Date> daysInSchedule = daysIn(update.getSchedule().getInterval());
+
+        ImmutableList<Date> staleBroadcastDays = update.getStaleBroadcasts()
+                .stream()
+                .map(broadcastRef -> broadcastRef.getTransmissionInterval()
+                        .getStart()
+                        .toLocalDate()
+                        .toDate())
+                .collect(MoreCollectors.toImmutableList());
+
+        ImmutableSet<String> lockKeys = getLockKeys(
+                update.getSchedule().getChannel(),
+                update.getSource(),
+                ImmutableSet.<Date>builder()
+                        .addAll(daysInSchedule)
+                        .addAll(staleBroadcastDays)
+                        .build()
+        );
+
+        try {
+            lock.lock(lockKeys);
+            writeSchedule(update, contentFor(update.getSchedule()));
+        } catch (InterruptedException e) {
+            throw Throwables.propagate(e);
+        } finally {
+            lock.unlock(lockKeys);
+        }
     }
 
     @Override
     public final void updateEquivalences(ImmutableSet<EquivalenceGraph> graphs)
             throws WriteException {
-        for (EquivalenceGraph graph : graphs) {
-            Resolved<Content> graphContent = get(contentStore.resolveIds(graph.getEquivalenceSet()));
-            for (Content elem : graphContent.getResources()) {
-                if (elem instanceof Item) {
-                    Item item = (Item) elem;
+        // Fire all the requests to the content store in parallel
+        ImmutableMap<EquivalenceGraph, ListenableFuture<Resolved<Content>>> graphsContent = graphs
+                .stream()
+                .distinct()
+                .collect(MoreCollectors.toImmutableMap(
+                        graph -> graph,
+                        graph -> contentStore.resolveIds(graph.getEquivalenceSet())
+                ));
 
-                    Iterable<Broadcast> activelyPublishedBroadcasts = item.getBroadcasts()
-                            .stream()
-                            .filter(Broadcast::isActivelyPublished)
-                            .collect(Collectors.toList());
+        ImmutableList.Builder<CompletableFuture<Void>> futures = ImmutableList.builder();
 
-                    for (Broadcast broadcast : activelyPublishedBroadcasts) {
-                        Item copy = item.copy();
-                        copy.setBroadcasts(ImmutableSet.of(broadcast));
+        // Create a future for each update we will have to do
+        for (Map.Entry<EquivalenceGraph, ListenableFuture<Resolved<Content>>> entry :
+                graphsContent.entrySet()) {
+            EquivalenceGraph graph = entry.getKey();
+            ImmutableList<Item> graphItems = get(entry.getValue())
+                    .getResources()
+                    .filter(Item.class)
+                    .toList();
 
-                        updateEquivalentContent(
-                                item.getSource(),
-                                broadcast,
-                                graph,
-                                equivItems(
-                                        copy,
-                                        broadcast,
-                                        graphContent.getResources().filter(Item.class)
-                                )
-                        );
-                    }
+            for (Item item : graphItems) {
+                ImmutableList<Broadcast> broadcasts = item.getBroadcasts()
+                        .stream()
+                        .filter(Broadcast::isActivelyPublished)
+                        .collect(MoreCollectors.toImmutableList());
+
+                for (Broadcast broadcast : broadcasts) {
+                    Item copy = item.copy();
+                    copy.setBroadcasts(ImmutableSet.of(broadcast));
+
+                    List<Date> daysInInterval = daysIn(broadcast.getTransmissionInterval());
+
+                    ImmutableSet<String> lockKeys = getLockKeys(
+                            broadcast.getChannelId(), item.getSource(), daysInInterval
+                    );
+
+                    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                        try {
+                            lock.lock(lockKeys);
+
+                            updateEquivalentContent(
+                                    item.getSource(),
+                                    broadcast,
+                                    graph,
+                                    equivItems(copy, broadcast, graphItems),
+                                    daysInInterval
+                            );
+                        } catch (InterruptedException | WriteException e) {
+                            throw Throwables.propagate(e);
+                        } finally {
+                            lock.unlock(lockKeys);
+                        }
+                    });
+
+                    futures.add(future);
                 }
             }
         }
+
+        try {
+            // Block until all futures are completed
+            for (CompletableFuture<Void> future : futures.build()) {
+                future.get();
+            }
+        } catch (Exception e) {
+            throw new WriteException(e);
+        }
     }
 
-    protected abstract void writeSchedule(ScheduleUpdate update,
-            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content)
-            throws WriteException;
+    protected abstract void writeSchedule(
+            ScheduleUpdate update,
+            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
+    ) throws WriteException;
 
-    protected abstract void updateEquivalentContent(Publisher publisher, Broadcast broadcast,
-            EquivalenceGraph graph, ImmutableSet<Item> content) throws WriteException;
+    protected abstract void updateEquivalentContent(
+            Publisher publisher,
+            Broadcast broadcast,
+            EquivalenceGraph graph,
+            ImmutableSet<Item> content,
+            List<Date> daysInInterval) throws WriteException;
+
+    protected List<Date> daysIn(Interval interval) {
+        return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
+                .map(LocalDate::toDate)
+                .collect(Collectors.toList());
+    }
+
+    private ImmutableSet<String> getLockKeys(Id channelId, Publisher source,
+            Iterable<Date> dates) {
+        return StreamSupport.stream(dates.spliterator(), false)
+                .map(date -> getLockKey(channelId, source, date))
+                .collect(MoreCollectors.toImmutableSet());
+    }
+
+    private String getLockKey(Id channelId, Publisher source, Date date) {
+        return channelId.longValue() + "|" + source.key() + "|" + date.toInstant().toEpochMilli();
+    }
 
     private Map<ScheduleRef.Entry, EquivalentScheduleEntry> contentFor(ScheduleRef schedule)
             throws WriteException {
@@ -146,7 +241,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                                      ? possibleGraph.get()
                                      : EquivalenceGraph.valueOf(item.toRef());
 
-            Equivalent<Item> equivItems = new Equivalent<Item>(
+            Equivalent<Item> equivItems = new Equivalent<>(
                     graph, equivItems(item, broadcast, graphItems(graph, allItems))
             );
             entryContent.put(entry, new EquivalentScheduleEntry(broadcast, equivItems));
