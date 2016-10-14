@@ -180,7 +180,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds)
             throws InterruptedException, StoreException {
         // Temporary blacklist to deal with queue backlog on bad graph
-        if (adjacentsIds.contains(Id.valueOf(42959503L))) {
+        if (adjacentsIds.contains(Id.valueOf(42959503L))
+                || adjacentsIds.contains(Id.valueOf(44245199L))) {
             throw new IllegalArgumentException("Blacklisted ID found. Skipping...");
         }
 
@@ -196,7 +197,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
 
         // Temporary blacklist to deal with queue backlog on bad graph
-        if (allIds.contains(Id.valueOf(42959503L))) {
+        if (allIds.contains(Id.valueOf(42959503L)) || allIds.contains(Id.valueOf(44245199L))) {
             throw new IllegalArgumentException("Blacklisted ID found. Skipping...");
         }
 
