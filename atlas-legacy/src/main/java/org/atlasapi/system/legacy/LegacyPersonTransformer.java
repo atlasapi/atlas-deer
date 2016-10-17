@@ -21,6 +21,13 @@ public class LegacyPersonTransformer extends DescribedLegacyResourceTransformer<
         person.setBirthPlace(input.getBirthPlace());
         person.setQuotes(input.getQuotes());
 
+        person.setPseudoSurname(input.getPseudoSurname());
+        person.setPseudoForename(input.getPseudoForename());
+        person.setPersonSource(input.getSource());
+        person.setSourceTitle(input.getSourceTitle());
+        person.setAdditionalInfo(input.getAdditionalInfo());
+        person.setBilling(input.getBilling());
+
         return person;
     }
 

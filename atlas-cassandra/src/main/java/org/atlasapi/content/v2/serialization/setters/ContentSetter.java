@@ -20,9 +20,12 @@ import org.atlasapi.content.v2.serialization.CertificateSerialization;
 import org.atlasapi.content.v2.serialization.ClipSerialization;
 import org.atlasapi.content.v2.serialization.ContentGroupRefSerialization;
 import org.atlasapi.content.v2.serialization.CrewMemberSerialization;
+import org.atlasapi.content.v2.serialization.DistributionSerialization;
 import org.atlasapi.content.v2.serialization.EncodingSerialization;
 import org.atlasapi.content.v2.serialization.EventRefSerialization;
 import org.atlasapi.content.v2.serialization.KeyPhraseSerialization;
+import org.atlasapi.content.v2.serialization.LanguageSerialization;
+import org.atlasapi.content.v2.serialization.LocalizedTitleSerialization;
 import org.atlasapi.content.v2.serialization.RatingSerialization;
 import org.atlasapi.content.v2.serialization.ReviewSerialization;
 import org.atlasapi.content.v2.serialization.TagSerialization;
@@ -40,6 +43,9 @@ public class ContentSetter {
     private final TagSerialization tag = new TagSerialization();
     private final RatingSerialization rating = new RatingSerialization();
     private final ReviewSerialization review = new ReviewSerialization();
+    private final LocalizedTitleSerialization localizedTitles = new LocalizedTitleSerialization();
+    private final DistributionSerialization distribution = new DistributionSerialization();
+    private final LanguageSerialization language = new LanguageSerialization();
 
     public ContentSetter() {
         this.clip = new ClipSerialization(this);
@@ -102,6 +108,12 @@ public class ContentSetter {
                 .stream()
                 .map(encoding::serialize)
                 .collect(Collectors.toSet())));
+
+        internal.setLocalizedTitles(localizedTitles.serialize(content.getLocalizedTitles()));
+
+        internal.setDistributions(distribution.serialize(content.getDistributions()));
+
+        internal.setLanguage(language.serialize(content.getLanguage()));
     }
 
     public void deserialize(Content content, ContentIface internal) {
@@ -192,5 +204,11 @@ public class ContentSetter {
                     .map(encoding::deserialize)
                     .collect(Collectors.toSet()));
         }
+
+        content.setLocalizedTitles(localizedTitles.deserialize(internal.getLocalizedTitles()));
+
+        content.setDistributions(distribution.deserialize(internal.getDistributions()));
+
+        content.setLanguage(language.deserialize(internal.getLanguage()));
     }
 }

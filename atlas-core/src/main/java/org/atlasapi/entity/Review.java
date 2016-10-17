@@ -1,5 +1,6 @@
 package org.atlasapi.entity;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -15,6 +16,9 @@ public class Review implements Hashable {
 
     private final Locale locale;
     private final String review;
+
+    private String type;
+    private Author author;
     // source should not be serialised.  It is inherited from the Content that contains it
     private final Optional<Publisher> source;
 
@@ -54,9 +58,25 @@ public class Review implements Hashable {
                 Objects.equals(source, review1.source);
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Author getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(Author author) {
+        this.author = author;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(locale, review, source);
+        return Objects.hash(locale, review, source, type, author);
     }
 
     @Override

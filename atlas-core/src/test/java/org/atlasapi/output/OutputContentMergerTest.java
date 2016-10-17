@@ -26,6 +26,7 @@ import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Distribution;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -41,6 +42,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.joda.time.DateTime;
@@ -131,6 +133,35 @@ public class OutputContentMergerTest {
         );
         Item merged = merger.merge(one, ImmutableList.of(two), sources);
         assertThat(merged.getAliases().size(), is(2));
+    }
+
+    @Test
+    public void testMergeOfDistributions() {
+        Item one = item(1l, "o", Publisher.METABROADCAST);
+        Item two = item(2l, "k", Publisher.BBC);
+
+        Distribution distributionOne = Distribution.builder()
+                .withDistributor("distributor")
+                .withformat("format")
+                .withReleaseDate(DateTime.now())
+                .build();
+        one.setDistributions(ImmutableSet.of(distributionOne));
+
+        Distribution distributionTwo = Distribution.builder()
+                .withDistributor("other distributor")
+                .withformat("other format")
+                .withReleaseDate(DateTime.now())
+                .build();
+        two.setDistributions(ImmutableSet.of(distributionTwo));
+
+        ApplicationSources sources = sourcesWithPrecedence(
+                true,
+                Publisher.METABROADCAST,
+                Publisher.BBC,
+                Publisher.PA
+        );
+        Item merged = merger.merge(one, ImmutableList.of(two), sources);
+        assertThat(Iterators.size(merged.getDistributions().iterator()), is(2));
     }
 
     @Test

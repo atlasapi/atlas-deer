@@ -6,11 +6,26 @@ import java.util.Set;
 import org.atlasapi.content.v2.model.udt.Certificate;
 import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
+import org.atlasapi.content.v2.model.udt.Distribution;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
+import org.atlasapi.content.v2.model.udt.Language;
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.model.udt.Tag;
 
 public interface ContentIface extends Described {
+
+    Language getLanguage();
+
+    void setLanguage(Language language);
+
+    Iterable<Distribution> getDistributions();
+
+    void setDistributions(Iterable<Distribution> distributions);
+
+    Set<LocalizedTitle> getLocalizedTitles();
+
+    void setLocalizedTitles(Set<LocalizedTitle> localizedTitles);
 
     Set<KeyPhrase> getKeyPhrases();
 

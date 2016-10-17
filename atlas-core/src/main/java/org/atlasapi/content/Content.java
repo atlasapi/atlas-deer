@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Aliased;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.equivalence.Equivalable;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -56,6 +57,7 @@ public abstract class Content extends Described
     private Set<Encoding> manifestedAs = Sets.newLinkedHashSet();
     private Boolean genericDescription = Boolean.FALSE;
     private ImmutableSet<EventRef> eventRefs = ImmutableSet.of();
+    private Set<Person> peopleSet = Sets.newLinkedHashSet();
 
     public Content(String uri, String curie, Publisher publisher) {
         super(uri, curie, publisher);
@@ -67,6 +69,15 @@ public abstract class Content extends Described
 
     public Content(Id id, Publisher source) {
         super(id, source);
+    }
+
+    @FieldName("peopleSet")
+    public Set<Person> getPeopleSet() {
+        return peopleSet;
+    }
+
+    public void setPeopleSet(Set<Person> peopleSet) {
+        this.peopleSet = peopleSet;
     }
 
     @FieldName("clips")

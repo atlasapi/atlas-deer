@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.joda.time.DateTime;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -56,8 +57,16 @@ public class LegacyContentTransformerTest {
     @Mock
     private GenreToTagMapper genreToTagMapper;
 
-    @InjectMocks
     private LegacyContentTransformer objectUnderTest;
+
+    @Before
+    public void setup() {
+        objectUnderTest = new LegacyContentTransformer(
+                channelResolver,
+                legacySegmentMigrator,
+                genreToTagMapper
+        );
+    }
 
     @Test
     public void testTransformSeriesWithParentRefWithNullId() {

@@ -11,8 +11,11 @@ import org.atlasapi.content.v2.model.udt.ContainerRef;
 import org.atlasapi.content.v2.model.udt.ContainerSummary;
 import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
+import org.atlasapi.content.v2.model.udt.Distribution;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
+import org.atlasapi.content.v2.model.udt.Language;
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
 import org.atlasapi.content.v2.model.udt.Ref;
@@ -82,6 +85,33 @@ public class Clip implements ContentIface {
     private Set<Review> reviews;
     private Set<Rating> ratings;
     private Encoding.Wrapper encodings;
+    private Iterable<Distribution> distributions;
+    private Language language;
+    private Set<LocalizedTitle> localizedTitles;
+
+    public Iterable<Distribution> getDistributions() {
+        return distributions;
+    }
+
+    public void setDistributions(Iterable<Distribution> distributions) {
+        this.distributions = distributions;
+    }
+
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
+    }
+
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return localizedTitles;
+    }
+
+    public void setLocalizedTitles(Set<LocalizedTitle> localizedTitles) {
+        this.localizedTitles = localizedTitles;
+    }
 
     public Long getId() {
         return id;

@@ -3,8 +3,10 @@ package org.atlasapi.output;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Brand;
@@ -26,6 +28,7 @@ import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.ReleaseDate;
 import org.atlasapi.content.Subtitles;
 import org.atlasapi.content.Tag;
+import org.atlasapi.entity.Distribution;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Person;
@@ -65,7 +68,8 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                             content.getImages()
                     );
 
-    private static final Predicate<Item> HAS_BROADCASTS = input -> input.getBroadcasts()!= null && !input.getBroadcasts().isEmpty();
+    private static final Predicate<Item> HAS_BROADCASTS =
+            input -> input.getBroadcasts()!= null && !input.getBroadcasts().isEmpty();
 
     private static final Predicate<Film> HAS_PEOPLE =
             film -> film.getPeople() != null && !film.getPeople().isEmpty();
@@ -187,21 +191,61 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             for (Person unchosen : Iterables.filter(notChosen, Person.class)) {
                 quotes.addAll(unchosen.getQuotes());
                 person.withName(person.name() != null ? person.name() : unchosen.name());
-                person.setGivenName(person.getGivenName() != null
-                                    ? person.getGivenName()
-                                    : unchosen.getGivenName());
-                person.setFamilyName(person.getFamilyName() != null
-                                     ? person.getFamilyName()
-                                     : unchosen.getFamilyName());
-                person.setGender(person.getGender() != null
-                                 ? person.getGender()
-                                 : unchosen.getGender());
-                person.setBirthDate(person.getBirthDate() != null
-                                    ? person.getBirthDate()
-                                    : unchosen.getBirthDate());
-                person.setBirthPlace(person.getBirthPlace() != null
-                                     ? person.getBirthPlace()
-                                     : unchosen.getBirthPlace());
+                person.setGivenName(
+                        person.getGivenName() != null
+                        ? person.getGivenName()
+                        : unchosen.getGivenName()
+                );
+                person.setFamilyName(
+                        person.getFamilyName() != null
+                        ? person.getFamilyName()
+                        : unchosen.getFamilyName()
+                );
+                person.setGender(
+                        person.getGender() != null
+                        ? person.getGender()
+                        : unchosen.getGender()
+                );
+                person.setBirthDate(
+                        person.getBirthDate() != null
+                        ? person.getBirthDate()
+                        : unchosen.getBirthDate()
+                );
+                person.setBirthPlace(
+                        person.getBirthPlace() != null
+                        ? person.getBirthPlace()
+                        : unchosen.getBirthPlace()
+                );
+                person.setPseudoForename(
+                        person.getPseudoForename() != null
+                        ? person.getPseudoForename()
+                        : unchosen.getPseudoForename()
+                );
+                person.setPseudoSurname(
+                        person.getPseudoSurname() != null
+                        ? person.getPseudoSurname()
+                        : unchosen.getPseudoSurname()
+                );
+                person.setAdditionalInfo(
+                        person.getAdditionalInfo() != null
+                        ? person.getAdditionalInfo()
+                        : unchosen.getAdditionalInfo()
+                );
+                person.setBilling(
+                        person.getBilling() != null
+                        ? person.getBilling()
+                        : unchosen.getBilling()
+                );
+                person.setPersonSource(
+                        person.getPersonSource() != null
+                        ? person.getPersonSource()
+                        : unchosen.getPersonSource()
+                );
+                person.setSourceTitle(
+                        person.getSourceTitle() !=null
+                        ? person.getSourceTitle()
+                        : unchosen.getSourceTitle()
+                );
             }
             person.setQuotes(quotes.build());
         }
@@ -280,6 +324,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         mergeReviews(chosen, notChosen);
         mergeRatings(chosen, notChosen);
+        mergeDistributons(chosen, notChosen);
     }
 
     private <T extends Content> void mergeReviews(T chosen, Iterable<T> notChosen) {
@@ -295,6 +340,24 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 .collect(Collectors.toSet());
 
         chosen.setReviews(combinedReviews);
+    }
+
+    private <T extends Content> void mergeDistributons(T chosen, Iterable<T> notChosen) {
+
+        List<T> allContent = new ImmutableList.Builder<T>()
+                .add(chosen)
+                .addAll(notChosen)
+                .build();
+
+        Set<Distribution> combinedDistributions = allContent.stream()
+                .map(Content::getDistributions)
+                .filter(Objects::nonNull)
+                .flatMap(distributions ->
+                        StreamSupport.stream(distributions.spliterator(), false)
+                )
+                .collect(Collectors.toSet());
+
+        chosen.setDistributions(combinedDistributions);
     }
 
     private <T extends Content> void mergeRatings(T chosen, Iterable<T> notChosen) {

@@ -13,10 +13,13 @@ import org.atlasapi.content.v2.model.udt.ContainerRef;
 import org.atlasapi.content.v2.model.udt.ContainerSummary;
 import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
+import org.atlasapi.content.v2.model.udt.Distribution;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.ItemRef;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
+import org.atlasapi.content.v2.model.udt.Language;
+import org.atlasapi.content.v2.model.udt.LocalizedTitle;
 import org.atlasapi.content.v2.model.udt.LocationSummary;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
@@ -274,6 +277,41 @@ public class Content implements ContentIface {
 
     @Column(name = "encodings")
     private Encoding.Wrapper encodings;
+
+    @Column(name = "localizedTitles")
+    private Set<LocalizedTitle> localizedTitles;
+
+    @Column(name = "distributions")
+    private Iterable<Distribution> distributions;
+
+    @Column(name = "languageClass")
+    private Language language;
+
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
+    }
+
+    public Iterable<Distribution> getDistributions() {
+        return distributions;
+    }
+
+    public void setDistributions(
+            Iterable<Distribution> distributions) {
+        this.distributions = distributions;
+    }
+
+    public Set<LocalizedTitle> getLocalizedTitles() {
+        return localizedTitles;
+    }
+
+    public void setLocalizedTitles(
+            Set<LocalizedTitle> localizedTitles) {
+        this.localizedTitles = localizedTitles;
+    }
 
     @Override
     public Long getId() {

@@ -1,7 +1,8 @@
 package org.atlasapi.system.legacy;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Locale;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,7 +13,12 @@ import org.atlasapi.content.PriorityScoreReasons;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.content.Synopses;
 import org.atlasapi.entity.Alias;
+import org.atlasapi.entity.Author;
 import org.atlasapi.entity.Award;
+import org.atlasapi.entity.Distribution;
+import org.atlasapi.entity.Language;
+import org.atlasapi.entity.LocalizedTitle;
+import org.atlasapi.entity.Person;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
 import org.atlasapi.media.entity.Content;
@@ -29,7 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSet;
 
-public abstract class DescribedLegacyResourceTransformer<F extends Described, T extends org.atlasapi.content.Described>
+public abstract class DescribedLegacyResourceTransformer
+        <F extends Described, T extends org.atlasapi.content.Described>
         extends BaseLegacyResourceTransformer<F, T> {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -71,8 +78,29 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
 
         described.setReviews(transformReviews(input.getReviews(), input.getPublisher()));
         described.setRatings(transformRatings(input.getRatings()));
+        described.setLocalizedTitles(transformLocalizedTitles(input.getLocalizedTitles()));
+        described.setDistributions(transformDistributions(input.getDistributions()));
+        if (input.getLanguage() != null) {
+            described.setLanguage(transformLanguage(input.getLanguage()));
+
+        }
 
         return described;
+    }
+
+    private Language transformLanguage(org.atlasapi.media.entity.Language legacyLanguage) {
+        Language language = new Language();
+        if (legacyLanguage.getCode() != null) {
+            language.setCode(legacyLanguage.getCode());
+        }
+        if (legacyLanguage.getDisplay() != null) {
+            language.setDisplay(legacyLanguage.getDisplay());
+        }
+        if (legacyLanguage.getDubbing() != null) {
+            language.setDubbing(legacyLanguage.getDubbing());
+        }
+
+        return language;
     }
 
     private org.atlasapi.content.Priority transformPriority(
@@ -87,6 +115,26 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
                         legacy.getReasons().getNegative()
                 )
         );
+    }
+
+    protected Iterable<Distribution> transformDistributions(
+            Iterable<org.atlasapi.media.entity.Distribution> legacyDistributions
+    ) {
+        List<Distribution> newDistributions = new ArrayList();
+        for (org.atlasapi.media.entity.Distribution distribution : legacyDistributions) {
+            newDistributions.add(transformDistribution(distribution));
+        }
+        return newDistributions;
+    }
+
+    protected Distribution transformDistribution(
+            org.atlasapi.media.entity.Distribution legacyDistribution
+    ) {
+        return Distribution.builder()
+                .withDistributor(legacyDistribution.getDistributor())
+                .withformat(legacyDistribution.getFormat())
+                .withReleaseDate(legacyDistribution.getReleaseDate())
+                .build();
     }
 
     protected <I extends org.atlasapi.entity.Identified> void setIdentifiedFields(I i,
@@ -138,29 +186,77 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         return award;
     }
 
-    protected Iterable<Review> transformReviews(Collection<org.atlasapi.media.entity.Review> legacyReviews, Publisher source) {
+    protected Iterable<Review> transformReviews(
+            Collection<org.atlasapi.media.entity.Review> legacyReviews,
+            Publisher source
+    ) {
         return legacyReviews.stream()
-                .map(legacyReview -> transformReview(legacyReview.getLocale(), legacyReview.getReview(), source))
+                .map(legacyReview -> transformReview(legacyReview, source))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
-    protected Optional<Review> transformReview(Locale locale, String review, Publisher source) {
+    protected Optional<Review> transformReview(
+            org.atlasapi.media.entity.Review legacyReview,
+            Publisher source
+    ) {
         // we don't want to fail the ingest of the whole content item because of
         // a broken legacy review
         try {
-            return Optional.of(new Review(locale, review, Optional.ofNullable(source)));
+            Optional<Review> review = Optional.of(new Review(
+                    legacyReview.getLocale(),
+                    legacyReview.getReview(),
+                    Optional.ofNullable(source)
+            ));
+            if (review.isPresent()) {
+                review.get().setType(legacyReview.getType());
+                if (legacyReview.getAuthor() != null) {
+                    review.get().setAuthor(transformAuthor(legacyReview.getAuthor()));
+                }
+            }
+            return review;
         } catch(NullPointerException e) {
             return Optional.empty();
         }
     }
 
+    protected Author transformAuthor(org.atlasapi.media.entity.Author author) {
+        return Author.builder()
+                .withAuthorInitials(author.getAuthorInitials())
+                .withAuthorName(author.getAuthorName())
+                .build();
+    }
 
-    protected Iterable<Rating> transformRatings(Iterable<org.atlasapi.media.entity.Rating> legacyRatings) {
+    protected Iterable<Rating> transformRatings(
+            Iterable<org.atlasapi.media.entity.Rating> legacyRatings
+    ) {
         return Iterables.transform(
                 legacyRatings,
-                legacyRating -> new Rating(legacyRating.getType(), legacyRating.getValue(), legacyRating.getPublisher())
+                legacyRating -> new Rating(
+                        legacyRating.getType(),
+                        legacyRating.getValue(),
+                        legacyRating.getPublisher()
+                )
         );
+    }
+
+    protected Set<LocalizedTitle> transformLocalizedTitles(
+            Set<org.atlasapi.media.entity.LocalizedTitle> localizedTitles
+    ) {
+        return localizedTitles.stream()
+                .map(localizedTitle -> transformLocalizedTitle(localizedTitle))
+                .collect(Collectors.toSet());
+
+    }
+
+    private LocalizedTitle transformLocalizedTitle(
+            org.atlasapi.media.entity.LocalizedTitle localizedTitle
+    ) {
+        LocalizedTitle newLocalizedTitle = new LocalizedTitle();
+        newLocalizedTitle.setLocale(localizedTitle.getLocale());
+        newLocalizedTitle.setTitle(localizedTitle.getTitle());
+        newLocalizedTitle.setType(localizedTitle.getType());
+        return newLocalizedTitle;
     }
 }

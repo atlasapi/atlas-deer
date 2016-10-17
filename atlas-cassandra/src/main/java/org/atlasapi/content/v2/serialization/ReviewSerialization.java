@@ -3,6 +3,7 @@ package org.atlasapi.content.v2.serialization;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.atlasapi.content.v2.model.udt.Author;
 import org.atlasapi.content.v2.model.udt.Review;
 
 public class ReviewSerialization {
@@ -16,6 +17,13 @@ public class ReviewSerialization {
             internal.setLocale(locale.toLanguageTag());
         }
 
+        internal.setType(review.getType());
+
+        org.atlasapi.entity.Author author = review.getAuthor();
+        if (author != null) {
+            internal.setPeople(serializeAuthor(author));
+        }
+
         return internal;
     }
 
@@ -26,6 +34,31 @@ public class ReviewSerialization {
             locale = Locale.forLanguageTag(internalLocale);
         }
 
-        return new org.atlasapi.entity.Review(locale, review.getReview(), Optional.empty());
+        org.atlasapi.entity.Review newReview = new org.atlasapi.entity.Review(
+                locale, review.getReview(), Optional.empty());
+
+        newReview.setType(review.getType());
+        Author author = review.getAuthor();
+        if (author != null) {
+            newReview.setAuthor(deserializeAuthor(author));
+        }
+
+        return newReview;
+    }
+
+    private Author serializeAuthor(org.atlasapi.entity.Author authorOld) {
+        Author newAuthor = new Author();
+        newAuthor.setAuthorInitials(authorOld.getAuthorInitials());
+        newAuthor.setAuthorName(authorOld.getAuthorName());
+
+        return newAuthor;
+    }
+
+    private org.atlasapi.entity.Author deserializeAuthor(Author input) {
+        return org.atlasapi.entity.Author
+                .builder()
+                .withAuthorInitials(input.getAuthorInitials())
+                .withAuthorName(input.getAuthorName())
+                .build();
     }
 }

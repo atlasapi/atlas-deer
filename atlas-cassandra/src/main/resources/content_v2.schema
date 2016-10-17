@@ -331,7 +331,7 @@ CREATE TABLE IF NOT EXISTS content_v2 (
   key_phrases set<frozen<KeyPhrase>>,
   tags list<frozen<Tag>>,
   content_group_refs set<frozen<ContentGroupRef>>,
-  people list<frozen<CrewMember>>,
+  author list<frozen<CrewMember>>,
   languages set<text>,
   certificates set<frozen<Certificate>>,
   year int,

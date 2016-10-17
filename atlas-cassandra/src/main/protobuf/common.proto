@@ -104,6 +104,12 @@ message Person {
     optional string birthPlace = 5;
     repeated string quote = 6;
     repeated Award awards = 7;
+    repeated string pseudoForename = 8;
+    repeated string pseudoSurname = 9;
+    repeated string additionalInfo = 10;
+    repeated string billing = 11;
+    repeated string personSource = 12;
+    repeated string sourceTitle = 13;
     required ContentGroup contentGroup = 100;
 }
 
@@ -170,4 +176,11 @@ message Rating {
 message Review {
     optional LocaleString locale = 1;
     optional string review = 2;
+    optional string type = 3;
+    optional Author author = 4;
+}
+
+message Author {
+    optional string name = 1;
+    optional string initials = 2;
 }

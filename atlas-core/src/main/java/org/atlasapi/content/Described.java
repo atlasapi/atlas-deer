@@ -16,15 +16,18 @@ package org.atlasapi.content;
 
 import java.util.Set;
 
+import org.atlasapi.entity.Distribution;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Identified;
+import org.atlasapi.entity.Language;
 import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Review;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.channel.Channel;
+import org.atlasapi.entity.LocalizedTitle;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
@@ -70,6 +73,10 @@ public abstract class Described extends Identified implements Sourced {
     private Set<Rating> ratings = ImmutableSet.of();
 
     private Set<Award> awards = ImmutableSet.of();
+
+    private Set<LocalizedTitle> localizedTitles = ImmutableSet.of();
+    private Iterable<Distribution> distributions;
+    private Language language;
 
     public Described(String uri, String curie, Publisher publisher) {
         super(uri, curie);
@@ -174,6 +181,22 @@ public abstract class Described extends Identified implements Sourced {
 
     public void setLongDescription(String longDescription) {
         this.longDescription = longDescription;
+    }
+
+    public Iterable<Distribution> getDistributions() {
+        return distributions;
+    }
+
+    public void setDistributions(Iterable<Distribution> distribution) {
+        this.distributions = distribution;
+    }
+
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 
     @FieldName("publisher")
@@ -316,6 +339,13 @@ public abstract class Described extends Identified implements Sourced {
         return awards;
     }
 
+    @FieldName("localized_title")
+    public Set<LocalizedTitle> getLocalizedTitles() { return localizedTitles; }
+
+    public void setLocalizedTitles(Set<LocalizedTitle> localizedTitles) {
+        this.localizedTitles = localizedTitles;
+    }
+
     public void setAwards(Set<Award> awards) {
         this.awards = awards;
     }
@@ -343,6 +373,7 @@ public abstract class Described extends Identified implements Sourced {
         to.reviews = from.reviews;
         to.ratings = from.ratings;
         to.awards = from.awards;
+        to.localizedTitles = from.localizedTitles;
     }
 
     public abstract Described copy();

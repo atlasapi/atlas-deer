@@ -22,6 +22,13 @@ public class Person extends ContentGroup {
     private String birthPlace;
     private Set<String> quotes = Sets.newHashSet();
 
+    private String pseudoForename;
+    private String pseudoSurname;
+    private String additionalInfo;
+    private String billing;
+    private String personSource;
+    private String sourceTitle;
+
     @FieldName("given_name")
     public String getGivenName() {
         return givenName;
@@ -84,6 +91,54 @@ public class Person extends ContentGroup {
 
     public Person(String uri, String curie, Publisher publisher) {
         super(ContentGroup.Type.PERSON, uri, curie, publisher);
+    }
+
+    public String getPseudoForename() {
+        return pseudoForename;
+    }
+
+    public void setPseudoForename(String pseudoForename) {
+        this.pseudoForename = pseudoForename;
+    }
+
+    public String getPseudoSurname() {
+        return pseudoSurname;
+    }
+
+    public void setPseudoSurname(String pseudoSurname) {
+        this.pseudoSurname = pseudoSurname;
+    }
+
+    public String getAdditionalInfo() {
+        return additionalInfo;
+    }
+
+    public void setAdditionalInfo(String additionalInfo) {
+        this.additionalInfo = additionalInfo;
+    }
+
+    public String getBilling() {
+        return billing;
+    }
+
+    public void setBilling(String billing) {
+        this.billing = billing;
+    }
+
+    public String getPersonSource() {
+        return personSource;
+    }
+
+    public void setPersonSource(String source) {
+        this.personSource = source;
+    }
+
+    public String getSourceTitle() {
+        return sourceTitle;
+    }
+
+    public void setSourceTitle(String sourceTitle) {
+        this.sourceTitle = sourceTitle;
     }
 
     @FieldName("name")
