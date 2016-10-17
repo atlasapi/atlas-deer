@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -53,17 +54,19 @@ import com.datastax.driver.core.exceptions.QueryExecutionException;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.SetMultimap;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
@@ -236,19 +239,18 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ScheduleUpdate update,
             Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
     ) throws WriteException {
-        List<Date> daysInSchedule = daysIn(update.getSchedule().getInterval());
-        ImmutableList<Date> staleBroadcastDays = update.getStaleBroadcasts()
+        List<LocalDate> daysInSchedule = daysIn(update.getSchedule().getInterval());
+        ImmutableList<LocalDate> staleBroadcastDays = update.getStaleBroadcasts()
                 .stream()
                 .map(broadcastRef -> broadcastRef.getTransmissionInterval()
                         .getStart()
-                        .toLocalDate()
-                        .toDate())
+                        .toLocalDate())
                 .collect(MoreCollectors.toImmutableList());
 
         ImmutableSet<String> lockKeys = getLockKeys(
                 update.getSchedule().getChannel(),
                 update.getSource(),
-                ImmutableSet.<Date>builder()
+                ImmutableSet.<LocalDate>builder()
                         .addAll(daysInSchedule)
                         .addAll(staleBroadcastDays)
                         .build()
@@ -265,24 +267,19 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     .map(ScheduleRef.Entry::getBroadcast)
                     .collect(MoreCollectors.toImmutableSet());
 
-            Set<String> updateBroadcastIds = updateBroadcastRefs
-                    .stream()
-                    .map(BroadcastRef::getSourceId)
-                    .collect(MoreCollectors.toImmutableSet());
-
             Set<BroadcastRef> currentBroadcastRefs = resolveBroadcasts(
                     update.getSource(),
                     update.getSchedule().getChannel(),
                     update.getSchedule().getInterval()
             );
 
-            Set<BroadcastRef> staleBroadcasts = currentBroadcastRefs.stream()
-                    .filter(broadcast -> !updateBroadcastIds.contains(broadcast.getSourceId()))
-                    .collect(MoreCollectors.toImmutableSet());
+            Set<StaleBroadcast> staleBroadcasts = getStaleBroadcasts(
+                    updateBroadcastRefs, currentBroadcastRefs
+            );
 
             List<Statement> deletes = deleteStatements(
                     update.getSource(),
-                    Sets.union(staleBroadcasts, update.getStaleBroadcasts()),
+                    staleBroadcasts,
                     update.getSchedule().getInterval()
             );
 
@@ -296,7 +293,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     updateLog(currentBroadcastRefs),
                     updateLog(updateBroadcastRefs),
                     updateLog(update.getStaleBroadcasts()),
-                    updateLog(staleBroadcasts)
+                    updateLog(staleBroadcasts.stream()
+                            .map(StaleBroadcast::getBroadcastRef)
+                            .collect(MoreCollectors.toImmutableSet()))
             );
 
             List<Statement> updates = updateStatements(
@@ -341,7 +340,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             EquivalenceGraph graph,
             ImmutableSet<Item> content
     ) throws WriteException {
-        List<Date> daysInInterval = daysIn(broadcast.getTransmissionInterval());
+        List<LocalDate> daysInInterval = daysIn(broadcast.getTransmissionInterval());
 
         ImmutableSet<String> lockKeys = getLockKeys(
                 broadcast.getChannelId(), publisher, daysInInterval
@@ -360,7 +359,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     .map(day -> broadcastEquivUpdate.bind()
                             .setString("source", publisher.key())
                             .setLong("channel", broadcast.getChannelId().longValue())
-                            .setTimestamp("day", day)
+                            .setTimestamp("day", toJavaUtilDate(day))
                             .setString("broadcast", broadcast.getSourceId())
                             .setBytes("broadcastData", broadcastBytes)
                             .setTimestamp("broadcastStartData", broadcastStart)
@@ -417,6 +416,55 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         }
     }
 
+    private Set<StaleBroadcast> getStaleBroadcasts(
+            Set<BroadcastRef> updateBroadcastRefs,
+            Set<BroadcastRef> currentBroadcastRefs
+    ) {
+        ImmutableMultimap<LocalDate, BroadcastRef> updateBroadcastsByDay = getBroadcastsByDay(
+                updateBroadcastRefs
+        );
+        ImmutableMultimap<LocalDate, BroadcastRef> currentBroadcastsByDay = getBroadcastsByDay(
+                currentBroadcastRefs
+        );
+
+        ImmutableSet.Builder<StaleBroadcast> staleBroadcasts = ImmutableSet.builder();
+
+        for (LocalDate day : currentBroadcastsByDay.keySet()) {
+            ImmutableCollection<BroadcastRef> currentBroadcastsInDay = currentBroadcastsByDay
+                    .get(day);
+
+            ImmutableSet<String> updateBroadcastIdsInDay = updateBroadcastsByDay
+                    .get(day)
+                    .stream()
+                    .map(BroadcastRef::getSourceId)
+                    .collect(MoreCollectors.toImmutableSet());
+
+            ImmutableSet<StaleBroadcast> staleBroadcastsInDay = currentBroadcastsInDay
+                    .stream()
+                    .filter(broadcast -> !updateBroadcastIdsInDay.contains(broadcast.getSourceId()))
+                    .map(broadcast -> StaleBroadcast.create(day, broadcast))
+                    .collect(MoreCollectors.toImmutableSet());
+
+            staleBroadcasts.addAll(staleBroadcastsInDay);
+        }
+        return staleBroadcasts.build();
+    }
+
+    private ImmutableMultimap<LocalDate, BroadcastRef> getBroadcastsByDay(
+            Set<BroadcastRef> broadcasts
+    ) {
+        ImmutableMultimap.Builder<LocalDate, BroadcastRef> broadcastsPerDay =
+                ImmutableMultimap.builder();
+
+        for (BroadcastRef broadcast : broadcasts) {
+            for (LocalDate day : daysIn(broadcast.getTransmissionInterval())) {
+                broadcastsPerDay.put(day, broadcast);
+            }
+        }
+
+        return broadcastsPerDay.build();
+    }
+
     private Stream<Statement> contentUpdateStatements(
             Publisher src,
             Broadcast broadcast,
@@ -428,7 +476,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .map(day -> contentUpdate.bind()
                         .setString("source", src.key())
                         .setLong("channel", broadcast.getChannelId().longValue())
-                        .setTimestamp("day", day)
+                        .setTimestamp("day", toJavaUtilDate(day))
                         .setString("broadcast", broadcast.getSourceId())
                         .setLong("contentCount", contentCount)
                         .setBytes("data", serializedContent));
@@ -436,24 +484,27 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private List<Statement> selectStatements(Publisher src, Iterable<Channel> channels,
             Interval interval) {
-        List<Date> days = daysIn(interval);
+        List<LocalDate> days = daysIn(interval);
         ImmutableList.Builder<Statement> selects = ImmutableList.builder();
 
         for (Channel channel : channels) {
-            for (Date day : days) {
+            for (LocalDate day : days) {
                 selects.add(scheduleSelect.bind()
                         .setString("source", src.key())
                         .setLong("channel", channel.getId().longValue())
-                        .setTimestamp("day", day));
+                        .setTimestamp("day", toJavaUtilDate(day)));
             }
         }
         return selects.build();
     }
 
-    private List<Date> daysIn(Interval interval) {
+    private List<LocalDate> daysIn(Interval interval) {
         return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
-                .map(LocalDate::toDate)
                 .collect(Collectors.toList());
+    }
+
+    private Date toJavaUtilDate(LocalDate localDate) {
+        return localDate.toDateTimeAtStartOfDay(DateTimeZone.UTC).toDate();
     }
 
     private String updateLog(Set<BroadcastRef> staleBroadcasts) {
@@ -506,7 +557,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .map(day -> broadcastScheduleUpdate.bind()
                         .setString("source", source.key())
                         .setLong("channel", entry.getBroadcast().getChannelId().longValue())
-                        .setTimestamp("day", day)
+                        .setTimestamp("day", toJavaUtilDate(day))
                         .setString("broadcast", entry.getBroadcast().getSourceId())
                         .setBytes("broadcastData", broadcast)
                         .setTimestamp(
@@ -538,34 +589,42 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private List<Statement> deleteStatements(
             Publisher src,
-            Set<BroadcastRef> staleBroadcasts,
+            Set<StaleBroadcast> staleBroadcasts,
             Interval interval
     ) {
+        List<LocalDate> daysInInterval = daysIn(interval);
+
         return staleBroadcasts.stream()
-                .flatMap(broadcastRef ->
-                        Sets.intersection(
-                                ImmutableSet.copyOf(daysIn(broadcastRef.getTransmissionInterval())),
-                                ImmutableSet.copyOf(daysIn(interval))
+                .filter(staleBroadcast -> daysInInterval.contains(staleBroadcast.getDay()))
+                .map(staleBroadcast -> broadcastDelete.bind()
+                        .setString(
+                                "source",
+                                src.key()
                         )
-                        .stream()
-                        .map(day -> broadcastDelete.bind()
-                                .setString("source", src.key())
-                                .setLong("channel", broadcastRef.getChannelId().longValue())
-                                .setTimestamp("day", day)
-                                .setString("broadcast", broadcastRef.getSourceId()))
-                )
+                        .setLong(
+                                "channel",
+                                staleBroadcast.getBroadcastRef().getChannelId().longValue()
+                        )
+                        .setTimestamp(
+                                "day",
+                                toJavaUtilDate(staleBroadcast.getDay())
+                        )
+                        .setString(
+                                "broadcast",
+                                staleBroadcast.getBroadcastRef().getSourceId()
+                        ))
                 .collect(MoreCollectors.toImmutableList());
     }
 
     private Set<BroadcastRef> resolveBroadcasts(Publisher publisher, Id channelId,
             Interval interval) throws WriteException {
         ImmutableList.Builder<ListenableFuture<ResultSet>> broadcastFutures = ImmutableList.builder();
-        for (Date day : daysIn(interval)) {
+        for (LocalDate day : daysIn(interval)) {
             broadcastFutures.add(session.executeAsync(
                     broadcastSelect.bind()
                             .setString("source", publisher.key())
                             .setLong("channel", channelId.longValue())
-                            .setTimestamp("day", day)));
+                            .setTimestamp("day", toJavaUtilDate(day))));
         }
 
         ImmutableList<Row> rows = Futures.get(
@@ -604,15 +663,18 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return broadcasts.build();
     }
 
-    private ImmutableSet<String> getLockKeys(Id channelId, Publisher source,
-            Iterable<Date> dates) {
+    private ImmutableSet<String> getLockKeys(
+            Id channelId,
+            Publisher source,
+            Iterable<LocalDate> dates
+    ) {
         return StreamSupport.stream(dates.spliterator(), false)
                 .map(date -> getLockKey(channelId, source, date))
                 .collect(MoreCollectors.toImmutableSet());
     }
 
-    private String getLockKey(Id channelId, Publisher source, Date date) {
-        return channelId.longValue() + "|" + source.key() + "|" + date.toInstant().toEpochMilli();
+    private String getLockKey(Id channelId, Publisher source, LocalDate date) {
+        return channelId.longValue() + "|" + source.key() + "|" + date.toString();
     }
 
     private final class ToEquivalentSchedule implements Function<List<ResultSet>,
@@ -741,6 +803,47 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             return broadcastSerializer.deserialize(ContentProtos.Broadcast.parseFrom(
                     ByteString.copyFrom(broadcastBytes)
             ));
+        }
+    }
+
+    private static class StaleBroadcast {
+
+        private final LocalDate day;
+        private final BroadcastRef broadcastRef;
+
+        private StaleBroadcast(LocalDate day, BroadcastRef broadcastRef) {
+            this.day = checkNotNull(day);
+            this.broadcastRef = checkNotNull(broadcastRef);
+        }
+
+        public static StaleBroadcast create(LocalDate day, BroadcastRef broadcastRef) {
+            return new StaleBroadcast(day, broadcastRef);
+        }
+
+        public LocalDate getDay() {
+            return day;
+        }
+
+        public BroadcastRef getBroadcastRef() {
+            return broadcastRef;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            StaleBroadcast that = (StaleBroadcast) o;
+            return Objects.equals(day, that.day) &&
+                    Objects.equals(broadcastRef, that.broadcastRef);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(day, broadcastRef);
         }
     }
 }

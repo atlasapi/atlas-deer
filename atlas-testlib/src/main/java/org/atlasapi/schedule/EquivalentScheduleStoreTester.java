@@ -37,8 +37,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -134,8 +134,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 18, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -186,8 +186,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -239,8 +239,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -291,8 +291,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -357,8 +357,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -425,8 +425,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -494,8 +494,8 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC),
-                new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC)
+                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
         );
 
         EquivalentSchedule resolved
@@ -517,10 +517,10 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
 
-        DateTime one = new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC);
-        DateTime two = new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC);
-        DateTime three = new DateTime(2014, 03, 21, 18, 00, 00, 000, DateTimeZones.UTC);
-        DateTime four = new DateTime(2014, 03, 21, 19, 00, 00, 000, DateTimeZones.UTC);
+        DateTime one = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
+        DateTime two = new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC);
+        DateTime three = new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC);
+        DateTime four = new DateTime(2014, 3, 21, 19, 0, 0, 0, DateTimeZones.UTC);
 
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
@@ -555,12 +555,7 @@ public final class EquivalentScheduleStoreTester
                 ));
 
         EquivalentSchedule resolved
-                = get(getSubjectGenerator().getEquivalentScheduleStore()
-                .resolveSchedules(ImmutableList.of(channel),
-                        new Interval(one.plusMinutes(30), one.plusMinutes(30)),
-                        Publisher.METABROADCAST,
-                        ImmutableSet.of(Publisher.METABROADCAST)
-                ));
+                = getEquivalentSchedule(channel, one.plusMinutes(30), one.plusMinutes(30));
 
         EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
 
@@ -569,12 +564,7 @@ public final class EquivalentScheduleStoreTester
         assertThat(Iterables.getOnlyElement(broadcastItems.getResources()), is(item1));
 
         resolved
-                = get(getSubjectGenerator().getEquivalentScheduleStore()
-                .resolveSchedules(ImmutableList.of(channel),
-                        new Interval(one.plusMinutes(30), three),
-                        Publisher.METABROADCAST,
-                        ImmutableSet.of(Publisher.METABROADCAST)
-                ));
+                = getEquivalentSchedule(channel, one.plusMinutes(30), three);
 
         schedule = Iterables.getOnlyElement(resolved.channelSchedules());
 
@@ -589,12 +579,7 @@ public final class EquivalentScheduleStoreTester
         );
 
         resolved
-                = get(getSubjectGenerator().getEquivalentScheduleStore()
-                .resolveSchedules(ImmutableList.of(channel),
-                        new Interval(one.plusMinutes(30), three.plusMinutes(30)),
-                        Publisher.METABROADCAST,
-                        ImmutableSet.of(Publisher.METABROADCAST)
-                ));
+                = getEquivalentSchedule(channel, one.plusMinutes(30), three.plusMinutes(30));
 
         schedule = Iterables.getOnlyElement(resolved.channelSchedules());
 
@@ -613,10 +598,7 @@ public final class EquivalentScheduleStoreTester
         );
 
         resolved
-                = get(getSubjectGenerator().getEquivalentScheduleStore()
-                .resolveSchedules(ImmutableList.of(channel), new Interval(three, three),
-                        Publisher.METABROADCAST, ImmutableSet.of(Publisher.METABROADCAST)
-                ));
+                = getEquivalentSchedule(channel, three, three);
 
         schedule = Iterables.getOnlyElement(resolved.channelSchedules());
 
@@ -633,9 +615,9 @@ public final class EquivalentScheduleStoreTester
         Channel channel2 = Channel.builder(Publisher.BBC).build();
         channel2.setId(2L);
 
-        DateTime one = new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC);
-        DateTime two = new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC);
-        DateTime three = new DateTime(2014, 03, 21, 18, 00, 00, 000, DateTimeZones.UTC);
+        DateTime one = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
+        DateTime two = new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC);
+        DateTime three = new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC);
 
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
@@ -795,10 +777,10 @@ public final class EquivalentScheduleStoreTester
         Channel channel = Channel.builder(Publisher.BBC).build();
         channel.setId(1L);
 
-        DateTime one = new DateTime(2014, 03, 21, 16, 00, 00, 000, DateTimeZones.UTC);
-        DateTime two = new DateTime(2014, 03, 21, 17, 00, 00, 000, DateTimeZones.UTC);
-        DateTime three = new DateTime(2014, 03, 21, 18, 00, 00, 000, DateTimeZones.UTC);
-        DateTime four = new DateTime(2014, 03, 21, 19, 00, 00, 000, DateTimeZones.UTC);
+        DateTime one = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
+        DateTime two = new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC);
+        DateTime three = new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC);
+        DateTime four = new DateTime(2014, 3, 21, 19, 0, 0, 0, DateTimeZones.UTC);
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
@@ -1257,26 +1239,14 @@ public final class EquivalentScheduleStoreTester
 
         EquivalentChannelSchedule beforeSchedule
                 = Iterables.getOnlyElement(
-                get(
-                        getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
-                                ImmutableList.of(channel),
-                                new Interval(beforeStart, start.minusSeconds(1)),
-                                Publisher.METABROADCAST,
-                                ImmutableSet.of(Publisher.METABROADCAST)
-                        )).channelSchedules()
+                getEquivalentSchedule(channel, beforeStart, start.minusSeconds(1)).channelSchedules()
         );
 
         assertThat(beforeSchedule.getEntries().size(), is(1));
 
         EquivalentChannelSchedule afterSchedule
                 = Iterables.getOnlyElement(
-                get(
-                        getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
-                                ImmutableList.of(channel),
-                                new Interval(end.plusSeconds(1), afterEnd),
-                                Publisher.METABROADCAST,
-                                ImmutableSet.of(Publisher.METABROADCAST)
-                        )).channelSchedules()
+                getEquivalentSchedule(channel, end.plusSeconds(1), afterEnd).channelSchedules()
         );
 
         assertThat(afterSchedule.getEntries().size(), is(1));
@@ -1383,181 +1353,280 @@ public final class EquivalentScheduleStoreTester
 
     }
 
-    /**
-     * If two broadcasts exist on consecutive schedule days with the same ID, and
-     * the one on the second day is marked as stale, the first broadcast should
-     * not be removed. In the case where the update interval spans from the first
-     * day to the second day, the broadcast on the first day was being removed.
-     *
-     * TODO: If the remaining, valid, broadcasts is within the update window, but
-     *       on the same calendar day as the stale broadcast, it will be removed.
-     */
-    public void testOnlyRemovesStaleBroadcastFromOutsideInterval() throws Exception {
-
+    public void testDoesNotRemoveStaleBroadcastsFromOutsideInterval() throws Exception {
 
         Channel channel = Channel.builder(Publisher.METABROADCAST).build();
         channel.setId(1L);
 
-        DateTime item1BroadcastStart = new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC);
-        DateTime item1BroadcastEnd = new DateTime(2015, 10, 25, 22, 0, 0, 0, DateTimeZones.UTC);
-        DateTime item2BroadcastStart = new DateTime(2015, 10, 26, 19, 30, 0, 0, DateTimeZones.UTC);
-        DateTime item2BroadcastEnd = new DateTime(2015, 10, 26, 23, 0, 0, 0, DateTimeZones.UTC);
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
-        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
-        Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("bid1");
 
-        Broadcast item1Broadcast = new Broadcast(channel, item1BroadcastStart, item1BroadcastEnd).withId("bid1");
-        Broadcast item2Broadcast = new Broadcast(channel, item2BroadcastStart, item2BroadcastEnd).withId("bid1");
+        item.addBroadcast(broadcast);
+        getSubjectGenerator().getContentStore().writeContent(item);
 
-        item1.addBroadcast(item1Broadcast);
-        item2.addBroadcast(item2Broadcast);
-
-        getSubjectGenerator().getContentStore().writeContent(item1);
-        getSubjectGenerator().getContentStore().writeContent(item2);
-
-        ScheduleRef update1 = ScheduleRef.forChannel(channel.getId(), new Interval(item1BroadcastStart, item2BroadcastEnd))
-                .addEntry(item1.getId(), item1Broadcast.toRef())
-                .addEntry(item2.getId(), item2Broadcast.toRef())
-                .build();
-
-        getSubjectGenerator().getEquivalentScheduleStore()
-                             .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, update1, ImmutableSet.of()));
-
-        Broadcast item2NewBroadcast = new Broadcast(channel, item2BroadcastStart, item2BroadcastEnd).withId("bid2");
-        item2.setBroadcasts(ImmutableSet.of(item2NewBroadcast));
-
-        getSubjectGenerator().getContentStore().writeContent(item2);
-
-        ScheduleRef update2 = ScheduleRef.forChannel(channel.getId(), new Interval(item1BroadcastStart, item2BroadcastEnd))
-                .addEntry(item1.getId(), item1Broadcast.toRef())
-                .addEntry(item2.getId(), item2NewBroadcast.toRef())
-                .build();
-
-        getSubjectGenerator().getEquivalentScheduleStore()
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST, update1, ImmutableSet.of(item2Broadcast.toRef())));
-
-        EquivalentSchedule resolved = get(
-                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
-                        ImmutableList.of(channel),
-                        new Interval(item1BroadcastStart, item1BroadcastEnd),
-                        Publisher.METABROADCAST,
-                        ImmutableSet.of(Publisher.METABROADCAST)
+        ScheduleRef broadcastUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
                 )
+        )
+                .addEntry(item.getId(), broadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        broadcastUpdate,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
         );
 
-        EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
-        assertThat(schedule.getEntries().size(), is(1));
+        ScheduleRef updateThatShouldNotDeleteBroadcast = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 17, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        updateThatShouldNotDeleteBroadcast,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
+
+        ScheduleRef updateThatShouldDeleteBroadcast = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        updateThatShouldDeleteBroadcast,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
     }
 
-    public void testDoesnRemoveStaleBroadcastsFromOutsideInterval() throws Exception {
+    public void testBroadcastSpanningMultipleRowsGettingShortenedToOneRowIsRemovedFromOtherRows()
+            throws Exception {
 
         Channel channel = Channel.builder(Publisher.METABROADCAST).build();
         channel.setId(1L);
 
-        /*
-        The test case here is testing that when there's a broadcast that spans multiple rows gets
-        shortened to be only one row will get deleted from the correct row under certain conditions.
-        Example sequence of updates:
-        Update 1
-        item1 -> (2015-10-25T19:30:00.000Z -> 2015-10-26T10:00:00.000Z)
-        item2 -> (2015-10-26T10:00:00.000Z -> 2015-10-26T12:00:00.000Z)
-        Update 2
-        item1 -> (2015-10-25T19:30:00.000Z -> 2015-10-26T00:00:00.000Z)
-        item3 -> (2015-10-26T00:00:00.000Z -> 2015-10-26T06:00:00.000Z)
-        Update 3
-        item4 -> (2015-10-26T06:00:00.000Z -> 2015-10-26T10:00:00.000Z)
-        item2 -> (2015-10-26T10:00:00.000Z -> 2015-10-26T12:00:00.000Z)
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
-        After update2 the broadcast for item1 will be modified in the row for 2015-10-25 with
-        updated end time, but will be orphaned in the row for 2015-10-26 with incorrect times.
-
-        During update 3 for row for 2015-10-26, this broadcast is considered stale(it's not in the
-        update for the interval) and it's get deleted. The problem is that it is deleted from the
-        interval of the broadcast(which includes 2015-10-25) rather than interval of the update,
-        which causes a correct broadcast from 2015-10-25 to be deleted
-
-        The solution for this is to only delete stale broadcasts from update intervals, not the
-        broadcast intervals
-        */
-
-        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
-        Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
-        Item item3 = new Item(Id.valueOf(3), Publisher.METABROADCAST);
-        Item item4 = new Item(Id.valueOf(4), Publisher.METABROADCAST);
-
-        Broadcast item1Broadcast1 = new Broadcast(
+        Broadcast broadcast = new Broadcast(
                 channel,
                 new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
                 new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC)
         )
                 .withId("bid1");
 
-        //it's the same broadcast that got shortened
-        Broadcast item1Broadcast2 = new Broadcast(
+        Broadcast updatedBroadcast = new Broadcast(
                 channel,
                 new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
                 new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
         )
                 .withId("bid1");
 
-        Broadcast item2Broadcast = new Broadcast(
-                channel,
-                new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 26, 12, 0, 0, 0, DateTimeZones.UTC)
-        )
-                .withId("bid2");
+        item.addBroadcast(broadcast);
+        getSubjectGenerator().getContentStore().writeContent(item);
 
-        Broadcast item3Broadcast = new Broadcast(
-                channel,
-                new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 26, 6, 0, 0, 0, DateTimeZones.UTC)
-        )
-                .withId("bid3");
-
-        Broadcast item4Broadcast = new Broadcast(
-                channel,
-                new DateTime(2015, 10, 26, 6, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC)
-        )
-                .withId("bid4");
-
-        item1.addBroadcast(item1Broadcast1);
-        getSubjectGenerator().getContentStore().writeContent(item1);
-
-        item2.addBroadcast(item2Broadcast);
-        getSubjectGenerator().getContentStore().writeContent(item2);
-
-        ScheduleRef update1 = ScheduleRef.forChannel(
+        ScheduleRef updateA = ScheduleRef.forChannel(
                 channel.getId(),
-                new Interval(new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
                         new DateTime(2015, 10, 26, 12, 0, 0, 0, DateTimeZones.UTC)
                 )
         )
-                .addEntry(item1.getId(), item1Broadcast1.toRef())
-                .addEntry(item2.getId(), item2Broadcast.toRef())
+                .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
         getSubjectGenerator().getEquivalentScheduleStore()
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        update1,
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        updateA,
                         ImmutableSet.of()
                 ));
 
-        item1.setBroadcasts(ImmutableSet.of(item1Broadcast2));
-        getSubjectGenerator().getContentStore().writeContent(item1);
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
 
-        item3.addBroadcast(item3Broadcast);
-        getSubjectGenerator().getContentStore().writeContent(item3);
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
 
-        ScheduleRef update2 = ScheduleRef.forChannel(
+        item.setBroadcasts(ImmutableSet.of(updatedBroadcast));
+        getSubjectGenerator().getContentStore().writeContent(item);
+
+        ScheduleRef updateB = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
                         new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
                         new DateTime(2015, 10, 26, 6, 0, 0, 0, DateTimeZones.UTC)
                 )
         )
-                .addEntry(item1.getId(), item1Broadcast2.toRef())
-                .addEntry(item3.getId(), item3Broadcast.toRef())
+                .addEntry(item.getId(), updatedBroadcast.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        updateB,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
+
+        assertThat(
+                getScheduleEntries(channel,
+                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
+    }
+
+    public void testBroadcastsInAdjacentDaysWithSameIdsDoNotPreventRemovalOfStaleBroadcasts()
+            throws Exception {
+
+        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
+        channel.setId(1L);
+
+        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
+
+        Broadcast broadcast1 = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("bid1");
+
+        Broadcast broadcast2 = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("bid1");
+
+        item1.addBroadcast(broadcast1);
+        getSubjectGenerator().getContentStore().writeContent(item1);
+
+        item2.addBroadcast(broadcast2);
+        getSubjectGenerator().getContentStore().writeContent(item2);
+
+        ScheduleRef update1 = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item1.getId(), broadcast1.toRef())
+                .addEntry(item2.getId(), broadcast2.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        update1,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
+
+        ScheduleRef update2 = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
 
         getSubjectGenerator().getEquivalentScheduleStore()
@@ -1567,67 +1636,48 @@ public final class EquivalentScheduleStoreTester
                         ImmutableSet.of()
                 ));
 
-        item4.addBroadcast(item4Broadcast);
-        getSubjectGenerator().getContentStore().writeContent(item4);
-
-        ScheduleRef update3 = ScheduleRef.forChannel(
-                channel.getId(),
-                new Interval(
-                        new DateTime(2015, 10, 26, 6, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 12, 0, 0, 0, DateTimeZones.UTC)
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
                 )
+                        .isEmpty(),
+                is(true)
+        );
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
+    }
+
+    private ImmutableList<EquivalentScheduleEntry> getScheduleEntries(
+            Channel channel, DateTime start, DateTime end
+    ) throws Exception {
+        return Iterables.getOnlyElement(
+                getEquivalentSchedule(channel, start, end)
+                        .channelSchedules()
         )
-                .addEntry(item4.getId(), item4Broadcast.toRef())
-                .addEntry(item2.getId(), item2Broadcast.toRef())
-                .build();
+                .getEntries();
+    }
 
-        getSubjectGenerator().getEquivalentScheduleStore()
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        update3,
-                        ImmutableSet.of()
-                ));
-
-        EquivalentSchedule resolved = get(
-                getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
-                        ImmutableList.of(channel),
-                        new Interval(new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
-                                new DateTime(2015, 10, 26, 12, 0, 0, 0, DateTimeZones.UTC)
-                        ),
-                        Publisher.METABROADCAST,
-                        ImmutableSet.of(Publisher.METABROADCAST)
-                )
-        );
-
-        EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
-
-        assertThat(schedule.getEntries().size(), is(4));
-        assertThat(
-                Iterables.getOnlyElement(
-                        schedule.getEntries().get(0).getItems().getResources()
-                ),
-                is(item1)
-        );
-
-        assertThat(
-                Iterables.getOnlyElement(
-                        schedule.getEntries().get(1).getItems().getResources()
-                ),
-                is(item3)
-        );
-
-        assertThat(
-                Iterables.getOnlyElement(
-                        schedule.getEntries().get(2).getItems().getResources()
-                ),
-                is(item4)
-        );
-
-        assertThat(
-                Iterables.getOnlyElement(
-                        schedule.getEntries().get(3).getItems().getResources()
-                ),
-                is(item2)
-        );
+    private EquivalentSchedule getEquivalentSchedule(
+            Channel channel, DateTime start, DateTime end
+    ) throws Exception {
+        return get(
+                    getSubjectGenerator().getEquivalentScheduleStore().resolveSchedules(
+                            ImmutableList.of(channel),
+                            new Interval(start, end),
+                            Publisher.METABROADCAST,
+                            ImmutableSet.of(Publisher.METABROADCAST)
+                    )
+            );
     }
 
     private <T> T get(ListenableFuture<T> future) throws Exception {
