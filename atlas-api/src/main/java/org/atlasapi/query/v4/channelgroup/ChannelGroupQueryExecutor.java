@@ -15,6 +15,7 @@ import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelGroupRef;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelGroupSummary;
+import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
@@ -25,7 +26,6 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryContext;
@@ -34,7 +34,6 @@ import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.UncheckedQueryExecutionException;
 
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;
 
@@ -44,7 +43,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.LocalDate;
@@ -55,16 +53,6 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private final ChannelGroupResolver channelGroupResolver;
     private final ChannelResolver channelResolver;
-
-    private final ImmutableList<Publisher> whitelistedPublishers =
-            ImmutableList.<Publisher>builder().add(
-                    Publisher.BT_TV_CHANNELS,
-                    Publisher.BT_TV_CHANNELS_REFERENCE,
-                    Publisher.BT_TV_CHANNELS_TEST1,
-                    Publisher.BT_TV_CHANNELS_TEST2,
-                    Publisher.MAGPIE
-            ).build();
-
 
     public ChannelGroupQueryExecutor(
             ChannelGroupResolver channelGroupResolver,
@@ -187,8 +175,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                                     ctxt,
                                     Annotation.GENERIC_CHANNEL_GROUPS_SUMMARY
                             )
-                            ? this::publisherIsWhitelisted
-                            : publisher -> true
+                            ? this::isChannelGroupMembership
+                            : channelGroupMembership -> true
                     )
             );
         } else if (contextHasAnnotation(ctxt, Annotation.ADVERTISED_CHANNELS) ||
@@ -234,7 +222,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     }
 
     private Optional<Iterable<ResolvedChannel>> resolveChannelsWithChannelGroups(
-            ChannelGroup<?> entity, Function<ChannelGroupRef, Boolean> whitelistedChannelGroupPredicate
+            ChannelGroup<?> entity, Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
     ) {
         Optional<Iterable<ResolvedChannel>> channels = resolveAdvertisedChannels(entity);
         if (!channels.isPresent()) {
@@ -258,11 +246,11 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
 
     private Optional<List<ChannelGroupSummary>> resolveChannelGroupSummaries(
             Channel channel,
-            Function<ChannelGroupRef, Boolean> whitelistedChannelGroupPredicate
+            Function<ChannelGroupMembership, Boolean> whitelistedChannelGroupPredicate
     ) {
         Iterable<Id> channelGroupIds = channel.getChannelGroups().stream()
-                .map(ChannelGroupMembership::getChannelGroup)
                 .filter(whitelistedChannelGroupPredicate::apply)
+                .map(ChannelGroupMembership::getChannelGroup)
                 .map(ResourceRef::getId)
                 .collect(MoreCollectors.toImmutableList());
 
@@ -328,7 +316,7 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                         ).contains(annotation.toKey()));
     }
 
-    private boolean publisherIsWhitelisted(ChannelGroupRef channelGroupRef) {
-        return whitelistedPublishers.contains(channelGroupRef.getSource());
+    private boolean isChannelGroupMembership(ChannelGroupMembership channelGroupMembership) {
+        return !(channelGroupMembership instanceof ChannelNumbering);
     }
 }
