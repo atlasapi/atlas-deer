@@ -277,16 +277,21 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     updateBroadcastRefs, currentBroadcastRefs
             );
 
+            List<LocalDate> daysInInterval = daysIn(update.getSchedule().getInterval());
+
+            ImmutableSet<StaleBroadcast> staleBroadcastsInInterval = staleBroadcasts.stream()
+                    .filter(staleBroadcast -> daysInInterval.contains(staleBroadcast.getDay()))
+                    .collect(MoreCollectors.toImmutableSet());
+
             List<Statement> deletes = deleteStatements(
                     update.getSource(),
-                    staleBroadcasts,
-                    update.getSchedule().getInterval()
+                    staleBroadcastsInInterval
             );
 
             log.info(
                     "Processing equivalent schedule update for {} {} {}: currentEntries:{}, "
-                            + "update:{}, stale broadcasts from update: {}, stale broadcasts "
-                            + "from store: {}",
+                            + "update:{}, stale broadcasts from update:{}, stale broadcasts:{}, "
+                            + "stale broadcasts in interval:{}",
                     update.getSource(),
                     update.getSchedule().getChannel().longValue(),
                     update.getSchedule().getInterval(),
@@ -294,6 +299,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     updateLog(updateBroadcastRefs),
                     updateLog(update.getStaleBroadcasts()),
                     updateLog(staleBroadcasts.stream()
+                            .map(StaleBroadcast::getBroadcastRef)
+                            .collect(MoreCollectors.toImmutableSet())),
+                    updateLog(staleBroadcastsInInterval.stream()
                             .map(StaleBroadcast::getBroadcastRef)
                             .collect(MoreCollectors.toImmutableSet()))
             );
@@ -589,13 +597,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private List<Statement> deleteStatements(
             Publisher src,
-            Set<StaleBroadcast> staleBroadcasts,
-            Interval interval
+            Set<StaleBroadcast> staleBroadcasts
     ) {
-        List<LocalDate> daysInInterval = daysIn(interval);
-
         return staleBroadcasts.stream()
-                .filter(staleBroadcast -> daysInInterval.contains(staleBroadcast.getDay()))
                 .map(staleBroadcast -> broadcastDelete.bind()
                         .setString(
                                 "source",
