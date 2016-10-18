@@ -56,13 +56,14 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
     private final ChannelGroupResolver channelGroupResolver;
     private final ChannelResolver channelResolver;
 
-    private final List<Publisher> whitelistedPublishers = Lists.newArrayList(
-            Publisher.BT_TV_CHANNELS,
-            Publisher.BT_TV_CHANNELS_REFERENCE,
-            Publisher.BT_TV_CHANNELS_TEST1,
-            Publisher.BT_TV_CHANNELS_TEST2,
-            Publisher.MAGPIE
-    );
+    private final ImmutableList<Publisher> whitelistedPublishers =
+            ImmutableList.<Publisher>builder().add(
+                    Publisher.BT_TV_CHANNELS,
+                    Publisher.BT_TV_CHANNELS_REFERENCE,
+                    Publisher.BT_TV_CHANNELS_TEST1,
+                    Publisher.BT_TV_CHANNELS_TEST2,
+                    Publisher.MAGPIE
+            ).build();
 
 
     public ChannelGroupQueryExecutor(
