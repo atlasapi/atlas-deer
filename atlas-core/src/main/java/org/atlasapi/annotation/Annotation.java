@@ -48,8 +48,8 @@ public enum Annotation {
     PRODUCTS,
     RECENTLY_BROADCAST,
     CHANNELS,
-    CHANNEL_GROUPS_SUMMARY,
-    GENERIC_CHANNEL_GROUPS_SUMMARY,
+    @Deprecated CHANNEL_GROUPS_SUMMARY,             // causes performance problems
+    @Deprecated GENERIC_CHANNEL_GROUPS_SUMMARY,     // only to be used by existing users of this annotation
     CONTENT_CHANNEL_SUMMARY,
     PUBLISHER,
     SERIES,
