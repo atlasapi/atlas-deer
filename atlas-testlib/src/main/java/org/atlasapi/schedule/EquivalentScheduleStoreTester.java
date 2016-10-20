@@ -1657,6 +1657,87 @@ public final class EquivalentScheduleStoreTester
         );
     }
 
+    public void testWritingBroadcastThatHasChangedSourceIdWritesTheCorrectClusteringKey()
+            throws Exception {
+
+        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
+        channel.setId(1L);
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+
+        Broadcast broadcastWithOriginalId = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        Broadcast broadcastWithUpdatedId = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("changedId");
+
+        item.addBroadcast(broadcastWithUpdatedId);
+        getSubjectGenerator().getContentStore().writeContent(item);
+
+        ScheduleRef updateThatAddsBroadcast = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item.getId(), broadcastWithOriginalId.toRef())
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        updateThatAddsBroadcast,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .size(),
+                is(1)
+        );
+
+        // If the broadcast has been written with the wrong source ID we will fail to remove it
+        // because we will be trying to remove the wrong key
+        ScheduleRef updateThatRemovesBroadcast = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .build();
+
+        getSubjectGenerator().getEquivalentScheduleStore()
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        updateThatRemovesBroadcast,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
+    }
+
     private ImmutableList<EquivalentScheduleEntry> getScheduleEntries(
             Channel channel, DateTime start, DateTime end
     ) throws Exception {

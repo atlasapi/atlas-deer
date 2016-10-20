@@ -537,9 +537,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ImmutableList.Builder<Statement> statements = ImmutableList.builder();
 
         for (ScheduleRef.Entry entry : scheduleRef.getScheduleEntries()) {
-            EquivalentScheduleEntry entryItems = content.get(entry);
-            if (entryItems != null) {
-                statements.addAll(statementsForEntry(source, entry, entryItems, now));
+            EquivalentScheduleEntry scheduleEntry = content.get(entry);
+            if (scheduleEntry != null) {
+                statements.addAll(statementsForEntry(source, scheduleEntry, now));
             } else {
                 log.warn("No content provided for entry " + entry);
             }
@@ -549,30 +549,31 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private List<Statement> statementsForEntry(
             Publisher source,
-            ScheduleRef.Entry entry,
             EquivalentScheduleEntry content,
             DateTime now
     ) throws WriteException {
         Equivalent<Item> items = content.getItems();
         int contentCount = items.getResources().size();
 
-        ByteBuffer serializedContent = serialize(items.getResources());
-        ByteBuffer graph = graphSerializer.serialize(items.getGraph());
-        ByteBuffer broadcast = serialize(content.getBroadcast());
+        Broadcast broadcast = content.getBroadcast();
 
-        return daysIn(entry.getBroadcast().getTransmissionInterval())
+        ByteBuffer serializedContent = serialize(items.getResources());
+        ByteBuffer serializedGraph = graphSerializer.serialize(items.getGraph());
+        ByteBuffer serializedBroadcast = serialize(broadcast);
+
+        return daysIn(broadcast.getTransmissionInterval())
                 .stream()
                 .map(day -> broadcastScheduleUpdate.bind()
                         .setString("source", source.key())
-                        .setLong("channel", entry.getBroadcast().getChannelId().longValue())
+                        .setLong("channel", broadcast.getChannelId().longValue())
                         .setTimestamp("day", toJavaUtilDate(day))
-                        .setString("broadcast", entry.getBroadcast().getSourceId())
-                        .setBytes("broadcastData", broadcast)
+                        .setString("broadcast", broadcast.getSourceId())
+                        .setBytes("broadcastData", serializedBroadcast)
                         .setTimestamp(
                                 "broadcastStartData",
-                                entry.getBroadcast().getTransmissionInterval().getStart().toDate()
+                                broadcast.getTransmissionInterval().getStart().toDate()
                         )
-                        .setBytes("graphData", graph)
+                        .setBytes("graphData", serializedGraph)
                         .setLong("contentCountData", contentCount)
                         .setBytes("contentData", serializedContent)
                         .setTimestamp("now", now.toDate()))
@@ -647,7 +648,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         CHANNEL.valueFrom(row),
                         SOURCE.valueFrom(row),
                         BROADCAST_ID.valueFrom(row)
-
                 );
                 continue;
             }
