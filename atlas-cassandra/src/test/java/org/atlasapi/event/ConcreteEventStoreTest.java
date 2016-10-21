@@ -26,11 +26,11 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.*;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -84,7 +84,7 @@ public class ConcreteEventStoreTest {
     @Test
     public void testWritePersistsNewEventIfNoneExists() throws Exception {
         when(persistenceStore.resolvePrevious(any(), any(), any()))
-                .thenReturn(Optional.<Event>absent());
+                .thenReturn(Optional.absent());
 
         Event expected = (Event) getEvent().build();
         eventStore.write(expected);
@@ -101,7 +101,7 @@ public class ConcreteEventStoreTest {
     @Test
     public void testWritePersistsNewEventUsesIdIfSpecified() throws Exception {
         when(persistenceStore.resolvePrevious(any(), any(), any()))
-                .thenReturn(Optional.<Event>absent());
+                .thenReturn(Optional.absent());
 
         Event expected = (Event) getEvent().withId(Id.valueOf(1111L)).build();
         eventStore.write(expected);
@@ -156,7 +156,7 @@ public class ConcreteEventStoreTest {
     @Test
     public void testWriteSendsResourceUpdatedMessage() throws Exception {
         when(persistenceStore.resolvePrevious(any(), any(), any()))
-                .thenReturn(Optional.<Event>absent());
+                .thenReturn(Optional.absent());
 
         Event expected = (Event) getEvent().withId(Id.valueOf(1L)).build();
         eventStore.write(expected);
