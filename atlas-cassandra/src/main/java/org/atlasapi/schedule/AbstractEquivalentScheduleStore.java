@@ -1,7 +1,6 @@
 package org.atlasapi.schedule;
 
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,20 +66,19 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
-        List<Date> daysInSchedule = daysIn(update.getSchedule().getInterval());
+        List<LocalDate> daysInSchedule = daysIn(update.getSchedule().getInterval());
 
-        ImmutableList<Date> staleBroadcastDays = update.getStaleBroadcasts()
+        ImmutableList<LocalDate> staleBroadcastDays = update.getStaleBroadcasts()
                 .stream()
                 .map(broadcastRef -> broadcastRef.getTransmissionInterval()
                         .getStart()
-                        .toLocalDate()
-                        .toDate())
+                        .toLocalDate())
                 .collect(MoreCollectors.toImmutableList());
 
         ImmutableSet<String> lockKeys = getLockKeys(
                 update.getSchedule().getChannel(),
                 update.getSource(),
-                ImmutableSet.<Date>builder()
+                ImmutableSet.<LocalDate>builder()
                         .addAll(daysInSchedule)
                         .addAll(staleBroadcastDays)
                         .build()
@@ -129,7 +127,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                     Item copy = item.copy();
                     copy.setBroadcasts(ImmutableSet.of(broadcast));
 
-                    List<Date> daysInInterval = daysIn(broadcast.getTransmissionInterval());
+                    List<LocalDate> daysInInterval = daysIn(broadcast.getTransmissionInterval());
 
                     ImmutableSet<String> lockKeys = getLockKeys(
                             broadcast.getChannelId(), item.getSource(), daysInInterval
@@ -178,23 +176,26 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
             Broadcast broadcast,
             EquivalenceGraph graph,
             ImmutableSet<Item> content,
-            List<Date> daysInInterval) throws WriteException;
+            List<LocalDate> daysInInterval
+    ) throws WriteException;
 
-    protected List<Date> daysIn(Interval interval) {
+    protected List<LocalDate> daysIn(Interval interval) {
         return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
-                .map(LocalDate::toDate)
                 .collect(Collectors.toList());
     }
 
-    private ImmutableSet<String> getLockKeys(Id channelId, Publisher source,
-            Iterable<Date> dates) {
+    private ImmutableSet<String> getLockKeys(
+            Id channelId,
+            Publisher source,
+            Iterable<LocalDate> dates
+    ) {
         return StreamSupport.stream(dates.spliterator(), false)
                 .map(date -> getLockKey(channelId, source, date))
                 .collect(MoreCollectors.toImmutableSet());
     }
 
-    private String getLockKey(Id channelId, Publisher source, Date date) {
-        return channelId.longValue() + "|" + source.key() + "|" + date.toInstant().toEpochMilli();
+    private String getLockKey(Id channelId, Publisher source, LocalDate date) {
+        return channelId.longValue() + "|" + source.key() + "|" + date.toString();
     }
 
     private Map<ScheduleRef.Entry, EquivalentScheduleEntry> contentFor(ScheduleRef schedule)
