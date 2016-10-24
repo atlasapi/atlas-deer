@@ -27,6 +27,7 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -60,71 +61,94 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class AbstractScheduleStore implements ScheduleStore {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractScheduleStore.class);
+
+    private static final String METER_CALLED = ".meter.called";
+    private static final String METER_FAILURE = ".meter.failure";
+
     private final ContentStore contentStore;
     private final MessageSender<ScheduleUpdateMessage> messageSender;
     private final BroadcastContiguityCheck contiguityCheck;
     private final ScheduleBlockUpdater blockUpdater;
+    private final MetricRegistry metricRegistry;
+    private final String writeSchedule;
 
-    public AbstractScheduleStore(ContentStore contentStore,
-            MessageSender<ScheduleUpdateMessage> sender) {
+    public AbstractScheduleStore(
+            ContentStore contentStore,
+            MessageSender<ScheduleUpdateMessage> sender,
+            MetricRegistry metricRegistry,
+            String metrixPrefix
+    ) {
         this.contentStore = checkNotNull(contentStore);
         this.messageSender = checkNotNull(sender);
         this.contiguityCheck = new BroadcastContiguityCheck();
         this.blockUpdater = new ScheduleBlockUpdater();
+
+        this.metricRegistry = metricRegistry;
+        writeSchedule = metrixPrefix + "writeSchedule";
     }
 
     @Override
     public List<WriteResult<? extends Content, Content>> writeSchedule(
             List<ScheduleHierarchy> content, Channel channel,
             Interval interval) throws WriteException {
-        if (content.isEmpty()) {
-            return ImmutableList.of();
-        }
-        List<ItemAndBroadcast> itemsAndBroadcasts = itemsAndBroadcasts(content);
-        checkArgument(
-                broadcastHaveIds(itemsAndBroadcasts),
-                "all broadcasts must have IDs"
-        );
-        checkArgument(broadcastsContiguous(itemsAndBroadcasts),
-                "broadcasts of items on %s not contiguous in %s", channel, interval
-        );
-        Publisher source = getSource(content);
+        metricRegistry.meter(writeSchedule + METER_CALLED).mark();
+        try {
+            if (content.isEmpty()) {
+                return ImmutableList.of();
+            }
+            List<ItemAndBroadcast> itemsAndBroadcasts = itemsAndBroadcasts(content);
+            checkArgument(
+                    broadcastHaveIds(itemsAndBroadcasts),
+                    "all broadcasts must have IDs"
+            );
+            checkArgument(broadcastsContiguous(itemsAndBroadcasts),
+                    "broadcasts of items on %s not contiguous in %s", channel, interval
+            );
+            Publisher source = getSource(content);
 
-        List<WriteResult<? extends Content, Content>> writeResults = writeContent(content);
-        if (!contentChanged(writeResults)) {
+            List<WriteResult<? extends Content, Content>> writeResults = writeContent(content);
+            if (!contentChanged(writeResults)) {
+                return writeResults;
+            }
+            List<ChannelSchedule> currentBlocks = resolveCurrentScheduleBlocks(
+                    source,
+                    channel,
+                    interval
+            );
+            List<ChannelSchedule> staleBlocks = resolveStaleScheduleBlocks(
+                    source,
+                    channel,
+                    interval
+            );
+            ScheduleBlocksUpdate update = blockUpdater.updateBlocks(
+                    currentBlocks,
+                    staleBlocks,
+                    itemsAndBroadcasts,
+                    channel,
+                    interval
+            );
+            log.info(
+                    "Processing schedule update for {} {} {}: currentEntries:{}, update:{}, stale broadcasts:{}",
+                    source,
+                    channel.getId().longValue(),
+                    interval,
+                    updateLog(currentBlocks),
+                    updateLog(itemsAndBroadcasts),
+                    updateLog(update.getStaleEntries())
+            );
+            for (ItemAndBroadcast staleEntry : Iterables.concat(
+                    update.getStaleEntries(),
+                    update.getStaleContent()
+            )) {
+                updateStaleItemInContentStore(staleEntry);
+            }
+            doWrite(source, removeAdditionalBroadcasts(update.getUpdatedBlocks()));
+            sendUpdateMessage(source, content, update, channel, interval);
             return writeResults;
+        } catch (WriteException | RuntimeException e) {
+            metricRegistry.meter(writeSchedule + METER_FAILURE).mark();
+            throw e;
         }
-        List<ChannelSchedule> currentBlocks = resolveCurrentScheduleBlocks(
-                source,
-                channel,
-                interval
-        );
-        List<ChannelSchedule> staleBlocks = resolveStaleScheduleBlocks(source, channel, interval);
-        ScheduleBlocksUpdate update = blockUpdater.updateBlocks(
-                currentBlocks,
-                staleBlocks,
-                itemsAndBroadcasts,
-                channel,
-                interval
-        );
-        log.info(
-                "Processing schedule update for {} {} {}: currentEntries:{}, update:{}, stale broadcasts:{}",
-                source,
-                channel.getId().longValue(),
-                interval,
-                updateLog(currentBlocks),
-                updateLog(itemsAndBroadcasts),
-                updateLog(update.getStaleEntries())
-        );
-        for (ItemAndBroadcast staleEntry : Iterables.concat(
-                update.getStaleEntries(),
-                update.getStaleContent()
-        )) {
-            updateStaleItemInContentStore(staleEntry);
-        }
-        doWrite(source, removeAdditionalBroadcasts(update.getUpdatedBlocks()));
-        sendUpdateMessage(source, content, update, channel, interval);
-        return writeResults;
     }
 
     private String updateLog(Iterable<ItemAndBroadcast> itemsAndBroadcasts) {

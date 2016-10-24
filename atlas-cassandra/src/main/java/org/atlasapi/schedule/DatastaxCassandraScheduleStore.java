@@ -78,9 +78,6 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
     private final PreparedStatement scheduleUpdate;
     private final PreparedStatement scheduleSelect;
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
-
     public DatastaxCassandraScheduleStore(
             String table,
             ContentStore contentStore,
@@ -94,7 +91,7 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(contentStore, sender);
+        super(contentStore, sender, metricRegistry, metricPrefix);
         this.table = checkNotNull(table);
         this.clock = checkNotNull(clock);
         this.readCl = checkNotNull(readCl);
@@ -117,9 +114,6 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                 .and(eq(CHANNEL_COLUMN, bindMarker("channel")))
                 .and(eq(DAY_COLUMN, bindMarker("day"))));
         this.scheduleSelect.setConsistencyLevel(readCl);
-
-        this.calledMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.called");
-        this.failureMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.failure");
     }
 
     @Override
@@ -160,7 +154,6 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
 
     @Override
     protected void doWrite(Publisher source, List<ChannelSchedule> blocks) {
-        calledMeter.mark();
         try {
             if (blocks.isEmpty()) {
                 return;
@@ -190,7 +183,6 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             }
             session.execute(batch);
         } catch (Exception e) {
-            failureMeter.mark();
             Throwables.propagate(e);
         }
     }

@@ -158,9 +158,6 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
                 }
             }, ItemAndBroadcast.toBroadcast());
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
-
     private AstyanaxCassandraScheduleStore(
             AstyanaxContext<Keyspace> context,
             String name,
@@ -172,7 +169,7 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(contentStore, messageSender);
+        super(contentStore, messageSender, metricRegistry, metricPrefix);
         this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
                 contentStore)));
         this.keyspace = context.getClient();
@@ -184,8 +181,6 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
         this.clock = clock;
         this.readCl = readCl;
         this.writeCl = writeCl;
-        calledMeter = metricRegistry.meter(metricPrefix + "meter.called");
-        failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 
     @Override
@@ -311,7 +306,6 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
 
     @Override
     protected void doWrite(Publisher source, List<ChannelSchedule> blocks) throws WriteException {
-        calledMeter.mark();
         try {
             MutationBatch batch = keyspace.prepareMutationBatch().withConsistencyLevel(writeCl);
             for (ChannelSchedule block : blocks) {
@@ -331,7 +325,6 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
                 throw new WriteException(ce);
             }
         } catch (WriteException | RuntimeException e) {
-            failureMeter.mark();
             throw e;
         }
     }

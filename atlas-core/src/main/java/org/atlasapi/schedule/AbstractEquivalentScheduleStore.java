@@ -27,6 +27,7 @@ import org.atlasapi.media.entity.Publisher;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -44,54 +45,82 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentScheduleStore.class);
 
+    private static final String METER_CALLED = ".meter.called";
+    private static final String METER_FAILURE = ".meter.failure";
+
     private final EquivalenceGraphStore graphStore;
     private final ContentResolver contentStore;
 
     private final FlexibleBroadcastMatcher broadcastMatcher
             = new FlexibleBroadcastMatcher(Duration.standardMinutes(10));
 
-    public AbstractEquivalentScheduleStore(EquivalenceGraphStore graphStore,
-            ContentResolver contentStore) {
+    private final MetricRegistry metricRegistry;
+    private final String updateSchedule;
+    private final String updateEquivalences;
+
+
+    public AbstractEquivalentScheduleStore(
+            EquivalenceGraphStore graphStore,
+            ContentResolver contentStore,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
         this.graphStore = checkNotNull(graphStore);
         this.contentStore = checkNotNull(contentStore);
+        this.metricRegistry = metricRegistry;
+
+        updateSchedule = metricPrefix + "updateSchedule";
+        updateEquivalences = metricPrefix + "updateEquivalences";
     }
 
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
-        writeSchedule(update, contentFor(update.getSchedule()));
+        metricRegistry.meter(updateSchedule + METER_CALLED).mark();
+        try {
+            writeSchedule(update, contentFor(update.getSchedule()));
+        } catch (WriteException | RuntimeException e) {
+            metricRegistry.meter(updateSchedule + METER_FAILURE).mark();
+            throw e;
+        }
     }
 
     @Override
     public final void updateEquivalences(ImmutableSet<EquivalenceGraph> graphs)
             throws WriteException {
-        for (EquivalenceGraph graph : graphs) {
-            Resolved<Content> graphContent = get(contentStore.resolveIds(graph.getEquivalenceSet()));
-            for (Content elem : graphContent.getResources()) {
-                if (elem instanceof Item) {
-                    Item item = (Item) elem;
+        metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
+        try {
+            for (EquivalenceGraph graph : graphs) {
+                Resolved<Content> graphContent = get(contentStore.resolveIds(graph.getEquivalenceSet()));
+                for (Content elem : graphContent.getResources()) {
+                    if (elem instanceof Item) {
+                        Item item = (Item) elem;
 
-                    Iterable<Broadcast> activelyPublishedBroadcasts = item.getBroadcasts()
-                            .stream()
-                            .filter(Broadcast::isActivelyPublished)
-                            .collect(Collectors.toList());
+                        Iterable<Broadcast> activelyPublishedBroadcasts = item.getBroadcasts()
+                                .stream()
+                                .filter(Broadcast::isActivelyPublished)
+                                .collect(Collectors.toList());
 
-                    for (Broadcast broadcast : activelyPublishedBroadcasts) {
-                        Item copy = item.copy();
-                        copy.setBroadcasts(ImmutableSet.of(broadcast));
+                        for (Broadcast broadcast : activelyPublishedBroadcasts) {
+                            Item copy = item.copy();
+                            copy.setBroadcasts(ImmutableSet.of(broadcast));
 
-                        updateEquivalentContent(
-                                item.getSource(),
-                                broadcast,
-                                graph,
-                                equivItems(
-                                        copy,
-                                        broadcast,
-                                        graphContent.getResources().filter(Item.class)
-                                )
-                        );
+                            updateEquivalentContent(
+                                    item.getSource(),
+                                    broadcast,
+                                    graph,
+                                    equivItems(
+                                            copy,
+                                            broadcast,
+                                            graphContent.getResources().filter(Item.class)
+                                    )
+                            );
+                        }
                     }
                 }
             }
+        } catch (WriteException | RuntimeException e) {
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
+            throw e;
         }
     }
 

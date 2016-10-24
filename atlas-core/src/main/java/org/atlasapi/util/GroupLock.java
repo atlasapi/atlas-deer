@@ -11,6 +11,8 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * <p> Lock multiple values simultaneously. This intended for use for controlling access by a number
  * of threads to a number of resources, identified by values of type {@code T}. </p>
@@ -54,8 +56,8 @@ public final class GroupLock<T> {
     ) {
         this.ordering = ordering;
 
-        this.idsLocked = metricRegistry.histogram(metricPrefix + "histogram.idsLocked");
-        this.threadsLocked = metricRegistry.counter(metricPrefix + "counter.threadsLocked");
+        this.idsLocked = metricRegistry.histogram(checkNotNull(metricPrefix) + "histogram.idsLocked");
+        this.threadsLocked = metricRegistry.counter(checkNotNull(metricPrefix) + "counter.threadsLocked");
 
     }
 
@@ -70,9 +72,12 @@ public final class GroupLock<T> {
      */
     public void lock(T id) throws InterruptedException {
         threadsLocked.inc();
-        idsLocked.update(1);
-        lockInternal(id);
-        threadsLocked.dec();
+        try {
+            idsLocked.update(1);
+            lockInternal(id);
+        } finally {
+            threadsLocked.dec();
+        }
     }
 
     /**
@@ -89,7 +94,6 @@ public final class GroupLock<T> {
         synchronized (locked) {
             if (locked.remove(id)) {
                 log.trace("{} unlocked {}", Thread.currentThread().getName(), id.toString());
-                idsLocked.update(-1);
                 locked.notifyAll();
             }
         }
@@ -103,15 +107,12 @@ public final class GroupLock<T> {
      * @throws InterruptedException thread was interrupted whilst waiting for the lock.
      */
     public boolean tryLock(T id) throws InterruptedException {
-        log.trace("{} attempting to lock {}", Thread.currentThread().getName(), id.toString());
-        synchronized (locked) {
-            if (!locked.contains(id)) {
-                log.trace("{} got lock for {}", Thread.currentThread().getName(), id.toString());
-                lock(id);
-                return true;
-            }
-            log.trace("{} didnt get lock {}", Thread.currentThread().getName(), id.toString());
-            return false;
+        threadsLocked.inc();
+        try {
+            idsLocked.update(1);
+            return tryLockInternal(id);
+        } finally {
+            threadsLocked.dec();
         }
     }
 
@@ -128,12 +129,14 @@ public final class GroupLock<T> {
      */
     public void lock(Set<T> ids) throws InterruptedException {
         threadsLocked.inc();
-        idsLocked.update(ids.size());
-        for (T id : ordering.sortedCopy(ids)) {
-            lockInternal(id);
+        try {
+            idsLocked.update(ids.size());
+            for (T id : ordering.sortedCopy(ids)) {
+                lockInternal(id);
+            }
+        } finally {
+            threadsLocked.dec();
         }
-        threadsLocked.dec();
-
     }
 
     /**
@@ -155,16 +158,19 @@ public final class GroupLock<T> {
      * @throws InterruptedException thread was interrupted whilst waiting for the lock.
      */
     public boolean tryLock(Set<T> ids) throws InterruptedException {
-        synchronized (locked) {
-            List<T> orderedIds = ordering.sortedCopy(ids);
+        threadsLocked.inc();
+        try {
             idsLocked.update(ids.size());
+            List<T> orderedIds = ordering.sortedCopy(ids);
             for (T id : orderedIds) {
-                if (!tryLock(id)) {
+                if(!tryLockInternal(id)) {
                     unlockTill(orderedIds, id);
                     return false;
                 }
             }
             return true;
+        } finally {
+            threadsLocked.dec();
         }
     }
 
@@ -181,6 +187,19 @@ public final class GroupLock<T> {
             }
             log.trace("{} acquired lock for {}", Thread.currentThread().getName(), id.toString());
             locked.add(id);
+        }
+    }
+
+    private boolean tryLockInternal(T id) throws InterruptedException {
+        log.trace("{} trying to lock {}", Thread.currentThread().getName(), id.toString());
+        synchronized (locked) {
+            if(!locked.contains(id)) {
+                locked.add(id);
+                return true;
+            } else {
+                log.trace("{} didnt get lock {}", Thread.currentThread().getName(), id.toString());
+                return false;
+            }
         }
     }
 

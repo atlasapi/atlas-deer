@@ -90,6 +90,9 @@ public class CqlContentStore implements ContentStore {
 
     private static final long READ_TIMEOUT_SECONDS = 5L;
 
+    private static final String METER_CALLED = ".meter.called";
+    private static final String METER_FAILURE = ".meter.failure";
+
     private final Session session;
     private final Mapper<org.atlasapi.content.v2.model.Content> mapper;
     private final ContentAccessor accessor;
@@ -111,8 +114,11 @@ public class CqlContentStore implements ContentStore {
     private final ContentHasher hasher;
     private final EquivalenceGraphStore graphStore;
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
+    private final String writeContent;
+    private final String writeBroadcast;
+
+    private final MetricRegistry metricRegistry;
+
 
     public CqlContentStore(
             Session session,
@@ -140,10 +146,10 @@ public class CqlContentStore implements ContentStore {
         this.hasher = checkNotNull(hasher);
         this.graphStore = checkNotNull(graphStore);
 
-        calledMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.called");
-        failureMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.failure");
+        writeContent = metricPrefix + "writeContent";
+        writeBroadcast = metricPrefix + "writeBroadcast";
+
+        this.metricRegistry = metricRegistry;
     }
 
     public static Builder builder() {
@@ -152,7 +158,7 @@ public class CqlContentStore implements ContentStore {
 
     @Override
     public WriteResult<Content, Content> writeContent(Content content) throws WriteException {
-        calledMeter.mark();
+        metricRegistry.meter(writeContent + METER_CALLED).mark();
         try {
             checkArgument(
                     !(content instanceof Episode) || ((Episode) content).getContainerRef() != null,
@@ -200,7 +206,7 @@ public class CqlContentStore implements ContentStore {
 
             return new WriteResult<>(content, true, DateTime.now(), previous);
         } catch (WriteException | RuntimeException e) {
-            failureMeter.mark();
+            metricRegistry.meter(writeContent + METER_FAILURE).mark();
             throw e;
         }
     }
@@ -212,6 +218,7 @@ public class CqlContentStore implements ContentStore {
             Optional<SeriesRef> seriesRef,
             Broadcast broadcast
     ) {
+        metricRegistry.meter(writeBroadcast + METER_CALLED).mark();
         try {
             BatchStatement batch = new BatchStatement();
 
@@ -274,7 +281,7 @@ public class CqlContentStore implements ContentStore {
                     item
             )));
         } catch (RuntimeException e) {
-            failureMeter.mark();
+            metricRegistry.meter(writeBroadcast + METER_FAILURE).mark();
             Throwables.propagate(e);
         }
     }
@@ -801,43 +808,43 @@ public class CqlContentStore implements ContentStore {
         private Builder() {
         }
 
-        public Builder withSession(Session val) {
-            session = val;
+        public Builder withSession(Session session) {
+            this.session = session;
             return this;
         }
 
-        public Builder withIdGenerator(IdGenerator val) {
-            idGenerator = val;
+        public Builder withIdGenerator(IdGenerator idGenerator) {
+            this.idGenerator = idGenerator;
             return this;
         }
 
-        public Builder withSender(MessageSender<ResourceUpdatedMessage> val) {
-            sender = val;
+        public Builder withSender(MessageSender<ResourceUpdatedMessage> sender) {
+            this.sender = sender;
             return this;
         }
 
-        public Builder withClock(Clock val) {
-            clock = val;
+        public Builder withClock(Clock clock) {
+            this.clock = clock;
             return this;
         }
 
-        public Builder withHasher(ContentHasher val) {
-            hasher = val;
+        public Builder withHasher(ContentHasher hasher) {
+            this.hasher = hasher;
             return this;
         }
 
-        public Builder withGraphStore(EquivalenceGraphStore val) {
-            graphStore = val;
+        public Builder withGraphStore(EquivalenceGraphStore graphStore) {
+            this.graphStore = graphStore;
             return this;
         }
 
-        public Builder withMetricRegistry(MetricRegistry val) {
-            metricRegistry = val;
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
             return this;
         }
 
-        public Builder withMetricPrefix(String val) {
-            metricPrefix = val;
+        public Builder withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
             return this;
         }
 

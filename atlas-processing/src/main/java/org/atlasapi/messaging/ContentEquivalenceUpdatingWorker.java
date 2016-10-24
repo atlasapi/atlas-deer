@@ -69,7 +69,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         metricRegistry.meter(
                 String.format(
                         publisherMeterName,
-                        message.getPublishers().iterator().next().toString()
+                        message.getSubject().getSource()
                 ))
                 .mark();
 

@@ -41,6 +41,9 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private static final String PRIMARY_KEY_COLUMN = "organisation_id";
     private static final String DATA_COLUMN = "data";
 
+    private static final String METER_CALLED = ".meter.called";
+    private static final String METER_FAILURE = ".meter.failure";
+
     private final String KEYS = "keys";
     private final String ORGANISATION_ID = "organisationId";
     private final String DATA = "data";
@@ -56,8 +59,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private final PreparedStatement rowUpdate;
     private final PreparedStatement selectStatement;
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
+    private final MetricRegistry metricRegistry;
+    private final String write;
 
     protected DatastaxCassandraOrganisationStore(
             Session session,
@@ -84,10 +87,9 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
                 .with(set(DATA_COLUMN, bindMarker(DATA))))
                 .setConsistencyLevel(writeConsistency);
 
-        this.calledMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.called");
-        this.failureMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.failure");
+        this.metricRegistry = metricRegistry;
+
+        write = metricPrefix + "write";
 
     }
 
@@ -117,7 +119,7 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     @Override
     public Organisation write(Organisation organisation) {
-        calledMeter.mark();
+        metricRegistry.meter(write + METER_CALLED).mark();
         try {
             Id id = organisation.getId();
             ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation)
@@ -136,7 +138,7 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
             return organisation;
         } catch (RuntimeException e) {
-            failureMeter.mark();
+            metricRegistry.meter(write + METER_FAILURE).mark();
             throw Throwables.propagate(e);
         }
     }

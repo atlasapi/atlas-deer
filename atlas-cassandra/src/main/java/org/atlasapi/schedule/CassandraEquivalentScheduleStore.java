@@ -103,6 +103,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private static final Column<Date> SCHEDULE_UPDATE = dateColumn("schedule_update");
     private static final Column<Date> EQUIV_UPDATE = dateColumn("equiv_update");
 
+    private static final String METER_CALLED = ".meter.called";
+    private static final String METER_FAILURE = ".meter.failure";
+
     private final Session session;
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
@@ -120,8 +123,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final PreparedStatement broadcastSelect;
 
     private final GroupLock<String> lock;
-    private final Meter calledMeter;
-    private final Meter failureMeter;
+    private final MetricRegistry metricRegistry;
+    private final String updateContent;
 
     public CassandraEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
@@ -133,7 +136,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(graphStore, contentStore);
+        super(graphStore, contentStore, metricRegistry, metricPrefix);
 
         this.contentSerializer = new ContentSerializer(
                 new ContentSerializationVisitor(contentStore)
@@ -202,8 +205,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .and(set(SCHEDULE_UPDATE.name(), bindMarker("now"))));
 
         this.lock = GroupLock.natural(metricRegistry, metricPrefix);
-        this.calledMeter = metricRegistry.meter(metricPrefix + "meter.called");
-        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.metricRegistry = metricRegistry;
+
+        updateContent = metricPrefix + "updateContent";
 
     }
 
@@ -247,7 +251,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ScheduleUpdate update,
             Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
     ) throws WriteException {
-        calledMeter.mark();
         List<Date> daysInSchedule = daysIn(update.getSchedule().getInterval());
         ImmutableList<Date> staleBroadcastDays = update.getStaleBroadcasts()
                 .stream()
@@ -337,11 +340,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         deletes.size()
                 );
             } catch (NoHostAvailableException | QueryExecutionException e) {
-                failureMeter.mark();
                 throw new WriteException(e);
             }
         } catch (InterruptedException | RuntimeException e) {
-            failureMeter.mark();
             throw Throwables.propagate(e);
         } finally {
             lock.unlock(lockKeys);
@@ -355,7 +356,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             EquivalenceGraph graph,
             ImmutableSet<Item> content
     ) throws WriteException {
-        calledMeter.mark();
         List<Date> daysInInterval = daysIn(broadcast.getTransmissionInterval());
 
         ImmutableSet<String> lockKeys = getLockKeys(
@@ -386,10 +386,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                     .map(statement -> statement.setConsistencyLevel(write))
                     .forEach(session::execute);
         } catch (WriteException e) {
-            failureMeter.mark();
             throw e;
         } catch (InterruptedException | RuntimeException e) {
-            failureMeter.mark();
             throw Throwables.propagate(e);
         } finally {
             lock.unlock(lockKeys);
@@ -398,7 +396,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     @Override
     public void updateContent(Iterable<Item> content) throws WriteException {
-        calledMeter.mark();
+        metricRegistry.meter(updateContent + METER_CALLED).mark();
         try {
             ByteBuffer serializedContent = serialize(content);
             int contentCount = Iterables.size(content);
@@ -438,7 +436,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 throw new WriteException(e);
             }
         } catch (WriteException | RuntimeException e) {
-            failureMeter.mark();
+            metricRegistry.meter(updateContent + METER_FAILURE).mark();
             throw e;
         }
     }

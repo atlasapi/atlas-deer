@@ -129,7 +129,8 @@ public class AtlasPersistenceModule {
     private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private static final PersistenceAuditLog persistenceAuditLog = new NoLoggingPersistenceAuditLog();
-    private static final String METRIC_PREFIX = "persistence.util.";
+    private static final String STORE_METRIC_PREFIX = "persistence.store.";
+    private static final String UTIL_METRIC_PREFIX = "persistence.util.";
 
     private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
     private final Integer mongoWritePort = Configurer.get("mongo.write.port").toInt();
@@ -231,7 +232,7 @@ public class AtlasPersistenceModule {
                 idGeneratorBuilder(),
                 ContentHashGenerator.create(
                         HashGenerator.create(),
-                        METRIC_PREFIX,
+                        UTIL_METRIC_PREFIX,
                         metricsModule.metrics()
                 ),
                 eventV2 -> UUID.randomUUID().toString(),
@@ -325,7 +326,7 @@ public class AtlasPersistenceModule {
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel(),
                 metricsModule.metrics(),
-                METRIC_PREFIX
+                STORE_METRIC_PREFIX
         );
     }
 
@@ -341,7 +342,7 @@ public class AtlasPersistenceModule {
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel(),
                 metricsModule.metrics(),
-                METRIC_PREFIX
+                STORE_METRIC_PREFIX
         );
     }
 

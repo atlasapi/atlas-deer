@@ -123,9 +123,6 @@ public class CassandraTopicStore extends AbstractTopicStore {
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Topic> aliasIndex;
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
-
     private final String valueColumn = "topic";
     private final TopicSerializer topicSerializer = new TopicSerializer();
     private final Function<Row<Long, String>, Topic> rowToTopic =
@@ -162,10 +159,6 @@ public class CassandraTopicStore extends AbstractTopicStore {
                 LongSerializer.get(), StringSerializer.get()
         );
         this.aliasIndex = AliasIndex.create(keyspace, cfName + "_aliases");
-
-        this.calledMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.called");
-        this.failureMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.failure");
-
     }
 
     @Override
@@ -212,7 +205,6 @@ public class CassandraTopicStore extends AbstractTopicStore {
     protected void doWrite(Topic topic, @Nullable Topic previous) {
         //Allow migration of owl content that has changed source
         //checkArgument(previous == null || topic.getSource().equals(previous.getSource()));
-        calledMeter.mark();
         try {
             long id = topic.getId().longValue();
             MutationBatch batch = keyspace.prepareMutationBatch();
@@ -222,7 +214,6 @@ public class CassandraTopicStore extends AbstractTopicStore {
             batch.mergeShallow(aliasIndex.mutateAliases(topic, previous));
             batch.execute();
         } catch (Exception e) {
-            failureMeter.mark();
             throw new CassandraPersistenceException(topic.toString(), e);
         }
     }

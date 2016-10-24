@@ -65,9 +65,6 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     private final PreparedStatement segmentInsert;
     private final PreparedStatement segmentSelect;
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
-
     private CassandraSegmentStore(
             Session session,
             String keyspace,
@@ -79,7 +76,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(idGenerator, equivalence, sender, new SystemClock());
+        super(idGenerator, equivalence, sender, new SystemClock(), metricRegistry, metricPrefix);
         this.session = checkNotNull(session);
         this.aliasIndex = checkNotNull(aliasIndex);
         this.keyspace = checkNotNull(keyspace);
@@ -94,14 +91,10 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
         this.segmentSelect = session.prepare(select().from(keyspace, tableName)
                 .where(eq(CassandraUtil.KEY, bindMarker()))
                 .setForceNoValues(true));
-
-        calledMeter = metricRegistry.meter(metricPrefix + "meter.called");
-        failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 
     @Override
     protected void doWrite(Segment segment, Segment previous) {
-        calledMeter.mark();
         checkArgument(
                 previous == null || segment.getSource().equals(previous.getSource()),
                 "Cannot change the Source of a Segment!"
@@ -115,7 +108,6 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
             /* TODO Write CQL implementation of AliasIndex so that these may be batched together */
             aliasIndex.mutateAliases(segment, previous).execute();
         } catch (ConnectionException e) {
-            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }

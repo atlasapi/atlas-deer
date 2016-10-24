@@ -30,6 +30,9 @@ public class ConcreteEventStore implements EventStore {
 
     private static final Event NO_PREVIOUS = null;
 
+    private static final String METER_CALLED = ".meter.called";
+    private static final String METER_FAILURE = ".meter.failure";
+
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final Clock clock;
@@ -37,8 +40,9 @@ public class ConcreteEventStore implements EventStore {
     private final EventHasher eventHasher;
     private final MessageSender<ResourceUpdatedMessage> sender;
     private final EventPersistenceStore persistenceStore;
-    private final Meter calledMeter;
-    private final Meter failureMeter;
+
+    private final MetricRegistry metricRegistry;
+    private final String write;
 
     protected ConcreteEventStore(
             Clock clock,
@@ -54,8 +58,9 @@ public class ConcreteEventStore implements EventStore {
         this.sender = checkNotNull(sender);
         this.eventHasher = checkNotNull(eventHasher);
         this.persistenceStore = checkNotNull(persistenceStore);
-        this.calledMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.called");
-        this.failureMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.failure");
+
+        this.metricRegistry = metricRegistry;
+        write = metricPrefix + "write";
     }
 
     @Override
@@ -66,12 +71,12 @@ public class ConcreteEventStore implements EventStore {
     @Override
     public WriteResult<Event, Event> write(Event event) throws WriteException {
 
-        calledMeter.mark();
+        metricRegistry.meter(write + METER_CALLED).mark();
         try {
             checkNotNull(event, "cannot write null event");
             checkNotNull(event.getSource(), "cannot write event without source");
         } catch (NullPointerException e) {
-            failureMeter.mark();
+            metricRegistry.meter(write + METER_FAILURE).mark();
             Throwables.propagate(e);
         }
 
@@ -86,7 +91,7 @@ public class ConcreteEventStore implements EventStore {
             return result;
 
         } catch (WriteException | RuntimeException e) {
-            failureMeter.mark();
+            metricRegistry.meter(write + METER_FAILURE).mark();
             throw e;
         }
     }

@@ -29,7 +29,9 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -72,20 +74,26 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Brand, Content> visit(Brand brand) {
-            Optional<Content> previous = getPreviousContent(brand);
+            metricRegistry.meter(visit + "Brand" + METER_CALLED).mark();
+            try {
+                Optional<Content> previous = getPreviousContent(brand);
 
-            brand.setItemRefs(ImmutableSet.of());
-            brand.setSeriesRefs(ImmutableSet.of());
+                brand.setItemRefs(ImmutableSet.of());
+                brand.setSeriesRefs(ImmutableSet.of());
 
-            if (previous.isPresent()) {
-                return writeBrandWithPrevious(brand, previous.get());
+                if (previous.isPresent()) {
+                    return writeBrandWithPrevious(brand, previous.get());
+                }
+
+                updateTimes(brand);
+                handleContainer(brand, Optional.absent());
+                write(brand, NO_PREVIOUS);
+
+                return WriteResult.<Brand, Content>written(brand).build();
+            } catch (RuntimeException e) {
+                metricRegistry.meter(visit + METER_FAILURE).mark();
+                throw Throwables.propagate(e);
             }
-
-            updateTimes(brand);
-            handleContainer(brand, Optional.absent());
-            write(brand, NO_PREVIOUS);
-
-            return WriteResult.<Brand, Content>written(brand).build();
 
         }
 
@@ -114,17 +122,23 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Series, Content> visit(Series series) {
-            Optional<Content> previous = getPreviousContent(series);
+            metricRegistry.meter(visit + "Series" + METER_CALLED).mark();
+            try {
+                Optional<Content> previous = getPreviousContent(series);
 
-            series.setItemRefs(ImmutableSet.of());
-            if (previous.isPresent()) {
-                return writeSeriesWithPrevious(series, previous.get());
+                series.setItemRefs(ImmutableSet.of());
+                if (previous.isPresent()) {
+                    return writeSeriesWithPrevious(series, previous.get());
+                }
+                updateTimes(series);
+                writeRefAndSummarizePrimary(series);
+                handleContainer(series, Optional.absent());
+                write(series, NO_PREVIOUS);
+                return WriteResult.<Series, Content>written(series).build();
+            } catch (RuntimeException e) {
+                metricRegistry.meter(visit + "Series" + METER_FAILURE).mark();
+                throw Throwables.propagate(e);
             }
-            updateTimes(series);
-            writeRefAndSummarizePrimary(series);
-            handleContainer(series, Optional.absent());
-            write(series, NO_PREVIOUS);
-            return WriteResult.<Series, Content>written(series).build();
         }
 
         private WriteResult<Series, Content> writeSeriesWithPrevious(Series series,
@@ -159,19 +173,24 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Item, Content> visit(Item item) {
-
-            if (item.getContainerRef() != null) {
-                item.setContainerSummary(getSummary(item.getContainerRef()));
+            metricRegistry.meter(visit + "Item" + METER_CALLED).mark();
+            try {
+                if (item.getContainerRef() != null) {
+                    item.setContainerSummary(getSummary(item.getContainerRef()));
+                }
+                Optional<Content> previous = getPreviousContent(item);
+                if (previous.isPresent()) {
+                    return writeItemWithPrevious(item, previous.get());
+                }
+                updateTimes(item);
+                writeItemRefs(item);
+                write(item, NO_PREVIOUS);
+                return WriteResult.<Item, Content>written(item)
+                        .build();
+            } catch (RuntimeException e) {
+                metricRegistry.meter(visit + "Item" + METER_FAILURE).mark();
+                throw Throwables.propagate(e);
             }
-            Optional<Content> previous = getPreviousContent(item);
-            if (previous.isPresent()) {
-                return writeItemWithPrevious(item, previous.get());
-            }
-            updateTimes(item);
-            writeItemRefs(item);
-            write(item, NO_PREVIOUS);
-            return WriteResult.<Item, Content>written(item)
-                    .build();
         }
 
         private WriteResult<Item, Content> writeItemWithPrevious(Item item, Content previous) {
@@ -190,25 +209,31 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Episode, Content> visit(Episode episode) {
-            checkArgument(
-                    episode.getContainerRef() != null,
-                    "can't write episode with null container"
-            );
+            metricRegistry.meter(visit + "Episode" + METER_CALLED).mark();
+            try {
+                checkArgument(
+                        episode.getContainerRef() != null,
+                        "can't write episode with null container"
+                );
 
-            episode.setContainerSummary(getSummary(episode.getContainerRef()));
-            if (episode.getSeriesRef() != null) {
-                getSummary(episode.getSeriesRef());
+                episode.setContainerSummary(getSummary(episode.getContainerRef()));
+                if (episode.getSeriesRef() != null) {
+                    getSummary(episode.getSeriesRef());
+                }
+
+                Optional<Content> previous = getPreviousContent(episode);
+
+                if (previous.isPresent()) {
+                    return writeEpisodeWithExising(episode, previous.get());
+                }
+                updateTimes(episode);
+                writeItemRefs(episode);
+                write(episode, NO_PREVIOUS);
+                return WriteResult.<Episode, Content>written(episode).build();
+            } catch (RuntimeException e) {
+                metricRegistry.meter(visit + "Episode" + METER_FAILURE).mark();
+                throw Throwables.propagate(e);
             }
-
-            Optional<Content> previous = getPreviousContent(episode);
-
-            if (previous.isPresent()) {
-                return writeEpisodeWithExising(episode, previous.get());
-            }
-            updateTimes(episode);
-            writeItemRefs(episode);
-            write(episode, NO_PREVIOUS);
-            return WriteResult.<Episode, Content>written(episode).build();
         }
 
         private WriteResult<Episode, Content> writeEpisodeWithExising(Episode episode,
@@ -240,13 +265,19 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Film, Content> visit(Film film) {
-            Optional<Content> previous = getPreviousContent(film);
-            if (previous.isPresent()) {
-                return writeFilmWithPrevious(film, previous.get());
+            metricRegistry.meter(visit + "Film" + METER_CALLED).mark();
+            try {
+                Optional<Content> previous = getPreviousContent(film);
+                if (previous.isPresent()) {
+                    return writeFilmWithPrevious(film, previous.get());
+                }
+                updateTimes(film);
+                write(film, NO_PREVIOUS);
+                return WriteResult.<Film, Content>written(film).build();
+            } catch (RuntimeException e) {
+                metricRegistry.meter(visit + "Film" + METER_FAILURE).mark();
+                throw Throwables.propagate(e);
             }
-            updateTimes(film);
-            write(film, NO_PREVIOUS);
-            return WriteResult.<Film, Content>written(film).build();
         }
 
         private WriteResult<Film, Content> writeFilmWithPrevious(Film film, Content previous) {
@@ -263,16 +294,22 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Song, Content> visit(Song song) {
-            Optional<Content> previous = getPreviousContent(song);
+            metricRegistry.meter(visit + "Song" + METER_CALLED).mark();
+            try {
+                Optional<Content> previous = getPreviousContent(song);
 
-            if (previous.isPresent()) {
-                return writeSongWithPrevious(song, previous.get());
+                if (previous.isPresent()) {
+                    return writeSongWithPrevious(song, previous.get());
+                }
+
+                updateTimes(song);
+                write(song, NO_PREVIOUS);
+                return WriteResult.<Song, Content>written(song)
+                        .build();
+            } catch (RuntimeException e) {
+                metricRegistry.meter(visit + "Song" + METER_FAILURE).mark();
+                throw Throwables.propagate(e);
             }
-
-            updateTimes(song);
-            write(song, NO_PREVIOUS);
-            return WriteResult.<Song, Content>written(song)
-                    .build();
         }
 
         private WriteResult<Song, Content> writeSongWithPrevious(Song song, Content previous) {
@@ -293,6 +330,10 @@ public abstract class AbstractContentStore implements ContentStore {
         }
     }
 
+
+    private static final String METER_CALLED = ".meter.called";
+    private static final String METER_FAILURE = ".meter.failure";
+
     private final ContentHasher hasher;
     private final IdGenerator idGenerator;
     private final MessageSender<ResourceUpdatedMessage> sender;
@@ -301,12 +342,19 @@ public abstract class AbstractContentStore implements ContentStore {
 
     private final ContentWritingVisitor writingVisitor;
 
+    private final MetricRegistry metricRegistry;
+    private final String writeContent;
+    private final String writeBroadcast;
+    private final String visit;
+
     protected AbstractContentStore(
             ContentHasher hasher,
             IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
             EquivalenceGraphStore graphStore,
-            Clock clock
+            Clock clock,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
         this.hasher = checkNotNull(hasher);
         this.idGenerator = checkNotNull(idGenerator);
@@ -314,16 +362,23 @@ public abstract class AbstractContentStore implements ContentStore {
         this.graphStore = checkNotNull(graphStore);
         this.clock = checkNotNull(clock);
         this.writingVisitor = new ContentWritingVisitor();
+
+        this.metricRegistry = metricRegistry;
+
+        writeContent = metricPrefix + "writeContent";
+        writeBroadcast = metricPrefix + "writeBroadcast";
+        visit = metricPrefix + "visit";
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public final <C extends Content> WriteResult<C, Content> writeContent(C content)
             throws WriteException {
-        checkNotNull(content, "write null content");
-        checkNotNull(content.getSource(), "write unsourced content");
-
+        metricRegistry.meter(writeContent + METER_CALLED).mark();
         try {
+            checkNotNull(content, "write null content");
+            checkNotNull(content.getSource(), "write unsourced content");
+
             WriteResult<C, Content> result =
                     (WriteResult<C, Content>) content.accept(writingVisitor);
             if (result.written()) {
@@ -331,6 +386,7 @@ public abstract class AbstractContentStore implements ContentStore {
             }
             return result;
         } catch (RuntimeWriteException e) {
+            metricRegistry.meter(writeContent + METER_FAILURE).mark();
             throw e.getCause();
         }
     }
@@ -342,6 +398,8 @@ public abstract class AbstractContentStore implements ContentStore {
             Optional<SeriesRef> seriesRef,
             Broadcast broadcast
     ) {
+        metricRegistry.meter(writeBroadcast + METER_CALLED).mark();
+
         doWriteBroadcast(itemRef, containerRef, seriesRef, broadcast);
 
         try {
@@ -355,6 +413,7 @@ public abstract class AbstractContentStore implements ContentStore {
                     )
             );
         } catch (Exception e) {
+            metricRegistry.meter(writeBroadcast + METER_FAILURE).mark();
             log.error("Failed to send message " + itemRef.toString(), e);
         }
     }

@@ -156,9 +156,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     private final ColumnFamily<Long, String> mainCf;
     private final AliasIndex<Content> aliasIndex;
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
-
     private final ContentMarshaller<ColumnListMutation<String>, ColumnList<String>> marshaller =
             AstyanaxProtobufContentMarshaller.create(
                     new ContentSerializer(new ContentSerializationVisitor(this))
@@ -206,7 +203,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(hasher, idGenerator, sender, graphStore, clock);
+        super(hasher, idGenerator, sender, graphStore, clock, metricRegistry, metricPrefix);
         this.keyspace = checkNotNull(context.getClient());
         this.readConsistency = checkNotNull(readConsistency);
         this.writeConsistency = checkNotNull(writeConsistency);
@@ -215,10 +212,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         );
         this.aliasIndex = AliasIndex.create(keyspace, cfName + "_aliases");
 
-        calledMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.called");
-        failureMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.failure");
     }
 
     @Override
@@ -258,7 +251,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     @Override
     protected void doWriteContent(Content content, @Nullable Content previous) {
-        calledMeter.mark();
         try {
             long id = content.getId().longValue();
 
@@ -278,7 +270,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
             log.trace("Written content id " + id);
         } catch (Exception e) {
-            failureMeter.mark();
             throw new CassandraPersistenceException(content.toString(), e);
         }
     }
@@ -371,7 +362,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             SeriesRef seriesRef,
             Boolean activelyPublished
     ) {
-        calledMeter.mark();
         try {
             if (!activelyPublished) {
                 MutationBatch batch = keyspace.prepareMutationBatch();
@@ -399,7 +389,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
             batch.execute();
         } catch (Exception e) {
-            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }
@@ -443,7 +432,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
     protected void writeItemRefs(
             Item item
     ) {
-        calledMeter.mark();
         try {
             ensureId(item);
             if (!item.isActivelyPublished() || (item.isGenericDescription() != null
@@ -504,7 +492,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             batch.execute();
 
         } catch (Exception e) {
-            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }
@@ -515,7 +502,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             Optional<SeriesRef> seriesRef,
             Broadcast broadcast
     ) {
-        calledMeter.mark();
         Item item = new Item();
         item.setId(itemRef.getId());
         item.setThisOrChildLastUpdated(itemRef.getUpdated());
@@ -584,14 +570,12 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
             batch.execute();
         } catch (ConnectionException | RuntimeException e) {
-            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }
 
     @Override
     protected void writeContainerSummary(ContainerSummary summary, Iterable<ItemRef> items) {
-        calledMeter.mark();
         MutationBatch batch = keyspace.prepareMutationBatch();
         batch.setConsistencyLevel(writeConsistency);
         for (ItemRef itemRef : items) {
@@ -613,7 +597,6 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         try {
             batch.execute();
         } catch (ConnectionException | RuntimeException e) {
-            failureMeter.mark();
             Throwables.propagate(e);
         }
 

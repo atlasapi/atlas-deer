@@ -62,7 +62,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     private static final int CQL_PORT = 9042;
 
-    private static final String METRIC_PREFIX = "processing.store.";
+    private static final String METRIC_PREFIX = "persistence.store.";
 
     private String contentEquivalenceGraphChanges = Configurer.get(
             "messaging.destination.equivalence.content.graph.changes").get();
@@ -130,7 +130,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.dataStaxService = datastaxCassandraService;
         this.keyspace = keyspace;
         this.context = context;
-        this.metrics = metrics;
+        this.metrics = checkNotNull(metrics);
         this.session = dataStaxService.getSession(keyspace);
     }
 
@@ -285,7 +285,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "CassandraTopicStore.")
                 .build();
-        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule",
+        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule", // you got to here
                 contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class)
         )
                 .withReadConsistency(readConsistency)
