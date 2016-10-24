@@ -8,6 +8,7 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
+import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -1876,6 +1877,249 @@ public class CassandraEquivalentScheduleStoreIT {
                         .isEmpty(),
                 is(true)
         );
+    }
+
+    @Test
+    public void updatingEquivalencesDoesNotChangeSchedule() throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        Broadcast updatedBroadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        item.addBroadcast(broadcast);
+        contentStore.writeContent(item);
+
+        ScheduleRef initialUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item.getId(), broadcast.toRef())
+                .build();
+
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        initialUpdate,
+                        ImmutableSet.of()
+                ));
+
+        item.setBroadcasts(ImmutableSet.of(updatedBroadcast));
+        equivalentScheduleStore.updateEquivalences(ImmutableSet.of(
+                EquivalenceGraph.valueOf(item.toRef())
+        ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
+    }
+
+    @Test
+    public void updatingEquivalencesOnMissingRowDoesNotChangeSchedule() throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        item.addBroadcast(broadcast);
+        contentStore.writeContent(item);
+
+        equivalentScheduleStore.updateEquivalences(ImmutableSet.of(
+                EquivalenceGraph.valueOf(item.toRef())
+        ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
+    }
+
+    @Test
+    public void updatingScheduleDeletesRowsWithNullBroadcasts() throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        item.addBroadcast(broadcast);
+        contentStore.writeContent(item);
+
+        equivalentScheduleStore.updateEquivalences(ImmutableSet.of(
+                EquivalenceGraph.valueOf(item.toRef())
+        ));
+
+        ScheduleRef initialUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 0, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .build();
+
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        initialUpdate,
+                        ImmutableSet.of()
+                ));
+
+        boolean scheduleHasRows = module.getSession()
+                .execute("SELECT * FROM equivalent_schedule")
+                .iterator()
+                .hasNext();
+
+        assertThat(scheduleHasRows, is(false));
+    }
+
+    @Test
+    public void updatingEquivalencesUpdatesContent() throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item.setTitle("oldTitle");
+        item.setThisOrChildLastUpdated(DateTime.now());
+
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        item.addBroadcast(broadcast);
+        contentStore.writeContent(item);
+
+        ScheduleRef initialUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item.getId(), broadcast.toRef())
+                .build();
+
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        initialUpdate,
+                        ImmutableSet.of()
+                ));
+
+        item.setTitle("updatedTitle");
+        contentStore.writeContent(item);
+
+        EquivalenceGraph graph = EquivalenceGraph.valueOf(item.toRef());
+
+        equivalentScheduleStore.updateEquivalences(ImmutableSet.of(graph));
+
+        ImmutableList<EquivalentScheduleEntry> scheduleEntries = getScheduleEntries(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        );
+
+        EquivalentScheduleEntry entry = Iterables.getOnlyElement(scheduleEntries);
+
+        Item actualItem = Iterables.getOnlyElement(entry.getItems().getResources());
+        assertThat(actualItem.getTitle(), is(item.getTitle()));
+    }
+
+    @Test
+    public void updatingEquivalencesUpdatesGraph() throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item.setThisOrChildLastUpdated(DateTime.now());
+
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        item.addBroadcast(broadcast);
+        contentStore.writeContent(item);
+
+        ScheduleRef initialUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item.getId(), broadcast.toRef())
+                .build();
+
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        initialUpdate,
+                        ImmutableSet.of()
+                ));
+
+        Item equivItem = new Item(Id.valueOf(2L), Publisher.BBC);
+        equivItem.setThisOrChildLastUpdated(DateTime.now());
+        contentStore.writeContent(equivItem);
+
+        EquivalenceGraph graph = EquivalenceGraph.valueOf(ImmutableSet.of(
+                EquivalenceGraph.Adjacents
+                        .valueOf(equivItem.toRef()),
+                EquivalenceGraph.Adjacents
+                        .valueOf(item.toRef())
+                        .copyWithOutgoing(equivItem.toRef())
+        ));
+
+        equivalentScheduleStore.updateEquivalences(ImmutableSet.of(graph));
+
+        ImmutableList<EquivalentScheduleEntry> scheduleEntries = getScheduleEntries(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        );
+
+        EquivalentScheduleEntry entry = Iterables.getOnlyElement(scheduleEntries);
+        assertThat(entry.getItems().getGraph(), is(graph));
     }
 
     private ImmutableList<EquivalentScheduleEntry> getScheduleEntries(

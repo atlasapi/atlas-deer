@@ -36,7 +36,6 @@ import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
-import org.atlasapi.locks.GroupLock;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
@@ -124,9 +123,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final PreparedStatement broadcastScheduleUpdate;
     private final PreparedStatement broadcastSelect;
 
-    private final GroupLock<String> lock;
-    private final MetricRegistry metricRegistry;
-    private final String updateContent;
+    private final String updateContentMetricPrefix;
+    private final String resolveScheduleMetricPrefix;
 
     public CassandraEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
@@ -184,9 +182,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .and(eq(CHANNEL.name(), bindMarker("channel")))
                 .and(eq(DAY.name(), bindMarker("day")))
                 .and(eq(BROADCAST_ID.name(), bindMarker("broadcast")))
-                .with(set(BROADCAST.name(), bindMarker("broadcastData")))
-                .and(set(BROADCAST_START.name(), bindMarker("broadcastStartData")))
-                .and(set(GRAPH.name(), bindMarker("graphData")))
+                .with(set(GRAPH.name(), bindMarker("graphData")))
                 .and(set(CONTENT_COUNT.name(), bindMarker("contentCountData")))
                 .and(set(CONTENT.name(), bindMarker("contentData")))
                 .and(set(EQUIV_UPDATE.name(), bindMarker("now"))));
@@ -203,11 +199,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .and(set(CONTENT.name(), bindMarker("contentData")))
                 .and(set(SCHEDULE_UPDATE.name(), bindMarker("now"))));
 
-        this.lock = GroupLock.natural(metricRegistry, metricPrefix);
-        this.metricRegistry = metricRegistry;
-
-        updateContent = metricPrefix + "updateContent.";
-
+        this.updateContentMetricPrefix = metricPrefix + "updateContent.";
+        this.resolveScheduleMetricPrefix = metricPrefix + "resolveSchedule.";
     }
 
     @Override
@@ -217,6 +210,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             Publisher source,
             Set<Publisher> selectedSources
     ) {
+        metricRegistry.meter(resolveScheduleMetricPrefix + METER_CALLED).mark();
+
         ImmutableList<ResultSetFuture> resultFutures = selectStatements(source, channels, interval)
                 .stream()
                 .map(statement -> statement.setConsistencyLevel(read))
@@ -237,6 +232,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             Publisher source,
             Set<Publisher> selectedSources
     ) {
+        metricRegistry.meter(resolveScheduleMetricPrefix + METER_CALLED).mark();
+
         Interval interval = new Interval(start, start.plus(MAX_SCHEDULE_LENGTH));
         return Futures.transform(
                 resolveSchedules(channels, interval, source, selectedSources),
@@ -333,8 +330,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ImmutableSet<Item> content,
             List<LocalDate> daysInInterval
     ) throws WriteException {
-        Date broadcastStart = broadcast.getTransmissionTime().toDate();
-        ByteBuffer broadcastBytes = serialize(broadcast);
         ByteBuffer graphBytes = graphSerializer.serialize(graph);
         ByteBuffer contentBytes = serialize(content);
 
@@ -345,8 +340,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setLong("channel", broadcast.getChannelId().longValue())
                         .setTimestamp("day", toJavaUtilDate(day))
                         .setString("broadcast", broadcast.getSourceId())
-                        .setBytes("broadcastData", broadcastBytes)
-                        .setTimestamp("broadcastStartData", broadcastStart)
                         .setBytes("graphData", graphBytes)
                         .setLong("contentCountData", content.size())
                         .setBytes("contentData", contentBytes)
@@ -357,7 +350,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     @Override
     public void updateContent(Iterable<Item> content) throws WriteException {
-        metricRegistry.meter(updateContent + METER_CALLED).mark();
+        metricRegistry.meter(updateContentMetricPrefix + METER_CALLED).mark();
         try {
             ByteBuffer serializedContent = serialize(content);
             int contentCount = Iterables.size(content);
@@ -397,7 +390,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 throw new WriteException(e);
             }
         } catch (WriteException | RuntimeException e) {
-            metricRegistry.meter(updateContent + METER_FAILURE).mark();
+            metricRegistry.meter(updateContentMetricPrefix + METER_FAILURE).mark();
             throw e;
         }
     }
@@ -696,20 +689,17 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ScheduleBroadcastFilter broadcastFilter = ScheduleBroadcastFilter.valueOf(interval);
             ImmutableSetMultimap.Builder<Id, EquivalentScheduleEntry> channelEntries =
                     ImmutableSetMultimap.builder();
+
             for (Row row : Iterables.concat(input)) {
                 if (row.isNull(BROADCAST.name())) {
-                    log.warn(
-                            "null broadcast for day: {}, channel: {}, source {}, broadcast {}",
-                            DAY.valueFrom(row),
-                            CHANNEL.valueFrom(row),
-                            SOURCE.valueFrom(row),
-                            BROADCAST_ID.valueFrom(row)
-
-                    );
+                    // It is legitimate to have a null broadcast because the methods that update
+                    // equivalence and content do not set the broadcast column to ensure they
+                    // cannot modify the schedule
                     continue;
                 }
                 deserializeRow(channelEntries, row, broadcastFilter, annotations);
             }
+
             return channelEntries.build();
         }
 

@@ -18,7 +18,6 @@ import org.atlasapi.segment.SegmentStore;
 import org.atlasapi.system.legacy.LegacyContentResolver;
 import org.atlasapi.topic.TopicStore;
 
-import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.ids.IdGeneratorBuilder;
 import com.metabroadcast.common.ids.SequenceGenerator;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
@@ -138,19 +137,17 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
         clearTables(session, context);
     }
 
+    public Session getSession() {
+        return cassandraService.getCluster().connect(keyspace);
+    }
+
     private void clearTables(Session session, AstyanaxContext<Keyspace> context)
             throws ConnectionException {
         CassandraInit.truncate(session, context);
     }
 
     private IdGeneratorBuilder idGeneratorBuilder() {
-        return new IdGeneratorBuilder() {
-
-            @Override
-            public IdGenerator generator(String sequenceIdentifier) {
-                return new SequenceGenerator();
-            }
-        };
+        return sequenceIdentifier -> new SequenceGenerator();
     }
 
     @Override
