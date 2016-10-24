@@ -10,6 +10,7 @@ import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableList;
@@ -71,7 +72,9 @@ public class DatastaxCassandraOrganizationStoreTest {
                 session,
                 readConsistency,
                 writeConsistency,
-                uriStore
+                uriStore,
+                new MetricRegistry(),
+                "test.store.DatastaxCassandraOrganisationStore"
         );
     }
 

@@ -8,6 +8,8 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -54,8 +56,17 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private final PreparedStatement rowUpdate;
     private final PreparedStatement selectStatement;
 
-    protected DatastaxCassandraOrganisationStore(Session session,
-            ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency, OrganisationUriStore uriStore) {
+    private final Meter calledMeter;
+    private final Meter failureMeter;
+
+    protected DatastaxCassandraOrganisationStore(
+            Session session,
+            ConsistencyLevel writeConsistency,
+            ConsistencyLevel readConsistency,
+            OrganisationUriStore uriStore,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
         this.session = checkNotNull(session);
         this.readConsistency = checkNotNull(readConsistency);
         this.serializer = new OrganisationSerializer();
@@ -72,6 +83,12 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
                 .where(eq(PRIMARY_KEY_COLUMN, bindMarker(ORGANISATION_ID)))
                 .with(set(DATA_COLUMN, bindMarker(DATA))))
                 .setConsistencyLevel(writeConsistency);
+
+        this.calledMeter = checkNotNull(metricRegistry)
+                .meter(checkNotNull(metricPrefix) + "meter.called");
+        this.failureMeter = checkNotNull(metricRegistry)
+                .meter(checkNotNull(metricPrefix) + "meter.failure");
+
     }
 
     @Override
@@ -100,21 +117,28 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     @Override
     public Organisation write(Organisation organisation) {
-        Id id = organisation.getId();
-        ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation)
-                .toByteArray());
+        calledMeter.mark();
+        try {
+            Id id = organisation.getId();
+            ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation)
+                    .toByteArray());
 
-        BatchStatement batchStatement = new BatchStatement();
+            BatchStatement batchStatement = new BatchStatement();
 
-        Statement writeOrganisation = rowUpdate.bind()
-                .setLong(ORGANISATION_ID, id.longValue())
-                .setBytes(DATA, serializedOrganisation);
+            Statement writeOrganisation = rowUpdate.bind()
+                    .setLong(ORGANISATION_ID, id.longValue())
+                    .setBytes(DATA, serializedOrganisation);
 
-        Statement writeUri = organisationUriStore.prepareWritingStatement(organisation);
-        batchStatement.add(writeOrganisation);
-        batchStatement.add(writeUri);
-        session.execute(batchStatement);
-        return organisation;
+            Statement writeUri = organisationUriStore.prepareWritingStatement(organisation);
+            batchStatement.add(writeOrganisation);
+            batchStatement.add(writeUri);
+            session.execute(batchStatement);
+
+            return organisation;
+        } catch (RuntimeException e) {
+            failureMeter.mark();
+            throw Throwables.propagate(e);
+        }
     }
 
     protected Organisation extractOrganisation(Row row) {
@@ -140,6 +164,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         private ConsistencyLevel writeConsistency;
         private ConsistencyLevel readConsistency;
         private OrganisationUriStore organisationUriStore;
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         private Builder() {
         }
@@ -168,13 +194,25 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
             return this;
         }
 
+        public BuildStep withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public BuildStep withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
+            return this;
+        }
+
         @Override
         public DatastaxCassandraOrganisationStore build() {
             return new DatastaxCassandraOrganisationStore(
                     this.session,
                     this.writeConsistency,
                     this.readConsistency,
-                    this.organisationUriStore
+                    this.organisationUriStore,
+                    this.metricRegistry,
+                    this.metricPrefix
             );
         }
     }
@@ -200,6 +238,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     public interface BuildStep {
 
+        BuildStep withMetricRegistry(MetricRegistry metricRegistry);
+        BuildStep withMetricPrefix(String metricPrefix);
         DatastaxCassandraOrganisationStore build();
     }
 

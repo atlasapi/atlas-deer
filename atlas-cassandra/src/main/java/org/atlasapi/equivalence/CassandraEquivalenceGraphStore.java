@@ -17,6 +17,7 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -58,7 +59,7 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     @VisibleForTesting static final String GRAPH_ID_KEY = "graph_id";
     private static final String GRAPH_KEY = "graph";
 
-    private static final GroupLock<Id> lock = GroupLock.natural();
+    private final GroupLock<Id> lock;
     private static final Logger log = LoggerFactory.getLogger(CassandraEquivalenceGraphStore.class);
 
     private final EquivalenceGraphSerializer serializer = new EquivalenceGraphSerializer();
@@ -74,8 +75,9 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
 
     public CassandraEquivalenceGraphStore(
             MessageSender<EquivalenceGraphUpdateMessage> messageSender, Session session,
-            ConsistencyLevel read, ConsistencyLevel write) {
-        super(messageSender);
+            ConsistencyLevel read, ConsistencyLevel write, MetricRegistry metricRegistry,
+            String metricPrefix) {
+        super(messageSender, metricRegistry, metricPrefix);
         this.session = checkNotNull(session);
         this.read = read;
         this.write = write;
@@ -100,6 +102,8 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
                         .value(GRAPH_ID_KEY, bindMarker("graphId"))
                         .value(GRAPH_KEY, bindMarker("data")));
         this.graphInsert.setConsistencyLevel(write);
+
+        this.lock = GroupLock.natural(metricRegistry, metricPrefix);
     }
 
     private final Function<Iterable<Row>, Map<Long, EquivalenceGraph>> toGraph = rows -> {

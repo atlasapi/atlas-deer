@@ -24,6 +24,8 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.SystemClock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -63,10 +65,20 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     private final PreparedStatement segmentInsert;
     private final PreparedStatement segmentSelect;
 
-    private CassandraSegmentStore(Session session, String keyspace, String tableName,
-            AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
+    private final Meter calledMeter;
+    private final Meter failureMeter;
+
+    private CassandraSegmentStore(
+            Session session,
+            String keyspace,
+            String tableName,
+            AliasIndex<Segment> aliasIndex,
+            IdGenerator idGenerator,
             Equivalence<? super Segment> equivalence,
-            MessageSender<ResourceUpdatedMessage> sender) {
+            MessageSender<ResourceUpdatedMessage> sender,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
         super(idGenerator, equivalence, sender, new SystemClock());
         this.session = checkNotNull(session);
         this.aliasIndex = checkNotNull(aliasIndex);
@@ -82,10 +94,14 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
         this.segmentSelect = session.prepare(select().from(keyspace, tableName)
                 .where(eq(CassandraUtil.KEY, bindMarker()))
                 .setForceNoValues(true));
+
+        calledMeter = metricRegistry.meter(metricPrefix + "meter.called");
+        failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
     }
 
     @Override
     protected void doWrite(Segment segment, Segment previous) {
+        calledMeter.mark();
         checkArgument(
                 previous == null || segment.getSource().equals(previous.getSource()),
                 "Cannot change the Source of a Segment!"
@@ -99,6 +115,7 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
             /* TODO Write CQL implementation of AliasIndex so that these may be batched together */
             aliasIndex.mutateAliases(segment, previous).execute();
         } catch (ConnectionException e) {
+            failureMeter.mark();
             throw Throwables.propagate(e);
         }
     }
@@ -186,6 +203,8 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
         private IdGenerator idGenerator;
         private Equivalence<Segment> equivalence;
         private MessageSender<ResourceUpdatedMessage> sender;
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         public Builder() {
 
@@ -226,6 +245,16 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
             return this;
         }
 
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = checkNotNull(metricRegistry);
+            return this;
+        }
+
+        public Builder withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = checkNotNull(metricPrefix);
+            return this;
+        }
+
         public CassandraSegmentStore build() {
             return new CassandraSegmentStore(
                     cassandra,
@@ -234,7 +263,9 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
                     segmentIndex,
                     idGenerator,
                     equivalence,
-                    sender
+                    sender,
+                    metricRegistry,
+                    metricPrefix
             );
         }
     }

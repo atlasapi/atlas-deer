@@ -16,7 +16,10 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Equivalence;
+import com.google.common.base.Throwables;
 import com.google.common.primitives.Longs;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -30,21 +33,32 @@ public abstract class AbstractTopicStore implements TopicStore {
     private final Equivalence<? super Topic> equivalence;
     private final MessageSender<ResourceUpdatedMessage> sender;
     private final Clock clock;
+    private final Meter calledMeter;
+    private final Meter failureMeter;
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     public AbstractTopicStore(IdGenerator idGenerator, Equivalence<? super Topic> equivalence,
-            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
+            MessageSender<ResourceUpdatedMessage> sender, Clock clock, MetricRegistry metricRegistry,
+            String metricPrefix) {
         this.idGenerator = checkNotNull(idGenerator);
         this.equivalence = checkNotNull(equivalence);
         this.sender = checkNotNull(sender);
         this.clock = checkNotNull(clock);
+        this.calledMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.called");
+        this.failureMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.failure");
     }
 
     @Override
     public WriteResult<Topic, Topic> writeTopic(Topic topic) {
-        checkNotNull(topic, "write null topic");
-        checkNotNull(topic.getSource(), "write unsourced topic");
+        calledMeter.mark();
+        try {
+            checkNotNull(topic, "write null topic");
+            checkNotNull(topic.getSource(), "write unsourced topic");
+        } catch(NullPointerException e) {
+            failureMeter.mark();
+            Throwables.propagate(e);
+        }
 
         Topic previous = getPreviousTopic(topic);
         if (previous != null) {

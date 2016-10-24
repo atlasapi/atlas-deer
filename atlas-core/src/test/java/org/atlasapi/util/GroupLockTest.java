@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
@@ -18,7 +19,10 @@ public class GroupLockTest {
     @Test
     public void testCanLockDifferentThings() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural();
+        final GroupLock<String> lock = GroupLock.<String>natural(
+                new MetricRegistry(),
+                "CanLockDifferentThings"
+        );
 
         lock.lock("A");
 
@@ -44,7 +48,10 @@ public class GroupLockTest {
     @Test
     public void testCantAcquireLockForKeyTwice() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural();
+        final GroupLock<String> lock = GroupLock.<String>natural(
+                new MetricRegistry(),
+                "CantAcquireLockForKeyTwice"
+        );
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -72,7 +79,10 @@ public class GroupLockTest {
     @Test
     public void testTryLock() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural();
+        final GroupLock<String> lock = GroupLock.<String>natural(
+                new MetricRegistry(),
+                "TryLock"
+        );
 
         String id = "A";
         assertTrue(lock.tryLock(id));
@@ -84,7 +94,10 @@ public class GroupLockTest {
     @Test
     public void testCantLockGroupWhereOneElementIsLocked() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural();
+        final GroupLock<String> lock = GroupLock.<String>natural(
+                new MetricRegistry(),
+                "CantLockGroupWhereOneElementIsLocked"
+        );
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -112,7 +125,10 @@ public class GroupLockTest {
     @Test
     public void testLocksGroupElementsInOrder() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural();
+        final GroupLock<String> lock = GroupLock.<String>natural(
+                new MetricRegistry(),
+                "LocksGroupElementsInOrder"
+        );
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch one = new CountDownLatch(1);
         final CountDownLatch two = new CountDownLatch(1);
@@ -155,7 +171,10 @@ public class GroupLockTest {
     @Test
     public void testUnlocksAllGroupElementsIfTryLockFailsAGroup() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural();
+        final GroupLock<String> lock = GroupLock.<String>natural(
+                new MetricRegistry(),
+                "UnlocksAllGroupElementsIfTryLockFailsAGroup"
+        );
         lock.lock("B");
         assertFalse(lock.tryLock(ImmutableSet.of("A", "B", "C")));
         assertTrue(lock.tryLock("A"));

@@ -20,6 +20,7 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.google.common.base.Optional;
@@ -68,6 +69,9 @@ public class DatastaxCassandraEventStoreIT {
 
     private @Mock Clock clock;
 
+    private @Mock MetricRegistry metricRegistry;
+
+    private String metricPrefix;
     private EventStore store;
     private DateTime now;
     private DateTime secondNow;
@@ -97,7 +101,9 @@ public class DatastaxCassandraEventStoreIT {
                 writeConsistency
         );
 
-        store = new ConcreteEventStore(clock, idGenerator, hasher, sender, persistenceStore);
+        metricPrefix = "ConcreteEventStore";
+
+        store = new ConcreteEventStore(clock, idGenerator, hasher, sender, persistenceStore, metricRegistry, metricPrefix);
 
         now = new DateTime(DateTimeZones.UTC);
         secondNow = now.plusHours(1);

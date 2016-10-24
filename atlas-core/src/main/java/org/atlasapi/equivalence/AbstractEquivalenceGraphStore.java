@@ -25,6 +25,8 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -57,15 +59,27 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
 
+    private final Meter calledMeter;
+    private final Meter failureMeter;
+
     public AbstractEquivalenceGraphStore(
-            MessageSender<EquivalenceGraphUpdateMessage> messageSender) {
+            MessageSender<EquivalenceGraphUpdateMessage> messageSender,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
         this.messageSender = checkNotNull(messageSender);
+
+        calledMeter = checkNotNull(metricRegistry)
+                .meter(checkNotNull(metricPrefix) + "meter.called");
+        failureMeter = checkNotNull(metricRegistry)
+                .meter(checkNotNull(metricPrefix) + "meter.failure");
     }
 
     @Override
     public final Optional<EquivalenceGraphUpdate> updateEquivalences(ResourceRef subject,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws WriteException {
 
+        calledMeter.mark();
         ImmutableSet<Id> newAdjacents
                 = ImmutableSet.copyOf(Iterables.transform(assertedAdjacents, Identifiables.toId()));
         Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
@@ -114,12 +128,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             return updated;
 
         } catch (InterruptedException e) {
+            failureMeter.mark();
             log().error(String.format("%s: %s", subject, newAdjacents), e);
             return Optional.absent();
         } catch (StoreException e) {
+            failureMeter.mark();
             Throwables.propagateIfPossible(e, WriteException.class);
             throw new WriteException(e);
         } catch (IllegalArgumentException e) {
+            failureMeter.mark();
             log().error(e.getMessage());
             return Optional.absent();
         } finally {

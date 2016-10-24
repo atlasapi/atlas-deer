@@ -46,6 +46,8 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final String publisherMeterName;
+    private final MetricRegistry metricRegistry;
 
     private ScheduleReadWriteWorker(
             SourceChannelIntervalFactory<ChannelIntervalScheduleBootstrapTask> taskFactory,
@@ -58,9 +60,12 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.taskFactory = checkNotNull(taskFactory);
         this.ignoredSources = ImmutableSet.copyOf(ignoredSources);
 
+        this.metricRegistry = metricRegistry;
+
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.publisherMeterName = metricPrefix + "%s.meter.publisher";
     }
 
     public static ScheduleReadWriteWorker create(
@@ -105,6 +110,8 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             LOG.debug("{}: ignoring source {}", updateMsg, src.key());
             return;
         }
+
+        metricRegistry.meter(String.format(publisherMeterName, src.toString())).mark();
 
         Id cid = Id.valueOf(idCodec.decode(msg.getChannel()));
 

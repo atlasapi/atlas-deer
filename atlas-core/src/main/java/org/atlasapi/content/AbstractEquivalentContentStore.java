@@ -19,6 +19,7 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -41,7 +42,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
 
-    private static final GroupLock<Id> lock = GroupLock.natural();
+    private final GroupLock<Id> lock;
 
     private final ContentResolver contentResolver;
 
@@ -53,12 +54,18 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
             ContentResolver contentResolver,
             EquivalenceGraphStore graphStore,
             MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender,
-            MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender
+            MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.graphStore = checkNotNull(graphStore);
         this.equivContentUpdatedMessageSender = checkNotNull(equivContentUpdatedMessageSender);
         this.equivGraphUpdatedMessageSender = checkNotNull(equivGraphUpdatedMessageSender);
+        this.lock = GroupLock.natural(
+                checkNotNull(metricRegistry),
+                checkNotNull(metricPrefix)
+        );
     }
 
     @Override

@@ -40,6 +40,8 @@ import org.atlasapi.util.GroupLock;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -117,7 +119,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final PreparedStatement broadcastScheduleUpdate;
     private final PreparedStatement broadcastSelect;
 
-    private final GroupLock<String> lock = GroupLock.natural();
+    private final GroupLock<String> lock;
+    private final Meter calledMeter;
+    private final Meter failureMeter;
 
     public CassandraEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
@@ -125,7 +129,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             Session session,
             ConsistencyLevel read,
             ConsistencyLevel write,
-            Clock clock
+            Clock clock,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
         super(graphStore, contentStore);
 
@@ -194,6 +200,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .and(set(CONTENT_COUNT.name(), bindMarker("contentCountData")))
                 .and(set(CONTENT.name(), bindMarker("contentData")))
                 .and(set(SCHEDULE_UPDATE.name(), bindMarker("now"))));
+
+        this.lock = GroupLock.natural(metricRegistry, metricPrefix);
+        this.calledMeter = metricRegistry.meter(metricPrefix + "meter.called");
+        this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+
     }
 
     @Override
@@ -236,6 +247,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ScheduleUpdate update,
             Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
     ) throws WriteException {
+        calledMeter.mark();
         List<Date> daysInSchedule = daysIn(update.getSchedule().getInterval());
         ImmutableList<Date> staleBroadcastDays = update.getStaleBroadcasts()
                 .stream()
@@ -325,9 +337,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         deletes.size()
                 );
             } catch (NoHostAvailableException | QueryExecutionException e) {
+                failureMeter.mark();
                 throw new WriteException(e);
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | RuntimeException e) {
+            failureMeter.mark();
             throw Throwables.propagate(e);
         } finally {
             lock.unlock(lockKeys);
@@ -341,6 +355,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             EquivalenceGraph graph,
             ImmutableSet<Item> content
     ) throws WriteException {
+        calledMeter.mark();
         List<Date> daysInInterval = daysIn(broadcast.getTransmissionInterval());
 
         ImmutableSet<String> lockKeys = getLockKeys(
@@ -370,7 +385,11 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                             .setTimestamp("now", clock.now().toDate()))
                     .map(statement -> statement.setConsistencyLevel(write))
                     .forEach(session::execute);
-        } catch (InterruptedException e) {
+        } catch (WriteException e) {
+            failureMeter.mark();
+            throw e;
+        } catch (InterruptedException | RuntimeException e) {
+            failureMeter.mark();
             throw Throwables.propagate(e);
         } finally {
             lock.unlock(lockKeys);
@@ -379,41 +398,48 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     @Override
     public void updateContent(Iterable<Item> content) throws WriteException {
-        ByteBuffer serializedContent = serialize(content);
-        int contentCount = Iterables.size(content);
-
-        ImmutableList.Builder<Statement> statements = ImmutableList.builder();
-        for (Item item : content) {
-            ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
-                    .stream(item.getBroadcasts().spliterator(), false)
-                    .filter(Broadcast::isActivelyPublished)
-                    .collect(MoreCollectors.toImmutableList());
-
-            BatchStatement batchStatement = new BatchStatement();
-
-            batchStatement.addAll(activelyPublishedBroadcasts.stream()
-                    .flatMap(broadcast -> contentUpdateStatements(
-                            item.getSource(), broadcast, serializedContent, contentCount
-                    ))
-                    .collect(Collectors.toList()))
-                    .setConsistencyLevel(write);
-
-            statements.add(batchStatement);
-        }
+        calledMeter.mark();
         try {
-            ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
-                    .stream()
-                    .map(session::executeAsync)
-                    .collect(Collectors.toList()));
-            insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
-        } catch (NoHostAvailableException
-                | QueryExecutionException
-                | InterruptedException
-                | ExecutionException
-                | TimeoutException
-                e
-                ) {
-            throw new WriteException(e);
+            ByteBuffer serializedContent = serialize(content);
+            int contentCount = Iterables.size(content);
+
+            ImmutableList.Builder<Statement> statements = ImmutableList.builder();
+            for (Item item : content) {
+                ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
+                        .stream(item.getBroadcasts().spliterator(), false)
+                        .filter(Broadcast::isActivelyPublished)
+                        .collect(MoreCollectors.toImmutableList());
+
+                BatchStatement batchStatement = new BatchStatement();
+
+                batchStatement.addAll(activelyPublishedBroadcasts.stream()
+                        .flatMap(broadcast -> contentUpdateStatements(
+                                item.getSource(), broadcast, serializedContent, contentCount
+                        ))
+                        .collect(Collectors.toList()))
+                        .setConsistencyLevel(write);
+
+                statements.add(batchStatement);
+            }
+
+            try {
+                ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
+                        .stream()
+                        .map(session::executeAsync)
+                        .collect(Collectors.toList()));
+                insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
+            } catch (NoHostAvailableException
+                    | QueryExecutionException
+                    | InterruptedException
+                    | ExecutionException
+                    | TimeoutException
+                    e
+                    ) {
+                throw new WriteException(e);
+            }
+        } catch (WriteException | RuntimeException e) {
+            failureMeter.mark();
+            throw e;
         }
     }
 

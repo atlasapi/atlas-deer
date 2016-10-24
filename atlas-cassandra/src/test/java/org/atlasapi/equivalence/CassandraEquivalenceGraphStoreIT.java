@@ -18,6 +18,7 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -46,6 +47,9 @@ public class CassandraEquivalenceGraphStoreIT {
 
     private static final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
     private static final String keyspace = "atlas_testing";
+    private static final MetricRegistry metricRegistry = new MetricRegistry();
+    private static final String metricPrefix = "processing.store";
+
     private static DatastaxCassandraService service
             = new DatastaxCassandraService(ImmutableList.of("localhost"), 8, 2);
     private static CassandraEquivalenceGraphStore store;
@@ -90,7 +94,9 @@ public class CassandraEquivalenceGraphStoreIT {
                 messageSender,
                 session,
                 ConsistencyLevel.ONE,
-                ConsistencyLevel.ONE
+                ConsistencyLevel.ONE,
+                metricRegistry,
+                metricPrefix
         );
     }
 

@@ -13,7 +13,10 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
@@ -34,14 +37,25 @@ public class ConcreteEventStore implements EventStore {
     private final EventHasher eventHasher;
     private final MessageSender<ResourceUpdatedMessage> sender;
     private final EventPersistenceStore persistenceStore;
+    private final Meter calledMeter;
+    private final Meter failureMeter;
 
-    protected ConcreteEventStore(Clock clock, IdGenerator idGenerator, EventHasher eventHasher,
-            MessageSender<ResourceUpdatedMessage> sender, EventPersistenceStore persistenceStore) {
+    protected ConcreteEventStore(
+            Clock clock,
+            IdGenerator idGenerator,
+            EventHasher eventHasher,
+            MessageSender<ResourceUpdatedMessage> sender,
+            EventPersistenceStore persistenceStore,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
         this.clock = checkNotNull(clock);
         this.idGenerator = checkNotNull(idGenerator);
         this.sender = checkNotNull(sender);
         this.eventHasher = checkNotNull(eventHasher);
         this.persistenceStore = checkNotNull(persistenceStore);
+        this.calledMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.called");
+        this.failureMeter = checkNotNull(metricRegistry).meter(checkNotNull(metricPrefix) + "meter.failure");
     }
 
     @Override
@@ -51,16 +65,30 @@ public class ConcreteEventStore implements EventStore {
 
     @Override
     public WriteResult<Event, Event> write(Event event) throws WriteException {
-        checkNotNull(event, "cannot write null event");
-        checkNotNull(event.getSource(), "cannot write event without source");
 
-        WriteResult<Event, Event> result = writeInternal(event);
-
-        if (result.written()) {
-            sendResourceUpdatedMessage(result);
+        calledMeter.mark();
+        try {
+            checkNotNull(event, "cannot write null event");
+            checkNotNull(event.getSource(), "cannot write event without source");
+        } catch (NullPointerException e) {
+            failureMeter.mark();
+            Throwables.propagate(e);
         }
 
-        return result;
+        try {
+
+            WriteResult<Event, Event> result = writeInternal(event);
+
+            if (result.written()) {
+                sendResourceUpdatedMessage(result);
+            }
+
+            return result;
+
+        } catch (WriteException | RuntimeException e) {
+            failureMeter.mark();
+            throw e;
+        }
     }
 
     private WriteResult<Event, Event> writeInternal(Event event) throws WriteException {
@@ -171,6 +199,8 @@ public class ConcreteEventStore implements EventStore {
 
     public interface BuildStep {
 
+        BuildStep withMetricRegistry(MetricRegistry metricRegistry);
+        BuildStep withMetricPrefix(String metricPrefix);
         ConcreteEventStore build();
     }
 
@@ -182,6 +212,8 @@ public class ConcreteEventStore implements EventStore {
         private EventHasher eventHasher;
         private MessageSender<ResourceUpdatedMessage> sender;
         private EventPersistenceStore persistenceStore;
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         private Builder() {
         }
@@ -216,6 +248,16 @@ public class ConcreteEventStore implements EventStore {
             return this;
         }
 
+        public BuildStep withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public BuildStep withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
+            return this;
+        }
+
         @Override
         public ConcreteEventStore build() {
             return new ConcreteEventStore(
@@ -223,7 +265,9 @@ public class ConcreteEventStore implements EventStore {
                     this.idGenerator,
                     this.eventHasher,
                     this.sender,
-                    this.persistenceStore
+                    this.persistenceStore,
+                    this.metricRegistry,
+                    this.metricPrefix
             );
         }
     }

@@ -10,6 +10,7 @@ import org.atlasapi.media.entity.Publisher;
 import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.persistence.cassandra.DatastaxCassandraService;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSet;
@@ -79,7 +80,9 @@ public class IdSettingOrganisationStoreIT {
                 session,
                 readConsistency,
                 writeConsistency,
-                uriStore
+                uriStore,
+                new MetricRegistry(),
+                "test.store.DatastaxCassandraOrganisationStore"
         );
         store.write(getOrganisation(1L, "uri"));
         when(idGenerator.generateRaw()).thenReturn(EXPECTED_ID);

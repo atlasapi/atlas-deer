@@ -48,6 +48,8 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
 
     private final ImmutableSet<String> seeds = ImmutableSet.of("localhost");
     private final String keyspace = "atlas_testing";
+    private final String metricPrefix = "processing.store";
+    private final MetricRegistry metricRegistry = new MetricRegistry();
     private final MessageSenderFactory messageSenderFactory = new MessageSenderFactory() {
 
         @Override
@@ -185,7 +187,9 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
                 messageSenderFactory.makeMessageSender("EquivContentGraphUpdates", null),
                 cassandraService.getCluster().connect(keyspace),
                 ConsistencyLevel.ONE,
-                ConsistencyLevel.ONE
+                ConsistencyLevel.ONE,
+                metricRegistry,
+                metricPrefix
 
         );
     }

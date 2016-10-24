@@ -1,9 +1,11 @@
 package org.atlasapi.util;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -20,32 +22,41 @@ import org.slf4j.LoggerFactory;
  */
 public final class GroupLock<T> {
 
+    private final Histogram idsLocked;
+    private final Counter threadsLocked;
+
+
     /**
      * Creates a new lock which uses the natural ordering of the value type to determine the order
      * in which locks on the value are acquired.
      *
      * @return a new GroupLock
      */
-    public static final <C extends Comparable<? super C>> GroupLock<C> natural() {
-        return new GroupLock<C>(Ordering.natural());
-    }
-
-    /**
-     * Creates a new lock which uses the ordering of the provided comparator to determine the order
-     * in which locks on the value are acquired.
-     *
-     * @return a new GroupLock
-     */
-    public static final <U> GroupLock<U> fromComparator(Comparator<? super U> comparator) {
-        return new GroupLock<U>(Ordering.from(comparator));
+    public static final <C extends Comparable<? super C>> GroupLock<C> natural(
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
+        return new GroupLock<C>(
+                Ordering.natural(),
+                metricRegistry,
+                metricPrefix
+        );
     }
 
     private final Set<T> locked = Sets.newHashSet();
     private final Logger log = LoggerFactory.getLogger(GroupLock.class);
     private final Ordering<? super T> ordering;
 
-    private GroupLock(Ordering<? super T> ordering) {
+    private GroupLock(
+            Ordering<? super T> ordering,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
         this.ordering = ordering;
+
+        this.idsLocked = metricRegistry.histogram(metricPrefix + "histogram.idsLocked");
+        this.threadsLocked = metricRegistry.counter(metricPrefix + "counter.threadsLocked");
+
     }
 
     /**
@@ -58,19 +69,10 @@ public final class GroupLock<T> {
      * @throws InterruptedException thread was interrupted whilst waiting for the lock.
      */
     public void lock(T id) throws InterruptedException {
-        log.trace("{} trying to lock {}", Thread.currentThread().getName(), id.toString());
-        synchronized (locked) {
-            while (locked.contains(id)) {
-                log.trace(
-                        "{} waiting on lock for {}",
-                        Thread.currentThread().getName(),
-                        id.toString()
-                );
-                locked.wait();
-            }
-            log.trace("{} acquired lock for {}", Thread.currentThread().getName(), id.toString());
-            locked.add(id);
-        }
+        threadsLocked.inc();
+        idsLocked.update(1);
+        lockInternal(id);
+        threadsLocked.dec();
     }
 
     /**
@@ -87,6 +89,7 @@ public final class GroupLock<T> {
         synchronized (locked) {
             if (locked.remove(id)) {
                 log.trace("{} unlocked {}", Thread.currentThread().getName(), id.toString());
+                idsLocked.update(-1);
                 locked.notifyAll();
             }
         }
@@ -124,9 +127,13 @@ public final class GroupLock<T> {
      * @throws InterruptedException thread was interrupted whilst waiting for the lock.
      */
     public void lock(Set<T> ids) throws InterruptedException {
+        threadsLocked.inc();
+        idsLocked.update(ids.size());
         for (T id : ordering.sortedCopy(ids)) {
-            lock(id);
+            lockInternal(id);
         }
+        threadsLocked.dec();
+
     }
 
     /**
@@ -150,6 +157,7 @@ public final class GroupLock<T> {
     public boolean tryLock(Set<T> ids) throws InterruptedException {
         synchronized (locked) {
             List<T> orderedIds = ordering.sortedCopy(ids);
+            idsLocked.update(ids.size());
             for (T id : orderedIds) {
                 if (!tryLock(id)) {
                     unlockTill(orderedIds, id);
@@ -157,6 +165,22 @@ public final class GroupLock<T> {
                 }
             }
             return true;
+        }
+    }
+
+    private void lockInternal(T id) throws InterruptedException {
+        log.trace("{} trying to lock {}", Thread.currentThread().getName(), id.toString());
+        synchronized (locked) {
+            while (locked.contains(id)) {
+                log.trace(
+                        "{} waiting on lock for {}",
+                        Thread.currentThread().getName(),
+                        id.toString()
+                );
+                locked.wait();
+            }
+            log.trace("{} acquired lock for {}", Thread.currentThread().getName(), id.toString());
+            locked.add(id);
         }
     }
 
