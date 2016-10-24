@@ -65,7 +65,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
-        this.publisherMeterName = metricPrefix + "%s.meter.publisher";
+        this.publisherMeterName = metricPrefix + "%s.meter.received";
     }
 
     public static ScheduleReadWriteWorker create(

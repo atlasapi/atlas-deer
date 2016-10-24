@@ -56,7 +56,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.contentNotWrittenMeter = metricRegistry.meter(metricPrefix + "meter.nop");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
-        this.publisherMeterName = metricPrefix + "%s.meter.publisher";
+        this.publisherMeterName = metricPrefix + "%s.meter.received";
 
         this.metricRegistry = metricRegistry;
 

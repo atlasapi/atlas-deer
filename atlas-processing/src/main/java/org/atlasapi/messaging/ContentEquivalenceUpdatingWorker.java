@@ -48,7 +48,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
 
-        this.publisherMeterName = metricPrefix + "%s.meter.publisher";
+        this.publisherMeterName = metricPrefix + "%s.meter.received";
     }
 
     public static ContentEquivalenceUpdatingWorker create(
