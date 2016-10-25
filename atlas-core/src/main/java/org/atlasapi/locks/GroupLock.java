@@ -1,4 +1,4 @@
-package org.atlasapi.util;
+package org.atlasapi.locks;
 
 import java.util.List;
 import java.util.Set;
@@ -34,7 +34,7 @@ public final class GroupLock<T> {
      *
      * @return a new GroupLock
      */
-    public static final <C extends Comparable<? super C>> GroupLock<C> natural(
+    public static <C extends Comparable<? super C>> GroupLock<C> natural(
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {

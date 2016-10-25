@@ -11,7 +11,7 @@ import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.messaging.EquivalentContentUpdatedMessage;
-import org.atlasapi.util.GroupLock;
+import org.atlasapi.locks.GroupLock;
 
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.queue.MessageSender;

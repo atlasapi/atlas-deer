@@ -15,7 +15,7 @@ import org.atlasapi.entity.util.StoreException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.GroupLock;
+import org.atlasapi.locks.GroupLock;
 
 import com.metabroadcast.common.collect.MoreSets;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -25,7 +25,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;

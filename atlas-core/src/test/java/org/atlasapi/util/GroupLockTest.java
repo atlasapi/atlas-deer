@@ -19,7 +19,7 @@ public class GroupLockTest {
     @Test
     public void testCanLockDifferentThings() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural(
+        final org.atlasapi.locks.GroupLock<String> lock = org.atlasapi.locks.GroupLock.<String>natural(
                 new MetricRegistry(),
                 "CanLockDifferentThings"
         );
@@ -48,7 +48,7 @@ public class GroupLockTest {
     @Test
     public void testCantAcquireLockForKeyTwice() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural(
+        final org.atlasapi.locks.GroupLock<String> lock = org.atlasapi.locks.GroupLock.<String>natural(
                 new MetricRegistry(),
                 "CantAcquireLockForKeyTwice"
         );
@@ -79,7 +79,7 @@ public class GroupLockTest {
     @Test
     public void testTryLock() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural(
+        final org.atlasapi.locks.GroupLock<String> lock = org.atlasapi.locks.GroupLock.<String>natural(
                 new MetricRegistry(),
                 "TryLock"
         );
@@ -94,7 +94,7 @@ public class GroupLockTest {
     @Test
     public void testCantLockGroupWhereOneElementIsLocked() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural(
+        final org.atlasapi.locks.GroupLock<String> lock = org.atlasapi.locks.GroupLock.<String>natural(
                 new MetricRegistry(),
                 "CantLockGroupWhereOneElementIsLocked"
         );
@@ -125,7 +125,7 @@ public class GroupLockTest {
     @Test
     public void testLocksGroupElementsInOrder() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural(
+        final org.atlasapi.locks.GroupLock<String> lock = org.atlasapi.locks.GroupLock.<String>natural(
                 new MetricRegistry(),
                 "LocksGroupElementsInOrder"
         );
@@ -171,7 +171,7 @@ public class GroupLockTest {
     @Test
     public void testUnlocksAllGroupElementsIfTryLockFailsAGroup() throws InterruptedException {
 
-        final GroupLock<String> lock = GroupLock.<String>natural(
+        final org.atlasapi.locks.GroupLock<String> lock = org.atlasapi.locks.GroupLock.<String>natural(
                 new MetricRegistry(),
                 "UnlocksAllGroupElementsIfTryLockFailsAGroup"
         );
