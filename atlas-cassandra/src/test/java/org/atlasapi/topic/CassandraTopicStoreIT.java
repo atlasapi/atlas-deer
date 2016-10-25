@@ -19,6 +19,7 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.google.common.base.Equivalence;
@@ -83,6 +84,8 @@ public class CassandraTopicStoreIT {
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)
+                .withMetricRegistry(new MetricRegistry())
+                .withMetricPrefix("test.CassandraTopicStore.")
                 .build();
     }
 

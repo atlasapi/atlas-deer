@@ -1,5 +1,6 @@
 package org.atlasapi.schedule;
 
+import com.codahale.metrics.MetricRegistry;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -16,6 +17,8 @@ public class AstyanaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)
+                .withMetricRegistry(new MetricRegistry())
+                .withMetricPrefix("test.AstyanaxCassandraScheduleStore.")
                 .build();
     }
 

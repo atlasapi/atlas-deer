@@ -69,7 +69,7 @@ public class DatastaxCassandraEventStoreIT {
 
     private @Mock Clock clock;
 
-    private @Mock MetricRegistry metricRegistry;
+    private MetricRegistry metricRegistry;
 
     private String metricPrefix;
     private EventStore store;
@@ -101,6 +101,7 @@ public class DatastaxCassandraEventStoreIT {
                 writeConsistency
         );
 
+        metricRegistry = new MetricRegistry();
         metricPrefix = "ConcreteEventStore";
 
         store = new ConcreteEventStore(clock, idGenerator, hasher, sender, persistenceStore, metricRegistry, metricPrefix);
