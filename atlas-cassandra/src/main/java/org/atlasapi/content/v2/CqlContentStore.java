@@ -90,8 +90,8 @@ public class CqlContentStore implements ContentStore {
 
     private static final long READ_TIMEOUT_SECONDS = 5L;
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final Session session;
     private final Mapper<org.atlasapi.content.v2.model.Content> mapper;
@@ -146,8 +146,8 @@ public class CqlContentStore implements ContentStore {
         this.hasher = checkNotNull(hasher);
         this.graphStore = checkNotNull(graphStore);
 
-        writeContent = metricPrefix + "writeContent";
-        writeBroadcast = metricPrefix + "writeBroadcast";
+        writeContent = metricPrefix + "writeContent.";
+        writeBroadcast = metricPrefix + "writeBroadcast.";
 
         this.metricRegistry = metricRegistry;
     }

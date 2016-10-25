@@ -57,10 +57,13 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final int TIMEOUT = 1;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
 
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
+
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
 
-    private final Meter calledMeter;
-    private final Meter failureMeter;
+    private final MetricRegistry metricRegistry;
+    private final String updateEquivalences;
 
     public AbstractEquivalenceGraphStore(
             MessageSender<EquivalenceGraphUpdateMessage> messageSender,
@@ -69,17 +72,16 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     ) {
         this.messageSender = checkNotNull(messageSender);
 
-        calledMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.called");
-        failureMeter = checkNotNull(metricRegistry)
-                .meter(checkNotNull(metricPrefix) + "meter.failure");
+        this.metricRegistry = metricRegistry;
+        updateEquivalences = metricPrefix + "updateEquivalences.";
+
     }
 
     @Override
     public final Optional<EquivalenceGraphUpdate> updateEquivalences(ResourceRef subject,
             Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws WriteException {
 
-        calledMeter.mark();
+        metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
         ImmutableSet<Id> newAdjacents
                 = ImmutableSet.copyOf(Iterables.transform(assertedAdjacents, Identifiables.toId()));
         Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
@@ -128,15 +130,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             return updated;
 
         } catch (InterruptedException e) {
-            failureMeter.mark();
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
             log().error(String.format("%s: %s", subject, newAdjacents), e);
             return Optional.absent();
         } catch (StoreException e) {
-            failureMeter.mark();
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
             Throwables.propagateIfPossible(e, WriteException.class);
             throw new WriteException(e);
         } catch (IllegalArgumentException e) {
-            failureMeter.mark();
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
             log().error(e.getMessage());
             return Optional.absent();
         } finally {

@@ -41,8 +41,8 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private static final String PRIMARY_KEY_COLUMN = "organisation_id";
     private static final String DATA_COLUMN = "data";
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final String KEYS = "keys";
     private final String ORGANISATION_ID = "organisationId";
@@ -89,7 +89,7 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
         this.metricRegistry = metricRegistry;
 
-        write = metricPrefix + "write";
+        write = metricPrefix + "write.";
 
     }
 

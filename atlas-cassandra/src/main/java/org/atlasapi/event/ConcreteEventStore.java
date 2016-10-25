@@ -30,8 +30,8 @@ public class ConcreteEventStore implements EventStore {
 
     private static final Event NO_PREVIOUS = null;
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -60,7 +60,7 @@ public class ConcreteEventStore implements EventStore {
         this.persistenceStore = checkNotNull(persistenceStore);
 
         this.metricRegistry = metricRegistry;
-        write = metricPrefix + "write";
+        write = metricPrefix + "write.";
     }
 
     @Override

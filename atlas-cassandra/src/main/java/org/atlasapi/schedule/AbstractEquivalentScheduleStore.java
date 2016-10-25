@@ -51,8 +51,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentScheduleStore.class);
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final EquivalenceGraphStore graphStore;
     private final ContentResolver contentStore;
@@ -77,8 +77,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         this.contentStore = checkNotNull(contentStore);
         this.metricRegistry = metricRegistry;
 
-        updateSchedule = metricPrefix + "updateSchedule";
-        updateEquivalences = metricPrefix + "updateEquivalences";
+        updateSchedule = metricPrefix + "updateSchedule.";
+        updateEquivalences = metricPrefix + "updateEquivalences.";
 
         lock = GroupLock.natural(metricRegistry, metricPrefix);
     }

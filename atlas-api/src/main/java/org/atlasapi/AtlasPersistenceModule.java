@@ -326,7 +326,7 @@ public class AtlasPersistenceModule {
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel(),
                 metricsModule.metrics(),
-                STORE_METRIC_PREFIX
+                STORE_METRIC_PREFIX + "CassandraEquivalentContentStore."
         );
     }
 
@@ -342,7 +342,7 @@ public class AtlasPersistenceModule {
                 persistenceModule().getReadConsistencyLevel(),
                 persistenceModule().getWriteConsistencyLevel(),
                 metricsModule.metrics(),
-                STORE_METRIC_PREFIX
+                STORE_METRIC_PREFIX + "nullMessageSendingCassandraEquivalentContentStore."
         );
     }
 

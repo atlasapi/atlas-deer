@@ -42,6 +42,9 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
 
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
+
     private final GroupLock<Id> lock;
 
     private final ContentResolver contentResolver;
@@ -49,6 +52,10 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     private final EquivalenceGraphStore graphStore;
     private final MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender;
     private final MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender;
+
+    private final MetricRegistry metricRegistry;
+    private final String updateEquivalences;
+    private final String updateContent;
 
     protected AbstractEquivalentContentStore(
             ContentResolver contentResolver,
@@ -66,10 +73,16 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
                 checkNotNull(metricRegistry),
                 checkNotNull(metricPrefix)
         );
+
+        this.metricRegistry = metricRegistry;
+        updateEquivalences = metricPrefix + "updateEquivalences.";
+        updateContent = metricPrefix + "updateContent.";
     }
 
     @Override
     public final void updateEquivalences(EquivalenceGraphUpdate update) throws WriteException {
+        metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
+
         Set<Id> ids = idsOf(update);
         ImmutableSet<Id> staleContentIds = ImmutableSet.of();
 
@@ -100,6 +113,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
             sendEquivalentContentGraphChangedMessage(update);
         } catch (MessagingException | InterruptedException e) {
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
             throw new WriteException("Updating " + ids, e);
         } finally {
             lock.unlock(ids);
@@ -113,6 +127,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     @Override
     public final void updateContent(Id contentId) throws WriteException {
+        metricRegistry.meter(updateContent + METER_CALLED).mark();
         try {
             lock.lock(contentId);
 
@@ -134,6 +149,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
             sendEquivalentContentChangedMessage(content, graph);
         } catch (MessagingException | InterruptedException e) {
+            metricRegistry.meter(updateContent + METER_FAILURE).mark();
             throw new WriteException("Updating " + contentId, e);
         } finally {
             lock.unlock(contentId);

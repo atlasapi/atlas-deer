@@ -28,8 +28,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 abstract public class AbstractSegmentStore implements SegmentStore {
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final IdGenerator idGen;
@@ -54,7 +54,7 @@ abstract public class AbstractSegmentStore implements SegmentStore {
         this.clock = checkNotNull(clock);
 
         this.metricRegistry = metricRegistry;
-        writeSegment = metricPrefix + "writeSegment";
+        writeSegment = metricPrefix + "writeSegment.";
     }
 
     @Override

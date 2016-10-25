@@ -106,8 +106,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private static final Column<Date> SCHEDULE_UPDATE = dateColumn("schedule_update");
     private static final Column<Date> EQUIV_UPDATE = dateColumn("equiv_update");
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final Session session;
     private final ConsistencyLevel read;
@@ -207,7 +207,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         this.lock = GroupLock.natural(metricRegistry, metricPrefix);
         this.metricRegistry = metricRegistry;
 
-        updateContent = metricPrefix + "updateContent";
+        updateContent = metricPrefix + "updateContent.";
 
     }
 

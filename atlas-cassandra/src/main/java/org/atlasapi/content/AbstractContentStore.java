@@ -74,7 +74,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Brand, Content> visit(Brand brand) {
-            metricRegistry.meter(visit + "Brand" + METER_CALLED).mark();
+            metricRegistry.meter(visitMeterPrefix + "Brand." + METER_CALLED).mark();
             try {
                 Optional<Content> previous = getPreviousContent(brand);
 
@@ -91,7 +91,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
                 return WriteResult.<Brand, Content>written(brand).build();
             } catch (RuntimeException e) {
-                metricRegistry.meter(visit + METER_FAILURE).mark();
+                metricRegistry.meter(visitMeterPrefix + "Brand." + METER_FAILURE).mark();
                 throw Throwables.propagate(e);
             }
 
@@ -122,7 +122,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Series, Content> visit(Series series) {
-            metricRegistry.meter(visit + "Series" + METER_CALLED).mark();
+            metricRegistry.meter(visitMeterPrefix + "Series." + METER_CALLED).mark();
             try {
                 Optional<Content> previous = getPreviousContent(series);
 
@@ -136,7 +136,7 @@ public abstract class AbstractContentStore implements ContentStore {
                 write(series, NO_PREVIOUS);
                 return WriteResult.<Series, Content>written(series).build();
             } catch (RuntimeException e) {
-                metricRegistry.meter(visit + "Series" + METER_FAILURE).mark();
+                metricRegistry.meter(visitMeterPrefix + "Series." + METER_FAILURE).mark();
                 throw Throwables.propagate(e);
             }
         }
@@ -173,7 +173,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Item, Content> visit(Item item) {
-            metricRegistry.meter(visit + "Item" + METER_CALLED).mark();
+            metricRegistry.meter(visitMeterPrefix + "Item." + METER_CALLED).mark();
             try {
                 if (item.getContainerRef() != null) {
                     item.setContainerSummary(getSummary(item.getContainerRef()));
@@ -188,7 +188,7 @@ public abstract class AbstractContentStore implements ContentStore {
                 return WriteResult.<Item, Content>written(item)
                         .build();
             } catch (RuntimeException e) {
-                metricRegistry.meter(visit + "Item" + METER_FAILURE).mark();
+                metricRegistry.meter(visitMeterPrefix + "Item." + METER_FAILURE).mark();
                 throw Throwables.propagate(e);
             }
         }
@@ -209,7 +209,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Episode, Content> visit(Episode episode) {
-            metricRegistry.meter(visit + "Episode" + METER_CALLED).mark();
+            metricRegistry.meter(visitMeterPrefix + "Episode." + METER_CALLED).mark();
             try {
                 checkArgument(
                         episode.getContainerRef() != null,
@@ -231,7 +231,7 @@ public abstract class AbstractContentStore implements ContentStore {
                 write(episode, NO_PREVIOUS);
                 return WriteResult.<Episode, Content>written(episode).build();
             } catch (RuntimeException e) {
-                metricRegistry.meter(visit + "Episode" + METER_FAILURE).mark();
+                metricRegistry.meter(visitMeterPrefix + "Episode." + METER_FAILURE).mark();
                 throw Throwables.propagate(e);
             }
         }
@@ -265,7 +265,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Film, Content> visit(Film film) {
-            metricRegistry.meter(visit + "Film" + METER_CALLED).mark();
+            metricRegistry.meter(visitMeterPrefix + "Film." + METER_CALLED).mark();
             try {
                 Optional<Content> previous = getPreviousContent(film);
                 if (previous.isPresent()) {
@@ -275,7 +275,7 @@ public abstract class AbstractContentStore implements ContentStore {
                 write(film, NO_PREVIOUS);
                 return WriteResult.<Film, Content>written(film).build();
             } catch (RuntimeException e) {
-                metricRegistry.meter(visit + "Film" + METER_FAILURE).mark();
+                metricRegistry.meter(visitMeterPrefix + "Film." + METER_FAILURE).mark();
                 throw Throwables.propagate(e);
             }
         }
@@ -294,7 +294,7 @@ public abstract class AbstractContentStore implements ContentStore {
 
         @Override
         public WriteResult<Song, Content> visit(Song song) {
-            metricRegistry.meter(visit + "Song" + METER_CALLED).mark();
+            metricRegistry.meter(visitMeterPrefix + "Song." + METER_CALLED).mark();
             try {
                 Optional<Content> previous = getPreviousContent(song);
 
@@ -307,7 +307,7 @@ public abstract class AbstractContentStore implements ContentStore {
                 return WriteResult.<Song, Content>written(song)
                         .build();
             } catch (RuntimeException e) {
-                metricRegistry.meter(visit + "Song" + METER_FAILURE).mark();
+                metricRegistry.meter(visitMeterPrefix + "Song." + METER_FAILURE).mark();
                 throw Throwables.propagate(e);
             }
         }
@@ -331,8 +331,8 @@ public abstract class AbstractContentStore implements ContentStore {
     }
 
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final ContentHasher hasher;
     private final IdGenerator idGenerator;
@@ -345,7 +345,7 @@ public abstract class AbstractContentStore implements ContentStore {
     private final MetricRegistry metricRegistry;
     private final String writeContent;
     private final String writeBroadcast;
-    private final String visit;
+    private final String visitMeterPrefix;
 
     protected AbstractContentStore(
             ContentHasher hasher,
@@ -365,9 +365,9 @@ public abstract class AbstractContentStore implements ContentStore {
 
         this.metricRegistry = metricRegistry;
 
-        writeContent = metricPrefix + "writeContent";
-        writeBroadcast = metricPrefix + "writeBroadcast";
-        visit = metricPrefix + "visit";
+        writeContent = metricPrefix + "writeContent.";
+        writeBroadcast = metricPrefix + "writeBroadcast.";
+        visitMeterPrefix = metricPrefix + "visitMeterPrefix";
     }
 
     @Override

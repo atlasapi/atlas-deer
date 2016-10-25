@@ -62,8 +62,8 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractScheduleStore.class);
 
-    private static final String METER_CALLED = ".meter.called";
-    private static final String METER_FAILURE = ".meter.failure";
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
 
     private final ContentStore contentStore;
     private final MessageSender<ScheduleUpdateMessage> messageSender;
@@ -84,7 +84,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
         this.blockUpdater = new ScheduleBlockUpdater();
 
         this.metricRegistry = metricRegistry;
-        writeSchedule = metrixPrefix + "writeSchedule";
+        writeSchedule = metrixPrefix + "writeSchedule.";
     }
 
     @Override

@@ -285,7 +285,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "CassandraTopicStore.")
                 .build();
-        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule", // you got to here
+        this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule",
                 contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class)
         )
                 .withReadConsistency(readConsistency)
