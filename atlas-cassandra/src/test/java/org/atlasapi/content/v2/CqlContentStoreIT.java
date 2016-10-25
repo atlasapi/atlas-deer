@@ -10,6 +10,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.segment.SegmentEvent;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.junit.Ignore;
@@ -33,6 +34,8 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
                 .withClock(clock)
                 .withHasher(hasher)
                 .withGraphStore(graphStore)
+                .withMetricRegistry(new MetricRegistry())
+                .withMetricPrefix("test.CqlContentStore.")
                 .build();
     }
 
