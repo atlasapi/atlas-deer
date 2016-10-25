@@ -54,16 +54,17 @@ public class ConcreteEventStoreTest {
     private @Mock EventHasher eventHasher;
     private @Mock MessageSender<ResourceUpdatedMessage> sender;
     private @Mock EventPersistenceStore persistenceStore;
-    private @Mock MetricRegistry metricRegistry;
 
     private DateTime now;
     private long id;
     private Publisher publisher;
+    private MetricRegistry metricRegistry;
     private String metricPrefix;
 
     @Before
     public void setUp() throws Exception {
 
+        metricRegistry = new MetricRegistry();
         metricPrefix = "ConcreteEventStore";
 
         eventStore = new ConcreteEventStore(
