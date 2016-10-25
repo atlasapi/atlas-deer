@@ -1791,6 +1791,93 @@ public class CassandraEquivalentScheduleStoreIT {
         );
     }
 
+    @Test
+    public void updatingTheScheduleUsesTheCurrentBroadcastIdsWhenDeterminingStales()
+            throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        // The existing broadcast has the same ID as the broadcast in the update. If we use
+        // the broadcast ID when computing stale broadcasts instead of using the ID of the broadcast
+        // we resolved from the content store (which is the most up-to-date one) we will think this
+        // ID is not stale and therefore won't remove this broadcast. This test asserts that this
+        // doesn't happen
+        Broadcast existingBroadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("firstId");
+
+        Broadcast broadcastInUpdate = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("firstId");
+
+        Broadcast broadcastInStore = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("secondId");
+
+        Item existingItem = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        Item item = new Item(Id.valueOf(2), Publisher.METABROADCAST);
+
+        existingItem.setBroadcasts(ImmutableSet.of(existingBroadcast));
+        item.setBroadcasts(ImmutableSet.of(broadcastInStore));
+
+        contentStore.writeContent(existingItem);
+        contentStore.writeContent(item);
+
+        // This update adds the existing broadcast
+        ScheduleRef firstUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(existingItem.getId(), existingBroadcast.toRef())
+                .build();
+
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        firstUpdate,
+                        ImmutableSet.of()
+                ));
+
+        // This update should add the new broadcast and remove the existing one
+        ScheduleRef secondUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item.getId(), broadcastInUpdate.toRef())
+                .build();
+
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        secondUpdate,
+                        ImmutableSet.of()
+                ));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
+    }
+
     private ImmutableList<EquivalentScheduleEntry> getScheduleEntries(
             Channel channel, DateTime start, DateTime end
     ) throws Exception {
