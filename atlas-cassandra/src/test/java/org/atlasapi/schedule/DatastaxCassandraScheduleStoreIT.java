@@ -3,6 +3,7 @@ package org.atlasapi.schedule;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -15,6 +16,9 @@ public class DatastaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {
 
     private final ConsistencyLevel writeConsistency = ConsistencyLevel.ONE;
     private final ConsistencyLevel readConsistency = ConsistencyLevel.ONE;
+
+    MetricRegistry metricRegistry = new MetricRegistry();
+    String metricPrefix = "test.DatastaxCassandraScheduleStoreIT.";
 
     @Override
     protected ScheduleStore provideScheduleStore() {
@@ -29,7 +33,9 @@ public class DatastaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {
                 session,
                 new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
                         contentStore))),
-                CASSANDRA_TIMEOUT_SECONDS
+                CASSANDRA_TIMEOUT_SECONDS,
+                metricRegistry,
+                metricPrefix
         );
     }
 

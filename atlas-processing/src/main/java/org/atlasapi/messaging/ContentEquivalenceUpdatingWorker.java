@@ -26,9 +26,12 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     private final EquivalenceGraphStore graphStore;
     private final DirectAndExplicitEquivalenceMigrator equivMigrator;
 
+    private final MetricRegistry metricRegistry;
+
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final String publisherMeterName;
 
     private ContentEquivalenceUpdatingWorker(
             EquivalenceGraphStore graphStore,
@@ -39,9 +42,13 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.graphStore = checkNotNull(graphStore);
         this.equivMigrator = checkNotNull(equivMigrator);
 
+        this.metricRegistry = metricRegistry;
+
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+
+        this.publisherMeterName = metricPrefix + "%s.meter.received";
     }
 
     public static ContentEquivalenceUpdatingWorker create(
@@ -58,6 +65,13 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
     @Override
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
         messageReceivedMeter.mark();
+
+        metricRegistry.meter(
+                String.format(
+                        publisherMeterName,
+                        message.getSubject().getSource()
+                ))
+                .mark();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug(
@@ -78,6 +92,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
                     message.getPublishers()
             );
             equivMigrator.migrateEquivalence(message.getSubject());
+
 
             LOG.debug("Successfully processed message {}", message.toString());
         } catch (Exception e) {

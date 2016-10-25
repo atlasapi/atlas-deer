@@ -129,6 +129,8 @@ public class AtlasPersistenceModule {
     private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private static final PersistenceAuditLog persistenceAuditLog = new NoLoggingPersistenceAuditLog();
+    private static final String STORE_METRIC_PREFIX = "persistence.store.";
+    private static final String UTIL_METRIC_PREFIX = "persistence.util.";
 
     private final String mongoWriteHost = Configurer.get("mongo.write.host").get();
     private final Integer mongoWritePort = Configurer.get("mongo.write.port").toInt();
@@ -230,7 +232,7 @@ public class AtlasPersistenceModule {
                 idGeneratorBuilder(),
                 ContentHashGenerator.create(
                         HashGenerator.create(),
-                        "persistence.util.",
+                        UTIL_METRIC_PREFIX,
                         metricsModule.metrics()
                 ),
                 eventV2 -> UUID.randomUUID().toString(),
@@ -322,7 +324,9 @@ public class AtlasPersistenceModule {
                 ),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
-                persistenceModule().getWriteConsistencyLevel()
+                persistenceModule().getWriteConsistencyLevel(),
+                metricsModule.metrics(),
+                STORE_METRIC_PREFIX + "CassandraEquivalentContentStore."
         );
     }
 
@@ -336,7 +340,9 @@ public class AtlasPersistenceModule {
                 persistenceModule().nullMessageSender(EquivalenceGraphUpdateMessage.class),
                 persistenceModule().getSession(),
                 persistenceModule().getReadConsistencyLevel(),
-                persistenceModule().getWriteConsistencyLevel()
+                persistenceModule().getWriteConsistencyLevel(),
+                metricsModule.metrics(),
+                STORE_METRIC_PREFIX + "nullMessageSendingCassandraEquivalentContentStore."
         );
     }
 

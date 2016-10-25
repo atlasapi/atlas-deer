@@ -38,6 +38,9 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final Meter messageReceivedMeter;
     private final Meter contentNotWrittenMeter;
     private final Meter failureMeter;
+    private final String publisherMeterName;
+
+    private final MetricRegistry metricRegistry;
 
     private ContentBootstrapWorker(
             ContentResolver contentResolver,
@@ -53,6 +56,9 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.contentNotWrittenMeter = metricRegistry.meter(metricPrefix + "meter.nop");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.publisherMeterName = metricPrefix + "%s.meter.received";
+
+        this.metricRegistry = metricRegistry;
 
         this.columbusTelescopeReporter = checkNotNull(columbusTelescopeReporter);
     }
@@ -82,6 +88,13 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
                 contentId, getTimeToProcessInSeconds(message), message);
 
         Timer.Context time = executionTimer.time();
+
+        metricRegistry.meter(
+                String.format(
+                        publisherMeterName,
+                        message.getUpdatedResource().getSource()
+                )
+        ).mark();
 
         try {
             process(contentId);

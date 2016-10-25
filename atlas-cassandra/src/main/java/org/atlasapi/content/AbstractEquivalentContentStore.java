@@ -19,6 +19,7 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -41,7 +42,10 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalentContentStore.class);
 
-    private static final GroupLock<Id> lock = GroupLock.natural();
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
+
+    private final GroupLock<Id> lock;
 
     private final ContentResolver contentResolver;
 
@@ -49,20 +53,36 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
     private final MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender;
     private final MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender;
 
+    private final MetricRegistry metricRegistry;
+    private final String updateEquivalences;
+    private final String updateContent;
+
     protected AbstractEquivalentContentStore(
             ContentResolver contentResolver,
             EquivalenceGraphStore graphStore,
             MessageSender<EquivalentContentUpdatedMessage> equivContentUpdatedMessageSender,
-            MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender
+            MessageSender<EquivalenceGraphUpdateMessage> equivGraphUpdatedMessageSender,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
         this.contentResolver = checkNotNull(contentResolver);
         this.graphStore = checkNotNull(graphStore);
         this.equivContentUpdatedMessageSender = checkNotNull(equivContentUpdatedMessageSender);
         this.equivGraphUpdatedMessageSender = checkNotNull(equivGraphUpdatedMessageSender);
+        this.lock = GroupLock.natural(
+                checkNotNull(metricRegistry),
+                checkNotNull(metricPrefix)
+        );
+
+        this.metricRegistry = metricRegistry;
+        updateEquivalences = metricPrefix + "updateEquivalences.";
+        updateContent = metricPrefix + "updateContent.";
     }
 
     @Override
     public final void updateEquivalences(EquivalenceGraphUpdate update) throws WriteException {
+        metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
+
         Set<Id> ids = idsOf(update);
         ImmutableSet<Id> staleContentIds = ImmutableSet.of();
 
@@ -93,6 +113,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
             sendEquivalentContentGraphChangedMessage(update);
         } catch (MessagingException | InterruptedException e) {
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
             throw new WriteException("Updating " + ids, e);
         } finally {
             lock.unlock(ids);
@@ -106,6 +127,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
     @Override
     public final void updateContent(Id contentId) throws WriteException {
+        metricRegistry.meter(updateContent + METER_CALLED).mark();
         try {
             lock.lock(contentId);
 
@@ -127,6 +149,7 @@ public abstract class AbstractEquivalentContentStore implements EquivalentConten
 
             sendEquivalentContentChangedMessage(content, graph);
         } catch (MessagingException | InterruptedException e) {
+            metricRegistry.meter(updateContent + METER_FAILURE).mark();
             throw new WriteException("Updating " + contentId, e);
         } finally {
             lock.unlock(contentId);

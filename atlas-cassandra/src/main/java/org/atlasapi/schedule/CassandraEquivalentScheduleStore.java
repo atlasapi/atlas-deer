@@ -36,10 +36,13 @@ import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.ContentProtos;
 import org.atlasapi.util.Column;
+import org.atlasapi.util.GroupLock;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -103,6 +106,9 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private static final Column<Date> SCHEDULE_UPDATE = dateColumn("schedule_update");
     private static final Column<Date> EQUIV_UPDATE = dateColumn("equiv_update");
 
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
+
     private final Session session;
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
@@ -119,15 +125,21 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final PreparedStatement broadcastScheduleUpdate;
     private final PreparedStatement broadcastSelect;
 
+    private final GroupLock<String> lock;
+    private final MetricRegistry metricRegistry;
+    private final String updateContent;
+
     public CassandraEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
             ContentResolver contentStore,
             Session session,
             ConsistencyLevel read,
             ConsistencyLevel write,
-            Clock clock
+            Clock clock,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
-        super(graphStore, contentStore);
+        super(graphStore, contentStore, metricRegistry, metricPrefix);
 
         this.contentSerializer = new ContentSerializer(
                 new ContentSerializationVisitor(contentStore)
@@ -191,6 +203,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .and(set(CONTENT_COUNT.name(), bindMarker("contentCountData")))
                 .and(set(CONTENT.name(), bindMarker("contentData")))
                 .and(set(SCHEDULE_UPDATE.name(), bindMarker("now"))));
+
+        this.lock = GroupLock.natural(metricRegistry, metricPrefix);
+        this.metricRegistry = metricRegistry;
+
+        updateContent = metricPrefix + "updateContent.";
+
     }
 
     @Override
@@ -336,41 +354,48 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     @Override
     public void updateContent(Iterable<Item> content) throws WriteException {
-        ByteBuffer serializedContent = serialize(content);
-        int contentCount = Iterables.size(content);
-
-        ImmutableList.Builder<Statement> statements = ImmutableList.builder();
-        for (Item item : content) {
-            ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
-                    .stream(item.getBroadcasts().spliterator(), false)
-                    .filter(Broadcast::isActivelyPublished)
-                    .collect(MoreCollectors.toImmutableList());
-
-            BatchStatement batchStatement = new BatchStatement();
-
-            batchStatement.addAll(activelyPublishedBroadcasts.stream()
-                    .flatMap(broadcast -> contentUpdateStatements(
-                            item.getSource(), broadcast, serializedContent, contentCount
-                    ))
-                    .collect(Collectors.toList()))
-                    .setConsistencyLevel(write);
-
-            statements.add(batchStatement);
-        }
+        metricRegistry.meter(updateContent + METER_CALLED).mark();
         try {
-            ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
-                    .stream()
-                    .map(session::executeAsync)
-                    .collect(Collectors.toList()));
-            insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
-        } catch (NoHostAvailableException
-                | QueryExecutionException
-                | InterruptedException
-                | ExecutionException
-                | TimeoutException
-                e
-                ) {
-            throw new WriteException(e);
+            ByteBuffer serializedContent = serialize(content);
+            int contentCount = Iterables.size(content);
+
+            ImmutableList.Builder<Statement> statements = ImmutableList.builder();
+            for (Item item : content) {
+                ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
+                        .stream(item.getBroadcasts().spliterator(), false)
+                        .filter(Broadcast::isActivelyPublished)
+                        .collect(MoreCollectors.toImmutableList());
+
+                BatchStatement batchStatement = new BatchStatement();
+
+                batchStatement.addAll(activelyPublishedBroadcasts.stream()
+                        .flatMap(broadcast -> contentUpdateStatements(
+                                item.getSource(), broadcast, serializedContent, contentCount
+                        ))
+                        .collect(Collectors.toList()))
+                        .setConsistencyLevel(write);
+
+                statements.add(batchStatement);
+            }
+
+            try {
+                ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
+                        .stream()
+                        .map(session::executeAsync)
+                        .collect(Collectors.toList()));
+                insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
+            } catch (NoHostAvailableException
+                    | QueryExecutionException
+                    | InterruptedException
+                    | ExecutionException
+                    | TimeoutException
+                    e
+                    ) {
+                throw new WriteException(e);
+            }
+        } catch (WriteException | RuntimeException e) {
+            metricRegistry.meter(updateContent + METER_FAILURE).mark();
+            throw e;
         }
     }
 

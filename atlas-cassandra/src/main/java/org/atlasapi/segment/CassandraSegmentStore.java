@@ -24,6 +24,8 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.SystemClock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -63,11 +65,18 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
     private final PreparedStatement segmentInsert;
     private final PreparedStatement segmentSelect;
 
-    private CassandraSegmentStore(Session session, String keyspace, String tableName,
-            AliasIndex<Segment> aliasIndex, IdGenerator idGenerator,
+    private CassandraSegmentStore(
+            Session session,
+            String keyspace,
+            String tableName,
+            AliasIndex<Segment> aliasIndex,
+            IdGenerator idGenerator,
             Equivalence<? super Segment> equivalence,
-            MessageSender<ResourceUpdatedMessage> sender) {
-        super(idGenerator, equivalence, sender, new SystemClock());
+            MessageSender<ResourceUpdatedMessage> sender,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
+        super(idGenerator, equivalence, sender, new SystemClock(), metricRegistry, metricPrefix);
         this.session = checkNotNull(session);
         this.aliasIndex = checkNotNull(aliasIndex);
         this.keyspace = checkNotNull(keyspace);
@@ -186,6 +195,8 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
         private IdGenerator idGenerator;
         private Equivalence<Segment> equivalence;
         private MessageSender<ResourceUpdatedMessage> sender;
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         public Builder() {
 
@@ -226,6 +237,16 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
             return this;
         }
 
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = checkNotNull(metricRegistry);
+            return this;
+        }
+
+        public Builder withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = checkNotNull(metricPrefix);
+            return this;
+        }
+
         public CassandraSegmentStore build() {
             return new CassandraSegmentStore(
                     cassandra,
@@ -234,7 +255,9 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
                     segmentIndex,
                     idGenerator,
                     equivalence,
-                    sender
+                    sender,
+                    metricRegistry,
+                    metricPrefix
             );
         }
     }

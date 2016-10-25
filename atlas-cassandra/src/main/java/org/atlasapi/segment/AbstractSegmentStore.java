@@ -15,8 +15,10 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Equivalence;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.primitives.Longs;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -26,49 +28,70 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 abstract public class AbstractSegmentStore implements SegmentStore {
 
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
+
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final IdGenerator idGen;
     private final Equivalence<? super Segment> equivalence;
     private final MessageSender<ResourceUpdatedMessage> sender;
     private final Clock clock;
 
-    public AbstractSegmentStore(IdGenerator idGen, Equivalence<? super Segment> equivalence,
-            MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
+    private final MetricRegistry metricRegistry;
+    private final String writeSegment;
+
+    public AbstractSegmentStore(
+            IdGenerator idGen,
+            Equivalence<? super Segment> equivalence,
+            MessageSender<ResourceUpdatedMessage> sender,
+            Clock clock,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+            ) {
         this.idGen = checkNotNull(idGen);
         this.equivalence = checkNotNull(equivalence);
         this.sender = checkNotNull(sender);
         this.clock = checkNotNull(clock);
+
+        this.metricRegistry = metricRegistry;
+        writeSegment = metricPrefix + "writeSegment.";
     }
 
     @Override
     public WriteResult<Segment, Segment> writeSegment(Segment segment) {
-        checkNotNull(segment, "Cannot persist a null segment");
-        checkNotNull(segment.getSource(), "Cannot persist a segment without a publisher");
+        metricRegistry.meter(writeSegment + METER_CALLED).mark();
+        try {
+            checkNotNull(segment, "Cannot persist a null segment");
+            checkNotNull(segment.getSource(), "Cannot persist a segment without a publisher");
 
-        Segment previous = getPreviousSegment(segment);
-        if (previous != null) {
-            if (equivalence.equivalent(segment, previous)) {
-                return WriteResult.<Segment, Segment>unwritten(segment)
-                        .withPrevious(previous)
-                        .build();
+            Segment previous = getPreviousSegment(segment);
+            if (previous != null) {
+                if (equivalence.equivalent(segment, previous)) {
+                    return WriteResult.<Segment, Segment>unwritten(segment)
+                            .withPrevious(previous)
+                            .build();
+                }
+                segment.setId(previous.getId());
+                segment.setFirstSeen(previous.getFirstSeen());
             }
-            segment.setId(previous.getId());
-            segment.setFirstSeen(previous.getFirstSeen());
-        }
 
-        DateTime now = clock.now();
-        if (segment.getFirstSeen() == null) {
-            segment.setFirstSeen(now);
+            DateTime now = clock.now();
+            if (segment.getFirstSeen() == null) {
+                segment.setFirstSeen(now);
+            }
+            segment.setLastUpdated(now);
+            doWrite(ensureId(segment), previous);
+            WriteResult<Segment, Segment> result = WriteResult.<Segment, Segment>written(segment)
+                    .withPrevious(previous)
+                    .build();
+            if (result.written()) {
+                writeMessage(result);
+            }
+            return result;
+        } catch (RuntimeException e) {
+            metricRegistry.meter(writeSegment + METER_FAILURE).mark();
+            throw Throwables.propagate(e);
         }
-        segment.setLastUpdated(now);
-        doWrite(ensureId(segment), previous);
-        WriteResult<Segment, Segment> result = WriteResult.<Segment, Segment>written(segment)
-                .withPrevious(previous)
-                .build();
-        if (result.written()) {
-            writeMessage(result);
-        }
-        return result;
     }
 
     private void writeMessage(WriteResult<Segment, Segment> result) {

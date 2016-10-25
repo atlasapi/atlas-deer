@@ -28,6 +28,7 @@ import com.metabroadcast.common.queue.MessagingException;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -792,7 +793,10 @@ public class AbstractEquivalenceGraphStoreTest {
         private final Logger log = LoggerFactory.getLogger(getClass());
         private final ConcurrentMap<Id, EquivalenceGraph> store = Maps.newConcurrentMap();
         private final Function<Id, EquivalenceGraph> storeFn = Functions.forMap(store, null);
-        private final GroupLock<Id> lock = GroupLock.natural();
+        private final GroupLock<Id> lock = GroupLock.natural(
+                new MetricRegistry(),
+                "InMemoryEquivalenceGraphStore"
+        );
 
         public InMemoryEquivalenceGraphStore() {
             super(new MessageSender<EquivalenceGraphUpdateMessage>() {
@@ -813,7 +817,10 @@ public class AbstractEquivalenceGraphStoreTest {
                 public void close() throws Exception {
                     // no-op
                 }
-            });
+            },
+                new MetricRegistry(),
+                "test.InMemoryEquivalenceGraphStore."
+            );
         }
 
         @Override

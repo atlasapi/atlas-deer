@@ -14,6 +14,7 @@ import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.util.ResolveException;
+import org.atlasapi.entity.util.RuntimeWriteException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraUtil;
@@ -24,6 +25,8 @@ import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.SystemClock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
@@ -87,6 +90,8 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
         private ConsistencyLevel readCl = ConsistencyLevel.CL_QUORUM;
         private ConsistencyLevel writeCl = ConsistencyLevel.CL_QUORUM;
         private Clock clock = new SystemClock();
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         public Builder(AstyanaxContext<Keyspace> context, String name, ContentStore contentStore,
                 MessageSender<ScheduleUpdateMessage> messageSender) {
@@ -111,6 +116,16 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
             return this;
         }
 
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = checkNotNull(metricRegistry);
+            return this;
+        }
+
+        public Builder withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = checkNotNull(metricPrefix);
+            return this;
+        }
+
         public AstyanaxCassandraScheduleStore build() {
             return new AstyanaxCassandraScheduleStore(
                     context,
@@ -119,7 +134,9 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
                     messageSender,
                     clock,
                     readCl,
-                    writeCl
+                    writeCl,
+                    metricRegistry,
+                    metricPrefix
             );
         }
 
@@ -141,11 +158,18 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
                 }
             }, ItemAndBroadcast.toBroadcast());
 
-    private AstyanaxCassandraScheduleStore(AstyanaxContext<Keyspace> context, String name,
-            ContentStore contentStore, MessageSender<ScheduleUpdateMessage> messageSender,
+    private AstyanaxCassandraScheduleStore(
+            AstyanaxContext<Keyspace> context,
+            String name,
+            ContentStore contentStore,
+            MessageSender<ScheduleUpdateMessage> messageSender,
             Clock clock,
-            ConsistencyLevel readCl, ConsistencyLevel writeCl) {
-        super(contentStore, messageSender);
+            ConsistencyLevel readCl,
+            ConsistencyLevel writeCl,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
+        super(contentStore, messageSender, metricRegistry, metricPrefix);
         this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
                 contentStore)));
         this.keyspace = context.getClient();
@@ -282,22 +306,26 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
 
     @Override
     protected void doWrite(Publisher source, List<ChannelSchedule> blocks) throws WriteException {
-        MutationBatch batch = keyspace.prepareMutationBatch().withConsistencyLevel(writeCl);
-        for (ChannelSchedule block : blocks) {
-            ColumnListMutation<String> rowMutation = batch.withRow(cf, key(source, block));
-            for (ItemAndBroadcast entry : block.getEntries()) {
-                rowMutation.putColumn(
-                        entry.getBroadcast().getSourceId(),
-                        serializer.serialize(entry)
-                );
-            }
-            rowMutation.putColumn(IDS_COL, Joiner.on(',').join(broadcastIds(block)));
-            rowMutation.putColumn(UPDATED_COL, clock.now().toDate());
-        }
         try {
-            batch.execute();
-        } catch (ConnectionException ce) {
-            throw new WriteException(ce);
+            MutationBatch batch = keyspace.prepareMutationBatch().withConsistencyLevel(writeCl);
+            for (ChannelSchedule block : blocks) {
+                ColumnListMutation<String> rowMutation = batch.withRow(cf, key(source, block));
+                for (ItemAndBroadcast entry : block.getEntries()) {
+                    rowMutation.putColumn(
+                            entry.getBroadcast().getSourceId(),
+                            serializer.serialize(entry)
+                    );
+                }
+                rowMutation.putColumn(IDS_COL, Joiner.on(',').join(broadcastIds(block)));
+                rowMutation.putColumn(UPDATED_COL, clock.now().toDate());
+            }
+            try {
+                batch.execute();
+            } catch (ConnectionException ce) {
+                throw new WriteException(ce);
+            }
+        } catch (WriteException | RuntimeException e) {
+            throw e;
         }
     }
 

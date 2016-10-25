@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import javax.validation.constraints.Null;
+
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContentStore;
@@ -24,6 +26,8 @@ import org.atlasapi.media.entity.Publisher;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -33,6 +37,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
@@ -82,9 +87,11 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
             ConsistencyLevel writeCl,
             Session session,
             ItemAndBroadcastSerializer serializer,
-            Integer timeoutSeconds
+            Integer timeoutSeconds,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
-        super(contentStore, sender);
+        super(contentStore, sender, metricRegistry, metricPrefix);
         this.table = checkNotNull(table);
         this.clock = checkNotNull(clock);
         this.readCl = checkNotNull(readCl);
@@ -146,34 +153,38 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
     }
 
     @Override
-    protected void doWrite(Publisher source, List<ChannelSchedule> blocks) throws WriteException {
-        if (blocks.isEmpty()) {
-            return;
-        }
-        BatchStatement batch = new BatchStatement();
-        batch.setConsistencyLevel(writeCl);
-        for (ChannelSchedule block : blocks) {
-            Long channelId = block.getChannel().getId().longValue();
-            Map<String, ByteBuffer> broadcasts = block.getEntries().stream()
-                    .collect(
-                            Collectors.toMap(
-                                    key -> key.getBroadcast().getSourceId(),
-                                    value -> ByteBuffer.wrap(serializer.serialize(value))
-                            )
-                    );
+    protected void doWrite(Publisher source, List<ChannelSchedule> blocks) {
+        try {
+            if (blocks.isEmpty()) {
+                return;
+            }
+            BatchStatement batch = new BatchStatement();
+            batch.setConsistencyLevel(writeCl);
+            for (ChannelSchedule block : blocks) {
+                Long channelId = block.getChannel().getId().longValue();
+                Map<String, ByteBuffer> broadcasts = block.getEntries().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        key -> key.getBroadcast().getSourceId(),
+                                        value -> ByteBuffer.wrap(serializer.serialize(value))
+                                )
+                        );
 
-            batch.add(scheduleUpdate.bind()
-                    .setString("source", source.key())
-                    .setLong("channel", channelId)
-                    .setTimestamp(
-                            "day",
-                            block.getInterval().getStart().toDate()
-                    )
-                    .setMap("broadcastsData", broadcasts)
-                    .setSet("broadcastsIdsData", broadcasts.keySet())
-                    .setTimestamp("updatedData", clock.now().toDate()));
+                batch.add(scheduleUpdate.bind()
+                        .setString("source", source.key())
+                        .setLong("channel", channelId)
+                        .setTimestamp(
+                                "day",
+                                block.getInterval().getStart().toDate()
+                        )
+                        .setMap("broadcastsData", broadcasts)
+                        .setSet("broadcastsIdsData", broadcasts.keySet())
+                        .setTimestamp("updatedData", clock.now().toDate()));
+            }
+            session.execute(batch);
+        } catch (Exception e) {
+            Throwables.propagate(e);
         }
-        session.execute(batch);
     }
 
     @Override

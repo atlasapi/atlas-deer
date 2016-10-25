@@ -57,6 +57,8 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.codepoetics.protonpack.maps.MapStream;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.Session;
@@ -65,6 +67,7 @@ import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -87,6 +90,9 @@ public class CqlContentStore implements ContentStore {
 
     private static final long READ_TIMEOUT_SECONDS = 5L;
 
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
+
     private final Session session;
     private final Mapper<org.atlasapi.content.v2.model.Content> mapper;
     private final ContentAccessor accessor;
@@ -108,13 +114,21 @@ public class CqlContentStore implements ContentStore {
     private final ContentHasher hasher;
     private final EquivalenceGraphStore graphStore;
 
+    private final String writeContent;
+    private final String writeBroadcast;
+
+    private final MetricRegistry metricRegistry;
+
+
     public CqlContentStore(
             Session session,
             MessageSender<ResourceUpdatedMessage> sender,
             IdGenerator idGenerator,
             Clock clock,
             ContentHasher hasher,
-            EquivalenceGraphStore graphStore
+            EquivalenceGraphStore graphStore,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
         this.idGenerator = checkNotNull(idGenerator);
         this.session = checkNotNull(session);
@@ -131,6 +145,11 @@ public class CqlContentStore implements ContentStore {
         this.sender = checkNotNull(sender);
         this.hasher = checkNotNull(hasher);
         this.graphStore = checkNotNull(graphStore);
+
+        writeContent = metricPrefix + "writeContent.";
+        writeBroadcast = metricPrefix + "writeBroadcast.";
+
+        this.metricRegistry = metricRegistry;
     }
 
     public static Builder builder() {
@@ -139,116 +158,132 @@ public class CqlContentStore implements ContentStore {
 
     @Override
     public WriteResult<Content, Content> writeContent(Content content) throws WriteException {
-        checkArgument(
-                !(content instanceof Episode) || ((Episode) content).getContainerRef() != null,
-                "Can't write episode without brand"
-        );
+        metricRegistry.meter(writeContent + METER_CALLED).mark();
+        try {
+            checkArgument(
+                    !(content instanceof Episode) || ((Episode) content).getContainerRef() != null,
+                    "Can't write episode without brand"
+            );
 
-        Content previous = resolvePrevious(content);
+            Content previous = resolvePrevious(content);
 
-        if (previous != null && hasher.hash(content).equals(hasher.hash(previous))) {
-            return WriteResult.<Content, Content>result(content, false)
-                    .withPrevious(previous)
-                    .build();
+            if (previous != null && hasher.hash(content).equals(hasher.hash(previous))) {
+                return WriteResult.<Content, Content>result(content, false)
+                        .withPrevious(previous)
+                        .build();
+            }
+
+            BatchStatement batch = new BatchStatement();
+
+            Container container = resolveContainer(content);
+            ensureContentSummary(content, container);
+            ensureId(content);
+
+            ImmutableList.Builder<ResourceUpdatedMessage> messages = ImmutableList.builder();
+
+            DateTime now = clock.now();
+
+            batch.addAll(updateWriteDates(content, now));
+            batch.addAll(updateContainerSummary(content, messages));
+            batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
+            batch.addAll(updateChildrenSummaries(content, previous, messages));
+
+            org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
+
+            batch.add(mapper.saveQuery(serialized));
+
+            session.execute(batch);
+
+            messages.add(new ResourceUpdatedMessage(
+                    UUID.randomUUID().toString(),
+                    Timestamp.of(DateTime.now()),
+                    content.toRef()
+            ));
+
+            sendMessages(messages.build());
+
+            setExistingItemRefs(content, previous);
+
+            return new WriteResult<>(content, true, DateTime.now(), previous);
+        } catch (WriteException | RuntimeException e) {
+            metricRegistry.meter(writeContent + METER_FAILURE).mark();
+            throw e;
         }
-
-        BatchStatement batch = new BatchStatement();
-
-        Container container = resolveContainer(content);
-        ensureContentSummary(content, container);
-        ensureId(content);
-
-        ImmutableList.Builder<ResourceUpdatedMessage> messages = ImmutableList.builder();
-
-        DateTime now = clock.now();
-
-        batch.addAll(updateWriteDates(content, now));
-        batch.addAll(updateContainerSummary(content, messages));
-        batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
-        batch.addAll(updateChildrenSummaries(content, previous, messages));
-
-        org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
-
-        batch.add(mapper.saveQuery(serialized));
-
-        session.execute(batch);
-
-        messages.add(new ResourceUpdatedMessage(
-                UUID.randomUUID().toString(),
-                Timestamp.of(DateTime.now()),
-                content.toRef()
-        ));
-
-        sendMessages(messages.build());
-
-        setExistingItemRefs(content, previous);
-
-        return new WriteResult<>(content, true, DateTime.now(), previous);
     }
 
     @Override
-    public void writeBroadcast(ItemRef item, Optional<ContainerRef> containerRef,
-            Optional<SeriesRef> seriesRef, Broadcast broadcast) {
-        BatchStatement batch = new BatchStatement();
+    public void writeBroadcast(
+            ItemRef item,
+            Optional<ContainerRef> containerRef,
+            Optional<SeriesRef> seriesRef,
+            Broadcast broadcast
+    ) {
+        metricRegistry.meter(writeBroadcast + METER_CALLED).mark();
+        try {
+            BatchStatement batch = new BatchStatement();
 
-        Instant now = clock.now().toInstant();
+            Instant now = clock.now().toInstant();
 
-        org.atlasapi.content.v2.model.udt.Broadcast serialized =
-                broadcastTranslator.serialize(broadcast);
+            org.atlasapi.content.v2.model.udt.Broadcast serialized =
+                    broadcastTranslator.serialize(broadcast);
 
-        ImmutableSet<org.atlasapi.content.v2.model.udt.Broadcast> broadcasts =
-                ImmutableSet.of(serialized);
+            ImmutableSet<org.atlasapi.content.v2.model.udt.Broadcast> broadcasts =
+                    ImmutableSet.of(serialized);
 
-        batch.add(accessor.addBroadcastToContent(
-                item.getId().longValue(),
-                broadcasts
-        ));
-        batch.add(accessor.setLastUpdated(item.getId().longValue(), now));
+            batch.add(accessor.addBroadcastToContent(
+                    item.getId().longValue(),
+                    broadcasts
+            ));
+            batch.add(accessor.setLastUpdated(item.getId().longValue(), now));
 
-        // we only denormalize upcoming broadcasts on containers. If this is stale, just add to
-        // item and return early
-        if (broadcast.isActivelyPublished() && broadcast.isUpcoming()) {
-            org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(item);
+            // we only denormalize upcoming broadcasts on containers. If this is stale, just add to
+            // item and return early
+            if (broadcast.isActivelyPublished() && broadcast.isUpcoming()) {
+                org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(item);
 
-            Map<
-                    org.atlasapi.content.v2.model.udt.ItemRef,
-                    List<org.atlasapi.content.v2.model.udt.BroadcastRef>
-                    > upcomingBroadcasts = ImmutableMap.of(
-                    itemRef,
-                    ImmutableList.of(broadcastRefTranslator.serialize(broadcast.toRef()))
-            );
+                Map<
+                        org.atlasapi.content.v2.model.udt.ItemRef,
+                        List<org.atlasapi.content.v2.model.udt.BroadcastRef>
+                        > upcomingBroadcasts = ImmutableMap.of(
+                        itemRef,
+                        ImmutableList.of(broadcastRefTranslator.serialize(broadcast.toRef()))
+                );
 
-            if (containerRef.isPresent()) {
-                long id = containerRef.get().getId().longValue();
+                if (containerRef.isPresent()) {
+                    long id = containerRef.get().getId().longValue();
 
-                batch.add(accessor.addItemRefsToContainer(
-                        id,
-                        ImmutableSet.of(),
-                        upcomingBroadcasts,
-                        ImmutableMap.of()
-                ));
-                batch.add(accessor.setLastUpdated(id, now));
+                    batch.add(accessor.addItemRefsToContainer(
+                            id,
+                            ImmutableSet.of(),
+                            upcomingBroadcasts,
+                            ImmutableMap.of()
+                    ));
+                    batch.add(accessor.setLastUpdated(id, now));
+                }
+
+                if (seriesRef.isPresent()) {
+                    long id = seriesRef.get().getId().longValue();
+                    batch.add(accessor.addItemRefsToContainer(
+                            id,
+                            ImmutableSet.of(itemRef),
+                            upcomingBroadcasts,
+                            ImmutableMap.of()
+                    ));
+                    batch.add(accessor.setLastUpdated(id, now));
+                }
             }
 
-            if (seriesRef.isPresent()) {
-                long id = seriesRef.get().getId().longValue();
-                batch.add(accessor.addItemRefsToContainer(
-                        id,
-                        ImmutableSet.of(itemRef),
-                        upcomingBroadcasts,
-                        ImmutableMap.of()
-                ));
-                batch.add(accessor.setLastUpdated(id, now));
-            }
+            session.execute(batch);
+
+            sendMessages(ImmutableList.of(new ResourceUpdatedMessage(
+                    UUID.randomUUID().toString(),
+                    Timestamp.of(clock.now()),
+                    item
+            )));
+        } catch (RuntimeException e) {
+            metricRegistry.meter(writeBroadcast + METER_FAILURE).mark();
+            Throwables.propagate(e);
         }
-
-        session.execute(batch);
-
-        sendMessages(ImmutableList.of(new ResourceUpdatedMessage(
-                UUID.randomUUID().toString(),
-                Timestamp.of(clock.now()),
-                item
-        )));
     }
 
     @Override
@@ -767,42 +802,63 @@ public class CqlContentStore implements ContentStore {
         private Clock clock;
         private ContentHasher hasher;
         private EquivalenceGraphStore graphStore;
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         private Builder() {
         }
 
-        public Builder withSession(Session val) {
-            session = val;
+        public Builder withSession(Session session) {
+            this.session = session;
             return this;
         }
 
-        public Builder withIdGenerator(IdGenerator val) {
-            idGenerator = val;
+        public Builder withIdGenerator(IdGenerator idGenerator) {
+            this.idGenerator = idGenerator;
             return this;
         }
 
-        public Builder withSender(MessageSender<ResourceUpdatedMessage> val) {
-            sender = val;
+        public Builder withSender(MessageSender<ResourceUpdatedMessage> sender) {
+            this.sender = sender;
             return this;
         }
 
-        public Builder withClock(Clock val) {
-            clock = val;
+        public Builder withClock(Clock clock) {
+            this.clock = clock;
             return this;
         }
 
-        public Builder withHasher(ContentHasher val) {
-            hasher = val;
+        public Builder withHasher(ContentHasher hasher) {
+            this.hasher = hasher;
             return this;
         }
 
-        public Builder withGraphStore(EquivalenceGraphStore val) {
-            graphStore = val;
+        public Builder withGraphStore(EquivalenceGraphStore graphStore) {
+            this.graphStore = graphStore;
+            return this;
+        }
+
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public Builder withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
             return this;
         }
 
         public CqlContentStore build() {
-            return new CqlContentStore(session, sender, idGenerator, clock, hasher, graphStore);
+            return new CqlContentStore(
+                    session,
+                    sender,
+                    idGenerator,
+                    clock,
+                    hasher,
+                    graphStore,
+                    metricRegistry,
+                    metricPrefix
+            );
         }
     }
 }

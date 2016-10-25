@@ -29,6 +29,7 @@ import org.atlasapi.util.GroupLock;
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -50,22 +51,41 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentScheduleStore.class);
 
+    private static final String METER_CALLED = "meter.called";
+    private static final String METER_FAILURE = "meter.failure";
+
     private final EquivalenceGraphStore graphStore;
     private final ContentResolver contentStore;
 
     private final FlexibleBroadcastMatcher broadcastMatcher
             = new FlexibleBroadcastMatcher(Duration.standardMinutes(10));
 
-    private final GroupLock<String> lock = GroupLock.natural();
+    private final GroupLock<String> lock;
 
-    public AbstractEquivalentScheduleStore(EquivalenceGraphStore graphStore,
-            ContentResolver contentStore) {
+    private final MetricRegistry metricRegistry;
+    private final String updateSchedule;
+    private final String updateEquivalences;
+
+
+    public AbstractEquivalentScheduleStore(
+            EquivalenceGraphStore graphStore,
+            ContentResolver contentStore,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
         this.graphStore = checkNotNull(graphStore);
         this.contentStore = checkNotNull(contentStore);
+        this.metricRegistry = metricRegistry;
+
+        updateSchedule = metricPrefix + "updateSchedule.";
+        updateEquivalences = metricPrefix + "updateEquivalences.";
+
+        lock = GroupLock.natural(metricRegistry, metricPrefix);
     }
 
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
+        metricRegistry.meter(updateSchedule + METER_CALLED).mark();
         List<LocalDate> daysInSchedule = daysIn(update.getSchedule().getInterval());
 
         ImmutableList<LocalDate> staleBroadcastDays = update.getStaleBroadcasts()
@@ -87,7 +107,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         try {
             lock.lock(lockKeys);
             writeSchedule(update, contentFor(update.getSchedule()));
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | WriteException | RuntimeException e) {
+            metricRegistry.meter(updateSchedule + METER_FAILURE).mark();
             throw Throwables.propagate(e);
         } finally {
             lock.unlock(lockKeys);
@@ -97,6 +118,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     @Override
     public final void updateEquivalences(ImmutableSet<EquivalenceGraph> graphs)
             throws WriteException {
+        metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
         // Fire all the requests to the content store in parallel
         ImmutableMap<EquivalenceGraph, ListenableFuture<Resolved<Content>>> graphsContent = graphs
                 .stream()
@@ -145,6 +167,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                                     daysInInterval
                             );
                         } catch (InterruptedException | WriteException e) {
+                            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
                             throw Throwables.propagate(e);
                         } finally {
                             lock.unlock(lockKeys);
@@ -162,6 +185,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                 future.get();
             }
         } catch (Exception e) {
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
             throw new WriteException(e);
         }
     }

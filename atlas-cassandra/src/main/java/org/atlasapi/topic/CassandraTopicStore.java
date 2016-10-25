@@ -21,6 +21,8 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.SystemClock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Equivalence;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -69,6 +71,8 @@ public class CassandraTopicStore extends AbstractTopicStore {
         private ConsistencyLevel readCl = ConsistencyLevel.CL_QUORUM;
         private ConsistencyLevel writeCl = ConsistencyLevel.CL_QUORUM;
         private Clock clock = new SystemClock();
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         public Builder(AstyanaxContext<Keyspace> context, String name,
                 Equivalence<? super Topic> equivalence,
@@ -95,9 +99,19 @@ public class CassandraTopicStore extends AbstractTopicStore {
             return this;
         }
 
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public Builder withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
+            return this;
+        }
+
         public CassandraTopicStore build() {
             return new CassandraTopicStore(context, name, readCl, writeCl,
-                    equivalence, idGenerator, sender, clock
+                    equivalence, idGenerator, sender, clock, metricRegistry, metricPrefix
             );
         }
 
@@ -112,34 +126,32 @@ public class CassandraTopicStore extends AbstractTopicStore {
     private final String valueColumn = "topic";
     private final TopicSerializer topicSerializer = new TopicSerializer();
     private final Function<Row<Long, String>, Topic> rowToTopic =
-            new Function<Row<Long, String>, Topic>() {
-
-                @Override
-                public Topic apply(Row<Long, String> input) {
-                    ColumnList<String> cols = input.getColumns();
-                    Column<String> col = cols.getColumnByName(valueColumn);
-                    if (col == null) {
-                        return null;
-                    }
-                    return topicSerializer.deserialize(col.getByteArrayValue());
+            input -> {
+                ColumnList<String> cols = input.getColumns();
+                Column<String> col = cols.getColumnByName(valueColumn);
+                if (col == null) {
+                    return null;
                 }
+                return topicSerializer.deserialize(col.getByteArrayValue());
             };
     private final Function<Rows<Long, String>, Resolved<Topic>> toResolved =
-            new Function<Rows<Long, String>, Resolved<Topic>>() {
+            rows -> Resolved.valueOf(FluentIterable.from(rows)
+                    .transform(rowToTopic)
+                    .filter(Predicates.notNull()));
 
-                @Override
-                public Resolved<Topic> apply(Rows<Long, String> rows) {
-                    return Resolved.valueOf(FluentIterable.from(rows)
-                            .transform(rowToTopic)
-                            .filter(Predicates.notNull()));
-                }
-            };
-
-    public CassandraTopicStore(AstyanaxContext<Keyspace> context, String cfName,
-            ConsistencyLevel readCl, ConsistencyLevel writeCl,
+    public CassandraTopicStore(
+            AstyanaxContext<Keyspace> context,
+            String cfName,
+            ConsistencyLevel readCl,
+            ConsistencyLevel writeCl,
             Equivalence<? super Topic> equivalence,
-            IdGenerator idGenerator, MessageSender<ResourceUpdatedMessage> sender, Clock clock) {
-        super(idGenerator, equivalence, sender, clock);
+            IdGenerator idGenerator,
+            MessageSender<ResourceUpdatedMessage> sender,
+            Clock clock,
+            MetricRegistry metricRegistry,
+            String metricPrefix
+    ) {
+        super(idGenerator, equivalence, sender, clock, metricRegistry, metricPrefix);
         this.keyspace = checkNotNull(context.getClient());
         this.readConsistency = checkNotNull(readCl);
         this.writeConsistency = checkNotNull(writeCl);
@@ -178,11 +190,10 @@ public class CassandraTopicStore extends AbstractTopicStore {
             Iterable<Topic> topics = Iterables.transform(resolved, rowToTopic);
             ImmutableMap.Builder<Alias, Optional<Topic>> aliasMap = ImmutableMap.builder();
             for (Topic topic : topics) {
-                for (Alias alias : topic.getAliases()) {
-                    if (uniqueAliases.contains(alias)) {
-                        aliasMap.put(alias, Optional.of(topic));
-                    }
-                }
+                topic.getAliases()
+                        .stream()
+                        .filter(uniqueAliases::contains)
+                        .forEach(alias -> aliasMap.put(alias, Optional.of(topic)));
             }
             return ImmutableOptionalMap.copyOf(aliasMap.build());
         } catch (Exception e) {

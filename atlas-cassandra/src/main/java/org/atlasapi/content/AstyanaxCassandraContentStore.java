@@ -23,6 +23,8 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.SystemClock;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
@@ -35,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.MultimapBuilder;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.netflix.astyanax.AstyanaxContext;
@@ -86,6 +89,8 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
         private ConsistencyLevel readCl = ConsistencyLevel.CL_QUORUM;
         private ConsistencyLevel writeCl = ConsistencyLevel.CL_QUORUM;
         private Clock clock = new SystemClock();
+        private MetricRegistry metricRegistry;
+        private String metricPrefix;
 
         public Builder(
                 AstyanaxContext<Keyspace> context,
@@ -118,9 +123,29 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             return this;
         }
 
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public Builder withMetricPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
+            return this;
+        }
+        
         public AstyanaxCassandraContentStore build() {
             return new AstyanaxCassandraContentStore(
-                    context, name, readCl, writeCl, hasher, idGenerator, sender, graphStore, clock
+                    context,
+                    name,
+                    readCl,
+                    writeCl,
+                    hasher,
+                    idGenerator,
+                    sender,
+                    graphStore,
+                    clock,
+                    metricRegistry,
+                    metricPrefix
             );
         }
     }
@@ -174,9 +199,11 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             IdGenerator idGenerator,
             MessageSender<ResourceUpdatedMessage> sender,
             EquivalenceGraphStore graphStore,
-            Clock clock
+            Clock clock,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
-        super(hasher, idGenerator, sender, graphStore, clock);
+        super(hasher, idGenerator, sender, graphStore, clock, metricRegistry, metricPrefix);
         this.keyspace = checkNotNull(context.getClient());
         this.readConsistency = checkNotNull(readConsistency);
         this.writeConsistency = checkNotNull(writeConsistency);
@@ -184,6 +211,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
                 LongSerializer.get(), StringSerializer.get()
         );
         this.aliasIndex = AliasIndex.create(keyspace, cfName + "_aliases");
+
     }
 
     @Override
@@ -541,7 +569,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
             }
 
             batch.execute();
-        } catch (ConnectionException e) {
+        } catch (ConnectionException | RuntimeException e) {
             throw Throwables.propagate(e);
         }
     }
@@ -568,7 +596,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
         try {
             batch.execute();
-        } catch (ConnectionException e) {
+        } catch (ConnectionException | RuntimeException e) {
             Throwables.propagate(e);
         }
 

@@ -61,6 +61,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
     private static final int CQL_PORT = 9042;
+
+    private static final String METRIC_PREFIX = "persistence.store.";
+
     private String contentEquivalenceGraphChanges = Configurer.get(
             "messaging.destination.equivalence.content.graph.changes").get();
     private String contentChanges = Configurer.get("messaging.destination.content.changes").get();
@@ -127,7 +130,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.dataStaxService = datastaxCassandraService;
         this.keyspace = keyspace;
         this.context = context;
-        this.metrics = metrics;
+        this.metrics = checkNotNull(metrics);
         this.session = dataStaxService.getSession(keyspace);
     }
 
@@ -174,11 +177,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
         this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
-                session, read, write
-        );
-        this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
-                nullMessageSender(EquivalenceGraphUpdateMessage.class),
-                session, read, write
+                session,
+                read,
+                write,
+                metrics,
+                METRIC_PREFIX + "CassandraEquivalenceGraphStore."
         );
 
         this.contentStore = AstyanaxCassandraContentStore.builder(
@@ -191,6 +194,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "AstyanaxCassandraContentStore.")
                 .build();
 
         // This content store is used by debug endpoints that are used for resolving issues.
@@ -206,12 +211,9 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "NullMessageSendingAstyanaxCassandraContentStore.")
                 .build();
-
-        this.contentEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
-                sender(contentEquivalenceGraphChanges, EquivalenceGraphUpdateMessage.class),
-                session, read, write
-        );
 
         // The CQL content store isn't live yet and will run in parallel with the Astyanax store
         // for testing. We pass in a dummy message sender to avoid sending content update messages
@@ -223,13 +225,19 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withHasher(contentHasher)
                 .withGraphStore(contentEquivalenceGraphStore)
                 .withSender(nullMessageSender(ResourceUpdatedMessage.class))
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "CqlContentStore.")
                 .build();
 
         this.forceCqlContentWriter = NonValidatingCqlWriter.create(session, new SystemClock());
 
         this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(EquivalenceGraphUpdateMessage.class),
-                session, read, write
+                session,
+                read,
+                write,
+                metrics,
+                METRIC_PREFIX + "NullMessageSendingCassandraEquivalenceGraphStore."
         );
 
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(
@@ -238,14 +246,18 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 session,
                 read,
                 write,
-                new SystemClock()
+                new SystemClock(),
+                metrics,
+                METRIC_PREFIX + "CassandraEquivalenceScheduleStore."
         );
         this.nullMessageSendingEquivGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(
                         EquivalenceGraphUpdateMessage.class),
                 session,
                 read,
-                write
+                write,
+                metrics,
+                METRIC_PREFIX + "NullMessageSendingCassandraEquivalenceGraphStore."
         );
         this.v2ScheduleStore = new DatastaxCassandraScheduleStore(
                 "schedule_v2",
@@ -257,7 +269,9 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 session,
                 new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
                         contentStore))),
-                cassandraTimeoutSeconds
+                cassandraTimeoutSeconds,
+                metrics,
+                METRIC_PREFIX + "DatastaxCassandraScheduleStore."
         );
         this.topicStore = CassandraTopicStore.builder(context,
                 "topics",
@@ -268,13 +282,18 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "CassandraTopicStore.")
                 .build();
         this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule",
                 contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class)
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "AstyanaxCassandraScheduleStore.")
                 .build();
+
         this.segmentStore = CassandraSegmentStore.builder()
                 .withKeyspace(keyspace)
                 .withTableName("segments")
@@ -283,6 +302,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withIdGenerator(idGeneratorBuilder.generator("segment"))
                 .withMessageSender(nullMessageSender(ResourceUpdatedMessage.class))
                 .withEquivalence(segmentEquivalence())
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "CassandraSegmentStore.")
                 .build();
 
         this.eventStore = getEventStore(session);
@@ -439,6 +460,8 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withEventHasher(eventHasher)
                 .withSender(nullMessageSender(ResourceUpdatedMessage.class))
                 .withPersistenceStore(eventV2PersistenceStore)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "ConcreteEventStore.")
                 .build();
 
     }
@@ -449,11 +472,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withWriteConsistency(getWriteConsistencyLevel())
                 .withReadConsistency(getReadConsistencyLevel())
                 .build();
+
         DatastaxCassandraOrganisationStore organisationStore = DatastaxCassandraOrganisationStore.builder()
                 .withSession(session)
                 .withWriteConsistency(getWriteConsistencyLevel())
                 .withReadConsistency(getReadConsistencyLevel())
                 .withOrganisationUriStore(organisationUriStore)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "DatastaxCassandraOrganisationStore.")
                 .build();
 
         return organisationStore;

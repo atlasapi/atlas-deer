@@ -11,6 +11,7 @@ import com.metabroadcast.common.ids.IdGenerator;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Longs;
@@ -53,15 +54,20 @@ public class ConcreteEventStoreTest {
     private @Mock EventHasher eventHasher;
     private @Mock MessageSender<ResourceUpdatedMessage> sender;
     private @Mock EventPersistenceStore persistenceStore;
+    private @Mock MetricRegistry metricRegistry;
 
     private DateTime now;
     private long id;
     private Publisher publisher;
+    private String metricPrefix;
 
     @Before
     public void setUp() throws Exception {
+
+        metricPrefix = "ConcreteEventStore";
+
         eventStore = new ConcreteEventStore(
-                clock, idGenerator, eventHasher, sender, persistenceStore
+                clock, idGenerator, eventHasher, sender, persistenceStore, metricRegistry, metricPrefix
         );
 
         now = DateTime.parse("2015-01-01T12:00:00.000Z");

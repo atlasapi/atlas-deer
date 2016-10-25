@@ -32,6 +32,7 @@ import org.atlasapi.util.SecondaryIndex;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -108,13 +109,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             MessageSender<EquivalenceGraphUpdateMessage> graphUpdatedMessageSender,
             Session session,
             ConsistencyLevel read,
-            ConsistencyLevel write
+            ConsistencyLevel write,
+            MetricRegistry metricRegistry,
+            String metricPrefix
     ) {
         super(
                 contentResolver,
                 graphStore,
                 contentUpdatedMessageSender,
-                graphUpdatedMessageSender
+                graphUpdatedMessageSender,
+                metricRegistry,
+                metricPrefix
         );
         this.legacyContentResolver = checkNotNull(legacyContentResolver);
         this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(
