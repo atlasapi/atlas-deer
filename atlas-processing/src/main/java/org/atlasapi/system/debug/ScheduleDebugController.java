@@ -48,6 +48,7 @@ public class ScheduleDebugController {
     private final ChannelResolver channelResolver;
     private final EquivalentScheduleStore equivalentScheduleStore;
     private final ScheduleStore scheduleStore;
+    private final Gson gson;
 
     public ScheduleDebugController(
             ChannelResolver channelResolver,
@@ -56,13 +57,19 @@ public class ScheduleDebugController {
         this.channelResolver = channelResolver;
         this.equivalentScheduleStore = equivalentScheduleStore;
         this.scheduleStore = scheduleStore;
+        this.gson = new GsonBuilder()
+                .registerTypeAdapter(
+                        DateTime.class,
+                        (JsonSerializer<DateTime>) (src, typeOfSrc, context) ->
+                                new JsonPrimitive(src.toString())
+                )
+                .registerTypeAdapter(
+                        Interval.class,
+                        (JsonSerializer<Interval>) (src, typeOfSrc, context) ->
+                                new JsonPrimitive(src.toString())
+                )
+                .create();
     }
-
-    private final Gson gson = new GsonBuilder().registerTypeAdapter(
-            DateTime.class,
-            (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString())
-    )
-            .create();
 
     @RequestMapping("/system/debug/schedule")
     public void debugEquivalentSchedule(
