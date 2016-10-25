@@ -51,6 +51,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import org.joda.time.DateTime;
+import org.joda.time.Interval;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,11 +67,7 @@ public class ContentDebugController {
     private final NumberToShortStringCodec uppercase = new SubstitutionTableNumberCodec();
     private final NumberToShortStringCodec lowercase = SubstitutionTableNumberCodec.lowerCaseOnly();
 
-    private final Gson gson = new GsonBuilder().registerTypeAdapter(
-            DateTime.class,
-            (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString())
-    )
-            .create();
+    private final Gson gson;
     private final ObjectMapper jackson;
 
     private final ContentResolver legacyContentResolver;
@@ -128,6 +125,19 @@ public class ContentDebugController {
 
         this.jackson = new ObjectMapper();
         this.jackson.registerModule(new GuavaModule());
+
+        this.gson = new GsonBuilder()
+                .registerTypeAdapter(
+                        DateTime.class,
+                        (JsonSerializer<DateTime>) (src, typeOfSrc, context) ->
+                                new JsonPrimitive(src.toString())
+                )
+                .registerTypeAdapter(
+                        Interval.class,
+                        (JsonSerializer<Interval>) (src, typeOfSrc, context) ->
+                                new JsonPrimitive(src.toString())
+                )
+                .create();
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
