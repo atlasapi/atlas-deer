@@ -252,20 +252,26 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     ) throws WriteException {
         DateTime now = clock.now();
 
-        ImmutableSet<BroadcastRef> updateBroadcastRefs = update.getSchedule()
-                .getScheduleEntries()
-                .stream()
-                .map(ScheduleRef.Entry::getBroadcast)
-                .collect(MoreCollectors.toImmutableSet());
-
         ImmutableMultimap<LocalDate, BroadcastRow> currentBroadcastRows = resolveBroadcasts(
                 update.getSource(),
                 update.getSchedule().getChannel(),
                 update.getSchedule().getInterval()
         );
 
+        ImmutableList<EquivalentScheduleEntry> updateEntries = getEquivalentScheduleEntries(
+                update.getSchedule(),
+                content
+        );
+
+        ImmutableSet<BroadcastRef> updateBroadcastRefs = updateEntries
+                .stream()
+                .map(EquivalentScheduleEntry::getBroadcast)
+                .map(Broadcast::toRef)
+                .collect(MoreCollectors.toImmutableSet());
+
         Set<BroadcastRow> staleBroadcasts = getStaleBroadcasts(
-                updateBroadcastRefs, currentBroadcastRows
+                updateBroadcastRefs,
+                currentBroadcastRows
         );
 
         List<Statement> deletes = deleteStatements(
@@ -287,16 +293,14 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 updateLog(updateBroadcastRefs),
                 updateLog(update.getStaleBroadcasts()),
                 staleBroadcasts.stream()
-                        .map(BroadcastRow::getBroadcastSourceId)
+                        .map(BroadcastRow::toString)
                         .collect(Collectors.joining(","))
         );
 
-        List<Statement> updates = updateStatements(
-                update.getSource(),
-                update.getSchedule(),
-                content,
-                now
-        );
+        ImmutableList<Statement> updates = updateEntries
+                .stream()
+                .flatMap(entry -> statementsForEntry(update.getSource(), entry, now).stream())
+                .collect(MoreCollectors.toImmutableList());
 
         if (updates.isEmpty() && deletes.isEmpty()) {
             return;
@@ -498,34 +502,33 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return update.toString();
     }
 
-    private List<Statement> updateStatements(Publisher source, ScheduleRef scheduleRef,
-            Map<ScheduleRef.Entry, EquivalentScheduleEntry> content, DateTime now)
-            throws WriteException {
-        ImmutableList.Builder<Statement> statements = ImmutableList.builder();
-
-        for (ScheduleRef.Entry entry : scheduleRef.getScheduleEntries()) {
-            EquivalentScheduleEntry scheduleEntry = content.get(entry);
-            if (scheduleEntry != null) {
-                statements.addAll(statementsForEntry(source, scheduleEntry, now));
-            } else {
-                log.warn("No content provided for entry " + entry);
-            }
-        }
-        return statements.build();
+    private ImmutableList<EquivalentScheduleEntry> getEquivalentScheduleEntries(
+            ScheduleRef scheduleRef, Map<ScheduleRef.Entry, EquivalentScheduleEntry> content) {
+        return scheduleRef
+                    .getScheduleEntries()
+                    .stream()
+                    .filter(entry -> {
+                        if (content.get(entry) == null) {
+                            log.warn("No content provided for entry " + entry);
+                            return false;
+                        }
+                        return true;
+                    })
+                    .map(content::get)
+                    .collect(MoreCollectors.toImmutableList());
     }
 
     private List<Statement> statementsForEntry(
             Publisher source,
             EquivalentScheduleEntry content,
             DateTime now
-    ) throws WriteException {
-        Equivalent<Item> items = content.getItems();
-        int contentCount = items.getResources().size();
-
+    ) {
         Broadcast broadcast = content.getBroadcast();
+        ImmutableSet<Item> items = content.getItems().getResources();
+        EquivalenceGraph graph = content.getItems().getGraph();
 
-        ByteBuffer serializedContent = serialize(items.getResources());
-        ByteBuffer serializedGraph = graphSerializer.serialize(items.getGraph());
+        ByteBuffer serializedContent = serialize(items);
+        ByteBuffer serializedGraph = graphSerializer.serialize(graph);
         ByteBuffer serializedBroadcast = serialize(broadcast);
 
         return daysIn(broadcast.getTransmissionInterval())
@@ -541,19 +544,20 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                                 broadcast.getTransmissionInterval().getStart().toDate()
                         )
                         .setBytes("graphData", serializedGraph)
-                        .setLong("contentCountData", contentCount)
+                        .setLong("contentCountData", items.size())
                         .setBytes("contentData", serializedContent)
                         .setTimestamp("now", now.toDate()))
                 .collect(MoreCollectors.toImmutableList());
     }
 
-    private ByteBuffer serialize(Iterable<Item> resources) throws WriteException {
+    private ByteBuffer serialize(Iterable<Item> resources) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         for (Content content : resources) {
             try {
                 contentSerializer.serialize(content).writeDelimitedTo(outputStream);
             } catch (IOException e) {
-                throw new WriteException("failed to serialize " + content, e);
+                log.error("Failed to serialize {}", content, e);
+                throw Throwables.propagate(e);
             }
         }
         return ByteBuffer.wrap(outputStream.toByteArray());
@@ -817,7 +821,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         @Override
         public String toString() {
-            return "[" + day + "|" +broadcastSourceId + "]";
+            return "[" + broadcastSourceId + "|" + day + "]";
         }
     }
 }
