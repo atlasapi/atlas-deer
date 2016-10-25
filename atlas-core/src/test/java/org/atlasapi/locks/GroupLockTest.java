@@ -1,4 +1,4 @@
-package org.atlasapi.util;
+package org.atlasapi.locks;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
