@@ -30,6 +30,7 @@ import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.TimeMachine;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -129,6 +130,8 @@ public abstract class CassandraScheduleStoreIT {
                 .withReadConsistency(ConsistencyLevel.CL_ONE)
                 .withWriteConsistency(ConsistencyLevel.CL_ONE)
                 .withClock(clock)
+                .withMetricRegistry(new MetricRegistry())
+                .withMetricPrefix("test.AstyanaxCassandraContentStore")
                 .build();
         store = provideScheduleStore();
 
