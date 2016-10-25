@@ -10,7 +10,7 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
-import org.atlasapi.util.GroupLock;
+import org.atlasapi.locks.GroupLock;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;

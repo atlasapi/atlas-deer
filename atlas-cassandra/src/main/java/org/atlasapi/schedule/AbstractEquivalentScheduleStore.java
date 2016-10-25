@@ -24,7 +24,7 @@ import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.util.GroupLock;
+import org.atlasapi.locks.GroupLock;
 
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.stream.MoreCollectors;
