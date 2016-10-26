@@ -23,8 +23,8 @@ import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.Equivalent;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.locks.GroupLock;
+import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -54,6 +54,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
 
+    protected final MetricRegistry metricRegistry;
+
     private final EquivalenceGraphStore graphStore;
     private final ContentResolver contentStore;
 
@@ -62,7 +64,6 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     private final GroupLock<String> lock;
 
-    private final MetricRegistry metricRegistry;
     private final String updateSchedule;
     private final String updateEquivalences;
 
@@ -75,17 +76,18 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     ) {
         this.graphStore = checkNotNull(graphStore);
         this.contentStore = checkNotNull(contentStore);
+
+        this.lock = GroupLock.natural(metricRegistry, metricPrefix);
+
         this.metricRegistry = metricRegistry;
-
-        updateSchedule = metricPrefix + "updateSchedule.";
-        updateEquivalences = metricPrefix + "updateEquivalences.";
-
-        lock = GroupLock.natural(metricRegistry, metricPrefix);
+        this.updateSchedule = metricPrefix + "updateSchedule.";
+        this.updateEquivalences = metricPrefix + "updateEquivalences.";
     }
 
     @Override
     public final void updateSchedule(ScheduleUpdate update) throws WriteException {
         metricRegistry.meter(updateSchedule + METER_CALLED).mark();
+
         List<LocalDate> daysInSchedule = daysIn(update.getSchedule().getInterval());
 
         ImmutableList<LocalDate> staleBroadcastDays = update.getStaleBroadcasts()
@@ -119,6 +121,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     public final void updateEquivalences(ImmutableSet<EquivalenceGraph> graphs)
             throws WriteException {
         metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
+
         // Fire all the requests to the content store in parallel
         ImmutableMap<EquivalenceGraph, ListenableFuture<Resolved<Content>>> graphsContent = graphs
                 .stream()
