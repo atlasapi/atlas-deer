@@ -245,6 +245,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     @Override
     public void updateContent(Iterable<Item> content) throws WriteException {
         metricRegistry.meter(updateContentMetricPrefix + METER_CALLED).mark();
+
         try {
             ByteBuffer serializedContent = serialize(content);
             int contentCount = Iterables.size(content);

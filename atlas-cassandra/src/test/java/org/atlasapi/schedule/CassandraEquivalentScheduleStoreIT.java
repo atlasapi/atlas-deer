@@ -1967,6 +1967,88 @@ public class CassandraEquivalentScheduleStoreIT {
     }
 
     @Test
+    public void updatingContentDoesNotChangeSchedule() throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        Broadcast updatedBroadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        item.addBroadcast(broadcast);
+        contentStore.writeContent(item);
+
+        ScheduleRef initialUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+        )
+                .addEntry(item.getId(), broadcast.toRef())
+                .build();
+
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        initialUpdate,
+                        ImmutableSet.of()
+                ));
+
+        item.setBroadcasts(ImmutableSet.of(updatedBroadcast));
+        equivalentScheduleStore.updateContent(ImmutableList.of(item));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
+    }
+
+    @Test
+    public void updatingContentOnMissingRowDoesNotChangeSchedule() throws Exception {
+        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+
+        Broadcast broadcast = new Broadcast(
+                channel,
+                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+        )
+                .withId("id");
+
+        item.addBroadcast(broadcast);
+
+        equivalentScheduleStore.updateContent(ImmutableList.of(item));
+
+        assertThat(
+                getScheduleEntries(
+                        channel,
+                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
+                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                )
+                        .isEmpty(),
+                is(true)
+        );
+    }
+
+    @Test
     public void updatingScheduleDeletesRowsWithNullBroadcasts() throws Exception {
         Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
 
