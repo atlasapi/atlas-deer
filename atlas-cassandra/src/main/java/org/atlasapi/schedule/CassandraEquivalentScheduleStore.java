@@ -243,6 +243,54 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
+    public void updateContent(Iterable<Item> content) throws WriteException {
+        metricRegistry.meter(updateContentMetricPrefix + METER_CALLED).mark();
+
+        try {
+            ByteBuffer serializedContent = serialize(content);
+            int contentCount = Iterables.size(content);
+
+            ImmutableList.Builder<Statement> statements = ImmutableList.builder();
+            for (Item item : content) {
+                ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
+                        .stream(item.getBroadcasts().spliterator(), false)
+                        .filter(Broadcast::isActivelyPublished)
+                        .collect(MoreCollectors.toImmutableList());
+
+                BatchStatement batchStatement = new BatchStatement();
+
+                batchStatement.addAll(activelyPublishedBroadcasts.stream()
+                        .flatMap(broadcast -> contentUpdateStatements(
+                                item.getSource(), broadcast, serializedContent, contentCount
+                        ))
+                        .collect(Collectors.toList()))
+                        .setConsistencyLevel(write);
+
+                statements.add(batchStatement);
+            }
+
+            try {
+                ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
+                        .stream()
+                        .map(session::executeAsync)
+                        .collect(Collectors.toList()));
+                insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
+            } catch (NoHostAvailableException
+                    | QueryExecutionException
+                    | InterruptedException
+                    | ExecutionException
+                    | TimeoutException
+                    e
+                    ) {
+                throw new WriteException(e);
+            }
+        } catch (WriteException | RuntimeException e) {
+            metricRegistry.meter(updateContentMetricPrefix + METER_FAILURE).mark();
+            throw e;
+        }
+    }
+
+    @Override
     protected void writeSchedule(
             ScheduleUpdate update,
             Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
@@ -346,53 +394,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setTimestamp("now", clock.now().toDate()))
                 .map(statement -> statement.setConsistencyLevel(write))
                 .forEach(session::execute);
-    }
-
-    @Override
-    public void updateContent(Iterable<Item> content) throws WriteException {
-        metricRegistry.meter(updateContentMetricPrefix + METER_CALLED).mark();
-        try {
-            ByteBuffer serializedContent = serialize(content);
-            int contentCount = Iterables.size(content);
-
-            ImmutableList.Builder<Statement> statements = ImmutableList.builder();
-            for (Item item : content) {
-                ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
-                        .stream(item.getBroadcasts().spliterator(), false)
-                        .filter(Broadcast::isActivelyPublished)
-                        .collect(MoreCollectors.toImmutableList());
-
-                BatchStatement batchStatement = new BatchStatement();
-
-                batchStatement.addAll(activelyPublishedBroadcasts.stream()
-                        .flatMap(broadcast -> contentUpdateStatements(
-                                item.getSource(), broadcast, serializedContent, contentCount
-                        ))
-                        .collect(Collectors.toList()))
-                        .setConsistencyLevel(write);
-
-                statements.add(batchStatement);
-            }
-
-            try {
-                ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
-                        .stream()
-                        .map(session::executeAsync)
-                        .collect(Collectors.toList()));
-                insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
-            } catch (NoHostAvailableException
-                    | QueryExecutionException
-                    | InterruptedException
-                    | ExecutionException
-                    | TimeoutException
-                    e
-                    ) {
-                throw new WriteException(e);
-            }
-        } catch (WriteException | RuntimeException e) {
-            metricRegistry.meter(updateContentMetricPrefix + METER_FAILURE).mark();
-            throw e;
-        }
     }
 
     private Set<BroadcastRow> getStaleBroadcasts(
