@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -246,47 +243,39 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     public void updateContent(Iterable<Item> content) throws WriteException {
         metricRegistry.meter(updateContentMetricPrefix + METER_CALLED).mark();
 
+        ByteBuffer serializedContent = serialize(content);
+        int contentCount = Iterables.size(content);
+
+        ImmutableList.Builder<ResultSetFuture> futureBuilder = ImmutableList.builder();
+
+        for (Item item : content) {
+            StreamSupport
+                    .stream(item.getBroadcasts().spliterator(), false)
+                    .filter(Broadcast::isActivelyPublished)
+                    .flatMap(broadcast ->
+                            updateContent(
+                                    serializedContent,
+                                    contentCount,
+                                    broadcast,
+                                    item.getSource()
+                            )
+                    )
+                    .forEach(futureBuilder::add);
+        }
+
+        ImmutableList<ResultSetFuture> futures = futureBuilder.build();
+
+        metricRegistry.histogram(updateContentMetricPrefix + "histogram.parallelWrites")
+                .update(futures.size());
+
         try {
-            ByteBuffer serializedContent = serialize(content);
-            int contentCount = Iterables.size(content);
-
-            ImmutableList.Builder<Statement> statements = ImmutableList.builder();
-            for (Item item : content) {
-                ImmutableList<Broadcast> activelyPublishedBroadcasts = StreamSupport
-                        .stream(item.getBroadcasts().spliterator(), false)
-                        .filter(Broadcast::isActivelyPublished)
-                        .collect(MoreCollectors.toImmutableList());
-
-                BatchStatement batchStatement = new BatchStatement();
-
-                batchStatement.addAll(activelyPublishedBroadcasts.stream()
-                        .flatMap(broadcast -> contentUpdateStatements(
-                                item.getSource(), broadcast, serializedContent, contentCount
-                        ))
-                        .collect(Collectors.toList()))
-                        .setConsistencyLevel(write);
-
-                statements.add(batchStatement);
+            // Block until all futures are completed
+            for (ResultSetFuture future : futures) {
+                future.get();
             }
-
-            try {
-                ListenableFuture<List<ResultSet>> insertsFuture = Futures.allAsList(statements.build()
-                        .stream()
-                        .map(session::executeAsync)
-                        .collect(Collectors.toList()));
-                insertsFuture.get(CONTENT_UPDATE_TIMEOUT, TimeUnit.SECONDS);
-            } catch (NoHostAvailableException
-                    | QueryExecutionException
-                    | InterruptedException
-                    | ExecutionException
-                    | TimeoutException
-                    e
-                    ) {
-                throw new WriteException(e);
-            }
-        } catch (WriteException | RuntimeException e) {
+        } catch (Exception e) {
             metricRegistry.meter(updateContentMetricPrefix + METER_FAILURE).mark();
-            throw e;
+            throw new WriteException(e);
         }
     }
 
@@ -443,21 +432,23 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         return broadcastsPerDay.build();
     }
 
-    private Stream<Statement> contentUpdateStatements(
-            Publisher src,
-            Broadcast broadcast,
+    private Stream<ResultSetFuture> updateContent(
             ByteBuffer serializedContent,
-            int contentCount
+            int contentCount,
+            Broadcast broadcast,
+            Publisher source
     ) {
         return daysIn(broadcast.getTransmissionInterval())
                 .stream()
                 .map(day -> contentUpdate.bind()
-                        .setString("source", src.key())
+                        .setString("source", source.key())
                         .setLong("channel", broadcast.getChannelId().longValue())
                         .setTimestamp("day", toJavaUtilDate(day))
                         .setString("broadcast", broadcast.getSourceId())
                         .setLong("contentCount", contentCount)
-                        .setBytes("data", serializedContent));
+                        .setBytes("data", serializedContent))
+                .map(statement -> statement.setConsistencyLevel(write))
+                .map(session::executeAsync);
     }
 
     private List<Statement> selectStatements(Publisher src, Iterable<Channel> channels,
