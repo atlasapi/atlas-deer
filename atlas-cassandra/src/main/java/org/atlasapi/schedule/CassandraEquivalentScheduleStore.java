@@ -270,9 +270,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
         try {
             // Block until all futures are completed
-            for (ResultSetFuture future : futures) {
-                future.get();
-            }
+            Futures.allAsList(futures).get();
         } catch (Exception e) {
             metricRegistry.meter(updateContentMetricPrefix + METER_FAILURE).mark();
             throw new WriteException(e);
@@ -360,17 +358,16 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     }
 
     @Override
-    protected void updateEquivalentContent(
+    protected ImmutableList<ResultSetFuture> updateEquivalentContent(
             Publisher publisher,
             Broadcast broadcast,
             EquivalenceGraph graph,
-            ImmutableSet<Item> content,
-            List<LocalDate> daysInInterval
-    ) throws WriteException {
+            ImmutableSet<Item> content
+    ) {
         ByteBuffer graphBytes = graphSerializer.serialize(graph);
         ByteBuffer contentBytes = serialize(content);
 
-        daysInInterval
+        return daysIn(broadcast.getTransmissionInterval())
                 .stream()
                 .map(day -> broadcastEquivUpdate.bind()
                         .setString("source", publisher.key())
@@ -382,7 +379,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setBytes("contentData", contentBytes)
                         .setTimestamp("now", clock.now().toDate()))
                 .map(statement -> statement.setConsistencyLevel(write))
-                .forEach(session::execute);
+                .map(session::executeAsync)
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private Set<BroadcastRow> getStaleBroadcasts(
