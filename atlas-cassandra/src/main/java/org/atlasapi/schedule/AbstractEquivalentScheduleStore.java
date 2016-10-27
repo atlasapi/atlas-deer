@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -30,6 +29,7 @@ import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.codahale.metrics.MetricRegistry;
+import com.datastax.driver.core.ResultSetFuture;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -131,7 +131,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                         graph -> contentStore.resolveIds(graph.getEquivalenceSet())
                 ));
 
-        ImmutableList.Builder<CompletableFuture<Void>> futures = ImmutableList.builder();
+        ImmutableList.Builder<ResultSetFuture> futureBuilder = ImmutableList.builder();
 
         // Create a future for each update we will have to do
         for (Map.Entry<EquivalenceGraph, ListenableFuture<Resolved<Content>>> entry :
@@ -152,41 +152,24 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                     Item copy = item.copy();
                     copy.setBroadcasts(ImmutableSet.of(broadcast));
 
-                    List<LocalDate> daysInInterval = daysIn(broadcast.getTransmissionInterval());
-
-                    ImmutableSet<String> lockKeys = getLockKeys(
-                            broadcast.getChannelId(), item.getSource(), daysInInterval
-                    );
-
-                    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                        try {
-                            lock.lock(lockKeys);
-
-                            updateEquivalentContent(
-                                    item.getSource(),
-                                    broadcast,
-                                    graph,
-                                    equivItems(copy, broadcast, graphItems),
-                                    daysInInterval
-                            );
-                        } catch (InterruptedException | WriteException e) {
-                            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
-                            throw Throwables.propagate(e);
-                        } finally {
-                            lock.unlock(lockKeys);
-                        }
-                    });
-
-                    futures.add(future);
+                    futureBuilder.addAll(updateEquivalentContent(
+                            item.getSource(),
+                            broadcast,
+                            graph,
+                            equivItems(copy, broadcast, graphItems)
+                    ));
                 }
             }
         }
 
+        ImmutableList<ResultSetFuture> futures = futureBuilder.build();
+
+        metricRegistry.histogram(updateEquivalences + "histogram.parallelWrites")
+                .update(futures.size());
+
         try {
             // Block until all futures are completed
-            for (CompletableFuture<Void> future : futures.build()) {
-                future.get();
-            }
+            Futures.allAsList(futures).get();
         } catch (Exception e) {
             metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
             throw new WriteException(e);
@@ -198,13 +181,12 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
             Map<ScheduleRef.Entry, EquivalentScheduleEntry> content
     ) throws WriteException;
 
-    protected abstract void updateEquivalentContent(
+    protected abstract ImmutableList<ResultSetFuture> updateEquivalentContent(
             Publisher publisher,
             Broadcast broadcast,
             EquivalenceGraph graph,
-            ImmutableSet<Item> content,
-            List<LocalDate> daysInInterval
-    ) throws WriteException;
+            ImmutableSet<Item> content
+    );
 
     protected List<LocalDate> daysIn(Interval interval) {
         return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
