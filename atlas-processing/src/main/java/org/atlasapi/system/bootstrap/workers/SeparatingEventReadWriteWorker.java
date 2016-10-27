@@ -7,9 +7,9 @@ import org.atlasapi.event.EventResolver;
 import org.atlasapi.event.EventWriter;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -32,6 +32,7 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
 
     private SeparatingEventReadWriteWorker(
             EventResolver resolver,
@@ -45,6 +46,7 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
     }
 
     public static SeparatingEventReadWriteWorker create(
@@ -62,7 +64,9 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
         messageReceivedMeter.mark();
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
-                message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
+                message.getUpdatedResource().getId(),
+                getTimeToProcessInMillis(message.getTimestamp()) / 1000L,
+                message
         );
 
         Timer.Context time = executionTimer.time();
@@ -79,6 +83,11 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
                     .get();
 
             writer.write(event);
+
+            latencyTimer.update(
+                    getTimeToProcessInMillis(message.getTimestamp()),
+                    TimeUnit.MILLISECONDS
+            );
         } catch (Exception e) {
             failureMeter.mark();
             throw Throwables.propagate(e);
@@ -87,7 +96,7 @@ public class SeparatingEventReadWriteWorker implements Worker<ResourceUpdatedMes
         }
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }

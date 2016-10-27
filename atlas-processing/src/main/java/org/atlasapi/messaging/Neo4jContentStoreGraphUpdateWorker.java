@@ -1,5 +1,7 @@
 package org.atlasapi.messaging;
 
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.entity.Id;
@@ -12,10 +14,10 @@ import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.persistence.lookup.entry.LookupEntry;
 import org.atlasapi.persistence.lookup.entry.LookupEntryStore;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -44,6 +46,7 @@ public class Neo4jContentStoreGraphUpdateWorker
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
 
     private Neo4jContentStoreGraphUpdateWorker(
             ContentResolver legacyResolver,
@@ -60,6 +63,7 @@ public class Neo4jContentStoreGraphUpdateWorker
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
     }
 
     public static Neo4jContentStoreGraphUpdateWorker create(
@@ -98,7 +102,7 @@ public class Neo4jContentStoreGraphUpdateWorker
                 "Processing message on subject: {}, took: PT{}S, "
                         + "asserted adjacents: {}, asserted sources: {}, message: {}",
                 assertion.getSubject().getId(),
-                getTimeToProcessInSeconds(message),
+                getTimeToProcessInMillis(message.getTimestamp()) / 1000L,
                 assertion.getAssertedAdjacents().stream()
                         .map(ResourceRef::getId)
                         .collect(MoreCollectors.toImmutableSet()),
@@ -121,6 +125,11 @@ public class Neo4jContentStoreGraphUpdateWorker
                     assertion.getSubject(),
                     adjacents,
                     Publisher.all()
+            );
+
+            latencyTimer.update(
+                    getTimeToProcessInMillis(message.getTimestamp()),
+                    TimeUnit.MILLISECONDS
             );
         } catch (Exception e) {
             failureMeter.mark();
@@ -163,7 +172,7 @@ public class Neo4jContentStoreGraphUpdateWorker
                 .collect(MoreCollectors.toImmutableSet());
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }

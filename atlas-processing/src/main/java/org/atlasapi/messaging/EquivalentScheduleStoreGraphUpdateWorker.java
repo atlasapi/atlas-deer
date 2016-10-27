@@ -1,14 +1,16 @@
 package org.atlasapi.messaging;
 
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -31,6 +33,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
 
     private EquivalentScheduleStoreGraphUpdateWorker(
             EquivalentScheduleWriter scheduleWriter,
@@ -44,6 +47,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
     }
 
     public static EquivalentScheduleStoreGraphUpdateWorker create(
@@ -66,7 +70,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
                 message.getGraphUpdate().getAllGraphs().stream()
                         .map(EquivalenceGraph::getId)
                         .collect(MoreCollectors.toImmutableList()),
-                getTimeToProcessInSeconds(message),
+                getTimeToProcessInMillis(message.getTimestamp()) / 1000L,
                 message
         );
 
@@ -77,6 +81,11 @@ public class EquivalentScheduleStoreGraphUpdateWorker
                     graphUpdateResolver.resolve(message.getGraphUpdate());
 
             scheduleWriter.updateEquivalences(graphs);
+
+            latencyTimer.update(
+                    getTimeToProcessInMillis(message.getTimestamp()),
+                    TimeUnit.MILLISECONDS
+            );
         } catch (WriteException e) {
             failureMeter.mark();
             throw new RecoverableException("update failed for " + message.getGraphUpdate(), e);
@@ -85,7 +94,7 @@ public class EquivalentScheduleStoreGraphUpdateWorker
         }
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }

@@ -9,9 +9,9 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.neo4j.service.Neo4jContentStore;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -38,6 +38,7 @@ public class Neo4jContentStoreContentUpdateWorker
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
 
     private Neo4jContentStoreContentUpdateWorker(
             ContentResolver contentResolver,
@@ -51,6 +52,7 @@ public class Neo4jContentStoreContentUpdateWorker
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
     }
 
     public static Neo4jContentStoreContentUpdateWorker create(
@@ -71,12 +73,17 @@ public class Neo4jContentStoreContentUpdateWorker
         Id contentId = message.getContentRef().getId();
 
         log.debug("Processing message on id {}, took PT{}S, message: {}",
-                contentId, getTimeToProcessInSeconds(message), message);
+                contentId, getTimeToProcessInMillis(message.getTimestamp()) / 1000L, message);
 
         Timer.Context time = executionTimer.time();
         try {
             Content content = getContent(contentId);
             neo4JContentStore.writeContent(content);
+
+            latencyTimer.update(
+                    getTimeToProcessInMillis(message.getTimestamp()),
+                    TimeUnit.MILLISECONDS
+            );
         } catch (Exception e) {
             failureMeter.mark();
             throw Throwables.propagate(e);
@@ -104,7 +111,7 @@ public class Neo4jContentStoreContentUpdateWorker
         return contentResolver.resolveIds(ImmutableList.of(contentId));
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }

@@ -1,6 +1,7 @@
 package org.atlasapi.messaging;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.atlasapi.content.Content;
@@ -9,10 +10,10 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.schedule.EquivalentScheduleWriter;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -35,6 +36,7 @@ public class EquivalentScheduleStoreContentUpdateWorker
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
 
     private EquivalentScheduleStoreContentUpdateWorker(
             EquivalentContentStore contentStore,
@@ -48,6 +50,7 @@ public class EquivalentScheduleStoreContentUpdateWorker
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
     }
 
     public static EquivalentScheduleStoreContentUpdateWorker create(
@@ -70,7 +73,7 @@ public class EquivalentScheduleStoreContentUpdateWorker
 
         LOG.debug("Processing message on id: {}, took: PT{}S, message: {}",
                 message.getEquivalentSetId(),
-                getTimeToProcessInSeconds(message),
+                getTimeToProcessInMIllis(message.getTimestamp()) / 1000L,
                 message
         );
 
@@ -92,6 +95,11 @@ public class EquivalentScheduleStoreContentUpdateWorker
                             })
                             .collect(MoreCollectors.toImmutableSet())
             );
+
+            latencyTimer.update(
+                    getTimeToProcessInMIllis(message.getTimestamp()),
+                    TimeUnit.MILLISECONDS
+            );
         } catch (WriteException e) {
             failureMeter.mark();
             throw new RecoverableException(e);
@@ -100,7 +108,7 @@ public class EquivalentScheduleStoreContentUpdateWorker
         }
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMIllis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }

@@ -9,9 +9,9 @@ import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicIndex;
 import org.atlasapi.topic.TopicResolver;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -33,6 +33,7 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
 
     private TopicIndexingWorker(
             TopicResolver topicResolver,
@@ -46,6 +47,7 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
     }
 
     public static TopicIndexingWorker create(
@@ -63,7 +65,7 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
 
         LOG.debug(
                 "Processing message on id {}, took: PT{}S, message: {}",
-                message.getUpdatedResource(), getTimeToProcessInSeconds(message), message
+                message.getUpdatedResource(), getTimeToProcessInMillis(message.getTimestamp()) / 1000L, message
         );
 
         Timer.Context time = executionTimer.time();
@@ -83,6 +85,11 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
                 Topic source = topic.get();
                 LOG.debug("indexing {}", source);
                 topicIndex.index(source);
+
+                latencyTimer.update(
+                        getTimeToProcessInMillis(message.getTimestamp()),
+                        TimeUnit.MILLISECONDS
+                );
             } else {
                 LOG.warn(
                         "{}: failed to resolve {} ",
@@ -101,7 +108,7 @@ public class TopicIndexingWorker implements Worker<ResourceUpdatedMessage> {
         return topicResolver.resolveIds(ImmutableList.of(message.getUpdatedResource().getId()));
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }
