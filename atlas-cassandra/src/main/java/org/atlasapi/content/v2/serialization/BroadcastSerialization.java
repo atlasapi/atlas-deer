@@ -43,7 +43,6 @@ public class BroadcastSerialization {
         }
         internal.setScheduleDate(broadcast.getScheduleDate());
         internal.setActivelyPublished(broadcast.isActivelyPublished());
-        internal.setSourceId(broadcast.getSourceId());
         internal.setVersionId(broadcast.getVersionId());
         internal.setRepeat(broadcast.getRepeat());
         internal.setSubtitled(broadcast.getSubtitled());
@@ -63,7 +62,7 @@ public class BroadcastSerialization {
         return internal;
     }
 
-    public org.atlasapi.content.Broadcast deserialize(Broadcast internal) {
+    public org.atlasapi.content.Broadcast deserialize(String sourceId, Broadcast internal) {
         if (internal == null) {
             return null;
         }
@@ -79,7 +78,7 @@ public class BroadcastSerialization {
 
         broadcast.setScheduleDate(internal.getScheduleDate());
         broadcast.setIsActivelyPublished(internal.getActivelyPublished());
-        broadcast = broadcast.withId(internal.getSourceId());
+        broadcast = broadcast.withId(sourceId);
         broadcast.setVersionId(internal.getVersionId());
         broadcast.setRepeat(internal.getRepeat());
         broadcast.setSubtitled(internal.getSubtitled());

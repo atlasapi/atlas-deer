@@ -16,8 +16,8 @@ import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.Interval;
 import org.atlasapi.content.v2.model.udt.ItemRef;
 import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
+import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
 import org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries;
-import org.atlasapi.content.v2.model.udt.ItemSummary;
 import org.atlasapi.content.v2.model.udt.KeyPhrase;
 import org.atlasapi.content.v2.model.udt.Priority;
 import org.atlasapi.content.v2.model.udt.Rating;
@@ -214,9 +214,10 @@ public class Content implements ContentIface {
     @Column(name = "container_summary")
     private ContainerSummary containerSummary;
 
+    @FrozenKey
     @FrozenValue
     @Column(name = "broadcasts")
-    private Set<Broadcast> broadcasts;
+    private Map<String, Broadcast> broadcasts;
 
     @FrozenValue
     @Column(name = "segment_events")
@@ -269,7 +270,7 @@ public class Content implements ContentIface {
     @FrozenKey
     @FrozenValue
     @Column(name = "item_summaries")
-    private Map<Ref, ItemSummary> itemSummaries;
+    private Map<Ref, ItemRefAndItemSummary> itemSummaries;
 
     @FrozenValue
     @Column(name = "reviews")
@@ -813,11 +814,11 @@ public class Content implements ContentIface {
         this.containerSummary = containerSummary;
     }
 
-    public Set<Broadcast> getBroadcasts() {
+    public Map<String, Broadcast> getBroadcasts() {
         return broadcasts;
     }
 
-    public void setBroadcasts(Set<Broadcast> broadcasts) {
+    public void setBroadcasts(Map<String, Broadcast> broadcasts) {
         this.broadcasts = broadcasts;
     }
 
@@ -858,8 +859,7 @@ public class Content implements ContentIface {
         return releaseDates;
     }
 
-    public void setReleaseDates(
-            Set<ReleaseDate> releaseDates) {
+    public void setReleaseDates(Set<ReleaseDate> releaseDates) {
         this.releaseDates = releaseDates;
     }
 
@@ -919,11 +919,11 @@ public class Content implements ContentIface {
         this.availableContent = availableContent;
     }
 
-    public Map<Ref, ItemSummary> getItemSummaries() {
+    public Map<Ref, ItemRefAndItemSummary> getItemSummaries() {
         return itemSummaries;
     }
 
-    public void setItemSummaries(Map<Ref, ItemSummary> itemSummaries) {
+    public void setItemSummaries(Map<Ref, ItemRefAndItemSummary> itemSummaries) {
         this.itemSummaries = itemSummaries;
     }
 }

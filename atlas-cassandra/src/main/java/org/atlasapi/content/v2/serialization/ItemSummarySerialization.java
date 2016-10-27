@@ -6,20 +6,21 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.EpisodeSummary;
+import org.atlasapi.content.v2.model.udt.ItemRef;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
+import org.atlasapi.content.v2.model.udt.Ref;
 
 import com.google.common.collect.ImmutableSet;
 
 public class ItemSummarySerialization {
 
     private final CertificateSerialization certificate = new CertificateSerialization();
-    private final ItemRefSerialization itemRef = new ItemRefSerialization();
+    private final ItemRefSerialization itemRefSerialization = new ItemRefSerialization();
 
     public ItemSummary serialize(org.atlasapi.content.ItemSummary itemSummary) {
         ItemSummary internal = new ItemSummary();
 
         internal.setType("item");
-        internal.setRef(itemRef.serialize(itemSummary.getItemRef()));
         internal.setTitle(itemSummary.getTitle());
 
         Optional<String> description = itemSummary.getDescription();
@@ -56,14 +57,14 @@ public class ItemSummarySerialization {
         return internal;
     }
 
-    public org.atlasapi.content.ItemSummary deserialize(ItemSummary is) {
+    public org.atlasapi.content.ItemSummary deserialize(Ref ref, ItemRef itemRef, ItemSummary is) {
         if (is == null) {
             return null;
         }
 
         if ("item".equals(is.getType())) {
             return new org.atlasapi.content.ItemSummary(
-                    itemRef.deserialize(is.getRef()),
+                    itemRefSerialization.deserialize(ref, itemRef),
                     is.getTitle(),
                     is.getDescription(),
                     is.getImage(),
@@ -75,7 +76,7 @@ public class ItemSummarySerialization {
             );
         } else {
             return new org.atlasapi.content.EpisodeSummary(
-                    itemRef.deserialize(is.getRef()),
+                    itemRefSerialization.deserialize(ref, itemRef),
                     is.getTitle(),
                     is.getDescription(),
                     is.getImage(),

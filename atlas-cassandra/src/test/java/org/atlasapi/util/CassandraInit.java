@@ -11,14 +11,19 @@ import com.datastax.driver.extras.codecs.joda.InstantCodec;
 import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
 import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CassandraInit {
+
+    private static final Logger log = LoggerFactory.getLogger(CassandraInit.class);
 
     private static final ImmutableSet<String> SEEDS = ImmutableSet.of("localhost");
     private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
@@ -56,7 +61,12 @@ public class CassandraInit {
             stmt = stmt.trim();
 
             if (!stmt.isEmpty()) {
-                session.execute(stmt);
+                try {
+                    session.execute(stmt);
+                } catch (Exception e) {
+                    log.error("Failed to exec statement {}", stmt, e);
+                    throw Throwables.propagate(e);
+                }
             }
         }
     }

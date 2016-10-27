@@ -137,13 +137,13 @@ CREATE TYPE IF NOT EXISTS CrewMember (
 CREATE TYPE IF NOT EXISTS LocationSummary (
   available boolean,
   uri text,
-  interval Interval
+  interval frozen<Interval>
 );
 
 CREATE TYPE IF NOT EXISTS BroadcastRef (
   src_id text,
   channel_id bigint,
-  interval Interval
+  interval frozen<Interval>
 );
 
 CREATE TYPE IF NOT EXISTS Broadcast (
@@ -161,7 +161,6 @@ CREATE TYPE IF NOT EXISTS Broadcast (
   bd bigint,
   sd date,
   ap boolean,
-  si text,
   vi text,
   r boolean,
   sub boolean,
@@ -243,13 +242,18 @@ CREATE TYPE IF NOT EXISTS ReleaseDate (
 );
 
 CREATE TYPE IF NOT EXISTS ItemRefAndBroadcastRefs (
-  item ItemRef,
+  item frozen<ItemRef>,
   broadcasts list<frozen<BroadcastRef>>
 );
 
 CREATE TYPE IF NOT EXISTS ItemRefAndLocationSummaries (
-  item ItemRef,
+  item frozen<ItemRef>,
   location_summaries list<frozen<LocationSummary>>
+);
+
+CREATE TYPE IF NOT EXISTS ItemRefAndItemSummary (
+  item frozen<ItemRef>,
+  summary frozen<ItemSummary>
 );
 
 CREATE TABLE IF NOT EXISTS content_v2 (
@@ -307,7 +311,7 @@ CREATE TABLE IF NOT EXISTS content_v2 (
   countries_of_origin set<text>,
   sort_key text,
   container_summary frozen<ContainerSummary>,
-  broadcasts set<frozen<Broadcast>>,
+  broadcasts map<text, frozen<Broadcast>>,
   segment_events list<frozen<SegmentEvent>>,
   restrictions map<frozen<Restriction>, frozen<UpdateTimes>>,
 
@@ -321,10 +325,10 @@ CREATE TABLE IF NOT EXISTS content_v2 (
 
   series_refs map<frozen<Ref>, frozen<SeriesRef>>,
 
-  item_refs map<frozen<Ref>. frozen<ItemRef>>,
+  item_refs map<frozen<Ref>, frozen<ItemRef>>,
   upcoming map<frozen<Ref>, frozen<ItemRefAndBroadcastRefs>>,
   available map<frozen<Ref>, frozen<ItemRefAndLocationSummaries>>,
-  item_summaries map<frozen<Ref>, frozen<ItemSummary>>,
+  item_summaries map<frozen<Ref>, frozen<ItemRefAndItemSummary>>,
 
   reviews set<frozen<Review>>,
   ratings set<frozen<Rating>>,

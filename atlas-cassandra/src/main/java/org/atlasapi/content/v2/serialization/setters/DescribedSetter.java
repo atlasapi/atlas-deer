@@ -1,5 +1,6 @@
 package org.atlasapi.content.v2.serialization.setters;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -8,15 +9,21 @@ import org.atlasapi.content.MediaType;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.content.v2.model.Described;
 import org.atlasapi.content.v2.model.udt.Award;
+import org.atlasapi.content.v2.model.udt.Image;
+import org.atlasapi.content.v2.model.udt.Interval;
 import org.atlasapi.content.v2.serialization.AwardSerialization;
-import org.atlasapi.content.v2.serialization.DateTimeUtils;
 import org.atlasapi.content.v2.serialization.ImageSerialization;
 import org.atlasapi.content.v2.serialization.PrioritySerialization;
 import org.atlasapi.content.v2.serialization.RelatedLinkSerialization;
 import org.atlasapi.content.v2.serialization.SynopsesSerialization;
 import org.atlasapi.media.entity.Publisher;
 
+import com.metabroadcast.common.stream.MoreCollectors;
+
+import org.joda.time.DateTime;
+
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;
+import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
 public class DescribedSetter {
 
@@ -54,13 +61,26 @@ public class DescribedSetter {
         internal.setImage(content.getImage());
 
         internal.setImages(content.getImages().stream()
-                .map(image::serialize)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toSet()));
+                .collect(MoreCollectors.toImmutableMap(image::serialize, img -> {
+                    Interval interval = new Interval();
+
+                    DateTime start = img.getAvailabilityStart();
+                    if (start != null) {
+                        interval.setStart(toInstant(img.getAvailabilityStart()));
+                    }
+
+                    DateTime end = img.getAvailabilityEnd();
+                    if (end != null) {
+                        interval.setEnd(toInstant(img.getAvailabilityStart()));
+                    }
+
+                    return interval;
+                })));
         internal.setThumbnail(content.getThumbnail());
-        internal.setFirstSeen(DateTimeUtils.toInstant(content.getFirstSeen()));
-        internal.setLastFetched(DateTimeUtils.toInstant(content.getLastFetched()));
-        internal.setThisOrChildLastUpdated(DateTimeUtils.toInstant(content.getThisOrChildLastUpdated()));
+        internal.setFirstSeen(toInstant(content.getFirstSeen()));
+        internal.setLastFetched(toInstant(content.getLastFetched()));
+        internal.setThisOrChildLastUpdated(toInstant(content.getThisOrChildLastUpdated()));
         internal.setScheduleOnly(content.isScheduleOnly());
         internal.setActivelyPublished(content.isActivelyPublished());
         internal.setPresentationChannel(content.getPresentationChannel());
@@ -108,12 +128,19 @@ public class DescribedSetter {
         }
 
         content.setImage(internal.getImage());
-        Set<org.atlasapi.content.v2.model.udt.Image> images = internal.getImages();
+
+        Map<Image, Interval> images = internal.getImages();
+
         if (images != null) {
-            content.setImages(images.stream()
-                    .map(image::deserialize)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet()));
+            content.setImages(images.entrySet().stream().map(internalImg -> {
+                org.atlasapi.content.Image img = image.deserialize(internalImg.getKey());
+
+                Interval availability = internalImg.getValue();
+                img.setAvailabilityStart(toDateTime(availability.getStart()));
+                img.setAvailabilityEnd(toDateTime(availability.getEnd()));
+
+                return img;
+            }).collect(MoreCollectors.toImmutableSet()));
         }
 
         content.setThumbnail(internal.getThumbnail());

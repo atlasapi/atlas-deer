@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
+import com.datastax.driver.mapping.annotations.Frozen;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "locationsummary")
@@ -8,7 +9,7 @@ public class LocationSummary {
 
     @Field(name = "available") private Boolean available;
     @Field(name = "uri") private String uri;
-    @Field(name = "interval") private Interval interval;
+    @Field(name = "interval") @Frozen private Interval interval;
 
     public Boolean getAvailable() {
         return available;

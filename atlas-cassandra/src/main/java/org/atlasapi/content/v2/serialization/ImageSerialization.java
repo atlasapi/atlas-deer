@@ -5,10 +5,6 @@ import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.media.MimeType;
 
-import org.joda.time.Instant;
-
-import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;
-
 public class ImageSerialization {
 
     public Image serialize(org.atlasapi.content.Image img) {
@@ -47,8 +43,6 @@ public class ImageSerialization {
             image.setMimeType(mimeType.name());
         }
 
-        image.setAvailabilityStart(DateTimeUtils.toInstant(img.getAvailabilityStart()));
-        image.setAvailabilityEnd(DateTimeUtils.toInstant(img.getAvailabilityEnd()));
         image.setHasTitleArt(img.hasTitleArt());
 
         Publisher source = img.getSource();
@@ -92,16 +86,6 @@ public class ImageSerialization {
         String mimeType = img.getMimeType();
         if (mimeType != null) {
             newImg.setMimeType(MimeType.valueOf(mimeType));
-        }
-
-        Instant availabilityStart = img.getAvailabilityStart();
-        if (availabilityStart != null) {
-            newImg.setAvailabilityStart(toDateTime(availabilityStart));
-        }
-
-        Instant availabilityEnd = img.getAvailabilityEnd();
-        if (availabilityEnd != null) {
-            newImg.setAvailabilityEnd(toDateTime(availabilityEnd));
         }
 
         newImg.setHasTitleArt(img.getHasTitleArt());

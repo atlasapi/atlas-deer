@@ -32,7 +32,6 @@ public class ItemRefSerialization {
             ref.setSource(source.key());
         }
 
-        internal.setRef(ref);
         internal.setSortKey(itemRef.getSortKey());
         internal.setUpdated(toInstant(itemRef.getUpdated()));
 
@@ -51,40 +50,40 @@ public class ItemRefSerialization {
         return internal;
     }
 
-    public org.atlasapi.content.ItemRef deserialize(ItemRef itemRef) {
+    public org.atlasapi.content.ItemRef deserialize(Ref ref, ItemRef itemRef) {
         switch (itemRef.getType()) {
         case "episode":
             return new org.atlasapi.content.EpisodeRef(
-                    Id.valueOf(itemRef.getRef().getId()),
-                    Publisher.fromKey(itemRef.getRef().getSource()).requireValue(),
+                    Id.valueOf(ref.getId()),
+                    Publisher.fromKey(ref.getSource()).requireValue(),
                     itemRef.getSortKey(),
                     toDateTime(itemRef.getUpdated())
             );
         case "film":
             return new org.atlasapi.content.FilmRef(
-                    Id.valueOf(itemRef.getRef().getId()),
-                    Publisher.fromKey(itemRef.getRef().getSource()).requireValue(),
+                    Id.valueOf(ref.getId()),
+                    Publisher.fromKey(ref.getSource()).requireValue(),
                     itemRef.getSortKey(),
                     toDateTime(itemRef.getUpdated())
             );
         case "song":
             return new org.atlasapi.content.SongRef(
-                    Id.valueOf(itemRef.getRef().getId()),
-                    Publisher.fromKey(itemRef.getRef().getSource()).requireValue(),
+                    Id.valueOf(ref.getId()),
+                    Publisher.fromKey(ref.getSource()).requireValue(),
                     itemRef.getSortKey(),
                     toDateTime(itemRef.getUpdated())
             );
         case "clip":
             return new org.atlasapi.content.ClipRef(
-                    Id.valueOf(itemRef.getRef().getId()),
-                    Publisher.fromKey(itemRef.getRef().getSource()).requireValue(),
+                    Id.valueOf(ref.getId()),
+                    Publisher.fromKey(ref.getSource()).requireValue(),
                     itemRef.getSortKey(),
                     toDateTime(itemRef.getUpdated())
             );
         case "item":
             return new org.atlasapi.content.ItemRef(
-                    Id.valueOf(itemRef.getRef().getId()),
-                    Publisher.fromKey(itemRef.getRef().getSource()).requireValue(),
+                    Id.valueOf(ref.getId()),
+                    Publisher.fromKey(ref.getSource()).requireValue(),
                     itemRef.getSortKey(),
                     toDateTime(itemRef.getUpdated())
             );

@@ -27,7 +27,6 @@ public class Broadcast implements Identified {
     @Field(name = "bd") private Long broadcastDuration;
     @Field(name = "sd") private LocalDate scheduleDate;
     @Field(name = "ap") private Boolean activelyPublished;
-    @Field(name = "si") private String sourceId;
     @Field(name = "vi") private String versionId;
     @Field(name = "r") private Boolean repeat;
     @Field(name = "sub") private Boolean subtitled;
@@ -137,14 +136,6 @@ public class Broadcast implements Identified {
 
     public void setActivelyPublished(Boolean activelyPublished) {
         this.activelyPublished = activelyPublished;
-    }
-
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(String sourceId) {
-        this.sourceId = sourceId;
     }
 
     public String getVersionId() {

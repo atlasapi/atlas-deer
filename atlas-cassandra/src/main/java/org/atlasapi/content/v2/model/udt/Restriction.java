@@ -5,6 +5,7 @@ import java.util.Set;
 import org.atlasapi.content.v2.model.Identified;
 
 import com.datastax.driver.mapping.annotations.Field;
+import com.datastax.driver.mapping.annotations.Transient;
 import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
@@ -72,21 +73,25 @@ public class Restriction implements Identified {
         this.equivalentTo = equivalentTo;
     }
 
+    @Transient
     @Override
     public Instant getLastUpdated() {
         throw new UnsupportedOperationException("stored as part of a map value against this key");
     }
 
+    @Transient
     @Override
     public void setLastUpdated(Instant lastUpdated) {
         throw new UnsupportedOperationException("stored as part of a map value against this key");
     }
 
+    @Transient
     @Override
     public Instant getEquivalenceUpdate() {
         throw new UnsupportedOperationException("stored as part of a map value against this key");
     }
 
+    @Transient
     @Override
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         throw new UnsupportedOperationException("stored as part of a map value against this key");

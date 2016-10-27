@@ -23,8 +23,11 @@ public class BroadcastRefSerialization {
 
         Interval transmissionInterval = broadcastRef.getTransmissionInterval();
         if (transmissionInterval != null) {
-            internal.setStart(transmissionInterval.getStart().toInstant());
-            internal.setEnd(transmissionInterval.getEnd().toInstant());
+            org.atlasapi.content.v2.model.udt.Interval interval =
+                    new org.atlasapi.content.v2.model.udt.Interval();
+            interval.setStart(transmissionInterval.getStart().toInstant());
+            interval.setEnd(transmissionInterval.getEnd().toInstant());
+            internal.setInterval(interval);
         }
 
         return internal;
@@ -38,7 +41,7 @@ public class BroadcastRefSerialization {
         return new org.atlasapi.content.BroadcastRef(
                 br.getSourceId(),
                 Id.valueOf(br.getChannelId()),
-                new Interval(br.getStart(), br.getEnd())
+                new Interval(br.getInterval().getStart(), br.getInterval().getEnd())
         );
     }
 

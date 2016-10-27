@@ -119,6 +119,11 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
     }
 
     @Test
+    public void multipleChildUpdatesAddMultipleBroadcastRefsToContainerUpcoming() throws Exception {
+
+    }
+
+    @Test
     public void writesSegmentsWithDescription() throws Exception {
         when(clock.now()).thenReturn(DateTime.now());
 

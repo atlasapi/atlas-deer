@@ -30,6 +30,8 @@ import org.atlasapi.content.LocationSummary;
 import org.atlasapi.content.Series;
 import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Description;
+import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
+import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
 import org.atlasapi.content.v2.serialization.BroadcastRefSerialization;
 import org.atlasapi.content.v2.serialization.BroadcastSerialization;
 import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
@@ -38,6 +40,7 @@ import org.atlasapi.content.v2.serialization.ContentSerializationImpl;
 import org.atlasapi.content.v2.serialization.ItemRefSerialization;
 import org.atlasapi.content.v2.serialization.ItemSummarySerialization;
 import org.atlasapi.content.v2.serialization.LocationSummarySerialization;
+import org.atlasapi.content.v2.serialization.RefSerialization;
 import org.atlasapi.content.v2.serialization.SeriesRefSerialization;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.MissingResourceException;
@@ -57,7 +60,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codepoetics.protonpack.maps.MapStream;
 import com.datastax.driver.core.BatchStatement;
@@ -102,6 +104,7 @@ public class CqlContentStore implements ContentStore {
 
     private final ContentSerialization translator = new ContentSerializationImpl();
     private final BroadcastSerialization broadcastTranslator = new BroadcastSerialization();
+    private final RefSerialization refTranslator = new RefSerialization();
     private final SeriesRefSerialization seriesRefTranslator = new SeriesRefSerialization();
     private final ItemRefSerialization itemRefTranslator = new ItemRefSerialization();
     private final BroadcastRefSerialization broadcastRefTranslator =
@@ -138,6 +141,10 @@ public class CqlContentStore implements ContentStore {
 
         // TODO: bug in driver 3.1.0 prompting this hackaround. Remove when it's fixed. MBST-16715
         mappingManager.udtCodec(Description.class);
+        mappingManager.udtCodec(org.atlasapi.content.v2.model.udt.BroadcastRef.class);
+        mappingManager.udtCodec(org.atlasapi.content.v2.model.udt.LocationSummary.class);
+        mappingManager.udtCodec(org.atlasapi.content.v2.model.udt.LocationSummary.class);
+        mappingManager.udtCodec(org.atlasapi.content.v2.model.udt.ItemSummary.class);
 
         this.mapper = mappingManager.mapper(org.atlasapi.content.v2.model.Content.class);
         this.accessor = mappingManager.createAccessor(ContentAccessor.class);
@@ -227,8 +234,8 @@ public class CqlContentStore implements ContentStore {
             org.atlasapi.content.v2.model.udt.Broadcast serialized =
                     broadcastTranslator.serialize(broadcast);
 
-            ImmutableSet<org.atlasapi.content.v2.model.udt.Broadcast> broadcasts =
-                    ImmutableSet.of(serialized);
+            ImmutableMap<String, org.atlasapi.content.v2.model.udt.Broadcast> broadcasts =
+                    ImmutableMap.of(broadcast.getSourceId(), serialized);
 
             batch.add(accessor.addBroadcastToContent(
                     item.getId().longValue(),
@@ -239,22 +246,24 @@ public class CqlContentStore implements ContentStore {
             // we only denormalize upcoming broadcasts on containers. If this is stale, just add to
             // item and return early
             if (broadcast.isActivelyPublished() && broadcast.isUpcoming()) {
+                org.atlasapi.content.v2.model.udt.Ref ref = refTranslator.serialize(item);
                 org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(item);
 
-                Map<
-                        org.atlasapi.content.v2.model.udt.ItemRef,
-                        List<org.atlasapi.content.v2.model.udt.BroadcastRef>
-                        > upcomingBroadcasts = ImmutableMap.of(
-                        itemRef,
-                        ImmutableList.of(broadcastRefTranslator.serialize(broadcast.toRef()))
-                );
+                Map<org.atlasapi.content.v2.model.udt.Ref, ItemRefAndBroadcastRefs> upcomingBroadcasts =
+                        ImmutableMap.of(
+                                ref,
+                                new ItemRefAndBroadcastRefs(
+                                        itemRef,
+                                        ImmutableList.of(broadcastRefTranslator.serialize(broadcast.toRef()))
+                                )
+                        );
 
                 if (containerRef.isPresent()) {
                     long id = containerRef.get().getId().longValue();
 
                     batch.add(accessor.addItemRefsToContainer(
                             id,
-                            ImmutableSet.of(),
+                            ImmutableMap.of(),
                             upcomingBroadcasts,
                             ImmutableMap.of()
                     ));
@@ -265,7 +274,7 @@ public class CqlContentStore implements ContentStore {
                     long id = seriesRef.get().getId().longValue();
                     batch.add(accessor.addItemRefsToContainer(
                             id,
-                            ImmutableSet.of(itemRef),
+                            ImmutableMap.of(ref, itemRef),
                             upcomingBroadcasts,
                             ImmutableMap.of()
                     ));
@@ -590,12 +599,15 @@ public class CqlContentStore implements ContentStore {
                 if (!series.isActivelyPublished()) {
                     result.add(accessor.removeSeriesRefFromBrand(
                             brandRef.getId().longValue(),
-                            ImmutableSet.of(seriesRefTranslator.serialize(series.toRef()))
+                            ImmutableSet.of(refTranslator.serialize(series.toRef()))
                     ));
                 } else {
                     result.add(accessor.addSeriesRefToBrand(
                             brandRef.getId().longValue(),
-                            ImmutableSet.of(seriesRefTranslator.serialize(series.toRef()))
+                            ImmutableMap.of(
+                                    refTranslator.serialize(series.toRef()),
+                                    seriesRefTranslator.serialize(series.toRef())
+                            )
                     ));
                 }
 
@@ -661,20 +673,26 @@ public class CqlContentStore implements ContentStore {
         ItemRef ref = item.toRef();
         ItemSummary summary = item.toSummary();
 
+        org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
+        org.atlasapi.content.v2.model.udt.Ref itemRefKey = refTranslator.serialize(ref);
+        org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
+
         ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcoming = ImmutableMap.of(
                 item.toRef(), item.getUpcomingBroadcastRefs()
         );
 
         Map<
-                org.atlasapi.content.v2.model.udt.ItemRef,
-                List<org.atlasapi.content.v2.model.udt.BroadcastRef>
+                org.atlasapi.content.v2.model.udt.Ref,
+                org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs
         > upcomingSerialised = MapStream
                 .of(upcoming)
                 .mapEntries(
-                        itemRefTranslator::serialize,
-                        vals -> StreamSupport.stream(vals.spliterator(), false)
-                                .map(broadcastRefTranslator::serialize)
-                                .collect(Collectors.toList())
+                        refTranslator::serialize,
+                        vals -> new org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs(
+                                    itemRef,
+                                    StreamSupport.stream(vals.spliterator(), false)
+                                        .map(broadcastRefTranslator::serialize)
+                                        .collect(Collectors.toList()))
                 )
                 .collect();
 
@@ -683,25 +701,25 @@ public class CqlContentStore implements ContentStore {
         );
 
         Map<
-                org.atlasapi.content.v2.model.udt.ItemRef,
-                List<org.atlasapi.content.v2.model.udt.LocationSummary>
+                org.atlasapi.content.v2.model.udt.Ref,
+                org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries
         > availableLocationsSerialised = MapStream
                 .of(availableLocations)
                 .mapEntries(
-                        itemRefTranslator::serialize,
-                        vals -> StreamSupport.stream(vals.spliterator(), false)
-                                .map(locationSummaryTranslator::serialize)
-                                .collect(Collectors.toList())
+                        refTranslator::serialize,
+                        vals -> new org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries(
+                                itemRef,
+                                StreamSupport.stream(vals.spliterator(), false)
+                                        .map(locationSummaryTranslator::serialize)
+                                        .collect(Collectors.toList()))
                 )
                 .collect();
 
-        org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
-        org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
 
         if (containerRef != null) {
             result.add(accessor.addItemRefsToContainer(
                     containerRef.getId().longValue(),
-                    ImmutableSet.of(itemRef),
+                    ImmutableMap.of(itemRefKey, itemRef),
                     upcomingSerialised,
                     availableLocationsSerialised
             ));
@@ -709,7 +727,7 @@ public class CqlContentStore implements ContentStore {
             if (seriesRef == null) {
                 result.add(accessor.addItemSummariesToContainer(
                         containerRef.getId().longValue(),
-                        ImmutableSet.of(itemSummary)
+                        ImmutableMap.of(itemRefKey, new ItemRefAndItemSummary(itemRef, itemSummary))
                 ));
             }
 
@@ -723,14 +741,14 @@ public class CqlContentStore implements ContentStore {
         if (seriesRef != null) {
             result.add(accessor.addItemRefsToContainer(
                     seriesRef.getId().longValue(),
-                    ImmutableSet.of(itemRef),
+                    ImmutableMap.of(itemRefKey, itemRef),
                     upcomingSerialised,
                     availableLocationsSerialised
             ));
 
             result.add(accessor.addItemSummariesToContainer(
                     seriesRef.getId().longValue(),
-                    ImmutableSet.of(itemSummary)
+                    ImmutableMap.of(itemRefKey, new ItemRefAndItemSummary(itemRef, itemSummary))
             ));
 
             messages.add(new ResourceUpdatedMessage(
@@ -748,42 +766,40 @@ public class CqlContentStore implements ContentStore {
             ContainerRef... containerRefs
     ) {
         ItemRef ref = item.toRef();
-        ItemSummary summary = item.toSummary();
 
         ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcoming = ImmutableMap.of(
                 item.toRef(), item.getUpcomingBroadcastRefs()
         );
 
-        Set<org.atlasapi.content.v2.model.udt.ItemRef> upcomingSerialised = upcoming.keySet()
+        Set<org.atlasapi.content.v2.model.udt.Ref> upcomingSerialised = upcoming.keySet()
                 .stream()
-                .map(itemRefTranslator::serialize)
-                .collect(Collectors.toSet());
+                .map(refTranslator::serialize)
+                .collect(MoreCollectors.toImmutableSet());
 
         ImmutableMap<ItemRef, Iterable<LocationSummary>> availableLocations = ImmutableMap.of(
                 item.toRef(), item.getAvailableLocations()
         );
 
-        Set<org.atlasapi.content.v2.model.udt.ItemRef> availableLocationsSerialised = availableLocations
+        Set<org.atlasapi.content.v2.model.udt.Ref> availableLocationsSerialised = availableLocations
                 .keySet()
                 .stream()
-                .map(itemRefTranslator::serialize)
-                .collect(Collectors.toSet());
+                .map(refTranslator::serialize)
+                .collect(MoreCollectors.toImmutableSet());
 
-        org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
-        org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
+        org.atlasapi.content.v2.model.udt.Ref itemRefKey = refTranslator.serialize(ref);
 
         return Arrays.stream(containerRefs)
                 .filter(Objects::nonNull)
                 .flatMap(containerRef -> Lists.newArrayList(
                         accessor.removeItemRefsFromContainer(
                                 containerRef.getId().longValue(),
-                                ImmutableSet.of(itemRef),
+                                ImmutableSet.of(itemRefKey),
                                 upcomingSerialised,
                                 availableLocationsSerialised
                         ),
                         accessor.removeItemSummariesFromContainer(
                                 containerRef.getId().longValue(),
-                                ImmutableSet.of(itemSummary)
+                                ImmutableSet.of(itemRefKey)
                         )
                 ).stream()).collect(Collectors.toList());
     }
