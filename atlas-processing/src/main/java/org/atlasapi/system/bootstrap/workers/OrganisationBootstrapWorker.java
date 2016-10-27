@@ -1,6 +1,7 @@
 package org.atlasapi.system.bootstrap.workers;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -9,8 +10,8 @@ import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.organisation.OrganisationWriter;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -33,6 +34,7 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
 
     private OrganisationBootstrapWorker(
             OrganisationResolver resolver,
@@ -46,6 +48,7 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
     }
 
     public static OrganisationBootstrapWorker create(
@@ -62,7 +65,9 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
         messageReceivedMeter.mark();
 
         LOG.debug("Processing message on id {}, took: PT{}S, message: {}",
-                message.getUpdatedResource().getId(), getTimeToProcessInSeconds(message), message
+                message.getUpdatedResource().getId(),
+                getTimeToProcessInMillis(message.getTimestamp()) / 1000L,
+                message
         );
 
         Timer.Context time = executionTimer.time();
@@ -74,7 +79,13 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
                     ExecutionException.class
             );
             Organisation organisation = content.getResources().first().get();
+
             writer.write(organisation);
+
+            latencyTimer.update(
+                    getTimeToProcessInMillis(message.getTimestamp()),
+                    TimeUnit.MILLISECONDS
+            );
             LOG.debug("Bootstrapped organisation {}", organisation.toString());
         } catch (Exception e) {
             LOG.error(
@@ -90,7 +101,7 @@ public class OrganisationBootstrapWorker implements Worker<ResourceUpdatedMessag
         }
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }

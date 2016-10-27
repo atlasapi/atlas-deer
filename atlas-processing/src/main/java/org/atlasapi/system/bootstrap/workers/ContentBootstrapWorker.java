@@ -1,19 +1,21 @@
 package org.atlasapi.system.bootstrap.workers;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
 import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.system.bootstrap.ColumbusTelescopeReporter;
 
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.RecoverableException;
 import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -38,6 +40,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
     private final Meter messageReceivedMeter;
     private final Meter contentNotWrittenMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
     private final String publisherMeterName;
 
     private final MetricRegistry metricRegistry;
@@ -56,6 +59,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.contentNotWrittenMeter = metricRegistry.meter(metricPrefix + "meter.nop");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
         this.publisherMeterName = metricPrefix + "%s.meter.received";
 
         this.metricRegistry = metricRegistry;
@@ -85,7 +89,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
         Id contentId = message.getUpdatedResource().getId();
         log.debug("Processing message on id {}, took: PT{}S, message: {}",
-                contentId, getTimeToProcessInSeconds(message), message);
+                contentId, getTimeToProcessInMillis(message.getTimestamp()) / 1000L, message);
 
         Timer.Context time = executionTimer.time();
 
@@ -97,7 +101,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         ).mark();
 
         try {
-            process(contentId);
+            process(contentId, message.getTimestamp());
         } catch (Exception e) {
             log.error("Failed to bootstrap content {}", message.getUpdatedResource(), e);
             failureMeter.mark();
@@ -108,7 +112,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         }
     }
 
-    private void process(Id contentId) throws org.atlasapi.entity.util.WriteException {
+    private void process(Id contentId, Timestamp timestamp) throws WriteException {
         Resolved<Content> content = resolveContent(contentId);
 
         if (content.getResources().isEmpty()) {
@@ -121,6 +125,11 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
 
         if (result.written()) {
             log.debug("Bootstrapped content {}", result.toString());
+
+            latencyTimer.update(
+                    getTimeToProcessInMillis(timestamp),
+                    TimeUnit.MILLISECONDS
+            );
             columbusTelescopeReporter.reportSuccessfulMigration(
                     content.getResources().first().get()
             );
@@ -141,7 +150,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         }
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }

@@ -14,9 +14,9 @@ import org.atlasapi.system.bootstrap.SourceChannelIntervalFactory;
 
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
-import com.metabroadcast.common.queue.AbstractMessage;
 import com.metabroadcast.common.queue.Worker;
 import com.metabroadcast.common.scheduling.UpdateProgress;
+import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -46,7 +46,9 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
     private final Timer executionTimer;
     private final Meter messageReceivedMeter;
     private final Meter failureMeter;
+    private final Timer latencyTimer;
     private final String publisherMeterName;
+
     private final MetricRegistry metricRegistry;
 
     private ScheduleReadWriteWorker(
@@ -65,6 +67,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.executionTimer = metricRegistry.timer(metricPrefix + "timer.execution");
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
+        this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
         this.publisherMeterName = metricPrefix + "%s.meter.received";
     }
 
@@ -91,7 +94,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         LOG.debug(
                 "Processing message on id {}, took: PT{}S, from: {}, to: {}",
                 msg.getChannel(),
-                getTimeToProcessInSeconds(msg),
+                getTimeToProcessInMillis(msg.getTimestamp()) / 1000L,
                 msg.getUpdateStart(),
                 msg.getUpdateEnd()
         );
@@ -145,6 +148,10 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
                 updatePaSchedule(updateMsg, resolvedChannel, interval);
             }
 
+            latencyTimer.update(
+                    getTimeToProcessInMillis(msg.getTimestamp()),
+                    TimeUnit.MILLISECONDS
+            );
             time.stop();
         } catch (Exception e) {
             failureMeter.mark();
@@ -170,7 +177,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         LOG.debug("{}: processed: {}", updateMsg, paResult);
     }
 
-    private long getTimeToProcessInSeconds(AbstractMessage message) {
-        return (System.currentTimeMillis() - message.getTimestamp().millis()) / 1000L;
+    private long getTimeToProcessInMillis(Timestamp messageTimestamp) {
+        return System.currentTimeMillis() - messageTimestamp.millis();
     }
 }
