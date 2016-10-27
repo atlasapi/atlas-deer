@@ -1,20 +1,24 @@
 package org.atlasapi.content.v2.serialization;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.atlasapi.content.v2.model.Clip;
 import org.atlasapi.content.v2.model.Encoding;
-import org.atlasapi.content.v2.model.udt.Restriction;
+import org.atlasapi.content.v2.model.udt.Broadcast;
 import org.atlasapi.content.v2.model.udt.SegmentEvent;
+import org.atlasapi.content.v2.model.udt.UpdateTimes;
 import org.atlasapi.content.v2.serialization.setters.ContentSetter;
 
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.intl.Country;
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
 public class ClipSerialization {
 
@@ -58,9 +62,10 @@ public class ClipSerialization {
         internal.setContainerSummary(containerSummary.serialize(clip.getContainerSummary()));
 
         internal.setBroadcasts(clip.getBroadcasts().stream()
-                .map(broadcast::serialize)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet()));
+                .collect(MoreCollectors.toImmutableMap(
+                        org.atlasapi.content.Broadcast::getSourceId,
+                        broadcast::serialize
+                )));
 
         internal.setSegmentEvents(clip.getSegmentEvents()
                 .stream()
@@ -68,12 +73,17 @@ public class ClipSerialization {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
 
-        internal.setRestrictions(clip.getRestrictions()
-                .stream()
-                .map(restriction::serialize)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet()));
+        internal.setRestrictions(
+                clip.getRestrictions().stream()
+                        .map(r -> new Clip.RestrictionWithTimes(
+                                restriction.serialize(r),
+                                new UpdateTimes(
+                                        toInstant(r.getLastUpdated()),
+                                        toInstant(r.getEquivalenceUpdate())
+                                )
+                        )).collect(MoreCollectors.toImmutableList())
 
+        );
         internal.setClipOf(clip.getClipOf());
 
         return internal;
@@ -108,11 +118,11 @@ public class ClipSerialization {
 
         content.setContainerRef(containerRef.deserialize(internal.getContainerRef()));
 
-        Set<org.atlasapi.content.v2.model.udt.Broadcast> broadcasts = internal.getBroadcasts();
+        Map<String, Broadcast> broadcasts = internal.getBroadcasts();
         if (broadcasts != null) {
-            content.setBroadcasts(broadcasts.stream()
-                    .map(broadcast::deserialize)
-                    .collect(Collectors.toSet()));
+            content.setBroadcasts(broadcasts.entrySet().stream()
+                    .map(entry -> broadcast.deserialize(entry.getKey(), entry.getValue()))
+                    .collect(MoreCollectors.toImmutableSet()));
         }
 
         List<SegmentEvent> segmentEvents = internal.getSegmentEvents();
@@ -122,11 +132,15 @@ public class ClipSerialization {
                     .collect(Collectors.toList()));
         }
 
-        Set<Restriction> restrictions = internal.getRestrictions();
+        List<Clip.RestrictionWithTimes> restrictions = internal.getRestrictions();
         if (restrictions != null) {
-            content.setRestrictions(restrictions.stream()
-                    .map(restriction::deserialize)
-                    .collect(Collectors.toSet()));
+            content.setRestrictions(
+                    restrictions.stream()
+                            .map(r -> restriction.deserialize(
+                                    r.getUpdateTimes(),
+                                    r.getRestriction()
+                            )).collect(MoreCollectors.toImmutableSet())
+            );
         }
 
         content.setClipOf(internal.getClipOf());

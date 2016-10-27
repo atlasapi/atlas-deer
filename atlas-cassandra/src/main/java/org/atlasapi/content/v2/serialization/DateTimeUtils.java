@@ -1,12 +1,15 @@
 package org.atlasapi.content.v2.serialization;
 
+import javax.annotation.Nullable;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Instant;
 
 public class DateTimeUtils {
 
-    public static Instant toInstant(DateTime joda) {
+    @Nullable
+    public static Instant toInstant(@Nullable DateTime joda) {
         if (joda != null) {
             return joda.toInstant();
         } else {
@@ -14,7 +17,8 @@ public class DateTimeUtils {
         }
     }
 
-    public static DateTime toDateTime(Instant dateTime) {
+    @Nullable
+    public static DateTime toDateTime(@Nullable Instant dateTime) {
         if (dateTime == null) {
             return null;
         }

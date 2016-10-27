@@ -3,6 +3,8 @@ package org.atlasapi.content.v2.serialization;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.model.udt.SeriesRef;
 import org.atlasapi.entity.Id;
@@ -15,7 +17,8 @@ public class SeriesRefSerialization {
 
     private final CertificateSerialization certificate = new CertificateSerialization();
 
-    public SeriesRef serialize(org.atlasapi.content.SeriesRef seriesRef) {
+    @Nullable
+    public SeriesRef serialize(@Nullable org.atlasapi.content.SeriesRef seriesRef) {
         if (seriesRef == null) {
             return null;
         }
@@ -32,8 +35,6 @@ public class SeriesRefSerialization {
             ref.setSource(source.key());
         }
 
-        internal.setRef(ref);
-
         internal.setTitle(seriesRef.getTitle());
         internal.setUpdated(toInstant(seriesRef.getUpdated()));
         internal.setSeriesNumber(seriesRef.getSeriesNumber());
@@ -49,8 +50,8 @@ public class SeriesRefSerialization {
 
     public org.atlasapi.content.SeriesRef deserialize(SeriesRef ref) {
         return new org.atlasapi.content.SeriesRef(
-                Id.valueOf(ref.getRef().getId()),
-                Publisher.fromKey(ref.getRef().getSource()).requireValue(),
+                Id.valueOf(-1),
+                Publisher.METABROADCAST,
                 ref.getTitle(),
                 ref.getSeriesNumber(),
                 toDateTime(ref.getUpdated()),

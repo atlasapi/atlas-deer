@@ -1,6 +1,7 @@
 package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
+import com.datastax.driver.mapping.annotations.Frozen;
 import com.datastax.driver.mapping.annotations.UDT;
 
 @UDT(name = "broadcastref")
@@ -8,7 +9,7 @@ public class BroadcastRef {
 
     @Field(name = "src_id") private String sourceId;
     @Field(name = "channel_id") private Long channelId;
-    @Field(name = "interval") private Interval interval;
+    @Field(name = "interval") @Frozen private Interval interval;
 
     public String getSourceId() {
         return sourceId;

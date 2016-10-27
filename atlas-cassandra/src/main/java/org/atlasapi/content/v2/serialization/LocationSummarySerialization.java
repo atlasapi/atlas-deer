@@ -1,7 +1,6 @@
 package org.atlasapi.content.v2.serialization;
 
-import java.util.Optional;
-
+import org.atlasapi.content.v2.model.udt.Interval;
 import org.atlasapi.content.v2.model.udt.LocationSummary;
 
 import org.joda.time.DateTime;
@@ -19,24 +18,32 @@ public class LocationSummarySerialization {
 
         internal.setAvailable(locationSummary.getAvailable());
         internal.setUri(locationSummary.getUri());
-        Optional<DateTime> availabilityStart = locationSummary.getAvailabilityStart();
-        if (availabilityStart.isPresent()) {
-            internal.setStart(availabilityStart.get().toInstant());
-        }
-        Optional<DateTime> availabilityEnd = locationSummary.getAvailabilityEnd();
-        if (availabilityEnd.isPresent()) {
-            internal.setEnd(availabilityEnd.get().toInstant());
+
+        Interval interval = new Interval();
+
+        locationSummary.getAvailabilityStart()
+                .map(DateTime::toInstant)
+                .ifPresent(interval::setStart);
+
+        locationSummary.getAvailabilityEnd()
+                .map(DateTime::toInstant)
+                .ifPresent(interval::setEnd);
+
+        if (interval.getStart() != null || interval.getEnd() != null) {
+            internal.setInterval(interval);
         }
 
         return internal;
     }
 
     public org.atlasapi.content.LocationSummary deserialize(LocationSummary internal) {
+        Interval interval = internal.getInterval();
         return new org.atlasapi.content.LocationSummary(
                 internal.getAvailable(),
                 internal.getUri(),
-                toDateTime(internal.getStart()),
-                toDateTime(internal.getEnd()));
+                toDateTime(interval != null ? interval.getStart() : null),
+                toDateTime(interval != null ? interval.getEnd() : null)
+        );
 
     }
 }

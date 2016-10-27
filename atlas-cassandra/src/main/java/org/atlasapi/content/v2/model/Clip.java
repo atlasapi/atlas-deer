@@ -24,8 +24,12 @@ import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.content.v2.model.udt.SegmentEvent;
 import org.atlasapi.content.v2.model.udt.Synopses;
 import org.atlasapi.content.v2.model.udt.Tag;
+import org.atlasapi.content.v2.model.udt.UpdateTimes;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.time.Instant;
 
@@ -77,9 +81,9 @@ public class Clip implements ContentIface {
     private Set<String> countriesOfOrigin;
     private String sortKey;
     private ContainerSummary containerSummary;
-    private Set<Broadcast> broadcasts;
+    private Map<String, Broadcast> broadcasts;
     private List<SegmentEvent> segmentEvents;
-    private Set<Restriction> restrictions;
+    private List<RestrictionWithTimes> restrictions;
     private String clipOf;
     private Set<Review> reviews;
     private Set<Rating> ratings;
@@ -237,12 +241,29 @@ public class Clip implements ContentIface {
         this.image = image;
     }
 
+    @JsonIgnore
     public Map<Image, Interval> getImages() {
         return images;
     }
 
+    @JsonIgnore
     public void setImages(Map<Image, Interval> images) {
         this.images = images;
+    }
+
+    @JsonProperty("images")
+    public List<ImageWithInterval> getImagesJson() {
+        return images.entrySet()
+                .stream()
+                .map(entry -> new ImageWithInterval(entry.getKey(), entry.getValue()))
+                .collect(MoreCollectors.toImmutableList());
+    }
+
+    public void setImagesJson(@JsonProperty("images") List<ImageWithInterval> imagesJson) {
+        this.images = imagesJson.stream().collect(MoreCollectors.toImmutableMap(
+                ImageWithInterval::getImage,
+                ImageWithInterval::getInterval
+        ));
     }
 
     public String getThumbnail() {
@@ -489,11 +510,11 @@ public class Clip implements ContentIface {
         this.containerSummary = containerSummary;
     }
 
-    public Set<Broadcast> getBroadcasts() {
+    public Map<String, Broadcast> getBroadcasts() {
         return broadcasts;
     }
 
-    public void setBroadcasts(Set<Broadcast> broadcasts) {
+    public void setBroadcasts(Map<String, Broadcast> broadcasts) {
         this.broadcasts = broadcasts;
     }
 
@@ -506,12 +527,11 @@ public class Clip implements ContentIface {
         this.segmentEvents = segmentEvents;
     }
 
-    public Set<Restriction> getRestrictions() {
+    public List<RestrictionWithTimes> getRestrictions() {
         return restrictions;
     }
 
-    public void setRestrictions(
-            Set<Restriction> restrictions) {
+    public void setRestrictions(List<RestrictionWithTimes> restrictions) {
         this.restrictions = restrictions;
     }
 
@@ -537,6 +557,60 @@ public class Clip implements ContentIface {
         @JsonProperty("clips")
         public List<Clip> getClips() {
             return clips;
+        }
+    }
+
+    public static class RestrictionWithTimes {
+
+        private Restriction restriction;
+        private UpdateTimes updateTimes;
+
+        public RestrictionWithTimes(Restriction restriction, UpdateTimes updateTimes) {
+            this.restriction = restriction;
+            this.updateTimes = updateTimes;
+        }
+
+        public Restriction getRestriction() {
+            return restriction;
+        }
+
+        public void setRestriction(Restriction restriction) {
+            this.restriction = restriction;
+        }
+
+        public UpdateTimes getUpdateTimes() {
+            return updateTimes;
+        }
+
+        public void setUpdateTimes(UpdateTimes updateTimes) {
+            this.updateTimes = updateTimes;
+        }
+    }
+
+    public static class ImageWithInterval {
+
+        private Image image;
+        private Interval interval;
+
+        public ImageWithInterval(Image image, Interval interval) {
+            this.image = image;
+            this.interval = interval;
+        }
+
+        public Image getImage() {
+            return image;
+        }
+
+        public void setImage(Image image) {
+            this.image = image;
+        }
+
+        public Interval getInterval() {
+            return interval;
+        }
+
+        public void setInterval(Interval interval) {
+            this.interval = interval;
         }
     }
 }
