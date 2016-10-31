@@ -39,6 +39,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
@@ -151,6 +152,17 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                 for (Broadcast broadcast : broadcasts) {
                     Item copy = item.copy();
                     copy.setBroadcasts(ImmutableSet.of(broadcast));
+
+                    metricRegistry.meter(
+                            updateEquivalences + "source." + item.getSource() + "." + METER_CALLED
+                    )
+                            .mark();
+
+                    metricRegistry.meter(
+                            updateEquivalences + "broadcast." + getBroadcastMetricName(broadcast)
+                                    + METER_CALLED
+                    )
+                            .mark();
 
                     futureBuilder.addAll(updateEquivalentContent(
                             item.getSource(),
@@ -375,5 +387,27 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                 .stream()
                 .filter(Broadcast::isActivelyPublished)
                 .anyMatch(broadcast -> broadcastMatcher.matches(subjectBroadcast, broadcast));
+    }
+
+    private String getBroadcastMetricName(Broadcast broadcast) {
+        if (broadcast.getTransmissionEndTime().isAfterNow()) {
+            return "current.";
+        }
+
+        Duration broadcastAge = new Duration(
+                broadcast.getTransmissionEndTime(),
+                DateTime.now()
+        );
+
+        if (broadcastAge.isShorterThan(Duration.standardDays(7))) {
+            return "withinLastWeek.";
+        }
+        if (broadcastAge.isShorterThan(Duration.standardDays(30))) {
+            return "withinLastMonth.";
+        }
+        if (broadcastAge.isShorterThan(Duration.standardDays(365))) {
+            return "withinLastYear.";
+        }
+        return "olderThanOneYear.";
     }
 }
