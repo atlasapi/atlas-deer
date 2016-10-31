@@ -44,6 +44,12 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
     @Override
     public void testWritingResolvingContainerWhichOnlyChildRefsThrowsCorrectException() {}
 
+    @Ignore("MBST-17328")
+    @Test
+    @Override
+    public void writingContentWithoutContainerRemovesExistingContainer() throws Exception {
+    }
+
     @Test
     public void writesSegmentsWithDescription() throws Exception {
         when(clock.now()).thenReturn(DateTime.now());
