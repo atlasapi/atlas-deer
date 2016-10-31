@@ -68,6 +68,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -1956,6 +1957,42 @@ public abstract class CassandraContentStoreIT {
         assertThat(resolvedItem.getBroadcasts().size(), is(1));
         assertThat(Iterables.getOnlyElement(resolvedItem.getBroadcasts()).getSourceId(),
                 is(updatedBroadcast.getSourceId()));
+    }
+
+    @Test
+    public void writingContentWithoutContainerRemovesExistingContainer() throws Exception {
+        Brand container = create(new Brand());
+        container.setId(2L);
+
+        store.writeContent(container);
+
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        when(clock.now()).thenReturn(now);
+        when(hasher.hash(any(Item.class))).thenReturn(
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString()
+        );
+
+        Item item = create(new Item());
+        item.setTitle("Title");
+        item.setId(0L);
+
+        item.setContainerRef(container.toRef());
+
+        WriteResult<Content, Content> firstWriteResult = store.writeContent(item);
+        assertThat(firstWriteResult.written(), is(true));
+        assertThat(firstWriteResult.getPrevious().isPresent(), is(false));
+
+        item.setContainerRef(null);
+
+        WriteResult<Content, Content> secondWriteResult = store.writeContent(item);
+        assertThat(secondWriteResult.written(), is(true));
+        assertThat(secondWriteResult.getPrevious().isPresent(), is(true));
+
+        Item resolvedItem = (Item) resolve(item.getId().longValue());
+
+        assertThat(resolvedItem.getContainerRef(), is(nullValue()));
+        assertThat(resolvedItem.getContainerSummary(), is(nullValue()));
     }
 
     protected  <T extends Content> T create(T content) {
