@@ -60,7 +60,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         this.contentNotWrittenMeter = metricRegistry.meter(metricPrefix + "meter.nop");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
-        this.publisherMeterName = metricPrefix + "%s.meter.received";
+        this.publisherMeterName = metricPrefix + "source.%s.meter.received";
 
         this.metricRegistry = metricRegistry;
 
@@ -96,7 +96,7 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
         metricRegistry.meter(
                 String.format(
                         publisherMeterName,
-                        message.getUpdatedResource().getSource()
+                        message.getUpdatedResource().getSource().key().replace('.', '_')
                 )
         ).mark();
 

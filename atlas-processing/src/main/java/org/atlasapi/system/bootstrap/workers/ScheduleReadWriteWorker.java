@@ -68,7 +68,7 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
         this.messageReceivedMeter = metricRegistry.meter(metricPrefix + "meter.received");
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
-        this.publisherMeterName = metricPrefix + "%s.meter.received";
+        this.publisherMeterName = metricPrefix + "source.%s.meter.received";
     }
 
     public static ScheduleReadWriteWorker create(
@@ -114,7 +114,11 @@ public class ScheduleReadWriteWorker implements Worker<ScheduleUpdateMessage> {
             return;
         }
 
-        metricRegistry.meter(String.format(publisherMeterName, src.toString())).mark();
+        metricRegistry.meter(String.format(
+                publisherMeterName,
+                src.key().replace('.', '_')
+        ))
+                .mark();
 
         Id cid = Id.valueOf(idCodec.decode(msg.getChannel()));
 
