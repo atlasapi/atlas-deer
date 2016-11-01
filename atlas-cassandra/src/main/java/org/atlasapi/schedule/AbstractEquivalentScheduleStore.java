@@ -122,6 +122,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     public final void updateEquivalences(ImmutableSet<EquivalenceGraph> graphs)
             throws WriteException {
         metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
+        metricRegistry.histogram(updateEquivalences + "histogram.numberOfGraphs")
+                .update(graphs.size());
 
         // Fire all the requests to the content store in parallel
         ImmutableMap<EquivalenceGraph, ListenableFuture<Resolved<Content>>> graphsContent = graphs
@@ -143,6 +145,9 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                     .filter(Item.class)
                     .toList();
 
+            metricRegistry.histogram(updateEquivalences + "graph.histogram.size")
+                    .update(graphItems.size());
+
             for (Item item : graphItems) {
                 ImmutableList<Broadcast> broadcasts = item.getBroadcasts()
                         .stream()
@@ -154,7 +159,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                     copy.setBroadcasts(ImmutableSet.of(broadcast));
 
                     metricRegistry.meter(
-                            updateEquivalences + "source." + item.getSource() + "." + METER_CALLED
+                            updateEquivalences + "source."
+                                    + item.getSource().key().replace('.', '_') + "." + METER_CALLED
                     )
                             .mark();
 
