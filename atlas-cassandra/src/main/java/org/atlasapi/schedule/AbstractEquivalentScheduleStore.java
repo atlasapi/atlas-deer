@@ -11,13 +11,11 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
-import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.Sourceds;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -125,72 +123,8 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         metricRegistry.histogram(updateEquivalences + "histogram.numberOfGraphs")
                 .update(graphs.size());
 
-        // Fire all the requests to the content store in parallel
-        ImmutableMap<EquivalenceGraph, ListenableFuture<Resolved<Content>>> graphsContent = graphs
-                .stream()
-                .distinct()
-                .collect(MoreCollectors.toImmutableMap(
-                        graph -> graph,
-                        graph -> contentStore.resolveIds(graph.getEquivalenceSet())
-                ));
-
-        ImmutableList.Builder<ResultSetFuture> futureBuilder = ImmutableList.builder();
-
-        // Create a future for each update we will have to do
-        for (Map.Entry<EquivalenceGraph, ListenableFuture<Resolved<Content>>> entry :
-                graphsContent.entrySet()) {
-            EquivalenceGraph graph = entry.getKey();
-            ImmutableList<Item> graphItems = get(entry.getValue())
-                    .getResources()
-                    .filter(Item.class)
-                    .toList();
-
-            metricRegistry.histogram(updateEquivalences + "graph.histogram.size")
-                    .update(graphItems.size());
-
-            for (Item item : graphItems) {
-                ImmutableList<Broadcast> broadcasts = item.getBroadcasts()
-                        .stream()
-                        .filter(Broadcast::isActivelyPublished)
-                        .collect(MoreCollectors.toImmutableList());
-
-                for (Broadcast broadcast : broadcasts) {
-                    Item copy = item.copy();
-                    copy.setBroadcasts(ImmutableSet.of(broadcast));
-
-                    metricRegistry.meter(
-                            updateEquivalences + "source."
-                                    + item.getSource().key().replace('.', '_') + "." + METER_CALLED
-                    )
-                            .mark();
-
-                    metricRegistry.meter(
-                            updateEquivalences + "broadcast." + getBroadcastMetricName(broadcast)
-                                    + METER_CALLED
-                    )
-                            .mark();
-
-                    futureBuilder.addAll(updateEquivalentContent(
-                            item.getSource(),
-                            broadcast,
-                            graph,
-                            equivItems(copy, broadcast, graphItems)
-                    ));
-                }
-            }
-        }
-
-        ImmutableList<ResultSetFuture> futures = futureBuilder.build();
-
-        metricRegistry.histogram(updateEquivalences + "histogram.parallelWrites")
-                .update(futures.size());
-
-        try {
-            // Block until all futures are completed
-            Futures.allAsList(futures).get();
-        } catch (Exception e) {
-            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
-            throw new WriteException(e);
+        for (EquivalenceGraph graph : graphs) {
+            updateEquivalences(graph);
         }
     }
 
@@ -209,6 +143,71 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     protected List<LocalDate> daysIn(Interval interval) {
         return StreamSupport.stream(new ScheduleIntervalDates(interval).spliterator(), false)
                 .collect(Collectors.toList());
+    }
+
+    private void updateEquivalences(EquivalenceGraph graph) throws WriteException {
+        ImmutableList<Item> graphItems = get(
+                contentStore.resolveIds(graph.getEquivalenceSet())
+        )
+                .getResources()
+                .filter(Item.class)
+                .toList();
+
+        metricRegistry.histogram(updateEquivalences + "graph.histogram.size")
+                .update(graphItems.size());
+
+        ImmutableList<ResultSetFuture> futures = getUpdateEquivalencesFutures(graph, graphItems);
+
+        metricRegistry.histogram(updateEquivalences + "histogram.parallelWrites")
+                .update(futures.size());
+
+        try {
+            // Block until all futures are completed
+            Futures.allAsList(futures).get();
+        } catch (Exception e) {
+            metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
+            throw new WriteException(e);
+        }
+    }
+
+    private ImmutableList<ResultSetFuture> getUpdateEquivalencesFutures(
+            EquivalenceGraph graph,
+            ImmutableList<Item> graphItems
+    ) {
+        ImmutableList.Builder<ResultSetFuture> futureBuilder = ImmutableList.builder();
+
+        for (Item item : graphItems) {
+            ImmutableList<Broadcast> broadcasts = item.getBroadcasts()
+                    .stream()
+                    .filter(Broadcast::isActivelyPublished)
+                    .collect(MoreCollectors.toImmutableList());
+
+            for (Broadcast broadcast : broadcasts) {
+                Item copy = item.copy();
+                copy.setBroadcasts(ImmutableSet.of(broadcast));
+
+                metricRegistry.meter(
+                        updateEquivalences + "source."
+                                + item.getSource().key().replace('.', '_') + "." + METER_CALLED
+                )
+                        .mark();
+
+                metricRegistry.meter(
+                        updateEquivalences + "broadcast." + getBroadcastMetricName(broadcast)
+                                + METER_CALLED
+                )
+                        .mark();
+
+                futureBuilder.addAll(updateEquivalentContent(
+                        item.getSource(),
+                        broadcast,
+                        graph,
+                        equivItems(copy, broadcast, graphItems)
+                ));
+            }
+        }
+
+        return futureBuilder.build();
     }
 
     private ImmutableSet<String> getLockKeys(
