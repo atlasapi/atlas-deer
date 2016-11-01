@@ -52,7 +52,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         this.failureMeter = metricRegistry.meter(metricPrefix + "meter.failure");
         this.latencyTimer = metricRegistry.timer(metricPrefix + "timer.latency");
 
-        this.publisherMeterName = metricPrefix + "%s.meter.received";
+        this.publisherMeterName = metricPrefix + "source.%s.meter.received";
     }
 
     public static ContentEquivalenceUpdatingWorker create(
@@ -73,7 +73,7 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
         metricRegistry.meter(
                 String.format(
                         publisherMeterName,
-                        message.getSubject().getSource()
+                        message.getSubject().getSource().key().replace('.', '_')
                 ))
                 .mark();
 
