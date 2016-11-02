@@ -525,8 +525,14 @@ public class ContentSerializationImplTest {
     @Test
     public void serializerSerializesStuff() {
         for (Content original : contents) {
-            Content mashed = serialization.deserialize(serialization.serialize(original));
-            assertReflectionEquals(original, mashed, ReflectionComparatorMode.LENIENT_ORDER);
+            org.atlasapi.content.v2.model.Content serialized = serialization.serialize(original);
+            Content deserialized = serialization.deserialize(serialized);
+            assertReflectionEquals(
+                    original.getClass().getName(),
+                    original,
+                    deserialized,
+                    ReflectionComparatorMode.LENIENT_ORDER
+            );
         }
     }
 

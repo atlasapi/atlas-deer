@@ -62,21 +62,24 @@ public class DescribedSetter {
 
         internal.setImages(content.getImages().stream()
                 .filter(Objects::nonNull)
-                .collect(MoreCollectors.toImmutableMap(image::serialize, img -> {
-                    Interval interval = new Interval();
+                .collect(MoreCollectors.toImmutableMap(
+                        image::serialize,
+                        img -> {
+                            Interval interval = new Interval();
 
-                    DateTime start = img.getAvailabilityStart();
-                    if (start != null) {
-                        interval.setStart(toInstant(img.getAvailabilityStart()));
-                    }
+                            DateTime start = img.getAvailabilityStart();
+                            if (start != null) {
+                                interval.setStart(toInstant(start));
+                            }
 
-                    DateTime end = img.getAvailabilityEnd();
-                    if (end != null) {
-                        interval.setEnd(toInstant(img.getAvailabilityStart()));
-                    }
+                            DateTime end = img.getAvailabilityEnd();
+                            if (end != null) {
+                                interval.setEnd(toInstant(end));
+                            }
 
-                    return interval;
-                })));
+                            return interval;
+                        }
+                )));
         internal.setThumbnail(content.getThumbnail());
         internal.setFirstSeen(toInstant(content.getFirstSeen()));
         internal.setLastFetched(toInstant(content.getLastFetched()));
