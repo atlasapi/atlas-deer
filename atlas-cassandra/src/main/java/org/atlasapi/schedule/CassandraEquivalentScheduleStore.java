@@ -85,7 +85,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private static final Logger log = LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
     private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);
-    private static final int CONTENT_UPDATE_TIMEOUT = 10;
 
     private static final String EQUIVALENT_SCHEDULE_TABLE = "equivalent_schedule";
 
@@ -107,7 +106,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private final Session session;
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
-    private final Clock clock;
 
     private final ContentSerializer contentSerializer;
     private final EquivalenceGraphSerializer graphSerializer = new EquivalenceGraphSerializer();
@@ -133,7 +131,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             MetricRegistry metricRegistry,
             String metricPrefix
     ) {
-        super(graphStore, contentStore, metricRegistry, metricPrefix);
+        super(graphStore, contentStore, metricRegistry, metricPrefix, clock);
 
         this.contentSerializer = new ContentSerializer(
                 new ContentSerializationVisitor(contentStore)
@@ -141,7 +139,6 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         this.session = checkNotNull(session);
         this.read = checkNotNull(read);
         this.write = checkNotNull(write);
-        this.clock = checkNotNull(clock);
 
         this.broadcastSelect = session.prepare(
                 select(
@@ -252,6 +249,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             StreamSupport
                     .stream(item.getBroadcasts().spliterator(), false)
                     .filter(Broadcast::isActivelyPublished)
+                    .filter(this::shouldUpdateBroadcast)
                     .flatMap(broadcast ->
                             updateContent(
                                     serializedContent,

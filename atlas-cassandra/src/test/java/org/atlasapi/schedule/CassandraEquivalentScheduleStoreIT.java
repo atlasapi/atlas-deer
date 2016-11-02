@@ -8,6 +8,7 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
+import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
@@ -26,12 +27,15 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.atlasapi.schedule.AbstractEquivalentScheduleStore.MAX_BROADCAST_AGE_TO_UPDATE;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -43,6 +47,7 @@ public class CassandraEquivalentScheduleStoreIT {
     private EquivalenceGraphStore equivalenceGraphStore;
     private ContentStore contentStore;
     private EquivalentScheduleStore equivalentScheduleStore;
+    private Channel channel;
 
     @BeforeClass
     public static void init() throws Exception {
@@ -53,6 +58,8 @@ public class CassandraEquivalentScheduleStoreIT {
     @Before
     public void setUp() throws Exception {
         module.reset();
+
+        channel = Channel.builder(Publisher.BBC).withId(1L).build();
 
         equivalenceGraphStore = module.contentEquivalenceGraphStore();
         contentStore = module.contentStore();
@@ -66,12 +73,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testWritingNewSchedule() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -84,11 +88,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -108,12 +108,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testUpdatingASchedule() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -131,11 +128,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         scheduleRef = ScheduleRef.forChannel(channel.getId(), interval)
                 .addEntry(item2.getId(), broadcast2.toRef())
@@ -166,12 +159,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testWritingRepeatedItem() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 18, 0)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -193,11 +183,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast2.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -219,12 +205,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testWritingNewScheduleWithEquivalentItems() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -249,11 +232,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -273,12 +252,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testResolvingScheduleFiltersItemsAccordingToSelectedSources() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -303,11 +279,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -326,12 +298,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testResolvingScheduleSetsEquivalentToOnItems() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -356,11 +325,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -393,12 +358,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testWritingNewScheduleWithEquivalentItemsChoosesBestEquivalent() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -437,11 +399,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -462,12 +420,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testUpdatingEquivalences() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
@@ -497,11 +452,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore.updateSchedule(new ScheduleUpdate(
-                Publisher.METABROADCAST,
-                scheduleRef,
-                ImmutableSet.of()
-        ));
+        updateSchedule(scheduleRef);
 
         EquivalenceGraphUpdate equivUpdate = equivalenceGraphStore
                 .updateEquivalences(
@@ -532,12 +483,9 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testResolvingAnEmptySchedule() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
         Interval interval = new Interval(
-                new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
         );
 
         EquivalentSchedule resolved
@@ -556,14 +504,10 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testResolvingScheduleFiltersByRequestedInterval() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
-
-        DateTime one = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
-        DateTime two = new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC);
-        DateTime three = new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC);
-        DateTime four = new DateTime(2014, 3, 21, 19, 0, 0, 0, DateTimeZones.UTC);
+        DateTime one = makeDateTime(3, 21, 16, 0);
+        DateTime two = makeDateTime(3, 21, 17, 0);
+        DateTime three = makeDateTime(3, 21, 18, 0);
+        DateTime four = makeDateTime(3, 21, 19, 0);
 
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
@@ -591,11 +535,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item3.getId(), broadcast3.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = getEquivalentSchedule(channel, one.plusMinutes(30), one.plusMinutes(30));
@@ -652,20 +592,15 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testResolvingScheduleFromMultipleChannels() throws Exception {
+        Channel channel2 = Channel.builder(Publisher.BBC).withId(2L).build();
 
-        Channel channel1 = Channel.builder(Publisher.BBC).build();
-        channel1.setId(1L);
-
-        Channel channel2 = Channel.builder(Publisher.BBC).build();
-        channel2.setId(2L);
-
-        DateTime one = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
-        DateTime two = new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC);
-        DateTime three = new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC);
+        DateTime one = makeDateTime(3, 21, 16, 0);
+        DateTime two = makeDateTime(3, 21, 17, 0);
+        DateTime three = makeDateTime(3, 21, 18, 0);
 
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
-        Broadcast broadcast1 = new Broadcast(channel1, one, two).withId("12");
+        Broadcast broadcast1 = new Broadcast(channel, one, two).withId("12");
         item1.addBroadcast(broadcast1);
 
         Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
@@ -677,20 +612,16 @@ public class CassandraEquivalentScheduleStoreIT {
         contentStore.writeContent(item2);
 
         ScheduleRef scheduleRef = ScheduleRef
-                .forChannel(channel1.getId(), new Interval(one, three))
+                .forChannel(channel.getId(), new Interval(one, three))
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
-                .resolveSchedules(ImmutableList.of(channel1, channel2), new Interval(one, three),
+                .resolveSchedules(ImmutableList.of(channel, channel2), new Interval(one, three),
                         Publisher.METABROADCAST, ImmutableSet.of(Publisher.METABROADCAST)
                 ));
 
@@ -708,12 +639,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testResolvingScheduleFromMultipleChannelsWithCountParameter() throws Exception {
-
-        Channel channel1 = Channel.builder(Publisher.BBC).build();
-        channel1.setId(1L);
-
-        Channel channel2 = Channel.builder(Publisher.BBC).build();
-        channel2.setId(2L);
+        Channel channel2 = Channel.builder(Publisher.BBC).withId(2L).build();
 
         DateTime start = DateTime.now();
         DateTime startPlus1h = start.plusHours(1);
@@ -732,22 +658,22 @@ public class CassandraEquivalentScheduleStoreIT {
         Item item3 = new Item(Id.valueOf(3), Publisher.METABROADCAST);
         item3.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
 
-        Broadcast broadcast1Channel1 = new Broadcast(channel1, start, startPlus1h).withId("11");
+        Broadcast broadcast1Channel1 = new Broadcast(channel, start, startPlus1h).withId("11");
         item1.addBroadcast(broadcast1Channel1);
         Broadcast broadcast2Channel1 = new Broadcast(
-                channel1,
+                channel,
                 startPlus1h,
                 startPlus2h
         ).withId("12");
         item2.addBroadcast(broadcast2Channel1);
         Broadcast broadcast3Channel1 = new Broadcast(
-                channel1,
+                channel,
                 startPlus2h,
                 startPlus3h
         ).withId("13");
         item3.addBroadcast(broadcast3Channel1);
         Broadcast broadcast4Channel1 = new Broadcast(
-                channel1,
+                channel,
                 startPlus3h,
                 startPlus4h
         ).withId("14");
@@ -767,18 +693,14 @@ public class CassandraEquivalentScheduleStoreIT {
         contentStore.writeContent(item3);
 
         ScheduleRef scheduleRef1 = ScheduleRef
-                .forChannel(channel1.getId(), new Interval(start, startPlus3h))
+                .forChannel(channel.getId(), new Interval(start, startPlus3h))
                 .addEntry(item1.getId(), broadcast1Channel1.toRef())
                 .addEntry(item2.getId(), broadcast2Channel1.toRef())
                 .addEntry(item3.getId(), broadcast3Channel1.toRef())
                 .addEntry(item2.getId(), broadcast4Channel1.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef1,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef1);
 
         ScheduleRef scheduleRef2 = ScheduleRef
                 .forChannel(channel2.getId(), new Interval(start, startPlus26h))
@@ -787,16 +709,12 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item3.getId(), broadcast3Channel2.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef2,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef2);
 
         EquivalentSchedule resolved
                 = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1, channel2),
+                        ImmutableList.of(channel, channel2),
                         start,
                         3,
                         Publisher.METABROADCAST,
@@ -819,14 +737,10 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testWritingScheduleRemovesExtraneousBroadcasts() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
-
-        DateTime one = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
-        DateTime two = new DateTime(2014, 3, 21, 17, 0, 0, 0, DateTimeZones.UTC);
-        DateTime three = new DateTime(2014, 3, 21, 18, 0, 0, 0, DateTimeZones.UTC);
-        DateTime four = new DateTime(2014, 3, 21, 19, 0, 0, 0, DateTimeZones.UTC);
+        DateTime one = makeDateTime(3, 21, 16, 0);
+        DateTime two = makeDateTime(3, 21, 17, 0);
+        DateTime three = makeDateTime(3, 21, 18, 0);
+        DateTime four = makeDateTime(3, 21, 19, 0);
 
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
@@ -857,11 +771,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item.getId(), broadcast1.toRef())
                 .build();
 
-        equivalentScheduleStore.updateSchedule(new ScheduleUpdate(
-                Publisher.METABROADCAST,
-                scheduleRef,
-                ImmutableSet.of()
-        ));
+        updateSchedule(scheduleRef);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -892,9 +802,6 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testUpdatingContentUpdatesContent() throws Exception {
-        Channel channel1 = Channel.builder(Publisher.BBC).build();
-        channel1.setId(1L);
-
         DateTime now = DateTime.now();
         DateTime nowPlus1h = now.plusHours(1);
         DateTime nowPlus2h = now.plusHours(2);
@@ -909,8 +816,8 @@ public class CassandraEquivalentScheduleStoreIT {
         item2.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
         item2.setTitle("Item2 title");
 
-        Broadcast broadcast1 = new Broadcast(channel1, now, nowPlus1h).withId("11");
-        Broadcast broadcast2 = new Broadcast(channel1, nowPlus1h, nowPlus2h).withId("12");
+        Broadcast broadcast1 = new Broadcast(channel, now, nowPlus1h).withId("11");
+        Broadcast broadcast2 = new Broadcast(channel, nowPlus1h, nowPlus2h).withId("12");
 
         item1.addBroadcast(broadcast1);
 
@@ -920,20 +827,14 @@ public class CassandraEquivalentScheduleStoreIT {
         contentStore.writeContent(item2);
 
         ScheduleRef scheduleRef1 = ScheduleRef
-                .forChannel(channel1.getId(), new Interval(now, nowPlus2h))
+                .forChannel(channel.getId(), new Interval(now, nowPlus2h))
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .build();
 
-        equivalentScheduleStore.updateSchedule(
-                new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        scheduleRef1,
-                        ImmutableSet.of()
-                )
-        );
+        updateSchedule(scheduleRef1);
 
         ScheduleRef scheduleRef2 = ScheduleRef
-                .forChannel(channel1.getId(), new Interval(nowMinus26h, nowMinus25h))
+                .forChannel(channel.getId(), new Interval(nowMinus26h, nowMinus25h))
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
 
@@ -947,7 +848,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
         EquivalentChannelSchedule currentMbSched = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1),
+                        ImmutableList.of(channel),
                         new Interval(now, nowPlus2h),
                         Publisher.METABROADCAST,
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
@@ -962,7 +863,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
         EquivalentChannelSchedule currentBbcSched = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1),
+                        ImmutableList.of(channel),
                         new Interval(now, nowPlus2h),
                         Publisher.BBC_KIWI,
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
@@ -996,7 +897,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
         currentMbSched = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1),
+                        ImmutableList.of(channel),
                         new Interval(now, nowPlus2h),
                         Publisher.METABROADCAST,
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
@@ -1011,7 +912,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
         currentBbcSched = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1),
+                        ImmutableList.of(channel),
                         new Interval(now, nowPlus2h),
                         Publisher.METABROADCAST,
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
@@ -1033,7 +934,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
         currentMbSched = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1),
+                        ImmutableList.of(channel),
                         new Interval(now, nowPlus2h),
                         Publisher.METABROADCAST,
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
@@ -1053,7 +954,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
         currentBbcSched = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1),
+                        ImmutableList.of(channel),
                         new Interval(now, nowPlus2h),
                         Publisher.METABROADCAST,
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
@@ -1075,9 +976,6 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testUpdatingWithContentWithIncorrectBroadcastsDoesnBlowUp() throws Exception {
-        Channel channel1 = Channel.builder(Publisher.BBC).build();
-        channel1.setId(1L);
-
         DateTime now = DateTime.now();
         DateTime nowPlus1h = now.plusHours(1);
         DateTime nowPlus2h = now.plusHours(2);
@@ -1092,9 +990,9 @@ public class CassandraEquivalentScheduleStoreIT {
         item2.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
         item2.setTitle("Item2 title");
 
-        Broadcast broadcast1 = new Broadcast(channel1, now, nowPlus1h).withId("11");
-        Broadcast broadcast11 = new Broadcast(channel1, now, nowPlus1h).withId("111");
-        Broadcast broadcast2 = new Broadcast(channel1, nowPlus1h, nowPlus2h).withId("12");
+        Broadcast broadcast1 = new Broadcast(channel, now, nowPlus1h).withId("11");
+        Broadcast broadcast11 = new Broadcast(channel, now, nowPlus1h).withId("111");
+        Broadcast broadcast2 = new Broadcast(channel, nowPlus1h, nowPlus2h).withId("12");
 
         item1.addBroadcast(broadcast1);
         item1.addBroadcast(broadcast11);
@@ -1105,20 +1003,14 @@ public class CassandraEquivalentScheduleStoreIT {
         contentStore.writeContent(item2);
 
         ScheduleRef scheduleRef1 = ScheduleRef
-                .forChannel(channel1.getId(), new Interval(now, nowPlus2h))
+                .forChannel(channel.getId(), new Interval(now, nowPlus2h))
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .build();
 
-        equivalentScheduleStore.updateSchedule(
-                new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        scheduleRef1,
-                        ImmutableSet.of()
-                )
-        );
+        updateSchedule(scheduleRef1);
 
         ScheduleRef scheduleRef2 = ScheduleRef
-                .forChannel(channel1.getId(), new Interval(nowMinus26h, nowMinus25h))
+                .forChannel(channel.getId(), new Interval(nowMinus26h, nowMinus25h))
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
 
@@ -1134,7 +1026,7 @@ public class CassandraEquivalentScheduleStoreIT {
 
         EquivalentChannelSchedule currentMbSched = get(
                 equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel1),
+                        ImmutableList.of(channel),
                         new Interval(now, nowPlus2h),
                         Publisher.METABROADCAST,
                         ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
@@ -1152,15 +1044,12 @@ public class CassandraEquivalentScheduleStoreIT {
     @Test
     public void testUpdatingAScheduleRemovesStaleBroadcastsEvenIfNotPresentInStaleBroadcastsInUpdate()
             throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
-        DateTime beforeStart = new DateTime(2014, 3, 21, 0, 0, 0, 0, DateTimeZones.UTC);
-        DateTime start = new DateTime(2014, 3, 21, 1, 0, 0, 0, DateTimeZones.UTC);
-        DateTime midday = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
-        DateTime fourPm = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
-        DateTime end = new DateTime(2014, 3, 21, 23, 0, 0, 0, DateTimeZones.UTC);
-        DateTime afterEnd = new DateTime(2014, 3, 22, 23, 30, 0, 0, DateTimeZones.UTC);
+        DateTime beforeStart = makeDateTime(3, 21, 0, 0);
+        DateTime start = makeDateTime(3, 21, 1, 0);
+        DateTime midday = makeDateTime(3, 21, 16, 0);
+        DateTime fourPm = makeDateTime(3, 21, 16, 0);
+        DateTime end = makeDateTime(3, 21, 23, 0);
+        DateTime afterEnd = makeDateTime(3, 22, 23, 30);
         Interval interval = new Interval(
                 start,
                 end
@@ -1191,16 +1080,8 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(afterItem.getId(), afterBroadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRefBefore,
-                        ImmutableSet.of()
-                ));
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRefAfter,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRefBefore);
+        updateSchedule(scheduleRefAfter);
 
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         Broadcast broadcast1 = new Broadcast(channel, start, midday).withId("sid1");
@@ -1224,11 +1105,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item3.getId(), broadcast3.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         Item item4 = new Item(Id.valueOf(4), Publisher.METABROADCAST);
         Broadcast broadcast4 = new Broadcast(channel, midday, end).withId("sid4");
@@ -1240,11 +1117,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item4.getId(), broadcast4.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef2,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef2);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -1305,13 +1178,10 @@ public class CassandraEquivalentScheduleStoreIT {
     @Test
     public void testUpdatingAScheduleRemovesStaleBroadcastsEvenIfNotPresentInStaleBroadcastsInUpdateAndBroadcastMoved()
             throws Exception {
-
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1L);
-        DateTime start = new DateTime(2014, 3, 21, 0, 0, 0, 0, DateTimeZones.UTC);
-        DateTime midday = new DateTime(2014, 3, 21, 12, 0, 0, 0, DateTimeZones.UTC);
-        DateTime fourPm = new DateTime(2014, 3, 21, 16, 0, 0, 0, DateTimeZones.UTC);
-        DateTime end = new DateTime(2014, 3, 22, 0, 0, 0, 0, DateTimeZones.UTC);
+        DateTime start = makeDateTime(3, 21, 0, 0);
+        DateTime midday = makeDateTime(3, 21, 12, 0);
+        DateTime fourPm = makeDateTime(3, 21, 16, 0);
+        DateTime end = makeDateTime(3, 22, 0, 0);
         Interval interval = new Interval(
                 start,
                 end
@@ -1339,11 +1209,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item3.getId(), broadcast3.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef);
 
         Item item4 = new Item(Id.valueOf(4), Publisher.METABROADCAST);
         Broadcast broadcast4 = new Broadcast(channel, midday, end).withId("sid3");
@@ -1355,11 +1221,7 @@ public class CassandraEquivalentScheduleStoreIT {
                 .addEntry(item4.getId(), broadcast4.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(Publisher.METABROADCAST,
-                        scheduleRef2,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(scheduleRef2);
 
         EquivalentSchedule resolved
                 = get(equivalentScheduleStore
@@ -1405,16 +1267,12 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void testDoesNotRemoveStaleBroadcastsFromOutsideInterval() throws Exception {
-
-        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
-        channel.setId(1L);
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 26, 2, 0)
         )
                 .withId("bid1");
 
@@ -1424,25 +1282,20 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef broadcastUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 26, 2, 0)
                 )
         )
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        broadcastUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(broadcastUpdate);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 26, 2, 0)
                 )
                         .size(),
                 is(1)
@@ -1451,24 +1304,19 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef updateThatShouldNotDeleteBroadcast = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 17, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 17, 0),
+                        makeDateTime(10, 25, 18, 0)
                 )
         )
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        updateThatShouldNotDeleteBroadcast,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(updateThatShouldNotDeleteBroadcast);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 26, 2, 0)
                 )
                         .size(),
                 is(1)
@@ -1477,24 +1325,19 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef updateThatShouldDeleteBroadcast = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 26, 2, 0)
                 )
         )
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        updateThatShouldDeleteBroadcast,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(updateThatShouldDeleteBroadcast);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 26, 2, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -1504,23 +1347,19 @@ public class CassandraEquivalentScheduleStoreIT {
     @Test
     public void testBroadcastSpanningMultipleRowsGettingShortenedToOneRowIsRemovedFromOtherRows()
             throws Exception {
-
-        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
-        channel.setId(1L);
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 30),
+                makeDateTime(10, 26, 10, 0)
         )
                 .withId("bid1");
 
         Broadcast updatedBroadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 30),
+                makeDateTime(10, 26, 0, 0)
         )
                 .withId("bid1");
 
@@ -1530,25 +1369,20 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef updateA = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 12, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 30),
+                        makeDateTime(10, 26, 12, 0)
                 )
         )
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        updateA,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(updateA);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 30),
+                        makeDateTime(10, 26, 0, 0)
                 )
                         .size(),
                 is(1)
@@ -1557,8 +1391,8 @@ public class CassandraEquivalentScheduleStoreIT {
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 26, 0, 0),
+                        makeDateTime(10, 26, 10, 0)
                 )
                         .size(),
                 is(1)
@@ -1570,25 +1404,20 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef updateB = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 6, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 30),
+                        makeDateTime(10, 26, 6, 0)
                 )
         )
                 .addEntry(item.getId(), updatedBroadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        updateB,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(updateB);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 30, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 30),
+                        makeDateTime(10, 26, 0, 0)
                 )
                         .size(),
                 is(1)
@@ -1596,8 +1425,8 @@ public class CassandraEquivalentScheduleStoreIT {
 
         assertThat(
                 getScheduleEntries(channel,
-                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 10, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 26, 0, 0),
+                        makeDateTime(10, 26, 10, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -1607,24 +1436,20 @@ public class CassandraEquivalentScheduleStoreIT {
     @Test
     public void testBroadcastsInAdjacentDaysWithSameIdsDoNotPreventRemovalOfStaleBroadcasts()
             throws Exception {
-
-        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
-        channel.setId(1L);
-
         Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         Item item2 = new Item(Id.valueOf(2), Publisher.METABROADCAST);
 
         Broadcast broadcast1 = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("bid1");
 
         Broadcast broadcast2 = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 26, 2, 0),
+                makeDateTime(10, 26, 3, 0)
         )
                 .withId("bid1");
 
@@ -1637,26 +1462,21 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef update1 = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 26, 3, 0)
                 )
         )
                 .addEntry(item1.getId(), broadcast1.toRef())
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        update1,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(update1);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
                         .size(),
                 is(1)
@@ -1665,8 +1485,8 @@ public class CassandraEquivalentScheduleStoreIT {
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 26, 2, 0),
+                        makeDateTime(10, 26, 3, 0)
                 )
                         .size(),
                 is(1)
@@ -1675,25 +1495,20 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef update2 = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 26, 3, 0)
                 )
         )
                 .addEntry(item2.getId(), broadcast2.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        update2,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(update2);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -1702,8 +1517,8 @@ public class CassandraEquivalentScheduleStoreIT {
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 26, 2, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 3, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 26, 2, 0),
+                        makeDateTime(10, 26, 3, 0)
                 )
                         .size(),
                 is(1)
@@ -1713,23 +1528,19 @@ public class CassandraEquivalentScheduleStoreIT {
     @Test
     public void testWritingBroadcastThatHasChangedSourceIdWritesTheCorrectClusteringKey()
             throws Exception {
-
-        Channel channel = Channel.builder(Publisher.METABROADCAST).build();
-        channel.setId(1L);
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcastWithOriginalId = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
         Broadcast broadcastWithUpdatedId = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("changedId");
 
@@ -1739,25 +1550,20 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef updateThatAddsBroadcast = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
         )
                 .addEntry(item.getId(), broadcastWithOriginalId.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        updateThatAddsBroadcast,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(updateThatAddsBroadcast);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
                         .size(),
                 is(1)
@@ -1768,24 +1574,19 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef updateThatRemovesBroadcast = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
         )
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        updateThatRemovesBroadcast,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(updateThatRemovesBroadcast);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -1795,8 +1596,6 @@ public class CassandraEquivalentScheduleStoreIT {
     @Test
     public void updatingTheScheduleUsesTheCurrentBroadcastIdsWhenDeterminingStales()
             throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         // The existing broadcast has the same ID as the broadcast in the update. If we use
         // the broadcast ID when computing stale broadcasts instead of using the ID of the broadcast
         // we resolved from the content store (which is the most up-to-date one) we will think this
@@ -1804,22 +1603,22 @@ public class CassandraEquivalentScheduleStoreIT {
         // doesn't happen
         Broadcast existingBroadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 18, 0),
+                makeDateTime(10, 25, 19, 0)
         )
                 .withId("firstId");
 
         Broadcast broadcastInUpdate = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("firstId");
 
         Broadcast broadcastInStore = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("secondId");
 
@@ -1836,43 +1635,33 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef firstUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 18, 0),
+                        makeDateTime(10, 25, 19, 0)
                 )
         )
                 .addEntry(existingItem.getId(), existingBroadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        firstUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(firstUpdate);
 
         // This update should add the new broadcast and remove the existing one
         ScheduleRef secondUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 18, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
         )
                 .addEntry(item.getId(), broadcastInUpdate.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        secondUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(secondUpdate);
 
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 18, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 18, 0),
+                        makeDateTime(10, 25, 19, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -1881,21 +1670,19 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void updatingEquivalencesDoesNotChangeSchedule() throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
         Broadcast updatedBroadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 21, 0)
         )
                 .withId("id");
 
@@ -1905,19 +1692,14 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef initialUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
         )
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        initialUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(initialUpdate);
 
         item.setBroadcasts(ImmutableSet.of(updatedBroadcast));
         equivalentScheduleStore.updateEquivalences(ImmutableSet.of(
@@ -1927,8 +1709,8 @@ public class CassandraEquivalentScheduleStoreIT {
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 20, 0),
+                        makeDateTime(10, 25, 21, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -1937,14 +1719,12 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void updatingEquivalencesOnMissingRowDoesNotChangeSchedule() throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
@@ -1958,8 +1738,8 @@ public class CassandraEquivalentScheduleStoreIT {
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -1968,21 +1748,19 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void updatingContentDoesNotChangeSchedule() throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
         Broadcast updatedBroadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 21, 0)
         )
                 .withId("id");
 
@@ -1992,19 +1770,14 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef initialUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
         )
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        initialUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(initialUpdate);
 
         item.setBroadcasts(ImmutableSet.of(updatedBroadcast));
         equivalentScheduleStore.updateContent(ImmutableList.of(item));
@@ -2012,8 +1785,8 @@ public class CassandraEquivalentScheduleStoreIT {
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 21, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 20, 0),
+                        makeDateTime(10, 25, 21, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -2022,14 +1795,12 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void updatingContentOnMissingRowDoesNotChangeSchedule() throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
@@ -2040,8 +1811,8 @@ public class CassandraEquivalentScheduleStoreIT {
         assertThat(
                 getScheduleEntries(
                         channel,
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
                         .isEmpty(),
                 is(true)
@@ -2050,14 +1821,12 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void updatingScheduleDeletesRowsWithNullBroadcasts() throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
@@ -2071,18 +1840,13 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef initialUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 0, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 26, 0, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 0, 0),
+                        makeDateTime(10, 26, 0, 0)
                 )
         )
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        initialUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(initialUpdate);
 
         boolean scheduleHasRows = module.getSession()
                 .execute("SELECT * FROM equivalent_schedule")
@@ -2094,16 +1858,14 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void updatingEquivalencesUpdatesContent() throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item.setTitle("oldTitle");
         item.setThisOrChildLastUpdated(DateTime.now());
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
@@ -2113,19 +1875,14 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef initialUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
         )
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        initialUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(initialUpdate);
 
         item.setTitle("updatedTitle");
         contentStore.writeContent(item);
@@ -2136,8 +1893,8 @@ public class CassandraEquivalentScheduleStoreIT {
 
         ImmutableList<EquivalentScheduleEntry> scheduleEntries = getScheduleEntries(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         );
 
         EquivalentScheduleEntry entry = Iterables.getOnlyElement(scheduleEntries);
@@ -2148,15 +1905,13 @@ public class CassandraEquivalentScheduleStoreIT {
 
     @Test
     public void updatingEquivalencesUpdatesGraph() throws Exception {
-        Channel channel = Channel.builder(Publisher.METABROADCAST).withId(1L).build();
-
         Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
         item.setThisOrChildLastUpdated(DateTime.now());
 
         Broadcast broadcast = new Broadcast(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         )
                 .withId("id");
 
@@ -2166,19 +1921,14 @@ public class CassandraEquivalentScheduleStoreIT {
         ScheduleRef initialUpdate = ScheduleRef.forChannel(
                 channel.getId(),
                 new Interval(
-                        new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                        new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                        makeDateTime(10, 25, 19, 0),
+                        makeDateTime(10, 25, 20, 0)
                 )
         )
                 .addEntry(item.getId(), broadcast.toRef())
                 .build();
 
-        equivalentScheduleStore
-                .updateSchedule(new ScheduleUpdate(
-                        Publisher.METABROADCAST,
-                        initialUpdate,
-                        ImmutableSet.of()
-                ));
+        updateSchedule(initialUpdate);
 
         Item equivItem = new Item(Id.valueOf(2L), Publisher.BBC);
         equivItem.setThisOrChildLastUpdated(DateTime.now());
@@ -2196,12 +1946,167 @@ public class CassandraEquivalentScheduleStoreIT {
 
         ImmutableList<EquivalentScheduleEntry> scheduleEntries = getScheduleEntries(
                 channel,
-                new DateTime(2015, 10, 25, 19, 0, 0, 0, DateTimeZones.UTC),
-                new DateTime(2015, 10, 25, 20, 0, 0, 0, DateTimeZones.UTC)
+                makeDateTime(10, 25, 19, 0),
+                makeDateTime(10, 25, 20, 0)
         );
 
         EquivalentScheduleEntry entry = Iterables.getOnlyElement(scheduleEntries);
         assertThat(entry.getItems().getGraph(), is(graph));
+    }
+
+    @Test
+    public void updatingSchedulesDoesUpdateOldBroadcastRows() throws Exception {
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item.setTitle("oldTitle");
+
+        DateTime dateTimeOlderThanUpdateWindow = DateTime.now(DateTimeZone.UTC)
+                .minus(MAX_BROADCAST_AGE_TO_UPDATE.plus(Duration.standardDays(1)));
+
+        DateTime start = dateTimeOlderThanUpdateWindow.withHourOfDay(0);
+        DateTime end = dateTimeOlderThanUpdateWindow.withHourOfDay(2);
+
+        Broadcast oldBroadcast = new Broadcast(channel, start, end)
+                .withId("id");
+
+        item.addBroadcast(oldBroadcast);
+        contentStore.writeContent(item);
+
+        ScheduleRef update = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(start, end)
+        )
+                .addEntry(item.getId(), oldBroadcast.toRef())
+                .build();
+
+        updateSchedule(update);
+
+        EquivalentScheduleEntry scheduleEntry = Iterables.getOnlyElement(
+                getScheduleEntries(channel, start, end)
+        );
+
+        assertThat(
+                scheduleEntry.getBroadcast(),
+                is(oldBroadcast)
+        );
+    }
+
+    @Test
+    public void updatingContentDoesNotUpdateOldBroadcastRows() throws Exception {
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item.setTitle("oldTitle");
+
+        DateTime dateTimeOlderThanUpdateWindow = DateTime.now(DateTimeZone.UTC)
+                .minus(MAX_BROADCAST_AGE_TO_UPDATE.plus(Duration.standardDays(1)));
+
+        DateTime start = dateTimeOlderThanUpdateWindow.withHourOfDay(0);
+        DateTime end = dateTimeOlderThanUpdateWindow.withHourOfDay(2);
+
+        Broadcast oldBroadcast = new Broadcast(channel, start, end)
+                .withId("id");
+
+        item.addBroadcast(oldBroadcast);
+        contentStore.writeContent(item);
+
+        ScheduleRef initialUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(start, end)
+        )
+                .addEntry(item.getId(), oldBroadcast.toRef())
+                .build();
+
+        updateSchedule(initialUpdate);
+
+        item.setTitle("newTitle");
+        equivalentScheduleStore.updateContent(ImmutableList.of(item));
+
+        EquivalentScheduleEntry scheduleEntry = Iterables.getOnlyElement(
+                getScheduleEntries(channel, start, end)
+        );
+
+        Item actualItem = Iterables.getOnlyElement(scheduleEntry.getItems().getResources());
+
+        assertThat(
+               actualItem.getTitle(),
+                is("oldTitle")
+        );
+    }
+
+    @Test
+    public void updatingEquivalencesDoesNotUpdateOldBroadcastRows() throws Exception {
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item.setThisOrChildLastUpdated(DateTime.now());
+
+        DateTime dateTimeOlderThanUpdateWindow = DateTime.now(DateTimeZone.UTC)
+                .minus(MAX_BROADCAST_AGE_TO_UPDATE.plus(Duration.standardDays(1)));
+
+        DateTime start = dateTimeOlderThanUpdateWindow.withHourOfDay(0);
+        DateTime end = dateTimeOlderThanUpdateWindow.withHourOfDay(2);
+
+        Broadcast oldBroadcast = new Broadcast(channel, start, end)
+                .withId("id");
+
+        item.addBroadcast(oldBroadcast);
+        contentStore.writeContent(item);
+
+        ScheduleRef initialUpdate = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(start, end)
+        )
+                .addEntry(item.getId(), oldBroadcast.toRef())
+                .build();
+
+        updateSchedule(initialUpdate);
+
+        Item equivItem = new Item(Id.valueOf(2L), Publisher.BBC);
+        equivItem.setThisOrChildLastUpdated(DateTime.now());
+        contentStore.writeContent(equivItem);
+
+        EquivalenceGraph graph = EquivalenceGraph.valueOf(ImmutableSet.of(
+                EquivalenceGraph.Adjacents
+                        .valueOf(equivItem.toRef()),
+                EquivalenceGraph.Adjacents
+                        .valueOf(item.toRef())
+                        .copyWithOutgoing(equivItem.toRef())
+        ));
+
+        equivalentScheduleStore.updateEquivalences(ImmutableSet.of(graph));
+
+        ImmutableList<EquivalentScheduleEntry> scheduleEntries = getScheduleEntries(
+                channel, start, end
+        );
+
+        EquivalentScheduleEntry entry = Iterables.getOnlyElement(scheduleEntries);
+
+        ImmutableSet<Id> equivalenceSet = entry.getItems().getGraph().getEquivalenceSet();
+        assertThat(equivalenceSet.size(), is(1));
+        assertThat(equivalenceSet.contains(item.getId()), is(true));
+    }
+
+    private DateTime makeDateTime(
+            int monthOfYear,
+            int dayOfMonth,
+            int hourOfDay,
+            int minuteOfHour
+    ) {
+        // The store doesn't always update old broadcasts so this makes sure the test dates are
+        // in the future
+        return new DateTime(
+                DateTime.now().getYear() + 1,
+                monthOfYear,
+                dayOfMonth,
+                hourOfDay,
+                minuteOfHour,
+                DateTimeZones.UTC
+        );
+    }
+
+    private void updateSchedule(ScheduleRef scheduleRef) throws WriteException {
+        equivalentScheduleStore
+                .updateSchedule(new ScheduleUpdate(
+                        Publisher.METABROADCAST,
+                        scheduleRef,
+                        ImmutableSet.of()
+                ));
     }
 
     private ImmutableList<EquivalentScheduleEntry> getScheduleEntries(

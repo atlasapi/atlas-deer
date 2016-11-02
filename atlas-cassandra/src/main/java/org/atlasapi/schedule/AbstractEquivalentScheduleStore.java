@@ -25,9 +25,11 @@ import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.collect.OptionalMap;
 import com.metabroadcast.common.stream.MoreCollectors;
+import com.metabroadcast.common.time.Clock;
 
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.ResultSetFuture;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -37,7 +39,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
@@ -50,10 +51,14 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEquivalentScheduleStore.class);
 
+    @VisibleForTesting
+    static final Duration MAX_BROADCAST_AGE_TO_UPDATE = Duration.standardDays(14);
+
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
 
     protected final MetricRegistry metricRegistry;
+    protected final Clock clock;
 
     private final EquivalenceGraphStore graphStore;
     private final ContentResolver contentStore;
@@ -66,15 +71,16 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     private final String updateSchedule;
     private final String updateEquivalences;
 
-
     public AbstractEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
             ContentResolver contentStore,
             MetricRegistry metricRegistry,
-            String metricPrefix
+            String metricPrefix,
+            Clock clock
     ) {
         this.graphStore = checkNotNull(graphStore);
         this.contentStore = checkNotNull(contentStore);
+        this.clock = checkNotNull(clock);
 
         this.lock = GroupLock.natural(metricRegistry, metricPrefix);
 
@@ -145,6 +151,11 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                 .collect(Collectors.toList());
     }
 
+    protected boolean shouldUpdateBroadcast(Broadcast broadcast) {
+        return broadcast.getTransmissionEndTime()
+                .isAfter(clock.now().minus(MAX_BROADCAST_AGE_TO_UPDATE));
+    }
+
     private void updateEquivalences(EquivalenceGraph graph) throws WriteException {
         ImmutableList<Item> graphItems = get(
                 contentStore.resolveIds(graph.getEquivalenceSet())
@@ -192,18 +203,22 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                 )
                         .mark();
 
-                metricRegistry.meter(
-                        updateEquivalences + "broadcast." + getBroadcastMetricName(broadcast)
-                                + METER_CALLED
-                )
-                        .mark();
+                if (shouldUpdateBroadcast(broadcast)) {
+                    metricRegistry.meter(
+                            updateEquivalences + "broadcast." + getBroadcastMetricName(broadcast)
+                                    + METER_CALLED
+                    )
+                            .mark();
 
-                futureBuilder.addAll(updateEquivalentContent(
-                        item.getSource(),
-                        broadcast,
-                        graph,
-                        equivItems(copy, broadcast, graphItems)
-                ));
+                    futureBuilder.addAll(updateEquivalentContent(
+                            item.getSource(),
+                            broadcast,
+                            graph,
+                            equivItems(copy, broadcast, graphItems)
+                    ));
+                } else {
+                    metricRegistry.meter(updateEquivalences + "meter.nop").mark();
+                }
             }
         }
 
@@ -401,7 +416,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
         Duration broadcastAge = new Duration(
                 broadcast.getTransmissionEndTime(),
-                DateTime.now()
+                clock.now()
         );
 
         if (broadcastAge.isShorterThan(Duration.standardDays(7))) {
