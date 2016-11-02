@@ -2,13 +2,13 @@ package org.atlasapi.content.v2.serialization;
 
 import org.atlasapi.content.v2.model.udt.Restriction;
 import org.atlasapi.content.v2.model.udt.UpdateTimes;
-import org.atlasapi.content.v2.serialization.setters.IdentifiedSetter;
-
-import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;
+import org.atlasapi.content.v2.serialization.setters.IdentifiedWithoutUpdateTimesSetter;
+import org.atlasapi.content.v2.serialization.setters.WithUpdateTimesSetter;
 
 public class RestrictionSerialization {
 
-    private final IdentifiedSetter identifiedSetter = new IdentifiedSetter();
+    private final IdentifiedWithoutUpdateTimesSetter identifiedSetter = new IdentifiedWithoutUpdateTimesSetter();
+    private final WithUpdateTimesSetter timesSetter = new WithUpdateTimesSetter();
 
     public Restriction serialize(org.atlasapi.content.Restriction restriction) {
         if (restriction == null) {
@@ -40,8 +40,8 @@ public class RestrictionSerialization {
 
         identifiedSetter.deserialize(restriction, internal);
 
-        restriction.setLastUpdated(toDateTime(updateTimes.getLastUpdated()));
-        restriction.setEquivalenceUpdate(toDateTime(updateTimes.getEquivUpdate()));
+        timesSetter.deserialize(restriction, updateTimes);
+
         restriction.setRestricted(internal.getRestricted());
         restriction.setMinimumAge(internal.getMinimumAge());
         restriction.setMessage(internal.getMessage());

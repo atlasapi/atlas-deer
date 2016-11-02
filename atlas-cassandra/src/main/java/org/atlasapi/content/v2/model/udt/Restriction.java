@@ -2,15 +2,13 @@ package org.atlasapi.content.v2.model.udt;
 
 import java.util.Set;
 
-import org.atlasapi.content.v2.model.Identified;
+import org.atlasapi.content.v2.model.IdentifiedWithoutUpdateTimes;
 
 import com.datastax.driver.mapping.annotations.Field;
-import com.datastax.driver.mapping.annotations.Transient;
 import com.datastax.driver.mapping.annotations.UDT;
-import org.joda.time.Instant;
 
 @UDT(name = "restriction")
-public class Restriction implements Identified {
+public class Restriction implements IdentifiedWithoutUpdateTimes {
 
     @Field(name = "id") private Long id;
     @Field(name = "canonical_uri") private String canonicalUri;
@@ -71,30 +69,6 @@ public class Restriction implements Identified {
 
     public void setEquivalentTo(Set<Ref> equivalentTo) {
         this.equivalentTo = equivalentTo;
-    }
-
-    @Transient
-    @Override
-    public Instant getLastUpdated() {
-        throw new UnsupportedOperationException("stored as part of a map value against this key");
-    }
-
-    @Transient
-    @Override
-    public void setLastUpdated(Instant lastUpdated) {
-        throw new UnsupportedOperationException("stored as part of a map value against this key");
-    }
-
-    @Transient
-    @Override
-    public Instant getEquivalenceUpdate() {
-        throw new UnsupportedOperationException("stored as part of a map value against this key");
-    }
-
-    @Transient
-    @Override
-    public void setEquivalenceUpdate(Instant equivalenceUpdate) {
-        throw new UnsupportedOperationException("stored as part of a map value against this key");
     }
 
     public Boolean getRestricted() {
