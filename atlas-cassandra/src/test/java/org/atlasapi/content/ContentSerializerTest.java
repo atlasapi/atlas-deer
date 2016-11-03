@@ -12,7 +12,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
-import org.atlasapi.entity.Serializer;
 import org.atlasapi.equivalence.EquivalenceRef;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.segment.SegmentEvent;
@@ -30,7 +29,6 @@ import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Test;
-import org.springframework.context.annotation.Bean;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -40,8 +38,9 @@ import static org.junit.Assert.assertThat;
 
 public class ContentSerializerTest {
 
-    private final ContentSerializer serializer = new ContentSerializer(new ContentSerializationVisitor(
-            new NoOpContentResolver()));
+    private final ContentSerializer serializer = new ContentSerializer(
+            new ContentSerializationVisitor(new NoOpContentResolver())
+    );
 
     @Test
     public void testDeSerializesBrand() {
@@ -115,10 +114,13 @@ public class ContentSerializerTest {
     @Test
     public void testDeSerializesEpisode() {
         Episode episode = new Episode();
+
         setItemProperties(episode);
         episode.setEpisodeNumber(5);
         episode.setPartNumber(4);
         episode.setSeriesNumber(5);
+        episode.setSpecial(true);
+
         SeriesRef seriesRef = new SeriesRef(
                 Id.valueOf(5),
                 episode.getSource(),
@@ -134,12 +136,15 @@ public class ContentSerializerTest {
         Content deserialized = serializer.deserialize(serialized);
 
         assertThat(deserialized, is(instanceOf(Episode.class)));
+
         Episode deserializedEpisode = (Episode) deserialized;
+
         checkItemProperties(deserializedEpisode, episode);
         assertThat(deserializedEpisode.getEpisodeNumber(), is(episode.getEpisodeNumber()));
         assertThat(deserializedEpisode.getPartNumber(), is(episode.getPartNumber()));
         assertThat(deserializedEpisode.getSeriesNumber(), is(episode.getSeriesNumber()));
         assertThat(deserializedEpisode.getSeriesRef(), is(episode.getSeriesRef()));
+        assertThat(deserializedEpisode.getSpecial(), is(episode.getSpecial()));
     }
 
     @Test

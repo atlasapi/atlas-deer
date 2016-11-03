@@ -1,5 +1,9 @@
 package org.atlasapi.content;
 
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
@@ -40,11 +44,6 @@ import static org.atlasapi.annotation.Annotation.NEXT_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.SUB_ITEMS;
 import static org.atlasapi.annotation.Annotation.SUB_ITEM_SUMMARIES;
 import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
-import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
-
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
@@ -381,9 +380,12 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
                             .or(episode.getSource())
             ));
         }
+
         episode.setSeriesNumber(msg.hasSeriesNumber() ? msg.getSeriesNumber() : null);
         episode.setEpisodeNumber(msg.hasEpisodeNumber() ? msg.getEpisodeNumber() : null);
         episode.setPartNumber(msg.hasPartNumber() ? msg.getPartNumber() : null);
+        episode.setSpecial(msg.hasSpecial() ? msg.getSpecial() : null);
+
         return episode;
     }
 

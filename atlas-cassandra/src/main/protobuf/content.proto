@@ -110,6 +110,8 @@ message Content {
     repeated common.Award awards = 68 [(column)=DESC];
     repeated common.Rating ratings = 69 [(column)=DESC];
     repeated common.Review reviews = 70 [(column)=DESC];
+
+    optional bool special = 71 [(column)=DESC];
 }
 
 message Restriction {

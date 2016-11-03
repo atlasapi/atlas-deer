@@ -346,6 +346,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     @Override
     public Builder visit(Episode episode) {
         Builder builder = visitItem(episode);
+
         if (episode.getSeriesRef() != null) {
             ContentRefSerializer refSerializer = new ContentRefSerializer(episode.getSource());
             builder.setSeriesRef(refSerializer.serialize(episode.getSeriesRef()));
@@ -359,6 +360,10 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
         if (episode.getPartNumber() != null) {
             builder.setPartNumber(episode.getPartNumber());
         }
+        if (episode.getSpecial() != null) {
+            builder.setSpecial(episode.getSpecial());
+        }
+
         return builder;
     }
 
