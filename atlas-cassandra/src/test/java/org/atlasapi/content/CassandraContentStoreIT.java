@@ -2001,7 +2001,7 @@ public abstract class CassandraContentStoreIT {
         return content;
     }
 
-    private Content resolve(Long id)
+    protected Content resolve(Long id)
             throws InterruptedException, ExecutionException, TimeoutException {
         Resolved<Content> resolved = store.resolveIds(ImmutableList.of(Id.valueOf(id)))
                 .get(1, TimeUnit.SECONDS);

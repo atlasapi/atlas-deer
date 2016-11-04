@@ -191,7 +191,7 @@ public class CqlContentStore implements ContentStore {
             DateTime now = clock.now();
 
             batch.addAll(updateWriteDates(content, now));
-            batch.addAll(updateContainerSummary(content, messages));
+            batch.addAll(updateContainerSummary(previous, content, messages));
             batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
             batch.addAll(updateChildrenSummaries(content, previous, messages));
 
@@ -420,7 +420,7 @@ public class CqlContentStore implements ContentStore {
             }
 
             for (ItemRef childRef : itemRefs) {
-                statements.add(accessor.updateContainerSummaryInChild(
+                statements.add(accessor.updateContainerSummary(
                         childRef.getId().longValue(),
                         containerSummaryTranslator.serialize(container.toSummary())
                 ));
@@ -514,6 +514,7 @@ public class CqlContentStore implements ContentStore {
     }
 
     private List<Statement> updateContainerSummary(
+            Content previous,
             Content content,
             ImmutableList.Builder<ResourceUpdatedMessage> messages
     ) {
@@ -533,7 +534,7 @@ public class CqlContentStore implements ContentStore {
                         ir
                 ));
 
-                statements.add(accessor.updateContainerSummaryInChild(
+                statements.add(accessor.updateContainerSummary(
                         ir.getId().longValue(),
                         internal
                 ));
@@ -542,7 +543,23 @@ public class CqlContentStore implements ContentStore {
             return statements;
         }
 
+        if (containerWasRemoved(previous, content)) {
+            return ImmutableList.of(
+                    accessor.deleteContainerSummary(
+                            content.getId().longValue()
+                    )
+            );
+        }
+
         return ImmutableList.of();
+    }
+
+    private boolean containerWasRemoved(Content previous, Content content) {
+        return previous != null
+                && previous instanceof Item
+                && content instanceof Item
+                && ((Item) previous).getContainerRef() != null
+                && ((Item) content).getContainerRef() == null;
     }
 
     private List<Statement> updateWriteDates(Content content, DateTime now) {
