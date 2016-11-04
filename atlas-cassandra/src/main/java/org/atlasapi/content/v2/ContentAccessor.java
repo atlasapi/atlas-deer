@@ -84,8 +84,13 @@ public interface ContentAccessor {
     );
 
     @Query("UPDATE content_v2 SET container_summary = :summary WHERE id = :id")
-    Statement updateContainerSummaryInChild(
-            @Param("id") Long childId,
+    Statement updateContainerSummary(
+            @Param("id") Long id,
             @Param("summary") ContainerSummary containerSummary
+    );
+
+    @Query("DELETE container_summary FROM content_v2 WHERE id = :id")
+    Statement deleteContainerSummary(
+            @Param("id") Long contentId
     );
 }
