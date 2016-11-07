@@ -9,7 +9,7 @@ public class ItemRefAndItemSummary {
 
     @Frozen
     @Field(name = "item")
-    private ItemRef itemRef;
+    private PartialItemRef itemRef;
 
     @Frozen
     @Field(name = "summary")
@@ -18,18 +18,18 @@ public class ItemRefAndItemSummary {
     ItemRefAndItemSummary() {}
 
     public ItemRefAndItemSummary(
-            ItemRef itemRef,
+            PartialItemRef itemRef,
             ItemSummary summary
     ) {
         this.itemRef = itemRef;
         this.summary = summary;
     }
 
-    public ItemRef getItemRef() {
+    public PartialItemRef getItemRef() {
         return itemRef;
     }
 
-    public void setItemRef(ItemRef itemRef) {
+    public void setItemRef(PartialItemRef itemRef) {
         this.itemRef = itemRef;
     }
 

@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 import org.atlasapi.content.Certificate;
 import org.atlasapi.content.EpisodeSummary;
-import org.atlasapi.content.v2.model.udt.ItemRef;
+import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.model.udt.ItemSummary;
 import org.atlasapi.content.v2.model.udt.Ref;
 
@@ -57,7 +57,7 @@ public class ItemSummarySerialization {
         return internal;
     }
 
-    public org.atlasapi.content.ItemSummary deserialize(Ref ref, ItemRef itemRef, ItemSummary is) {
+    public org.atlasapi.content.ItemSummary deserialize(Ref ref, PartialItemRef itemRef, ItemSummary is) {
         if (is == null) {
             return null;
         }
