@@ -23,13 +23,10 @@ import org.joda.time.DateTime;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -54,42 +51,6 @@ public class CqlContentStoreIT extends CassandraContentStoreIT {
     @Test
     @Override
     public void testWritingResolvingContainerWhichOnlyChildRefsThrowsCorrectException() {}
-
-    @Test
-    @Override
-    public void writingContentWithoutContainerRemovesExistingContainer() throws Exception {
-        DateTime now = new DateTime(DateTimeZones.UTC);
-
-        Brand brand = create(new Brand());
-
-        when(clock.now()).thenReturn(now);
-        when(idGenerator.generateRaw()).thenReturn(1234L);
-        WriteResult<Brand, Content> brandWriteResult = store.writeContent(brand);
-
-        Episode episode = create(new Episode());
-        episode.setContainer(brandWriteResult.getResource());
-        episode.setTitle("Title 1");
-        episode.setImage("image1");
-        episode.setDescription("description");
-        episode.setEpisodeNumber(42);
-
-        long episodeId = 1235L;
-        when(idGenerator.generateRaw()).thenReturn(episodeId);
-        store.writeContent(episode);
-
-        Episode resolved = (Episode) resolve(episodeId);
-        assertThat(resolved.getContainerSummary(), notNullValue());
-
-        Item item = new Item();
-        Item.copyTo(episode, item);
-        item.setContainerRef(null);
-
-        when(hasher.hash(Mockito.any())).thenReturn("foo", "bar");
-        store.writeContent(item);
-
-        Item resolvedItem = (Item) resolve(episodeId);
-        assertThat(resolvedItem.getContainerSummary(), nullValue());
-    }
 
     @Test
     public void multipleChildUpdatesPreserveSingleRefInParent() throws Exception {

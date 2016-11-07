@@ -6,7 +6,7 @@ import java.util.Set;
 import org.atlasapi.content.v2.model.Content;
 import org.atlasapi.content.v2.model.udt.Broadcast;
 import org.atlasapi.content.v2.model.udt.ContainerSummary;
-import org.atlasapi.content.v2.model.udt.ItemRef;
+import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
 import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
 import org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries;
@@ -42,7 +42,7 @@ public interface ContentAccessor {
             + "WHERE id = :id")
     Statement addItemRefsToContainer(
             @Param("id") Long id,
-            @Param("refs") Map<Ref, ItemRef> itemRefs,
+            @Param("refs") Map<Ref, PartialItemRef> itemRefs,
             @Param("upcoming") Map<Ref, ItemRefAndBroadcastRefs> upcoming,
             @Param("available") Map<Ref, ItemRefAndLocationSummaries> available
     );

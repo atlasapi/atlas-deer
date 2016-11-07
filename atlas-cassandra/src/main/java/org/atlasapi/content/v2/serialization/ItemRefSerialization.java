@@ -4,7 +4,7 @@ import org.atlasapi.content.ClipRef;
 import org.atlasapi.content.EpisodeRef;
 import org.atlasapi.content.FilmRef;
 import org.atlasapi.content.SongRef;
-import org.atlasapi.content.v2.model.udt.ItemRef;
+import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -14,12 +14,12 @@ import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
 public class ItemRefSerialization {
 
-    public ItemRef serialize(org.atlasapi.content.ItemRef itemRef) {
+    public PartialItemRef serialize(org.atlasapi.content.ItemRef itemRef) {
         if (itemRef == null) {
             return null;
         }
 
-        ItemRef internal = new ItemRef();
+        PartialItemRef internal = new PartialItemRef();
 
         Ref ref = new Ref();
         Id id = itemRef.getId();
@@ -50,7 +50,7 @@ public class ItemRefSerialization {
         return internal;
     }
 
-    public org.atlasapi.content.ItemRef deserialize(Ref ref, ItemRef itemRef) {
+    public org.atlasapi.content.ItemRef deserialize(Ref ref, PartialItemRef itemRef) {
         switch (itemRef.getType()) {
         case "episode":
             return new org.atlasapi.content.EpisodeRef(

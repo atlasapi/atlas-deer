@@ -11,7 +11,7 @@ public class ItemRefAndLocationSummaries {
 
     @Frozen
     @Field(name = "item")
-    private ItemRef itemRef;
+    private PartialItemRef itemRef;
 
     @Field(name = "location_summaries")
     private List<LocationSummary> locationSummaries;
@@ -19,18 +19,18 @@ public class ItemRefAndLocationSummaries {
     ItemRefAndLocationSummaries() {}
 
     public ItemRefAndLocationSummaries(
-            ItemRef itemRef,
+            PartialItemRef itemRef,
             List<LocationSummary> locationSummaries
     ) {
         this.itemRef = itemRef;
         this.locationSummaries = locationSummaries;
     }
 
-    public ItemRef getItemRef() {
+    public PartialItemRef getItemRef() {
         return itemRef;
     }
 
-    public void setItemRef(ItemRef itemRef) {
+    public void setItemRef(PartialItemRef itemRef) {
         this.itemRef = itemRef;
     }
 

@@ -5,15 +5,15 @@ import com.datastax.driver.mapping.annotations.UDT;
 import org.joda.time.Instant;
 
 /** This doesn't hold the actual ID and publisher because those are the strict PK of
- * any resource ref. These objects are usually stored as a CQL {@code map<Ref, ItemRef>} and
- * serialised accordingly. If you need to store a full {@code ItemRef} as a field, you'll need a
+ * any resource ref. These objects are usually stored as a CQL {@code map<Ref, PartialItemRef>} and
+ * serialised accordingly. If you need to store a full {@code PartialItemRef} as a field, you'll need a
  * to make a different UDT.
  *
  * @see Ref
  * @see SeriesRef
  */
 @UDT(name = "itemref")
-public class ItemRef {
+public class PartialItemRef {
 
     @Field(name = "sort_key") private String sortKey;
     @Field(name = "updated") private Instant updated;

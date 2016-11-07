@@ -11,23 +11,23 @@ public class ItemRefAndBroadcastRefs {
 
     @Frozen
     @Field(name = "item")
-    private ItemRef itemRef;
+    private PartialItemRef itemRef;
 
     @Field(name = "broadcasts")
     private List<BroadcastRef> broadcastRefs;
 
     ItemRefAndBroadcastRefs() {}
 
-    public ItemRefAndBroadcastRefs(ItemRef itemRef, List<BroadcastRef> broadcastRefs) {
+    public ItemRefAndBroadcastRefs(PartialItemRef itemRef, List<BroadcastRef> broadcastRefs) {
         this.itemRef = itemRef;
         this.broadcastRefs = broadcastRefs;
     }
 
-    public ItemRef getItemRef() {
+    public PartialItemRef getItemRef() {
         return itemRef;
     }
 
-    public void setItemRef(ItemRef itemRef) {
+    public void setItemRef(PartialItemRef itemRef) {
         this.itemRef = itemRef;
     }
 

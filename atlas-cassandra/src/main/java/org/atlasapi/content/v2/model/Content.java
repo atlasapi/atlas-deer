@@ -14,7 +14,7 @@ import org.atlasapi.content.v2.model.udt.ContentGroupRef;
 import org.atlasapi.content.v2.model.udt.CrewMember;
 import org.atlasapi.content.v2.model.udt.Image;
 import org.atlasapi.content.v2.model.udt.Interval;
-import org.atlasapi.content.v2.model.udt.ItemRef;
+import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
 import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
 import org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries;
@@ -255,7 +255,7 @@ public class Content implements ContentIface {
     @FrozenKey
     @FrozenValue
     @Column(name = "item_refs")
-    private Map<Ref, ItemRef> itemRefs;
+    private Map<Ref, PartialItemRef> itemRefs;
 
     @FrozenKey
     @FrozenValue
@@ -895,11 +895,11 @@ public class Content implements ContentIface {
         this.seriesRefs = seriesRefs;
     }
 
-    public Map<Ref, ItemRef> getItemRefs() {
+    public Map<Ref, PartialItemRef> getItemRefs() {
         return itemRefs;
     }
 
-    public void setItemRefs(Map<Ref, ItemRef> itemRefs) {
+    public void setItemRefs(Map<Ref, PartialItemRef> itemRefs) {
         this.itemRefs = itemRefs;
     }
 

@@ -7,7 +7,7 @@ import java.util.stream.StreamSupport;
 
 import org.atlasapi.content.Container;
 import org.atlasapi.content.v2.model.Content;
-import org.atlasapi.content.v2.model.udt.ItemRef;
+import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
 import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
 import org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries;
@@ -99,7 +99,7 @@ public class ContainerSetter {
             org.atlasapi.content.v2.model.Content internal) {
         Container container = (Container) content;
 
-        Map<Ref, ItemRef> itemRefs = internal.getItemRefs();
+        Map<Ref, PartialItemRef> itemRefs = internal.getItemRefs();
         if (itemRefs != null) {
             container.setItemRefs(
                     itemRefs.entrySet().stream()

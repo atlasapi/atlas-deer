@@ -32,6 +32,7 @@ import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Description;
 import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
 import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
+import org.atlasapi.content.v2.model.udt.PartialItemRef;
 import org.atlasapi.content.v2.serialization.BroadcastRefSerialization;
 import org.atlasapi.content.v2.serialization.BroadcastSerialization;
 import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
@@ -247,7 +248,7 @@ public class CqlContentStore implements ContentStore {
             // item and return early
             if (broadcast.isActivelyPublished() && broadcast.isUpcoming()) {
                 org.atlasapi.content.v2.model.udt.Ref ref = refTranslator.serialize(item);
-                org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(item);
+                PartialItemRef itemRef = itemRefTranslator.serialize(item);
 
                 Map<org.atlasapi.content.v2.model.udt.Ref, ItemRefAndBroadcastRefs> upcomingBroadcasts =
                         ImmutableMap.of(
@@ -690,7 +691,7 @@ public class CqlContentStore implements ContentStore {
         ItemRef ref = item.toRef();
         ItemSummary summary = item.toSummary();
 
-        org.atlasapi.content.v2.model.udt.ItemRef itemRef = itemRefTranslator.serialize(ref);
+        PartialItemRef itemRef = itemRefTranslator.serialize(ref);
         org.atlasapi.content.v2.model.udt.Ref itemRefKey = refTranslator.serialize(ref);
         org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
 
