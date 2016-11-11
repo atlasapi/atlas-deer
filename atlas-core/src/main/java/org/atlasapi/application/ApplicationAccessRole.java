@@ -26,7 +26,12 @@ public enum ApplicationAccessRole {
      * This role is intended to allow privileged applications an extended grace period to
      * adjust to the API changes before their access is cut-off as well.
      */
-    SUNSETTED_API_FEATURES_ACCESS("sunsetted-api-features-access");
+    SUNSETTED_API_FEATURES_ACCESS("sunsetted-api-features-access"),
+
+    /**
+     * Application prefers EBS schedule data
+     */
+    PREFER_EBS_SCHEDULE("prefer-ebs-schedule");
 
     private final String role;
 
