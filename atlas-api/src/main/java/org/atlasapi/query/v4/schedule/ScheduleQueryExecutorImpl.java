@@ -1,13 +1,14 @@
 package org.atlasapi.query.v4.schedule;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import org.apache.avro.generic.GenericData;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
@@ -30,19 +31,12 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
-
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Interval;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
