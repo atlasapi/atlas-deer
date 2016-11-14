@@ -25,6 +25,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import org.joda.time.DateTime;
+import org.joda.time.Interval;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,10 +38,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CqlContentDebugController {
 
     private final NumberToShortStringCodec lowercase = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private final Gson gson = new GsonBuilder().registerTypeAdapter(
-            DateTime.class,
-            (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString())
-    )
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(
+                    DateTime.class,
+                    (JsonSerializer<DateTime>) (src, typeOfSrc, context) -> new JsonPrimitive(src.toString())
+            )
+            .registerTypeAdapter(
+                    Interval.class,
+                    (JsonSerializer<Interval>) (src, typeOfSrc, context) ->
+                            new JsonPrimitive(src.toString())
+            )
             .create();
 
     private final ContentResolver mongo;
