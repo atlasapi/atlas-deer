@@ -38,10 +38,13 @@ public class CrewMemberSerialization {
 
         identifiedSetter.deserialize(crewMember, internal);
 
+        String publisherKey = internal.getPublisher();
+        Publisher publisher = Publisher.fromKey(publisherKey).valueOrNull();
+
         crewMember = crewMember
                 .withRole(org.atlasapi.content.CrewMember.Role.fromKey(internal.getRole()))
                 .withName(internal.getName())
-                .withPublisher(Publisher.fromKey(internal.getPublisher()).requireValue());
+                .withPublisher(publisher);
 
         return crewMember;
     }

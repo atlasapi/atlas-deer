@@ -167,7 +167,7 @@ public class CqlContentGenerator {
 
         c.setContentGroupRefs(ImmutableList.of(new ContentGroupRef(Id.valueOf(4), "uri uri")));
 
-        c.setPeople(ImmutableList.of(makeCrewMember()));
+        c.setPeople(makeCrewMembers());
 
         c.setLanguages(ImmutableList.of("en", "de"));
 
@@ -332,14 +332,21 @@ public class CqlContentGenerator {
         return policy;
     }
 
-    private static CrewMember makeCrewMember() {
-        CrewMember crewMember = new CrewMember();
+    private static ImmutableList<CrewMember> makeCrewMembers() {
+        CrewMember crewMember0 = new CrewMember();
+        setIdentifiedFields(crewMember0);
 
-        setIdentifiedFields(crewMember);
+        CrewMember crewMember1 = new CrewMember();
+        setIdentifiedFields(crewMember1);
 
-        return crewMember.withRole(CrewMember.Role.ACTOR)
-                .withName("Crew Member")
-                .withPublisher(Publisher.BETTY);
+        return ImmutableList.of(
+                crewMember0.withRole(CrewMember.Role.ADAPTOR)
+                        .withName("Crew Member McMemberson")
+                        .withPublisher(null),
+                crewMember1.withRole(CrewMember.Role.ACTOR)
+                        .withName("Crew Member")
+                        .withPublisher(Publisher.BETTY)
+        );
     }
 
     private static Clip makeClip() {
