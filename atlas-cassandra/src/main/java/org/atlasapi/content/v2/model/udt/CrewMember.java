@@ -23,6 +23,8 @@ public class CrewMember implements Identified {
     @Field(name = "name") private String name;
     @Field(name = "publisher") private String publisher;
 
+    public CrewMember() {}
+
     public Long getId() {
         return id;
     }

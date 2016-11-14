@@ -17,6 +17,8 @@ public class Image {
     @Field(name = "has_title_art") private Boolean hasTitleArt;
     @Field(name = "src") private String source;
 
+    public Image() {}
+
     public String getUri() {
         return uri;
     }

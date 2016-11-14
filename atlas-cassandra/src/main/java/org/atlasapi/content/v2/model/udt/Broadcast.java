@@ -42,6 +42,8 @@ public class Broadcast implements Identified {
     @Field(name = "thd") private Boolean is3d;
     @Field(name = "br") private Boolean blackoutRestriction;
 
+    public Broadcast() {}
+
     public Long getId() {
         return id;
     }

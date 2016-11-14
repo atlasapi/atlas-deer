@@ -23,6 +23,8 @@ public class Restriction implements IdentifiedWithoutUpdateTimes {
     @Field(name = "authority") private String authority;
     @Field(name = "rating") private String rating;
 
+    public Restriction() {}
+
     public Long getId() {
         return id;
     }

@@ -19,6 +19,8 @@ public class PartialItemRef {
     @Field(name = "updated") private Instant updated;
     @Field(name = "type") private String type;
 
+    public PartialItemRef() {}
+
     public String getSortKey() {
         return sortKey;
     }

@@ -13,6 +13,8 @@ public class Tag {
     @Field(name = "relationship") private String relationship;
     @Field(name = "offset") private Integer offset;
 
+    public Tag() {}
+
     public Long getTopic() {
         return topic;
     }

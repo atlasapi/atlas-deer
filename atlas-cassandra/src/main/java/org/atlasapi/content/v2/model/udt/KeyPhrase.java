@@ -9,6 +9,8 @@ public class KeyPhrase {
     @Field(name = "phrase") private String phrase;
     @Field(name = "weighting") private Double weighting;
 
+    public KeyPhrase() {}
+
     public String getPhrase() {
         return phrase;
     }

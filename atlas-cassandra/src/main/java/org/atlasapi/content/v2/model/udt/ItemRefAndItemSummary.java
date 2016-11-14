@@ -15,7 +15,7 @@ public class ItemRefAndItemSummary {
     @Field(name = "summary")
     private ItemSummary summary;
 
-    ItemRefAndItemSummary() {}
+    public ItemRefAndItemSummary() {}
 
     public ItemRefAndItemSummary(
             PartialItemRef itemRef,

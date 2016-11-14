@@ -15,6 +15,8 @@ public class RelatedLink {
     @Field(name = "image") private String image;
     @Field(name = "thumbnail") private String thumbnail;
 
+    public RelatedLink() {}
+
     public String getUrl() {
         return url;
     }

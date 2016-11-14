@@ -11,6 +11,8 @@ public class Description {
     @Field(name = "image") private String image;
     @Field(name = "thumbnail") private String thumbnail;
 
+    public Description() {}
+
     public String getTitle() {
         return title;
     }

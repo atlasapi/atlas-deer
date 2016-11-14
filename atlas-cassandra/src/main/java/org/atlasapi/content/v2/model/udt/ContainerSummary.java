@@ -12,6 +12,8 @@ public class ContainerSummary {
     @Field(name = "series_nr") private Integer seriesNumber;
     @Field(name = "total_episodes") private Integer totalEpisodes;
 
+    public ContainerSummary() {}
+
     public String getType() {
         return type;
     }

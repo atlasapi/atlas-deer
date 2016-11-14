@@ -14,6 +14,8 @@ public class UpdateTimes implements WithUpdateTimes {
     @Field(name = "last_updated") private Instant lastUpdated;
     @Field(name = "equiv_update") private Instant equivalenceUpdate;
 
+    public UpdateTimes() {}
+
     public UpdateTimes(@Nullable Instant lastUpdated, @Nullable Instant equivalenceUpdate) {
         this.lastUpdated = lastUpdated;
         this.equivalenceUpdate = equivalenceUpdate;

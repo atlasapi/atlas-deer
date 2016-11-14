@@ -12,6 +12,8 @@ public class Interval {
     @Field(name = "start") private Instant start;
     @Field(name = "end") private Instant end;
 
+    public Interval() {}
+
     @Nullable
     public Instant getStart() {
         return start;
