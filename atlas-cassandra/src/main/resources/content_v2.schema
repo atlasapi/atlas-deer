@@ -131,7 +131,9 @@ CREATE TYPE IF NOT EXISTS CrewMember (
   equiv_update timestamp,
   role text,
   name text,
-  publisher text
+  publisher text,
+  type text,
+  character text
 );
 
 CREATE TYPE IF NOT EXISTS LocationSummary (

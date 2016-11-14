@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import org.atlasapi.channel.Channel;
+import org.atlasapi.content.Actor;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
@@ -339,7 +340,11 @@ public class CqlContentGenerator {
         CrewMember crewMember1 = new CrewMember();
         setIdentifiedFields(crewMember1);
 
+        Actor actor = new Actor();
+        setIdentifiedFields(actor);
+
         return ImmutableList.of(
+                actor.withCharacter("Didneyworl"),
                 crewMember0.withRole(CrewMember.Role.ADAPTOR)
                         .withName("Crew Member McMemberson")
                         .withPublisher(null),

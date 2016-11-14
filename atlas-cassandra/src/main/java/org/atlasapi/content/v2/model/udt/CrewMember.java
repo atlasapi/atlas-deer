@@ -22,6 +22,8 @@ public class CrewMember implements Identified {
     @Field(name = "role") private String role;
     @Field(name = "name") private String name;
     @Field(name = "publisher") private String publisher;
+    @Field(name = "type") private String type;
+    @Field(name = "character") private String character;
 
     public CrewMember() {}
 
@@ -111,5 +113,21 @@ public class CrewMember implements Identified {
 
     public void setPublisher(String publisher) {
         this.publisher = publisher;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getCharacter() {
+        return character;
+    }
+
+    public void setCharacter(String character) {
+        this.character = character;
     }
 }
