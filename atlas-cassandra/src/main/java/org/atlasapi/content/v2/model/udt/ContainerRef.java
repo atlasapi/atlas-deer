@@ -19,6 +19,8 @@ public class ContainerRef {
     @Field(name = "release_year") private Integer releaseYear;
     @Field(name = "certificates") private Set<Certificate> certificates;
 
+    public ContainerRef() {}
+
     public Long getId() {
         return id;
     }

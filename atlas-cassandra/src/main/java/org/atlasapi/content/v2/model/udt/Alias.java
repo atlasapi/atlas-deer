@@ -9,6 +9,8 @@ public class Alias {
     @Field(name = "value") private String value;
     @Field(name = "namespace") private String namespace;
 
+    public Alias() {}
+
     public String getValue() {
         return value;
     }

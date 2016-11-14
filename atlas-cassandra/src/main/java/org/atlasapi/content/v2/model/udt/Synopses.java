@@ -10,6 +10,8 @@ public class Synopses {
     @Field(name = "medium") private String mediumDescr;
     @Field(name = "long") private String longDescr;
 
+    public Synopses() {}
+
     public String getShortDescr() {
         return shortDescr;
     }

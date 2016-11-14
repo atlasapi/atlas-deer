@@ -28,6 +28,8 @@ public class SegmentEvent implements Identified {
     @Field(name = "version_id") private String versionId;
     @Field(name = "publisher") private String publisher;
 
+    public SegmentEvent() {}
+
     public Long getId() {
         return id;
     }

@@ -11,6 +11,8 @@ public class BroadcastRef {
     @Field(name = "channel_id") private Long channelId;
     @Field(name = "interval") @Frozen private Interval interval;
 
+    public BroadcastRef() {}
+
     public String getSourceId() {
         return sourceId;
     }

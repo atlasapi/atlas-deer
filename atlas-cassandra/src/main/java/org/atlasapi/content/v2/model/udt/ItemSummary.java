@@ -16,6 +16,8 @@ public class ItemSummary {
     @Field(name = "type") private String type;
     @Field(name = "episode_nr") private Integer episodeNumber;
 
+    public ItemSummary() {}
+
     public String getTitle() {
         return title;
     }

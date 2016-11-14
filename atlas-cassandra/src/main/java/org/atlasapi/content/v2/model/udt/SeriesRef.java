@@ -23,6 +23,8 @@ public class SeriesRef {
     @Field(name = "release_year") private Integer releaseYear;
     @Field(name = "certificates") private Set<Certificate> certificates;
 
+    public SeriesRef() {}
+
     public String getTitle() {
         return title;
     }

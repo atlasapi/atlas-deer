@@ -16,7 +16,7 @@ public class ItemRefAndLocationSummaries {
     @Field(name = "location_summaries")
     private List<LocationSummary> locationSummaries;
 
-    ItemRefAndLocationSummaries() {}
+    public ItemRefAndLocationSummaries() {}
 
     public ItemRefAndLocationSummaries(
             PartialItemRef itemRef,

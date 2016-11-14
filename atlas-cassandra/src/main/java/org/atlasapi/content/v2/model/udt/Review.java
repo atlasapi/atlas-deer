@@ -9,6 +9,8 @@ public class Review {
     @Field(name = "locale") private String locale;
     @Field(name = "review") private String review;
 
+    public Review() {}
+
     public String getLocale() {
         return locale;
     }

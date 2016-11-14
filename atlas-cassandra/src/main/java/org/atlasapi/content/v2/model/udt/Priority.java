@@ -12,6 +12,8 @@ public class Priority {
     @Field(name = "negative") private List<String> negative;
     @Field(name = "priority") private Double priority;
 
+    public Priority() {}
+
     public List<String> getPositive() {
         return positive;
     }

@@ -9,6 +9,8 @@ public class Certificate {
     @Field(name = "country_code") private String countryCode;
     @Field(name = "classification") private String classification;
 
+    public Certificate() {}
+
     public String getCountryCode() {
         return countryCode;
     }

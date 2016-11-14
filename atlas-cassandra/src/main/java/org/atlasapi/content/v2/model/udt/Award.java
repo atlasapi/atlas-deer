@@ -6,17 +6,12 @@ import com.datastax.driver.mapping.annotations.UDT;
 @UDT(name = "award")
 public class Award {
 
-    @Field(name = "outcome")
-    private String outcome;
+    @Field(name = "outcome") private String outcome;
+    @Field(name = "title") private String title;
+    @Field(name = "description") private String description;
+    @Field(name = "year") private Integer year;
 
-    @Field(name = "title")
-    private String title;
-
-    @Field(name = "description")
-    private String description;
-
-    @Field(name = "year")
-    private Integer year;
+    public Award() {}
 
     public String getOutcome() {
         return outcome;

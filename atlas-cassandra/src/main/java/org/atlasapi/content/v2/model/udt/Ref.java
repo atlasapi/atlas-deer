@@ -9,6 +9,8 @@ public class Ref {
     @Field(name = "id") private Long id;
     @Field(name = "src") private String source;
 
+    public Ref() {}
+
     public Long getId() {
         return id;
     }

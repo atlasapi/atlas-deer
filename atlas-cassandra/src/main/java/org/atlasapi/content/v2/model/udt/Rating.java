@@ -10,6 +10,8 @@ public class Rating {
     @Field(name = "type") private String type;
     @Field(name = "publisher") private String publisher;
 
+    public Rating() {}
+
     public float getValue() {
         return value;
     }

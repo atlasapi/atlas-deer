@@ -16,7 +16,7 @@ public class ItemRefAndBroadcastRefs {
     @Field(name = "broadcasts")
     private List<BroadcastRef> broadcastRefs;
 
-    ItemRefAndBroadcastRefs() {}
+    public ItemRefAndBroadcastRefs() {}
 
     public ItemRefAndBroadcastRefs(PartialItemRef itemRef, List<BroadcastRef> broadcastRefs) {
         this.itemRef = itemRef;

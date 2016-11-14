@@ -11,6 +11,8 @@ public class LocationSummary {
     @Field(name = "uri") private String uri;
     @Field(name = "interval") @Frozen private Interval interval;
 
+    public LocationSummary() {}
+
     public Boolean getAvailable() {
         return available;
     }

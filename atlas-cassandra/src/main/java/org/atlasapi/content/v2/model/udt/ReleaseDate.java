@@ -11,6 +11,8 @@ public class ReleaseDate {
     @Field(name = "type") private String type;
     @Field(name = "release_date") private LocalDate releaseDate;
 
+    public ReleaseDate() {}
+
     public String getCountry() {
         return country;
     }
