@@ -1,11 +1,6 @@
-FROM 448613307115.dkr.ecr.us-east-1.amazonaws.com/jvm-oracle8:latest
+FROM 448613307115.dkr.ecr.eu-west-1.amazonaws.com/jvm-oracle:latest
 
 ENV JETTY_HOME="/usr/local/jetties/atlas" \
-    COM_SUN_MANAGEMENT_JMXREMOTE_PORT="19761" \
-    COM_SUN_MANAGEMENT_JMXREMOTE_RMI_PORT="19761" \
-    COM_SUN_MANAGEMENT_JMXREMOTE_AUTHENTICATE="false" \
-    COM_SUN_MANAGEMENT_JMXREMOTE_SSL="false" \
-    JAVA_RMI_SERVER_HOSTNAME="127_0.0_1" \
     SUN_NET_INETADDR_TTL="60" \
     MBST_PLATFORM="stage" \
     CASSANDRA_CLIENTTHREADS="50" \
@@ -15,7 +10,7 @@ ENV JETTY_HOME="/usr/local/jetties/atlas" \
     CASSANDRA_DATASTAX_TIMEOUTS_CONNECTIONS="1000" \
     CASSANDRA_DATASTAX_TIMEOUTS_READ="11000" \
     CASSANDRA_KEYSPACE="atlas_deer_stage" \
-    CASSANDRA_SEEDS="cassandra1.stage.atlas.mbst.tv,cassandra2.stage.atlas.mbst.tv" \
+    CASSANDRA_SEEDS="cassandra1.stage.atlas.mbst.tv,cassandra2.stage.atlas.mbst.tv,cassandra3.deer.atlas.mbst.tv" \
     ELASTICSEARCH_CLUSTER="atlas_deer_stage" \
     ELASTICSEARCH_INDEX="content" \
     ELASTICSEARCH_REQUESTTIMEOUT="60000" \
@@ -37,33 +32,29 @@ ENV JETTY_HOME="/usr/local/jetties/atlas" \
     NOTIFICATIONS_EMAIL_PASSWORD="" \
     NOTIFICATIONS_EMAIL_TO="atlas@metabroadcast.com" \
     NOTIFICATIONS_EMAIL_USERNAME="atlas-admin@metabroadcast.com" \
+REPORTING_COLUMBUS-TELESCOPE_HOST="columbus-telescope.mbst.tv" \
     TWITTER_AUTH_CONSUMERKEY="BvVeHDlcMPxyKzGbM6JYw" \
     TWITTER_AUTH_CONSUMERSECRET="" \
     YOUTUBE_CLIENTID="725556533575-rlscsk65f4e8k4quv83fcfckkicbgh4e.apps.googleusercontent.com" \
     YOUTUBE_CLIENTSECRET="" \
     YOUTUBE_HANDLING_SERVICE="http://app1.stage.coyote.mbst.tv" \
     JSSE_ENABLESNIEXTENSION="false" \
-    LOG4J_CONFIGURATION="file:////usr/local/jetties/atlas/work/log4j.properties" \
+    LOG4J_CONFIGURATION="file:////usr/local/jetty/log4j.properties" \
     NIMROD_LOG_LEVEL="INFO" \
     ROOT_LOG_LEVEL="INFO" \
-    JMX_MEMORY="2G" \
-    JMX_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=2000"
+    JVM_MEMORY="5G" \
+    JVM_OPTS="-XX:+UseConcMarkSweepGC \
+      -XX:+UseParNewGC \
+      -XX:CMSInitiatingOccupancyFraction=75 \
+      -XX:+ExitOnOutOfMemoryError"
 
-COPY atlas-api/target/atlas-api.war /usr/local/jetties/atlas/lib/atlas-api.war
-COPY atlas-api/log4j.properties /usr/local/jetties/atlas/work/log4j.properties
+COPY atlas-api/target/atlas-api.war /usr/local/jetty/atlas-api.war
+COPY atlas-api/log4j.properties /usr/local/jetty/log4j.properties
 
-WORKDIR /usr/local/jetties/atlas
+WORKDIR /usr/local/jetty
 
 CMD java \
     -Djetty.home="$JETTY_HOME" \
-#    -server \
-    -Dcom.sun.management.jmxremote.port="$COM_SUN_MANAGEMENT_JMXREMOTE_PORT" \
-    -Dcom.sun.management.jmxremote.rmi.port="$COM_SUN_MANAGEMENT_JMXREMOTE_RMI_PORT" \
-    -Dcom.sun.management.jmxremote.authenticate="$COM_SUN_MANAGEMENT_JMXREMOTE_AUTHENTICATE" \
-    -Dcom.sun.management.jmxremote.ssl="$COM_SUN_MANAGEMENT_JMXREMOTE_SSL" \
-    -Djava.rmi.server.hostname="$JAVA_RMI_SERVER_HOSTNAME" \
-#    -XX:+UseG1GC \
-#    -XX:MaxGCPauseMillis=2000 \
     -Dsun.net.inetaddr.ttl="$SUN_NET_INETADDR_TTL" \
     -DMBST_PLATFORM="$MBST_PLATFORM" \
     -Dcassandra.clientThreads="$CASSANDRA_CLIENTTHREADS" \
@@ -101,17 +92,10 @@ CMD java \
     -Dyoutube.clientSecret="$YOUTUBE_CLIENTSECRET" \
     -Dyoutube.handling.service="$YOUTUBE_HANDLING_SERVICE" \
     -Djsse.enableSNIExtension="$JSSE_ENABLESNIEXTENSION" \
-    -Dout.log.file="$OUT_LOG_FILE" \
-    -Dext.log.file="$EXT_LOG_FILE" \
-    -Dnimrod.log.file="$NIMROD_LOG_FILE" \
     -Dlog4j.configuration="$LOG4J_CONFIGURATION" \
     -Dnimrod.log.level="$NIMROD_LOG_LEVEL" \
     -Droot.log.level="$ROOT_LOG_LEVEL" \
-#    -XX:+PrintGCDetails \
-#    -XX:+PrintGCDateStamps \
-#    -verbose:gc \
-#    -XX:+PrintTenuringDistribution \
-    -Xmx$JMX_MEMORY \
-    -Xms$JMX_MEMORY \
-    $JMX_OPTS \
-    -jar lib/atlas-api.war
+    -Xmx$JVM_MEMORY \
+    -Xms$JVM_MEMORY \
+    $JVM_OPTS \
+    -jar atlas-api.war
