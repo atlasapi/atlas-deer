@@ -2,10 +2,7 @@ package org.atlasapi.query.v4.schedule;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -76,7 +73,18 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
 
         Iterable<Channel> channels = resolveChannels(query);
 
-        List<ChannelSchedule> orderedChannelSchedules = getSameOrderChannelSchedules(channels, query);
+        Ordering<ChannelSchedule> ordering = Ordering.explicit(
+                StreamSupport.stream(channels.spliterator(), false)
+                        .map(Channel::getId)
+                        .collect(MoreCollectors.toImmutableList())
+        )
+                .onResultOf(channelSchedule -> channelSchedule.getChannel().getId());
+
+        ImmutableList<ChannelSchedule> orderedChannelSchedules = ImmutableList.copyOf(
+                ordering.sortedCopy(
+                        getChannelSchedules(channels, query)
+                )
+        );
 
         if (query.isMultiChannel()) {
             return QueryResult.listResult(
@@ -168,7 +176,7 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
     }
 
     private ImmutableList<ChannelSchedule> getChannelSchedules(
-            List<Channel> channels,
+            Iterable<Channel> channels,
             ScheduleQuery query
     ) throws ScheduleQueryExecutionException {
 
@@ -201,56 +209,4 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
                 .build();
     }
 
-    private List<ChannelSchedule> getSameOrderChannelSchedules(
-            Iterable<Channel> channels,
-            ScheduleQuery query
-    ) throws ScheduleQueryExecutionException {
-
-        Map<Id, ChannelWithSchedule> channelMap = new LinkedHashMap<>();
-        StreamSupport.stream(channels.spliterator(), false)
-                .forEach(channel -> channelMap.put(channel.getId(), ChannelWithSchedule.create(channel)));
-
-        List<ChannelSchedule> channelSchedules = getChannelSchedules(
-                ImmutableList.copyOf(channelMap.values()
-                        .stream()
-                        .map(ChannelWithSchedule::getChannel)
-                        .collect(MoreCollectors.toImmutableList())
-                ),
-                query
-        );
-
-        channelSchedules.forEach(channelSchedule ->
-                channelMap.get(channelSchedule.getChannel().getId())
-                        .addSchedule(channelSchedule));
-
-        return channelMap.values()
-                .stream()
-                .map(ChannelWithSchedule::getChannelSchedule)
-                .collect(MoreCollectors.toImmutableList());
-    }
-
-    private static class ChannelWithSchedule {
-        private Channel channel;
-        private ChannelSchedule channelSchedule;
-
-        private ChannelWithSchedule(Channel channel) {
-            this.channel = channel;
-        }
-
-        public static ChannelWithSchedule create(Channel channel) {
-            return new ChannelWithSchedule(channel);
-        }
-
-        public Channel getChannel() {
-            return channel;
-        }
-
-        public ChannelSchedule getChannelSchedule() {
-            return channelSchedule;
-        }
-
-        public void addSchedule(ChannelSchedule channelSchedule) {
-            this.channelSchedule = channelSchedule;
-        }
-    }
 }
