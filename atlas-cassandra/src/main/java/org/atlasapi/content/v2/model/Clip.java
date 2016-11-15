@@ -565,6 +565,8 @@ public class Clip implements ContentIface {
         private Restriction restriction;
         private UpdateTimes updateTimes;
 
+        public RestrictionWithTimes() {}
+
         public RestrictionWithTimes(Restriction restriction, UpdateTimes updateTimes) {
             this.restriction = restriction;
             this.updateTimes = updateTimes;
@@ -591,6 +593,8 @@ public class Clip implements ContentIface {
 
         private Image image;
         private Interval interval;
+
+        public ImageWithInterval() {}
 
         public ImageWithInterval(Image image, Interval interval) {
             this.image = image;

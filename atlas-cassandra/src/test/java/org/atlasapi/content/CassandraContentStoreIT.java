@@ -66,8 +66,10 @@ import org.mockito.Mock;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -1993,6 +1995,33 @@ public abstract class CassandraContentStoreIT {
 
         assertThat(resolvedItem.getContainerRef(), is(nullValue()));
         assertThat(resolvedItem.getContainerSummary(), is(nullValue()));
+    }
+
+    @Test
+    public void persistsAndRetrievesItemWithClips() throws Exception {
+        Item item = create(new Item());
+
+        Clip clip = create(new Clip());
+        clip.setRestrictions(ImmutableSet.of(Restriction.from(
+                "Pirates Of The High Seas",
+                "PG-42"
+        )));
+        clip.setImages(ImmutableList.of(new Image("http://foo.bar/baz.jpg")));
+
+        item.setClips(ImmutableList.of(clip));
+
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        when(clock.now()).thenReturn(now);
+        when(idGenerator.generateRaw()).thenReturn(1234L);
+        WriteResult<Item, Content> result = store.writeContent(item);
+
+        Content resolved = resolve(result.getResource().getId().longValue());
+
+        List<Clip> clips = resolved.getClips();
+        assertThat(clips, hasSize(1));
+
+        Clip resolvedClip = clips.get(0);
+        assertThat(resolvedClip.getTitle(), notNullValue());
     }
 
     protected  <T extends Content> T create(T content) {
