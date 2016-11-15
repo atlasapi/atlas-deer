@@ -32,7 +32,7 @@ ENV JETTY_HOME="/usr/local/jetties/atlas" \
     NOTIFICATIONS_EMAIL_PASSWORD="" \
     NOTIFICATIONS_EMAIL_TO="atlas@metabroadcast.com" \
     NOTIFICATIONS_EMAIL_USERNAME="atlas-admin@metabroadcast.com" \
-REPORTING_COLUMBUS-TELESCOPE_HOST="columbus-telescope.mbst.tv" \
+    REPORTING_COLUMBUS-TELESCOPE_HOST="columbus-telescope.mbst.tv" \
     TWITTER_AUTH_CONSUMERKEY="BvVeHDlcMPxyKzGbM6JYw" \
     TWITTER_AUTH_CONSUMERSECRET="" \
     YOUTUBE_CLIENTID="725556533575-rlscsk65f4e8k4quv83fcfckkicbgh4e.apps.googleusercontent.com" \
@@ -86,6 +86,7 @@ CMD java \
     -Dnotifications.email.password="$NOTIFICATIONS_EMAIL_PASSWORD" \
     -Dnotifications.email.to="$NOTIFICATIONS_EMAIL_TO" \
     -Dnotifications.email.username="$NOTIFICATIONS_EMAIL_USERNAME" \
+    -Dreporting.columbus-telescope.host="$REPORTING_COLUMBUS-TELESCOPE_HOST" \
     -Dtwitter.auth.consumerKey="$TWITTER_AUTH_CONSUMERKEY" \
     -Dtwitter.auth.consumerSecret="$TWITTER_AUTH_CONSUMERSECRET" \
     -Dyoutube.clientId="$YOUTUBE_CLIENTID" \
