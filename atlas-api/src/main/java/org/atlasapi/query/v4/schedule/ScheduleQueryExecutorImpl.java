@@ -9,8 +9,8 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -34,9 +34,12 @@ import org.atlasapi.schedule.ScheduleResolver;
 import org.joda.time.Interval;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -73,38 +76,26 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
 
         Iterable<Channel> channels = resolveChannels(query);
 
-        List<Channel> defaultChannels = Lists.newArrayList(channels);
-        List<Channel> ebsChannels = new ArrayList<>();
-
-        if (query.getContext().getApplicationSources().getAccessRoles().contains(
-                ApplicationAccessRole.PREFER_EBS_SCHEDULE)) {
-
-            ebsChannels = defaultChannels.stream()
-                    .filter(channel -> channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS))
-                    .collect(Collectors.toList());
-
-            defaultChannels.removeAll(ebsChannels);
-        }
-
-        List<ChannelSchedule> channelScheduleList = getChannelScheduleList(ebsChannels, defaultChannels, query);
+        List<ChannelSchedule> orderedChannelSchedules = getSameOrderChannelSchedules(channels, query);
 
         if (query.isMultiChannel()) {
             return QueryResult.listResult(
-                    channelScheduleList,
+                    orderedChannelSchedules,
                     query.getContext(),
-                    channelScheduleList.size()
+                    orderedChannelSchedules.size()
             );
         }
 
         return QueryResult.singleResult(
-                Iterables.getOnlyElement(channelScheduleList),
+                Iterables.getOnlyElement(orderedChannelSchedules),
                 query.getContext()
         );
     }
 
     private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
-        Iterable<Id> channelIds = query.isMultiChannel() ?
-                query.getChannelIds() : ImmutableSet.of(query.getChannelId());
+        Iterable<Id> channelIds = query.isMultiChannel()
+                ? query.getChannelIds()
+                : ImmutableSet.of(query.getChannelId());
 
         Resolved<Channel> resolvedChannels = Futures.get(
                 channelResolver.resolveIds(channelIds),
@@ -176,40 +167,90 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
         item.setBroadcasts(ImmutableSet.of(broadcast));
     }
 
-    private List<ChannelSchedule> getChannelScheduleList(
-            List<Channel> ebsChannels,
-            List<Channel> defaultChannels,
+    private ImmutableList<ChannelSchedule> getChannelSchedules(
+            List<Channel> channels,
             ScheduleQuery query
     ) throws ScheduleQueryExecutionException {
 
-        List<ChannelSchedule> ebsChannelSchedule = new ArrayList<>();
-        List<ChannelSchedule> defaultChannelSchedule = new ArrayList<>();
+        List<Channel> ebsChannels = new ArrayList<>();
+        List<Channel> defaultChannels = new ArrayList<>();
 
-        if (!ebsChannels.isEmpty()) {
+        channels.forEach(channel -> {
+            if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
+                ebsChannels.add(channel);
+            } else {
+                defaultChannels.add(channel);
+            }
+        });
 
-            ListenableFuture<Schedule> ebsSchedule = scheduleResolver.resolve(
-                    ebsChannels,
-                    new Interval(query.getStart(), query.getEnd().get()),
-                    Publisher.BT_SPORT_EBS
-            );
+        ListenableFuture<Schedule> ebsSchedule = scheduleResolver.resolve(
+                ebsChannels,
+                new Interval(query.getStart(), query.getEnd().get()),
+                Publisher.BT_SPORT_EBS
+        );
 
-            ebsChannelSchedule = channelSchedules(ebsSchedule, query);
-        }
-
-        if (!defaultChannels.isEmpty()) {
-
-            ListenableFuture<Schedule> baseSchedule = scheduleResolver.resolve(
-                    defaultChannels,
-                    new Interval(query.getStart(), query.getEnd().get()),
-                    query.getSource()
-            );
-
-            defaultChannelSchedule = channelSchedules(baseSchedule, query);
-        }
+        ListenableFuture<Schedule> defaultSchedule = scheduleResolver.resolve(
+                defaultChannels,
+                new Interval(query.getStart(), query.getEnd().get()),
+                query.getSource()
+        );
 
         return ImmutableList.<ChannelSchedule>builder()
-                .addAll(ebsChannelSchedule)
-                .addAll(defaultChannelSchedule)
+                .addAll(channelSchedules(ebsSchedule, query))
+                .addAll(channelSchedules(defaultSchedule, query))
                 .build();
+    }
+
+    private List<ChannelSchedule> getSameOrderChannelSchedules(
+            Iterable<Channel> channels,
+            ScheduleQuery query
+    ) throws ScheduleQueryExecutionException {
+
+        Map<Id, ChannelWithSchedule> channelMap = new LinkedHashMap<>();
+        StreamSupport.stream(channels.spliterator(), false)
+                .forEach(channel -> channelMap.put(channel.getId(), ChannelWithSchedule.create(channel)));
+
+        List<ChannelSchedule> channelSchedules = getChannelSchedules(
+                ImmutableList.copyOf(channelMap.values()
+                        .stream()
+                        .map(ChannelWithSchedule::getChannel)
+                        .collect(MoreCollectors.toImmutableList())
+                ),
+                query
+        );
+
+        channelSchedules.forEach(channelSchedule ->
+                channelMap.get(channelSchedule.getChannel().getId())
+                        .addSchedule(channelSchedule));
+
+        return channelMap.values()
+                .stream()
+                .map(ChannelWithSchedule::getChannelSchedule)
+                .collect(MoreCollectors.toImmutableList());
+    }
+
+    private static class ChannelWithSchedule {
+        private Channel channel;
+        private ChannelSchedule channelSchedule;
+
+        private ChannelWithSchedule(Channel channel) {
+            this.channel = channel;
+        }
+
+        public static ChannelWithSchedule create(Channel channel) {
+            return new ChannelWithSchedule(channel);
+        }
+
+        public Channel getChannel() {
+            return channel;
+        }
+
+        public ChannelSchedule getChannelSchedule() {
+            return channelSchedule;
+        }
+
+        public void addSchedule(ChannelSchedule channelSchedule) {
+            this.channelSchedule = channelSchedule;
+        }
     }
 }
