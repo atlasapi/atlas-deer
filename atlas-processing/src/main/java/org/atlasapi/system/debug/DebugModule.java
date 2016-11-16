@@ -37,8 +37,7 @@ public class DebugModule {
         return new CqlContentDebugController(
                 persistenceModule.legacyContentResolver(),
                 persistenceModule.contentStore(),
-                persistenceModule.cqlContentStore(),
-                persistenceModule.forceCqlContentWriter()
+                persistenceModule.cqlContentStore()
         );
     }
 
