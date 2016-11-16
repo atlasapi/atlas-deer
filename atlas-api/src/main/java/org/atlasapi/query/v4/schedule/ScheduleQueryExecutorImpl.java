@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -31,11 +32,8 @@ import org.atlasapi.schedule.ScheduleResolver;
 import org.joda.time.Interval;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -183,13 +181,23 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
         List<Channel> ebsChannels = new ArrayList<>();
         List<Channel> defaultChannels = new ArrayList<>();
 
-        channels.forEach(channel -> {
-            if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
-                ebsChannels.add(channel);
-            } else {
-                defaultChannels.add(channel);
-            }
-        });
+        if (query.getContext()
+                .getApplicationSources()
+                .getAccessRoles()
+                .contains(ApplicationAccessRole.PREFER_EBS_SCHEDULE)
+                ) {
+
+            channels.forEach(channel -> {
+                if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
+                    ebsChannels.add(channel);
+                } else {
+                    defaultChannels.add(channel);
+                }
+            });
+
+        } else {
+            defaultChannels.addAll(Lists.newArrayList(channels));
+        }
 
         ListenableFuture<Schedule> ebsSchedule = scheduleResolver.resolve(
                 ebsChannels,
