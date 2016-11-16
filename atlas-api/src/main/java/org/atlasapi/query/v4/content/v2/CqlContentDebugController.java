@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.v2.CqlContentStore;
-import org.atlasapi.content.v2.NonValidatingCqlWriter;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
@@ -52,19 +51,16 @@ public class CqlContentDebugController {
 
     private final ContentResolver mongo;
     private final ContentResolver astyanax;
-    private final CqlContentStore cqlResolver;
-    private final NonValidatingCqlWriter cqlWriter;
+    private final CqlContentStore cqlStore;
 
     public CqlContentDebugController(
             ContentResolver mongo,
             ContentResolver astyanax,
-            CqlContentStore cqlResolver,
-            NonValidatingCqlWriter cqlWriter
+            CqlContentStore cqlStore
     ) {
         this.mongo = checkNotNull(mongo);
         this.astyanax = checkNotNull(astyanax);
-        this.cqlResolver = checkNotNull(cqlResolver);
-        this.cqlWriter = checkNotNull(cqlWriter);
+        this.cqlStore = checkNotNull(cqlStore);
     }
 
     @RequestMapping(value = "/migrate/owl/{id}", method = RequestMethod.POST)
@@ -89,7 +85,7 @@ public class CqlContentDebugController {
             throws InterruptedException, ExecutionException, WriteException {
         Id id = Id.valueOf(lowercase.decode(encodedId));
         Resolved<Content> content = resolver.resolveIds(ImmutableList.of(id)).get();
-        cqlWriter.writeContent(Iterables.getOnlyElement(content.getResources()));
+        cqlStore.writeContent(Iterables.getOnlyElement(content.getResources()));
     }
 
     @RequestMapping("/{id}")
@@ -101,7 +97,7 @@ public class CqlContentDebugController {
         Long decodedId = lowercase.decode(id).longValue();
         ImmutableList<Id> ids = ImmutableList.of(Id.valueOf(decodedId));
         Resolved<Content> result = Futures.get(
-                cqlResolver.resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
+                cqlStore.resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
         );
         Content content = result.getResources().first().orNull();
         gson.toJson(content, response.getWriter());

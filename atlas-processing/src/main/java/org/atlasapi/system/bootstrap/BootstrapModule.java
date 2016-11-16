@@ -138,7 +138,7 @@ public class BootstrapModule {
                 persistence.databasedWriteMongo(),
                 progressStore(),
                 persistence.legacyContentResolver(),
-                persistence.forceCqlContentWriter(),
+                persistence.cqlContentStore(),
                 persistence.legacyContentLister(),
                 messaging.messageSenderFactory(),
                 (MessageConsumerFactory<KafkaConsumer>) messaging.messageConsumerFactory(),
