@@ -1,14 +1,9 @@
 package org.atlasapi.query.v4.schedule;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.*;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.metabroadcast.common.stream.MoreCollectors;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -21,7 +16,6 @@ import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryExecutionException;
@@ -29,12 +23,17 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
-import org.joda.time.Interval;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.joda.time.Interval;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -64,45 +63,38 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
     public QueryResult<ChannelSchedule> execute(ScheduleQuery query)
             throws QueryExecutionException {
 
+        Iterable<Channel> channels = resolveChannels(query);
         if (!query.getEnd().isPresent()) {
             throw new UnsupportedOperationException(
                     "'count' parameter not supported in non-equivalent schedule store. Please specify 'to' parameter in your request");
         }
-
-        Iterable<Channel> channels = resolveChannels(query);
-
-        Ordering<ChannelSchedule> ordering = Ordering.explicit(
-                StreamSupport.stream(channels.spliterator(), false)
-                        .map(Channel::getId)
-                        .collect(MoreCollectors.toImmutableList())
-        )
-                .onResultOf(channelSchedule -> channelSchedule.getChannel().getId());
-
-        ImmutableList<ChannelSchedule> orderedChannelSchedules = ImmutableList.copyOf(
-                ordering.sortedCopy(
-                        getChannelSchedules(channels, query)
-                )
+        ListenableFuture<Schedule> schedule = scheduleResolver.resolve(
+                channels,
+                new Interval(query.getStart(), query.getEnd().get()),
+                query.getSource()
         );
 
         if (query.isMultiChannel()) {
+            List<ChannelSchedule> channelSchedules = channelSchedules(schedule, query);
             return QueryResult.listResult(
-                    orderedChannelSchedules,
+                    channelSchedules,
                     query.getContext(),
-                    orderedChannelSchedules.size()
+                    channelSchedules.size()
             );
         }
-
         return QueryResult.singleResult(
-                Iterables.getOnlyElement(orderedChannelSchedules),
+                Iterables.getOnlyElement(channelSchedules(schedule, query)),
                 query.getContext()
         );
     }
 
     private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
-        Iterable<Id> channelIds = query.isMultiChannel()
-                ? query.getChannelIds()
-                : ImmutableSet.of(query.getChannelId());
-
+        Iterable<Id> channelIds;
+        if (query.isMultiChannel()) {
+            channelIds = query.getChannelIds();
+        } else {
+            channelIds = ImmutableSet.of(query.getChannelId());
+        }
         Resolved<Channel> resolvedChannels = Futures.get(
                 channelResolver.resolveIds(channelIds),
                 1,
@@ -129,7 +121,13 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
     }
 
     private AsyncFunction<Schedule, Schedule> toEquivalentEntries(final ScheduleQuery query) {
-        return input -> resolveEquivalents(input, query.getContext());
+        return new AsyncFunction<Schedule, Schedule>() {
+
+            @Override
+            public ListenableFuture<Schedule> apply(Schedule input) {
+                return resolveEquivalents(input, query.getContext());
+            }
+        };
     }
 
     private ListenableFuture<Schedule> resolveEquivalents(Schedule schedule,
@@ -151,76 +149,34 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
     }
 
     private Function<ResolvedEquivalents<Content>, Schedule> intoSchedule(final Schedule schedule) {
-        return input -> {
-            ImmutableList.Builder<ChannelSchedule> transformed = ImmutableList.builder();
-            for (ChannelSchedule cs : schedule.channelSchedules()) {
-                transformed.add(cs.copyWithEntries(replaceItems(cs.getEntries(), input)));
+        return new Function<ResolvedEquivalents<Content>, Schedule>() {
+
+            @Override
+            public Schedule apply(ResolvedEquivalents<Content> input) {
+                ImmutableList.Builder<ChannelSchedule> transformed = ImmutableList.builder();
+                for (ChannelSchedule cs : schedule.channelSchedules()) {
+                    transformed.add(cs.copyWithEntries(replaceItems(cs.getEntries(), input)));
+                }
+                return new Schedule(transformed.build(), schedule.interval());
             }
-            return new Schedule(transformed.build(), schedule.interval());
         };
     }
 
     private List<ItemAndBroadcast> replaceItems(List<ItemAndBroadcast> entries,
             final ResolvedEquivalents<Content> equivs) {
-        return Lists.transform(entries, input -> {
-            Item item = (Item) Iterables.getOnlyElement(equivs.get(input.getItem().getId()));
-            replaceBroadcasts(item, input.getBroadcast());
-            return new ItemAndBroadcast(item, input.getBroadcast());
+        return Lists.transform(entries, new Function<ItemAndBroadcast, ItemAndBroadcast>() {
+
+            @Override
+            public ItemAndBroadcast apply(ItemAndBroadcast input) {
+                Item item = (Item) Iterables.getOnlyElement(equivs.get(input.getItem().getId()));
+                replaceBroadcasts(item, input.getBroadcast());
+                return new ItemAndBroadcast(item, input.getBroadcast());
+            }
+
         });
     }
 
     private void replaceBroadcasts(Item item, Broadcast broadcast) {
         item.setBroadcasts(ImmutableSet.of(broadcast));
     }
-
-    private ImmutableList<ChannelSchedule> getChannelSchedules(
-            Iterable<Channel> channels,
-            ScheduleQuery query
-    ) throws ScheduleQueryExecutionException {
-
-        List<Channel> ebsChannels = new ArrayList<>();
-        List<Channel> defaultChannels = new ArrayList<>();
-
-        if (query.getContext()
-                .getApplicationSources()
-                .getAccessRoles()
-                .contains(ApplicationAccessRole.PREFER_EBS_SCHEDULE)
-                ) {
-
-            channels.forEach(channel -> {
-                if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
-                    ebsChannels.add(channel);
-                } else {
-                    defaultChannels.add(channel);
-                }
-            });
-
-        } else {
-            defaultChannels.addAll(Lists.newArrayList(channels));
-        }
-
-        ListenableFuture<Schedule> ebsSchedule = scheduleResolver.resolve(
-                ebsChannels,
-                new Interval(query.getStart(), query.getEnd().get()),
-                Publisher.BT_SPORT_EBS
-        );
-
-        ListenableFuture<Schedule> defaultSchedule = scheduleResolver.resolve(
-                defaultChannels,
-                new Interval(query.getStart(), query.getEnd().get()),
-                query.getSource()
-        );
-
-        ImmutableList.Builder<ChannelSchedule> scheduleBuilder = ImmutableList.builder();
-
-        if(ebsChannels.size() > 0) {
-            scheduleBuilder.addAll(channelSchedules(ebsSchedule, query));
-        }
-        if(defaultChannels.size() > 0) {
-            scheduleBuilder.addAll(channelSchedules(defaultSchedule, query));
-        }
-
-        return scheduleBuilder.build();
-    }
-
 }
