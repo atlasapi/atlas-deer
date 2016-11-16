@@ -211,10 +211,16 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
                 query.getSource()
         );
 
-        return ImmutableList.<ChannelSchedule>builder()
-                .addAll(channelSchedules(ebsSchedule, query))
-                .addAll(channelSchedules(defaultSchedule, query))
-                .build();
+        ImmutableList.Builder<ChannelSchedule> scheduleBuilder = ImmutableList.builder();
+
+        if(ebsChannels.size() > 0) {
+            scheduleBuilder.addAll(channelSchedules(ebsSchedule, query));
+        }
+        if(defaultChannels.size() > 0) {
+            scheduleBuilder.addAll(channelSchedules(defaultSchedule, query));
+        }
+
+        return scheduleBuilder.build();
     }
 
 }
