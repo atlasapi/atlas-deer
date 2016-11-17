@@ -532,6 +532,36 @@ public abstract class CassandraContentStoreIT {
     }
 
     @Test
+    public void writingBrandWithExistingItemRefsFollowedByEpisodeSucceeds() throws Exception {
+        DateTime now = new DateTime(DateTimeZones.UTC);
+        long brandId = 1234L;
+        long episodeId = 1237L;
+
+        Brand brand = create(new Brand());
+        brand.setId(Id.valueOf(brandId));
+
+        Episode episode = create(new Episode());
+        episode.setThisOrChildLastUpdated(now);
+        episode.setId(Id.valueOf(episodeId));
+        episode.setContainer(brand);
+
+        brand.setItemRefs(ImmutableList.of(episode.toRef()));
+
+        when(clock.now()).thenReturn(now);
+        store.writeContent(brand);
+
+        when(clock.now()).thenReturn(now.plusHours(2));
+        store.writeContent(episode);
+
+        Brand resolvedBrand = (Brand) resolve(brandId);
+        assertThat(resolvedBrand.getItemRefs().size(), is(1));
+
+        Episode resolvedEpisode1 = (Episode) resolve(episodeId);
+        assertThat(resolvedEpisode1.getContainerRef().getId().longValue(), is(brandId));
+        assertThat(resolvedEpisode1.getContainerSummary().getTitle(), is("Brand"));
+    }
+
+    @Test
     public void testRewritingBrandReturnsChildRefsInWriteResultBrand() throws Exception {
 
         DateTime now = new DateTime(DateTimeZones.UTC);
