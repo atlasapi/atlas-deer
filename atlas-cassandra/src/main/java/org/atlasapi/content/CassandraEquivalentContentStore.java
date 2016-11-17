@@ -83,6 +83,8 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     private static final String DATA_BIND = "data";
     private static final String GRAPH_BIND = "graph";
 
+    private static final int GRAPH_SIZE_ALERTING_THRESHOLD = 150;
+
     private final LegacyContentResolver legacyContentResolver;
     private final Session session;
     private final ConsistencyLevel writeConsistency;
@@ -273,6 +275,15 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
             ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
             for (Entry<Long, Long> id : index.entrySet()) {
                 Collection<Content> setForId = sets.get(id.getValue());
+
+                if (setForId.size() > GRAPH_SIZE_ALERTING_THRESHOLD) {
+                    log.warn(
+                            "Found large graph with id: {}, size: {}",
+                            id.getKey(),
+                            setForId.size()
+                    );
+                }
+
                 results.putEquivalents(Id.valueOf(id.getKey()), setForId);
             }
             return Optional.of(results.build());
