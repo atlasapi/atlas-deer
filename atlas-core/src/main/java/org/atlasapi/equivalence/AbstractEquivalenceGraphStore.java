@@ -14,8 +14,8 @@ import org.atlasapi.entity.Sourceds;
 import org.atlasapi.entity.util.StoreException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.locks.GroupLock;
+import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.collect.MoreSets;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -58,6 +58,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
+    private static final int GRAPH_SIZE_ALERTING_THRESHOLD = 150;
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
 
@@ -111,6 +112,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                     "Thread {} has left synchronized block, having locked graph IDs",
                     Thread.currentThread().getName()
             );
+
+            if (transitiveSetsIds.size() > GRAPH_SIZE_ALERTING_THRESHOLD) {
+                LOG.warn(
+                        "Found large graph for subject: {}, size >= {}",
+                        subject,
+                        transitiveSetsIds.size()
+                );
+            }
 
             Optional<EquivalenceGraphUpdate> updated
                     = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
