@@ -103,6 +103,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
 
+    private static final int GRAPH_SIZE_ALERTING_THRESHOLD = 150;
+
     private final Session session;
     private final ConsistencyLevel read;
     private final ConsistencyLevel write;
@@ -701,6 +703,15 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 Broadcast broadcast = deserialize(BROADCAST.valueFrom(row));
                 if (broadcastFilter.apply(broadcast.getTransmissionInterval())) {
                     Equivalent<Item> equivItems = deserialize(row, annotations);
+
+                    if (equivItems.getResources().size() > GRAPH_SIZE_ALERTING_THRESHOLD) {
+                        log.warn(
+                                "Found large graph with id: {}, size: {}",
+                                equivItems.getGraph().getId().longValue(),
+                                equivItems.getResources().size()
+                        );
+                    }
+
                     channelEntries.put(
                             Id.valueOf(CHANNEL.valueFrom(row)),
                             new EquivalentScheduleEntry(broadcast, equivItems)
