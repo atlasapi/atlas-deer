@@ -13,6 +13,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import javax.annotation.Nullable;
+
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Broadcast;
@@ -192,7 +194,7 @@ public class CqlContentStore implements ContentStore {
             DateTime now = clock.now();
 
             batch.addAll(updateWriteDates(content, now));
-            batch.addAll(updateContainerSummary(previous, content, messages));
+            batch.addAll(deleteContainerSummary(previous, content, messages));
             batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
             batch.addAll(updateChildrenSummaries(content, previous, messages));
 
@@ -397,17 +399,29 @@ public class CqlContentStore implements ContentStore {
         }
     }
 
+    /** Updates the denormalized container summaries on all children
+     *
+     * We use the itemRefs from {@code previous} because we can't rely on the ones in the content
+     * that got passed in. The itemRefs are written on the container when the children are updated,
+     * which means that they should be read only. If we get passed in a bunch of itemRefs, we don't
+     * know if those IDs exist in the DB, therefore we ignore them and use the ones we resolved from
+     * DB, aka {@code previous}.
+     *
+     * @param content content being written
+     * @param previous previous content, resolved from DB
+     * @param messages input arg of resource update messages to send
+     * @return a bunch of update statements to execute
+     */
     private Iterable<? extends Statement> updateChildrenSummaries(
             Content content,
-            Content previous, ImmutableList.Builder<ResourceUpdatedMessage> messages
+            @Nullable Content previous,
+            ImmutableList.Builder<ResourceUpdatedMessage> messages
     ) {
         List<Statement> statements = Lists.newArrayList();
 
         if (content instanceof Container) {
             Container container = (Container) content;
             Container previousContainer = (Container) previous;
-
-            Iterable<ItemRef> itemRefs = container.getItemRefs();
 
             if (previousContainer != null) {
                 ContainerSummary currentSummary = container.toSummary();
@@ -417,21 +431,22 @@ public class CqlContentStore implements ContentStore {
                     return ImmutableList.of();
                 }
 
-                itemRefs = previousContainer.getItemRefs();
+                Iterable<ItemRef> itemRefs = previousContainer.getItemRefs();
+
+                for (ItemRef childRef : itemRefs) {
+                    statements.add(accessor.updateContainerSummary(
+                            childRef.getId().longValue(),
+                            containerSummaryTranslator.serialize(container.toSummary())
+                    ));
+
+                    messages.add(new ResourceUpdatedMessage(
+                            UUID.randomUUID().toString(),
+                            Timestamp.of(DateTime.now()),
+                            childRef
+                    ));
+                }
             }
 
-            for (ItemRef childRef : itemRefs) {
-                statements.add(accessor.updateContainerSummary(
-                        childRef.getId().longValue(),
-                        containerSummaryTranslator.serialize(container.toSummary())
-                ));
-
-                messages.add(new ResourceUpdatedMessage(
-                        UUID.randomUUID().toString(),
-                        Timestamp.of(DateTime.now()),
-                        childRef
-                ));
-            }
         }
 
         return statements;
@@ -514,36 +529,11 @@ public class CqlContentStore implements ContentStore {
         }
     }
 
-    private List<Statement> updateContainerSummary(
-            Content previous,
+    private List<Statement> deleteContainerSummary(
+            @Nullable Content previous,
             Content content,
             ImmutableList.Builder<ResourceUpdatedMessage> messages
     ) {
-        if (content instanceof Container) {
-            Container container = (Container) content;
-            ContainerSummary summary = container.toSummary();
-
-            org.atlasapi.content.v2.model.udt.ContainerSummary internal =
-                    containerSummaryTranslator.serialize(summary);
-
-            List<Statement> statements = Lists.newArrayList();
-
-            for (ItemRef ir : container.getItemRefs()) {
-                messages.add(new ResourceUpdatedMessage(
-                        UUID.randomUUID().toString(),
-                        Timestamp.of(DateTime.now()),
-                        ir
-                ));
-
-                statements.add(accessor.updateContainerSummary(
-                        ir.getId().longValue(),
-                        internal
-                ));
-            }
-
-            return statements;
-        }
-
         if (containerWasRemoved(previous, content)) {
             return ImmutableList.of(
                     accessor.deleteContainerSummary(
