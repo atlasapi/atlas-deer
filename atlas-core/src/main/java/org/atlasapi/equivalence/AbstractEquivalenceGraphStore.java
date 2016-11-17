@@ -113,14 +113,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                     Thread.currentThread().getName()
             );
 
-            if (transitiveSetsIds.size() > GRAPH_SIZE_ALERTING_THRESHOLD) {
-                LOG.warn(
-                        "Found large graph for subject: {}, size >= {}",
-                        subject,
-                        transitiveSetsIds.size()
-                );
-            }
-
             Optional<EquivalenceGraphUpdate> updated
                     = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
 
@@ -132,6 +124,16 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                                 )
                         )
                         .build();
+
+                graphUpdate.getAllGraphs()
+                        .stream()
+                        .filter(graph ->
+                                graph.getAdjacencyList().size() > GRAPH_SIZE_ALERTING_THRESHOLD)
+                        .forEach(graph -> LOG.warn(
+                                "Found large graph with id: {}, size: {}",
+                                graph.getId().longValue(),
+                                graph.getAdjacencyList().size()
+                        ));
 
                 sendUpdateMessage(subject, graphUpdate);
             }
