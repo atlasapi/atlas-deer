@@ -58,6 +58,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -70,7 +71,9 @@ public class CqlContentBootstrapController {
     private static final Logger log = LoggerFactory.getLogger(CqlContentBootstrapController.class);
 
     private static final String TASK_NAME = "cql-mongo-id-bootstrap";
-    private static final String KAFKA_TOPIC_NAME = "CqlMondoIdBootstrapSender";
+    private static final String KAFKA_TOPIC_NAME_BRANDS = "CqlMondoIdBootstrapBrands";
+    private static final String KAFKA_TOPIC_NAME_SERIES = "CqlMondoIdBootstrapSeries";
+    private static final String KAFKA_TOPIC_NAME_ITEMS = "CqlMondoIdBootstrapItems";
     private static final long PROGRESS_SAVE_FREQUENCY = 100L;
     private static final int APPROXIMATE_MAX_ID = 50_000_000;
     private static final String KAFKA_CONSUMER_GROUP = "CqlMongoBootstrapConsumer";
@@ -92,8 +95,10 @@ public class CqlContentBootstrapController {
     private final Counter mongoSenderCounter;
     private final Counter cqlWriterCounter;
 
-    private MessageSender<ResourceUpdatedMessage> sender = null;
     private KafkaConsumer cqlConsumer = null;
+    private MessageSender<ResourceUpdatedMessage> brandSender = null;
+    private MessageSender<ResourceUpdatedMessage> seriesSender = null;
+    private MessageSender<ResourceUpdatedMessage> itemSender = null;
 
     public static CqlContentBootstrapController create(
             ListeningExecutorService listeningExecutorService,
@@ -164,17 +169,34 @@ public class CqlContentBootstrapController {
         ));
     }
 
-    @RequestMapping(value = "/write-mongo-ids", method = RequestMethod.POST)
+    @RequestMapping(value = "/write-mongo-ids/{type}", method = RequestMethod.POST)
     public void writeIdsToCqlStore(
             HttpServletRequest request,
-            HttpServletResponse response
+            HttpServletResponse response,
+            @PathVariable("type") String type
     ) {
+        String topicName;
+        String consumerGroup = String.format("%s-%s", KAFKA_CONSUMER_GROUP, type);
+        switch (type) {
+        case "brand":
+            topicName = KAFKA_TOPIC_NAME_BRANDS;
+            break;
+        case "series":
+            topicName = KAFKA_TOPIC_NAME_SERIES;
+            break;
+        case "item":
+            topicName = KAFKA_TOPIC_NAME_ITEMS;
+            break;
+        default:
+            throw new IllegalArgumentException(String.format("nope, no such type %s", type));
+        }
+
         if (this.cqlConsumer == null) {
             this.cqlConsumer = messageConsumerFactory.createConsumer(
                     new CqlWritingConsumer(),
                     JacksonMessageSerializer.forType(ResourceUpdatedMessage.class),
-                    KAFKA_TOPIC_NAME,
-                    KAFKA_CONSUMER_GROUP
+                    topicName,
+                    consumerGroup
             ).withFailedMessagePersistence(mongo)
                     .withDefaultConsumers(15)
                     .withMaxConsumers(15)
@@ -320,8 +342,16 @@ public class CqlContentBootstrapController {
     }
 
     private void initSender() {
-        this.sender = checkNotNull(messageSenderFactory).makeMessageSender(
-                KAFKA_TOPIC_NAME,
+        this.brandSender = checkNotNull(messageSenderFactory).makeMessageSender(
+                KAFKA_TOPIC_NAME_BRANDS,
+                JacksonMessageSerializer.forType(ResourceUpdatedMessage.class)
+        );
+        this.seriesSender = checkNotNull(messageSenderFactory).makeMessageSender(
+                KAFKA_TOPIC_NAME_BRANDS,
+                JacksonMessageSerializer.forType(ResourceUpdatedMessage.class)
+        );
+        this.itemSender = checkNotNull(messageSenderFactory).makeMessageSender(
+                KAFKA_TOPIC_NAME_BRANDS,
                 JacksonMessageSerializer.forType(ResourceUpdatedMessage.class)
         );
     }
@@ -337,16 +367,16 @@ public class CqlContentBootstrapController {
             ContentRef partition = ObjectUtils.firstNonNull(brand, series, episodeRef);
 
             if (brand != null && ! sentAlready.get(toInt(brand))) {
-                sendMessage(brand, partition);
+                sendMessage(brandSender, brand, partition);
                 sentAlready.set(toInt(brand));
             }
 
             if (series != null && ! sentAlready.get(toInt(series))) {
-                sendMessage(series, partition);
+                sendMessage(seriesSender, series, partition);
                 sentAlready.set(toInt(series));
             }
 
-            sendMessage(episodeRef, partition);
+            sendMessage(itemSender, episodeRef, partition);
         } else if (content instanceof Series) {
             Series series = (Series) content;
 
@@ -356,16 +386,16 @@ public class CqlContentBootstrapController {
             ContentRef partition = ObjectUtils.firstNonNull(brand, seriesRef);
 
             if (brand != null && ! sentAlready.get(toInt(brand))) {
-                sendMessage(brand, partition);
+                sendMessage(brandSender, brand, partition);
                 sentAlready.set(toInt(brand));
             }
 
-            sendMessage(seriesRef, partition);
+            sendMessage(seriesSender, seriesRef, partition);
             sentAlready.set(toInt(seriesRef));
         } else {
             ContentRef contentRef = content.toRef();
 
-            sendMessage(contentRef, contentRef);
+            sendMessage(itemSender, contentRef, contentRef);
             sentAlready.set(toInt(contentRef));
         }
     }
@@ -374,7 +404,11 @@ public class CqlContentBootstrapController {
         return Math.toIntExact(brand.getId().longValue());
     }
 
-    private void sendMessage(@Nullable ContentRef contentRef, ContentRef partition) {
+    private void sendMessage(
+            MessageSender<ResourceUpdatedMessage> sender,
+            @Nullable ContentRef contentRef,
+            ContentRef partition
+    ) {
         if (contentRef == null) {
             return;
         }
