@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.content.Brand;
 import org.atlasapi.content.BrandRef;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.ContainerRef;
@@ -71,9 +72,9 @@ public class CqlContentBootstrapController {
     private static final Logger log = LoggerFactory.getLogger(CqlContentBootstrapController.class);
 
     private static final String TASK_NAME = "cql-mongo-id-bootstrap";
-    private static final String KAFKA_TOPIC_NAME_BRANDS = "CqlMondoIdBootstrapBrands";
-    private static final String KAFKA_TOPIC_NAME_SERIES = "CqlMondoIdBootstrapSeries";
-    private static final String KAFKA_TOPIC_NAME_ITEMS = "CqlMondoIdBootstrapItems";
+    private static final String KAFKA_TOPIC_NAME_BRANDS = "CqlMondoIdBootstrapBrands2";
+    private static final String KAFKA_TOPIC_NAME_SERIES = "CqlMondoIdBootstrapSeries2";
+    private static final String KAFKA_TOPIC_NAME_ITEMS = "CqlMondoIdBootstrapItems2";
     private static final long PROGRESS_SAVE_FREQUENCY = 100L;
     private static final int APPROXIMATE_MAX_ID = 50_000_000;
     private static final String KAFKA_CONSUMER_GROUP = "CqlMongoBootstrapConsumer";
@@ -395,7 +396,12 @@ public class CqlContentBootstrapController {
         } else {
             ContentRef contentRef = content.toRef();
 
-            sendMessage(itemSender, contentRef, contentRef);
+            if (content instanceof Brand) {
+                sendMessage(brandSender, contentRef, contentRef);
+            } else {
+                sendMessage(itemSender, contentRef, contentRef);
+            }
+
             sentAlready.set(toInt(contentRef));
         }
     }
