@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
@@ -72,12 +71,11 @@ public class CqlContentBootstrapController {
     private static final Logger log = LoggerFactory.getLogger(CqlContentBootstrapController.class);
 
     private static final String TASK_NAME = "cql-mongo-id-bootstrap";
-    private static final String KAFKA_TOPIC_NAME_BRANDS = "CqlMondoIdBootstrapBrands2";
-    private static final String KAFKA_TOPIC_NAME_SERIES = "CqlMondoIdBootstrapSeries2";
-    private static final String KAFKA_TOPIC_NAME_ITEMS = "CqlMondoIdBootstrapItems2";
+    private static final String KAFKA_TOPIC_NAME_BRANDS = "CqlMondoIdBootstrapBrands3";
+    private static final String KAFKA_TOPIC_NAME_SERIES = "CqlMondoIdBootstrapSeries3";
+    private static final String KAFKA_TOPIC_NAME_ITEMS = "CqlMondoIdBootstrapItems3";
     private static final long PROGRESS_SAVE_FREQUENCY = 100L;
     private static final int APPROXIMATE_MAX_ID = 50_000_000;
-    private static final String KAFKA_CONSUMER_GROUP = "CqlMongoBootstrapConsumer";
 
     private final ListeningExecutorService listeningExecutorService;
     private final ProgressStore progressStore;
@@ -177,7 +175,6 @@ public class CqlContentBootstrapController {
             @PathVariable("type") String type
     ) {
         String topicName;
-        String consumerGroup = String.format("%s-%s", KAFKA_CONSUMER_GROUP, type);
         switch (type) {
         case "brand":
             topicName = KAFKA_TOPIC_NAME_BRANDS;
@@ -192,6 +189,7 @@ public class CqlContentBootstrapController {
             throw new IllegalArgumentException(String.format("nope, no such type %s", type));
         }
 
+        String consumerGroup = String.format("%s-CG-%s", topicName, type);
         if (this.cqlConsumer == null) {
             this.cqlConsumer = messageConsumerFactory.createConsumer(
                     new CqlWritingConsumer(),
@@ -491,7 +489,7 @@ public class CqlContentBootstrapController {
 
                 cqlWriterMeter.mark();
                 cqlWriterCounter.inc();
-            } catch (WriteException | InterruptedException | ExecutionException | TimeoutException e) {
+            } catch (Exception e) {
                 cqlWriterErrorMeter.mark();
                 cqlWriterErrorCounter.inc();
                 throw Throwables.propagate(e);
