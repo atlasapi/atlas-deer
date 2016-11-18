@@ -210,7 +210,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             throws InterruptedException, StoreException {
         // Temporary blacklist to deal with queue backlog on bad graph
         if (adjacentsIds.contains(Id.valueOf(42959503L))
-                || adjacentsIds.contains(Id.valueOf(44245199L))) {
+                || adjacentsIds.contains(Id.valueOf(44245199L))
+                || adjacentsIds.contains(Id.valueOf(22036L))) {
             throw new IllegalArgumentException("Blacklisted ID found. Skipping...");
         }
 
