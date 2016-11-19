@@ -18,8 +18,8 @@ import org.atlasapi.entity.Sourced;
 import org.atlasapi.entity.Sourceds;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph.Adjacents;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.locks.GroupLock;
+import org.atlasapi.media.entity.Publisher;
 
 import com.metabroadcast.common.collect.ImmutableOptionalMap;
 import com.metabroadcast.common.collect.OptionalMap;
@@ -843,11 +843,6 @@ public class AbstractEquivalenceGraphStoreTest {
                     store.put(id, graph);
                 }
             }
-        }
-
-        @Override
-        protected Logger log() {
-            return log;
         }
 
         @Override

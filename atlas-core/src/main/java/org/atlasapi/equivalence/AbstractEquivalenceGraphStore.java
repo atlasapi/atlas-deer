@@ -6,6 +6,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -56,13 +57,16 @@ import static com.google.common.base.Predicates.not;
 
 public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphStore {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractEquivalenceGraphStore.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractEquivalenceGraphStore.class);
     private static final int TIMEOUT = 1;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MINUTES;
 
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
+    private static final String METER_NOP = "meter.nop";
+    private static final String METER_BLACKLIST = "meter.blacklist";
     private static final String COUNTER_BLOCKED = "counter.blocked";
+    private static final String HISTOGRAM_BLACKLIST = "histogram.blacklist";
     private static final String TIMER_WAITING_LOCK = "timer.waitingLock";
     private static final String TIMER_EXECUTION = "timer.execution";
     private static final String CREATED_GRAPH_HISTOGRAM_COUNT = "graph.created.histogram.count";
@@ -78,6 +82,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private final MetricRegistry metricRegistry;
     private final String updateEquivalences;
 
+    private final Set<Id> blacklistedGraphAdjacents;
+
     public AbstractEquivalenceGraphStore(
             MessageSender<EquivalenceGraphUpdateMessage> messageSender,
             MetricRegistry metricRegistry,
@@ -87,6 +93,16 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
         this.metricRegistry = metricRegistry;
         this.updateEquivalences = metricPrefix + "updateEquivalences.";
+
+        this.blacklistedGraphAdjacents = Sets.newHashSet(
+                Id.valueOf(22036L),
+                Id.valueOf(34790L),
+                Id.valueOf(38300626L),
+                Id.valueOf(42959503L),
+                Id.valueOf(44245199L)
+        );
+        this.metricRegistry.histogram(updateEquivalences + HISTOGRAM_BLACKLIST)
+                .update(blacklistedGraphAdjacents.size());
     }
 
     @Override
@@ -124,7 +140,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                         .stream()
                         .filter(graph ->
                                 graph.getAdjacencyList().size() > GRAPH_SIZE_ALERTING_THRESHOLD)
-                        .forEach(graph -> LOG.warn(
+                        .forEach(graph -> log.warn(
                                 "Found large graph with id: {}, size: {}, update subject: {}",
                                 graph.getId().longValue(),
                                 graph.getAdjacencyList().size(),
@@ -148,13 +164,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                                 .histogram(updateEquivalences + CREATED_GRAPH_HISTOGRAM_SIZE)
                                 .update(graph.getAdjacencyList().size()));
 
+                updateBlacklist(graphUpdate);
+
                 sendUpdateMessage(subject, graphUpdate);
             }
             return updated;
 
         } catch (InterruptedException e) {
             metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
-            log().error(String.format("%s: %s", subject, newAdjacents), e);
+            log.error(String.format("%s: %s", subject, newAdjacents), e);
             return Optional.absent();
         } catch (StoreException e) {
             metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
@@ -162,14 +180,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             throw new WriteException(e);
         } catch (IllegalArgumentException e) {
             metricRegistry.meter(updateEquivalences + METER_FAILURE).mark();
-            log().error(e.getMessage());
+            log.error(e.getMessage());
             return Optional.absent();
         } finally {
             unlock(subjectAndAdjacents, transitiveSetsIds);
             Duration executionDuration = Duration.ofNanos(executionTime.stop());
 
             if (executionDuration.compareTo(EXECUTION_DURATION_ALERTING_THRESHOLD) > 0) {
-                LOG.warn(
+                log.warn(
                         "Slow update of equivalences with duration: {}, update subject: {}",
                         executionDuration,
                         subject
@@ -182,8 +200,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     protected abstract GroupLock<Id> lock();
 
-    protected abstract Logger log();
-
     private void sendUpdateMessage(ResourceRef subject, EquivalenceGraphUpdate updatedGraphs) {
         try {
             messageSender.sendMessage(
@@ -195,7 +211,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                     Longs.toByteArray(updatedGraphs.getUpdated().getId().longValue())
             );
         } catch (MessagingException e) {
-            log().warn("messaging failed for equivalence update of " + subject, e);
+            log.warn("messaging failed for equivalence update of " + subject, e);
         }
     }
 
@@ -208,13 +224,13 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         try {
             Set<Id> transitiveSetsIds;
 
-            LOG.debug(
+            log.debug(
                     "Thread {} is trying to enter synchronized block to lock graph IDs",
                     Thread.currentThread().getName()
             );
 
             synchronized (lock()) {
-                LOG.debug(
+                log.debug(
                         "Thread {} has entered synchronized block to lock graph IDs {}",
                         Thread.currentThread().getName(),
                         subjectAndAdjacents
@@ -222,14 +238,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 while ((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
                     lock().unlock(subjectAndAdjacents);
                     lock().wait(5000);
-                    LOG.debug(
+                    log.debug(
                             "Thread {} attempting to lock IDs {}",
                             Thread.currentThread().getName(),
                             subjectAndAdjacents
                     );
                 }
             }
-            LOG.debug(
+            log.debug(
                     "Thread {} has left synchronized block, having locked graph IDs",
                     Thread.currentThread().getName()
             );
@@ -242,17 +258,13 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     @Nullable
-    private Set<Id> tryLockAllIds(Set<Id> adjacentsIds)
-            throws InterruptedException, StoreException {
-        // Temporary blacklist to deal with queue backlog on bad graph
-        if (adjacentsIds.contains(Id.valueOf(42959503L))
-                || adjacentsIds.contains(Id.valueOf(44245199L))
-                || adjacentsIds.contains(Id.valueOf(22036L))) {
-            throw new IllegalArgumentException("Blacklisted ID found. Skipping...");
-        }
+    private Set<Id> tryLockAllIds(
+            Set<Id> adjacentsIds
+    ) throws InterruptedException, StoreException {
+        checkBlacklist(adjacentsIds);
 
         if (!lock().tryLock(adjacentsIds)) {
-            LOG.debug(
+            log.debug(
                     "Thread {} failed to lock adjacents {}",
                     Thread.currentThread().getName(),
                     adjacentsIds
@@ -262,14 +274,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
 
-        // Temporary blacklist to deal with queue backlog on bad graph
-        if (allIds.contains(Id.valueOf(42959503L)) || allIds.contains(Id.valueOf(44245199L))) {
-            throw new IllegalArgumentException("Blacklisted ID found. Skipping...");
-        }
+        checkBlacklist(allIds);
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
-        LOG.debug(
+        log.debug(
                 "Thread {} Lock attempt success status {} locking transitive set {}",
                 Thread.currentThread().getName(),
                 locked,
@@ -288,25 +297,25 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     }
 
     private void unlock(Set<Id> subjectAndAdjacents, @Nullable Set<Id> transitiveSetsIds) {
-        LOG.debug("Thread {} waiting for lock to unlock {} and {}",
+        log.debug("Thread {} waiting for lock to unlock {} and {}",
                 Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds
         );
 
         synchronized (lock()) {
-            LOG.debug("Thread {} unlocking IDs {}",
+            log.debug("Thread {} unlocking IDs {}",
                     Thread.currentThread().getName(), subjectAndAdjacents
             );
 
             lock().unlock(subjectAndAdjacents);
 
             if (transitiveSetsIds != null) {
-                LOG.debug("Thread {} unlocking transitive IDs {}",
+                log.debug("Thread {} unlocking transitive IDs {}",
                         Thread.currentThread().getName(), transitiveSetsIds
                 );
 
                 lock().unlock(transitiveSetsIds);
             }
-            LOG.debug(
+            log.debug(
                     "Thread {} performing notifyAll",
                     Thread.currentThread().getName(),
                     transitiveSetsIds
@@ -329,7 +338,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
         if (optionalSubjGraph.isPresent() &&
                 checkForOrphanedContent(subjGraph, adjacentsExistingGraphs, assertedAdjacents)) {
-            LOG.warn(
+            log.warn(
                     "Found orphaned content in graph {}. Rewriting graph in store and retrying",
                     subjGraph.getId().longValue()
             );
@@ -352,7 +361,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         if (changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
             store(update.getAllGraphs());
         } else {
-            log().debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
+            metricRegistry.meter(updateEquivalences + METER_NOP).mark();
+            log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
         }
 
         // We are always returning a graph update so that a graph change message will be
@@ -534,7 +544,7 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Set<ResourceRef> subjectAndAsserted = MoreSets.add(assertedAdjacents, subjAdjs.getRef());
         boolean change = !currentNeighbours.equals(subjectAndAsserted);
         if (change) {
-            log().debug("Equivalence change: {} -> {}", currentNeighbours, subjectAndAsserted);
+            log.debug("Equivalence change: {} -> {}", currentNeighbours, subjectAndAsserted);
         }
         return change;
     }
@@ -557,16 +567,42 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         return graphs;
     }
 
-    private static class CorruptEquivalenceGraphIndexException extends Exception {
+    private void checkBlacklist(Set<Id> adjacentsIds) {
+        // Temporary blacklist to deal with queue backlog on bad graphs
+        Sets.SetView<Id> intersection = Sets.intersection(adjacentsIds, blacklistedGraphAdjacents);
 
-        private final Id subjectId;
-
-        public CorruptEquivalenceGraphIndexException(Id subjectId) {
-            this.subjectId = checkNotNull(subjectId);
+        if (intersection.isEmpty()) {
+            return;
         }
 
-        public Id getSubjectId() {
-            return subjectId;
-        }
+        metricRegistry.meter(updateEquivalences + METER_BLACKLIST).mark();
+
+        throw new IllegalArgumentException(String.format(
+                "Blacklisted IDs %s found. Skipping...",
+                intersection.stream()
+                        .map(Id::longValue)
+                        .sorted()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", "))
+        ));
+    }
+
+    private void updateBlacklist(EquivalenceGraphUpdate graphUpdate) {
+        graphUpdate.getAllGraphs()
+                .stream()
+                .filter(this::shouldAddToBlacklist)
+                .flatMap(graph -> graph.getEquivalenceSet().stream())
+                .forEach(blacklistedGraphAdjacents::add);
+
+        metricRegistry.histogram(updateEquivalences + HISTOGRAM_BLACKLIST)
+                .update(blacklistedGraphAdjacents.size());
+    }
+
+    private boolean shouldAddToBlacklist(EquivalenceGraph graph) {
+        return !Sets.intersection(
+                graph.getEquivalenceSet(),
+                blacklistedGraphAdjacents
+        )
+                .isEmpty();
     }
 }
