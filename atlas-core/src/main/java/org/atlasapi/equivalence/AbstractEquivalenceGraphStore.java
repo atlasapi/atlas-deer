@@ -1,10 +1,13 @@
 package org.atlasapi.equivalence;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
@@ -26,6 +29,7 @@ import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.Timestamp;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -58,6 +62,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
+    private static final String COUNTER_BLOCKED = "counter.blocked";
+    private static final String TIMER_WAITING_LOCK = "timer.waitingLock";
+    private static final String TIMER_EXECUTION = "timer.execution";
+    private static final String CREATED_GRAPH_HISTOGRAM_COUNT = "graph.created.histogram.count";
+    private static final String DELETED_GRAPH_HISTOGRAM_COUNT = "graph.deleted.histogram.count";
+    private static final String UPDATED_GRAPH_HISTOGRAM_SIZE = "graph.updated.histogram.size";
+    private static final String CREATED_GRAPH_HISTOGRAM_SIZE = "graph.created.histogram.size";
+
+    private static final Duration EXECUTION_DURATION_ALERTING_THRESHOLD = Duration.ofSeconds(2);
     private static final int GRAPH_SIZE_ALERTING_THRESHOLD = 150;
 
     private final MessageSender<EquivalenceGraphUpdateMessage> messageSender;
@@ -73,45 +86,27 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         this.messageSender = checkNotNull(messageSender);
 
         this.metricRegistry = metricRegistry;
-        updateEquivalences = metricPrefix + "updateEquivalences.";
-
+        this.updateEquivalences = metricPrefix + "updateEquivalences.";
     }
 
     @Override
-    public final Optional<EquivalenceGraphUpdate> updateEquivalences(ResourceRef subject,
-            Set<ResourceRef> assertedAdjacents, Set<Publisher> sources) throws WriteException {
-
+    public final Optional<EquivalenceGraphUpdate> updateEquivalences(
+            ResourceRef subject,
+            Set<ResourceRef> assertedAdjacents,
+            Set<Publisher> sources
+    ) throws WriteException {
         metricRegistry.meter(updateEquivalences + METER_CALLED).mark();
+        Timer.Context executionTime = metricRegistry
+                .timer(updateEquivalences + TIMER_EXECUTION)
+                .time();
+
         ImmutableSet<Id> newAdjacents
                 = ImmutableSet.copyOf(Iterables.transform(assertedAdjacents, Identifiables.toId()));
         Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
         Set<Id> transitiveSetsIds = null;
 
         try {
-            LOG.debug(
-                    "Thread {} is trying to enter synchronized block to lock graph IDs",
-                    Thread.currentThread().getName()
-            );
-            synchronized (lock()) {
-                LOG.debug(
-                        "Thread {} has entered synchronized block to lock graph IDs {}",
-                        Thread.currentThread().getName(),
-                        subjectAndAdjacents
-                );
-                while ((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
-                    lock().unlock(subjectAndAdjacents);
-                    lock().wait(5000);
-                    LOG.debug(
-                            "Thread {} attempting to lock IDs {}",
-                            Thread.currentThread().getName(),
-                            subjectAndAdjacents
-                    );
-                }
-            }
-            LOG.debug(
-                    "Thread {} has left synchronized block, having locked graph IDs",
-                    Thread.currentThread().getName()
-            );
+            transitiveSetsIds = lockGraphIds(subjectAndAdjacents);
 
             Optional<EquivalenceGraphUpdate> updated
                     = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
@@ -130,10 +125,28 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                         .filter(graph ->
                                 graph.getAdjacencyList().size() > GRAPH_SIZE_ALERTING_THRESHOLD)
                         .forEach(graph -> LOG.warn(
-                                "Found large graph with id: {}, size: {}",
+                                "Found large graph with id: {}, size: {}, update subject: {}",
                                 graph.getId().longValue(),
-                                graph.getAdjacencyList().size()
+                                graph.getAdjacencyList().size(),
+                                subject
                         ));
+
+                metricRegistry
+                        .histogram(updateEquivalences + CREATED_GRAPH_HISTOGRAM_COUNT)
+                        .update(graphUpdate.getCreated().size());
+
+                metricRegistry
+                        .histogram(updateEquivalences + DELETED_GRAPH_HISTOGRAM_COUNT)
+                        .update(graphUpdate.getDeleted().size());
+
+                metricRegistry
+                        .histogram(updateEquivalences + UPDATED_GRAPH_HISTOGRAM_SIZE)
+                        .update(graphUpdate.getUpdated().getAdjacencyList().size());
+
+                graphUpdate.getCreated()
+                        .forEach(graph -> metricRegistry
+                                .histogram(updateEquivalences + CREATED_GRAPH_HISTOGRAM_SIZE)
+                                .update(graph.getAdjacencyList().size()));
 
                 sendUpdateMessage(subject, graphUpdate);
             }
@@ -153,35 +166,15 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
             return Optional.absent();
         } finally {
             unlock(subjectAndAdjacents, transitiveSetsIds);
-        }
-    }
+            Duration executionDuration = Duration.ofNanos(executionTime.stop());
 
-    private void unlock(Set<Id> subjectAndAdjacents, Set<Id> transitiveSetsIds) {
-        LOG.debug("Thread {} waiting for lock to unlock {} and {}",
-                Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds
-        );
-
-        synchronized (lock()) {
-            LOG.debug("Thread {} unlocking IDs {}",
-                    Thread.currentThread().getName(), subjectAndAdjacents
-            );
-
-            lock().unlock(subjectAndAdjacents);
-
-            if (transitiveSetsIds != null) {
-                LOG.debug("Thread {} unlocking transitive IDs {}",
-                        Thread.currentThread().getName(), transitiveSetsIds
+            if (executionDuration.compareTo(EXECUTION_DURATION_ALERTING_THRESHOLD) > 0) {
+                LOG.warn(
+                        "Slow update of equivalences with duration: {}, update subject: {}",
+                        executionDuration,
+                        subject
                 );
-
-                lock().unlock(transitiveSetsIds);
             }
-            LOG.debug(
-                    "Thread {} performing notifyAll",
-                    Thread.currentThread().getName(),
-                    transitiveSetsIds
-            );
-
-            lock().notifyAll();
         }
     }
 
@@ -206,6 +199,49 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         }
     }
 
+    private Set<Id> lockGraphIds(
+            Set<Id> subjectAndAdjacents
+    ) throws InterruptedException, StoreException {
+        Timer.Context time = metricRegistry.timer(updateEquivalences + TIMER_WAITING_LOCK).time();
+        metricRegistry.counter(updateEquivalences + COUNTER_BLOCKED).inc();
+
+        try {
+            Set<Id> transitiveSetsIds;
+
+            LOG.debug(
+                    "Thread {} is trying to enter synchronized block to lock graph IDs",
+                    Thread.currentThread().getName()
+            );
+
+            synchronized (lock()) {
+                LOG.debug(
+                        "Thread {} has entered synchronized block to lock graph IDs {}",
+                        Thread.currentThread().getName(),
+                        subjectAndAdjacents
+                );
+                while ((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
+                    lock().unlock(subjectAndAdjacents);
+                    lock().wait(5000);
+                    LOG.debug(
+                            "Thread {} attempting to lock IDs {}",
+                            Thread.currentThread().getName(),
+                            subjectAndAdjacents
+                    );
+                }
+            }
+            LOG.debug(
+                    "Thread {} has left synchronized block, having locked graph IDs",
+                    Thread.currentThread().getName()
+            );
+
+            return transitiveSetsIds;
+        } finally {
+            time.stop();
+            metricRegistry.counter(updateEquivalences + COUNTER_BLOCKED).dec();
+        }
+    }
+
+    @Nullable
     private Set<Id> tryLockAllIds(Set<Id> adjacentsIds)
             throws InterruptedException, StoreException {
         // Temporary blacklist to deal with queue backlog on bad graph
@@ -249,6 +285,35 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                          ? input.get().getAdjacencyList().keySet()
                          : ImmutableSet.of()
         ));
+    }
+
+    private void unlock(Set<Id> subjectAndAdjacents, @Nullable Set<Id> transitiveSetsIds) {
+        LOG.debug("Thread {} waiting for lock to unlock {} and {}",
+                Thread.currentThread().getName(), subjectAndAdjacents, transitiveSetsIds
+        );
+
+        synchronized (lock()) {
+            LOG.debug("Thread {} unlocking IDs {}",
+                    Thread.currentThread().getName(), subjectAndAdjacents
+            );
+
+            lock().unlock(subjectAndAdjacents);
+
+            if (transitiveSetsIds != null) {
+                LOG.debug("Thread {} unlocking transitive IDs {}",
+                        Thread.currentThread().getName(), transitiveSetsIds
+                );
+
+                lock().unlock(transitiveSetsIds);
+            }
+            LOG.debug(
+                    "Thread {} performing notifyAll",
+                    Thread.currentThread().getName(),
+                    transitiveSetsIds
+            );
+
+            lock().notifyAll();
+        }
     }
 
     private Optional<EquivalenceGraphUpdate> updateGraphs(ResourceRef subject,
