@@ -247,10 +247,4 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
     protected GroupLock<Id> lock() {
         return lock;
     }
-
-    @Override
-    protected Logger log() {
-        return log;
-    }
-
 }
