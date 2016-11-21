@@ -290,8 +290,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
 
-        checkBlacklist(allIds);
-
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
         log.debug(
