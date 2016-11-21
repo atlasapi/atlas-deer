@@ -121,6 +121,7 @@ public class CqlContentBootstrapController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+        runConsumer.set(true);
         startBootstrapThread();
 
         response.setStatus(200);
