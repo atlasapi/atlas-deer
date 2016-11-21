@@ -214,13 +214,11 @@ public class CqlContentBootstrapController {
             SeriesRef series = episode.getSeriesRef();
 
             if (brand != null && ! sentAlready.get(toInt(brand))) {
-                bootstrapFromMongo(brand);
-                sentAlready.set(toInt(brand));
+                bootstrapFromMongo(brand, sentAlready);
             }
 
             if (series != null && ! sentAlready.get(toInt(series))) {
-                bootstrapFromMongo(series);
-                sentAlready.set(toInt(series));
+                bootstrapFromMongo(series, sentAlready);
             }
         } else if (content instanceof Series) {
             Series series = (Series) content;
@@ -228,21 +226,19 @@ public class CqlContentBootstrapController {
             BrandRef brand = series.getBrandRef();
 
             if (brand != null && ! sentAlready.get(toInt(brand))) {
-                bootstrapFromMongo(brand);
-                sentAlready.set(toInt(brand));
+                bootstrapFromMongo(brand, sentAlready);
             }
         }
 
         ContentRef contentRef = content.toRef();
-        bootstrapFromMongo(contentRef);
-        sentAlready.set(toInt(contentRef));
+        bootstrapFromMongo(contentRef, sentAlready);
     }
 
     private int toInt(ContentRef brand) {
         return Math.toIntExact(brand.getId().longValue());
     }
 
-    private void bootstrapFromMongo(@Nullable ContentRef contentRef) {
+    private void bootstrapFromMongo(@Nullable ContentRef contentRef, BitSet sentAlready) {
         if (contentRef == null) {
             return;
         }
@@ -255,18 +251,17 @@ public class CqlContentBootstrapController {
                     .first();
 
             if (! contentInMongo.isPresent()) {
-                throw new IllegalArgumentException(String.format(
-                        "Content %d not found in Mongo",
-                        contentRef.getId().longValue()
-                ));
+                log.error("Content {} not found in Mongo", contentRef.getId());
+                return;
             }
 
             contentWriter.writeContent(contentInMongo.get());
 
+            sentAlready.set(toInt(contentRef));
         } catch (Exception e) {
             cqlWriterErrorMeter.mark();
             cqlWriterErrorCounter.inc();
-            throw Throwables.propagate(e);
+            log.error("Failed to write content {}", contentRef.getId(), e);
         }
     }
 
