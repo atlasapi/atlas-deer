@@ -65,8 +65,11 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
     private static final String METER_FAILURE = "meter.failure";
     private static final String METER_NOP = "meter.nop";
     private static final String METER_BLACKLIST = "meter.blacklist";
+    private static final String METER_FAILED_TO_LOCK_ADJACENTS = "lock.adjacents.meter.failure";
+    private static final String METER_FAILED_TO_LOCK_TRANSITIVES = "lock.transitives.meter.failure";
     private static final String COUNTER_BLOCKED = "counter.blocked";
     private static final String HISTOGRAM_BLACKLIST = "histogram.blacklist";
+    private static final String HISTOGRAM_LOCK_ATTEMPTS = "histogram.lockAttempts";
     private static final String TIMER_WAITING_LOCK = "timer.waitingLock";
     private static final String TIMER_EXECUTION = "timer.execution";
     private static final String CREATED_GRAPH_HISTOGRAM_COUNT = "graph.created.histogram.count";
@@ -116,16 +119,21 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 .timer(updateEquivalences + TIMER_EXECUTION)
                 .time();
 
-        ImmutableSet<Id> newAdjacents
-                = ImmutableSet.copyOf(Iterables.transform(assertedAdjacents, Identifiables.toId()));
-        Set<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
+        ImmutableSet<Id> newAdjacents = assertedAdjacents.stream()
+                .map(ResourceRef::getId)
+                .collect(MoreCollectors.toImmutableSet());
+
+        ImmutableSet<Id> subjectAndAdjacents = MoreSets.add(newAdjacents, subject.getId());
         Set<Id> transitiveSetsIds = null;
 
         try {
             transitiveSetsIds = lockGraphIds(subjectAndAdjacents);
 
-            Optional<EquivalenceGraphUpdate> updated
-                    = updateGraphs(subject, ImmutableSet.copyOf(assertedAdjacents), sources);
+            Optional<EquivalenceGraphUpdate> updated = updateGraphs(
+                    subject,
+                    ImmutableSet.copyOf(assertedAdjacents),
+                    sources
+            );
 
             if (updated.isPresent()) {
                 EquivalenceGraphUpdate graphUpdate = updated.get().copy()
@@ -229,13 +237,17 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                     Thread.currentThread().getName()
             );
 
+            int lockAttempts = 0;
             synchronized (lock()) {
                 log.debug(
                         "Thread {} has entered synchronized block to lock graph IDs {}",
                         Thread.currentThread().getName(),
                         subjectAndAdjacents
                 );
+
                 while ((transitiveSetsIds = tryLockAllIds(subjectAndAdjacents)) == null) {
+                    lockAttempts++;
+
                     lock().unlock(subjectAndAdjacents);
                     lock().wait(5000);
                     log.debug(
@@ -249,6 +261,8 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                     "Thread {} has left synchronized block, having locked graph IDs",
                     Thread.currentThread().getName()
             );
+            metricRegistry.histogram(updateEquivalences + HISTOGRAM_LOCK_ATTEMPTS)
+                    .update(lockAttempts);
 
             return transitiveSetsIds;
         } finally {
@@ -269,12 +283,12 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                     Thread.currentThread().getName(),
                     adjacentsIds
             );
+            metricRegistry.meter(updateEquivalences + METER_FAILED_TO_LOCK_ADJACENTS).mark();
+
             return null;
         }
         Iterable<Id> transitiveIds = transitiveIdsToLock(adjacentsIds);
         Set<Id> allIds = ImmutableSet.copyOf(Iterables.concat(transitiveIds, adjacentsIds));
-
-        checkBlacklist(allIds);
 
         Iterable<Id> idsToLock = Iterables.filter(allIds, not(in(adjacentsIds)));
         boolean locked = lock().tryLock(ImmutableSet.copyOf(idsToLock));
@@ -284,7 +298,14 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
                 locked,
                 idsToLock
         );
-        return locked ? allIds : null;
+
+        if (locked) {
+            return allIds;
+        }
+
+        metricRegistry.meter(updateEquivalences + METER_FAILED_TO_LOCK_TRANSITIVES).mark();
+
+        return null;
     }
 
     private Iterable<Id> transitiveIdsToLock(Set<Id> adjacentsIds) throws StoreException {
@@ -360,15 +381,16 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
         if (changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
             store(update.getAllGraphs());
-        } else {
-            metricRegistry.meter(updateEquivalences + METER_NOP).mark();
-            log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
+
+            return Optional.of(update);
         }
 
-        // We are always returning a graph update so that a graph change message will be
-        // generated and downstream consumers (equivalent content index) will get a chance
-        // to get up to date if they happen to fall out of sync with the graph store
-        return Optional.of(update);
+        metricRegistry.meter(updateEquivalences + METER_NOP).mark();
+        log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
+
+        // Do not return an update if nothing has changed to reduce the work that the downstream
+        // stores have to do.
+        return Optional.absent();
     }
 
     private EquivalenceGraphUpdate computeUpdate(ResourceRef subject,
