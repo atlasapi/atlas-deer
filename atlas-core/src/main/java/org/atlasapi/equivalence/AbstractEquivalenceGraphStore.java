@@ -383,15 +383,16 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
         if (changeInAdjacents(subAdjs, assertedAdjacents, sources)) {
             store(update.getAllGraphs());
-        } else {
-            metricRegistry.meter(updateEquivalences + METER_NOP).mark();
-            log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
+
+            return Optional.of(update);
         }
 
-        // We are always returning a graph update so that a graph change message will be
-        // generated and downstream consumers (equivalent content index) will get a chance
-        // to get up to date if they happen to fall out of sync with the graph store
-        return Optional.of(update);
+        metricRegistry.meter(updateEquivalences + METER_NOP).mark();
+        log.debug("{}: no change in neighbours: {}", subject, assertedAdjacents);
+
+        // Do not return an update if nothing has changed to reduce the work that the downstream
+        // stores have to do.
+        return Optional.absent();
     }
 
     private EquivalenceGraphUpdate computeUpdate(ResourceRef subject,
