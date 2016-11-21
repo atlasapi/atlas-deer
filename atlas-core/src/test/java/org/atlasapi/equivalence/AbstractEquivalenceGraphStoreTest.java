@@ -546,8 +546,7 @@ public class AbstractEquivalenceGraphStoreTest {
     }
 
     @Test
-    public void testAlwaysReturnsEquivalenceUpdateEvenWhenEquivalencesDoNotChange()
-            throws Exception {
+    public void testDoesNotReturnEquivalenceUpdateWhenEquivalencesDoNotChange() throws Exception {
         makeEquivalent(bbcItem, paItem, bbcItem, paItem);
 
         EquivalenceGraph initialBbcGraph = graphOf(bbcItem);
@@ -556,7 +555,7 @@ public class AbstractEquivalenceGraphStoreTest {
         assertOutgoingAdjacents(bbcItem, paItem);
         assertIncomingAdjacent(paItem, bbcItem);
 
-        assertTrue(makeEquivalent(bbcItem, paItem).isPresent());
+        assertFalse(makeEquivalent(bbcItem, paItem).isPresent());
 
         assertTrue(initialBbcGraph == graphOf(bbcItem));
         assertTrue(initialPaGraph == graphOf(paItem));
