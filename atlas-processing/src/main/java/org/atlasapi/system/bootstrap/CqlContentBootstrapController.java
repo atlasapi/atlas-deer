@@ -65,6 +65,7 @@ public class CqlContentBootstrapController {
     private final Meter cqlWriterErrorMeter;
     private final Counter cqlWriterErrorCounter;
     private final Counter bootstrapCounter;
+    private final BitSet sentAlready;
 
     public static CqlContentBootstrapController create(
             ListeningExecutorService listeningExecutorService,
@@ -114,6 +115,13 @@ public class CqlContentBootstrapController {
                 "%s.cql-writer-error-count",
                 getClass().getSimpleName()
         ));
+
+        // Let's avoid sending brands and whatnot many times. Since each episode will reference
+        // its brand and series, this could be costly if we don't take care.
+        //
+        // For 50kk IDs, this should take
+        // about 6.25M of memory, which we can easily afford.
+        this.sentAlready = new BitSet(APPROXIMATE_MAX_ID);
     }
 
     @RequestMapping(method = RequestMethod.POST)
@@ -170,13 +178,6 @@ public class CqlContentBootstrapController {
                     progressStore.progressForTask(TASK_NAME);
             ContentListingProgress progress = storedProgress.orElse(ContentListingProgress.START);
 
-            // Let's avoid sending brands and whatnot many times. Since each episode will reference
-            // its brand and series, this could be costly if we don't take care.
-            //
-            // For 50kk IDs, this should take
-            // about 6.25M of memory, which we can easily afford.
-            BitSet sentAlready = new BitSet(APPROXIMATE_MAX_ID);
-
             long numProcessed = 0L;
 
             try {
@@ -185,14 +186,11 @@ public class CqlContentBootstrapController {
                         continue;
                     }
 
-                    bootstrap(content, sentAlready);
+                    listeningExecutorService.submit(() -> bootstrap(content));
 
                     numProcessed++;
 
                     storeProgress(numProcessed, content);
-
-                    bootstrapMeter.mark();
-                    bootstrapCounter.inc();
 
                     if (!runConsumer.get()) {
                         log.info("Stopping CQL bootstrap Mongo ID producer");
@@ -206,39 +204,39 @@ public class CqlContentBootstrapController {
         });
     }
 
-    private void bootstrap(Content content, BitSet sentAlready) {
+    private void bootstrap(Content content) {
         if (content instanceof Episode) {
             Episode episode = (Episode) content;
 
             ContainerRef brand = episode.getContainerRef();
             SeriesRef series = episode.getSeriesRef();
 
-            if (brand != null && ! sentAlready.get(toInt(brand))) {
-                bootstrapFromMongo(brand, sentAlready);
+            if (brand != null && ! sentAlready(toInt(brand))) {
+                bootstrapFromMongo(brand);
             }
 
-            if (series != null && ! sentAlready.get(toInt(series))) {
-                bootstrapFromMongo(series, sentAlready);
+            if (series != null && ! sentAlready(toInt(series))) {
+                bootstrapFromMongo(series);
             }
         } else if (content instanceof Series) {
             Series series = (Series) content;
 
             BrandRef brand = series.getBrandRef();
 
-            if (brand != null && ! sentAlready.get(toInt(brand))) {
-                bootstrapFromMongo(brand, sentAlready);
+            if (brand != null && ! sentAlready(toInt(brand))) {
+                bootstrapFromMongo(brand);
             }
         }
 
         ContentRef contentRef = content.toRef();
-        bootstrapFromMongo(contentRef, sentAlready);
+        bootstrapFromMongo(contentRef);
     }
 
     private int toInt(ContentRef brand) {
         return Math.toIntExact(brand.getId().longValue());
     }
 
-    private void bootstrapFromMongo(@Nullable ContentRef contentRef, BitSet sentAlready) {
+    private void bootstrapFromMongo(@Nullable ContentRef contentRef) {
         if (contentRef == null) {
             return;
         }
@@ -257,11 +255,26 @@ public class CqlContentBootstrapController {
 
             contentWriter.writeContent(contentInMongo.get());
 
-            sentAlready.set(toInt(contentRef));
+            bootstrapMeter.mark();
+            bootstrapCounter.inc();
+
+            setSentAlready(toInt(contentRef));
         } catch (Exception e) {
             cqlWriterErrorMeter.mark();
             cqlWriterErrorCounter.inc();
             log.error("Failed to write content {}", contentRef.getId(), e);
+        }
+    }
+
+    private boolean sentAlready(int id) {
+        synchronized (sentAlready) {
+            return sentAlready.get(id);
+        }
+    }
+
+    private void setSentAlready(int id) {
+        synchronized (sentAlready) {
+            sentAlready.set(id);
         }
     }
 
