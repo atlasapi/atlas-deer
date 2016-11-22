@@ -325,7 +325,7 @@ public class CqlContentStore implements ContentStore {
         );
     }
 
-    private void sendMessages(ImmutableList<ResourceUpdatedMessage> messages) {
+    protected void sendMessages(ImmutableList<ResourceUpdatedMessage> messages) {
         Map<Id, Id> resourceGraphIds = getResourceGraphIds(messages);
 
         for (ResourceUpdatedMessage message : messages) {
@@ -452,7 +452,7 @@ public class CqlContentStore implements ContentStore {
         return statements;
     }
 
-    private Content resolvePrevious(Content content) throws WriteException {
+    protected Content resolvePrevious(Content content) throws WriteException {
         Content previous;
         if (content != null && content.getId() != null) {
             try {

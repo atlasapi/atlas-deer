@@ -135,7 +135,7 @@ public class BootstrapModule {
                 executorService(20, "cql-content-bootstrap"),
                 progressStore(),
                 persistence.legacyContentResolver(),
-                persistence.cqlContentStore(),
+                persistence.bootstrapCqlContentStore(),
                 persistence.legacyContentLister(),
                 metrics
         );

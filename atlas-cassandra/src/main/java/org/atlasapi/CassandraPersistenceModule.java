@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
+import org.atlasapi.content.v2.BootstrapCqlContentStore;
 import org.atlasapi.content.v2.CqlContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
@@ -103,6 +104,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
     private CqlContentStore cqlContentStore;
+    private BootstrapCqlContentStore bootstrapCqlContentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
     private OrganisationStore organisationStore;
@@ -226,6 +228,17 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "CqlContentStore.")
                 .build();
+
+        this.bootstrapCqlContentStore = BootstrapCqlContentStore.create(
+                session,
+                nullMessageSender(ResourceUpdatedMessage.class),
+                contentIdGenerator,
+                new SystemClock(),
+                contentHasher,
+                contentEquivalenceGraphStore,
+                metrics,
+                METRIC_PREFIX + "BootstrapCqlContentStore."
+        );
 
         this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(EquivalenceGraphUpdateMessage.class),
@@ -359,6 +372,10 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     public CqlContentStore cqlContentStore() {
         return cqlContentStore;
+    }
+
+    public BootstrapCqlContentStore bootstrapCqlContentStore() {
+        return bootstrapCqlContentStore;
     }
 
     public AstyanaxCassandraContentStore nullMessageSendingContentStore() {
