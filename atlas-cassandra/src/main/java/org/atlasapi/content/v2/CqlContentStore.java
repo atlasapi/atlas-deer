@@ -93,7 +93,7 @@ public class CqlContentStore implements ContentStore {
 
     private static final Logger log = LoggerFactory.getLogger(CqlContentStore.class);
 
-    private static final long READ_TIMEOUT_SECONDS = 5L;
+    private static final long READ_TIMEOUT_SECONDS = 30L;
 
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
