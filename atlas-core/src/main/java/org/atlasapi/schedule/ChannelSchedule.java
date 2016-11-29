@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.ItemAndBroadcast;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.meta.annotations.FieldName;
 
 import com.google.common.base.Function;
@@ -32,11 +33,20 @@ public class ChannelSchedule {
     private final Channel channel;
     private final Interval interval;
     private final ImmutableList<ItemAndBroadcast> entries;
+    private final Publisher source;
 
     public ChannelSchedule(Channel channel, Interval interval, Iterable<ItemAndBroadcast> entries) {
         this.channel = checkNotNull(channel);
         this.interval = checkNotNull(interval);
         this.entries = Ordering.natural().immutableSortedCopy(entries);
+        this.source = null;
+    }
+
+    private ChannelSchedule(Channel channel, Interval interval, Iterable<ItemAndBroadcast> entries, Publisher source) {
+        this.channel = checkNotNull(channel);
+        this.interval = checkNotNull(interval);
+        this.entries = Ordering.natural().immutableSortedCopy(entries);
+        this.source = checkNotNull(source);
     }
 
     @FieldName("channel")
@@ -54,8 +64,16 @@ public class ChannelSchedule {
         return entries;
     }
 
+    public Publisher getSource() {
+        return source;
+    }
+
     public ChannelSchedule copyWithEntries(Iterable<ItemAndBroadcast> entries) {
         return new ChannelSchedule(channel, interval, entries);
+    }
+
+    public ChannelSchedule copyWithScheduleSource(Publisher source) {
+        return new ChannelSchedule(channel, interval, entries, source);
     }
 
     @Override

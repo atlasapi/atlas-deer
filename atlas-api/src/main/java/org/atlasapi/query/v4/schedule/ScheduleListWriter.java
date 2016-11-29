@@ -28,7 +28,7 @@ public class ScheduleListWriter implements EntityListWriter<ChannelSchedule> {
             throws IOException {
         ResolvedChannel resolvedChannel = ResolvedChannel.builder(entity.getChannel()).build();
         writer.writeObject(channelWriter, resolvedChannel, ctxt);
-        writer.writeField("source", resolvedChannel.getChannel().getSource());
+        writer.writeField("source", entity.getSource());
         writer.writeList(entryWriter, entity.getEntries(), ctxt);
     }
 

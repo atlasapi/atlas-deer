@@ -2,7 +2,11 @@ package org.atlasapi.query.v4.schedule;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -34,6 +38,7 @@ import org.joda.time.Interval;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -213,11 +218,22 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
 
         ImmutableList.Builder<ChannelSchedule> scheduleBuilder = ImmutableList.builder();
 
-        if(ebsChannels.size() > 0) {
-            scheduleBuilder.addAll(channelSchedules(ebsSchedule, query));
+        if(!ebsChannels.isEmpty()) {
+            scheduleBuilder.addAll(
+                    channelSchedules(ebsSchedule, query)
+                            .stream()
+                            .map(channelSchedule -> channelSchedule.copyWithScheduleSource(Publisher.BT_SPORT_EBS))
+                            .collect(MoreCollectors.toImmutableList())
+            );
         }
-        if(defaultChannels.size() > 0) {
-            scheduleBuilder.addAll(channelSchedules(defaultSchedule, query));
+
+        if(!defaultChannels.isEmpty()) {
+            scheduleBuilder.addAll(
+                    channelSchedules(defaultSchedule, query)
+                            .stream()
+                            .map(channelSchedule -> channelSchedule.copyWithScheduleSource(query.getSource()))
+                            .collect(MoreCollectors.toImmutableList())
+            );
         }
 
         return scheduleBuilder.build();
