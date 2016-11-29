@@ -17,18 +17,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ChannelSchedule {
 
+    private static final Function<ChannelSchedule, ImmutableList<ItemAndBroadcast>> TO_ENTRIES = input -> input.entries;
+
     public static Function<ChannelSchedule, ImmutableList<ItemAndBroadcast>> toEntries() {
         return TO_ENTRIES;
     }
-
-    private static final Function<ChannelSchedule, ImmutableList<ItemAndBroadcast>> TO_ENTRIES
-            = new Function<ChannelSchedule, ImmutableList<ItemAndBroadcast>>() {
-
-        @Override
-        public ImmutableList<ItemAndBroadcast> apply(ChannelSchedule input) {
-            return input.entries;
-        }
-    };
 
     private final Channel channel;
     private final Interval interval;
