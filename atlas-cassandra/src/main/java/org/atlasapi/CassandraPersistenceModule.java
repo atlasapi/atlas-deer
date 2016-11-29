@@ -168,7 +168,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
     @Override
     protected void startUp() throws Exception {
-        Session session = dataStaxService.getSession(keyspace);
         com.datastax.driver.core.ConsistencyLevel read = getReadConsistencyLevel();
         com.datastax.driver.core.ConsistencyLevel write = getWriteConsistencyLevel();
         ConsistencyLevel readConsistency = processing
@@ -184,61 +183,19 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 METRIC_PREFIX + "CassandraEquivalenceGraphStore."
         );
 
-        this.contentStore = AstyanaxCassandraContentStore.builder(
-                context,
-                "content",
-                contentHasher,
-                sender(contentChanges, ResourceUpdatedMessage.class),
-                contentIdGenerator,
-                contentEquivalenceGraphStore
-        )
-                .withReadConsistency(readConsistency)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .withMetricRegistry(metrics)
-                .withMetricPrefix(METRIC_PREFIX + "AstyanaxCassandraContentStore.")
-                .build();
+        this.contentStore = makeAstyanaxContentStore(readConsistency);
 
         // This content store is used by debug endpoints that are used for resolving issues.
         // Therefore we are passing a "fake" content hasher to ensure we are always writing
         // content when asked to
-        this.nullMsgSendingContentStore = AstyanaxCassandraContentStore.builder(
-                context,
-                "content",
-                content -> UUID.randomUUID().toString(),
-                nullMessageSender(ResourceUpdatedMessage.class),
-                contentIdGenerator,
-                contentEquivalenceGraphStore
-        )
-                .withReadConsistency(readConsistency)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .withMetricRegistry(metrics)
-                .withMetricPrefix(METRIC_PREFIX + "NullMessageSendingAstyanaxCassandraContentStore.")
-                .build();
+        this.nullMsgSendingContentStore = makeAstyanaxNullMsgContentStore(readConsistency);
 
         // The CQL content store isn't live yet and will run in parallel with the Astyanax store
         // for testing. We pass in a dummy message sender to avoid sending content update messages
         // from two different places
-        this.cqlContentStore = CqlContentStore.builder()
-                .withSession(session)
-                .withIdGenerator(contentIdGenerator)
-                .withClock(new SystemClock())
-                .withHasher(contentHasher)
-                .withGraphStore(contentEquivalenceGraphStore)
-                .withSender(nullMessageSender(ResourceUpdatedMessage.class))
-                .withMetricRegistry(metrics)
-                .withMetricPrefix(METRIC_PREFIX + "CqlContentStore.")
-                .build();
+        this.cqlContentStore = makeCqlContentStore(session);
 
-        this.bootstrapCqlContentStore = BootstrapCqlContentStore.create(
-                session,
-                nullMessageSender(ResourceUpdatedMessage.class),
-                contentIdGenerator,
-                new SystemClock(),
-                contentHasher,
-                contentEquivalenceGraphStore,
-                metrics,
-                METRIC_PREFIX + "BootstrapCqlContentStore."
-        );
+        this.bootstrapCqlContentStore = makeBootstrapCqlContentStore(session);
 
         this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(EquivalenceGraphUpdateMessage.class),
@@ -318,6 +275,69 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         this.eventStore = getEventStore(session);
         this.organisationStore = getOrganisationStore(session);
         this.idSettingOrganisationStore = getIdSettingOrganisationStore(session);
+    }
+
+    private AstyanaxCassandraContentStore makeAstyanaxContentStore(
+            ConsistencyLevel readConsistency) {
+        return AstyanaxCassandraContentStore.builder(
+                context,
+                "content",
+                contentHasher,
+                sender(contentChanges, ResourceUpdatedMessage.class),
+                contentIdGenerator,
+                contentEquivalenceGraphStore
+        )
+                .withReadConsistency(readConsistency)
+                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "AstyanaxCassandraContentStore.")
+                .build();
+    }
+
+    private AstyanaxCassandraContentStore makeAstyanaxNullMsgContentStore(
+            ConsistencyLevel readConsistency
+    ) {
+        return AstyanaxCassandraContentStore.builder(
+                context,
+                "content",
+                content -> UUID.randomUUID().toString(),
+                nullMessageSender(ResourceUpdatedMessage.class),
+                contentIdGenerator,
+                contentEquivalenceGraphStore
+        )
+                .withReadConsistency(readConsistency)
+                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "NullMessageSendingAstyanaxCassandraContentStore.")
+                .build();
+    }
+
+    private CqlContentStore makeCqlContentStore(Session session) {
+        return CqlContentStore.builder()
+                .withSession(session)
+                .withIdGenerator(contentIdGenerator)
+                .withClock(new SystemClock())
+                .withHasher(contentHasher)
+                .withGraphStore(contentEquivalenceGraphStore)
+                .withSender(nullMessageSender(ResourceUpdatedMessage.class))
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "CqlContentStore.")
+                .build();
+    }
+
+    private BootstrapCqlContentStore makeBootstrapCqlContentStore(Session session) {
+        return BootstrapCqlContentStore.create(
+                CqlContentStore.builder()
+                        .withSession(session)
+                        .withIdGenerator(contentIdGenerator)
+                        .withClock(new SystemClock())
+                        .withHasher(contentHasher)
+                        .withGraphStore(contentEquivalenceGraphStore)
+                        .withSender(nullMessageSender(ResourceUpdatedMessage.class))
+                        .withReadConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
+                        .withWriteConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
+                        .withMetricRegistry(metrics)
+                        .withMetricPrefix(METRIC_PREFIX + "BootstrapCqlContentStore."));
     }
 
     public EquivalenceGraphStore nullMessageSendingGraphStore() {

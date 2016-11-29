@@ -8,8 +8,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -34,7 +32,9 @@ import org.atlasapi.content.SeriesRef;
 import org.atlasapi.content.v2.model.udt.Description;
 import org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs;
 import org.atlasapi.content.v2.model.udt.ItemRefAndItemSummary;
+import org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries;
 import org.atlasapi.content.v2.model.udt.PartialItemRef;
+import org.atlasapi.content.v2.model.udt.Ref;
 import org.atlasapi.content.v2.serialization.BroadcastRefSerialization;
 import org.atlasapi.content.v2.serialization.BroadcastSerialization;
 import org.atlasapi.content.v2.serialization.ContainerSummarySerialization;
@@ -66,6 +66,7 @@ import com.metabroadcast.common.time.Timestamp;
 import com.codahale.metrics.MetricRegistry;
 import com.codepoetics.protonpack.maps.MapStream;
 import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.mapping.Mapper;
@@ -92,8 +93,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CqlContentStore implements ContentStore {
 
     private static final Logger log = LoggerFactory.getLogger(CqlContentStore.class);
-
-    private static final long READ_TIMEOUT_SECONDS = 30L;
 
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
@@ -125,20 +124,10 @@ public class CqlContentStore implements ContentStore {
 
     private final MetricRegistry metricRegistry;
 
-
-    public CqlContentStore(
-            Session session,
-            MessageSender<ResourceUpdatedMessage> sender,
-            IdGenerator idGenerator,
-            Clock clock,
-            ContentHasher hasher,
-            EquivalenceGraphStore graphStore,
-            MetricRegistry metricRegistry,
-            String metricPrefix
-    ) {
-        this.idGenerator = checkNotNull(idGenerator);
-        this.session = checkNotNull(session);
-        this.clock = checkNotNull(clock);
+    protected CqlContentStore(Builder builder) {
+        this.idGenerator = checkNotNull(builder.idGenerator);
+        this.session = checkNotNull(builder.session);
+        this.clock = checkNotNull(builder.clock);
 
         MappingManager mappingManager = new MappingManager(session);
 
@@ -152,14 +141,18 @@ public class CqlContentStore implements ContentStore {
         this.mapper = mappingManager.mapper(org.atlasapi.content.v2.model.Content.class);
         this.accessor = mappingManager.createAccessor(ContentAccessor.class);
 
-        this.sender = checkNotNull(sender);
-        this.hasher = checkNotNull(hasher);
-        this.graphStore = checkNotNull(graphStore);
+        mapper.setDefaultGetOptions(Mapper.Option.consistencyLevel(builder.readConsistency));
+        mapper.setDefaultSaveOptions(Mapper.Option.consistencyLevel(builder.writeConsistency));
+        mapper.setDefaultDeleteOptions(Mapper.Option.consistencyLevel(builder.writeConsistency));
 
-        writeContent = metricPrefix + "writeContent.";
-        writeBroadcast = metricPrefix + "writeBroadcast.";
+        this.sender = checkNotNull(builder.sender);
+        this.hasher = checkNotNull(builder.hasher);
+        this.graphStore = checkNotNull(builder.graphStore);
 
-        this.metricRegistry = metricRegistry;
+        writeContent = builder.metricPrefix + "writeContent.";
+        writeBroadcast = builder.metricPrefix + "writeBroadcast.";
+
+        this.metricRegistry = builder.metricRegistry;
     }
 
     public static Builder builder() {
@@ -249,10 +242,10 @@ public class CqlContentStore implements ContentStore {
             // we only denormalize upcoming broadcasts on containers. If this is stale, just add to
             // item and return early
             if (broadcast.isActivelyPublished() && broadcast.isUpcoming()) {
-                org.atlasapi.content.v2.model.udt.Ref ref = refTranslator.serialize(item);
+                Ref ref = refTranslator.serialize(item);
                 PartialItemRef itemRef = itemRefTranslator.serialize(item);
 
-                Map<org.atlasapi.content.v2.model.udt.Ref, ItemRefAndBroadcastRefs> upcomingBroadcasts =
+                Map<Ref, ItemRefAndBroadcastRefs> upcomingBroadcasts =
                         ImmutableMap.of(
                                 ref,
                                 new ItemRefAndBroadcastRefs(
@@ -458,13 +451,10 @@ public class CqlContentStore implements ContentStore {
             try {
                 previous = Iterables.getOnlyElement(
                         resolveIds(ImmutableList.of(content.getId()))
-                                .get(
-                                        READ_TIMEOUT_SECONDS,
-                                        TimeUnit.SECONDS
-                                ).getResources(),
+                                .get().getResources(),
                         null
                 );
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 throw new WriteException(
                         String.format("Failed to resolve content %s", content.getId()),
                         e
@@ -492,10 +482,7 @@ public class CqlContentStore implements ContentStore {
         if (containerRef != null) {
             try {
                 Optional<Content> container = resolveIds(ImmutableList.of(containerRef.getId()))
-                        .get(
-                                READ_TIMEOUT_SECONDS,
-                                TimeUnit.SECONDS
-                        )
+                        .get()
                         .getResources()
                         .first();
                 if (container.isPresent()) {
@@ -508,12 +495,15 @@ public class CqlContentStore implements ContentStore {
                             new MissingResourceException(containerRef.getId())
                     );
                 }
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                throw new WriteException(String.format(
-                        "Failed to retrieve container for %s in %d seconds",
-                        content.getId(),
-                        READ_TIMEOUT_SECONDS
-                ));
+            } catch (InterruptedException | ExecutionException e) {
+                throw new WriteException(
+                        String.format(
+                                "Failed to retrieve container %s for %s seconds",
+                                containerRef.getId(),
+                                content.getId()
+                        ),
+                        e
+                );
             }
         }
 
@@ -682,7 +672,7 @@ public class CqlContentStore implements ContentStore {
         ItemSummary summary = item.toSummary();
 
         PartialItemRef itemRef = itemRefTranslator.serialize(ref);
-        org.atlasapi.content.v2.model.udt.Ref itemRefKey = refTranslator.serialize(ref);
+        Ref itemRefKey = refTranslator.serialize(ref);
         org.atlasapi.content.v2.model.udt.ItemSummary itemSummary = itemSummaryTranslator.serialize(summary);
 
         ImmutableMap<ItemRef, Iterable<BroadcastRef>> upcoming = ImmutableMap.of(
@@ -690,13 +680,13 @@ public class CqlContentStore implements ContentStore {
         );
 
         Map<
-                org.atlasapi.content.v2.model.udt.Ref,
-                org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs
+                Ref,
+                ItemRefAndBroadcastRefs
         > upcomingSerialised = MapStream
                 .of(upcoming)
                 .mapEntries(
                         refTranslator::serialize,
-                        vals -> new org.atlasapi.content.v2.model.udt.ItemRefAndBroadcastRefs(
+                        vals -> new ItemRefAndBroadcastRefs(
                                     itemRef,
                                     StreamSupport.stream(vals.spliterator(), false)
                                         .map(broadcastRefTranslator::serialize)
@@ -709,13 +699,13 @@ public class CqlContentStore implements ContentStore {
         );
 
         Map<
-                org.atlasapi.content.v2.model.udt.Ref,
-                org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries
+                Ref,
+                ItemRefAndLocationSummaries
         > availableLocationsSerialised = MapStream
                 .of(availableLocations)
                 .mapEntries(
                         refTranslator::serialize,
-                        vals -> new org.atlasapi.content.v2.model.udt.ItemRefAndLocationSummaries(
+                        vals -> new ItemRefAndLocationSummaries(
                                 itemRef,
                                 StreamSupport.stream(vals.spliterator(), false)
                                         .map(locationSummaryTranslator::serialize)
@@ -779,7 +769,7 @@ public class CqlContentStore implements ContentStore {
                 item.toRef(), item.getUpcomingBroadcastRefs()
         );
 
-        Set<org.atlasapi.content.v2.model.udt.Ref> upcomingSerialised = upcoming.keySet()
+        Set<Ref> upcomingSerialised = upcoming.keySet()
                 .stream()
                 .map(refTranslator::serialize)
                 .collect(MoreCollectors.toImmutableSet());
@@ -788,13 +778,13 @@ public class CqlContentStore implements ContentStore {
                 item.toRef(), item.getAvailableLocations()
         );
 
-        Set<org.atlasapi.content.v2.model.udt.Ref> availableLocationsSerialised = availableLocations
+        Set<Ref> availableLocationsSerialised = availableLocations
                 .keySet()
                 .stream()
                 .map(refTranslator::serialize)
                 .collect(MoreCollectors.toImmutableSet());
 
-        org.atlasapi.content.v2.model.udt.Ref itemRefKey = refTranslator.serialize(ref);
+        Ref itemRefKey = refTranslator.serialize(ref);
 
         return Arrays.stream(containerRefs)
                 .filter(Objects::nonNull)
@@ -828,61 +818,63 @@ public class CqlContentStore implements ContentStore {
         private EquivalenceGraphStore graphStore;
         private MetricRegistry metricRegistry;
         private String metricPrefix;
+        private ConsistencyLevel readConsistency = ConsistencyLevel.QUORUM;
+        private ConsistencyLevel writeConsistency = ConsistencyLevel.QUORUM;
 
-        private Builder() {
-        }
+        private Builder() {}
 
-        public Builder withSession(Session session) {
-            this.session = session;
+        public Builder withSession(Session val) {
+            session = val;
             return this;
         }
 
-        public Builder withIdGenerator(IdGenerator idGenerator) {
-            this.idGenerator = idGenerator;
+        public Builder withIdGenerator(IdGenerator val) {
+            idGenerator = val;
             return this;
         }
 
-        public Builder withSender(MessageSender<ResourceUpdatedMessage> sender) {
-            this.sender = sender;
+        public Builder withSender(MessageSender<ResourceUpdatedMessage> val) {
+            sender = val;
             return this;
         }
 
-        public Builder withClock(Clock clock) {
-            this.clock = clock;
+        public Builder withClock(Clock val) {
+            clock = val;
             return this;
         }
 
-        public Builder withHasher(ContentHasher hasher) {
-            this.hasher = hasher;
+        public Builder withHasher(ContentHasher val) {
+            hasher = val;
             return this;
         }
 
-        public Builder withGraphStore(EquivalenceGraphStore graphStore) {
-            this.graphStore = graphStore;
+        public Builder withGraphStore(EquivalenceGraphStore val) {
+            graphStore = val;
             return this;
         }
 
-        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
-            this.metricRegistry = metricRegistry;
+        public Builder withMetricRegistry(MetricRegistry val) {
+            metricRegistry = val;
             return this;
         }
 
-        public Builder withMetricPrefix(String metricPrefix) {
-            this.metricPrefix = metricPrefix;
+        public Builder withMetricPrefix(String val) {
+            metricPrefix = val;
+            return this;
+        }
+
+        public Builder withReadConsistency(ConsistencyLevel val) {
+            readConsistency = val;
+            return this;
+        }
+
+        public Builder withWriteConsistency(ConsistencyLevel val) {
+            writeConsistency = val;
             return this;
         }
 
         public CqlContentStore build() {
-            return new CqlContentStore(
-                    session,
-                    sender,
-                    idGenerator,
-                    clock,
-                    hasher,
-                    graphStore,
-                    metricRegistry,
-                    metricPrefix
-            );
+            return new CqlContentStore(this);
         }
     }
 }
