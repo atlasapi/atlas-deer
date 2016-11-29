@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.schedule;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -36,7 +37,9 @@ import org.atlasapi.schedule.ScheduleResolver;
 import org.joda.time.Interval;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
@@ -194,14 +197,12 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
             channels.forEach(channel -> {
                 if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
                     ebsChannels.add(channel);
-                } else {
-                    defaultChannels.add(channel);
                 }
             });
 
-        } else {
-            defaultChannels.addAll(Lists.newArrayList(channels));
         }
+
+        defaultChannels.addAll(Lists.newArrayList(channels));
 
         ListenableFuture<Schedule> ebsSchedule = scheduleResolver.resolve(
                 ebsChannels,
@@ -215,27 +216,27 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
                 query.getSource()
         );
 
-        ImmutableList.Builder<ChannelSchedule> scheduleBuilder = ImmutableList.builder();
+        Map<String, ChannelSchedule> scheduleBuilder = new HashMap<>();
 
         if(!ebsChannels.isEmpty()) {
-            scheduleBuilder.addAll(
-                    channelSchedules(ebsSchedule, query)
-                            .stream()
-                            .map(channelSchedule -> channelSchedule.copyWithScheduleSource(Publisher.BT_SPORT_EBS))
-                            .collect(MoreCollectors.toImmutableList())
+            channelSchedules(ebsSchedule, query).forEach(channelSchedule ->
+                    scheduleBuilder.put(
+                            channelSchedule.getChannel().getKey(),
+                            channelSchedule.copyWithScheduleSource(Publisher.BT_SPORT_EBS)
+                    )
             );
         }
 
         if(!defaultChannels.isEmpty()) {
-            scheduleBuilder.addAll(
-                    channelSchedules(defaultSchedule, query)
-                            .stream()
-                            .map(channelSchedule -> channelSchedule.copyWithScheduleSource(query.getSource()))
-                            .collect(MoreCollectors.toImmutableList())
+            channelSchedules(defaultSchedule, query).forEach(channelSchedule ->
+                scheduleBuilder.putIfAbsent(
+                        channelSchedule.getChannel().getKey(),
+                        channelSchedule.copyWithScheduleSource(query.getSource())
+                )
             );
         }
 
-        return scheduleBuilder.build();
+        return ImmutableList.copyOf(scheduleBuilder.values());
     }
 
 }
