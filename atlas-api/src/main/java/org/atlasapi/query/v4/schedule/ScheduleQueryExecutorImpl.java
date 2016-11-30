@@ -1,9 +1,17 @@
 package org.atlasapi.query.v4.schedule;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import com.metabroadcast.common.stream.MoreCollectors;
 
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationAccessRole;
@@ -28,19 +36,14 @@ import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
 
-import com.metabroadcast.common.stream.MoreCollectors;
-
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Interval;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -196,14 +199,12 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
             channels.forEach(channel -> {
                 if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
                     ebsChannels.add(channel);
-                } else {
-                    defaultChannels.add(channel);
                 }
             });
 
-        } else {
-            defaultChannels.addAll(Lists.newArrayList(channels));
         }
+
+        defaultChannels.addAll(Lists.newArrayList(channels));
 
         ListenableFuture<Schedule> ebsSchedule = scheduleResolver.resolve(
                 ebsChannels,
@@ -217,16 +218,27 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
                 query.getSource()
         );
 
-        ImmutableList.Builder<ChannelSchedule> scheduleBuilder = ImmutableList.builder();
+        Map<String, ChannelSchedule> scheduleBuilder = new HashMap<>();
 
-        if (!ebsChannels.isEmpty()) {
-            scheduleBuilder.addAll(channelSchedules(ebsSchedule, query));
-        }
-        if (!defaultChannels.isEmpty()) {
-            scheduleBuilder.addAll(channelSchedules(defaultSchedule, query));
+        if(!ebsChannels.isEmpty()) {
+            channelSchedules(ebsSchedule, query).forEach(channelSchedule ->
+                    scheduleBuilder.put(
+                            channelSchedule.getChannel().getKey(),
+                            channelSchedule.copyWithScheduleSource(Publisher.BT_SPORT_EBS)
+                    )
+            );
         }
 
-        return scheduleBuilder.build();
+        if(!defaultChannels.isEmpty()) {
+            channelSchedules(defaultSchedule, query).forEach(channelSchedule ->
+                scheduleBuilder.putIfAbsent(
+                        channelSchedule.getChannel().getKey(),
+                        channelSchedule.copyWithScheduleSource(query.getSource())
+                )
+            );
+        }
+
+        return ImmutableList.copyOf(scheduleBuilder.values());
     }
 
 }
