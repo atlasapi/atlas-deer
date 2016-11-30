@@ -2,10 +2,8 @@ package org.atlasapi.query.v4.schedule;
 
 import java.io.IOException;
 
-import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
@@ -28,7 +26,7 @@ public class ScheduleListWriter implements EntityListWriter<ChannelSchedule> {
             throws IOException {
         ResolvedChannel resolvedChannel = ResolvedChannel.builder(entity.getChannel()).build();
         writer.writeObject(channelWriter, resolvedChannel, ctxt);
-        writer.writeField("source", resolvedChannel.getChannel().getSource());
+        writer.writeField("source", entity.getSource());
         writer.writeList(entryWriter, entity.getEntries(), ctxt);
     }
 

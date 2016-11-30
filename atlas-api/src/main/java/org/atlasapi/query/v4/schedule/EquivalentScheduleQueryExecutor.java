@@ -1,10 +1,18 @@
 package org.atlasapi.query.v4.schedule;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -20,7 +28,6 @@ import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryResult;
-import org.atlasapi.query.common.Resource;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.EquivalentChannelSchedule;
 import org.atlasapi.schedule.EquivalentSchedule;
@@ -72,66 +79,51 @@ public class EquivalentScheduleQueryExecutor
         Iterable<Channel> channels = resolveChannels(query);
 
         ImmutableSet<Publisher> selectedSources = selectedSources(query);
-        ListenableFuture<EquivalentSchedule> schedule;
-        ListenableFuture<EquivalentSchedule> overrideSchedule = null;
-        if (query.getEnd().isPresent()) {
-            schedule = scheduleResolver.resolveSchedules(
-                    channels,
-                    new Interval(query.getStart(), query.getEnd().get()),
-                    query.getSource(),
-                    selectedSources
-            );
 
-            if (query.getOverride().isPresent()) {
-                overrideSchedule = scheduleResolver.resolveSchedules(
-                        channels,
-                        new Interval(query.getStart(), query.getEnd().get()),
-                        query.getOverride().get(),
-                        selectedSources
-                );
-            }
-        } else {
-            schedule = scheduleResolver.resolveSchedules(
-                    channels,
-                    query.getStart(),
-                    query.getCount().get(),
-                    query.getSource(),
-                    selectedSources
-            );
+        ImmutableList<ChannelSchedule> orderedChannelSchedules;
+        ImmutableList<ChannelSchedule> orderedOverrideSchedules = ImmutableList.of();
 
-            if (query.getOverride().isPresent()) {
-                overrideSchedule = scheduleResolver.resolveSchedules(
-                        channels,
-                        query.getStart(),
-                        query.getCount().get(),
-                        query.getOverride().get(),
-                        selectedSources
-                );
-            }
+        Ordering<ChannelSchedule> ordering = Ordering.explicit(
+                StreamSupport.stream(channels.spliterator(), false)
+                        .map(Channel::getId)
+                        .collect(MoreCollectors.toImmutableList())
+        )
+                .onResultOf(channelSchedule -> channelSchedule.getChannel().getId());
+
+        orderedChannelSchedules = ImmutableList.copyOf(
+                ordering.sortedCopy(
+                        getChannelSchedules(channels, query, selectedSources)
+                )
+        );
+
+        if(query.getOverride().isPresent()) {
+            orderedOverrideSchedules = ImmutableList.copyOf(
+                    ordering.sortedCopy(
+                            getChannelSchedules(channels, query, selectedSources)
+                    )
+            );
         }
 
         if (query.isMultiChannel()) {
             List<ChannelSchedule> channelSchedules;
 
             if (query.getOverride().isPresent()) {
-                List<ChannelSchedule> originalSchedules = channelSchedules(schedule, query);
-                List<ChannelSchedule> overrideSchedules = channelSchedules(overrideSchedule, query);
 
-                if (originalSchedules.size() != overrideSchedules.size()) {
+                if (orderedChannelSchedules.size() != orderedOverrideSchedules.size()) {
                     throw new IllegalStateException(
                             String.format("Original schedule should have same number "
                                     + "of items as override: %d vs. %d, %s | %s",
-                                    originalSchedules.size(), overrideSchedules.size(),
+                                    orderedChannelSchedules.size(), orderedOverrideSchedules.size(),
                                     query.getChannelIds(), query.getOverride()
                             ));
                 }
 
                 channelSchedules = StreamUtils
-                        .zip(originalSchedules.stream(), overrideSchedules.stream(),
+                        .zip(orderedChannelSchedules.stream(), orderedOverrideSchedules.stream(),
                                 scheduleMerger::merge)
                         .collect(Collectors.toList());
             } else {
-                channelSchedules = channelSchedules(schedule, query);
+                channelSchedules = orderedChannelSchedules;
             }
             return QueryResult.listResult(
                     channelSchedules,
@@ -140,12 +132,9 @@ public class EquivalentScheduleQueryExecutor
             );
         } else {
             ChannelSchedule originalSchedule =
-                    Iterables.getOnlyElement(channelSchedules(schedule, query));
-            if (overrideSchedule != null) {
-                ChannelSchedule override = Iterables.getOnlyElement(channelSchedules(
-                        overrideSchedule,
-                        query
-                ));
+                    Iterables.getOnlyElement(orderedChannelSchedules);
+            if (orderedOverrideSchedules != null) {
+                ChannelSchedule override = Iterables.getOnlyElement(orderedOverrideSchedules);
                 return QueryResult.singleResult(
                         scheduleMerger.merge(originalSchedule, override),
                         query.getContext()
@@ -164,12 +153,10 @@ public class EquivalentScheduleQueryExecutor
     }
 
     private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
-        Iterable<Id> channelIds;
-        if (query.isMultiChannel()) {
-            channelIds = query.getChannelIds();
-        } else {
-            channelIds = ImmutableSet.of(query.getChannelId());
-        }
+        Iterable<Id> channelIds = query.isMultiChannel()
+                                  ? query.getChannelIds()
+                                  : ImmutableSet.of(query.getChannelId());
+
         Resolved<Channel> resolvedChannels = Futures.get(
                 channelResolver.resolveIds(channelIds),
                 1,
@@ -192,17 +179,15 @@ public class EquivalentScheduleQueryExecutor
     }
 
     private Function<EquivalentSchedule, Schedule> toSchedule(final QueryContext context) {
-        return new Function<EquivalentSchedule, Schedule>() {
 
-            @Override
-            public Schedule apply(EquivalentSchedule input) {
-                boolean hasNonMergedAnnotation = context.getAnnotations().containsValue(Annotation.NON_MERGED);
-                if (context.getApplicationSources().isPrecedenceEnabled() && !hasNonMergedAnnotation) {
-                    return mergeItemsInSchedule(input, context.getApplicationSources());
-                }
-                return selectBroadcastItems(input);
+        return input -> {
+            boolean hasNonMergedAnnotation =
+                    context.getAnnotations().containsValue(Annotation.NON_MERGED);
+
+            if (context.getApplicationSources().isPrecedenceEnabled() && !hasNonMergedAnnotation) {
+                return mergeItemsInSchedule(input, context.getApplicationSources());
             }
-
+            return selectBroadcastItems(input);
         };
     }
 
@@ -267,6 +252,95 @@ public class EquivalentScheduleQueryExecutor
             }
         }
         throw new IllegalStateException("couldn't find broadcast item in " + entry);
+    }
+
+    private ImmutableList<ChannelSchedule> getChannelSchedules(
+            Iterable<Channel> channels,
+            ScheduleQuery query,
+            ImmutableSet<Publisher> selectedSources
+    ) throws ScheduleQueryExecutionException {
+
+        List<Channel> ebsChannels = new ArrayList<>();
+        List<Channel> defaultChannels = new ArrayList<>();
+
+        if (query.getContext()
+                .getApplicationSources()
+                .getAccessRoles()
+                .contains(ApplicationAccessRole.PREFER_EBS_SCHEDULE)
+                ) {
+
+            channels.forEach(channel -> {
+                if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
+                    ebsChannels.add(channel);
+                } else {
+                    defaultChannels.add(channel);
+                }
+            });
+
+        } else {
+            defaultChannels.addAll(Lists.newArrayList(channels));
+        }
+
+        ListenableFuture<EquivalentSchedule> ebsSchedule;
+        Publisher overridableEbsPublisher = query.getOverride().isPresent() ?
+                                            query.getOverride().get() :
+                                            Publisher.BT_SPORT_EBS;
+
+        ListenableFuture<EquivalentSchedule> defaultSchedule;
+        Publisher overridableDefaultPublisher = query.getOverride().isPresent() ?
+                                                query.getOverride().get() :
+                                                query.getSource();
+
+        if (query.getEnd().isPresent()) {
+            ebsSchedule = scheduleResolver.resolveSchedules(
+                    ebsChannels,
+                    new Interval(query.getStart(), query.getEnd().get()),
+                    overridableEbsPublisher,
+                    selectedSources
+            );
+
+            defaultSchedule = scheduleResolver.resolveSchedules(
+                    defaultChannels,
+                    new Interval(query.getStart(), query.getEnd().get()),
+                    overridableDefaultPublisher,
+                    selectedSources
+            );
+        } else {
+            ebsSchedule = scheduleResolver.resolveSchedules(
+                    ebsChannels,
+                    query.getStart(),
+                    query.getCount().get(),
+                    overridableEbsPublisher,
+                    selectedSources
+            );
+
+            defaultSchedule = scheduleResolver.resolveSchedules(
+                    defaultChannels,
+                    query.getStart(),
+                    query.getCount().get(),
+                    overridableDefaultPublisher,
+                    selectedSources
+            );
+        }
+
+        Map<String, ChannelSchedule> scheduleMap = new HashMap<>();
+
+        if (!ebsChannels.isEmpty()) {
+            channelSchedules(ebsSchedule, query).forEach(channelSchedule ->
+                scheduleMap.put(
+                        channelSchedule.getChannel().getKey(),
+                        channelSchedule.copyWithScheduleSource(overridableEbsPublisher)
+                ));
+        }
+        if (!defaultChannels.isEmpty()) {
+            channelSchedules(defaultSchedule, query).forEach(channelSchedule ->
+                scheduleMap.putIfAbsent(
+                        channelSchedule.getChannel().getKey(),
+                        channelSchedule.copyWithScheduleSource(overridableDefaultPublisher)
+                ));
+        }
+
+        return ImmutableList.copyOf(scheduleMap.values());
     }
 
 }
