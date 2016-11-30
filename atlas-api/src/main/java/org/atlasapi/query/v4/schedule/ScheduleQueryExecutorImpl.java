@@ -3,15 +3,16 @@ package org.atlasapi.query.v4.schedule;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
 import com.metabroadcast.common.stream.MoreCollectors;
+
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
@@ -34,6 +35,7 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
+
 import org.joda.time.Interval;
 
 import java.util.ArrayList;
