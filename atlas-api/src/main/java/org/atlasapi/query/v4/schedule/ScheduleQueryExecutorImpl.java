@@ -1,12 +1,9 @@
 package org.atlasapi.query.v4.schedule;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
 
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
@@ -19,7 +16,6 @@ import org.atlasapi.entity.Identifiables;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryExecutionException;
@@ -28,15 +24,12 @@ import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
 
-import com.metabroadcast.common.stream.MoreCollectors;
-
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -70,45 +63,39 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
     public QueryResult<ChannelSchedule> execute(ScheduleQuery query)
             throws QueryExecutionException {
 
+        Iterable<Channel> channels = resolveChannels(query);
         if (!query.getEnd().isPresent()) {
             throw new UnsupportedOperationException(
-                    "'count' parameter not supported in non-equivalent schedule store. Please specify 'to' parameter in your request");
+                    "'count' parameter not supported in non-equivalent schedule store. "
+                            + "Please specify 'to' parameter in your request");
         }
-
-        Iterable<Channel> channels = resolveChannels(query);
-
-        Ordering<ChannelSchedule> ordering = Ordering.explicit(
-                StreamSupport.stream(channels.spliterator(), false)
-                        .map(Channel::getId)
-                        .collect(MoreCollectors.toImmutableList())
-        )
-                .onResultOf(channelSchedule -> channelSchedule.getChannel().getId());
-
-        ImmutableList<ChannelSchedule> orderedChannelSchedules = ImmutableList.copyOf(
-                ordering.sortedCopy(
-                        getChannelSchedules(channels, query)
-                )
+        ListenableFuture<Schedule> schedule = scheduleResolver.resolve(
+                channels,
+                new Interval(query.getStart(), query.getEnd().get()),
+                query.getSource()
         );
 
         if (query.isMultiChannel()) {
+            List<ChannelSchedule> channelSchedules = channelSchedules(schedule, query);
             return QueryResult.listResult(
-                    orderedChannelSchedules,
+                    channelSchedules,
                     query.getContext(),
-                    orderedChannelSchedules.size()
+                    channelSchedules.size()
             );
         }
-
         return QueryResult.singleResult(
-                Iterables.getOnlyElement(orderedChannelSchedules),
+                Iterables.getOnlyElement(channelSchedules(schedule, query)),
                 query.getContext()
         );
     }
 
     private Iterable<Channel> resolveChannels(ScheduleQuery query) throws QueryExecutionException {
-        Iterable<Id> channelIds = query.isMultiChannel()
-                ? query.getChannelIds()
-                : ImmutableSet.of(query.getChannelId());
-
+        Iterable<Id> channelIds;
+        if (query.isMultiChannel()) {
+            channelIds = query.getChannelIds();
+        } else {
+            channelIds = ImmutableSet.of(query.getChannelId());
+        }
         Resolved<Channel> resolvedChannels = Futures.get(
                 channelResolver.resolveIds(channelIds),
                 1,
@@ -178,55 +165,4 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
     private void replaceBroadcasts(Item item, Broadcast broadcast) {
         item.setBroadcasts(ImmutableSet.of(broadcast));
     }
-
-    private ImmutableList<ChannelSchedule> getChannelSchedules(
-            Iterable<Channel> channels,
-            ScheduleQuery query
-    ) throws ScheduleQueryExecutionException {
-
-        List<Channel> ebsChannels = new ArrayList<>();
-        List<Channel> defaultChannels = new ArrayList<>();
-
-        if (query.getContext()
-                .getApplicationSources()
-                .getAccessRoles()
-                .contains(ApplicationAccessRole.PREFER_EBS_SCHEDULE)
-                ) {
-
-            channels.forEach(channel -> {
-                if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
-                    ebsChannels.add(channel);
-                } else {
-                    defaultChannels.add(channel);
-                }
-            });
-
-        } else {
-            defaultChannels.addAll(Lists.newArrayList(channels));
-        }
-
-        ListenableFuture<Schedule> ebsSchedule = scheduleResolver.resolve(
-                ebsChannels,
-                new Interval(query.getStart(), query.getEnd().get()),
-                Publisher.BT_SPORT_EBS
-        );
-
-        ListenableFuture<Schedule> defaultSchedule = scheduleResolver.resolve(
-                defaultChannels,
-                new Interval(query.getStart(), query.getEnd().get()),
-                query.getSource()
-        );
-
-        ImmutableList.Builder<ChannelSchedule> scheduleBuilder = ImmutableList.builder();
-
-        if (!ebsChannels.isEmpty()) {
-            scheduleBuilder.addAll(channelSchedules(ebsSchedule, query));
-        }
-        if (!defaultChannels.isEmpty()) {
-            scheduleBuilder.addAll(channelSchedules(defaultSchedule, query));
-        }
-
-        return scheduleBuilder.build();
-    }
-
 }
