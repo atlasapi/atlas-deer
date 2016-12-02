@@ -129,13 +129,17 @@ public class EquivalentScheduleQueryExecutorTest {
     @Test
     public void testExecutingMultiScheduleQuery() throws Exception {
 
-        Channel channelOne = Channel.builder(Publisher.BBC).build();
-        channelOne.setId(1L);
-        channelOne.setCanonicalUri("one");
+        Channel channelOne = Channel.builder(Publisher.BBC)
+                .withKey("key1")
+                .withId(1L)
+                .withUri("one")
+                .build();
 
-        Channel channelTwo = Channel.builder(Publisher.BBC).build();
-        channelTwo.setId(2L);
-        channelTwo.setCanonicalUri("two");
+        Channel channelTwo = Channel.builder(Publisher.BBC)
+                .withKey("key2")
+                .withId(2L)
+                .withUri("two")
+                .build();
 
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);

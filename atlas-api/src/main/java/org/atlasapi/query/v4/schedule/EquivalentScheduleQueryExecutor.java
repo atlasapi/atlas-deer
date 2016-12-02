@@ -133,7 +133,7 @@ public class EquivalentScheduleQueryExecutor
         } else {
             ChannelSchedule originalSchedule =
                     Iterables.getOnlyElement(orderedChannelSchedules);
-            if (orderedOverrideSchedules != null) {
+            if (!orderedOverrideSchedules.isEmpty()) {
                 ChannelSchedule override = Iterables.getOnlyElement(orderedOverrideSchedules);
                 return QueryResult.singleResult(
                         scheduleMerger.merge(originalSchedule, override),
