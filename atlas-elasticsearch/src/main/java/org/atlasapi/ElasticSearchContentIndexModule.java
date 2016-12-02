@@ -17,7 +17,6 @@ import org.atlasapi.util.SecondaryIndex;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.Service.State;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -94,10 +93,15 @@ public class ElasticSearchContentIndexModule implements IndexModule {
 
     public void init() {
         try {
-            State contentIndexState = unequivIndex.start().get();
-            log.info("Started content index in state {}", contentIndexState.toString());
-            State topicIndexState = topicIndex.start().get();
-            log.info("Started topic index in state {}", topicIndexState.toString());
+            unequivIndex
+                    .startAsync()
+                    .awaitRunning();
+            log.info("Started content index", unequivIndex.state());
+
+            topicIndex
+                    .startAsync()
+                    .awaitRunning();
+            log.info("Started topic index in state {}", topicIndex.state());
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
