@@ -272,14 +272,11 @@ public class EquivalentScheduleQueryExecutor
             channels.forEach(channel -> {
                 if (channel.getAvailableFrom().contains(Publisher.BT_SPORT_EBS)) {
                     ebsChannels.add(channel);
-                } else {
-                    defaultChannels.add(channel);
                 }
             });
-
-        } else {
-            defaultChannels.addAll(Lists.newArrayList(channels));
         }
+
+        defaultChannels.addAll(Lists.newArrayList(channels));
 
         ListenableFuture<EquivalentSchedule> ebsSchedule;
         Publisher overridableEbsPublisher = query.getOverride().isPresent() ?
