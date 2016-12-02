@@ -98,8 +98,6 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         this.updateEquivalences = metricPrefix + "updateEquivalences.";
 
         this.blacklistedGraphAdjacents = Sets.newHashSet(
-                Id.valueOf(22036L),
-                Id.valueOf(34790L),
                 Id.valueOf(38300626L),
                 Id.valueOf(42959503L),
                 Id.valueOf(44245199L)
@@ -551,7 +549,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
 
     private Map<ResourceRef, EquivalenceGraph> resolveRefs(Set<ResourceRef> adjacents,
             OptionalMap<Id, EquivalenceGraph> adjacentsExistingGraph) {
-        Map<ResourceRef, EquivalenceGraph> graphs = Maps.newHashMapWithExpectedSize(adjacents.size());
+        Map<ResourceRef, EquivalenceGraph> graphs = Maps.newHashMapWithExpectedSize(
+                adjacents.size()
+        );
         for (ResourceRef adj : adjacents) {
             graphs.put(adj, adjacentsExistingGraph.get(adj.getId())
                     .or(EquivalenceGraph.valueOf(adj)));
