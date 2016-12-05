@@ -1,15 +1,16 @@
 package org.atlasapi.query.v4.schedule;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
+import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationAccessRole;
@@ -36,15 +37,13 @@ import org.atlasapi.schedule.EquivalentScheduleResolver;
 import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 import org.atlasapi.schedule.Schedule;
 
-import com.codepoetics.protonpack.StreamUtils;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Interval;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -76,19 +75,15 @@ public class EquivalentScheduleQueryExecutor
     public QueryResult<ChannelSchedule> execute(ScheduleQuery query)
             throws QueryExecutionException {
 
+
         Iterable<Channel> channels = resolveChannels(query);
 
         ImmutableSet<Publisher> selectedSources = selectedSources(query);
 
+        Ordering<ChannelSchedule> ordering = getQueryIdOrdering(query);
+
         ImmutableList<ChannelSchedule> orderedChannelSchedules;
         ImmutableList<ChannelSchedule> orderedOverrideSchedules = ImmutableList.of();
-
-        Ordering<ChannelSchedule> ordering = Ordering.explicit(
-                StreamSupport.stream(channels.spliterator(), false)
-                        .map(Channel::getId)
-                        .collect(MoreCollectors.toImmutableList())
-        )
-                .onResultOf(channelSchedule -> channelSchedule.getChannel().getId());
 
         orderedChannelSchedules = ImmutableList.copyOf(
                 ordering.sortedCopy(
@@ -121,7 +116,7 @@ public class EquivalentScheduleQueryExecutor
                 channelSchedules = StreamUtils
                         .zip(orderedChannelSchedules.stream(), orderedOverrideSchedules.stream(),
                                 scheduleMerger::merge)
-                        .collect(Collectors.toList());
+                        .collect(MoreCollectors.toImmutableList());
             } else {
                 channelSchedules = orderedChannelSchedules;
             }
@@ -338,6 +333,20 @@ public class EquivalentScheduleQueryExecutor
         }
 
         return ImmutableList.copyOf(scheduleMap.values());
+    }
+
+    private Ordering<ChannelSchedule> getQueryIdOrdering(ScheduleQuery query) {
+
+        ImmutableList.Builder<Id> idOrderingBuilder = ImmutableList.builder();
+
+        if (query.isMultiChannel()) {
+            query.getChannelIds().forEach(idOrderingBuilder::add);
+        } else {
+            idOrderingBuilder.add(query.getChannelId());
+        }
+
+        return Ordering.explicit(idOrderingBuilder.build())
+                .onResultOf(channelSchedule -> channelSchedule.getChannel().getId());
     }
 
 }
