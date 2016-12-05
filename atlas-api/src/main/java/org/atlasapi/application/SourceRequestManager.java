@@ -5,7 +5,6 @@ import java.io.UnsupportedEncodingException;
 import javax.mail.MessagingException;
 
 import org.atlasapi.application.SourceStatus.SourceState;
-import org.atlasapi.application.notification.EmailNotificationSender;
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
 import org.atlasapi.entity.Id;
@@ -28,20 +27,19 @@ public class SourceRequestManager {
     private final SourceRequestStore sourceRequestStore;
     private final ApplicationStore applicationStore;
     private final IdGenerator idGenerator;
-    private final EmailNotificationSender emailSender;
     private final Clock clock;
 
     private static Logger log = LoggerFactory.getLogger(SourceRequestManager.class);
 
-    public SourceRequestManager(SourceRequestStore sourceRequestStore,
+    public SourceRequestManager(
+            SourceRequestStore sourceRequestStore,
             ApplicationStore applicationStore,
             IdGenerator idGenerator,
-            EmailNotificationSender emailSender,
-            Clock clock) {
+            Clock clock
+    ) {
         this.sourceRequestStore = sourceRequestStore;
         this.applicationStore = applicationStore;
         this.idGenerator = idGenerator;
-        this.emailSender = emailSender;
         this.clock = clock;
     }
 
@@ -88,8 +86,14 @@ public class SourceRequestManager {
         }
     }
 
-    public SourceRequest createSourceRequest(Publisher source, UsageType usageType,
-            Id applicationId, String applicationUrl, String email, String reason) {
+    private SourceRequest createSourceRequest(
+            Publisher source,
+            UsageType usageType,
+            Id applicationId,
+            String applicationUrl,
+            String email,
+            String reason
+    ) {
         SourceRequest sourceRequest = SourceRequest.builder()
                 .withId(Id.valueOf(idGenerator.generateRaw()))
                 .withAppId(applicationId)
@@ -106,28 +110,24 @@ public class SourceRequestManager {
         applicationStore.updateApplication(
                 existing.copyWithReadSourceState(sourceRequest.getSource(), SourceState.REQUESTED));
 
-        try {
-            emailSender.sendNotificationOfPublisherRequestToAdmin(existing, sourceRequest);
-        } catch (UnsupportedEncodingException e) {
-            log.error(String.format(
-                    "Could not send notification to admin. Please review source requests "
-                            + "for '%s'.",
-                    existing.getTitle()
-            ), e);
-        } catch (MessagingException e) {
-            log.error(String.format(
-                    "Could not send notification to admin. Please review source requests "
-                            + "for '%s'.",
-                    existing.getTitle()
-            ), e);
-        }
+        log.info(
+                "Requesting source access for application {}, {}",
+                existing.getId(),
+                sourceRequest
+        );
+
         return sourceRequest;
     }
 
     // auto approve if not a source requiring manual approval
-    public SourceRequest createAndApproveSourceRequest(Publisher source, UsageType usageType,
-            Id applicationId, String applicationUrl, String email, String reason) {
-
+    private SourceRequest createAndApproveSourceRequest(
+            Publisher source,
+            UsageType usageType,
+            Id applicationId,
+            String applicationUrl,
+            String email,
+            String reason
+    ) {
         SourceRequest sourceRequest = SourceRequest.builder()
                 .withId(Id.valueOf(idGenerator.generateRaw()))
                 .withAppId(applicationId)
@@ -150,8 +150,13 @@ public class SourceRequestManager {
         return sourceRequest;
     }
 
-    public SourceRequest updateSourceRequest(SourceRequest existing, UsageType usageType,
-            String applicationUrl, String email, String reason) {
+    private SourceRequest updateSourceRequest(
+            SourceRequest existing,
+            UsageType usageType,
+            String applicationUrl,
+            String email,
+            String reason
+    ) {
         SourceRequest sourceRequest = existing.copy()
                 .withAppUrl(applicationUrl)
                 .withEmail(email)
@@ -192,6 +197,11 @@ public class SourceRequestManager {
                 ));
         SourceRequest approved = sourceRequest.get().copy().withApprovedAt(clock.now()).build();
         sourceRequestStore.store(approved);
-        emailSender.sendNotificationOfPublisherRequestSuccessToUser(existing, sourceRequest.get());
+
+        log.info(
+                "Approving source request for application {}, {}",
+                existing.getId(),
+                approved
+        );
     }
 }
