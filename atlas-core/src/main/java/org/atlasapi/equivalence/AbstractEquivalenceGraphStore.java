@@ -97,11 +97,9 @@ public abstract class AbstractEquivalenceGraphStore implements EquivalenceGraphS
         this.metricRegistry = metricRegistry;
         this.updateEquivalences = metricPrefix + "updateEquivalences.";
 
-        this.blacklistedGraphAdjacents = Sets.newHashSet(
-                Id.valueOf(38300626L),
-                Id.valueOf(42959503L),
-                Id.valueOf(44245199L)
-        );
+        // The blacklist is currently empty, but we are retaining the mechanism for
+        // potential future need
+        this.blacklistedGraphAdjacents = Sets.newHashSet();
         this.metricRegistry.histogram(updateEquivalences + HISTOGRAM_BLACKLIST)
                 .update(blacklistedGraphAdjacents.size());
     }
