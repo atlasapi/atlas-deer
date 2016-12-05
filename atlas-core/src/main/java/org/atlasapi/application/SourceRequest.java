@@ -6,6 +6,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.media.entity.Publisher;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import org.joda.time.DateTime;
 
@@ -120,6 +121,23 @@ public class SourceRequest implements Identifiable {
                 .withRequestedAt(requestedAt)
                 .withApproved(approved)
                 .withApprovedAt(approvedAt);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", id)
+                .add("appId", appId)
+                .add("source", source)
+                .add("usageType", usageType)
+                .add("email", email)
+                .add("appUrl", appUrl)
+                .add("reason", reason)
+                .add("licenseAccepted", licenseAccepted)
+                .add("requestedAt", requestedAt)
+                .add("approved", approved)
+                .add("approvedAt", approvedAt)
+                .toString();
     }
 
     public static class Builder {

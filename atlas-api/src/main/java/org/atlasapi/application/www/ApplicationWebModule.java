@@ -50,7 +50,6 @@ import org.atlasapi.application.model.deserialize.OptionalDeserializer;
 import org.atlasapi.application.model.deserialize.PublisherDeserializer;
 import org.atlasapi.application.model.deserialize.RoleDeserializer;
 import org.atlasapi.application.model.deserialize.SourceReadEntryDeserializer;
-import org.atlasapi.application.notification.NotifierModule;
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.users.EndUserLicenseController;
 import org.atlasapi.application.users.NewUserSupplier;
@@ -145,8 +144,8 @@ import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
 @Import({
         AtlasPersistenceModule.class,
         ApplicationPersistenceModule.class,
-        NotifierModule.class,
-        LicenseModule.class })
+        LicenseModule.class
+})
 public class ApplicationWebModule {
 
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
@@ -159,7 +158,6 @@ public class ApplicationWebModule {
 
     @Autowired AtlasPersistenceModule persistence;
     @Autowired ApplicationPersistenceModule appPersistence;
-    @Autowired NotifierModule notifier;
 
     @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
 
@@ -316,7 +314,6 @@ public class ApplicationWebModule {
                 appPersistence.sourceRequestStore(),
                 appPersistence.applicationStore(),
                 idGenerator,
-                notifier.emailSender(),
                 new SystemClock()
         );
         return new SourceRequestsController(
