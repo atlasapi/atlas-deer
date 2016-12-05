@@ -406,6 +406,20 @@
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jvm</artifactId>
         <version>${metrics-dw.version}</version>
+      </dependency><dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient</artifactId>
+      <version>${prometheus.version}</version>
+    </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_servlet</artifactId>
+        <version>${prometheus.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_dropwizard</artifactId>
+        <version>${prometheus.version}</version>
       </dependency>
       <dependency>
         <groupId>com.codahale.metrics</groupId>
@@ -526,6 +540,8 @@
     <spring.version>4.2.1.RELEASE</spring.version>
     <datastax.version>3.1.0</datastax.version>
     <jackson.version>2.8.0</jackson.version>
+    <metrics-dw.version>3.1.2</metrics-dw.version>
+    <prometheus.version>0.0.19</prometheus.version>
 
     <sonar.jacoco.itReportPath>${project.basedir}/target/jacoco-it.exec</sonar.jacoco.itReportPath>
     <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
@@ -534,7 +550,6 @@
     <sonar.language>java</sonar.language>
     <sonar.exclusions>**/target/**/*,**/src/main/java/**/generated/**/*</sonar.exclusions>
     <netty.version>4.0.33.Final</netty.version>
-    <metrics-dw.version>3.1.2</metrics-dw.version>
   </properties>
 
   <scm>
