@@ -245,6 +245,18 @@
 	  <artifactId>reflections</artifactId>
 	  <version>0.9.9</version>
     </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-graphite</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-jvm</artifactId>
+    </dependency>
   </dependencies>
 
   <distributionManagement>
