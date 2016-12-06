@@ -15,6 +15,8 @@ import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.dropwizard.DropwizardExports;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -38,6 +40,14 @@ public class MetricsModule {
         startGraphiteReporter(metrics);
 
         return metrics;
+    }
+
+    @Bean
+    public MetricsController metricsController() {
+        CollectorRegistry collectorRegistry = new CollectorRegistry();
+        collectorRegistry.register(new DropwizardExports(metrics()));
+
+        return MetricsController.create(collectorRegistry);
     }
 
     private void registerMetrics(String prefix, MetricSet metrics, MetricRegistry registry) {
