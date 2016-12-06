@@ -393,6 +393,21 @@
         <version>${metrics.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${metrics-dw.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-graphite</artifactId>
+        <version>${metrics-dw.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-jvm</artifactId>
+        <version>${metrics-dw.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.codahale.metrics</groupId>
         <artifactId>metrics-jetty9</artifactId>
         <version>${metrics.version}</version>
@@ -519,6 +534,7 @@
     <sonar.language>java</sonar.language>
     <sonar.exclusions>**/target/**/*,**/src/main/java/**/generated/**/*</sonar.exclusions>
     <netty.version>4.0.33.Final</netty.version>
+    <metrics-dw.version>3.1.2</metrics-dw.version>
   </properties>
 
   <scm>
