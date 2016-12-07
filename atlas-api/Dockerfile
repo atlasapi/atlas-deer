@@ -15,6 +15,11 @@ COPY atlas-api/log4j.properties /usr/local/jetty/log4j.properties
 WORKDIR /usr/local/jetty
 
 CMD java \
+# Needed to get the service to startup but not needed in kubernetes
+    -Dmetrics.environment.prefix=remove.this.value \
+    -Dmetrics.graphite.host=remove.this.value.too \
+    -Dmetrics.graphite.port=42 \
+##########
     -Djetty.home="$JETTY_HOME" \
     -Dsun.net.inetaddr.ttl="$SUN_NET_INETADDR_TTL" \
     -DMBST_PLATFORM="$MBST_PLATFORM" \
