@@ -145,7 +145,7 @@ public class CqlContentStore implements ContentStore {
         mapper.setDefaultSaveOptions(Mapper.Option.consistencyLevel(builder.writeConsistency));
         mapper.setDefaultDeleteOptions(Mapper.Option.consistencyLevel(builder.writeConsistency));
 
-        this.sender = checkNotNull(builder.sender);
+        this.sender = builder.sender;
         this.hasher = checkNotNull(builder.hasher);
         this.graphStore = checkNotNull(builder.graphStore);
 
@@ -319,6 +319,10 @@ public class CqlContentStore implements ContentStore {
     }
 
     protected void sendMessages(ImmutableList<ResourceUpdatedMessage> messages) {
+        if (sender == null) {
+            return;
+        }
+
         Map<Id, Id> resourceGraphIds = getResourceGraphIds(messages);
 
         for (ResourceUpdatedMessage message : messages) {
@@ -535,7 +539,7 @@ public class CqlContentStore implements ContentStore {
         return ImmutableList.of();
     }
 
-    private boolean containerWasRemoved(Content previous, Content content) {
+    private boolean containerWasRemoved(@Nullable Content previous, Content content) {
         return previous != null
                 && previous instanceof Item
                 && content instanceof Item

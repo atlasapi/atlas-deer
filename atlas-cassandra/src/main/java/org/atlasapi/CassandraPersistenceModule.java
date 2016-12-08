@@ -5,7 +5,6 @@ import java.util.UUID;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
-import org.atlasapi.content.v2.BootstrapCqlContentStore;
 import org.atlasapi.content.v2.CqlContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
@@ -104,7 +103,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private DatastaxCassandraScheduleStore v2ScheduleStore;
     private AstyanaxCassandraContentStore contentStore;
     private CqlContentStore cqlContentStore;
-    private BootstrapCqlContentStore bootstrapCqlContentStore;
+    private CqlContentStore bootstrapCqlContentStore;
     private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
     private OrganisationStore organisationStore;
@@ -319,25 +318,25 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withClock(new SystemClock())
                 .withHasher(contentHasher)
                 .withGraphStore(contentEquivalenceGraphStore)
-                .withSender(nullMessageSender(ResourceUpdatedMessage.class))
+//                .withSender(null)
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "CqlContentStore.")
                 .build();
     }
 
-    private BootstrapCqlContentStore makeBootstrapCqlContentStore(Session session) {
-        return BootstrapCqlContentStore.create(
-                CqlContentStore.builder()
-                        .withSession(session)
-                        .withIdGenerator(contentIdGenerator)
-                        .withClock(new SystemClock())
-                        .withHasher(contentHasher)
-                        .withGraphStore(contentEquivalenceGraphStore)
-                        .withSender(nullMessageSender(ResourceUpdatedMessage.class))
-                        .withReadConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
-                        .withWriteConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
-                        .withMetricRegistry(metrics)
-                        .withMetricPrefix(METRIC_PREFIX + "BootstrapCqlContentStore."));
+    private CqlContentStore makeBootstrapCqlContentStore(Session session) {
+        return CqlContentStore.builder()
+                .withSession(session)
+                .withIdGenerator(contentIdGenerator)
+                .withClock(new SystemClock())
+                .withHasher(contentHasher)
+                .withGraphStore(contentEquivalenceGraphStore)
+//                .withSender(null)
+                .withReadConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
+                .withWriteConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
+                .withMetricRegistry(metrics)
+                .withMetricPrefix(METRIC_PREFIX + "BootstrapCqlContentStore.")
+                .build();
     }
 
     public EquivalenceGraphStore nullMessageSendingGraphStore() {
@@ -394,7 +393,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         return cqlContentStore;
     }
 
-    public BootstrapCqlContentStore bootstrapCqlContentStore() {
+    public CqlContentStore bootstrapCqlContentStore() {
         return bootstrapCqlContentStore;
     }
 
