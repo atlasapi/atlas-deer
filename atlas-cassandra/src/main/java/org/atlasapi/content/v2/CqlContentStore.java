@@ -62,6 +62,7 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.Timestamp;
+import com.metabroadcast.promise.Promise;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codepoetics.protonpack.maps.MapStream;
@@ -299,10 +300,7 @@ public class CqlContentStore implements ContentStore {
         )
                 .map(Id::longValue)
                 .map(accessor::getContent)
-                .map(contentFuture -> Futures.transform(
-                        contentFuture,
-                        (org.atlasapi.content.v2.model.Content content) -> content != null ? translator.deserialize(content) : null
-                ))
+                .map(contentFuture -> Promise.wrap(contentFuture).then(this::deserializeIfFull))
                 .collect(Collectors.toList());
 
         ListenableFuture<List<Content>> contentList = Futures.transform(
@@ -316,6 +314,19 @@ public class CqlContentStore implements ContentStore {
                 contentList,
                 (Function<List<Content>, Resolved<Content>>) Resolved::valueOf
         );
+    }
+
+    @Nullable
+    private Content deserializeIfFull(@Nullable org.atlasapi.content.v2.model.Content content) {
+        // we denormalise things like itemRefs on containers. When a content gets written, we write
+        // its itemRef onto the container without checking that the container exists, thus
+        // creating an incomplete container object. These can be recognised most notably by
+        // lack of 'type'
+        if (content != null && content.getType() != null) {
+            return translator.deserialize(content);
+        } else {
+            return null;
+        }
     }
 
     protected void sendMessages(ImmutableList<ResourceUpdatedMessage> messages) {
@@ -470,6 +481,7 @@ public class CqlContentStore implements ContentStore {
         return previous;
     }
 
+    @Nullable
     private Container resolveContainer(Content content) throws WriteException {
         ContainerRef containerRef = null;
 
