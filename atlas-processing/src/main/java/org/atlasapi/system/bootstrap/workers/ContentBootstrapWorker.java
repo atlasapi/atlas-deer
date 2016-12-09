@@ -7,6 +7,7 @@ import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.ContentWriter;
 import org.atlasapi.entity.Id;
+import org.atlasapi.entity.util.MissingResourceException;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.entity.util.WriteResult;
@@ -120,8 +121,31 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
             throw new IllegalArgumentException("Failed to resolve content " + contentId);
         }
 
-        WriteResult<Content, Content> result =
-                writer.writeContent(content.getResources().first().get());
+        WriteResult<Content, Content> result = null;
+
+        Content contentToWrite = content.getResources().first().get();
+
+        try {
+            result = writer.writeContent(contentToWrite);
+        } catch (WriteException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof MissingResourceException) {
+                MissingResourceException mre = (MissingResourceException) e.getCause();
+
+                Id containerId = mre.getMissingId();
+                log.info("Missing container {} for {}, trying to fix", containerId, contentId);
+
+                Resolved<Content> missing = resolveContent(containerId);
+                if (missing.getResources().isEmpty()) {
+                    throw e;
+                }
+
+                writer.writeContent(missing.getResources().first().get());
+                result = writer.writeContent(contentToWrite);
+            } else {
+                throw e;
+            }
+        }
 
         if (result.written()) {
             log.debug("Bootstrapped content {}", result.toString());
@@ -131,10 +155,10 @@ public class ContentBootstrapWorker implements Worker<ResourceUpdatedMessage> {
                     TimeUnit.MILLISECONDS
             );
             columbusTelescopeReporter.reportSuccessfulMigration(
-                    content.getResources().first().get()
+                    contentToWrite
             );
         } else {
-            log.debug("Content has not been written: {}", result.toString());
+            log.debug("Content has not been written: {}", result);
             contentNotWrittenMeter.mark();
         }
     }
