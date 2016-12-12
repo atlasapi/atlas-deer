@@ -313,11 +313,13 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         );
 
         log.info(
-                "Processing equivalent schedule update for {} {} {}: currentEntries:{}, "
-                        + "update:{}, stale broadcasts from update:{}, stale broadcasts:{}",
+                "Processing equivalent schedule update for {} {} {}: content: {}, "
+                        + "currentEntries:{}, update:{}, stale broadcasts from update:{}, "
+                        + "stale broadcasts:{}",
                 update.getSource(),
                 update.getSchedule().getChannel().longValue(),
                 update.getSchedule().getInterval(),
+                content,
                 currentBroadcastRows.values()
                         .stream()
                         .map(BroadcastRow::toString)
