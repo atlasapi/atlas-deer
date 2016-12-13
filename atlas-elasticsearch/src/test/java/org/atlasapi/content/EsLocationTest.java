@@ -6,11 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.atlasapi.entity.Alias;
-
-import com.metabroadcast.common.stream.MoreCollectors;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -33,11 +31,9 @@ public class EsLocationTest {
 
     private DateTimeFormatter formatter;
 
-    private Map<String, Object> aliasMap;
-    private Map<String, Object> hashMapMap;
+    private Map<String, Object> locationMap;
 
     private Map<String, Object> expectedMap = new HashMap<>();
-    private EsLocation expectedEsLocation;
 
     private Alias aliasA, aliasB;
     private List<Alias> aliases = new ArrayList<>();
@@ -51,29 +47,26 @@ public class EsLocationTest {
         aliases.add(aliasA);
         aliases.add(aliasB);
 
+        Map<String, String> aliasAMap = ImmutableMap.of(
+                "namespace", "namespaceA",
+                "value", "valueA"
+        );
+        Map<String, String> aliasBMap = ImmutableMap.of(
+                "namespace", "namespaceB",
+                "value", "valueB"
+        );
 
-        aliasMap = new HashMap<>();
-        aliasMap.put(AVAILABILITY_TIME, formatter.parseDateTime(DATE_A));
-        aliasMap.put(AVAILABILITY_END_TIME, formatter.parseDateTime(DATE_B));
-        aliasMap.put(ALIASES, aliases.stream().collect(MoreCollectors.toImmutableSet()));
+        locationMap = ImmutableMap.of(
+                AVAILABILITY_TIME, formatter.parseDateTime(DATE_A),
+                AVAILABILITY_END_TIME, formatter.parseDateTime(DATE_B),
+                ALIASES, Lists.newArrayList(aliasAMap, aliasBMap)
+        );
 
-        Map<String, Object> aliasesAsHashMap = Maps.newHashMap();
-        Map<String, String> aliasAMap = Maps.newHashMap();
-        aliasAMap.put("namespace", "namespaceA");
-        aliasAMap.put("value", "valueA");
-        Map<String, String> aliasBMap = Maps.newHashMap();
-        aliasBMap.put("namespace", "namespaceB");
-        aliasBMap.put("value", "valueB");
+        EsLocation expectedEsLocation = new EsLocation()
+                .availabilityTime(formatter.parseDateTime(DATE_A).toDate())
+                .availabilityEndTime(formatter.parseDateTime(DATE_B).toDate())
+                .aliases(aliases);
 
-        hashMapMap = new HashMap<>();
-        hashMapMap.put(AVAILABILITY_TIME, formatter.parseDateTime(DATE_A));
-        hashMapMap.put(AVAILABILITY_END_TIME, formatter.parseDateTime(DATE_B));
-        hashMapMap.put(ALIASES, Lists.newArrayList(aliasAMap, aliasBMap));
-
-        expectedEsLocation = new EsLocation();
-        expectedEsLocation.availabilityTime(formatter.parseDateTime(DATE_A).toDate());
-        expectedEsLocation.availabilityEndTime(formatter.parseDateTime(DATE_B).toDate());
-        expectedEsLocation.aliases(aliases);
         expectedMap = expectedEsLocation.toMap();
     }
 
@@ -116,21 +109,9 @@ public class EsLocationTest {
     }
 
     @Test
-    public void createEsLocationFromMapWithAliases() throws Exception {
+    public void createEsLocationFromMap() throws Exception {
 
-        Map<String, Object> actualMap = EsLocation.fromMap(aliasMap).toMap();
-        assert(testEsLocationsFromMap(actualMap));
-
-    }
-
-    @Test
-    public void createEsLocationFromMapWithHashMap() throws Exception {
-
-        Map<String, Object> actualMap = EsLocation.fromMap(hashMapMap).toMap();
-        assert(testEsLocationsFromMap(actualMap));
-    }
-
-    private boolean testEsLocationsFromMap(Map<String, Object> actualMap) {
+        Map<String, Object> actualMap = EsLocation.fromMap(locationMap).toMap();
 
         Iterator<Map<String,Object>> actualAliasesIterator =
                 ((Iterable<Map<String,Object>>) actualMap.get(ALIASES)).iterator();
@@ -149,7 +130,5 @@ public class EsLocationTest {
 
         assertThat(actualAliasMapB.get(NAMESPACE), is(aliasB.getNamespace()));
         assertThat(actualAliasMapB.get(VALUE), is(aliasB.getValue()));
-
-        return true;
     }
 }
