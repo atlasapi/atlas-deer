@@ -1,15 +1,14 @@
 package org.atlasapi.content;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.atlasapi.entity.Alias;
-
-import com.metabroadcast.common.stream.MoreCollectors;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -32,9 +31,9 @@ public class EsLocationTest {
 
     private DateTimeFormatter formatter;
 
-    private Map<String, Object> map;
+    private Map<String, Object> locationMap;
+
     private Map<String, Object> expectedMap = new HashMap<>();
-    private EsLocation expectedEsLocation;
 
     private Alias aliasA, aliasB;
     private List<Alias> aliases = new ArrayList<>();
@@ -48,16 +47,26 @@ public class EsLocationTest {
         aliases.add(aliasA);
         aliases.add(aliasB);
 
+        Map<String, String> aliasAMap = ImmutableMap.of(
+                "namespace", "namespaceA",
+                "value", "valueA"
+        );
+        Map<String, String> aliasBMap = ImmutableMap.of(
+                "namespace", "namespaceB",
+                "value", "valueB"
+        );
 
-        map = new HashMap<>();
-        map.put(AVAILABILITY_TIME, formatter.parseDateTime(DATE_A));
-        map.put(AVAILABILITY_END_TIME, formatter.parseDateTime(DATE_B));
-        map.put(ALIASES, aliases.stream().collect(MoreCollectors.toImmutableSet()));
+        locationMap = ImmutableMap.of(
+                AVAILABILITY_TIME, formatter.parseDateTime(DATE_A),
+                AVAILABILITY_END_TIME, formatter.parseDateTime(DATE_B),
+                ALIASES, Lists.newArrayList(aliasAMap, aliasBMap)
+        );
 
-        expectedEsLocation = new EsLocation();
-        expectedEsLocation.availabilityTime(formatter.parseDateTime(DATE_A).toDate());
-        expectedEsLocation.availabilityEndTime(formatter.parseDateTime(DATE_B).toDate());
-        expectedEsLocation.aliases(aliases);
+        EsLocation expectedEsLocation = new EsLocation()
+                .availabilityTime(formatter.parseDateTime(DATE_A).toDate())
+                .availabilityEndTime(formatter.parseDateTime(DATE_B).toDate())
+                .aliases(aliases);
+
         expectedMap = expectedEsLocation.toMap();
     }
 
@@ -102,7 +111,7 @@ public class EsLocationTest {
     @Test
     public void createEsLocationFromMap() throws Exception {
 
-        Map<String, Object> actualMap = EsLocation.fromMap(map).toMap();
+        Map<String, Object> actualMap = EsLocation.fromMap(locationMap).toMap();
 
         Iterator<Map<String,Object>> actualAliasesIterator =
                 ((Iterable<Map<String,Object>>) actualMap.get(ALIASES)).iterator();
@@ -121,6 +130,5 @@ public class EsLocationTest {
 
         assertThat(actualAliasMapB.get(NAMESPACE), is(aliasB.getNamespace()));
         assertThat(actualAliasMapB.get(VALUE), is(aliasB.getValue()));
-
     }
 }

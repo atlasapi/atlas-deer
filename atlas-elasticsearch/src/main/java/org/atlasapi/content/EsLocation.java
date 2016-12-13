@@ -2,7 +2,10 @@ package org.atlasapi.content;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Alias;
 import org.atlasapi.util.EsAlias;
@@ -16,9 +19,9 @@ import org.joda.time.DateTime;
 
 public class EsLocation extends EsObject {
 
-    public final static String AVAILABILITY_TIME = "availabilityTime";
-    public final static String AVAILABILITY_END_TIME = "availabilityEndTime";
-    public final static String ALIASES = "aliases";
+    public static final String AVAILABILITY_TIME = "availabilityTime";
+    public static final String AVAILABILITY_END_TIME = "availabilityEndTime";
+    public static final String ALIASES = "aliases";
 
     public static XContentBuilder getMapping() throws IOException {
         return XContentFactory.jsonBuilder()
@@ -56,6 +59,17 @@ public class EsLocation extends EsObject {
         return this;
     }
 
+    public EsLocation aliasesFromEs(Iterable<EsAlias> aliases) {
+        properties.put(
+                ALIASES,
+                StreamSupport.stream(aliases.spliterator(), false)
+                        .map(TO_MAP::apply)
+                        .collect(Collectors.toList())
+        );
+
+        return this;
+    }
+
     public static EsLocation fromMap(Map<String, Object> map) {
         EsLocation esLocation = new EsLocation();
         if (map.get(AVAILABILITY_TIME) != null) {
@@ -66,8 +80,13 @@ public class EsLocation extends EsObject {
         }
 
         if (map.get(ALIASES) != null) {
-            esLocation.aliases((Iterable<Alias>)map.get(ALIASES));
+                esLocation.aliasesFromEs(
+                        (List<EsAlias>) ((List<Map>)map.get(ALIASES)).stream()
+                                .map(EsAlias::fromMap)
+                                .collect(Collectors.toList())
+                );
         }
         return esLocation;
     }
+
 }
