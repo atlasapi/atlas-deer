@@ -305,6 +305,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
         return broadcastItem.getBroadcasts()
                 .stream()
+                .filter(Broadcast::isActivelyPublished)
                 .filter(broadcast -> broadcast.getSourceId().equals(ref.getSourceId())
                         || broadcast.getChannelId().equals(ref.getChannelId())
                         && ref.getTransmissionInterval().equals(broadcast.getTransmissionInterval())
