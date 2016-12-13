@@ -1,6 +1,8 @@
 package org.atlasapi.schedule;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
@@ -17,6 +19,7 @@ import org.atlasapi.equivalence.Equivalent;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.TestCassandraPersistenceModule;
 
+import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.collect.ImmutableList;
@@ -37,6 +40,7 @@ import org.junit.Test;
 
 import static org.atlasapi.schedule.AbstractEquivalentScheduleStore.MAX_BROADCAST_AGE_TO_UPDATE;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -2080,6 +2084,65 @@ public class CassandraEquivalentScheduleStoreIT {
         ImmutableSet<Id> equivalenceSet = entry.getItems().getGraph().getEquivalenceSet();
         assertThat(equivalenceSet.size(), is(1));
         assertThat(equivalenceSet.contains(item.getId()), is(true));
+    }
+
+    @Test
+    public void unpublishedBroadcastsAreExcludedWhenLookingForDenormalisation() throws Exception {
+        /* NOTE: if this looks like it's non-deterministic, that's because it is. It's an
+        integration test, and we need to check that only one of the bunch gets left in. This
+        includes some random behaviour by way of order of iteration over a hash-set, so best we
+        can do is make it incredibly unlikely to succeed by accident, as in 0.1% right now.
+
+        Also note that this will never render a false failure, if it fails, it's legit. It might
+        accidentally succeed.
+         */
+        List<Broadcast> unpublishedBroadcasts = IntStream.range(0, 1000)
+                .mapToObj(i -> new Broadcast(
+                                channel,
+                                makeDateTime(10, 25, 18, 0),
+                                makeDateTime(10, 25, 19, 0),
+                                false
+                        ).withId(String.format("somestaleBroadcast_%d", i))
+                ).collect(MoreCollectors.toImmutableList());
+
+        Broadcast broadcastInUpdate = new Broadcast(
+                channel,
+                makeDateTime(10, 25, 18, 0),
+                makeDateTime(10, 25, 19, 0)
+        )
+                .withId("newBroadcast");
+
+        Item existingItem = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+
+        existingItem.setBroadcasts(ImmutableSet.copyOf(Iterables.concat(
+                unpublishedBroadcasts,
+                ImmutableList.of(broadcastInUpdate)
+        )));
+
+        contentStore.writeContent(existingItem);
+
+        ScheduleRef update = ScheduleRef.forChannel(
+                channel.getId(),
+                new Interval(
+                        makeDateTime(10, 25, 18, 0),
+                        makeDateTime(10, 25, 19, 0)
+                )
+        )
+                .addEntry(existingItem.getId(), broadcastInUpdate.toRef())
+                .build();
+
+        updateSchedule(update);
+
+        ImmutableList<EquivalentScheduleEntry> scheduleEntries = getScheduleEntries(
+                channel,
+                makeDateTime(10, 25, 18, 0),
+                makeDateTime(10, 25, 19, 0)
+        );
+
+        assertThat(scheduleEntries, hasSize(1));
+
+        EquivalentScheduleEntry entry = scheduleEntries.get(0);
+        assertThat(entry.getBroadcast().getSourceId(), is("newBroadcast"));
     }
 
     private DateTime makeDateTime(
