@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.ErrorResultWriter;
@@ -46,12 +46,12 @@ public class PopularTopicController {
     private final TopicResolver resolver;
     private final PopularTopicIndex index;
     private final QueryResultWriter<Topic> resultWriter;
-    private final ApplicationSourcesFetcher sourcesFetcher;
+    private final ApplicationFetcher sourcesFetcher;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     public PopularTopicController(TopicResolver resolver, PopularTopicIndex index,
-            QueryResultWriter<Topic> resultWriter, ApplicationSourcesFetcher configurationFetcher) {
+            QueryResultWriter<Topic> resultWriter, ApplicationFetcher configurationFetcher) {
         this.resolver = resolver;
         this.index = index;
         this.resultWriter = resultWriter;
@@ -72,7 +72,7 @@ public class PopularTopicController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            ApplicationSources sources = sourcesFetcher.sourcesFor(request)
+            ApplicationSources sources = sourcesFetcher.applicationFor(request)
                     .or(ApplicationSources.defaults());
             Interval interval = new Interval(
                     dateTimeInQueryParser.parse(from),

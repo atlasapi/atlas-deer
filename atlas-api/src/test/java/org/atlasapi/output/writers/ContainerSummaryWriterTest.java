@@ -57,7 +57,7 @@ public class ContainerSummaryWriterTest {
         applicationSources = ApplicationSources.defaults();
         annotations = ImmutableSet.of();
 
-        when(outputContext.getApplicationSources()).thenReturn(applicationSources);
+        when(outputContext.getApplication()).thenReturn(applicationSources);
         when(outputContext.getActiveAnnotations()).thenReturn(annotations);
 
         series = new Series(Id.valueOf(10L), Publisher.METABROADCAST);

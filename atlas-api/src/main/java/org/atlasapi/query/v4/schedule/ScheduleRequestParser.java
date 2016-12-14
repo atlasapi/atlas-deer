@@ -7,8 +7,9 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
@@ -57,7 +58,7 @@ class ScheduleRequestParser {
     private static final String ID_PARAM = "id";
     private static final String ORDER_BY = "order_by";
 
-    private final ApplicationSourcesFetcher applicationFetcher;
+    private final ApplicationFetcher applicationFetcher;
 
     private final SetBasedRequestParameterValidator singleValidator;
     private final SetBasedRequestParameterValidator multiValidator;
@@ -69,7 +70,7 @@ class ScheduleRequestParser {
     private final Clock clock;
 
     public ScheduleRequestParser(
-            ApplicationSourcesFetcher appFetcher,
+            ApplicationFetcher appFetcher,
             Duration maxQueryDuration,
             Clock clock,
             ContextualAnnotationsExtractor annotationsExtractor
@@ -90,7 +91,7 @@ class ScheduleRequestParser {
     }
 
     private SetBasedRequestParameterValidator singleRequestValidator(
-            ApplicationSourcesFetcher fetcher
+            ApplicationFetcher fetcher
     ) {
         ImmutableList<String> required = ImmutableList.<String>builder()
                 .add(FROM_PARAM, SOURCE_PARAM)
@@ -106,7 +107,7 @@ class ScheduleRequestParser {
     }
 
     private SetBasedRequestParameterValidator multiRequestValidator(
-            ApplicationSourcesFetcher fetcher
+            ApplicationFetcher fetcher
     ) {
         ImmutableList<String> required = ImmutableList.<String>builder()
                 .add(ID_PARAM, FROM_PARAM, SOURCE_PARAM)
@@ -292,11 +293,11 @@ class ScheduleRequestParser {
         return publisher.get();
     }
 
-    private ApplicationSources getConfiguration(HttpServletRequest request) throws InvalidApiKeyException {
-        com.google.common.base.Optional<ApplicationSources> config =
-                applicationFetcher.sourcesFor(request);
-        if (config.isPresent()) {
-            return config.get();
+    private Application getConfiguration(HttpServletRequest request) throws InvalidApiKeyException {
+
+        Optional<Application> application = applicationFetcher.applicationFor(request);
+        if (application.isPresent()) {
+            return application.get();
         }
         // key is required parameter so we should never reach here.
         throw new IllegalStateException("application not fetched");

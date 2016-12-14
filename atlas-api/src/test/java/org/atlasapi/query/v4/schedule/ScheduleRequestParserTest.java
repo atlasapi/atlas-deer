@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceStatus;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
@@ -60,7 +60,7 @@ public class ScheduleRequestParserTest {
 
     private static final String KEY_PARAM = "key";
 
-    @Mock private ApplicationSourcesFetcher applicationFetcher;
+    @Mock private ApplicationFetcher applicationFetcher;
     @Mock private ContextualAnnotationsExtractor annotationsExtractor;
 
     private DateTime time = new DateTime(2012, 12, 14, 10, 0, 0, 0, DateTimeZones.UTC);
@@ -86,9 +86,9 @@ public class ScheduleRequestParserTest {
 
         when(annotationsExtractor.extractFromRequest(any(HttpServletRequest.class)))
                 .thenReturn(ActiveAnnotations.standard());
-        when(applicationFetcher.sourcesFor(argThat(httpRequestWithParam(KEY_PARAM, is("apikey")))))
+        when(applicationFetcher.applicationFor(argThat(httpRequestWithParam(KEY_PARAM, is("apikey")))))
                 .thenReturn(Optional.of(sources));
-        when(applicationFetcher.sourcesFor(argThat(httpRequestWithParam(KEY_PARAM, not("apikey")))))
+        when(applicationFetcher.applicationFor(argThat(httpRequestWithParam(KEY_PARAM, not("apikey")))))
                 .thenThrow(new InvalidApiKeyException("therequestedapikey"));
     }
 

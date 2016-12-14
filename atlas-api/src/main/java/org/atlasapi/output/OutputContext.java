@@ -6,8 +6,8 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Region;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
@@ -18,8 +18,6 @@ import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -28,12 +26,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class OutputContext {
 
-    private final Logger log = LoggerFactory.getLogger(OutputContext.class);
-
     public static OutputContext valueOf(QueryContext standard) {
         return new OutputContext(
                 standard.getAnnotations(),
-                standard.getApplicationSources(),
+                standard.getApplication(),
                 standard.getRequest(),
                 null
         );
@@ -42,7 +38,7 @@ public class OutputContext {
     public static OutputContext valueOf(QueryContext standard, Region region) {
         return new OutputContext(
                 standard.getAnnotations(),
-                standard.getApplicationSources(),
+                standard.getApplication(),
                 standard.getRequest(),
                 region
         );
@@ -51,7 +47,7 @@ public class OutputContext {
     public static OutputContext valueOf(UserAwareQueryContext standard) {
         return new OutputContext(
                 standard.getAnnotations(),
-                standard.getApplicationSources(),
+                standard.getApplication(),
                 standard.getRequest(),
                 null
         );
@@ -60,26 +56,26 @@ public class OutputContext {
     public static OutputContext valueOf(UserAccountsAwareQueryContext standard) {
         return new OutputContext(
                 standard.getAnnotations(),
-                standard.getApplicationSources(),
+                standard.getApplication(),
                 standard.getRequest(),
                 null
         );
     }
 
     private final ActiveAnnotations annotations;
-    private final ApplicationSources applicationSources;
+    private final Application application;
     private final List<Resource> resources;
     private final HttpServletRequest request;
     private final Optional<Region> region;
 
     public OutputContext(
             ActiveAnnotations activeAnnotations,
-            ApplicationSources applicationSources,
+            Application application,
             HttpServletRequest request,
             @Nullable Region region
     ) {
         this.annotations = checkNotNull(activeAnnotations);
-        this.applicationSources = checkNotNull(applicationSources);
+        this.application = checkNotNull(application);
         this.resources = Lists.newLinkedList();
         this.request = checkNotNull(request);
         this.region = Optional.ofNullable(region);
@@ -108,8 +104,8 @@ public class OutputContext {
         return registry.activeAnnotations(active);
     }
 
-    public ApplicationSources getApplicationSources() {
-        return this.applicationSources;
+    public Application getApplication() {
+        return this.application;
     }
 
     public HttpServletRequest getRequest() {

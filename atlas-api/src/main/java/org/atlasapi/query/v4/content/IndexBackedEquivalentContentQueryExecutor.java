@@ -5,8 +5,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexQueryParser;
@@ -91,7 +91,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     private ListenableFuture<ResolvedEquivalents<Content>> resolve(Query<Content> query, Id id) {
         return resolver.resolveIds(
                 ImmutableSet.of(id),
-                applicationSources(query),
+                application(query),
                 annotations(query)
         );
     }
@@ -121,7 +121,7 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
             ListenableFuture<ResolvedEquivalents<Content>> resolving =
                     resolver.resolveIds(
                             input.getIds(),
-                            applicationSources(query),
+                            application(query),
                             annotations(query)
                     );
             return Futures.transform(resolving, (ResolvedEquivalents<Content> resolved) -> {
@@ -136,15 +136,15 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     }
 
     private ImmutableSet<Publisher> sources(Query<Content> query) {
-        return applicationSources(query).getEnabledReadSources();
+        return application(query).getConfiguration().getEnabledReadSources();
     }
 
     private Set<Annotation> annotations(Query<Content> query) {
         return ImmutableSet.copyOf(query.getContext().getAnnotations().values());
     }
 
-    private ApplicationSources applicationSources(Query<Content> query) {
-        return query.getContext().getApplicationSources();
+    private Application application(Query<Content> query) {
+        return query.getContext().getApplication();
     }
 
 }

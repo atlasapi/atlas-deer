@@ -25,8 +25,8 @@ import org.atlasapi.application.SourceRequestsController;
 import org.atlasapi.application.SourcesController;
 import org.atlasapi.application.SourcesQueryExecutor;
 import org.atlasapi.application.SourcesQueryExecutorMultipleAccounts;
-import org.atlasapi.application.auth.ApiKeySourcesFetcher;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import org.atlasapi.application.auth.ApiKeyApplicationFetcher;
+import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.application.auth.AuthProvidersListWriter;
 import org.atlasapi.application.auth.AuthProvidersQueryResultWriter;
 import org.atlasapi.application.auth.NoAuthUserFetcher;
@@ -448,8 +448,8 @@ public class ApplicationWebModule {
 
     public
     @Bean
-    ApplicationSourcesFetcher configFetcher() {
-        return new ApiKeySourcesFetcher(appPersistence.applicationStore());
+    ApplicationFetcher configFetcher() {
+        return new ApiKeyApplicationFetcher(appPersistence.applicationsClient());
     }
 
     public

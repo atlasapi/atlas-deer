@@ -1,5 +1,7 @@
 package org.atlasapi.application;
 
+import com.metabroadcast.applications.client.ApplicationsClient;
+import com.metabroadcast.applications.client.ApplicationsClientImpl;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.application.auth.MongoTokenRequestStore;
 import org.atlasapi.application.users.LegacyAdaptingUserStore;
@@ -42,6 +44,14 @@ public class ApplicationPersistenceModule {
     @Bean
     public MongoTokenRequestStore tokenStore() {
         return new MongoTokenRequestStore(persistence.databasedWriteMongo());
+    }
+
+    public ApplicationsClient applicationsClient() { //TODO: Make this work
+        return ApplicationsClientImpl.create(
+                "someHost",
+                null,
+                "applicationsClient"
+        );
     }
 
     @Bean

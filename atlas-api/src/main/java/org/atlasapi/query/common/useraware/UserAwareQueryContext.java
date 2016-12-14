@@ -2,6 +2,8 @@ package org.atlasapi.query.common.useraware;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.base.MoreObjects;
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
@@ -18,35 +20,35 @@ public class UserAwareQueryContext {
 
     public static final UserAwareQueryContext standard(HttpServletRequest request) {
         return new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                null, //TODO: needs to be default application
                 ActiveAnnotations.standard(),
                 Optional.<User>absent(),
                 request
         );
     }
 
-    private final ApplicationSources appSources;
+    private final Application application;
     private final ActiveAnnotations annotations;
     private final Optional<User> user;
     private final Optional<Selection> selection;
     private final HttpServletRequest request;
 
-    public UserAwareQueryContext(ApplicationSources appSources, ActiveAnnotations annotations,
+    public UserAwareQueryContext(Application application, ActiveAnnotations annotations,
             Optional<User> user, HttpServletRequest request) {
-        this(appSources, annotations, user, null, request);
+        this(application, annotations, user, null, request);
     }
 
-    public UserAwareQueryContext(ApplicationSources appSources, ActiveAnnotations annotations,
+    public UserAwareQueryContext(Application application, ActiveAnnotations annotations,
             Optional<User> user, Selection selection, HttpServletRequest request) {
-        this.appSources = checkNotNull(appSources);
+        this.application = checkNotNull(application);
         this.annotations = checkNotNull(annotations);
         this.user = checkNotNull(user);
         this.selection = Optional.fromNullable(selection);
         this.request = checkNotNull(request);
     }
 
-    public ApplicationSources getApplicationSources() {
-        return this.appSources;
+    public Application getApplication() {
+        return this.application;
     }
 
     public ActiveAnnotations getAnnotations() {
@@ -76,7 +78,7 @@ public class UserAwareQueryContext {
         }
         if (that instanceof UserAwareQueryContext) {
             UserAwareQueryContext other = (UserAwareQueryContext) that;
-            return appSources.equals(other.appSources)
+            return application.equals(other.application)
                     && annotations.equals(other.annotations)
                     && user.equals(other.user)
                     && selection.equals(other.selection);
@@ -86,14 +88,14 @@ public class UserAwareQueryContext {
 
     @Override
     public int hashCode() {
-        return appSources.hashCode() ^ annotations.hashCode() ^ user.hashCode()
+        return application.hashCode() ^ annotations.hashCode() ^ user.hashCode()
                 ^ selection.hashCode();
     }
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add("config", appSources)
+        return MoreObjects.toStringHelper(this)
+                .add("application", application)
                 .add("annotations", annotations)
                 .add("user", user)
                 .add("selection", selection)

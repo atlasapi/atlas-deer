@@ -23,14 +23,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ApiKeySourcesFetcherTest {
+public class ApiKeyApplicationFetcherTest {
 
     @Mock ApplicationStore appStore;
-    ApiKeySourcesFetcher fetcher;
+    ApiKeyApplicationFetcher fetcher;
 
     @Before
     public void setup() {
-        fetcher = new ApiKeySourcesFetcher(appStore);
+        fetcher = new ApiKeyApplicationFetcher(appStore);
     }
 
     @Test
@@ -43,7 +43,7 @@ public class ApiKeySourcesFetcherTest {
                 .build();
         when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
 
-        Optional<ApplicationSources> srcs = fetcher.sourcesFor(new StubHttpServletRequest().withParam(
+        Optional<ApplicationSources> srcs = fetcher.applicationFor(new StubHttpServletRequest().withParam(
                 "key",
                 apiKey
         ));
@@ -62,7 +62,7 @@ public class ApiKeySourcesFetcherTest {
                 .build();
         when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
 
-        Optional<ApplicationSources> srcs = fetcher.sourcesFor(new StubHttpServletRequest().withHeader(
+        Optional<ApplicationSources> srcs = fetcher.applicationFor(new StubHttpServletRequest().withHeader(
                 "key",
                 apiKey
         ));
@@ -80,7 +80,7 @@ public class ApiKeySourcesFetcherTest {
                 .build();
         when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
 
-        Optional<ApplicationSources> srcs = fetcher.sourcesFor(new StubHttpServletRequest());
+        Optional<ApplicationSources> srcs = fetcher.applicationFor(new StubHttpServletRequest());
 
         verify(appStore, never()).applicationForKey(apiKey);
         assertFalse(srcs.isPresent());
@@ -96,7 +96,7 @@ public class ApiKeySourcesFetcherTest {
                 .build();
         when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
 
-        fetcher.sourcesFor(new StubHttpServletRequest().withParam("key", apiKey));
+        fetcher.applicationFor(new StubHttpServletRequest().withParam("key", apiKey));
     }
 
     @Test(expected = InvalidApiKeyException.class)
@@ -105,7 +105,7 @@ public class ApiKeySourcesFetcherTest {
         String apiKey = "apikey";
         when(appStore.applicationForKey(apiKey)).thenReturn(Optional.<Application>absent());
 
-        fetcher.sourcesFor(new StubHttpServletRequest().withParam("key", apiKey));
+        fetcher.applicationFor(new StubHttpServletRequest().withParam("key", apiKey));
 
     }
 

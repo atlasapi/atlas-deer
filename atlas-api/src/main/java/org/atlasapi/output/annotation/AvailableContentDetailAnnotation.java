@@ -55,7 +55,7 @@ public class AvailableContentDetailAnnotation extends OutputAnnotation<Content> 
         final ResolvedEquivalents<Content> resolvedEquivalents = Futures.get(
                 contentResolver.resolveIds(
                         contentIds,
-                        ctxt.getApplicationSources(),
+                        ctxt.getApplication(),
                         Annotation.all()
                 ),
                 IOException.class

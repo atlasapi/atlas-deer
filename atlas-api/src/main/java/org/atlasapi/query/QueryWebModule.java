@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
@@ -269,7 +269,7 @@ public class QueryWebModule {
 
     private
     @Autowired
-    ApplicationSourcesFetcher configFetcher;
+    ApplicationFetcher configFetcher;
 
     private
     @Autowired

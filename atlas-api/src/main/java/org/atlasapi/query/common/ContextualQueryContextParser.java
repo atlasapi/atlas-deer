@@ -4,8 +4,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.content.QueryParseException;
@@ -24,12 +23,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ContextualQueryContextParser implements ParameterNameProvider {
 
-    private final ApplicationSourcesFetcher configFetcher;
+    private final ApplicationFetcher configFetcher;
     private final UserFetcher userFetcher;
     private final ContextualAnnotationsExtractor annotationExtractor;
     private final SelectionBuilder selectionBuilder;
 
-    public ContextualQueryContextParser(ApplicationSourcesFetcher configFetcher,
+    public ContextualQueryContextParser(ApplicationFetcher configFetcher,
             UserFetcher userFetcher, ContextualAnnotationsExtractor annotationsParser,
             Selection.SelectionBuilder selectionBuilder) {
         this.configFetcher = checkNotNull(configFetcher);
@@ -40,8 +39,8 @@ public class ContextualQueryContextParser implements ParameterNameProvider {
 
     public QueryContext parseContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        return QueryContext.create(
-                configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
+        return new QueryContext(
+                configFetcher.applicationFor(request).orElse(configFetcher.getDefaults()),
                 annotationExtractor.extractFromRequest(request),
                 selectionBuilder.build(request),
                 request
