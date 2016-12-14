@@ -286,7 +286,10 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
             Equivalent<Item> equivItems = new Equivalent<>(
                     graph, equivItems(item, broadcast, graphItems(graph, allItems))
             );
-            entryContent.put(entry, new EquivalentScheduleEntry(broadcast, equivItems));
+            entryContent.put(
+                    entry,
+                    EquivalentScheduleEntry.create(broadcast, item.getId(), equivItems)
+            );
         }
         return entryContent.build();
     }

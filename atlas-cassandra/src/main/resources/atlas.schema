@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS equivalent_schedule (
   content blob,
   schedule_update timestamp,
   equiv_update timestamp,
+  broadcast_item_id bigint,
   PRIMARY KEY ((source, channel, day), broadcast_id)
 ) WITH
   bloom_filter_fp_chance=0.010000 AND

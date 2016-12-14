@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,6 +27,7 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphFilter;
 import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceRef;
@@ -75,6 +77,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.atlasapi.util.Column.bigIntColumn;
 import static org.atlasapi.util.Column.bytesColumn;
@@ -99,6 +102,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
     private static final Column<ByteBuffer> CONTENT = bytesColumn("content");
     private static final Column<Date> SCHEDULE_UPDATE = dateColumn("schedule_update");
     private static final Column<Date> EQUIV_UPDATE = dateColumn("equiv_update");
+    private static final Column<Long> BROADCAST_ITEM_ID = bigIntColumn("broadcast_item_id");
 
     private static final String METER_CALLED = "meter.called";
     private static final String METER_FAILURE = "meter.failure";
@@ -193,7 +197,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                 .and(set(GRAPH.name(), bindMarker("graphData")))
                 .and(set(CONTENT_COUNT.name(), bindMarker("contentCountData")))
                 .and(set(CONTENT.name(), bindMarker("contentData")))
-                .and(set(SCHEDULE_UPDATE.name(), bindMarker("now"))));
+                .and(set(SCHEDULE_UPDATE.name(), bindMarker("now")))
+                .and(set(BROADCAST_ITEM_ID.name(), bindMarker("broadcast_item_id"))));
 
         this.updateContentMetricPrefix = metricPrefix + "updateContent.";
         this.resolveScheduleMetricPrefix = metricPrefix + "resolveSchedule.";
@@ -512,6 +517,12 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ImmutableSet<Item> items = content.getItems().getResources();
         EquivalenceGraph graph = content.getItems().getGraph();
 
+        checkArgument(
+                content.getBroadcastItemId().isPresent(),
+                "This should have been set in the abstract store so it must exist"
+        );
+        Id broadcastItemId = content.getBroadcastItemId().get();
+
         ByteBuffer serializedContent = serialize(items);
         ByteBuffer serializedGraph = graphSerializer.serialize(graph);
         ByteBuffer serializedBroadcast = serialize(broadcast);
@@ -531,7 +542,8 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .setBytes("graphData", serializedGraph)
                         .setLong("contentCountData", items.size())
                         .setBytes("contentData", serializedContent)
-                        .setTimestamp("now", now.toDate()))
+                        .setTimestamp("now", now.toDate())
+                        .setLong("broadcast_item_id", broadcastItemId.longValue()))
                 .collect(MoreCollectors.toImmutableList());
     }
 
@@ -703,20 +715,21 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         ) {
             try {
                 Broadcast broadcast = deserialize(BROADCAST.valueFrom(row));
-                if (broadcastFilter.apply(broadcast.getTransmissionInterval())) {
-                    Equivalent<Item> equivItems = deserialize(row, annotations);
 
-                    if (equivItems.getResources().size() > GRAPH_SIZE_ALERTING_THRESHOLD) {
-                        log.warn(
-                                "Found large graph with id: {}, size: {}",
-                                equivItems.getGraph().getId().longValue(),
-                                equivItems.getResources().size()
-                        );
-                    }
+                Optional<Id> broadcastItemId = BROADCAST_ITEM_ID.isNullIn(row)
+                        ? Optional.empty()
+                        : Optional.of(Id.valueOf(BROADCAST_ITEM_ID.valueFrom(row)));
+
+                if (broadcastFilter.apply(broadcast.getTransmissionInterval())) {
+                    Equivalent<Item> equivItems = deserialize(row, broadcastItemId, annotations);
 
                     channelEntries.put(
                             Id.valueOf(CHANNEL.valueFrom(row)),
-                            new EquivalentScheduleEntry(broadcast, equivItems)
+                            EquivalentScheduleEntry.createFromDb(
+                                    broadcast,
+                                    broadcastItemId,
+                                    equivItems
+                            )
                     );
                 }
             } catch (IOException e) {
@@ -724,8 +737,21 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             }
         }
 
-        private Equivalent<Item> deserialize(Row row, Set<Annotation> annotations) throws IOException {
+        private Equivalent<Item> deserialize(
+                Row row,
+                Optional<Id> broadcastItemId,
+                Set<Annotation> annotations
+        ) throws IOException {
             EquivalenceGraph graph = graphSerializer.deserialize(GRAPH.valueFrom(row));
+
+            if (graph.getEquivalenceSet().size() > GRAPH_SIZE_ALERTING_THRESHOLD) {
+                log.warn(
+                        "Found large graph with id: {}, size: {}",
+                        graph.getId(),
+                        graph.getEquivalenceSet().size()
+                );
+            }
+
             Long itemCount = CONTENT_COUNT.valueFrom(row);
             ByteBuffer itemsBytes = CONTENT.valueFrom(row);
 
@@ -735,15 +761,70 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
             ImmutableSet.Builder<Item> itemsBuilder = ImmutableSet.builder();
             for (int i = 0; i < itemCount; i++) {
                 ContentProtos.Content msg = ContentProtos.Content.parseDelimitedFrom(itemsStream);
-                Item item = (Item) contentSerializer.deserialize(msg, annotations);
-                if (selectedSources.contains(item.getSource())) {
-                    itemsBuilder.add(item);
-                }
+
+                itemsBuilder.add(
+                        (Item) contentSerializer.deserialize(msg, annotations)
+                );
             }
 
-            ImmutableSet<Item> items = getItemsWithEquivalents(itemsBuilder.build());
+            ImmutableSet<Item> items = itemsBuilder.build();
 
-            return new Equivalent<>(graph, items);
+            ImmutableSet<Item> filteredItems = items
+                    .stream()
+                    .filter(
+                            EquivalenceGraphFilter.builder()
+                                    .withGraphEntryId(getGraphEntryId(broadcastItemId, items))
+                                    .withGraph(Optional.of(graph))
+                                    .withSelectedSources(selectedSources)
+                                    .withSelectedGraphSources(selectedSources)
+                                    .withActivelyPublishedIds(
+                                            items.stream()
+                                                    .filter(Item::isActivelyPublished)
+                                                    .map(Item::getId)
+                                                    .collect(MoreCollectors.toImmutableSet())
+                                    )
+                                    .build()
+                    )
+                    .collect(MoreCollectors.toImmutableSet());
+
+            return new Equivalent<>(
+                    graph,
+                    getItemsWithEquivalents(filteredItems)
+            );
+        }
+
+        private Optional<Id> getGraphEntryId(
+                Optional<Id> broadcastItemId,
+                ImmutableSet<Item> items
+        ) {
+            if (!broadcastItemId.isPresent()) {
+                return Optional.empty();
+            }
+
+            // Due to eventual consistency there is a chance this id does not exist in the DB
+            // This can happen only under very specific circumstances and will be eventually
+            // consistent once a schedule update comes
+            //
+            // Conditions:
+            // 1. The item with this id and with this broadcast A has been removed from the graph
+            // 2. There exists another item with a broadcast B
+            // 3. B has the same sourceId as A, is on the same day, on the same channel and from
+            //    the same source
+            // 4. A graph update comes and changes the items in this row before the schedule
+            //    update comes and fixes the schedule itself
+            // 5. Then we could temporarily have this row with the old broadcast and
+            //    broadcast_item_id, but with the broadcast_item_id item missing
+            //
+            // The next schedule update will fix this
+            boolean idExistsInEquivalentContentSet = items.stream()
+                    .map(Item::getId)
+                    .anyMatch(id -> id.equals(broadcastItemId.get()));
+
+            if (idExistsInEquivalentContentSet) {
+                return broadcastItemId;
+            }
+
+            return Optional.empty();
         }
 
         private ImmutableSet<Item> getItemsWithEquivalents(ImmutableSet<Item> items) {

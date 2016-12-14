@@ -16,6 +16,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.EquivalenceGraph;
+import org.atlasapi.equivalence.EquivalenceGraphFilter;
 import org.atlasapi.equivalence.EquivalenceGraphSerializer;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdate;
@@ -46,6 +47,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -223,7 +225,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         Futures.addCallback(
                 Futures.transform(
                         setsToResolve,
-                        toEquivalentsSets(selectedSources, activeAnnotations, readConsistency)
+                        toEquivalentsSets(selectedSources, activeAnnotations)
                 ),
                 new FutureCallback<Optional<ResolvedEquivalents<Content>>>() {
 
@@ -258,57 +260,153 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     }
 
     private AsyncFunction<Map<Long, Long>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
-            final Set<Publisher> selectedSources, final Set<Annotation> annotations, final ConsistencyLevel readConsistency) {
+            final Set<Publisher> selectedSources,
+            final Set<Annotation> annotations
+    ) {
         return index -> Futures.transform(
-                resultOf(selectSetsQueries(index.values()), readConsistency),
+                resultOf(selectSetsQueries(index.values())),
                 toEquivalentsSets(index, annotations, selectedSources)
         );
     }
 
     private Function<Iterable<ResultSet>, Optional<ResolvedEquivalents<Content>>> toEquivalentsSets(
-            final Map<Long, Long> index, Set<Annotation> activeAnnotations, final Set<Publisher> selectedSources) {
+            Map<Long, Long> index,
+            Set<Annotation> activeAnnotations,
+            Set<Publisher> selectedSources
+    ) {
         return setsRows -> {
-            Multimap<Long, Content> sets = deserialize(setsRows, activeAnnotations, selectedSources);
-            if (sets == null) {
-                return Optional.absent();
-            }
+            Multimap<Long, Content> sets = deserialize(
+                    setsRows,
+                    activeAnnotations,
+                    selectedSources,
+                    index
+            );
+
             ResolvedEquivalents.Builder<Content> results = ResolvedEquivalents.builder();
             for (Entry<Long, Long> id : index.entrySet()) {
-                Collection<Content> setForId = sets.get(id.getValue());
-
-                if (setForId.size() > GRAPH_SIZE_ALERTING_THRESHOLD) {
-                    log.warn(
-                            "Found large graph with id: {}, size: {}",
-                            id.getKey(),
-                            setForId.size()
-                    );
-                }
-
-                results.putEquivalents(Id.valueOf(id.getKey()), setForId);
+                results.putEquivalents(
+                        Id.valueOf(id.getKey()),
+                        sets.get(id.getValue())
+                );
             }
             return Optional.of(results.build());
         };
     }
 
-    private Multimap<Long, Content> deserialize(Iterable<ResultSet> setsRows,
+    private Multimap<Long, Content> deserialize(
+            Iterable<ResultSet> setsRows,
             Set<Annotation> activeAnnotations,
-            Set<Publisher> selectedSources) {
-        ImmutableSetMultimap.Builder<Long, Content> sets = ImmutableSetMultimap.builder();
-        ImmutableList<Row> allRows = StreamSupport.stream(setsRows.spliterator(), false)
-                .flatMap(rs -> rs.all().stream())
-                .collect(MoreCollectors.toImmutableList());
+            Set<Publisher> selectedSources,
+            Map<Long, Long> index
+    ) {
+        ImmutableListMultimap<Long, Row> rows = StreamSupport
+                .stream(setsRows.spliterator(), false)
+                .flatMap(resultSet -> resultSet.all().stream())
+                .collect(MoreCollectors.toImmutableListMultiMap(
+                        row -> row.getLong(SET_ID_KEY),
+                        row -> row
+                ));
 
-        for (Row row : allRows) {
-            long setId = row.getLong(SET_ID_KEY);
+        ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs = deserializeGraphs(rows);
+        ImmutableSetMultimap<Long, Content> content = deserializeContent(
+                rows,
+                activeAnnotations
+        );
 
-            Content content = deserializeInternal(row, activeAnnotations);
+        return filterContentSets(selectedSources, content, graphs, index);
+    }
 
-            if (contentSelected(content, selectedSources)
-                    && containedInGraph(content.getId(), row)) {
-                sets.put(setId, content);
-            }
+    private ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> deserializeGraphs(
+            ImmutableListMultimap<Long, Row> rows
+    ) {
+        ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs =
+                rows.keySet()
+                .stream()
+                .collect(MoreCollectors.toImmutableMap(
+                        setId -> setId,
+                        // The graph column is a static C* field so if the graph is set this should
+                        // always succeed to get a graph from the first row of the set
+                        setId -> rows.get(setId)
+                                .stream()
+                                .map(this::deserializeGraph)
+                                .filter(java.util.Optional::isPresent)
+                                .map(java.util.Optional::get)
+                                .findFirst()
+                ));
+
+        graphs.values()
+                .stream()
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .filter(graph -> graph.getEquivalenceSet().size() > GRAPH_SIZE_ALERTING_THRESHOLD)
+                .forEach(graph -> log.warn(
+                        "Found large graph with id: {}, size: {}",
+                        graph.getId(),
+                        graph.getEquivalenceSet().size()
+                ));
+
+        return graphs;
+    }
+
+    private ImmutableSetMultimap<Long, Content> deserializeContent(
+            ImmutableListMultimap<Long, Row> rows,
+            Set<Annotation> activeAnnotations
+    ) {
+        return rows.entries()
+                .stream()
+                .collect(MoreCollectors.toImmutableSetMultiMap(
+                        Entry::getKey,
+                        rowEntry -> deserializeInternal(rowEntry.getValue(), activeAnnotations)
+                ));
+    }
+
+    private Multimap<Long, Content> filterContentSets(
+            Set<Publisher> selectedSources,
+            ImmutableSetMultimap<Long, Content> content,
+            ImmutableMap<Long, java.util.Optional<EquivalenceGraph>> graphs,
+            Map<Long, Long> index
+    ) {
+        ImmutableSetMultimap.Builder<Long, Content> filteredContentBuilder =
+                ImmutableSetMultimap.builder();
+
+        ImmutableSetMultimap<Long, Long> inverseIndex = index.entrySet()
+                .stream()
+                .collect(MoreCollectors.toImmutableSetMultiMap(
+                        Entry::getValue,
+                        Entry::getKey
+                ));
+
+        for (Long setId : content.keySet()) {
+            ImmutableSet<Content> filteredContent = content.get(setId)
+                    .stream()
+                    .filter(EquivalenceGraphFilter
+                            .builder()
+                            .withGraphEntryId(java.util.Optional.of(Id.valueOf(
+                                    // If we have requested the same graph multiple
+                                    // times from different IDs then arbitrarily pick one
+                                    inverseIndex.get(setId).iterator().next()
+                            )))
+                            .withGraph(graphs.get(setId))
+                            .withSelectedSources(selectedSources)
+                            .withSelectedGraphSources(selectedSources)
+                            .withActivelyPublishedIds(
+                                    content.get(setId)
+                                            .stream()
+                                            .filter(Content::isActivelyPublished)
+                                            .map(Content::getId)
+                                            .collect(MoreCollectors.toImmutableSet())
+                            )
+                            .build()
+                    )
+                    .collect(MoreCollectors.toImmutableSet());
+
+            filteredContentBuilder.putAll(
+                    setId,
+                    filteredContent
+            );
         }
-        return sets.build();
+
+        return filteredContentBuilder.build();
     }
 
     private Content deserialize(Row row) {
@@ -348,13 +446,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         }
     }
 
-    private boolean contentSelected(Content content, Set<Publisher> selectedSources) {
-        return content.isActivelyPublished()
-                && selectedSources.contains(content.getSource());
-    }
-
-    private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries,
-            ConsistencyLevel readConsistency) {
+    private ListenableFuture<List<ResultSet>> resultOf(Iterable<Statement> queries) {
         ImmutableList.Builder<ListenableFuture<ResultSet>> resultSets = ImmutableList.builder();
         for (Statement query : queries) {
             resultSets.add(session.executeAsync(query));
@@ -523,7 +615,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                     ImmutableSet.Builder<Content> content = ImmutableSet.builder();
                     for (Row row : resultSet) {
                         Content deserialized = deserialize(row);
-                        if (containedInGraph(deserialized.getId(), row)) {
+                        if (containedInGraph(deserialized.getId(), deserializeGraph(row))) {
                             content.add(deserialized);
                         }
                     }
@@ -536,12 +628,17 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
     // It might not be in case of stale entries that were removed from the graph, but
     // due to a bug or missed message the row did not get removed in this store.
     // In that case the row will currently never get removed
-    private boolean containedInGraph(Id contentId, Row row) {
+    private boolean containedInGraph(Id contentId, java.util.Optional<EquivalenceGraph> graph) {
+        return !graph.isPresent() || graph.get().getEquivalenceSet().contains(contentId);
+    }
+
+    private java.util.Optional<EquivalenceGraph> deserializeGraph(Row row) {
         if (row.getBytes(GRAPH_KEY) == null) {
-            return true;
+            return java.util.Optional.empty();
         }
-        EquivalenceGraph graph = graphSerializer.deserialize(row.getBytes(GRAPH_KEY));
-        return graph.getEquivalenceSet().contains(contentId);
+        return java.util.Optional.of(
+                graphSerializer.deserialize(row.getBytes(GRAPH_KEY))
+        );
     }
 
     // This is effectively leaking implementation details to the abstract store which should not
