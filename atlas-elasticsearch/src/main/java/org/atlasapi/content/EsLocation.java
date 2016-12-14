@@ -80,11 +80,11 @@ public class EsLocation extends EsObject {
         }
 
         if (map.get(ALIASES) != null) {
-                esLocation.aliasesFromEs(
-                        (List<EsAlias>) ((List<Map>)map.get(ALIASES)).stream()
-                                .map(EsAlias::fromMap)
-                                .collect(Collectors.toList())
-                );
+            esLocation.aliasesFromEs(
+                    (List<EsAlias>) ((List<Map>) map.get(ALIASES)).stream()
+                            .map(EsAlias::fromMap)
+                            .collect(Collectors.toList())
+            );
         }
         return esLocation;
     }

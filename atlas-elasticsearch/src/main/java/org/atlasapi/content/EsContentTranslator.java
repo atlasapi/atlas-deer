@@ -35,6 +35,7 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -360,14 +361,29 @@ public class EsContentTranslator {
 
         ImmutableList<Map<String, Object>> newLocations = locations.stream()
                 .filter(location -> filter.apply(location.getPolicy()))
-                .map(this::toEsLocation)
-                .map(EsObject::toMap)
+                .map(location -> existingLocationPolicyToMap(location.getPolicy()))
                 .collect(MoreCollectors.toImmutableList());
 
         return ImmutableList.<Map<String, Object>>builder()
                 .addAll(nonNullExistingLocations)
                 .addAll(newLocations)
                 .build();
+    }
+
+    private Map<String, Object> existingLocationPolicyToMap(Policy policy) {
+        ImmutableList.Builder<Map<String, String>> aliases = ImmutableList.builder();
+
+        policy.getAliases().forEach(alias -> aliases.add(ImmutableMap.of(
+                "namespace", alias.getNamespace(),
+                "value", alias.getValue())
+        ));
+
+        return ImmutableMap.of(
+                "aliases", aliases.build(),
+                "availabilityEndTime", policy.getAvailabilityEnd(),
+                "availabilityTime", policy.getAvailabilityStart()
+        );
+
     }
 
     private ImmutableList<Policy> fromEsLocations(List<Map<String, Object>> existingLocations) {
