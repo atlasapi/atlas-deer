@@ -362,29 +362,13 @@ public class EsContentTranslator {
 
         ImmutableList<Map<String, Object>> newLocations = locations.stream()
                 .filter(location -> filter.apply(location.getPolicy()))
-                .map(location -> newLocationPolicyToMap(location.getPolicy()))
+                .map(EsLocation::toMap)
                 .collect(MoreCollectors.toImmutableList());
 
         return ImmutableList.<Map<String, Object>>builder()
                 .addAll(nonNullExistingLocations)
                 .addAll(newLocations)
                 .build();
-    }
-
-    private Map<String, Object> newLocationPolicyToMap(Policy policy) {
-        ImmutableList.Builder<Map<String, String>> aliases = ImmutableList.builder();
-
-        policy.getAliases().forEach(alias -> aliases.add(ImmutableMap.of(
-                EsAlias.NAMESPACE, alias.getNamespace(),
-                EsAlias.VALUE, alias.getValue())
-        ));
-
-        return ImmutableMap.of(
-                EsLocation.ALIASES, aliases.build(),
-                EsLocation.AVAILABILITY_END_TIME, policy.getAvailabilityEnd(),
-                EsLocation.AVAILABILITY_TIME, policy.getAvailabilityStart()
-        );
-
     }
 
     private ImmutableList<Policy> fromEsLocations(List<Map<String, Object>> existingLocations) {
