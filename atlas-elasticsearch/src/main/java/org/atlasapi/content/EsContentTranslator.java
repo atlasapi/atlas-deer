@@ -16,6 +16,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.util.ElasticsearchUtils;
+import org.atlasapi.util.EsAlias;
 import org.atlasapi.util.EsObject;
 import org.atlasapi.util.SecondaryIndex;
 
@@ -374,14 +375,14 @@ public class EsContentTranslator {
         ImmutableList.Builder<Map<String, String>> aliases = ImmutableList.builder();
 
         policy.getAliases().forEach(alias -> aliases.add(ImmutableMap.of(
-                "namespace", alias.getNamespace(),
-                "value", alias.getValue())
+                EsAlias.NAMESPACE, alias.getNamespace(),
+                EsAlias.VALUE, alias.getValue())
         ));
 
         return ImmutableMap.of(
-                "aliases", aliases.build(),
-                "availabilityEndTime", policy.getAvailabilityEnd(),
-                "availabilityTime", policy.getAvailabilityStart()
+                EsLocation.ALIASES, aliases.build(),
+                EsLocation.AVAILABILITY_END_TIME, policy.getAvailabilityEnd(),
+                EsLocation.AVAILABILITY_TIME, policy.getAvailabilityStart()
         );
 
     }
