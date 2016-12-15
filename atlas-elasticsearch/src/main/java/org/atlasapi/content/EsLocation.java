@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.util.EsAlias;
 import org.atlasapi.util.EsObject;
@@ -16,6 +18,8 @@ import com.google.common.collect.Iterables;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.joda.time.DateTime;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EsLocation extends EsObject {
 
@@ -80,13 +84,29 @@ public class EsLocation extends EsObject {
         }
 
         if (map.get(ALIASES) != null) {
-                esLocation.aliasesFromEs(
-                        (List<EsAlias>) ((List<Map>)map.get(ALIASES)).stream()
-                                .map(EsAlias::fromMap)
-                                .collect(Collectors.toList())
-                );
+            esLocation.aliasesFromEs(
+                    (List<EsAlias>) ((List<Map>) map.get(ALIASES)).stream()
+                            .map(EsAlias::fromMap)
+                            .collect(Collectors.toList())
+            );
         }
         return esLocation;
+    }
+
+    public static Map<String, Object> toMap(Location location) {
+        Policy policy = checkNotNull(location.getPolicy());
+        ImmutableList.Builder<Map<String, String>> aliases = ImmutableList.builder();
+
+        policy.getAliases().forEach(alias -> aliases.add(ImmutableMap.of(
+                EsAlias.NAMESPACE, alias.getNamespace(),
+                EsAlias.VALUE, alias.getValue())
+        ));
+
+        return ImmutableMap.of(
+                ALIASES, aliases.build(),
+                AVAILABILITY_END_TIME, policy.getAvailabilityEnd(),
+                AVAILABILITY_TIME, policy.getAvailabilityStart()
+        );
     }
 
 }

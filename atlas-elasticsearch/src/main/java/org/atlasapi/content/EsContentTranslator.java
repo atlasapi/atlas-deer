@@ -16,6 +16,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.util.ElasticsearchUtils;
+import org.atlasapi.util.EsAlias;
 import org.atlasapi.util.EsObject;
 import org.atlasapi.util.SecondaryIndex;
 
@@ -35,6 +36,7 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -360,8 +362,7 @@ public class EsContentTranslator {
 
         ImmutableList<Map<String, Object>> newLocations = locations.stream()
                 .filter(location -> filter.apply(location.getPolicy()))
-                .map(this::toEsLocation)
-                .map(EsObject::toMap)
+                .map(EsLocation::toMap)
                 .collect(MoreCollectors.toImmutableList());
 
         return ImmutableList.<Map<String, Object>>builder()
