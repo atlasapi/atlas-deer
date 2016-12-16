@@ -81,7 +81,10 @@ public class EsLocation extends EsObject {
 
         if (map.get(ALIASES) != null) {
                 esLocation.aliasesFromEs(
-                        (List<EsAlias>) ((List<Map>)map.get(ALIASES)).stream()
+                        (List<EsAlias>) StreamSupport.stream(
+                                ((Iterable<Map>)map.get(ALIASES)).spliterator(),
+                                false
+                        )
                                 .map(EsAlias::fromMap)
                                 .collect(Collectors.toList())
                 );
