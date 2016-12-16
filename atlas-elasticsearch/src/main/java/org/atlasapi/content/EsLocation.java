@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.entity.Alias;
@@ -81,7 +82,10 @@ public class EsLocation extends EsObject {
 
         if (map.get(ALIASES) != null) {
                 esLocation.aliasesFromEs(
-                        (List<EsAlias>) ((List<Map>)map.get(ALIASES)).stream()
+                        (List<EsAlias>) StreamSupport.stream(
+                                ((Iterable<Map>)map.get(ALIASES)).spliterator(),
+                                false
+                        )
                                 .map(EsAlias::fromMap)
                                 .collect(Collectors.toList())
                 );
