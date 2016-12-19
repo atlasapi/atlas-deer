@@ -124,7 +124,8 @@ public class ChannelGroupQueryExecutor implements QueryExecutor<ResolvedChannelG
                     channelGroups.spliterator(),
                     false
                 ).filter(input -> query.getContext()
-                        .getApplicationSources()
+                        .getApplication()
+                        .getConfiguration()
                         .isReadEnabled(input.getSource())
                 ).collect(Collectors.toList()));
 

@@ -90,7 +90,7 @@ public class IndexBackedTopicQueryExecutor implements QueryExecutor<Topic> {
             throws QueryExecutionException {
         return index.query(
                 query.getOperands(),
-                query.getContext().getApplicationSources().getEnabledReadSources(),
+                query.getContext().getApplication().getConfiguration().getEnabledReadSources(),
                 query.getContext().getSelection().or(Selection.ALL)
         );
     }

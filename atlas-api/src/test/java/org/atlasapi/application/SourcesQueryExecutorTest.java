@@ -41,7 +41,7 @@ public class SourcesQueryExecutorTest {
     public void testAdminAccessToSource() throws QueryExecutionException {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
         UserAwareQueryContext context = new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
                 mock(HttpServletRequest.class)
@@ -65,7 +65,7 @@ public class SourcesQueryExecutorTest {
                 .withSources(ImmutableSet.of(Publisher.YOUTUBE))
                 .build();
         UserAwareQueryContext context = new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
                 mock(HttpServletRequest.class)
@@ -89,7 +89,7 @@ public class SourcesQueryExecutorTest {
                 .withSources(ImmutableSet.of(Publisher.BBC))
                 .build();
         UserAwareQueryContext context = new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
                 mock(HttpServletRequest.class)

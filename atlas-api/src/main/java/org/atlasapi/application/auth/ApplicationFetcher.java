@@ -15,6 +15,4 @@ public interface ApplicationFetcher {
 
     ImmutableSet<String> getParameterNames();
 
-    Application getDefaults();
-
 }

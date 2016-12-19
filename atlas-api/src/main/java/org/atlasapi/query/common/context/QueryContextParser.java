@@ -4,6 +4,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.application.auth.UserFetcher;
@@ -56,6 +57,7 @@ public class QueryContextParser implements ParameterNameProvider {
                 configFetcher.applicationFor(request).orElse(configFetcher.getDefaults()),
         return QueryContext.create(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
+                configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromSingleRequest(request),
                 selectionBuilder.build(request),
                 request
@@ -67,7 +69,7 @@ public class QueryContextParser implements ParameterNameProvider {
         return QueryContext.create(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
         return new QueryContext(
-                configFetcher.applicationFor(request).orElse(configFetcher.getDefaults()),
+                configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromListRequest(request),
                 selectionBuilder.build(request),
                 request

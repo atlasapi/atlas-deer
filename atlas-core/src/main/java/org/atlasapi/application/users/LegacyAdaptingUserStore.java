@@ -3,7 +3,6 @@ package org.atlasapi.application.users;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.atlasapi.application.LegacyApplicationStore;
 import org.atlasapi.application.users.v3.UserTranslator;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -38,11 +37,10 @@ public class LegacyAdaptingUserStore implements UserStore {
         }
     };
 
-    public LegacyAdaptingUserStore(org.atlasapi.application.users.v3.UserStore legacyStore,
-            LegacyApplicationStore appStore, DatabasedMongo db) {
+    public LegacyAdaptingUserStore(org.atlasapi.application.users.v3.UserStore legacyStore, DatabasedMongo db) {
         this.legacyStore = legacyStore;
         this.collection = db.collection("users");
-        this.transformer = new UserModelTranslator(appStore);
+        this.transformer = new UserModelTranslator();
         this.translator = new UserTranslator(new UserRefTranslator());
     }
 

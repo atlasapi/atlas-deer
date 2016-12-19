@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.search.support;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentResolver;
@@ -35,29 +36,22 @@ public class ContentResolvingSearcher implements SearchResolver {
     }
 
     @Override
-    public List<Identified> search(SearchQuery query, ApplicationSources sources) {
+    public List<Identified> search(SearchQuery query, Application application) {
         try {
 
-            return Futures.transform(Futures.transform(
-                    searcher.search(query),
-                    new AsyncFunction<SearchResults, Resolved<Content>>() {
-
-                        @Override
-                        public ListenableFuture<Resolved<Content>> apply(SearchResults input)
-                                throws Exception {
+            return Futures.transform(
+                    Futures.transformAsync(
+                        searcher.search(query),
+                        input -> {
                             if (input.getIds().isEmpty()) {
-                                return Futures.immediateFuture(Resolved.<Content>empty());
+                                return Futures.immediateFuture(Resolved.empty());
                             }
                             return contentResolver.resolveIds(input.getIds());
                         }
-                    }
-            ), new Function<Resolved<Content>, List<Identified>>() {
-
-                @Override
-                public List<Identified> apply(Resolved<Content> input) {
-                    return ImmutableList.<Identified>copyOf(input.getResources());
-                }
-            }).get(timeout, TimeUnit.MILLISECONDS);
+                    ),
+                    (Function<Resolved<Content>, List<Identified>>) input ->
+                            ImmutableList.copyOf(input.getResources())
+            ).get(timeout, TimeUnit.MILLISECONDS);
 
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage(), ex);

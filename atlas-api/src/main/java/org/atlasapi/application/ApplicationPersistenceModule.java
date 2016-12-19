@@ -55,24 +55,6 @@ public class ApplicationPersistenceModule {
     }
 
     @Bean
-    public LegacyApplicationStore applicationStore() {
-        DatabasedMongo mongo = persistence.databasedWriteMongo();
-        IdGenerator idGenerator = new MongoSequentialIdGenerator(mongo, "application");
-        MongoApplicationStore legacyStore = new MongoApplicationStore(
-                mongo,
-                idGenerator,
-                ReadPreference.primaryPreferred()
-        );
-        LegacyAdaptingApplicationStore store = new LegacyAdaptingApplicationStore(
-                legacyStore,
-                mongo,
-                idGenerator,
-                idCodec
-        );
-        return new CacheBackedApplicationStore(store, cacheMinutes);
-    }
-
-    @Bean
     public SourceRequestStore sourceRequestStore() {
         return new MongoSourceRequestStore(persistence.databasedWriteMongo());
     }
@@ -83,7 +65,6 @@ public class ApplicationPersistenceModule {
         MongoUserStore legacy = new MongoUserStore(persistence.databasedWriteMongo());
         return new LegacyAdaptingUserStore(
                 legacy,
-                applicationStore(),
                 persistence.databasedWriteMongo()
         );
     }

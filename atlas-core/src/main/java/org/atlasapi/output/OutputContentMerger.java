@@ -608,25 +608,17 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<Container> notChosen
     ) {
         mergeContent(application, chosen, notChosen);
-        mergeContainer(application, chosen, notChosen);
+        mergeContainer(chosen, notChosen);
     }
 
     private void mergeContainer(
-            Application application,
             Container chosen,
             Iterable<Container> notChosen
     ) {
 
         Iterable<Container> orderedEquivalents;
-        Optional<Ordering<Sourced>> sourcedContentHierarchyOrdering = //TODO: chat with Thomas
-                sources.getSourcedContentHierarchyOrdering();
 
-        if (sourcedContentHierarchyOrdering.isPresent()) {
-            orderedEquivalents = sourcedContentHierarchyOrdering.get()
-                    .sortedCopy(Iterables.concat(ImmutableSet.of(chosen), notChosen));
-        } else {
-            orderedEquivalents = Iterables.concat(ImmutableSet.of(chosen), notChosen);
-        }
+        orderedEquivalents = Iterables.concat(ImmutableSet.of(chosen), notChosen);
 
         Iterable<Container> contentHierarchySourceOrderedContainers = StreamSupport.stream(
                 orderedEquivalents.spliterator(), false)

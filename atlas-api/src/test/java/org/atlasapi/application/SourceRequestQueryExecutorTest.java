@@ -60,7 +60,7 @@ public class SourceRequestQueryExecutorTest {
     public void testExecutingAllSourceRequestQuery() throws QueryExecutionException {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
         UserAwareQueryContext context = new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
                 mock(HttpServletRequest.class)

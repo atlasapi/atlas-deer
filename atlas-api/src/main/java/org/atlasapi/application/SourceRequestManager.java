@@ -4,6 +4,10 @@ import java.io.UnsupportedEncodingException;
 
 import javax.mail.MessagingException;
 
+import com.metabroadcast.applications.client.ApplicationsClient;
+import com.metabroadcast.applications.client.query.Query;
+import com.metabroadcast.applications.client.query.Result;
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.SourceStatus.SourceState;
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
@@ -24,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 public class SourceRequestManager {
 
+    private final ApplicationsClient applicationsClient;
     private final SourceRequestStore sourceRequestStore;
-    private final ApplicationStore applicationStore;
     private final IdGenerator idGenerator;
     private final Clock clock;
 
@@ -33,12 +37,12 @@ public class SourceRequestManager {
 
     public SourceRequestManager(
             SourceRequestStore sourceRequestStore,
-            ApplicationStore applicationStore,
+            ApplicationsClient applicationsClient,
             IdGenerator idGenerator,
             Clock clock
     ) {
         this.sourceRequestStore = sourceRequestStore;
-        this.applicationStore = applicationStore;
+        this.applicationsClient = applicationsClient;
         this.idGenerator = idGenerator;
         this.clock = clock;
     }
@@ -60,10 +64,19 @@ public class SourceRequestManager {
                     applicationUrl, email, reason
             );
         } else {
-            Application application = applicationStore.applicationFor(applicationId).get();
-            SourceState appSourceState = application.getSources()
-                    .readStatusOrDefault(source)
-                    .getState();
+            Result result = applicationsClient.resolve(Query.create(applicationId.toString(), null));
+            if (!result.getSingleResult().isPresent()) {
+                // error
+            }
+
+            Application application = result.getSingleResult().get();
+
+//            SourceState appSourceState = application.getSources()
+//                    .readStatusOrDefault(source)
+//                    .getState(); //TODO: check if this class is trash
+
+            SourceState appSourceState = SourceState.AVAILABLE;
+
             if (appSourceState.equals(SourceState.UNAVAILABLE)) {
                 return createSourceRequest(source, usageType,
                         applicationId, applicationUrl, email, reason
@@ -106,13 +119,13 @@ public class SourceRequestManager {
                 .withRequestedAt(clock.now())
                 .build();
         sourceRequestStore.store(sourceRequest);
-        Application existing = applicationStore.applicationFor(sourceRequest.getAppId()).get();
-        applicationStore.updateApplication(
-                existing.copyWithReadSourceState(sourceRequest.getSource(), SourceState.REQUESTED));
+//        Application existing = applicationStore.applicationFor(sourceRequest.getAppId()).get();
+//        applicationStore.updateApplication(
+//                existing.copyWithReadSourceState(sourceRequest.getSource(), SourceState.REQUESTED)); //TODO: check if this is trash
 
         log.info(
                 "Requesting source access for application {}, {}",
-                existing.getId(),
+//                existing.getId(),
                 sourceRequest
         );
 
@@ -141,12 +154,12 @@ public class SourceRequestManager {
                 .withLicenseAccepted(true)
                 .build();
         sourceRequestStore.store(sourceRequest);
-        Application existing = applicationStore.applicationFor(sourceRequest.getAppId()).get();
-        applicationStore.updateApplication(
-                existing
-                        .copyWithReadSourceState(sourceRequest.getSource(), SourceState.AVAILABLE)
-                        .copyWithSourceEnabled(sourceRequest.getSource())
-        );
+//        Application existing = applicationStore.applicationFor(sourceRequest.getAppId()).get();
+//        applicationStore.updateApplication(
+//                existing
+//                        .copyWithReadSourceState(sourceRequest.getSource(), SourceState.AVAILABLE)
+//                        .copyWithSourceEnabled(sourceRequest.getSource()) // TODO: check if this is trash
+//        );
         return sourceRequest;
     }
 
@@ -188,19 +201,19 @@ public class SourceRequestManager {
                 && !approvingUser.getSources().contains(sourceRequest.get().getSource())) {
             throw new ResourceForbiddenException();
         }
-        Application existing = applicationStore.applicationFor(sourceRequest.get().getAppId())
-                .get();
-        applicationStore.updateApplication(
-                existing.copyWithReadSourceState(
-                        sourceRequest.get().getSource(),
-                        SourceState.AVAILABLE
-                ));
+//        Application existing = applicationStore.applicationFor(sourceRequest.get().getAppId()) //TODO: check if this is trash
+//                .get();
+//        applicationStore.updateApplication(
+//                existing.copyWithReadSourceState(
+//                        sourceRequest.get().getSource(),
+//                        SourceState.AVAILABLE
+//                ));
         SourceRequest approved = sourceRequest.get().copy().withApprovedAt(clock.now()).build();
         sourceRequestStore.store(approved);
 
         log.info(
                 "Approving source request for application {}, {}",
-                existing.getId(),
+//                existing.getId(),
                 approved
         );
     }

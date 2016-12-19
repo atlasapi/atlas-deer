@@ -1,6 +1,10 @@
 package org.atlasapi.output;
 
+import com.google.common.collect.Lists;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
@@ -18,6 +22,9 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.ZonedDateTime;
+import java.util.List;
+
 import static com.metabroadcast.common.time.DateTimeZones.UTC;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,20 +35,21 @@ public class BroadcastMergingTest {
 
     //TODO mock hierarchy chooser
     private final OutputContentMerger executor = new OutputContentMerger(new MostPrecidentWithChildrenContentHierarchyChooser());
-    private final ApplicationSources sources = ApplicationSources.defaults()
-            .copy().withPrecedence(true)
-            .withReadableSources(ImmutableList.of(
-                    new SourceReadEntry(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED),
-                    new SourceReadEntry(Publisher.FACEBOOK, SourceStatus.AVAILABLE_ENABLED)
-            ))
+    private final Application application = Application.builder()
+            .withId(-1l)
+            .withTitle("test")
+            .withDescription("desc")
+            .withEnvironment(mock(Environment.class))
+            .withCreated(ZonedDateTime.now())
+            .withApiKey("test")
+            .withSources(ApplicationConfiguration.builder()
+                    .withPrecedence(Lists.newArrayList(Publisher.BBC, Publisher.FACEBOOK))
+                    .withEnabledWriteSources(Lists.newArrayList())
+                    .build())
+            .withAllowedDomains(Lists.newArrayList())
+            .withAccessRoles(mock(AccessRoles.class))
+            .withRevoked(false)
             .build();
-
-    private final Application application = mock(Application.class);
-
-    @Before
-    public void setUp() {
-//        when(application.get)
-    }
 
     @Test
     public void testBroadcastMergingNoBroadcasts() {
@@ -229,7 +237,7 @@ public class BroadcastMergingTest {
         executor.merge(
                 chosenItemWithoutBroadcasts,
                 ImmutableList.of(notChosenFirstBbcItem, notChosenBbcItem, notChosenFbItem),
-                sources
+                application
         );
 
         // ensure that the broadcast matched, 

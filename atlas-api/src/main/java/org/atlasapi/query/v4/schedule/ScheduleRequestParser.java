@@ -206,11 +206,12 @@ class ScheduleRequestParser {
 
     private QueryContext parseContext(HttpServletRequest request, Publisher publisher)
             throws InvalidApiKeyException, InvalidAnnotationException {
-        ApplicationSources appSources = getConfiguration(request);
+        Application application = getConfiguration(request);
 
-        checkArgument(appSources.isReadEnabled(publisher), "Source %s not enabled", publisher);
+        checkArgument(application.getConfiguration().isReadEnabled(publisher), "Source %s not enabled", publisher);
 
         ActiveAnnotations annotations = annotationExtractor.extractFromRequest(request);
+        return new QueryContext(application, annotations, request);
         return QueryContext.create(appSources, annotations, request);
     }
 

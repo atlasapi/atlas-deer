@@ -6,10 +6,10 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.atlasapi.application.ApplicationSources;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.QueryResultWriter;
@@ -27,7 +27,6 @@ import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Interval;
@@ -72,8 +71,8 @@ public class PopularTopicController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            ApplicationSources sources = sourcesFetcher.applicationFor(request)
-                    .or(ApplicationSources.defaults());
+            Application application = sourcesFetcher.applicationFor(request)
+                    .orElse(DefaultApplication.create());
             Interval interval = new Interval(
                     dateTimeInQueryParser.parse(from),
                     dateTimeInQueryParser.parse(to)
@@ -96,15 +95,11 @@ public class PopularTopicController {
 
     private Iterable<Topic> resolve(ListenableFuture<FluentIterable<Id>> topicIds)
             throws Exception {
-        return Futures.get(Futures.transform(
-                topicIds,
-                new AsyncFunction<FluentIterable<Id>, Resolved<Topic>>() {
-
-                    @Override
-                    public ListenableFuture<Resolved<Topic>> apply(FluentIterable<Id> input) {
-                        return resolver.resolveIds(input);
-                    }
-                }
-        ), 60, TimeUnit.SECONDS, Exception.class).getResources();
+        return Futures.getChecked(
+                Futures.transformAsync(topicIds, resolver::resolveIds),
+                Exception.class,
+                60,
+                TimeUnit.SECONDS
+        ).getResources();
     }
 }

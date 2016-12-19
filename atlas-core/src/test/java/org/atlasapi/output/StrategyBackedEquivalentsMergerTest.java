@@ -1,10 +1,15 @@
 package org.atlasapi.output;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
+import com.google.common.collect.Lists;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.SourceStatus;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.Id;
@@ -27,6 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -44,54 +50,61 @@ public class StrategyBackedEquivalentsMergerTest {
         merger = new StrategyBackedEquivalentsMerger<Content>(strategy);
     }
 
-    private final ApplicationSources nonMergingSources = ApplicationSources.defaults()
-            .copy().withPrecedence(false).build();
-    private final ApplicationSources mergingSources = ApplicationSources.defaults()
-            .copy().withPrecedence(true)
-            .withReadableSources(ImmutableList.of(
-                    new SourceReadEntry(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED),
-                    new SourceReadEntry(Publisher.TED, SourceStatus.AVAILABLE_ENABLED)
-            ))
+    private final Application nonMergingApplication = DefaultApplication.create();
+    private final Application mergingApplication = Application.builder()
+            .withId(-1l)
+            .withTitle("test")
+            .withDescription("desc")
+            .withEnvironment(mock(Environment.class))
+            .withCreated(ZonedDateTime.now())
+            .withApiKey("test")
+            .withSources(ApplicationConfiguration.builder()
+                    .withPrecedence(Lists.newArrayList(Publisher.BBC, Publisher.TED))
+                    .withEnabledWriteSources(Lists.newArrayList())
+                    .build())
+            .withAllowedDomains(Lists.newArrayList())
+            .withAccessRoles(mock(AccessRoles.class))
+            .withRevoked(false)
             .build();
 
     @Test
     public void testDoesntMergeForNonMergingConfig() {
         Id id = Id.valueOf(1234);
-        List<Content> merged = merger.merge(Optional.of(id), ImmutableSet.<Content>of(),
-                nonMergingSources
+        List<Content> merged = merger.merge(Optional.of(id), ImmutableSet.of(),
+                nonMergingApplication
         );
 
         assertTrue(merged.isEmpty());
-        veryifyNoMerge(nonMergingSources);
+        veryifyNoMerge(nonMergingApplication);
     }
 
     @Test
     public void testDoesntMergeForEmptyEquivalenceSet() {
         Id id = Id.valueOf(1234);
         List<Content> merged = merger.merge(Optional.of(id), ImmutableSet.<Content>of(),
-                mergingSources
+                mergingApplication
         );
 
         assertTrue(merged.isEmpty());
-        veryifyNoMerge(mergingSources);
+        veryifyNoMerge(mergingApplication);
     }
 
     @Test
     public void testDoesntMergeForSingletonEquivalenceSet() {
         Content brand = new Brand(Id.valueOf(1), Publisher.BBC);
-        when(strategy.merge(brand, ImmutableList.of(), mergingSources)).thenReturn(brand);
+        when(strategy.merge(brand, ImmutableList.of(), mergingApplication)).thenReturn(brand);
         List<Content> merged = merger.merge(Optional.of(brand.getId()), ImmutableSet.of(brand),
-                mergingSources
+                mergingApplication
         );
 
         assertThat(merged.size(), is(1));
     }
 
-    private void veryifyNoMerge(ApplicationSources sources) {
+    private void veryifyNoMerge(Application application) {
         verify(strategy, never()).merge(
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
-                argThat(is(sources))
+                argThat(is(application))
         );
     }
 
@@ -110,31 +123,31 @@ public class StrategyBackedEquivalentsMergerTest {
             when(strategy.merge(
                     argThat(any(Content.class)),
                     anyCollectionOf(Content.class),
-                    argThat(is(mergingSources))
+                    argThat(is(mergingApplication))
             )).thenReturn(one);
 
-            merger.merge(Optional.of(one.getId()), contentList, mergingSources);
+            merger.merge(Optional.of(one.getId()), contentList, mergingApplication);
 
             if (contentList.get(0).equals(one)) {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
-                                argThat(is(mergingSources))
+                                argThat(is(mergingApplication))
                         );
             } else if (contentList.get(0).equals(two)) {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
-                                argThat(is(mergingSources))
+                                argThat(is(mergingApplication))
                         );
             } else {
                 verify(strategy)
                         .merge(
                                 argThat(is(one)),
                                 argThat(contains(two, three)),
-                                argThat(is(mergingSources))
+                                argThat(is(mergingApplication))
                         );
             }
 
@@ -152,38 +165,38 @@ public class StrategyBackedEquivalentsMergerTest {
         setUpMockStrategyToReturn(one);
         List<Content> merged = merger.merge(Optional.of(one.getId()),
                 ImmutableSet.of(one, two, three),
-                mergingSources
+                mergingApplication
         );
 
         verify(strategy)
                 .merge(
                         argThat(is(one)),
                         argThat(contains(two, three)),
-                        argThat(is(mergingSources))
+                        argThat(is(mergingApplication))
                 );
         reset(strategy);
         setUpMockStrategyToReturn(one);
         merged = merger.merge(Optional.of(two.getId()), ImmutableSet.of(one, two, three),
-                mergingSources
+                mergingApplication
         );
 
         verify(strategy)
                 .merge(
                         argThat(is(two)),
                         argThat(contains(one, three)),
-                        argThat(is(mergingSources))
+                        argThat(is(mergingApplication))
                 );
         reset(strategy);
         setUpMockStrategyToReturn(one);
         merged = merger.merge(Optional.of(three.getId()), ImmutableSet.of(one, two, three),
-                mergingSources
+                mergingApplication
         );
 
         verify(strategy)
                 .merge(
                         argThat(is(one)),
                         argThat(contains(two, three)),
-                        argThat(is(mergingSources))
+                        argThat(is(mergingApplication))
                 );
         reset(strategy);
     }
@@ -192,7 +205,7 @@ public class StrategyBackedEquivalentsMergerTest {
         when(strategy.merge(
                 argThat(any(Content.class)),
                 anyCollectionOf(Content.class),
-                argThat(is(mergingSources))
+                argThat(is(mergingApplication))
         )).thenReturn(content);
     }
 

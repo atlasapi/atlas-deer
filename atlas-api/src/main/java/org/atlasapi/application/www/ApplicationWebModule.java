@@ -9,9 +9,6 @@ import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.Application;
 import org.atlasapi.application.ApplicationPersistenceModule;
-import org.atlasapi.application.ApplicationQueryExecutor;
-import org.atlasapi.application.ApplicationQueryExecutorMultipleAccounts;
-import org.atlasapi.application.ApplicationsController;
 import org.atlasapi.application.SourceLicense;
 import org.atlasapi.application.SourceLicenseController;
 import org.atlasapi.application.SourceLicenseQueryExecutor;
@@ -58,9 +55,6 @@ import org.atlasapi.application.users.User;
 import org.atlasapi.application.users.UsersController;
 import org.atlasapi.application.users.UsersQueryExecutor;
 import org.atlasapi.application.users.UsersQueryExecutorMultipleAccounts;
-import org.atlasapi.application.writers.ApplicationListWriter;
-import org.atlasapi.application.writers.ApplicationQueryResultWriter;
-import org.atlasapi.application.writers.ApplicationQueryResultWriterMultipleAccounts;
 import org.atlasapi.application.writers.EndUserLicenseListWriter;
 import org.atlasapi.application.writers.EndUserLicenseQueryResultWriter;
 import org.atlasapi.application.writers.SourceLicenseQueryResultWriter;
@@ -226,25 +220,6 @@ public class ApplicationWebModule {
         );
     }
 
-    @Bean
-    public ApplicationsController applicationAdminController() {
-        return new ApplicationsController(
-                applicationQueryParser(),
-                applicationQueryParserNoAuth(),
-                new ApplicationQueryExecutor(appPersistence.applicationStore()),
-                new ApplicationQueryExecutorMultipleAccounts(appPersistence.applicationStore()),
-                new ApplicationQueryResultWriter(applicationListWriter()),
-                new ApplicationQueryResultWriterMultipleAccounts(applicationListWriter()),
-                gsonModelReader(),
-                idCodec,
-                sourceIdCodec,
-                appPersistence.applicationStore(),
-                userFetcher(),
-                noAuthUserFetcher(),
-                appPersistence.userStore()
-        );
-    }
-
     public
     @Bean
     DefaultAnnotationHandlerMapping controllerMappings() {
@@ -281,7 +256,7 @@ public class ApplicationWebModule {
     }
 
     @Bean
-    public SourcesController sourcesController() {
+    public SourcesController sourcesController() { //TODO: check if needed
         return new SourcesController(
                 sourcesQueryParser(),
                 sourcesQueryParserNoAuth(),
@@ -291,7 +266,7 @@ public class ApplicationWebModule {
                 new SourcesQueryResultWriterMultipleAccounts(getSourcesWriter()),
                 idCodec,
                 sourceIdCodec,
-                appPersistence.applicationStore(),
+                null,
                 userFetcher(),
                 noAuthUserFetcher()
         );
@@ -313,7 +288,7 @@ public class ApplicationWebModule {
         );
         SourceRequestManager manager = new SourceRequestManager(
                 appPersistence.sourceRequestStore(),
-                appPersistence.applicationStore(),
+                appPersistence.applicationsClient(),
                 idGenerator,
                 new SystemClock()
         );
@@ -398,11 +373,6 @@ public class ApplicationWebModule {
                         SourceIdStringCoercer.create(sourceIdCodec)
                 )
         ));
-    }
-
-    @Bean
-    protected EntityListWriter<Application> applicationListWriter() {
-        return new ApplicationListWriter(idCodec, sourceIdCodec);
     }
 
     private StandardUserAwareQueryParser<User> usersQueryParser() {

@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.metabroadcast.applications.client.model.internal.Application;
-import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.auth.ApiKeyApplicationFetcher;
 import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.content.Content;
@@ -143,7 +143,7 @@ public class SearchController {
             );
 
             Application application = applicationFetcher.applicationFor(request)
-                    .orElse(applicationFetcher.getDefaults());
+                    .orElse(DefaultApplication.create());
             Set<Specialization> specializations = specializations(specialization);
             Set<Publisher> publishers = publishers(publisher, application);
             List<Identified> content = searcher.search(SearchQuery.builder(q)

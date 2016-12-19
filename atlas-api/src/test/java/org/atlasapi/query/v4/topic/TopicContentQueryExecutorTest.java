@@ -1,12 +1,16 @@
 package org.atlasapi.query.v4.topic;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceStatus;
+import com.google.common.collect.Lists;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.Episode;
@@ -70,6 +74,27 @@ public class TopicContentQueryExecutorTest {
     public void testExecutingTopicContentQuery() throws QueryExecutionException {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
+
+        QueryContext context = new QueryContext(
+                Application.builder()
+                        .withId(-1l)
+                        .withTitle("test")
+                        .withDescription("desc")
+                        .withEnvironment(Environment.PROD)
+                        .withCreated(ZonedDateTime.now())
+                        .withApiKey("apiKey")
+                        .withSources(ApplicationConfiguration.builder()
+                                .withPrecedence(Lists.newArrayList(Publisher.BBC, Publisher.DBPEDIA))
+                                .withEnabledWriteSources(Lists.newArrayList())
+                                .build())
+                        .withAllowedDomains(Lists.newArrayList())
+                        .withAccessRoles(mock(AccessRoles.class))
+                        .withRevoked(false)
+                        .build(),
+                ActiveAnnotations.standard(),
+                mock(HttpServletRequest.class)
+        );
+
         QueryContext context = QueryContext.create(ApplicationSources.defaults()
                 .copyWithChangedReadableSourceStatus(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED)
                 .copyWithChangedReadableSourceStatus(
@@ -90,14 +115,14 @@ public class TopicContentQueryExecutorTest {
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
         FluentIterable<Id> returning = FluentIterable.from(ImmutableSet.of(content.getId()));
         when(contentIndex.query(emptyAttributeQuerySet,
-                context.getApplicationSources().getEnabledReadSources(),
+                context.getApplication().getConfiguration().getEnabledReadSources(),
                 Selection.all(),
                 Optional.empty()
         ))
                 .thenReturn(Futures.immediateFuture(IndexQueryResult.withIds(returning, 0L)));
         when(equivalentsResolver.resolveIds(
                 argThat(hasItems(content.getId())),
-                argThat(is(context.getApplicationSources())),
+                argThat(is(context.getApplication())),
                 argThat(is(context.getAnnotations().all()))
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
@@ -127,17 +152,7 @@ public class TopicContentQueryExecutorTest {
         try {
             executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
         } catch (QueryExecutionException qee) {
-            verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)),
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(Selection.class)),
-                    argThat(isA(Optional.class))
-            );
-            verify(equivalentsResolver, never()).resolveIds(
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(ApplicationSources.class)),
-                    argThat(isA(Set.class))
-            );
-            throw qee.getCause();
+           verifyException(qee);
         }
 
     }
@@ -160,18 +175,22 @@ public class TopicContentQueryExecutorTest {
         try {
             executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
         } catch (QueryExecutionException qee) {
-            verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)),
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(Selection.class)),
-                    argThat(isA(Optional.class))
-            );
-            verify(equivalentsResolver, never()).resolveIds(
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(ApplicationSources.class)),
-                    argThat(isA(Set.class))
-            );
-            throw qee.getCause();
+            verifyException(qee);
         }
 
+    }
+
+    private void verifyException(QueryExecutionException qee) throws Throwable {
+        verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)),
+                argThat(isA(Iterable.class)),
+                argThat(isA(Selection.class)),
+                argThat(isA(Optional.class))
+        );
+        verify(equivalentsResolver, never()).resolveIds(
+                argThat(isA(Iterable.class)),
+                argThat(isA(Application.class)),
+                argThat(isA(Set.class))
+        );
+        throw qee.getCause();
     }
 }

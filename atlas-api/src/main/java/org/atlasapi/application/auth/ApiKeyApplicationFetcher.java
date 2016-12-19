@@ -5,16 +5,12 @@ import javax.servlet.http.HttpServletRequest;
 import com.google.api.client.repackaged.com.google.common.base.Objects;
 import com.metabroadcast.applications.client.ApplicationsClient;
 import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.applications.client.model.internal.Environment;
 import com.metabroadcast.applications.client.query.Query;
 import com.metabroadcast.applications.client.query.Result;
 
 import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.stream.MoreCollectors;
-import org.atlasapi.media.entity.Publisher;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -44,39 +40,12 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
         );
 
         if (apiKey != null) {
-            Result result = applicationsClient.resolve(Query.create(apiKey, Environment.PROD));
+            Result result = applicationsClient.resolve(Query.create(apiKey, Environment.PROD)); //TODO: get environment from correct place
             if (result.getErrorCode().isPresent()) {
                 throw new InvalidApiKeyException(result.getErrorCode().get().toString());
             }
             return result.getSingleResult();
         }
         return Optional.empty();
-    }
-
-    @Override
-    public Application getDefaults() {
-
-        ApplicationConfiguration configuration = ApplicationConfiguration.builder()
-                .withNoPrecedence(getNoApiKeyPublishers())
-                .withEnabledWriteSources(null)
-                .build();
-
-        return Application.builder().withId(null)
-                .withTitle(null)
-                .withDescription(null)
-                .withEnvironment(Environment.PROD)
-                .withCreated(null)
-                .withApiKey(null)
-                .withSources(configuration)
-                .withAllowedDomains(null)
-                .withAccessRoles(null)
-                .withRevoked(false)
-                .build();
-    }
-
-    private List<Publisher> getNoApiKeyPublishers() {
-        return Publisher.all().stream()
-                .filter(Publisher::enabledWithNoApiKey)
-                .collect(MoreCollectors.toImmutableList());
     }
 }

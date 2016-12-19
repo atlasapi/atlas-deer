@@ -153,7 +153,8 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
                 .filter(
                         input -> query
                                 .getContext()
-                                .getApplicationSources()
+                                .getApplication()
+                                .getConfiguration()
                                 .isReadEnabled(input.getSource())
                 )
                 .collect(MoreCollectors.toImmutableList());

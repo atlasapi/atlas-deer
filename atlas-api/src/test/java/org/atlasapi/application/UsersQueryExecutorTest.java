@@ -46,7 +46,7 @@ public class UsersQueryExecutorTest {
     public void testExecutingUserQuery() throws Exception {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.ADMIN).build();
         UserAwareQueryContext context = new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
                 mock(HttpServletRequest.class)
@@ -67,7 +67,7 @@ public class UsersQueryExecutorTest {
     public void testCanSeeOwnProfile() throws Exception {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.REGULAR).build();
         UserAwareQueryContext context = new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
                 mock(HttpServletRequest.class)
@@ -88,7 +88,7 @@ public class UsersQueryExecutorTest {
     public void testCannotSeeOtherProfile() throws Exception {
         User user = User.builder().withId(Id.valueOf(5000)).withRole(Role.REGULAR).build();
         UserAwareQueryContext context = new UserAwareQueryContext(
-                ApplicationSources.defaults(),
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 Optional.of(user),
                 mock(HttpServletRequest.class)

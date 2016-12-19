@@ -8,7 +8,8 @@ import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupRef;
@@ -102,13 +103,15 @@ public class ChannelGroupQueryExecutorTest {
 
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
-        ApplicationSources applicationSources = mock(ApplicationSources.class);
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
         Selection selection = Selection.ALL;
         HttpServletRequest request = mock(HttpServletRequest.class);
 
-        when(applicationSources.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(application.getConfiguration()).thenReturn(configuration);
 
-        when(context.getApplicationSources()).thenReturn(applicationSources);
+        when(context.getApplication()).thenReturn(application);
         when(context.getSelection()).thenReturn(Optional.of(selection));
         when(context.getRequest()).thenReturn(request);
 
@@ -247,15 +250,17 @@ public class ChannelGroupQueryExecutorTest {
 
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannelGroup> channelQuery = mock(Query.class);
-        ApplicationSources applicationSources = mock(ApplicationSources.class);
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
         Selection selection = Selection.ALL;
         HttpServletRequest request = mock(HttpServletRequest.class);
 
-        when(applicationSources.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(application.getConfiguration()).thenReturn(configuration);
 
         when(request.getParameter("annotations")).thenReturn("regions,channels");
 
-        when(context.getApplicationSources()).thenReturn(applicationSources);
+        when(context.getApplication()).thenReturn(application);
         when(context.getSelection()).thenReturn(Optional.of(selection));
         when(context.getRequest()).thenReturn(request);
 

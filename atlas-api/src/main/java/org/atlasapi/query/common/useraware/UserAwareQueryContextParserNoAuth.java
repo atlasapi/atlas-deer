@@ -4,7 +4,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.auth.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.application.auth.NoAuthUserFetcher;
@@ -28,9 +28,12 @@ public class UserAwareQueryContextParserNoAuth implements ParameterNameProvider 
     private final AnnotationsExtractor annotationExtractor;
     private final Selection.SelectionBuilder selectionBuilder;
 
-    public UserAwareQueryContextParserNoAuth(ApplicationFetcher configFetcher,
-            NoAuthUserFetcher userFetcher, AnnotationsExtractor annotationsParser,
-            Selection.SelectionBuilder selectionBuilder) {
+    public UserAwareQueryContextParserNoAuth(
+            ApplicationFetcher configFetcher,
+            NoAuthUserFetcher userFetcher,
+            AnnotationsExtractor annotationsParser,
+            Selection.SelectionBuilder selectionBuilder
+    ) {
         this.configFetcher = checkNotNull(configFetcher);
         this.userFetcher = checkNotNull(userFetcher);
         this.annotationExtractor = checkNotNull(annotationsParser);
@@ -40,7 +43,7 @@ public class UserAwareQueryContextParserNoAuth implements ParameterNameProvider 
     public UserAccountsAwareQueryContext parseSingleContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
         return new UserAccountsAwareQueryContext(
-                configFetcher.applicationFor(request).or(ApplicationSources.defaults()),
+                configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromSingleRequest(request),
                 userFetcher.userFor(request),
                 selectionBuilder.build(request),
@@ -51,7 +54,7 @@ public class UserAwareQueryContextParserNoAuth implements ParameterNameProvider 
     public UserAccountsAwareQueryContext parseListContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
         return new UserAccountsAwareQueryContext(
-                configFetcher.applicationFor(request).or(ApplicationSources.defaults()),
+                configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromListRequest(request),
                 userFetcher.userFor(request),
                 selectionBuilder.build(request),

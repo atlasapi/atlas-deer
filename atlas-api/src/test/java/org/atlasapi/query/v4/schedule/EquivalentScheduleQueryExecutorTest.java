@@ -1,14 +1,16 @@
 package org.atlasapi.query.v4.schedule;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.SourceStatus;
+import com.google.api.client.util.Lists;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
@@ -35,11 +37,9 @@ import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 
 import com.metabroadcast.common.time.DateTimeZones;
 
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -226,23 +226,27 @@ public class EquivalentScheduleQueryExecutorTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        List<SourceReadEntry> reads = ImmutableList.copyOf(Iterables.transform(
-                Publisher.all(),
-                new Function<Publisher, SourceReadEntry>() {
 
-                    @Override
-                    public SourceReadEntry apply(@Nullable Publisher input) {
-                        return new SourceReadEntry(input, SourceStatus.AVAILABLE_ENABLED);
-                    }
-                }
-        ));
-
-        ApplicationSources appSources = ApplicationSources.defaults().copy()
-                .withPrecedence(true)
-                .withReadableSources(reads)
+        Application application = Application.builder()
+                .withId(-1l)
+                .withTitle("test")
+                .withDescription("desc")
+                .withEnvironment(Environment.PROD)
+                .withCreated(ZonedDateTime.now())
+                .withApiKey("apiKey")
+                .withSources(ApplicationConfiguration.builder()
+                        .withPrecedence(Publisher.all().asList())
+                        .withEnabledWriteSources(Lists.newArrayList())
+                        .build())
+                .withAllowedDomains(Lists.newArrayList())
+                .withAccessRoles(mock(AccessRoles.class))
+                .withRevoked(false)
                 .build();
         QueryContext context = QueryContext.create(
                 appSources,
+
+        QueryContext context = new QueryContext(
+                application,
                 ActiveAnnotations.standard(),
                 mock(HttpServletRequest.class)
         );
@@ -286,14 +290,17 @@ public class EquivalentScheduleQueryExecutorTest {
         when(scheduleResolver.resolveSchedules(argThat(hasItems(channel)),
                 eq(interval),
                 eq(query.getSource()),
-                argThat(is(query.getContext().getApplicationSources().getEnabledReadSources()))
-        ))
+                argThat(is(query.getContext()
+                        .getApplication()
+                        .getConfiguration()
+                        .getEnabledReadSources())
+                )))
                 .thenReturn(Futures.immediateFuture(new EquivalentSchedule(ImmutableList.of(
                         channelSchedule), interval)));
         when(equivalentsMerger.merge(
                 Optional.absent(),
                 ImmutableSet.of(scheduleItem, equivalentItem),
-                appSources
+                application
         ))
                 .thenReturn(ImmutableList.of(equivalentItem));
         when(broadcastMatcher.findMatchingBroadcast(originalBroadcast, equivalentBroadcasts))
@@ -312,7 +319,7 @@ public class EquivalentScheduleQueryExecutorTest {
         verify(equivalentsMerger).merge(
                 Optional.<Id>absent(),
                 ImmutableSet.of(scheduleItem, equivalentItem),
-                appSources
+                application
         );
 
     }

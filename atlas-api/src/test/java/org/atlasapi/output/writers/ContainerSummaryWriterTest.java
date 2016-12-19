@@ -1,7 +1,8 @@
 package org.atlasapi.output.writers;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Episode;
@@ -40,7 +41,7 @@ public class ContainerSummaryWriterTest {
 
     private ContainerSummaryWriter containerSummaryWriter;
 
-    private ApplicationSources applicationSources;
+    private Application application;
     private ImmutableSet<Annotation> annotations;
     private Series series;
     private Episode episode;
@@ -54,10 +55,10 @@ public class ContainerSummaryWriterTest {
                 commonContainerSummaryWriter
         );
 
-        applicationSources = ApplicationSources.defaults();
+        application = DefaultApplication.create();
         annotations = ImmutableSet.of();
 
-        when(outputContext.getApplication()).thenReturn(applicationSources);
+        when(outputContext.getApplication()).thenReturn(application);
         when(outputContext.getActiveAnnotations()).thenReturn(annotations);
 
         series = new Series(Id.valueOf(10L), Publisher.METABROADCAST);
@@ -86,7 +87,7 @@ public class ContainerSummaryWriterTest {
         ContainerSummary expectedSummary = ContainerSummary.from(series);
 
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), applicationSources, annotations
+                series.getId(), application, annotations
         ))
                 .thenReturn(Optional.of(expectedSummary));
 
@@ -98,7 +99,7 @@ public class ContainerSummaryWriterTest {
     @Test
     public void doNotWriteWhenContainerSummaryCannotBeResolved() throws Exception {
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), applicationSources, annotations
+                series.getId(), application, annotations
         ))
                 .thenReturn(Optional.absent());
 

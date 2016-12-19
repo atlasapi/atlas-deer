@@ -3,7 +3,6 @@ package org.atlasapi.model.translators;
 import java.util.Set;
 
 import org.atlasapi.application.Application;
-import org.atlasapi.application.LegacyApplicationStore;
 import org.atlasapi.application.users.Role;
 import org.atlasapi.application.users.User;
 import org.atlasapi.entity.Id;
@@ -17,10 +16,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserModelTranslator implements Function<org.atlasapi.application.users.v3.User, User> {
 
-    private final LegacyApplicationStore store;
-
-    public UserModelTranslator(LegacyApplicationStore store) {
-        this.store = store;
+    public UserModelTranslator() {
     }
 
     public User apply(org.atlasapi.application.users.v3.User input) {
@@ -43,7 +39,8 @@ public class UserModelTranslator implements Function<org.atlasapi.application.us
     }
 
     public Set<Id> transformApplicationSlugs(Set<String> input) {
-        return Sets.newHashSet(store.applicationIdsForSlugs(input));
+//        return Sets.newHashSet(store.applicationIdsForSlugs(input)); //TODO: this
+        return Sets.newHashSet();
     }
 
     public org.atlasapi.application.users.v3.User transform4to3(User input) {
@@ -66,15 +63,10 @@ public class UserModelTranslator implements Function<org.atlasapi.application.us
     }
 
     public Set<String> transformApplicationIds(Set<Id> input) {
-        ListenableFuture<Resolved<Application>> resolved = store.resolveIds(input);
+        ListenableFuture<Resolved<Application>> resolved = null; // store.resolveIds(input); // TODO: this
         return ImmutableSet.copyOf(Futures.getUnchecked(resolved)
-                .getResources().transform(new Function<Application, String>() {
-
-                                              @Override
-                                              public String apply(Application input) {
-                                                  return input.getSlug();
-                                              }
-                                          }
-                ));
+                .getResources()
+                .transform(Application::getSlug)
+        );
     }
 }

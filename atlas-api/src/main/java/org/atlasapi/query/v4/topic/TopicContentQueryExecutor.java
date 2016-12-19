@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.topic;
 import java.util.Optional;
 import java.util.Set;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
@@ -72,7 +73,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             final Topic topic = possibleTopic.get();
 
             final QueryContext context = query.getContext();
-            if (!context.getApplicationSources().isReadEnabled(topic.getSource())) {
+            if (!context.getApplication().getConfiguration().isReadEnabled(topic.getSource())) {
                 throw new ForbiddenException(topic.getId());
             }
 
@@ -100,19 +101,18 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             ListenableFuture<IndexQueryResult> queryIndex, QueryContext context) {
         return resolveContent(
                 queryIndex,
-                context.getApplicationSources(),
+                context.getApplication(),
                 context.getAnnotations().all()
         );
     }
 
     private ListenableFuture<ResolvedEquivalents<Content>> resolveContent(
             ListenableFuture<IndexQueryResult> queryHits,
-            final ApplicationSources sources, final Set<Annotation> annotations) {
+            final Application application, final Set<Annotation> annotations) {
         return Futures.transform(
                 queryHits,
-                (IndexQueryResult ids) -> {
-                    return contentResolver.resolveIds(ids.getIds(), sources, annotations);
-                }
+                (IndexQueryResult ids) ->
+                        contentResolver.resolveIds(ids.getIds(), application, annotations)
         );
     }
 
@@ -124,7 +124,7 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
             throws QueryExecutionException {
         return index.query(
                 query.getOperands(),
-                query.getContext().getApplicationSources().getEnabledReadSources(),
+                query.getContext().getApplication().getConfiguration().getEnabledReadSources(),
                 query.getContext().getSelection().or(Selection.all()),
                 Optional.empty()
         );

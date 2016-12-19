@@ -65,7 +65,7 @@ public class ApplicationSources {
         return Ordering.explicit(Lists.transform(reads, SourceReadEntry::getPublisher));
     }
 
-    public Optional<List<Publisher>> contentHierarchyPrecedence() {
+    public Optional<List<Publisher>> contentHierarchyPrecedence() { //TODO: Needs replication
         return contentHierarchyPrecedence == null ? Optional.absent() : contentHierarchyPrecedence;
     }
 
@@ -177,7 +177,7 @@ public class ApplicationSources {
     // with default source status
     public static ApplicationSources defaults() {
         return dflts;
-    }
+    } //TODO: Needs replication
 
     @Override
     public boolean equals(Object obj) {

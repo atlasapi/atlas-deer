@@ -44,7 +44,7 @@ public class IndexBackedEquivalentContentQueryExecutorTest {
         QueryContext ctxt = query.getContext();
 
         when(equivalentContentResolver.resolveIds(ImmutableSet.of(query.getOnlyId()),
-                ctxt.getApplicationSources(), ImmutableSet.copyOf(ctxt.getAnnotations().values())
+                ctxt.getApplication(), ImmutableSet.copyOf(ctxt.getAnnotations().values())
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>empty()));
 

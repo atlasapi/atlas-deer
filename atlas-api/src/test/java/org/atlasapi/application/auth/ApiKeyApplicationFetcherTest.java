@@ -1,112 +1,124 @@
 package org.atlasapi.application.auth;
 
-import org.atlasapi.application.Application;
-import org.atlasapi.application.ApplicationCredentials;
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.ApplicationStore;
+import com.google.api.client.util.Lists;
+import com.metabroadcast.applications.client.ApplicationsClient;
+import com.metabroadcast.applications.client.exceptions.ErrorCode;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
+import com.metabroadcast.applications.client.query.Query;
+import com.metabroadcast.applications.client.query.Result;
 
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
 
-import com.google.common.base.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.hamcrest.Matchers.is;
+import javax.servlet.http.HttpServletRequest;
+import java.time.ZonedDateTime;
+import java.util.Optional;
+
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiKeyApplicationFetcherTest {
 
-    @Mock ApplicationStore appStore;
-    ApiKeyApplicationFetcher fetcher;
+    @Mock private ApplicationsClient applicationsClient;
+
+    private ApiKeyApplicationFetcher fetcher;
+    private String apiKey;
+    private Query query;
 
     @Before
     public void setup() {
-        fetcher = new ApiKeyApplicationFetcher(appStore);
+        fetcher = new ApiKeyApplicationFetcher(applicationsClient);
+        apiKey = "apiKey";
+        query = Query.create(apiKey, Environment.PROD);
     }
 
     @Test
-    public void testGetsSourcesForApiKey() throws Exception {
+    public void testGetsSourcesForApiKeyAsParameter() throws Exception {
 
-        String apiKey = "apikey";
-        Application app = Application.builder()
-                .withCredentials(ApplicationCredentials.builder().withApiKey(apiKey).build())
-                .withRevoked(false)
-                .build();
-        when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
+        Application application = getApplication();
+        Result result = Result.success(application);
+        HttpServletRequest request = new StubHttpServletRequest().withParam("key", apiKey);
 
-        Optional<ApplicationSources> srcs = fetcher.applicationFor(new StubHttpServletRequest().withParam(
-                "key",
-                apiKey
-        ));
+        when(applicationsClient.resolve(query)).thenReturn(result);
 
-        assertTrue(srcs.isPresent());
-        assertThat(srcs.get(), is(app.getSources()));
+        Optional<Application> app = fetcher.applicationFor(request);
+
+        assertTrue(app.isPresent());
+        assertThat(app.get(), is(application));
     }
 
     @Test
     public void testGetsSourcesForApiKeyInHeader() throws Exception {
 
-        String apiKey = "apikey";
-        Application app = Application.builder()
-                .withRevoked(false)
-                .withCredentials(ApplicationCredentials.builder().withApiKey(apiKey).build())
-                .build();
-        when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
+        Application application = getApplication();
+        Result result = Result.success(application);
+        HttpServletRequest request = new StubHttpServletRequest().withHeader("key", apiKey);
 
-        Optional<ApplicationSources> srcs = fetcher.applicationFor(new StubHttpServletRequest().withHeader(
-                "key",
-                apiKey
-        ));
+        when(applicationsClient.resolve(query)).thenReturn(result);
 
-        assertTrue(srcs.isPresent());
-        assertThat(srcs.get(), is(app.getSources()));
+        Optional<Application> app = fetcher.applicationFor(request);
+
+        assertTrue(app.isPresent());
+        assertThat(app.get(), is(application));
     }
 
     @Test
-    public void testReturnsAbsentIfNoApiKeyIsSupplied() throws Exception {
+    public void testReturnsEmptyIfNoApiKeyIsSupplied() throws Exception {
 
-        String apiKey = "apikey";
-        Application app = Application.builder()
-                .withCredentials(ApplicationCredentials.builder().withApiKey(apiKey).build())
-                .build();
-        when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
+        HttpServletRequest request = new StubHttpServletRequest();
+        Optional<Application> app = fetcher.applicationFor(request);
 
-        Optional<ApplicationSources> srcs = fetcher.applicationFor(new StubHttpServletRequest());
-
-        verify(appStore, never()).applicationForKey(apiKey);
-        assertFalse(srcs.isPresent());
+        assertFalse(app.isPresent());
     }
 
     @Test(expected = InvalidApiKeyException.class)
     public void testThrowsInvalidApiKeyExceptionIfAppIsRevoked() throws Exception {
 
-        String apiKey = "apikey";
-        Application app = Application.builder()
-                .withCredentials(ApplicationCredentials.builder().withApiKey(apiKey).build())
-                .withRevoked(true)
-                .build();
-        when(appStore.applicationForKey(apiKey)).thenReturn(Optional.of(app));
+        Result result = Result.failure(ErrorCode.REVOKED);
+        HttpServletRequest request = new StubHttpServletRequest().withParam("key", apiKey);
 
-        fetcher.applicationFor(new StubHttpServletRequest().withParam("key", apiKey));
+        when(applicationsClient.resolve(query)).thenReturn(result);
+
+        fetcher.applicationFor(request);
     }
 
     @Test(expected = InvalidApiKeyException.class)
     public void testThrowsInvalidApiKeyExceptionIfTheresNoAppForKey() throws Exception {
 
-        String apiKey = "apikey";
-        when(appStore.applicationForKey(apiKey)).thenReturn(Optional.<Application>absent());
+        Result result = Result.failure(ErrorCode.NOT_FOUND);
+        HttpServletRequest request = new StubHttpServletRequest().withParam("key", apiKey);
 
-        fetcher.applicationFor(new StubHttpServletRequest().withParam("key", apiKey));
+        when(applicationsClient.resolve(query)).thenReturn(result);
 
+        fetcher.applicationFor(request);
+    }
+
+    private Application getApplication() {
+        return Application.builder()
+                .withId(-1l)
+                .withTitle("test")
+                .withDescription("desc")
+                .withEnvironment(Environment.PROD)
+                .withCreated(ZonedDateTime.now())
+                .withApiKey(apiKey)
+                .withSources(mock(ApplicationConfiguration.class))
+                .withAllowedDomains(Lists.newArrayList())
+                .withAccessRoles(mock(AccessRoles.class))
+                .withRevoked(false)
+                .build();
     }
 
 }

@@ -2,7 +2,8 @@ package org.atlasapi.query.v4.channel;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
@@ -88,14 +89,16 @@ public class ChannelQueryExecutorTest {
         Channel result2 = mock(Channel.class);
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannel> channelQuery = mock(Query.class);
-        ApplicationSources applicationSources = mock(ApplicationSources.class);
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
         Selection selection = Selection.ALL;
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter("annotations")).thenReturn("banana");
         when(context.getRequest()).thenReturn(request);
 
-        when(applicationSources.isReadEnabled(any(Publisher.class))).thenReturn(true);
-        when(context.getApplicationSources()).thenReturn(applicationSources);
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(application.getConfiguration()).thenReturn(configuration);
+        when(context.getApplication()).thenReturn(application);
 
         when(context.getSelection()).thenReturn(Optional.of(selection));
 
@@ -182,15 +185,17 @@ public class ChannelQueryExecutorTest {
         QueryContext context = mock(QueryContext.class);
         Query<ResolvedChannel> channelQuery = mock(Query.class);
 
-        ApplicationSources applicationSources = mock(ApplicationSources.class);
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
         Selection selection = Selection.ALL;
         HttpServletRequest request = mock(HttpServletRequest.class);
 
         when(request.getParameter("annotations")).thenReturn("variations,channel_groups_summary");
         when(context.getRequest()).thenReturn(request);
 
-        when(applicationSources.isReadEnabled(any(Publisher.class))).thenReturn(true);
-        when(context.getApplicationSources()).thenReturn(applicationSources);
+        when(application.getConfiguration()).thenReturn(configuration);
+        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
+        when(context.getApplication()).thenReturn(application);
 
         when(context.getSelection()).thenReturn(Optional.of(selection));
 

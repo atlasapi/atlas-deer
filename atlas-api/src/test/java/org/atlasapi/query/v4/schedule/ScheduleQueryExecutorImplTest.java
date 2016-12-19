@@ -4,7 +4,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.channel.Channel;
@@ -209,6 +210,9 @@ public class ScheduleQueryExecutorImplTest {
                 input -> new SourceReadEntry(input, SourceStatus.AVAILABLE_ENABLED)
         ));
 
+        Application application = DefaultApplication.createWithReads(Publisher.all().asList());
+        QueryContext context = new QueryContext(
+                application,
         ApplicationSources appSources = ApplicationSources.defaults().copy()
                 .withPrecedence(true)
                 .withReadableSources(reads)
@@ -249,7 +253,7 @@ public class ScheduleQueryExecutorImplTest {
                 )));
         when(equivalentContentResolver.resolveIds(
                 ImmutableSet.of(itemId),
-                appSources,
+                application,
                 ActiveAnnotations.standard().all()
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
@@ -265,7 +269,7 @@ public class ScheduleQueryExecutorImplTest {
         );
         verify(equivalentContentResolver).resolveIds(
                 ImmutableSet.of(itemId),
-                appSources,
+                application,
                 ActiveAnnotations.standard().all()
         );
 
