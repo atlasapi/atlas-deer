@@ -585,6 +585,7 @@ public class HashValueExtractorTest {
         broadcast.withId("sourceId");
         broadcast.setVersionId("versionId");
         broadcast.setRepeat(false);
+        broadcast.setRevisedRepeat(false);
         broadcast.setSubtitled(true);
         broadcast.setSigned(false);
         broadcast.setAudioDescribed(false);

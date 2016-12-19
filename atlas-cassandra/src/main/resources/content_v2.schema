@@ -176,7 +176,8 @@ CREATE TYPE IF NOT EXISTS Broadcast (
   ne boolean,
   p boolean,
   thd boolean,
-  br boolean
+  br boolean,
+  rr boolean
 );
 
 CREATE TYPE IF NOT EXISTS Description (

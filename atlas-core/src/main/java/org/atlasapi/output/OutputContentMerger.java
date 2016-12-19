@@ -547,6 +547,9 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
                 .isPresent()) {
             chosen.setBlackoutRestriction(toMerge.getBlackoutRestriction().get());
         }
+        if (chosen.getRevisedRepeat() == null && toMerge.getRevisedRepeat() != null) {
+            chosen.setRevisedRepeat(toMerge.getRevisedRepeat());
+        }
     }
 
     private static boolean isImageAvailableAndNotGenericImageContentPlayer(
