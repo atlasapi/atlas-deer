@@ -54,6 +54,13 @@ public class DebugModule {
                 persistenceModule.scheduleStore());
     }
 
+    @Bean
+    public DelphiController delphiController() {
+        return DelphiController.create(
+                persistenceModule.getContentEquivalenceGraphStore()
+        );
+    }
+
     private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
         return new DirectAndExplicitEquivalenceMigrator(
                 persistenceModule.legacyContentResolver(),
