@@ -73,10 +73,7 @@ public class BroadcastSerializerTest {
         Broadcast broadcast = serializer.deserialize(deserialized);
 
         Broadcast expectedBroadcast = getBroadcast();
-
-        // These fields are new and are not set in the serialized broadcast
         expectedBroadcast.setNewEpisode(null);
-        expectedBroadcast.setRevisedRepeat(null);
 
         checkBroadcast(broadcast, expectedBroadcast);
         checkBroadcastTimes(
@@ -99,7 +96,6 @@ public class BroadcastSerializerTest {
         assertThat(actual.getSourceId(), is(expected.getSourceId()));
         assertThat(actual.isActivelyPublished(), is(expected.isActivelyPublished()));
         assertThat(actual.getRepeat(), is(expected.getRepeat()));
-        assertThat(actual.getRevisedRepeat(), is(expected.getRevisedRepeat()));
         assertThat(actual.getSubtitled(), is(expected.getSubtitled()));
         assertThat(actual.getSigned(), is(expected.getSigned()));
         assertThat(actual.getAudioDescribed(), is(expected.getAudioDescribed()));
@@ -140,7 +136,6 @@ public class BroadcastSerializerTest {
         broadcast.withId("sourceId");
         broadcast.setIsActivelyPublished(null);
         broadcast.setRepeat(true);
-        broadcast.setRevisedRepeat(true);
         broadcast.setSubtitled(false);
         broadcast.setSigned(false);
         broadcast.setAudioDescribed(true);

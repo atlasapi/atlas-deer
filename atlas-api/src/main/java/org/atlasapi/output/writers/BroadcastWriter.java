@@ -3,6 +3,7 @@ package org.atlasapi.output.writers;
 import java.io.IOException;
 
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
@@ -116,7 +117,6 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         writer.writeField("premiere", entity.getPremiere());
         writer.writeField("new_series", entity.getNewSeries());
         writer.writeField("new_episode", entity.getNewEpisode());
-        writer.writeField("revised_repeat", entity.getRevisedRepeat());
 
         if (!entity.getBlackoutRestriction().isPresent()) {
             writer.writeField("blackout_restriction", null);
