@@ -58,6 +58,7 @@ public class BroadcastSerialization {
         internal.setIs3d(broadcast.is3d());
         internal.setBlackoutRestriction(broadcast.getBlackoutRestriction().isPresent()
                 && broadcast.getBlackoutRestriction().get().getAll());
+        internal.setRevisedRepeat(broadcast.getRevisedRepeat());
 
         return internal;
     }
@@ -94,6 +95,7 @@ public class BroadcastSerialization {
         broadcast.set3d(internal.getIs3d());
         broadcast.setBlackoutRestriction(
                 new org.atlasapi.content.BlackoutRestriction(internal.getBlackoutRestriction()));
+        broadcast.setRevisedRepeat(internal.getRevisedRepeat());
 
         return broadcast;
     }

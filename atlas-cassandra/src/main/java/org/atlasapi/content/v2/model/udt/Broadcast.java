@@ -41,6 +41,8 @@ public class Broadcast implements Identified {
     @Field(name = "p") private Boolean premiere;
     @Field(name = "thd") private Boolean is3d;
     @Field(name = "br") private Boolean blackoutRestriction;
+    @Field(name = "rr") private Boolean revisedRepeat;
+
 
     public Broadcast() {}
 
@@ -266,5 +268,13 @@ public class Broadcast implements Identified {
 
     public void setEquivalenceUpdate(Instant equivalenceUpdate) {
         this.equivalenceUpdate = equivalenceUpdate;
+    }
+
+    public Boolean getRevisedRepeat() {
+        return revisedRepeat;
+    }
+
+    public void setRevisedRepeat(Boolean revisedRepeat) {
+        this.revisedRepeat = revisedRepeat;
     }
 }

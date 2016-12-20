@@ -171,6 +171,7 @@ message Broadcast {
     optional bool is_three_d = 20;
     optional BlackoutRestriction blackout_restriction = 21;
     optional bool new_episode = 22;
+    optional bool revised_repeat = 23;
 }
 
 message BlackoutRestriction {

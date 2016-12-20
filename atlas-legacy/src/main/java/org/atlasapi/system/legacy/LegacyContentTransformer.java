@@ -464,6 +464,7 @@ public class LegacyContentTransformer
         b.set3d(version.is3d());
         b.setVersionId(version.getCanonicalUri());
         b.setBlackoutRestriction(transformBlackoutRestriction(input.getBlackoutRestriction()));
+        b.setRevisedRepeat(input.getRevisedRepeat());
         return b;
     }
 
