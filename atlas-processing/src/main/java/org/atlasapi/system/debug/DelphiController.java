@@ -19,6 +19,7 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.webapp.serializers.JodaDateTimeSerializer;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.HttpHeaders;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -77,6 +78,10 @@ public class DelphiController {
 
             EquivalenceGraph equivalenceGraph = optionalGraphMap.get(decodedId).get();
 
+            response.addHeader(
+                    HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
+                    "*"
+            );
             gson.toJson(equivalenceGraph, response.getWriter());
         } catch (Exception e) {
             log.error("Request exception {}", request.getRequestURI(), e);
