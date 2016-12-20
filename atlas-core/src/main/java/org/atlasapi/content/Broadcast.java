@@ -51,7 +51,6 @@ public class Broadcast extends Identified implements Hashable {
     private Boolean premiere;
     private Boolean is3d;
     private Optional<BlackoutRestriction> blackoutRestriction = Optional.absent();
-    private Boolean revisedRepeat;
 
     public Broadcast(Id channelId, Interval interval, Boolean activelyPublished) {
         this.channelId = checkNotNull(channelId);
@@ -302,16 +301,6 @@ public class Broadcast extends Identified implements Hashable {
         this.blackoutRestriction = Optional.fromNullable(blackoutRestriction);
     }
 
-    @Nullable
-    @FieldName("revised_repeat")
-    public Boolean getRevisedRepeat() {
-        return revisedRepeat;
-    }
-
-    public void setRevisedRepeat(Boolean revisedRepeat) {
-        this.revisedRepeat = revisedRepeat;
-    }
-
     public boolean isUpcoming() {
         return getTransmissionEndTime().isAfter(DateTime.now(DateTimeZone.UTC));
     }
@@ -378,7 +367,6 @@ public class Broadcast extends Identified implements Hashable {
         copy.premiere = premiere;
         copy.live = live;
         copy.versionId = versionId;
-        copy.revisedRepeat = revisedRepeat;
         return copy;
     }
 

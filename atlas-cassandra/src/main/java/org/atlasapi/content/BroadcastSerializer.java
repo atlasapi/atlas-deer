@@ -77,9 +77,6 @@ public class BroadcastSerializer {
                             .get())
             );
         }
-        if (broadcast.getRevisedRepeat() != null) {
-            builder.setRevisedRepeat(broadcast.getRepeat());
-        }
         return builder;
     }
 
@@ -118,7 +115,6 @@ public class BroadcastSerializer {
                     blackoutRestrictionSerializer.deserialize(msg.getBlackoutRestriction())
             );
         }
-        broadcast.setRevisedRepeat(msg.hasRevisedRepeat() ? msg.getRevisedRepeat() : null);
         return broadcast;
     }
 }
