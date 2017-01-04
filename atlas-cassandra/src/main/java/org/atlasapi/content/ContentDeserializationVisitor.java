@@ -48,7 +48,7 @@ import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
 final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
     private static final ImageSerializer imageSerializer = new ImageSerializer();
-    private static final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
+    private static final BroadcastSerializer broadcastSerializer = BroadcastSerializer.create();
     private static final EncodingSerializer encodingSerializer = new EncodingSerializer();
     private static final SegmentEventSerializer segmentEventSerializer = new SegmentEventSerializer();
     private static final RestrictionSerializer restrictionSerializer = new RestrictionSerializer();

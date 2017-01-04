@@ -11,9 +11,19 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 public class BroadcastSerializer {
 
-    private final IdentifiedSerializer<Broadcast> identifiedSerializer = new IdentifiedSerializer<>();
-    private final BlackoutRestrictionSerializer blackoutRestrictionSerializer = new BlackoutRestrictionSerializer();
-    private final DateTimeSerializer serializer = new DateTimeSerializer();
+    private final IdentifiedSerializer<Broadcast> identifiedSerializer;
+    private final BlackoutRestrictionSerializer blackoutRestrictionSerializer;
+    private final DateTimeSerializer serializer;
+
+    private BroadcastSerializer() {
+        this.identifiedSerializer = new IdentifiedSerializer<>();
+        this.blackoutRestrictionSerializer = new BlackoutRestrictionSerializer();
+        this.serializer = new DateTimeSerializer();
+    }
+
+    public static BroadcastSerializer create() {
+        return new BroadcastSerializer();
+    }
 
     public ContentProtos.Broadcast.Builder serialize(Broadcast broadcast) {
         Builder builder = ContentProtos.Broadcast.newBuilder();
@@ -78,7 +88,7 @@ public class BroadcastSerializer {
             );
         }
         if (broadcast.getRevisedRepeat() != null) {
-            builder.setRevisedRepeat(broadcast.getRepeat());
+            builder.setRevisedRepeat(broadcast.getRevisedRepeat());
         }
         return builder;
     }
