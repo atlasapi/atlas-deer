@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ItemAndBroadcastSerializer implements Serializer<ItemAndBroadcast, byte[]> {
 
     private final ContentSerializer contentSerializer;
-    private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
+    private final BroadcastSerializer broadcastSerializer = BroadcastSerializer.create();
 
     public ItemAndBroadcastSerializer(ContentSerializer contentSerializer) {
         this.contentSerializer = checkNotNull(contentSerializer);

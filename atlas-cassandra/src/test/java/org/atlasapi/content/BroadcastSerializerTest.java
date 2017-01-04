@@ -19,7 +19,7 @@ import static org.junit.Assert.assertThat;
 
 public class BroadcastSerializerTest {
 
-    private final BroadcastSerializer serializer = new BroadcastSerializer();
+    private final BroadcastSerializer serializer = BroadcastSerializer.create();
 
     @Test
     public void testDeSerializeBroadcast() {

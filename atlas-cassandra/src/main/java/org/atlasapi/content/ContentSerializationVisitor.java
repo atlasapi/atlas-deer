@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
 
-    private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
+    private final BroadcastSerializer broadcastSerializer = BroadcastSerializer.create();
     private final ImageSerializer imageSerializer = new ImageSerializer();
     private final EncodingSerializer encodingSerializer = new EncodingSerializer();
     private final SegmentEventSerializer segmentEventSerializer = new SegmentEventSerializer();

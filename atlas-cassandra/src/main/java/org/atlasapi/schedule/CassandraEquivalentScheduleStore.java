@@ -111,7 +111,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
 
     private final ContentSerializer contentSerializer;
     private final EquivalenceGraphSerializer graphSerializer = new EquivalenceGraphSerializer();
-    private final BroadcastSerializer broadcastSerializer = new BroadcastSerializer();
+    private final BroadcastSerializer broadcastSerializer = BroadcastSerializer.create();
 
     private final PreparedStatement scheduleSelect;
     private final PreparedStatement broadcastDelete;
