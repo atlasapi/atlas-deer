@@ -39,8 +39,11 @@ import static org.atlasapi.content.CassandraEquivalentContentStore.CONTENT_ID_KE
 import static org.atlasapi.content.CassandraEquivalentContentStore.EQUIVALENT_CONTENT_TABLE;
 import static org.atlasapi.content.CassandraEquivalentContentStore.GRAPH_KEY;
 import static org.atlasapi.content.CassandraEquivalentContentStore.SET_ID_KEY;
+import static org.atlasapi.media.entity.Publisher.BBC;
 import static org.atlasapi.media.entity.Publisher.METABROADCAST;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class CassandraEquivalentContentStoreRowIT {
@@ -274,7 +277,27 @@ public class CassandraEquivalentContentStoreRowIT {
         makeEquivalent(c1, c2, c3);
 
         resolvedWithoutEquivalence(c1.getId());
+    }
 
+    @Test
+    public void resolveContentFilteredByGraph() throws Exception {
+        Content c1 = createAndWriteItem(Id.valueOf(1L), METABROADCAST);
+        Content c2 = createAndWriteItem(Id.valueOf(2L), METABROADCAST);
+        Content c3 = createAndWriteItem(Id.valueOf(3L), BBC);
+        Content c4 = createAndWriteItem(Id.valueOf(4L), METABROADCAST);
+
+        persistenceModule.equivalentContentStore().updateContent(c1.getId());
+        persistenceModule.equivalentContentStore().updateContent(c2.getId());
+        persistenceModule.equivalentContentStore().updateContent(c3.getId());
+        persistenceModule.equivalentContentStore().updateContent(c4.getId());
+
+        // Graph
+        // c1 -> c2 -> c3 -> c4
+        makeEquivalent(c1, c2);
+        makeEquivalent(c2, c3);
+        makeEquivalent(c3, c4);
+
+        resolved(c1, c1, c2);
     }
 
     private void assertNoRowsWithIds(Id setId, Id contentId) {
@@ -311,8 +334,10 @@ public class CassandraEquivalentContentStoreRowIT {
                 .resolveIds(ImmutableList.of(c.getId()),
                         ImmutableSet.of(METABROADCAST), Annotation.all()
                 ));
-        ImmutableSet<Content> idContent = resolved.get(c.getId());
-        assertEquals(ImmutableSet.copyOf(cs), idContent);
+        ImmutableSet<Content> content = resolved.get(c.getId());
+
+        assertThat(content.size(), is(cs.length));
+        assertEquals(ImmutableSet.copyOf(cs), content);
     }
 
     private void resolvedWithoutEquivalence(Id setId) throws Exception {
@@ -336,6 +361,7 @@ public class CassandraEquivalentContentStoreRowIT {
     private void resolvedSet(Id setId, Content... cs) throws Exception {
         Set<Content> content = get(persistenceModule.equivalentContentStore()
                 .resolveEquivalentSet(setId.longValue()));
+        assertThat(content.size(), is(cs.length));
         assertEquals(ImmutableSet.copyOf(cs), content);
     }
 
@@ -345,12 +371,15 @@ public class CassandraEquivalentContentStoreRowIT {
 
     private void makeEquivalent(Content c, Content... cs) throws WriteException {
         Set<ResourceRef> csRefs = ImmutableSet.<ResourceRef>copyOf(
-                Iterables.transform(ImmutableSet.copyOf(cs), Content.toContentRef()));
+                Iterables.transform(ImmutableSet.copyOf(cs), Content.toContentRef())
+        );
 
         Optional<EquivalenceGraphUpdate> graphs
                 = persistenceModule.contentEquivalenceGraphStore()
-                .updateEquivalences(c.toRef(), csRefs,
-                        ImmutableSet.of(METABROADCAST, Publisher.BBC)
+                .updateEquivalences(
+                        c.toRef(),
+                        csRefs,
+                        ImmutableSet.of(METABROADCAST, BBC)
                 );
 
         persistenceModule.equivalentContentStore().updateEquivalences(graphs.get());

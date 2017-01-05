@@ -262,8 +262,9 @@ public class EquivalentScheduleQueryExecutorTest {
         Broadcast originalBroadcast = new Broadcast(channel, interval);
         EquivalentChannelSchedule channelSchedule = new EquivalentChannelSchedule(channel, interval,
                 ImmutableList.of(
-                        new EquivalentScheduleEntry(
+                        EquivalentScheduleEntry.create(
                                 originalBroadcast,
+                                scheduleItem.getId(),
                                 new Equivalent<>(
                                         EquivalenceGraph.valueOf(scheduleItem.toRef()),
                                         ImmutableList.of(scheduleItem, equivalentItem)

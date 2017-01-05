@@ -243,6 +243,15 @@ public final class EquivalenceGraph implements Identifiable {
             );
         }
 
+        public Adjacents copyWithIncoming(Iterable<ResourceRef> refs) {
+            return new Adjacents(
+                    subject,
+                    created,
+                    ImmutableSet.copyOf(outgoingEdges.values()),
+                    ImmutableSet.copyOf(refs)
+            );
+        }
+
         public Adjacents copyWithoutIncoming(ResourceRef ref) {
             ImmutableSet<ResourceRef> collected = incomingEdges.values()
                     .stream()

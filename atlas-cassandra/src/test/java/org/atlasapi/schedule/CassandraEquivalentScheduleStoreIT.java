@@ -979,73 +979,6 @@ public class CassandraEquivalentScheduleStoreIT {
     }
 
     @Test
-    public void testUpdatingWithContentWithIncorrectBroadcastsDoesnBlowUp() throws Exception {
-        DateTime now = DateTime.now();
-        DateTime nowPlus1h = now.plusHours(1);
-        DateTime nowPlus2h = now.plusHours(2);
-        DateTime nowMinus25h = now.minusHours(25);
-        DateTime nowMinus26h = now.minusHours(26);
-
-        Item item1 = new Item(Id.valueOf(1), Publisher.METABROADCAST);
-        item1.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
-        item1.setTitle("Item1 title");
-
-        Item item2 = new Item(Id.valueOf(2), Publisher.BBC_KIWI);
-        item2.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
-        item2.setTitle("Item2 title");
-
-        Broadcast broadcast1 = new Broadcast(channel, now, nowPlus1h).withId("11");
-        Broadcast broadcast11 = new Broadcast(channel, now, nowPlus1h).withId("111");
-        Broadcast broadcast2 = new Broadcast(channel, nowPlus1h, nowPlus2h).withId("12");
-
-        item1.addBroadcast(broadcast1);
-        item1.addBroadcast(broadcast11);
-
-        item2.addBroadcast(broadcast2);
-
-        contentStore.writeContent(item1);
-        contentStore.writeContent(item2);
-
-        ScheduleRef scheduleRef1 = ScheduleRef
-                .forChannel(channel.getId(), new Interval(now, nowPlus2h))
-                .addEntry(item1.getId(), broadcast1.toRef())
-                .build();
-
-        updateSchedule(scheduleRef1);
-
-        ScheduleRef scheduleRef2 = ScheduleRef
-                .forChannel(channel.getId(), new Interval(nowMinus26h, nowMinus25h))
-                .addEntry(item2.getId(), broadcast2.toRef())
-                .build();
-
-        equivalentScheduleStore.updateSchedule(
-                new ScheduleUpdate(
-                        Publisher.BBC_KIWI,
-                        scheduleRef2,
-                        ImmutableSet.of()
-                )
-        );
-        equivalentScheduleStore
-                .updateContent(ImmutableSet.of(item1, item2));
-
-        EquivalentChannelSchedule currentMbSched = get(
-                equivalentScheduleStore.resolveSchedules(
-                        ImmutableList.of(channel),
-                        new Interval(now, nowPlus2h),
-                        Publisher.METABROADCAST,
-                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC_KIWI)
-                )
-        ).channelSchedules().get(0);
-
-        assertThat(currentMbSched.getEntries().size(), is(1));
-        assertThat(
-                currentMbSched.getEntries().get(0).getItems().getResources(),
-                is(ImmutableSet.of(item1, item2))
-        );
-
-    }
-
-    @Test
     public void testUpdatingAScheduleRemovesStaleBroadcastsEvenIfNotPresentInStaleBroadcastsInUpdate()
             throws Exception {
         DateTime beforeStart = makeDateTime(3, 21, 0, 0);
@@ -2143,6 +2076,64 @@ public class CassandraEquivalentScheduleStoreIT {
 
         EquivalentScheduleEntry entry = scheduleEntries.get(0);
         assertThat(entry.getBroadcast().getSourceId(), is("newBroadcast"));
+    }
+
+    @Test
+    public void resolveScheduleFiltersEquivalentContentByGraph() throws Exception {
+        Interval interval = new Interval(
+                makeDateTime(3, 21, 16, 0),
+                makeDateTime(3, 21, 17, 0)
+        );
+
+        Item item = new Item(Id.valueOf(1), Publisher.METABROADCAST);
+        item.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+        Broadcast broadcast = new Broadcast(channel, interval).withId("sid");
+        item.addBroadcast(broadcast);
+
+        Item equivA = new Item(Id.valueOf(2), Publisher.BBC);
+        equivA.setThisOrChildLastUpdated(DateTime.now(DateTimeZones.UTC));
+
+        Item equivB = new Item(Id.valueOf(3), Publisher.ITV);
+        equivB.setThisOrChildLastUpdated(DateTime.now(DateTimeZone.UTC));
+
+        equivalenceGraphStore
+                .updateEquivalences(
+                        item.toRef(),
+                        ImmutableSet.of(equivA.toRef()),
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC, Publisher.ITV)
+                );
+        equivalenceGraphStore
+                .updateEquivalences(
+                        equivA.toRef(),
+                        ImmutableSet.of(equivB.toRef()),
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.BBC, Publisher.ITV)
+                );
+
+        contentStore.writeContent(item);
+        contentStore.writeContent(equivA);
+        contentStore.writeContent(equivB);
+
+        updateSchedule(
+                ScheduleRef.forChannel(channel.getId(), interval)
+                        .addEntry(item.getId(), broadcast.toRef())
+                        .build()
+        );
+
+        EquivalentSchedule resolved
+                = get(equivalentScheduleStore
+                .resolveSchedules(
+                        ImmutableList.of(channel),
+                        interval,
+                        Publisher.METABROADCAST,
+                        ImmutableSet.of(Publisher.METABROADCAST, Publisher.ITV)
+                ));
+
+        EquivalentChannelSchedule schedule = Iterables.getOnlyElement(resolved.channelSchedules());
+
+        Equivalent<Item> broadcastItems = Iterables.getOnlyElement(schedule.getEntries())
+                .getItems();
+        assertThat(broadcastItems.getResources().size(), is(1));
+        assertThat(broadcastItems.getResources(), hasItems(item));
     }
 
     private DateTime makeDateTime(

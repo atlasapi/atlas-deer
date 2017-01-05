@@ -64,16 +64,19 @@ public class EquivalentChannelScheduleTest {
         Equivalent<Item> equivalentItem2 = new Equivalent<>(graph2, ImmutableList.of(item2));
         Equivalent<Item> equivalentItem3 = new Equivalent<>(graph3, ImmutableList.of(item3));
 
-        EquivalentScheduleEntry scheduleEntry1 = new EquivalentScheduleEntry(
+        EquivalentScheduleEntry scheduleEntry1 = EquivalentScheduleEntry.create(
                 broadcast1,
+                item1Id,
                 equivalentItem1
         );
-        EquivalentScheduleEntry scheduleEntry2 = new EquivalentScheduleEntry(
+        EquivalentScheduleEntry scheduleEntry2 = EquivalentScheduleEntry.create(
                 broadcast2,
+                item2Id,
                 equivalentItem2
         );
-        EquivalentScheduleEntry scheduleEntry3 = new EquivalentScheduleEntry(
+        EquivalentScheduleEntry scheduleEntry3 = EquivalentScheduleEntry.create(
                 broadcast3,
+                item3Id,
                 equivalentItem3
         );
 
