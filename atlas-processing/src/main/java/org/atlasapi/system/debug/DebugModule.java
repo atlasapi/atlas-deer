@@ -1,7 +1,6 @@
 package org.atlasapi.system.debug;
 
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.query.v4.content.v2.CqlContentDebugController;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 
 import org.springframework.beans.factory.annotation.Autowired;

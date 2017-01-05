@@ -151,7 +151,7 @@ public abstract class CassandraContentStoreIT {
 
         WriteResult<Content, Content> writeResult = store.writeContent(content);
         assertTrue(writeResult.written());
-        assertThat(writeResult.getResource().getId().longValue(), is(1234l));
+        assertThat(writeResult.getResource().getId().longValue(), is(1234L));
         assertFalse(writeResult.getPrevious().isPresent());
 
         verify(sender).sendMessage(argThat(isA(ResourceUpdatedMessage.class)), any());
@@ -163,7 +163,6 @@ public abstract class CassandraContentStoreIT {
         assertThat(item.getFirstSeen(), is(now));
         assertThat(item.getLastUpdated(), is(now));
         assertThat(item.getThisOrChildLastUpdated(), is(now));
-
     }
 
     @Test
