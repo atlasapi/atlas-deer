@@ -106,14 +106,14 @@ public class QueryModule {
     }
 
     public MergingEquivalentsResolver<Content> mergingContentResolver() {
-        return new AnnotationBasedMergingEquivalentsResolver<Content>(
+        return new AnnotationBasedMergingEquivalentsResolver<>(
                 persistenceModule.getEquivalentContentStore(),
                 equivalentsMerger()
         );
     }
 
     private StrategyBackedEquivalentsMerger<Content> equivalentsMerger() {
-        return new StrategyBackedEquivalentsMerger<Content>(new OutputContentMerger(
+        return new StrategyBackedEquivalentsMerger<>(new OutputContentMerger(
                 contentHierarchyChooser()));
     }
 

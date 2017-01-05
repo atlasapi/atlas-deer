@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/4/content")
 public class ContentController {
 
-    private static Logger log = LoggerFactory.getLogger(ContentController.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentController.class);
 
     private final QueryParser<Content> requestParser;
     private final QueryExecutor<Content> queryExecutor;
@@ -40,8 +40,11 @@ public class ContentController {
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    public ContentController(QueryParser<Content> queryParser,
-            QueryExecutor<Content> queryExecutor, QueryResultWriter<Content> resultWriter) {
+    public ContentController(
+            QueryParser<Content> queryParser,
+            QueryExecutor<Content> queryExecutor,
+            QueryResultWriter<Content> resultWriter
+    ) {
         this.requestParser = queryParser;
         this.queryExecutor = queryExecutor;
         this.resultWriter = resultWriter;

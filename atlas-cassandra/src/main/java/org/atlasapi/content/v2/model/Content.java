@@ -670,8 +670,7 @@ public class Content implements ContentIface {
     }
 
     @Override
-    public void setCertificates(
-            Set<Certificate> certificates) {
+    public void setCertificates(Set<Certificate> certificates) {
         this.certificates = certificates;
     }
 
