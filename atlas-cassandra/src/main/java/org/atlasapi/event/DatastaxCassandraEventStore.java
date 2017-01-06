@@ -43,8 +43,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DatastaxCassandraEventStore implements EventPersistenceStore {
 
     private static final String EVENT_TABLE = "event_v2";
-    private static final String PRIMARY_KEY_COLUMN = "event_id";
     private static final int TIMEOUT_IN_MINUTES = 1;
+
+    private static final String EVENT_ID_COLUMN = "event_id";
+    private static final String DATA_COLUMN = "data";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -64,9 +66,12 @@ public class DatastaxCassandraEventStore implements EventPersistenceStore {
         this.readConsistency = checkNotNull(readConsistency);
         this.marshaller = new DatastaxProtobufEventMarshaller(new EventSerializer(), session);
 
-        this.idSelect = session.prepare(select().all()
+        this.idSelect = session.prepare(select(
+                EVENT_ID_COLUMN,
+                DATA_COLUMN
+        )
                 .from(EVENT_TABLE)
-                .where(eq(PRIMARY_KEY_COLUMN, bindMarker())));
+                .where(eq(EVENT_ID_COLUMN, bindMarker())));
         this.idSelect.setConsistencyLevel(readConsistency);
     }
 

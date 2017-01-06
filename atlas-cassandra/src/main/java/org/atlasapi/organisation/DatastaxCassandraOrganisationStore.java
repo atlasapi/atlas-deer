@@ -8,7 +8,6 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -24,8 +23,6 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
@@ -38,6 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     private static final String ORGANISATION_TABLE = "organisation";
+
     private static final String PRIMARY_KEY_COLUMN = "organisation_id";
     private static final String DATA_COLUMN = "data";
 
@@ -47,8 +45,6 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private final String KEYS = "keys";
     private final String ORGANISATION_ID = "organisationId";
     private final String DATA = "data";
-
-    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final OrganisationUriStore organisationUriStore;
 
@@ -60,7 +56,7 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
     private final PreparedStatement selectStatement;
 
     private final MetricRegistry metricRegistry;
-    private final String write;
+    private final String writeMetricPrefix;
 
     protected DatastaxCassandraOrganisationStore(
             Session session,
@@ -76,7 +72,10 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
         this.writeConsistency = checkNotNull(writeConsistency);
         this.organisationUriStore = uriStore;
 
-        RegularStatement statement = select().all()
+        RegularStatement statement = select(
+                PRIMARY_KEY_COLUMN,
+                DATA_COLUMN
+        )
                 .from(ORGANISATION_TABLE)
                 .where(in(PRIMARY_KEY_COLUMN, bindMarker(KEYS)));
         statement.setFetchSize(Integer.MAX_VALUE);
@@ -88,9 +87,7 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
                 .setConsistencyLevel(writeConsistency);
 
         this.metricRegistry = metricRegistry;
-
-        write = metricPrefix + "write.";
-
+        this.writeMetricPrefix = metricPrefix + "write.";
     }
 
     @Override
@@ -119,7 +116,7 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
     @Override
     public Organisation write(Organisation organisation) {
-        metricRegistry.meter(write + METER_CALLED).mark();
+        metricRegistry.meter(writeMetricPrefix + METER_CALLED).mark();
         try {
             Id id = organisation.getId();
             ByteBuffer serializedOrganisation = ByteBuffer.wrap(serializer.serialize(organisation)
@@ -138,7 +135,7 @@ public class DatastaxCassandraOrganisationStore implements OrganisationStore {
 
             return organisation;
         } catch (RuntimeException e) {
-            metricRegistry.meter(write + METER_FAILURE).mark();
+            metricRegistry.meter(writeMetricPrefix + METER_FAILURE).mark();
             throw Throwables.propagate(e);
         }
     }
