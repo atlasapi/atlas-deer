@@ -143,13 +143,33 @@ public class ContentBootstrapListener
             result.pop();
         }
 
+        // These are both taken here because Someone thought making the model mutable was a great
+        // idea. Tl; dr -- the Astyanax store mutates the content it writes and effectively resets
+        // these refs to the ones stored in DB currently. Since the children migration further
+        // down then uses the same, now mutated, object, we sometimes miss a load of children.
+        // E.g., if the currently stored Brand only has 50 itemRefs, but the legacy resolved one
+        // has 1042, by simply writing the brand, we'll reset its itemRefs to the 50 already stored,
+        // and thus won't migrate over an additional 992 items. Rinse & repeat for seriesRefs.
+        //
+        // Yes, there **are** cases like this, how'd you think I found this?!
+        ImmutableList<SeriesRef> seriesRefs = ImmutableList.of();
+        if (container instanceof Brand) {
+            seriesRefs = ((Brand) container).getSeriesRefs();
+        }
+        ImmutableList<ItemRef> itemRefs = container.getItemRefs();
+
         result.push(ResultNode.CONTENT);
         migrateContent(container, result);
         result.pop();
 
         if (migrateHierarchy && result.getSucceeded()) {
             result.push(ResultNode.CHILDREN);
-            migrateHierarchy(container, result);
+            migrateHierarchy(
+                    container,
+                    result,
+                    seriesRefs,
+                    itemRefs
+            );
             result.pop();
         }
 
@@ -250,28 +270,39 @@ public class ContentBootstrapListener
         }
     }
 
-    private void migrateHierarchy(Container container, Result result) {
+    private void migrateHierarchy(
+            Container container,
+            Result result,
+            ImmutableList<SeriesRef> seriesRefs,
+            ImmutableList<ItemRef> itemRefs
+    ) {
         if (container instanceof Brand) {
-            migrateSeries((Brand) container, result);
+            migrateSeries(seriesRefs, result);
         }
-        migrateItemRefs(container, result);
+        migrateItemRefs(itemRefs, result);
     }
 
-    private void migrateSeries(Brand brand, Result result) {
-        for (SeriesRef seriesRef : brand.getSeriesRefs()) {
+    private void migrateSeries(ImmutableList<SeriesRef> seriesRefs, Result result) {
+        for (SeriesRef seriesRef : seriesRefs) {
             Id seriesRefId = seriesRef.getId();
 
             Content series = resolveLegacyContent(seriesRefId);
             migrateContent(series, result);
 
             if (result.getSucceeded() && series instanceof Container) {
-                migrateHierarchy((Container) series, result);
+                Container container = (Container) series;
+                migrateHierarchy(
+                        container,
+                        result,
+                        ImmutableList.of(),
+                        container.getItemRefs()
+                );
             }
         }
     }
 
-    private void migrateItemRefs(Container container, Result result) {
-        for (ItemRef itemRef : container.getItemRefs()) {
+    private void migrateItemRefs(ImmutableList<ItemRef> itemRefs, Result result) {
+        for (ItemRef itemRef : itemRefs) {
             Id itemRefId = itemRef.getId();
 
             Content content = resolveLegacyContent(itemRefId);
