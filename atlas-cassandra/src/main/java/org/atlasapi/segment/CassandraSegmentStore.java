@@ -24,7 +24,6 @@ import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.common.time.SystemClock;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -88,7 +87,12 @@ public class CassandraSegmentStore extends AbstractSegmentStore {
                 .value(CassandraUtil.VALUE, bindMarker("data"))
                 .setForceNoValues(true));
 
-        this.segmentSelect = session.prepare(select().from(keyspace, tableName)
+        this.segmentSelect = session.prepare(select(
+                CassandraUtil.KEY,
+                SEGMENT,
+                CassandraUtil.VALUE
+        )
+                .from(keyspace, tableName)
                 .where(eq(CassandraUtil.KEY, bindMarker()))
                 .setForceNoValues(true));
     }

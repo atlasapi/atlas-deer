@@ -12,8 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.validation.constraints.Null;
-
 import org.atlasapi.channel.Channel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContentStore;
@@ -26,7 +24,6 @@ import org.atlasapi.media.entity.Publisher;
 import com.metabroadcast.common.queue.MessageSender;
 import com.metabroadcast.common.time.Clock;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -109,7 +106,15 @@ public class DatastaxCassandraScheduleStore extends AbstractScheduleStore {
                 .and(set(UPDATED_COLUMN, bindMarker("updatedData"))));
         this.scheduleUpdate.setConsistencyLevel(writeCl);
 
-        this.scheduleSelect = session.prepare(select().all().from(table)
+        this.scheduleSelect = session.prepare(select(
+                SOURCE_COLUMN,
+                CHANNEL_COLUMN,
+                DAY_COLUMN,
+                BROADCAST_IDS_COLUMN,
+                BROADCASTS_COLUMN,
+                UPDATED_COLUMN
+        )
+                .from(table)
                 .where(eq(SOURCE_COLUMN, bindMarker("source")))
                 .and(eq(CHANNEL_COLUMN, bindMarker("channel")))
                 .and(eq(DAY_COLUMN, bindMarker("day"))));

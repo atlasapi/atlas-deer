@@ -3,6 +3,7 @@ package org.atlasapi.organisation;
 import org.atlasapi.entity.Id;
 
 import com.metabroadcast.common.ids.IdGenerator;
+
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -13,8 +14,6 @@ import com.datastax.driver.core.Statement;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
@@ -26,11 +25,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class OrganisationUriStore implements OrganisationUriResolver {
 
     private static final String ORGANISATION_URI_TABLE = "organisation_uri";
+
     private static final String URI_COLUMN = "uri";
     private static final String SOURCE_COLUMN = "source";
     private static final String ID_COLUMN = "id";
-
-    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final Session session;
 
@@ -41,7 +39,11 @@ public class OrganisationUriStore implements OrganisationUriResolver {
             ConsistencyLevel writeConsistency, ConsistencyLevel readConsistency) {
         this.session = checkNotNull(session);
 
-        this.uriSelect = session.prepare(select().all()
+        this.uriSelect = session.prepare(select(
+                URI_COLUMN,
+                SOURCE_COLUMN,
+                ID_COLUMN
+        )
                 .from(ORGANISATION_URI_TABLE)
                 .where(eq(URI_COLUMN, bindMarker(URI_COLUMN)))
                 .and(eq(SOURCE_COLUMN, bindMarker(SOURCE_COLUMN))))

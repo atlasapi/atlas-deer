@@ -156,7 +156,20 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
                         .and(eq(CHANNEL.name(), bindMarker("channel")))
                         .and(eq(DAY.name(), bindMarker("day"))));
 
-        this.scheduleSelect = session.prepare(select().all()
+        this.scheduleSelect = session.prepare(select(
+                SOURCE.name(),
+                CHANNEL.name(),
+                DAY.name(),
+                BROADCAST_ID.name(),
+                BROADCAST_START.name(),
+                BROADCAST.name(),
+                GRAPH.name(),
+                CONTENT_COUNT.name(),
+                CONTENT.name(),
+                SCHEDULE_UPDATE.name(),
+                EQUIV_UPDATE.name(),
+                BROADCAST_ITEM_ID.name()
+        )
                 .from(EQUIVALENT_SCHEDULE_TABLE)
                 .where(eq(SOURCE.name(), bindMarker("source")))
                 .and(eq(CHANNEL.name(), bindMarker("channel")))

@@ -134,7 +134,12 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
         this.writeConsistency = write;
         this.index = new CassandraSecondaryIndex(session, EQUIVALENT_CONTENT_INDEX, read);
 
-        RegularStatement statement = select().all()
+        RegularStatement statement = select(
+                SET_ID_KEY,
+                CONTENT_ID_KEY,
+                DATA_KEY,
+                GRAPH_KEY
+        )
                 .from(EQUIVALENT_CONTENT_TABLE)
                 .where(eq(SET_ID_KEY, bindMarker(SET_ID_BIND)))
                 .orderBy(asc(CONTENT_ID_KEY));

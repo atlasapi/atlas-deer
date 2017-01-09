@@ -82,7 +82,10 @@ public final class CassandraEquivalenceGraphStore extends AbstractEquivalenceGra
         this.read = read;
         this.write = write;
 
-        this.graphRowsSelect = session.prepare(select().all()
+        this.graphRowsSelect = session.prepare(select(
+                GRAPH_ID_KEY,
+                GRAPH_KEY
+        )
                 .from(EQUIVALENCE_GRAPHS_TABLE)
                 .where(eq(GRAPH_ID_KEY, bindMarker())));
         this.graphRowsSelect.setConsistencyLevel(read);
