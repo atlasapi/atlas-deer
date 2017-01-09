@@ -2,8 +2,8 @@ package org.atlasapi.query.v4.schedule;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.query.common.InvalidParameterException;
-import org.atlasapi.query.common.SetBasedRequestParameterValidator;
+import org.atlasapi.query.common.exceptions.InvalidParameterException;
+import org.atlasapi.query.common.validation.SetBasedRequestParameterValidator;
 
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
 

@@ -9,6 +9,8 @@ import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.annotation.ActiveAnnotations;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.topic.Topic;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -64,7 +66,7 @@ public class ContextualQueryParserTest {
         when(attributeParser.parse(req))
                 .thenReturn(new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of()));
         when(queryContextParser.parseContext(req))
-                .thenReturn(new QueryContext(
+                .thenReturn(QueryContext.create(
                         ApplicationSources.defaults(),
                         ActiveAnnotations.standard(),
                         mock(HttpServletRequest.class)

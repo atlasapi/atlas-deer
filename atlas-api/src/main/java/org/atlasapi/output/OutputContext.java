@@ -11,8 +11,8 @@ import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Region;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.Resource;
+import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQueryContext;
 import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 

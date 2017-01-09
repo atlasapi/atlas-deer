@@ -22,8 +22,8 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResourceForbiddenException;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,7 +1,7 @@
 package org.atlasapi.output;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

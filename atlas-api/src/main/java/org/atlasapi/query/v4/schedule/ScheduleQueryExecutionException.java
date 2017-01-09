@@ -1,6 +1,6 @@
 package org.atlasapi.query.v4.schedule;
 
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 
 public class ScheduleQueryExecutionException extends QueryExecutionException {
 

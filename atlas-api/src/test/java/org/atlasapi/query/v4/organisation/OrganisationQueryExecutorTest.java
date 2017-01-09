@@ -5,8 +5,8 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.organisation.Organisation;
 import org.atlasapi.organisation.OrganisationResolver;
 import org.atlasapi.query.common.Query;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;

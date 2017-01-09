@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.query.common.InvalidAnnotationException;
 import org.atlasapi.query.common.Resource;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -155,8 +155,8 @@ public class ResourceAnnotationIndex implements AnnotationIndex {
             Multimap<String, PathAnnotation> singleBindings,
             Multimap<String, PathAnnotation> listBindings) {
         this.resource = resource;
-        this.singleIndex = new Index(singleBindings);
-        this.listIndex = new Index(listBindings);
+        this.singleIndex = Index.create(singleBindings);
+        this.listIndex = Index.create(listBindings);
     }
 
     @Override

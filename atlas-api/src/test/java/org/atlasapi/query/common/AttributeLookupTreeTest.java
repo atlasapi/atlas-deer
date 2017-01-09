@@ -3,6 +3,7 @@ package org.atlasapi.query.common;
 import java.util.Set;
 
 import org.atlasapi.criteria.attribute.Attributes;
+import org.atlasapi.query.common.attributes.AttributeLookupTree;
 
 import org.junit.Test;
 
@@ -18,7 +19,7 @@ public class AttributeLookupTreeTest {
     @Test
     public void testAttributeLookup() {
 
-        AttributeLookupTree tree = new AttributeLookupTree();
+        AttributeLookupTree tree = AttributeLookupTree.create();
 
         tree.put(Attributes.ALIASES_NAMESPACE);
 
@@ -46,7 +47,7 @@ public class AttributeLookupTreeTest {
 
     @Test
     public void testDoesntProduceNullWhenBestMatchIsNonLeafNode() {
-        AttributeLookupTree tree = new AttributeLookupTree();
+        AttributeLookupTree tree = AttributeLookupTree.create();
 
         tree.put(Attributes.TAG_RELATIONSHIP);
         tree.put(Attributes.TAG_SUPERVISED);
@@ -58,7 +59,7 @@ public class AttributeLookupTreeTest {
     @Test
     public void testGetAllKeys() {
 
-        AttributeLookupTree tree = new AttributeLookupTree();
+        AttributeLookupTree tree = AttributeLookupTree.create();
 
         tree.put(Attributes.ID);
         tree.put(Attributes.ALIASES_NAMESPACE);

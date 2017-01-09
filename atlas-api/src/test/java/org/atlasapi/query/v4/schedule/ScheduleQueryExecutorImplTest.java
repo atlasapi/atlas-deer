@@ -20,9 +20,9 @@ import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.Schedule;
 import org.atlasapi.schedule.ScheduleResolver;
@@ -213,7 +213,7 @@ public class ScheduleQueryExecutorImplTest {
                 .withPrecedence(true)
                 .withReadableSources(reads)
                 .build();
-        QueryContext context = new QueryContext(
+        QueryContext context = QueryContext.create(
                 appSources,
                 ActiveAnnotations.standard(),
                 mock(HttpServletRequest.class)

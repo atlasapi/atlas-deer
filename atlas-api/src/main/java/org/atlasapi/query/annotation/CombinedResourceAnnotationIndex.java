@@ -1,6 +1,6 @@
 package org.atlasapi.query.annotation;
 
-import org.atlasapi.query.common.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 
 import com.google.common.collect.ImmutableSetMultimap;
 
@@ -10,7 +10,7 @@ final class CombinedResourceAnnotationIndex implements
     private final Index index;
 
     public CombinedResourceAnnotationIndex(ImmutableSetMultimap<String, PathAnnotation> bindings) {
-        this.index = new Index(bindings);
+        this.index = Index.create(bindings);
     }
 
     @Override

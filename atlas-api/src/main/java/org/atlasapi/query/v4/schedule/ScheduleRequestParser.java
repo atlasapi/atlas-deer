@@ -15,9 +15,9 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
-import org.atlasapi.query.common.InvalidAnnotationException;
-import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.common.SetBasedRequestParameterValidator;
+import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
+import org.atlasapi.query.common.validation.SetBasedRequestParameterValidator;
 import org.atlasapi.source.Sources;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -210,7 +210,7 @@ class ScheduleRequestParser {
         checkArgument(appSources.isReadEnabled(publisher), "Source %s not enabled", publisher);
 
         ActiveAnnotations annotations = annotationExtractor.extractFromRequest(request);
-        return new QueryContext(appSources, annotations, request);
+        return QueryContext.create(appSources, annotations, request);
     }
 
     private List<Id> extractChannels(HttpServletRequest request) throws QueryParseException {

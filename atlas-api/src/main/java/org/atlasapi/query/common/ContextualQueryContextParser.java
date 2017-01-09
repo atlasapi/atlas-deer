@@ -11,6 +11,7 @@ import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.query.Selection.SelectionBuilder;
@@ -39,7 +40,7 @@ public class ContextualQueryContextParser implements ParameterNameProvider {
 
     public QueryContext parseContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        return new QueryContext(
+        return QueryContext.create(
                 configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 annotationExtractor.extractFromRequest(request),
                 selectionBuilder.build(request),

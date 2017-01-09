@@ -17,8 +17,8 @@ import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
-import org.atlasapi.query.common.InvalidParameterException;
 import org.atlasapi.query.common.Resource;
+import org.atlasapi.query.common.exceptions.InvalidParameterException;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;

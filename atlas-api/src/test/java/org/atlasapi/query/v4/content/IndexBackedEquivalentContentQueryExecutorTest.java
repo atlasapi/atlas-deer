@@ -9,7 +9,7 @@ import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
-import org.atlasapi.query.common.QueryContext;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;

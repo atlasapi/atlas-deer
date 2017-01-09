@@ -14,6 +14,10 @@ import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.Query.ListQuery;
 import org.atlasapi.query.common.Query.SingleQuery;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.validation.AbstractRequestParameterValidator;
+import org.atlasapi.query.common.validation.QueryRequestParameterValidator;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
@@ -40,7 +44,7 @@ public class ContextualQueryParser<C, R> {
         this.queryContextParser = checkNotNull(contextParser);
         this.contextResouceAttribute = checkNotNull(contextResouceAttribute);
         this.idCodec = checkNotNull(idCodec);
-        this.parameterValidator = new QueryRequestParameterValidator(
+        this.parameterValidator = QueryRequestParameterValidator.create(
                 attributeParser,
                 contextParser
         );

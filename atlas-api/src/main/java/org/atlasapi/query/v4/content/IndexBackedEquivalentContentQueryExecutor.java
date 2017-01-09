@@ -17,10 +17,10 @@ import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
-import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
-import org.atlasapi.query.common.UncheckedQueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
 
 import com.metabroadcast.common.query.Selection;
 

@@ -13,7 +13,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.query.common.QueryContext;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.time.DateTimeZones;
 

@@ -85,11 +85,12 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.ids.MongoSequentialIdGenerator;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
-import org.atlasapi.query.common.AttributeCoercers;
 import org.atlasapi.query.common.IndexAnnotationsExtractor;
-import org.atlasapi.query.common.QueryAtomParser;
-import org.atlasapi.query.common.QueryAttributeParser;
 import org.atlasapi.query.common.Resource;
+import org.atlasapi.query.common.attributes.QueryAtomParser;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+import org.atlasapi.query.common.coercers.IdCoercer;
+import org.atlasapi.query.common.coercers.SourceIdStringCoercer;
 import org.atlasapi.query.common.useraware.StandardUserAwareQueryParser;
 import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQueryExecutor;
@@ -383,18 +384,18 @@ public class ApplicationWebModule {
     }
 
     private QueryAttributeParser getAttributeParser() {
-        return new QueryAttributeParser(ImmutableList.of(
-                QueryAtomParser.valueOf(
+        return QueryAttributeParser.create(ImmutableList.of(
+                QueryAtomParser.create(
                         Attributes.ID,
-                        AttributeCoercers.idCoercer(idCodec)
+                        IdCoercer.create(idCodec)
                 ),
-                QueryAtomParser.valueOf(
+                QueryAtomParser.create(
                         Attributes.SOURCE_READS,
-                        AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                        SourceIdStringCoercer.create(sourceIdCodec)
                 ),
-                QueryAtomParser.valueOf(
+                QueryAtomParser.create(
                         Attributes.SOURCE_WRITES,
-                        AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                        SourceIdStringCoercer.create(sourceIdCodec)
                 )
         ));
     }
@@ -412,8 +413,11 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParser<User>(Resource.USER,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
+                                Attributes.ID,
+                                IdCoercer.create(idCodec)
+                        )
                 )),
                 idCodec, contextParser
         );
@@ -427,8 +431,11 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParserNoAuth<User>(Resource.USER,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
+                                Attributes.ID,
+                                IdCoercer.create(idCodec)
+                        )
                 )),
                 idCodec, contextParser
         );
@@ -481,8 +488,11 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParser<Publisher>(Resource.SOURCE,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
+                                Attributes.ID,
+                                IdCoercer.create(idCodec)
+                        )
                 )),
                 idCodec, contextParser
         );
@@ -496,8 +506,11 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParserNoAuth<Publisher>(Resource.SOURCE,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
+                                Attributes.ID,
+                                IdCoercer.create(idCodec)
+                        )
                 )),
                 idCodec, contextParser
         );
@@ -521,10 +534,11 @@ public class ApplicationWebModule {
         );
 
         return new StandardUserAwareQueryParser<SourceRequest>(Resource.SOURCE_REQUEST,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
                                 Attributes.SOURCE_REQUEST_SOURCE,
-                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                                SourceIdStringCoercer.create(
+                                                                sourceIdCodec)
                         )
                 )),
                 idCodec, contextParser
@@ -538,10 +552,11 @@ public class ApplicationWebModule {
                 selectionBuilder()
         );
         return new StandardUserAwareQueryParserNoAuth<SourceRequest>(Resource.SOURCE_REQUEST,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
                                 Attributes.SOURCE_REQUEST_SOURCE,
-                                AttributeCoercers.sourceIdCoercer(sourceIdCodec)
+                                SourceIdStringCoercer.create(
+                                                                sourceIdCodec)
                         )
                 )),
                 idCodec, contextParser
@@ -729,8 +744,11 @@ public class ApplicationWebModule {
                 selectionBuilder()
         );
         return new StandardUserAwareQueryParser<SourceLicense>(Resource.SOURCE_LICENSE,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
+                                Attributes.ID,
+                                IdCoercer.create(idCodec)
+                        )
                 )),
                 idCodec, contextParser
         );
@@ -743,8 +761,11 @@ public class ApplicationWebModule {
                 selectionBuilder()
         );
         return new StandardUserAwareQueryParserNoAuth<SourceLicense>(Resource.SOURCE_LICENSE,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec))
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
+                                Attributes.ID,
+                                IdCoercer.create(idCodec)
+                        )
                 )),
                 idCodec, contextParser
         );

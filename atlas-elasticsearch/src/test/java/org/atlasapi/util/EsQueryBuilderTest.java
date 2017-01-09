@@ -6,13 +6,13 @@ import java.util.UUID;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.attribute.Attribute;
-import org.atlasapi.criteria.attribute.BooleanValuedAttribute;
-import org.atlasapi.criteria.attribute.DateTimeValuedAttribute;
-import org.atlasapi.criteria.attribute.EnumValuedAttribute;
-import org.atlasapi.criteria.attribute.FloatValuedAttribute;
+import org.atlasapi.criteria.attribute.BooleanAttribute;
+import org.atlasapi.criteria.attribute.DateTimeAttribute;
+import org.atlasapi.criteria.attribute.EnumAttribute;
+import org.atlasapi.criteria.attribute.FloatAttribute;
 import org.atlasapi.criteria.attribute.IdAttribute;
-import org.atlasapi.criteria.attribute.IntegerValuedAttribute;
-import org.atlasapi.criteria.attribute.StringValuedAttribute;
+import org.atlasapi.criteria.attribute.IntegerAttribute;
+import org.atlasapi.criteria.attribute.StringAttribute;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
@@ -55,28 +55,27 @@ public class EsQueryBuilderTest {
     }
 
     private final Attribute<Integer> MINUS_ONE =
-            new IntegerValuedAttribute("minusone", Identified.class, true);
+            IntegerAttribute.list("minusone", Identified.class);
     private final Attribute<String> ZERO =
-            new StringValuedAttribute("zero", Identified.class, true);
+            StringAttribute.list("zero", Identified.class);
     private final Attribute<String> ONE_FIRST =
-            new StringValuedAttribute("one.first", Identified.class, true);
+            StringAttribute.list("one.first", Identified.class);
     private final Attribute<String> ONE_SECOND =
-            new StringValuedAttribute("one.second", Identified.class, true);
+            StringAttribute.list("one.second", Identified.class);
     private final Attribute<Float> ONE_TWO_FIRST =
-            new FloatValuedAttribute("one.two.first", Identified.class, true);
+            FloatAttribute.list("one.two.first", Identified.class);
     private final Attribute<TestEnum> ONE_TWO_SECOND =
-            new EnumValuedAttribute<TestEnum>(
+            EnumAttribute.list(
                     "one.two.second",
                     TestEnum.class,
-                    Identified.class,
-                    true
+                    Identified.class
             );
     private final Attribute<Boolean> ONE_TWO_THREE_FIRST =
-            new BooleanValuedAttribute("one.two.three.first", Identified.class, true);
+            BooleanAttribute.list("one.two.three.first", Identified.class);
     private final Attribute<DateTime> ONE_TWO_THREE_SECOND =
-            new DateTimeValuedAttribute("one.two.three.second", Identified.class);
+            DateTimeAttribute.single("one.two.three.second", Identified.class);
     private final Attribute<Id> ONE_TWO_THREE_THIRD =
-            new IdAttribute("one.two.three.third", Identified.class, true);
+            IdAttribute.list("one.two.three.third", Identified.class);
 
     private final EsQueryBuilder builder = new EsQueryBuilder();
 

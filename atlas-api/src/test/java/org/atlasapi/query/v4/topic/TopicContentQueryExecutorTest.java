@@ -22,12 +22,12 @@ import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.ContextualQuery;
 import org.atlasapi.query.common.ContextualQueryResult;
-import org.atlasapi.query.common.ForbiddenException;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.Query.ListQuery;
 import org.atlasapi.query.common.Query.SingleQuery;
-import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.exceptions.ForbiddenException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 
@@ -70,7 +70,7 @@ public class TopicContentQueryExecutorTest {
     public void testExecutingTopicContentQuery() throws QueryExecutionException {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = new QueryContext(ApplicationSources.defaults()
+        QueryContext context = QueryContext.create(ApplicationSources.defaults()
                 .copyWithChangedReadableSourceStatus(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED)
                 .copyWithChangedReadableSourceStatus(
                         Publisher.DBPEDIA,

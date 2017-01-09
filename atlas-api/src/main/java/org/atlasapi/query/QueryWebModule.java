@@ -45,7 +45,6 @@ import org.atlasapi.output.annotation.ChannelGroupIdSummaryAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipAnnotation;
 import org.atlasapi.output.annotation.ChannelGroupMembershipListWriter;
 import org.atlasapi.output.annotation.ChannelIdSummaryAnnotation;
-import org.atlasapi.output.annotation.ChannelSummaryWriter;
 import org.atlasapi.output.annotation.ChannelVariationAnnotation;
 import org.atlasapi.output.annotation.ChannelsAnnotation;
 import org.atlasapi.output.annotation.ClipsAnnotation;
@@ -62,7 +61,6 @@ import org.atlasapi.output.annotation.FirstBroadcastAnnotation;
 import org.atlasapi.output.annotation.IdentificationAnnotation;
 import org.atlasapi.output.annotation.IdentificationSummaryAnnotation;
 import org.atlasapi.output.annotation.KeyPhrasesAnnotation;
-import org.atlasapi.output.annotation.LegacyChannelAnnotation;
 import org.atlasapi.output.annotation.LocationsAnnotation;
 import org.atlasapi.output.annotation.ModelInfoAnnotation;
 import org.atlasapi.output.annotation.NextBroadcastAnnotation;
@@ -99,19 +97,23 @@ import org.atlasapi.output.writers.UpcomingContentDetailWriter;
 import org.atlasapi.output.writers.common.CommonContainerSummaryWriter;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.ImagesAnnotation;
+import org.atlasapi.query.annotation.IndexContextualAnnotationsExtractor;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
-import org.atlasapi.query.common.AttributeCoercers;
 import org.atlasapi.query.common.ContextualQueryContextParser;
 import org.atlasapi.query.common.ContextualQueryParser;
 import org.atlasapi.query.common.IndexAnnotationsExtractor;
-import org.atlasapi.query.common.IndexContextualAnnotationsExtractor;
-import org.atlasapi.query.common.QueryAtomParser;
-import org.atlasapi.query.common.QueryAttributeParser;
-import org.atlasapi.query.common.QueryContextParser;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryParser;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.StandardQueryParser;
+import org.atlasapi.query.common.attributes.QueryAtomParser;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+import org.atlasapi.query.common.coercers.BooleanCoercer;
+import org.atlasapi.query.common.coercers.EnumCoercer;
+import org.atlasapi.query.common.coercers.FloatCoercer;
+import org.atlasapi.query.common.coercers.IdCoercer;
+import org.atlasapi.query.common.coercers.StringCoercer;
+import org.atlasapi.query.common.context.QueryContextParser;
 import org.atlasapi.query.v4.channel.ChannelController;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.query.v4.channel.ChannelQueryResultWriter;
@@ -137,7 +139,6 @@ import org.atlasapi.query.v4.organisation.OrganisationController;
 import org.atlasapi.query.v4.organisation.OrganisationListWriter;
 import org.atlasapi.query.v4.organisation.OrganisationQueryResultWriter;
 import org.atlasapi.query.v4.schedule.ContentListWriter;
-import org.atlasapi.query.v4.schedule.LegacyChannelListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleController;
 import org.atlasapi.query.v4.schedule.ScheduleEntryListWriter;
 import org.atlasapi.query.v4.schedule.ScheduleListWriter;
@@ -184,7 +185,6 @@ import static org.atlasapi.annotation.Annotation.CHANNELS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUP;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS;
 import static org.atlasapi.annotation.Annotation.CHANNEL_GROUPS_SUMMARY;
-import static org.atlasapi.annotation.Annotation.CHANNEL_SUMMARY;
 import static org.atlasapi.annotation.Annotation.CLIPS;
 import static org.atlasapi.annotation.Annotation.CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.CONTENT_SUMMARY;
@@ -224,6 +224,7 @@ import static org.atlasapi.annotation.Annotation.UPCOMING_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.UPCOMING_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.VARIATIONS;
 
+@SuppressWarnings("PublicConstructor")
 @Configuration
 @Import({ QueryModule.class, LicenseModule.class, KafkaMessagingModule.class })
 public class QueryWebModule {
@@ -332,7 +333,7 @@ public class QueryWebModule {
                 queryModule.equivalentScheduleStoreScheduleQueryExecutor(),
                 configFetcher,
                 new ScheduleQueryResultWriter(scheduleWriter, licenseWriter, requestWriter()),
-                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
+                IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
                         .addExplicitSingleContext(channelAnnotationIndex())
                         .addExplicitListContext(contentAnnotationIndex())
                         .combine())
@@ -367,14 +368,14 @@ public class QueryWebModule {
     TopicContentController topicContentController() {
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(configFetcher,
                 userFetcher,
-                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
+                IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(contentAnnotationIndex())
                         .addExplicitSingleContext(topicAnnotationIndex())
                         .combine()
                 ), selectionBuilder()
         );
 
-        ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<Topic, Content>(
+        ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<>(
                 Resource.TOPIC, Attributes.TOPIC_ID, Resource.CONTENT, idCodec(),
                 contentQueryAttributeParser(),
                 contextParser
@@ -426,7 +427,7 @@ public class QueryWebModule {
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
                 userFetcher,
-                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
+                IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(modelInfoAnnotationIndex())
                         .combine()
                 ),
@@ -450,7 +451,7 @@ public class QueryWebModule {
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
                 userFetcher,
-                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
+                IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(endpointInfoAnnotationIndex())
                         .combine()
                 ),
@@ -465,76 +466,76 @@ public class QueryWebModule {
     }
 
     private QueryAttributeParser contentQueryAttributeParser() {
-        return new QueryAttributeParser(
-                ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                        QueryAtomParser.valueOf(
+        return QueryAttributeParser.create(
+                ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
+                        QueryAtomParser.create(
                                 Attributes.ID,
-                                AttributeCoercers.idCoercer(idCodec())
+                                IdCoercer.create(idCodec())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.CONTENT_TYPE,
-                                AttributeCoercers.enumCoercer(ContentType.fromKey())
+                                EnumCoercer.create(ContentType.fromKey())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.SOURCE,
-                                AttributeCoercers.enumCoercer(Sources.fromKey())
+                                EnumCoercer.create(Sources.fromKey())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.ALIASES_NAMESPACE,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.ALIASES_VALUE,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.LOCATIONS_ALIASES_NAMESPACE,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.LOCATIONS_ALIASES_VALUE,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.TAG_RELATIONSHIP,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.TAG_SUPERVISED,
-                                AttributeCoercers.booleanCoercer()
+                                BooleanCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.TAG_WEIGHTING,
-                                AttributeCoercers.floatCoercer()
+                                FloatCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.CONTENT_TITLE_PREFIX,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.GENRE,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.CONTENT_GROUP,
-                                AttributeCoercers.idCoercer(idCodec())
+                                IdCoercer.create(idCodec())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.SPECIALIZATION,
-                                AttributeCoercers.enumCoercer(Specialization.FROM_KEY())
+                                EnumCoercer.create(Specialization.FROM_KEY())
                         )
                 )
         );
     }
 
     private StandardQueryParser<Content> contentQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(
+        QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
                 userFetcher,
                 new IndexAnnotationsExtractor(contentAnnotationIndex()), selectionBuilder()
         );
 
-        return new StandardQueryParser<>(
+        return StandardQueryParser.create(
                 Resource.CONTENT,
                 contentQueryAttributeParser(),
                 idCodec(), contextParser
@@ -605,7 +606,7 @@ public class QueryWebModule {
     }
 
     private QueryParser<ResolvedChannelGroup> channelGroupQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(
+        QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
                 userFetcher,
                 new IndexAnnotationsExtractor(
@@ -613,7 +614,7 @@ public class QueryWebModule {
                 ),
                 selectionBuilder()
         );
-        return new StandardQueryParser<>(
+        return StandardQueryParser.create(
                 Resource.CHANNEL_GROUP,
                 channelGroupQueryAttributeParser(),
                 idCodec(),
@@ -626,26 +627,26 @@ public class QueryWebModule {
     }
 
     private QueryAttributeParser channelGroupQueryAttributeParser() {
-        return new QueryAttributeParser(
+        return QueryAttributeParser.create(
                 ImmutableList.of(
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.ID,
-                                AttributeCoercers.idCoercer(idCodec())
+                                IdCoercer.create(idCodec())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_TYPE,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.CHANNEL_GROUP_CHANNEL_GENRES,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         )
                 )
         );
     }
 
     private StandardQueryParser<ResolvedChannel> channelQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(
+        QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
                 userFetcher,
                 new IndexAnnotationsExtractor(
@@ -653,7 +654,7 @@ public class QueryWebModule {
                 ),
                 selectionBuilder()
         );
-        return new StandardQueryParser<>(
+        return StandardQueryParser.create(
                 Resource.CHANNEL,
                 channelQueryAttributeParser(),
                 idCodec(),
@@ -662,96 +663,96 @@ public class QueryWebModule {
     }
 
     private QueryAttributeParser channelQueryAttributeParser() {
-        return new QueryAttributeParser(
-                ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                        QueryAtomParser.valueOf(
+        return QueryAttributeParser.create(
+                ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
+                        QueryAtomParser.create(
                                 Attributes.ID,
-                                AttributeCoercers.idCoercer(idCodec())
+                                IdCoercer.create(idCodec())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.AVAILABLE_FROM,
-                                AttributeCoercers.enumCoercer(Sources.fromKey())
+                                EnumCoercer.create(Sources.fromKey())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.BROADCASTER,
-                                AttributeCoercers.enumCoercer(Sources.fromKey())
+                                EnumCoercer.create(Sources.fromKey())
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.ORDER_BY_CHANNEL,
-                                AttributeCoercers.stringCoercer()
+                                StringCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.ADVERTISED_ON,
-                                AttributeCoercers.booleanCoercer()
+                                BooleanCoercer.create()
                         ),
-                        QueryAtomParser.valueOf(
+                        QueryAtomParser.create(
                                 Attributes.MEDIA_TYPE,
-                                AttributeCoercers.enumCoercer(
-                                        MediaType::fromKey
-                                )
+                                EnumCoercer.create(MediaType::fromKey)
                         )
                 )
         );
     }
 
     private StandardQueryParser<Topic> topicQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
+        QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
                 new IndexAnnotationsExtractor(topicAnnotationIndex()), selectionBuilder()
         );
 
-        return new StandardQueryParser<Topic>(Resource.TOPIC,
-                new QueryAttributeParser(
-                        ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                            QueryAtomParser.valueOf(
-                                    Attributes.ID,
-                                    AttributeCoercers.idCoercer(idCodec())
-                            ),
-                            QueryAtomParser.valueOf(
-                                    Attributes.TOPIC_TYPE,
-                                    AttributeCoercers.enumCoercer(Topic.Type.fromKey())
-                            ),
-                            QueryAtomParser.valueOf(
-                                    Attributes.SOURCE,
-                                    AttributeCoercers.enumCoercer(Sources.fromKey())
-                            ),
-                            QueryAtomParser.valueOf(
-                                    Attributes.ALIASES_NAMESPACE,
-                                    AttributeCoercers.stringCoercer()
-                            ),
-                            QueryAtomParser.valueOf(
-                                    Attributes.ALIASES_VALUE,
-                                    AttributeCoercers.stringCoercer()
-                            )
+        return StandardQueryParser.create(
+                Resource.TOPIC,
+                QueryAttributeParser.create(
+                        ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
+                                QueryAtomParser.create(
+                                        Attributes.ID,
+                                        IdCoercer.create(idCodec())
+                                ),
+                                QueryAtomParser.create(
+                                        Attributes.TOPIC_TYPE,
+                                        EnumCoercer.create(Topic.Type.fromKey())
+                                ),
+                                QueryAtomParser.create(
+                                        Attributes.SOURCE,
+                                        EnumCoercer.create(Sources.fromKey())
+                                ),
+                                QueryAtomParser.create(
+                                        Attributes.ALIASES_NAMESPACE,
+                                        StringCoercer.create()
+                                ),
+                                QueryAtomParser.create(
+                                        Attributes.ALIASES_VALUE,
+                                        StringCoercer.create()
+                                )
                         )
                 ),
-                idCodec(), contextParser
+                idCodec(),
+                contextParser
         );
     }
 
     private StandardQueryParser<Event> eventQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
+        QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
                 new IndexAnnotationsExtractor(eventAnnotationIndex()), selectionBuilder()
         );
 
-        return new StandardQueryParser<Event>(Resource.EVENT,
-                new QueryAttributeParser(
-                        ImmutableList.<QueryAtomParser<String, ? extends Comparable<?>>>of(
-                            QueryAtomParser.valueOf(
-                                    Attributes.ID,
-                                    AttributeCoercers.idCoercer(idCodec())
-                            ),
-                            QueryAtomParser.valueOf(
-                                    Attributes.SOURCE,
-                                    AttributeCoercers.enumCoercer(Sources.fromKey())
-                            ),
-                            QueryAtomParser.valueOf(
-                                    Attributes.ALIASES_NAMESPACE,
-                                    AttributeCoercers.stringCoercer()
-                            ),
-                            QueryAtomParser.valueOf(
-                                    Attributes.ALIASES_VALUE,
-                                    AttributeCoercers.stringCoercer()
-                            )
+        return StandardQueryParser.create(Resource.EVENT,
+                QueryAttributeParser.create(
+                        ImmutableList.<QueryAtomParser<? extends Comparable<?>>>of(
+                                QueryAtomParser.create(
+                                        Attributes.ID,
+                                        IdCoercer.create(idCodec())
+                                ),
+                                QueryAtomParser.create(
+                                        Attributes.SOURCE,
+                                        EnumCoercer.create(Sources.fromKey())
+                                ),
+                                QueryAtomParser.create(
+                                        Attributes.ALIASES_NAMESPACE,
+                                        StringCoercer.create()
+                                ),
+                                QueryAtomParser.create(
+                                        Attributes.ALIASES_VALUE,
+                                        StringCoercer.create()
+                                )
                         )
                 ),
                 idCodec(), contextParser
@@ -759,15 +760,15 @@ public class QueryWebModule {
     }
 
     private StandardQueryParser<Organisation> organisationQueryParser() {
-        QueryContextParser contextParser = new QueryContextParser(configFetcher, userFetcher,
+        QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
                 new IndexAnnotationsExtractor(organisationAnnotationIndex()), selectionBuilder()
         );
 
-        return new StandardQueryParser<Organisation>(Resource.ORGANISATION,
-                new QueryAttributeParser(ImmutableList.of(
-                        QueryAtomParser.valueOf(
+        return StandardQueryParser.create(Resource.ORGANISATION,
+                QueryAttributeParser.create(ImmutableList.of(
+                        QueryAtomParser.create(
                                 Attributes.ID,
-                                AttributeCoercers.idCoercer(idCodec())
+                                IdCoercer.create(idCodec())
                         )
                 )),
                 idCodec(), contextParser
@@ -846,7 +847,10 @@ public class QueryWebModule {
     private AnnotationRegistry<Content> contentAnnotations() {
         ImmutableSet<Annotation> commonImplied = ImmutableSet.of(ID_SUMMARY);
         return AnnotationRegistry.<Content>builder()
-                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
+                .registerDefault(
+                        ID_SUMMARY,
+                        IdentificationSummaryAnnotation.create(idSummaryWriter)
+                )
                 .register(ID, new IdentificationAnnotation(), commonImplied)
                 .register(
                         EXTENDED_ID,
@@ -1052,7 +1056,10 @@ public class QueryWebModule {
     @Bean
     protected EntityListWriter<Topic> topicListWriter() {
         return new TopicListWriter(AnnotationRegistry.<Topic>builder()
-                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
+                .registerDefault(
+                        ID_SUMMARY,
+                        IdentificationSummaryAnnotation.create(idSummaryWriter)
+                )
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1066,14 +1073,23 @@ public class QueryWebModule {
     @Bean
     protected EntityListWriter<Event> eventListWriter() {
         return new EventListWriter(AnnotationRegistry.<Event>builder()
-                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
+                .registerDefault(
+                        ID_SUMMARY,
+                        IdentificationSummaryAnnotation.create(idSummaryWriter)
+                )
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
                         new ExtendedIdentificationAnnotation(idCodec()),
                         ImmutableSet.of(ID)
                 )
-                .register(EVENT, new EventAnnotation(new ItemRefWriter(idCodec(), "content"), persistenceModule.organisationStore()))
+                .register(
+                        EVENT,
+                        new EventAnnotation(
+                                new ItemRefWriter(idCodec(), "content"),
+                                persistenceModule.organisationStore()
+                        )
+                )
                 .register(EVENT_DETAILS, new EventDetailsAnnotation(topicAnnotationRegistry()))
                 .build());
     }
@@ -1085,7 +1101,10 @@ public class QueryWebModule {
 
     private AnnotationRegistry<Topic> topicAnnotationRegistry() {
         return AnnotationRegistry.<Topic>builder()
-                .registerDefault(ID_SUMMARY, IdentificationSummaryAnnotation.create(idSummaryWriter))
+                .registerDefault(
+                        ID_SUMMARY,
+                        IdentificationSummaryAnnotation.create(idSummaryWriter)
+                )
                 .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
                 .register(
                         EXTENDED_ID,
@@ -1104,18 +1123,8 @@ public class QueryWebModule {
         );
     }
 
-    protected EntityListWriter<org.atlasapi.media.channel.Channel> legacyChannelListWriter() {
-        return new LegacyChannelListWriter(AnnotationRegistry.<org.atlasapi.media.channel.Channel>builder()
-                //            .registerDefault(ID_SUMMARY, new IdentificationSummaryAnnotation(idCodec()))
-                //            .register(ID, new IdentificationAnnotation(), ID_SUMMARY)
-                //            .register(EXTENDED_ID, new ExtendedIdentificationAnnotation(idCodec()), ImmutableSet.of(ID))
-                .registerDefault(CHANNEL_SUMMARY, new ChannelSummaryWriter(idCodec()))
-                .register(CHANNEL, new LegacyChannelAnnotation(), ImmutableSet.of(CHANNEL_SUMMARY))
-                .build());
-    }
-
     @SuppressWarnings("unchecked")
-    protected EntityListWriter<ResolvedChannel> channelListWriter() {
+    private EntityListWriter<ResolvedChannel> channelListWriter() {
         return new ChannelListWriter(
                 AnnotationRegistry.<ResolvedChannel>builder()
                         .registerDefault(CHANNEL, new ChannelAnnotation(channelWriter()))

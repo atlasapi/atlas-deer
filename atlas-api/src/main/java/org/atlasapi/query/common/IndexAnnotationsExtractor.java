@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.AnnotationIndex;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;

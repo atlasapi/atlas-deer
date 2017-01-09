@@ -9,10 +9,10 @@ import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
-import org.atlasapi.query.common.AbstractRequestParameterValidator;
-import org.atlasapi.query.common.QueryAttributeParser;
-import org.atlasapi.query.common.QueryRequestParameterValidator;
 import org.atlasapi.query.common.Resource;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+import org.atlasapi.query.common.validation.AbstractRequestParameterValidator;
+import org.atlasapi.query.common.validation.QueryRequestParameterValidator;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
@@ -30,7 +30,7 @@ public class StandardUserAwareQueryParser<T> implements UserAwareQueryParser<T> 
     public StandardUserAwareQueryParser(Resource resource, QueryAttributeParser attributeParser,
             NumberToShortStringCodec idCodec,
             UserAwareQueryContextParser contextParser) {
-        this.parameterValidator = new QueryRequestParameterValidator(
+        this.parameterValidator = QueryRequestParameterValidator.create(
                 attributeParser,
                 contextParser
         );

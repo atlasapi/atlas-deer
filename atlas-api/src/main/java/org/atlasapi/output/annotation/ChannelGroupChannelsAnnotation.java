@@ -9,10 +9,10 @@ import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.channel.ResolvedChannelGroup;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
-import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.query.common.MissingResolvedDataException;
+import org.atlasapi.output.ResolvedChannelWithChannelGroupMembership;
+import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 import org.atlasapi.query.v4.channelgroup.ChannelGroupChannelWriter;
 
 import com.google.common.base.Optional;
