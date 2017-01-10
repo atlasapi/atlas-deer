@@ -126,8 +126,7 @@ public class CassandraEquivalentContentStore extends AbstractEquivalentContentSt
                 metricPrefix
         );
         this.legacyContentResolver = checkNotNull(legacyContentResolver);
-        this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor(
-                contentResolver));
+        this.contentSerializer = new ContentSerializer(new ContentSerializationVisitor());
         this.graphSerializer = new EquivalenceGraphSerializer();
         this.session = session;
         this.readConsistency = read;

@@ -158,7 +158,7 @@ public final class AstyanaxCassandraContentStore extends AbstractContentStore {
 
     private final ContentMarshaller<ColumnListMutation<String>, ColumnList<String>> marshaller =
             AstyanaxProtobufContentMarshaller.create(
-                    new ContentSerializer(new ContentSerializationVisitor(this))
+                    new ContentSerializer(new ContentSerializationVisitor())
             );
     private final Function<Map.Entry<Long, ColumnList<String>>, Content> rowToContent =
             input -> {

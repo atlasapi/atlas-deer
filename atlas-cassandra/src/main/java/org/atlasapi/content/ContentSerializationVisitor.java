@@ -25,8 +25,6 @@ import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.Iterables;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public final class ContentSerializationVisitor implements ContentVisitor<Builder> {
 
     private final BroadcastSerializer broadcastSerializer = BroadcastSerializer.create();
@@ -46,14 +44,11 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final ItemSummarySerializer itemSummarySerializer = new ItemSummarySerializer();
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
-    private final ContentResolver resolver;
     private final AwardSerializer awardSerializer = new AwardSerializer();
     private final ReviewSerializer reviewSerializer = new ReviewSerializer();
     private final RatingSerializer ratingSerializer = new RatingSerializer();
 
-    public ContentSerializationVisitor(ContentResolver resolver) {
-        this.resolver = checkNotNull(resolver);
-    }
+    public ContentSerializationVisitor() {}
 
     private Builder visitIdentified(Identified ided) {
         Builder builder = ContentProtos.Content.newBuilder();

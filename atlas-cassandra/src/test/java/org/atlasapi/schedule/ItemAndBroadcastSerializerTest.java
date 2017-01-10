@@ -6,7 +6,6 @@ import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
-import org.atlasapi.content.NoOpContentResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -21,7 +20,7 @@ import static org.junit.Assert.assertThat;
 public class ItemAndBroadcastSerializerTest {
 
     private final ItemAndBroadcastSerializer serializer = new ItemAndBroadcastSerializer(new ContentSerializer(
-            new ContentSerializationVisitor(new NoOpContentResolver())));
+            new ContentSerializationVisitor()));
 
     @Test
     public void testDeSerialization() {
