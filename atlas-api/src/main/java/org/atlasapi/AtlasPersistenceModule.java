@@ -360,7 +360,6 @@ public class AtlasPersistenceModule {
                         esCluster,
                         esIndex,
                         Long.parseLong(esRequestTimeout),
-                        persistenceModule().contentStore(),
                         metricsModule.metrics(),
                         channelGroupResolver(),
                         new CassandraSecondaryIndex(

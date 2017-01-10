@@ -41,7 +41,6 @@ public class PseudoEquivalentContentIndexIT {
         EsUnequivalentContentIndex delegate = new EsUnequivalentContentIndex(
                 esNode,
                 EsSchema.CONTENT_INDEX,
-                new NoOpContentResolver(),
                 mock(ChannelGroupResolver.class),
                 equivIndex,
                 60000

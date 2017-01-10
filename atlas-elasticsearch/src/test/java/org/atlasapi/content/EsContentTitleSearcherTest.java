@@ -98,7 +98,6 @@ public class EsContentTitleSearcherTest {
         EsUnequivalentContentIndex contentIndex = new EsUnequivalentContentIndex(
                 esClient.client(),
                 EsSchema.CONTENT_INDEX,
-                new NoOpContentResolver(),
                 mock(ChannelGroupResolver.class),
                 new NoOpSecondaryIndex(),
                 60000

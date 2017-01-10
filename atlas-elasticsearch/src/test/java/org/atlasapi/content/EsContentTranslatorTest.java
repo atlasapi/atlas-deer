@@ -33,7 +33,7 @@ public class EsContentTranslatorTest {
     @Before
     public void setUp() throws Exception {
         translator = new EsContentTranslator(
-                "index", client, secondaryIndex, 10L, contentResolver
+                "index", client, secondaryIndex, 10L
         );
     }
 
