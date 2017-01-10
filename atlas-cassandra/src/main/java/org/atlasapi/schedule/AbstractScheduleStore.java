@@ -307,7 +307,7 @@ public abstract class AbstractScheduleStore implements ScheduleStore {
         Broadcast broadcast = entry.getBroadcast();
         broadcast.setIsActivelyPublished(false);
         SeriesRef seriesRef = null;
-        if (resolve instanceof Episode && ((Episode) resolved).getSeriesRef() != null) {
+        if (resolved instanceof Episode && ((Episode) resolved).getSeriesRef() != null) {
             seriesRef = ((Episode) resolved).getSeriesRef();
         }
 
