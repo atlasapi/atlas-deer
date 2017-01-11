@@ -78,20 +78,20 @@ public class BootstrapModule {
 
     @Bean
     ContentBootstrapController contentBootstrapController() {
-        return new ContentBootstrapController(
-                persistence.legacyContentResolver(),
-                persistence.legacyContentLister(),
-                persistence.nullMessageSendingContentStore(),
-                search.equivContentIndex(),
-                explicitEquivalenceMigrator,
-                NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
-                progressStore(),
-                metrics,
-                persistence.nullMessageSendingEquivalentContentStore(),
-                persistence.nullMessageSendingEquivalenceGraphStore(),
-                persistence.contentStore(),
-                persistence.neo4jContentStore()
-        );
+        return ContentBootstrapController.builder()
+                .withRead(persistence.legacyContentResolver())
+                .withContentLister(persistence.legacyContentLister())
+                .withWrite(persistence.nullMessageSendingContentStore())
+                .withContentIndex(search.equivContentIndex())
+                .withEquivalenceMigrator(explicitEquivalenceMigrator)
+                .withMaxSourceBootstrapThreads(NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS)
+                .withProgressStore(progressStore())
+                .withMetrics(metrics)
+                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
+                .withEquivalenceGraphStore(persistence.nullMessageSendingEquivalenceGraphStore())
+                .withContentStore(persistence.contentStore())
+                .withNeo4JContentStore(persistence.neo4jContentStore())
+                .build();
     }
 
     @Bean

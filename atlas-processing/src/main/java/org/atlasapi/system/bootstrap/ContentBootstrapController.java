@@ -9,6 +9,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletResponse;
 
 import org.atlasapi.content.Container;
@@ -33,8 +34,6 @@ import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.ProgressStore;
 
-import com.metabroadcast.common.base.Maybe;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.FluentIterable;
@@ -58,7 +57,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Controller
 public class ContentBootstrapController {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger log = LoggerFactory.getLogger(ContentBootstrapController.class);
+
     private final ContentResolver read;
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -72,58 +72,53 @@ public class ContentBootstrapController {
     private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
-    public ContentBootstrapController(
-            ContentResolver read,
-            ResourceLister<Content> contentLister,
-            ContentWriter write,
-            ContentIndex contentIndex,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
-            Integer maxSourceBootstrapThreads,
-            ProgressStore progressStore,
-            MetricRegistry metrics,
-            EquivalentContentStore equivalentContentStore,
-            EquivalenceGraphStore equivalenceGraphStore,
-            ContentStore contentStore,
-            Neo4jContentStore neo4JContentStore
-    ) {
-        this.maxSourceBootstrapThreads = maxSourceBootstrapThreads;
-        this.read = checkNotNull(read);
-        this.contentLister = checkNotNull(contentLister);
-        this.contentIndex = checkNotNull(contentIndex);
-        this.progressStore = checkNotNull(progressStore);
-        this.timer = metrics.timer(getClass().getSimpleName());
+    private ContentBootstrapController(Builder builder) {
+        read = checkNotNull(builder.read);
+        contentLister = checkNotNull(builder.contentLister);
+        contentIndex = checkNotNull(builder.contentIndex);
+        maxSourceBootstrapThreads = checkNotNull(builder.maxSourceBootstrapThreads);
+        progressStore = checkNotNull(builder.progressStore);
+        timer = checkNotNull(builder.metrics).timer(getClass().getSimpleName());
 
-        this.contentBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(write)
-                .withEquivalenceMigrator(equivalenceMigrator)
-                .withEquivalentContentStore(equivalentContentStore)
+        contentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(builder.write)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(builder.equivalentContentStore)
                 .withContentIndex(contentIndex)
                 .build();
 
-        this.contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(write)
-                .withEquivalenceMigrator(equivalenceMigrator)
-                .withEquivalentContentStore(equivalentContentStore)
+        contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(builder.write)
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(builder.equivalentContentStore)
                 .withContentIndex(contentIndex)
-                .withMigrateEquivalents(equivalenceGraphStore)
+                .withMigrateEquivalents(builder.equivalenceGraphStore)
                 .build();
 
-        this.contentNeo4jMigrator = ContentNeo4jMigrator.create(
-                neo4JContentStore,
-                contentStore,
-                equivalenceGraphStore
+        contentNeo4jMigrator = ContentNeo4jMigrator.create(
+                builder.neo4JContentStore,
+                builder.contentStore,
+                builder.equivalenceGraphStore
         );
     }
 
-    @RequestMapping(value = "/system/bootstrap/source", method = RequestMethod.POST)
-    public void bootstrapSource(@RequestParam("source") String sourceString,
-            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
-            HttpServletResponse resp) throws IOException {
-        log.info("Bootstrapping source: {}", sourceString);
-        Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
-        java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
+    public static Builder builder() {
+        return new Builder();
+    }
 
-        Publisher source = fromKey.requireValue();
+    @RequestMapping(value = "/system/bootstrap/source", method = RequestMethod.POST)
+    public void bootstrapSource(
+            @RequestParam("source") String sourceString,
+            @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
+            HttpServletResponse resp
+    ) throws IOException {
+        log.info("Bootstrapping source: {}", sourceString);
+
+        Optional<Publisher> fromKey = Publisher.fromKey(sourceString).toOptional();
+
+        Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.get().toString());
+
+        Publisher source = fromKey.get();
         Runnable listener;
         if (Boolean.TRUE.equals(migrateEquivalents)) {
             listener = bootstrappingRunnable(contentAndEquivalentsBootstrapListener,
@@ -145,8 +140,10 @@ public class ContentBootstrapController {
     }
 
     @RequestMapping(value = "/system/bootstrap/all", method = RequestMethod.POST)
-    public void bootstrapAllSources(@RequestParam("exclude") String excludedSourcesString,
-            HttpServletResponse resp) {
+    public void bootstrapAllSources(
+            @Nullable @RequestParam("exclude") String excludedSourcesString,
+            HttpServletResponse resp
+    ) {
         Set<Publisher> excludedSources = ImmutableSet.of();
 
         if (excludedSourcesString != null && !excludedSourcesString.trim().isEmpty()) {
@@ -155,7 +152,7 @@ public class ContentBootstrapController {
 
         Set<Publisher> sourcesToBootstrap = Sets.difference(Publisher.all(), excludedSources);
         for (Publisher source : sourcesToBootstrap) {
-            java.util.Optional<ContentListingProgress> progress =
+            Optional<ContentListingProgress> progress =
                     progressStore.progressForTask(source.toString());
             executorService.execute(
                     bootstrappingRunnable(contentBootstrapListener, source, progress)
@@ -166,18 +163,22 @@ public class ContentBootstrapController {
     }
 
     @RequestMapping(value = "/system/count/nonGenerics", method = RequestMethod.POST)
-    public void countContent(@RequestParam("source") final String sourceString,
-            HttpServletResponse resp) {
+    public void countContent(
+            @RequestParam("source") final String sourceString,
+            HttpServletResponse resp
+    ) {
         log.info("Bootstrapping source: {}", sourceString);
-        Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
-        java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
-        executorService.execute(contentCountingRunnable(fromKey.requireValue(), progress));
+        Optional<Publisher> fromKey = Publisher.fromKey(sourceString).toOptional();
+        Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.get().toString());
+        executorService.execute(contentCountingRunnable(fromKey.get(), progress));
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 
     @RequestMapping(value = "/system/bootstrap/content", method = RequestMethod.POST)
-    public void bootstrapContent(@RequestParam("id") final String id,
-            final HttpServletResponse resp) throws IOException {
+    public void bootstrapContent(
+            @RequestParam("id") final String id,
+            final HttpServletResponse resp
+    ) throws IOException {
         log.info("Bootstrapping: {}", id);
         Identified identified = Iterables.getOnlyElement(
                 resolve(ImmutableList.of(Id.valueOf(id))),
@@ -203,13 +204,15 @@ public class ContentBootstrapController {
     }
 
     @RequestMapping(value = "/system/index/source", method = RequestMethod.POST)
-    public void indexSource(@RequestParam("source") final String sourceString,
-            HttpServletResponse resp) {
+    public void indexSource(
+            @RequestParam("source") final String sourceString,
+            HttpServletResponse resp
+    ) {
         ContentVisitorAdapter<Class<Void>> visitor = contentIndexingVisitor();
         log.info("Bootstrapping source: {}", sourceString);
-        Maybe<Publisher> fromKey = Publisher.fromKey(sourceString);
-        java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.toString());
-        executorService.execute(indexingRunnable(visitor, fromKey.requireValue(), progress));
+        Optional<Publisher> fromKey = Publisher.fromKey(sourceString).toOptional();
+        Optional<ContentListingProgress> progress = progressStore.progressForTask(fromKey.get().toString());
+        executorService.execute(indexingRunnable(visitor, fromKey.get(), progress));
         resp.setStatus(HttpStatus.ACCEPTED.value());
     }
 
@@ -222,7 +225,7 @@ public class ContentBootstrapController {
         log.info("Bootstrapping source in Neo4j: {}", sourceString);
         Publisher source = Publisher.fromKey(sourceString).requireValue();
 
-        java.util.Optional<ContentListingProgress> progress = progressStore.progressForTask(
+        Optional<ContentListingProgress> progress = progressStore.progressForTask(
                 "Neo4jBootstrap-" + source.key()
         );
 
@@ -234,47 +237,53 @@ public class ContentBootstrapController {
     private FluentIterable<Content> resolve(Iterable<Id> ids) {
         try {
             ListenableFuture<Resolved<Content>> resolved = read.resolveIds(ids);
-            return Futures.get(resolved, IOException.class).getResources();
+            return Futures.getChecked(resolved, IOException.class).getResources();
         } catch (IOException e) {
             throw new RuntimeException();
         }
     }
 
-    private Runnable bootstrappingRunnable(ContentVisitorAdapter<?> visitor, Publisher source,
-            java.util.Optional<ContentListingProgress> progress) {
+    private Runnable bootstrappingRunnable(
+            ContentVisitorAdapter<?> visitor,
+            Publisher source,
+            Optional<ContentListingProgress> progress
+    ) {
         FluentIterable<Content> contentIterable = getContentIterable(source, progress);
 
-        return () -> {
-            AtomicInteger atomicInteger = new AtomicInteger();
-
-            ExecutorService executor = getExecutor();
-
-            for (Content c : contentIterable) {
-                executor.submit(
-                        () -> {
-                            Timer.Context time = timer.time();
-                            int count = atomicInteger.incrementAndGet();
-                            log.info(
-                                    "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
-                                    ContentType.fromContent(c).get(),
-                                    c.getId(),
-                                    c.isActivelyPublished(),
-                                    c.getCanonicalUri(),
-                                    count
-                            );
-                            c.accept(visitor);
-                            storeProgress(source, c, count);
-                            time.stop();
-                        }
-                );
-            }
-            /* Finished */
-            progressStore.storeProgress(source.toString(), ContentListingProgress.START);
-        };
+        return () -> visitContentIterable(visitor, source, contentIterable);
     }
 
-    private Runnable contentCountingRunnable(Publisher source,
-            java.util.Optional<ContentListingProgress> progress) {
+    private void visitContentIterable(ContentVisitorAdapter<?> visitor, Publisher source,
+            FluentIterable<Content> contentIterable) {
+        AtomicInteger atomicInteger = new AtomicInteger();
+        ExecutorService executor = getExecutor();
+        for (Content c : contentIterable) {
+            executor.submit(
+                    () -> {
+                        Timer.Context time = timer.time();
+                        int count = atomicInteger.incrementAndGet();
+                        log.info(
+                                "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
+                                ContentType.fromContent(c).get(),
+                                c.getId(),
+                                c.isActivelyPublished(),
+                                c.getCanonicalUri(),
+                                count
+                        );
+                        c.accept(visitor);
+                        storeProgress(source, c, count);
+                        time.stop();
+                    }
+            );
+        }
+            /* Finished */
+        progressStore.storeProgress(source.toString(), ContentListingProgress.START);
+    }
+
+    private Runnable contentCountingRunnable(
+            Publisher source,
+            Optional<ContentListingProgress> progress
+    ) {
         FluentIterable<Content> contentIterable = getContentIterable(source, progress);
 
         return () -> {
@@ -334,35 +343,14 @@ public class ContentBootstrapController {
         };
     }
 
-    private Runnable indexingRunnable(ContentVisitorAdapter<Class<Void>> visitor, Publisher source,
-            java.util.Optional<ContentListingProgress> progress) {
+    private Runnable indexingRunnable(
+            ContentVisitorAdapter<Class<Void>> visitor,
+            Publisher source,
+            Optional<ContentListingProgress> progress
+    ) {
         FluentIterable<Content> contentIterable = getContentIterable(source, progress);
 
-        return () -> {
-            AtomicInteger atomicInteger = new AtomicInteger();
-            ExecutorService executor = getExecutor();
-            for (Content c : contentIterable) {
-                executor.submit(
-                        () -> {
-                            Timer.Context time = timer.time();
-                            int count = atomicInteger.incrementAndGet();
-                            log.info(
-                                    "Bootstrapping content type: {}, id: {}, activelyPublished: {}, uri: {}, count: {}",
-                                    ContentType.fromContent(c).get(),
-                                    c.getId(),
-                                    c.isActivelyPublished(),
-                                    c.getCanonicalUri(),
-                                    count
-                            );
-                            c.accept(visitor);
-                            storeProgress(source, c, count);
-                            time.stop();
-                        }
-                );
-            }
-            /* Finished */
-            progressStore.storeProgress(source.toString(), ContentListingProgress.START);
-        };
+        return () -> visitContentIterable(visitor, source, contentIterable);
     }
 
     private Runnable neo4jBootstrapRunnable(
@@ -452,6 +440,88 @@ public class ContentBootstrapController {
                     source.toString(),
                     progressFrom(content, source)
             );
+        }
+    }
+
+    public static final class Builder {
+
+        private ContentResolver read;
+        private ContentWriter write;
+        private DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
+        private EquivalentContentStore equivalentContentStore;
+        private EquivalenceGraphStore equivalenceGraphStore;
+        private Neo4jContentStore neo4JContentStore;
+        private ContentStore contentStore;
+        private MetricRegistry metrics;
+        private ResourceLister<Content> contentLister;
+        private ContentIndex contentIndex;
+        private Integer maxSourceBootstrapThreads;
+        private ProgressStore progressStore;
+
+        private Builder() { }
+
+        public Builder withContentStore(ContentStore val) {
+            contentStore = val;
+            return this;
+        }
+
+        public Builder withNeo4JContentStore(Neo4jContentStore val) {
+            neo4JContentStore = val;
+            return this;
+        }
+
+        public Builder withEquivalenceGraphStore(EquivalenceGraphStore val) {
+            equivalenceGraphStore = val;
+            return this;
+        }
+
+        public Builder withEquivalentContentStore(EquivalentContentStore val) {
+            equivalentContentStore = val;
+            return this;
+        }
+
+        public Builder withEquivalenceMigrator(DirectAndExplicitEquivalenceMigrator val) {
+            equivalenceMigrator = val;
+            return this;
+        }
+
+        public Builder withWrite(ContentWriter val) {
+            write = val;
+            return this;
+        }
+
+        public Builder withMetrics(MetricRegistry val) {
+            metrics = val;
+            return this;
+        }
+
+        public Builder withRead(ContentResolver val) {
+            read = val;
+            return this;
+        }
+
+        public Builder withContentLister(ResourceLister<Content> val) {
+            contentLister = val;
+            return this;
+        }
+
+        public Builder withContentIndex(ContentIndex val) {
+            contentIndex = val;
+            return this;
+        }
+
+        public Builder withMaxSourceBootstrapThreads(Integer val) {
+            maxSourceBootstrapThreads = val;
+            return this;
+        }
+
+        public Builder withProgressStore(ProgressStore val) {
+            progressStore = val;
+            return this;
+        }
+
+        public ContentBootstrapController build() {
+            return new ContentBootstrapController(this);
         }
     }
 }
