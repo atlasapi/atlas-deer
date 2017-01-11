@@ -31,7 +31,7 @@ import org.atlasapi.output.useraware.UserAccountsAwareQueryResultWriter;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
 import org.atlasapi.output.useraware.UserAwareQueryResultWriter;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.useraware.StandardUserAwareQueryParserNoAuth;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQuery;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQueryContext;

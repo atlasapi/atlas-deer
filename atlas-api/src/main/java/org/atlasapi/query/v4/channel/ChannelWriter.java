@@ -18,12 +18,11 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
 import org.atlasapi.output.writers.ImageListWriter;
 import org.atlasapi.output.writers.RelatedLinkWriter;
-import org.atlasapi.query.common.MissingResolvedDataException;
+import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 

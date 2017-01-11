@@ -10,6 +10,11 @@ import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
+import org.atlasapi.query.common.attributes.QueryAtomParser;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+import org.atlasapi.query.common.coercers.IdCoercer;
+import org.atlasapi.query.common.coercers.StringCoercer;
+import org.atlasapi.query.common.exceptions.InvalidOperatorException;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -27,13 +32,13 @@ import static org.junit.Assert.assertTrue;
 public class QueryAttributeParserTest {
 
     private NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private final QueryAttributeParser parser = new QueryAttributeParser(ImmutableList.of(
-            QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec)),
-            QueryAtomParser.valueOf(
-                    Attributes.ALIASES_NAMESPACE,
-                    AttributeCoercers.stringCoercer()
+    private final QueryAttributeParser parser = QueryAttributeParser.create(ImmutableList.of(
+            QueryAtomParser.create(
+                    Attributes.ID,
+                    IdCoercer.create(idCodec)
             ),
-            QueryAtomParser.valueOf(Attributes.ALIASES_VALUE, AttributeCoercers.stringCoercer())
+            QueryAtomParser.create(Attributes.ALIASES_NAMESPACE, StringCoercer.create()),
+            QueryAtomParser.create(Attributes.ALIASES_VALUE, StringCoercer.create())
     ));
 
     @Test

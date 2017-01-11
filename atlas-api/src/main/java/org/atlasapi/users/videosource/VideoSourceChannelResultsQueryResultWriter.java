@@ -9,8 +9,8 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.users.videosource.model.VideoSourceChannelResults;
 
 import com.google.common.collect.FluentIterable;

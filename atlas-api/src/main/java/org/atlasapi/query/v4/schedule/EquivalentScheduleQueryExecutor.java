@@ -1,17 +1,11 @@
 package org.atlasapi.query.v4.schedule;
 
-import com.codepoetics.protonpack.StreamUtils;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationSources;
@@ -26,9 +20,9 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
-import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.schedule.ChannelSchedule;
 import org.atlasapi.schedule.EquivalentChannelSchedule;
 import org.atlasapi.schedule.EquivalentSchedule;
@@ -37,13 +31,19 @@ import org.atlasapi.schedule.EquivalentScheduleResolver;
 import org.atlasapi.schedule.FlexibleBroadcastMatcher;
 import org.atlasapi.schedule.Schedule;
 
-import org.joda.time.Interval;
+import com.metabroadcast.common.stream.MoreCollectors;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import com.codepoetics.protonpack.StreamUtils;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.joda.time.Interval;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

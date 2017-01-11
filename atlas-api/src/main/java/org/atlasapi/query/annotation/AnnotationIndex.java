@@ -1,6 +1,6 @@
 package org.atlasapi.query.annotation;
 
-import org.atlasapi.query.common.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 
 public interface AnnotationIndex {
 

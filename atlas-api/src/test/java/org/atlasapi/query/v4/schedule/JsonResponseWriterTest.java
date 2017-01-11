@@ -10,7 +10,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.query.common.QueryContext;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
 import com.metabroadcast.common.servlet.StubHttpServletResponse;

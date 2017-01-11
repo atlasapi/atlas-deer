@@ -28,11 +28,11 @@ import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
-import org.atlasapi.query.common.QueryContext;
-import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
-import org.atlasapi.query.common.UncheckedQueryExecutionException;
+import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
 
 import com.metabroadcast.common.stream.MoreCollectors;
 import com.metabroadcast.promise.Promise;

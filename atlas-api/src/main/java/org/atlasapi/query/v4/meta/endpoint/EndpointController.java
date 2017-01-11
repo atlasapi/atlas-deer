@@ -15,8 +15,8 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.common.ContextualQueryContextParser;
-import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;

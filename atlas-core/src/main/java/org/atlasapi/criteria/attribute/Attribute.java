@@ -1,17 +1,3 @@
-/* Copyright 2009 Meta Broadcast Ltd
-
-Licensed under the Apache License, Version 2.0 (the "License"); you
-may not use this file except in compliance with the License. You may
-obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-implied. See the License for the specific language governing
-permissions and limitations under the License. */
-
 package org.atlasapi.criteria.attribute;
 
 import org.atlasapi.entity.Identified;
@@ -36,25 +22,20 @@ public abstract class Attribute<T> implements QueryFactory<T> {
     private final boolean isCollectionOfValues;
     private String alias;
 
-    Attribute(String name, Class<? extends Identified> target) {
-        this(name, target, false);
+    protected Attribute(
+            String name,
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
+    ) {
+        this(name, name, target, isCollectionOfValues);
     }
 
-    Attribute(String name, String javaAttributeName, Class<? extends Identified> target) {
-        this(name, javaAttributeName, target, false);
-    }
-
-    Attribute(String name, Class<? extends Identified> target, boolean isCollectionOfValues) {
-        this.name = checkNotNull(name);
-        this.pathParts = ImmutableList.copyOf(PATH_SPLITTER.split(name));
-        this.pathPrefix = PATH_JOINER.join(pathParts.subList(0, pathParts.size() - 1));
-        this.target = target;
-        this.isCollectionOfValues = isCollectionOfValues;
-        this.javaAttributeName = name;
-    }
-
-    Attribute(String name, String javaAttributeName, Class<? extends Identified> target,
-            boolean isCollectionOfValues) {
+    protected Attribute(
+            String name,
+            String javaAttributeName,
+            Class<? extends Identified> target,
+            boolean isCollectionOfValues
+    ) {
         this.name = checkNotNull(name);
         this.javaAttributeName = checkNotNull(javaAttributeName);
         this.pathParts = ImmutableList.copyOf(PATH_SPLITTER.split(javaAttributeName));

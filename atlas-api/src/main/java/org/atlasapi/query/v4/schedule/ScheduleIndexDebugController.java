@@ -11,7 +11,7 @@ import org.atlasapi.media.channel.Channel;
 import org.atlasapi.media.channel.ChannelResolver;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
-import org.atlasapi.query.common.InvalidAnnotationException;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.schedule.ScheduleIndex;
 import org.atlasapi.schedule.ScheduleRef;
 

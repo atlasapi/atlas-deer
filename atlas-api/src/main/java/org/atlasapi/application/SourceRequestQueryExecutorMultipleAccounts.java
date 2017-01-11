@@ -15,7 +15,7 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.useraware.UserAccountsAwareQueryResult;
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQuery;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQueryExecutor;
 

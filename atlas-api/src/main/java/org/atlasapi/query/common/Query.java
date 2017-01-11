@@ -2,6 +2,7 @@ package org.atlasapi.query.common;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
+import org.atlasapi.query.common.context.QueryContext;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

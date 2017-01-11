@@ -2,6 +2,7 @@ package org.atlasapi.query.common;
 
 import org.atlasapi.query.common.Query.ListQuery;
 import org.atlasapi.query.common.Query.SingleQuery;
+import org.atlasapi.query.common.context.QueryContext;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

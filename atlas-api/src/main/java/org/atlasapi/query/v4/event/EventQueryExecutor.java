@@ -9,10 +9,10 @@ import org.atlasapi.event.Event;
 import org.atlasapi.event.EventResolver;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.query.common.Query;
-import org.atlasapi.query.common.QueryExecutionException;
 import org.atlasapi.query.common.QueryExecutor;
 import org.atlasapi.query.common.QueryResult;
-import org.atlasapi.query.common.UncheckedQueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
 
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;

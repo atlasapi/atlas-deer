@@ -38,129 +38,131 @@ import org.joda.time.DateTime;
 
 public class Attributes {
 
-    public static final Attribute<Id> ID = idListAttribute("id", Identified.class);
-    public static final Attribute<Publisher> SOURCE = EnumValuedAttribute.valueOf(
+    private Attributes() {
+    }
+
+    public static final Attribute<Id> ID = IdAttribute.list("id", Identified.class);
+    public static final Attribute<Publisher> SOURCE = EnumAttribute.list(
             "source",
             Publisher.class,
-            Identified.class,
-            true
+            Identified.class
     );
-    public static final Attribute<String> ALIASES_NAMESPACE = stringListAttribute(
+    public static final Attribute<String> ALIASES_NAMESPACE = StringAttribute.list(
             "aliases.namespace",
             Identified.class
     );
-    public static final Attribute<String> ALIASES_VALUE = stringListAttribute(
+    public static final Attribute<String> ALIASES_VALUE = StringAttribute.list(
             "aliases.value",
             Identified.class
     );
 
-    public static final Attribute<String> LOCATIONS_ALIASES_NAMESPACE = stringListAttribute(
+    public static final Attribute<String> LOCATIONS_ALIASES_NAMESPACE = StringAttribute.list(
             "locations.aliases.namespace",
             Identified.class
     );
-    public static final Attribute<String> LOCATIONS_ALIASES_VALUE = stringListAttribute(
+    public static final Attribute<String> LOCATIONS_ALIASES_VALUE = StringAttribute.list(
             "locations.aliases.value",
             Identified.class
     );
-    public static final Attribute<Id> REGION = idListAttribute("region", Region.class);
+    public static final Attribute<Id> REGION = IdAttribute.list("region", Region.class);
 
-    public static final Attribute<Id> TOPIC_ID = idListAttribute(
+    public static final Attribute<Id> TOPIC_ID = IdAttribute.list(
             "tags.topic.id",
             "topics.topic.id",
             Identified.class
     );
-    public static final Attribute<String> TAG_RELATIONSHIP = stringListAttribute(
+    public static final Attribute<String> TAG_RELATIONSHIP = StringAttribute.list(
             "tags.relationship",
             "topics.relationship",
             Identified.class
     );
-    public static final Attribute<Float> TAG_WEIGHTING = new FloatValuedAttribute(
+    public static final Attribute<Float> TAG_WEIGHTING = FloatAttribute.single(
             "tags.weighting",
             "topics.weighting",
             Identified.class
     );
-    public static final Attribute<Boolean> TAG_SUPERVISED = new BooleanValuedAttribute(
+    public static final Attribute<Boolean> TAG_SUPERVISED = BooleanAttribute.single(
             "tags.supervised",
             "topics.supervised",
             Identified.class
     );
 
-    public static final Attribute<Topic.Type> TOPIC_TYPE = EnumValuedAttribute.valueOf(
+    public static final Attribute<Topic.Type> TOPIC_TYPE = EnumAttribute.list(
             "type",
             Topic.Type.class,
-            Topic.class,
-            true
+            Topic.class
     );
-    public static final Attribute<ContentType> CONTENT_TYPE = EnumValuedAttribute.valueOf(
+    public static final Attribute<ContentType> CONTENT_TYPE = EnumAttribute.list(
             "type",
             ContentType.class,
-            Content.class,
-            true
+            Content.class
     );
 
     // Simple string-valued attributes
-    public static final Attribute<Publisher> DESCRIPTION_PUBLISHER = new EnumValuedAttribute<Publisher>(
+    public static final Attribute<Publisher> DESCRIPTION_PUBLISHER = EnumAttribute.single(
             "publisher",
             Publisher.class,
             Content.class
     );
-    public static final Attribute<String> DESCRIPTION_GENRE = stringListAttribute(
+    public static final Attribute<String> DESCRIPTION_GENRE = StringAttribute.list(
             "genre",
             Content.class
     );
-    public static final Attribute<String> DESCRIPTION_TAG = stringListAttribute(
+    public static final Attribute<String> DESCRIPTION_TAG = StringAttribute.list(
             "tag",
             Content.class
     );
-    public static final Attribute<MediaType> DESCRIPTION_TYPE = new EnumValuedAttribute<MediaType>(
+    public static final Attribute<MediaType> DESCRIPTION_TYPE = EnumAttribute.single(
             "mediaType",
             MediaType.class,
             Item.class
     );
-    public static final Attribute<String> TAGS = stringListAttribute(
+    public static final Attribute<String> TAGS = StringAttribute.list(
             "tags",
             "topics",
             Content.class
     );
-    public static final Attribute<String> CHANNEL_GROUP_TYPE = stringListAttribute(
+    public static final Attribute<String> CHANNEL_GROUP_TYPE = StringAttribute.list(
             "type",
             ChannelGroup.class
     );
-    public static final Attribute<String> CHANNEL_GROUP_CHANNEL_GENRES = stringListAttribute(
+    public static final Attribute<String> CHANNEL_GROUP_CHANNEL_GENRES = StringAttribute.list(
             "channel_genres",
             ChannelGroup.class
     );
 
     // Time based attributes
-    public static final Attribute<DateTime> BRAND_THIS_OR_CHILD_LAST_UPDATED = dateTimeAttribute(
+    public static final Attribute<DateTime> BRAND_THIS_OR_CHILD_LAST_UPDATED = DateTimeAttribute
+            .single(
             "thisOrChildLastUpdated",
             Container.class
     ).allowShortMatches();
 
-    public static final Attribute<String> TOPIC_NAMESPACE = stringAttribute(
+
+    public static final Attribute<String> TOPIC_NAMESPACE = StringAttribute.single(
             "namespace",
             Topic.class
     );
-    public static final Attribute<String> TOPIC_VALUE = stringAttribute("value", Topic.class);
+    public static final Attribute<String> TOPIC_VALUE = StringAttribute.single(
+            "value",
+            Topic.class
+    );
 
     // For applications
-    public static final Attribute<Publisher> SOURCE_READS = EnumValuedAttribute.valueOf(
+    public static final Attribute<Publisher> SOURCE_READS = EnumAttribute.list(
             "source.reads",
             Publisher.class,
-            Identified.class,
-            true
+            Identified.class
     );
-    public static final Attribute<Publisher> SOURCE_WRITES = EnumValuedAttribute.valueOf(
+    public static final Attribute<Publisher> SOURCE_WRITES = EnumAttribute.list(
             "source.writes",
             Publisher.class,
-            Identified.class,
-            true
+            Identified.class
     );
-    public static final Attribute<Publisher> SOURCE_REQUEST_SOURCE = EnumValuedAttribute.valueOf(
+    public static final Attribute<Publisher> SOURCE_REQUEST_SOURCE = EnumAttribute.list(
             "source",
             Publisher.class,
-            Identified.class,
-            true
+            Identified.class
     );
 
     //For Channels
@@ -169,52 +171,51 @@ public class Attributes {
     public static final String MEDIA_TYPE_PARAM = "media_type";
     public static final String ORDER_BY_PARAM = "order_by";
     public static final String ADVERTISED_FROM_PARAM = "advertised";
-    public static final Attribute<Boolean> ADVERTISED_ON = new BooleanValuedAttribute(
+    public static final Attribute<Boolean> ADVERTISED_ON = BooleanAttribute.single(
             ADVERTISED_FROM_PARAM,
             Identified.class
     );
-    public static final Attribute<Publisher> BROADCASTER = EnumValuedAttribute.valueOf(
+    public static final Attribute<Publisher> BROADCASTER = EnumAttribute.list(
             BROADCASTER_PARAM,
             Publisher.class,
-            Identified.class,
-            true
+            Identified.class
     );
-    public static final Attribute<Publisher> AVAILABLE_FROM = EnumValuedAttribute.valueOf(
+    public static final Attribute<Publisher> AVAILABLE_FROM = EnumAttribute.list(
             AVAILABLE_FROM_PARAM,
             Publisher.class,
-            Identified.class,
-            true
+            Identified.class
     );
-    public static final Attribute<MediaType> MEDIA_TYPE = new EnumValuedAttribute<>(
+    public static final Attribute<MediaType> MEDIA_TYPE = EnumAttribute.single(
             MEDIA_TYPE_PARAM,
             MediaType.class,
             Identified.class
     );
-    public static final Attribute<String> ORDER_BY_CHANNEL = stringAttribute(
+    public static final Attribute<String> ORDER_BY_CHANNEL = StringAttribute.single(
             ORDER_BY_PARAM,
             Channel.class
     );
 
     // For filtering
-    public static final Attribute<String> CONTENT_TITLE_PREFIX = stringAttribute(
+    public static final Attribute<String> CONTENT_TITLE_PREFIX = StringAttribute.single(
             "title",
             "parentFlattenedTitle",
             Content.class
     ).withAlias("parentFlattenedTitle");
-    public static final Attribute<String> GENRE = stringListAttribute("genre", Container.class);
-    public static final Attribute<Id> CONTENT_GROUP = idListAttribute(
+
+    public static final Attribute<String> GENRE = StringAttribute.list("genre", Container.class);
+    public static final Attribute<Id> CONTENT_GROUP = IdAttribute.list(
             "contentGroups",
             "contentGroups",
             Content.class
     ).withAlias("contentGroups");
-    public static final Attribute<Specialization> SPECIALIZATION = new EnumValuedAttribute<>(
+    public static final Attribute<Specialization> SPECIALIZATION = EnumAttribute.single(
             "specialization",
             Specialization.class,
             Described.class
     );
 
     private static List<Attribute<?>> ALL_ATTRIBUTES =
-            ImmutableList.<Attribute<?>>of(
+            ImmutableList.of(
                     DESCRIPTION_TAG,
                     DESCRIPTION_GENRE,
                     DESCRIPTION_PUBLISHER,
@@ -249,54 +250,5 @@ public class Attributes {
         }
         table.put(key, attribute);
 
-    }
-
-    private static StringValuedAttribute stringAttribute(String name,
-            Class<? extends Identified> target) {
-        return new StringValuedAttribute(name, target);
-    }
-
-    private static StringValuedAttribute stringAttribute(String name, String javaAttribute,
-            Class<? extends Identified> target) {
-        return new StringValuedAttribute(name, javaAttribute, target);
-    }
-
-    private static IntegerValuedAttribute integerAttribute(String name, String javaAttribute,
-            Class<? extends Identified> target) {
-        IntegerValuedAttribute attribute = new IntegerValuedAttribute(name, javaAttribute, target);
-        return attribute;
-    }
-
-    private static IntegerValuedAttribute integerAttribute(String name,
-            Class<? extends Identified> target) {
-        return new IntegerValuedAttribute(name, target);
-    }
-
-    private static DateTimeValuedAttribute dateTimeAttribute(String name,
-            Class<? extends Identified> target) {
-        return new DateTimeValuedAttribute(name, target);
-    }
-
-    private static StringValuedAttribute stringListAttribute(String name,
-            Class<? extends Identified> target) {
-        return new StringValuedAttribute(name, target, true);
-    }
-
-    private static StringValuedAttribute stringListAttribute(String name, String javaAttribute,
-            Class<? extends Identified> target) {
-        return new StringValuedAttribute(name, javaAttribute, target, true);
-    }
-
-    private static IdAttribute idListAttribute(String name, Class<? extends Identified> target) {
-        return new IdAttribute(name, target, true);
-    }
-
-    private static IdAttribute idListAttribute(String name, String javaAttribute,
-            Class<? extends Identified> target) {
-        return new IdAttribute(name, javaAttribute, target, true);
-    }
-
-    private static IdAttribute singleIdAttribute(String name, Class<? extends Identified> target) {
-        return new IdAttribute(name, target, false);
     }
 }

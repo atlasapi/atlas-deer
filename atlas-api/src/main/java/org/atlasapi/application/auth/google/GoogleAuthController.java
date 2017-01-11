@@ -21,8 +21,8 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.output.UnsupportedFormatException;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.base.Maybe;
 import com.metabroadcast.common.social.auth.credentials.AuthToken;

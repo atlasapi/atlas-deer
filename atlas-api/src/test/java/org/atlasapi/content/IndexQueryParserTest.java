@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.query.common.Query;
-import org.atlasapi.query.common.QueryContext;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;

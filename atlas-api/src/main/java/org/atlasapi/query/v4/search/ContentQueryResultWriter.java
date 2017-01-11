@@ -18,8 +18,8 @@ import org.atlasapi.output.NotFoundException;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 

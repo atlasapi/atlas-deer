@@ -8,7 +8,7 @@ import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.query.common.MissingResolvedDataException;
+import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
 import org.atlasapi.query.v4.channel.ChannelWriter;
 
 import com.google.common.base.Optional;

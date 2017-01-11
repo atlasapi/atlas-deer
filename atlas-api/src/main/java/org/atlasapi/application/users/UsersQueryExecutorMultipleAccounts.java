@@ -11,7 +11,7 @@ import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.output.ResourceForbiddenException;
 import org.atlasapi.output.useraware.UserAccountsAwareQueryResult;
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQuery;
 import org.atlasapi.query.common.useraware.UserAccountsAwareQueryExecutor;
 

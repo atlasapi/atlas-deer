@@ -17,7 +17,7 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.NotFoundException;
 import org.atlasapi.output.ResourceForbiddenException;
 import org.atlasapi.output.useraware.UserAwareQueryResult;
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.useraware.UserAwareQuery;
 import org.atlasapi.query.common.useraware.UserAwareQueryExecutor;
 import org.atlasapi.source.Sources;

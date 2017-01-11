@@ -6,6 +6,7 @@ import org.atlasapi.annotation.Annotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.annotation.ContextualAnnotationIndex;
 import org.atlasapi.query.annotation.ResourceAnnotationIndex;
+import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

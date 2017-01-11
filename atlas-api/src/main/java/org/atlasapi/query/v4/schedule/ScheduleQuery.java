@@ -2,7 +2,7 @@ package org.atlasapi.query.v4.schedule;
 
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.query.common.QueryContext;
+import org.atlasapi.query.common.context.QueryContext;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;

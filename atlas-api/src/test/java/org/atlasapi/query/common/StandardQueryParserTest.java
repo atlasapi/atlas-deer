@@ -5,6 +5,14 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
+import org.atlasapi.query.common.attributes.QueryAtomParser;
+import org.atlasapi.query.common.attributes.QueryAttributeParser;
+import org.atlasapi.query.common.coercers.IdCoercer;
+import org.atlasapi.query.common.coercers.StringCoercer;
+import org.atlasapi.query.common.context.QueryContext;
+import org.atlasapi.query.common.context.QueryContextParser;
+import org.atlasapi.query.common.exceptions.InvalidOperatorException;
+import org.atlasapi.query.common.exceptions.InvalidParameterException;
 import org.atlasapi.topic.Topic;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
@@ -34,13 +42,13 @@ import static org.mockito.Mockito.when;
 public class StandardQueryParserTest {
 
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private final QueryAttributeParser atrributes = new QueryAttributeParser(
+    private final QueryAttributeParser atrributes = QueryAttributeParser.create(
             ImmutableList.of(
-                    QueryAtomParser.valueOf(Attributes.ID, AttributeCoercers.idCoercer(idCodec)),
-                    QueryAtomParser.valueOf(
-                            Attributes.ALIASES_NAMESPACE,
-                            AttributeCoercers.stringCoercer()
-                    )
+                    QueryAtomParser.create(
+                            Attributes.ID,
+                            IdCoercer.create(idCodec)
+                    ),
+                    QueryAtomParser.create(Attributes.ALIASES_NAMESPACE, StringCoercer.create())
             )
     );
 
@@ -49,9 +57,9 @@ public class StandardQueryParserTest {
 
     @Before
     public void setUp() {
-        when(queryContextParser.getRequiredParameters()).thenReturn(ImmutableSet.<String>of());
-        when(queryContextParser.getOptionalParameters()).thenReturn(ImmutableSet.<String>of());
-        queryParser = new StandardQueryParser<Topic>(
+        when(queryContextParser.getRequiredParameters()).thenReturn(ImmutableSet.of());
+        when(queryContextParser.getOptionalParameters()).thenReturn(ImmutableSet.of());
+        queryParser = StandardQueryParser.create(
                 Resource.TOPIC,
                 atrributes,
                 idCodec,
@@ -100,7 +108,8 @@ public class StandardQueryParserTest {
 
         assertTrue(q.isListQuery());
         assertThat(q.getOperands().size(), is(1));
-        AttributeQuery<String> operand = (AttributeQuery<String>) Iterables.getOnlyElement(q.getOperands());
+        AttributeQuery<String> operand =
+                (AttributeQuery<String>) Iterables.getOnlyElement(q.getOperands());
         assertThat(operand.getValue(), hasItem("prefix"));
 
         verify(queryContextParser).parseListContext(isA(HttpServletRequest.class));

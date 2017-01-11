@@ -6,7 +6,7 @@ import java.util.Queue;
 import org.atlasapi.criteria.QueryNode.IntermediateNode;
 import org.atlasapi.criteria.QueryNode.TerminalNode;
 import org.atlasapi.criteria.attribute.Attribute;
-import org.atlasapi.criteria.attribute.StringValuedAttribute;
+import org.atlasapi.criteria.attribute.StringAttribute;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Identified;
 
@@ -27,21 +27,21 @@ import static org.junit.Assert.assertThat;
 public class AttributeQuerySetTest {
 
     private final Attribute<String> ZERO =
-            new StringValuedAttribute("id", Identified.class, true);
+            StringAttribute.list("id", Identified.class);
     private final Attribute<String> ONE_FIRST =
-            new StringValuedAttribute("one.first", Identified.class, true);
+            StringAttribute.list("one.first", Identified.class);
     private final Attribute<String> ONE_SECOND =
-            new StringValuedAttribute("one.second", Identified.class, true);
+            StringAttribute.list("one.second", Identified.class);
     private final Attribute<String> ONE_TWO_FIRST =
-            new StringValuedAttribute("one.two.first", Identified.class, true);
+            StringAttribute.list("one.two.first", Identified.class);
     private final Attribute<String> ONE_TWO_SECOND =
-            new StringValuedAttribute("one.two.second", Identified.class, true);
+            StringAttribute.list("one.two.second", Identified.class);
     private final Attribute<String> ONE_TWO_THREE_FIRST =
-            new StringValuedAttribute("one.two.three.first", Identified.class, true);
+            StringAttribute.list("one.two.three.first", Identified.class);
     private final Attribute<String> ONE_TWO_THREE_SECOND =
-            new StringValuedAttribute("one.two.three.second", Identified.class, true);
+            StringAttribute.list("one.two.three.second", Identified.class);
     private final Attribute<String> ONE_TWO_THREE_THIRD =
-            new StringValuedAttribute("one.two.three.third", Identified.class, true);
+            StringAttribute.list("one.two.three.third", Identified.class);
 
     @Test
     public void testAddingUncommonPrefix() {

@@ -16,8 +16,8 @@ import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
+import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.topic.PopularTopicIndex;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
@@ -84,7 +84,7 @@ public class PopularTopicController {
             );
             resultWriter.write(QueryResult.listResult(
                     resolve(topicIds),
-                    new QueryContext(sources, ActiveAnnotations.standard(), request),
+                    QueryContext.create(sources, ActiveAnnotations.standard(), request),
                     Long.valueOf(topicIds.get().size())
             ), writer);
         } catch (Exception e) {

@@ -15,7 +15,7 @@ import org.atlasapi.query.common.ContextualQuery;
 import org.atlasapi.query.common.ContextualQueryExecutor;
 import org.atlasapi.query.common.ContextualQueryParser;
 import org.atlasapi.query.common.ContextualQueryResult;
-import org.atlasapi.query.common.QueryExecutionException;
+import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.topic.Topic;
 
 import com.google.common.base.Objects;
