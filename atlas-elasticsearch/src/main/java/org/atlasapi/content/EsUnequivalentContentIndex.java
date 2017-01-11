@@ -60,7 +60,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
     public EsUnequivalentContentIndex(
             Client esClient,
             String indexName,
-            ContentResolver resolver,
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivIdIndex,
             Integer requestTimeout
@@ -73,16 +72,12 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
                 indexName,
                 esClient,
                 equivIdIndex,
-                requestTimeout.longValue(),
-                resolver
+                requestTimeout.longValue()
         );
         this.indexer = new EsUnequivalentContentIndexer(
                 esClient,
-                resolver,
                 indexName,
                 requestTimeout,
-                channelGroupResolver,
-                equivIdIndex,
                 translator
         );
     }

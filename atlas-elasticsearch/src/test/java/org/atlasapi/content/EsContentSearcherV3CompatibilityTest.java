@@ -71,7 +71,6 @@ public class EsContentSearcherV3CompatibilityTest {
         indexer = new EsUnequivalentContentIndex(
                 esClient.client(),
                 EsSchema.CONTENT_INDEX,
-                new NoOpContentResolver(),
                 mock(ChannelGroupResolver.class),
                 new NoOpSecondaryIndex(),
                 60000

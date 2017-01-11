@@ -39,7 +39,7 @@ import static org.junit.Assert.assertThat;
 public class ContentSerializerTest {
 
     private final ContentSerializer serializer = new ContentSerializer(
-            new ContentSerializationVisitor(new NoOpContentResolver())
+            new ContentSerializationVisitor()
     );
 
     @Test

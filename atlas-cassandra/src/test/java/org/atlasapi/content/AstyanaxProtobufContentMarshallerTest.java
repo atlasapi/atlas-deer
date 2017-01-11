@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 public class AstyanaxProtobufContentMarshallerTest {
 
     private final ContentMarshaller marshaller = AstyanaxProtobufContentMarshaller.create(
-            new ContentSerializer(new ContentSerializationVisitor(new NoOpContentResolver()))
+            new ContentSerializer(new ContentSerializationVisitor())
     );
 
     @Test

@@ -232,8 +232,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 getReadConsistencyLevel(),
                 getWriteConsistencyLevel(),
                 session,
-                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
-                        contentStore))),
+                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor())),
                 cassandraTimeoutSeconds,
                 metrics,
                 METRIC_PREFIX + "DatastaxCassandraScheduleStore."

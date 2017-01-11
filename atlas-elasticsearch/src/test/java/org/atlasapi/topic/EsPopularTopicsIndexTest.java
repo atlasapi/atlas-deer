@@ -5,7 +5,6 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.EsUnequivalentContentIndex;
 import org.atlasapi.content.Item;
-import org.atlasapi.content.NoOpContentResolver;
 import org.atlasapi.content.Tag;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
@@ -44,7 +43,6 @@ public class EsPopularTopicsIndexTest {
     private final EsUnequivalentContentIndex index = new EsUnequivalentContentIndex(
             esClient.client(),
             EsSchema.CONTENT_INDEX,
-            new NoOpContentResolver(),
             mock(ChannelGroupResolver.class),
             new NoOpSecondaryIndex(),
             1_000

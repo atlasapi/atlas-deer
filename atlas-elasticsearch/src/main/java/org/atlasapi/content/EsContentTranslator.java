@@ -13,8 +13,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.util.ElasticsearchUtils;
 import org.atlasapi.util.EsObject;
 import org.atlasapi.util.SecondaryIndex;
@@ -24,7 +22,6 @@ import com.metabroadcast.common.time.DateTimeZones;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -55,21 +52,18 @@ public class EsContentTranslator {
     private final SecondaryIndex equivIdIndex;
     private final String indexName;
     private final Integer requestTimeout;
-    private final ContentResolver contentResolver;
 
     public EsContentTranslator(
             String indexName,
             Client esClient,
             SecondaryIndex equivIdIndex,
-            Long requestTimeout,
-            ContentResolver contentResolver
+            Long requestTimeout
     ) {
         checkArgument(!Strings.isNullOrEmpty(indexName), "Index name cannot be null or empty");
         this.indexName = indexName;
         this.esClient = checkNotNull(esClient);
         this.equivIdIndex = checkNotNull(equivIdIndex);
         this.requestTimeout = checkNotNull(requestTimeout.intValue());
-        this.contentResolver = checkNotNull(contentResolver);
     }
 
     private Collection<EsBroadcast> makeESBroadcasts(Item item) {
@@ -185,39 +179,6 @@ public class EsContentTranslator {
         }
     }
 
-    private Integer ageRestrictionFromContainer(Container container) {
-        // TODO fix this, number of item refs in containers is too high to resolve without C* timeouts
-        if (true) {
-            return null;
-        }
-
-        try {
-            if (container.getItemRefs() == null || container.getItemRefs().isEmpty()) {
-                return null;
-            }
-
-            Resolved<Content> resolved = Futures.get(
-                    contentResolver.resolveIds(Iterables.transform(
-                            container.getItemRefs(),
-                            ResourceRef::getId
-                    )),
-                    IOException.class
-            );
-
-            return ImmutableList.copyOf(resolved.getResources()).stream()
-                    .filter(i -> i instanceof Item)
-                    .map(i -> (Item) i)
-                    .filter(i -> (i.getRestrictions() != null) || !i.getRestrictions().isEmpty())
-                    .flatMap(i -> i.getRestrictions().stream())
-                    .map(Restriction::getMinimumAge)
-                    .filter(a -> a != null)
-                    .max(Integer::compare)
-                    .orElse(null);
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
     public EsContent toEsContainer(Container container) throws IndexException {
         Optional<Map<String, Object>> maybeExisting = getContainer(container.toRef());
         Id canonicalId = toCanonicalId(container.getId());
@@ -228,7 +189,7 @@ public class EsContentTranslator {
                 .aliases(container.getAliases())
                 .title(container.getTitle())
                 .genre(container.getGenres())
-                .age(ageRestrictionFromContainer(container))
+                .age(null)
                 .price(makeEsPrices(container.getManifestedAs()))
                 .flattenedTitle(flattenedOrNull(container.getTitle()))
                 .parentTitle(container.getTitle())

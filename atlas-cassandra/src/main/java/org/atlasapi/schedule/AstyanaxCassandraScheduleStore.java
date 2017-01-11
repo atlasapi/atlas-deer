@@ -14,7 +14,6 @@ import org.atlasapi.content.ContentSerializer;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ItemAndBroadcast;
 import org.atlasapi.entity.util.ResolveException;
-import org.atlasapi.entity.util.RuntimeWriteException;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.util.CassandraUtil;
@@ -25,7 +24,6 @@ import com.metabroadcast.common.time.Clock;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.SystemClock;
 
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -170,8 +168,7 @@ public class AstyanaxCassandraScheduleStore extends AbstractScheduleStore {
             String metricPrefix
     ) {
         super(contentStore, messageSender, metricRegistry, metricPrefix);
-        this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
-                contentStore)));
+        this.serializer = new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor()));
         this.keyspace = context.getClient();
         this.cf = ColumnFamily.newColumnFamily(
                 name,

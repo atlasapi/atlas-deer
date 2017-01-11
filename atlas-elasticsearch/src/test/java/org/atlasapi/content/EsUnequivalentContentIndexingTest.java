@@ -67,7 +67,6 @@ public final class EsUnequivalentContentIndexingTest {
         contentIndexer = new EsUnequivalentContentIndex(
                 esClient.client(),
                 EsSchema.CONTENT_INDEX,
-                new NoOpContentResolver(),
                 mock(ChannelGroupResolver.class),
                 new NoOpSecondaryIndex(),
                 6000

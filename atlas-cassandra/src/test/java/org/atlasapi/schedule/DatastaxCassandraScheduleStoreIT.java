@@ -31,8 +31,7 @@ public class DatastaxCassandraScheduleStoreIT extends CassandraScheduleStoreIT {
                 readConsistency,
                 writeConsistency,
                 session,
-                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor(
-                        contentStore))),
+                new ItemAndBroadcastSerializer(new ContentSerializer(new ContentSerializationVisitor())),
                 CASSANDRA_TIMEOUT_SECONDS,
                 metricRegistry,
                 metricPrefix

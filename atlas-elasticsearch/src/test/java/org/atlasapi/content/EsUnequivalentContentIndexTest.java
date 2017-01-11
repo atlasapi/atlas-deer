@@ -87,7 +87,7 @@ public class EsUnequivalentContentIndexTest {
     @Before
     public void setup() {
         index = new EsUnequivalentContentIndex(
-                esClient, EsSchema.CONTENT_INDEX, new NoOpContentResolver(),
+                esClient, EsSchema.CONTENT_INDEX,
                 channelGroupResolver, equivIdIndex, 60_000
         );
         index.startAsync().awaitRunning();

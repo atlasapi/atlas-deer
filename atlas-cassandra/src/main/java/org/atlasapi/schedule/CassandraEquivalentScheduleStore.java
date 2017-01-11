@@ -140,7 +140,7 @@ public final class CassandraEquivalentScheduleStore extends AbstractEquivalentSc
         super(graphStore, contentStore, metricRegistry, metricPrefix, clock);
 
         this.contentSerializer = new ContentSerializer(
-                new ContentSerializationVisitor(contentStore)
+                new ContentSerializationVisitor()
         );
         this.session = checkNotNull(session);
         this.read = checkNotNull(read);

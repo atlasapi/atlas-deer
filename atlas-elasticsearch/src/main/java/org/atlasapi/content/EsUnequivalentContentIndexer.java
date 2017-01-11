@@ -4,10 +4,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.atlasapi.EsSchema;
-import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.entity.Id;
 import org.atlasapi.util.ElasticsearchUtils;
-import org.atlasapi.util.SecondaryIndex;
 
 import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.action.ActionFuture;
@@ -30,29 +28,20 @@ public class EsUnequivalentContentIndexer {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Client esClient;
-    private final ContentResolver contentResolver;
     private final String indexName;
     private final Integer requestTimeout;
-    private final ChannelGroupResolver cgResolver;
-    private final SecondaryIndex equivIdIndex;
     private final EsContentTranslator contentTranslator;
 
     public EsUnequivalentContentIndexer(
             Client esClient,
-            ContentResolver contentResolver,
             String indexName,
             Integer requestTimeout,
-            ChannelGroupResolver cgResolver,
-            SecondaryIndex equivIdIndex,
-            EsContentTranslator contentTranslator) {
+            EsContentTranslator contentTranslator
+    ) {
         this.contentTranslator = checkNotNull(contentTranslator);
         this.esClient = checkNotNull(esClient);
-        this.contentResolver = checkNotNull(contentResolver);
         this.indexName = checkNotNull(indexName);
         this.requestTimeout = checkNotNull(requestTimeout);
-        this.cgResolver = checkNotNull(cgResolver);
-        this.equivIdIndex = checkNotNull(equivIdIndex);
-
     }
 
     public void index(Content content) throws IndexException {

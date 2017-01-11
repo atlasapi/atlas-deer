@@ -4,7 +4,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.content.ContentIndex;
-import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
 import org.atlasapi.content.EsUnequivalentContentIndex;
@@ -42,7 +41,6 @@ public class ElasticSearchContentIndexModule implements IndexModule {
             String clusterName,
             String indexName,
             Long requestTimeout,
-            ContentResolver resolver,
             MetricRegistry metrics,
             ChannelGroupResolver channelGroupResolver,
             SecondaryIndex equivContentIndex
@@ -54,7 +52,6 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         unequivIndex = new EsUnequivalentContentIndex(
                 esClient,
                 indexName,
-                resolver,
                 channelGroupResolver,
                 equivContentIndex,
                 requestTimeout.intValue()
@@ -63,8 +60,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
                 indexName,
                 esClient,
                 equivContentIndex,
-                requestTimeout.longValue(),
-                resolver
+                requestTimeout.longValue()
         );
 
         PseudoEquivalentContentIndex equivalentEsIndex =
