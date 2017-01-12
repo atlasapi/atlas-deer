@@ -42,7 +42,7 @@ public class BootstrapModule {
     private static final Integer NUMBER_OF_SCHECHULE_CONTROLLER_THREADS = 2;
     private static final Integer NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS = Configurer.get(
             "boootstrap.schedule.numThreads").toInt();
-    private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS = Configurer.get(
+    private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_THREADS = Configurer.get(
             "boootstrap.source.numThreads").toInt();
 
     private final Integer contentChangesReplayNumOfConsumers =
@@ -91,7 +91,7 @@ public class BootstrapModule {
                 .withWrite(persistence.nullMessageSendingContentStore())
                 .withContentIndex(search.equivContentIndex())
                 .withEquivalenceMigrator(explicitEquivalenceMigrator)
-                .withMaxSourceBootstrapThreads(NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS)
+                .withMaxSourceBootstrapThreads(NUMBER_OF_SOURCE_BOOTSTRAP_THREADS)
                 .withProgressStore(progressStore())
                 .withMetrics(metrics)
                 .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
