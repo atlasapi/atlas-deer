@@ -12,10 +12,12 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.bootstrap.workers.EntityUpdatedLegacyMessageSerializer;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
 
 import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.kafka.StartPoint;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -43,6 +45,12 @@ public class BootstrapModule {
     private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS = Configurer.get(
             "boootstrap.source.numThreads").toInt();
 
+    private final Integer contentChangesReplayNumOfConsumers =
+            Configurer.get("messaging.bootstrap.content.changes.consumers").toInt();
+    private final String consumerSystem = Configurer.get("messaging.system").get();
+    private final String contentChanges =
+            Configurer.get("messaging.destination.content.changes").get();
+
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private BootstrapWorkersModule workers;
     @Autowired private ElasticSearchContentIndexModule search;
@@ -51,7 +59,6 @@ public class BootstrapModule {
 
     @Autowired private MessagingModule messaging;
     @Autowired private MetricsModule metricsModule;
-
 
     @Bean
     BootstrapController bootstrapController() {
@@ -91,7 +98,23 @@ public class BootstrapModule {
                 .withEquivalenceGraphStore(persistence.nullMessageSendingEquivalenceGraphStore())
                 .withContentStore(persistence.contentStore())
                 .withNeo4JContentStore(persistence.neo4jContentStore())
-                .build();
+                .withLegacyResolver(persistence.legacyContentResolver())
+                .withAstyanaxStore(persistence.astyanaxContentStore())
+                .withReplayConsumerFactory(worker -> workers.bootstrapQueueFactory()
+                        .createConsumer(
+                                worker,
+                                new EntityUpdatedLegacyMessageSerializer(),
+                                contentChanges,
+                                "ReplayContentBootstrap"
+                        )
+                        .withConsumerSystem(consumerSystem)
+                        .withDefaultConsumers(contentChangesReplayNumOfConsumers)
+                        .withMaxConsumers(contentChangesReplayNumOfConsumers)
+                        .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                        .withMetricRegistry(metricsModule.metrics())
+                        .startFrom(StartPoint.BEGINNING)
+                        .build()
+                ).build();
     }
 
     @Bean

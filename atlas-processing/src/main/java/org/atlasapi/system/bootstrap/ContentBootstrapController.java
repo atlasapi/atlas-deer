@@ -3,15 +3,18 @@ package org.atlasapi.system.bootstrap;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
@@ -26,13 +29,19 @@ import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.ResourceLister;
+import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.entity.util.Resolved;
+import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.media.entity.Publisher;
+import org.atlasapi.messaging.ResourceUpdatedMessage;
 import org.atlasapi.neo4j.service.Neo4jContentStore;
 import org.atlasapi.persistence.content.listing.ContentListingProgress;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 import org.atlasapi.system.legacy.ProgressStore;
+
+import com.metabroadcast.common.queue.Worker;
+import com.metabroadcast.common.queue.kafka.KafkaConsumer;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -44,6 +53,7 @@ import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -72,6 +82,12 @@ public class ContentBootstrapController {
     private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
+    private final ContentResolver legacyResolver;
+    private final AstyanaxCassandraContentStore astyanaxStore;
+    private final Function<Worker<ResourceUpdatedMessage>, KafkaConsumer> replayConsumerFactory;
+
+    private KafkaConsumer replayBootstrapListener;
+
     private ContentBootstrapController(Builder builder) {
         read = checkNotNull(builder.read);
         contentLister = checkNotNull(builder.contentLister);
@@ -79,6 +95,9 @@ public class ContentBootstrapController {
         maxSourceBootstrapThreads = checkNotNull(builder.maxSourceBootstrapThreads);
         progressStore = checkNotNull(builder.progressStore);
         timer = checkNotNull(builder.metrics).timer(getClass().getSimpleName());
+        legacyResolver = checkNotNull(builder.legacyResolver);
+        astyanaxStore = checkNotNull(builder.astyanaxStore);
+        replayConsumerFactory = checkNotNull(builder.replayConsumerFactory);
 
         contentBootstrapListener = ContentBootstrapListener.builder()
                 .withContentWriter(builder.write)
@@ -203,7 +222,79 @@ public class ContentBootstrapController {
         resp.getWriter().flush();
     }
 
-    @RequestMapping(value = "/system/index/source", method = RequestMethod.POST)
+    @RequestMapping(value = "/system/bootstrap/kafkaReplay", method = RequestMethod.POST)
+    public void replayKafkaContentChanges(
+            @RequestParam("since") String dateTimeString,
+            HttpServletResponse response
+    ) {
+        if (this.replayBootstrapListener != null) {
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return;
+        }
+
+        DateTime since = DateTime.parse(dateTimeString);
+
+        this.replayBootstrapListener = replayConsumerFactory.apply(
+                message -> {
+                    DateTime messageTime = message.getTimestamp().toDateTimeUTC();
+                    if (messageTime.isBefore(since)) {
+                        log.debug(
+                                "Message from {} is before threshold {}, skipping",
+                                messageTime,
+                                since
+                        );
+                        return;
+                    }
+
+                    ResourceRef updated = message.getUpdatedResource();
+
+                    Content legacy;
+                    try {
+                        log.debug("Resolving content for {} at {}", updated.getId(), messageTime);
+                        legacy = legacyResolver.resolveIds(
+                                ImmutableList.of(updated.getId())
+                        ).get().getResources().first().orNull();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    if (legacy == null) {
+                        return;
+                    }
+
+                    try {
+                        log.info(
+                                "Bootstrapping Asty content for {} at {}",
+                                updated.getId(),
+                                messageTime
+                        );
+
+                        astyanaxStore.writeContent(legacy);
+                    } catch (WriteException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+
+        replayBootstrapListener.startAsync().awaitRunning();
+
+        response.setStatus(HttpStatus.ACCEPTED.value());
+    }
+
+    @RequestMapping(value = "/system/bootstrap/kafkaReplay", method = RequestMethod.DELETE)
+    public void killKafkaReplayWorker(
+            HttpServletResponse response
+    ) {
+        if (replayBootstrapListener != null) {
+            replayBootstrapListener.stopAsync().awaitTerminated();
+            replayBootstrapListener = null;
+            response.setStatus(HttpStatus.OK.value());
+        } else {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+        }
+    }
+
+        @RequestMapping(value = "/system/index/source", method = RequestMethod.POST)
     public void indexSource(
             @RequestParam("source") final String sourceString,
             HttpServletResponse resp
@@ -458,7 +549,28 @@ public class ContentBootstrapController {
         private Integer maxSourceBootstrapThreads;
         private ProgressStore progressStore;
 
+        private ContentResolver legacyResolver;
+        private AstyanaxCassandraContentStore astyanaxStore;
+        private Function<Worker<ResourceUpdatedMessage>, KafkaConsumer> replayConsumerFactory;
+
         private Builder() { }
+
+        public Builder withLegacyResolver(ContentResolver val) {
+            legacyResolver = val;
+            return this;
+        }
+
+        public Builder withAstyanaxStore(AstyanaxCassandraContentStore val) {
+            astyanaxStore = val;
+            return this;
+        }
+
+        public Builder withReplayConsumerFactory(
+                Function<Worker<ResourceUpdatedMessage>, KafkaConsumer> val
+        ) {
+            replayConsumerFactory = val;
+            return this;
+        }
 
         public Builder withContentStore(ContentStore val) {
             contentStore = val;
