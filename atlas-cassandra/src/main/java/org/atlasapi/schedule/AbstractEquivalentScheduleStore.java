@@ -15,7 +15,6 @@ import org.atlasapi.content.ContentResolver;
 import org.atlasapi.content.Item;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiables;
-import org.atlasapi.entity.Sourceds;
 import org.atlasapi.entity.util.WriteException;
 import org.atlasapi.equivalence.EquivalenceGraph;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
@@ -35,9 +34,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimaps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Duration;
@@ -73,7 +70,6 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
 
     private final String updateSchedule;
     private final String updateEquivalences;
-    private final String sourceFilter;
 
     public AbstractEquivalentScheduleStore(
             EquivalenceGraphStore graphStore,
@@ -91,7 +87,6 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         this.metricRegistry = metricRegistry;
         this.updateSchedule = metricPrefix + "updateSchedule.";
         this.updateEquivalences = metricPrefix + "updateEquivalences.";
-        this.sourceFilter = metricPrefix + "sourceFilter.";
     }
 
     @Override
@@ -199,9 +194,6 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                     .collect(MoreCollectors.toImmutableList());
 
             for (Broadcast broadcast : broadcasts) {
-                Item copy = item.copy();
-                copy.setBroadcasts(ImmutableSet.of(broadcast));
-
                 metricRegistry.meter(
                         updateEquivalences + "source."
                                 + item.getSource().key().replace('.', '_') + "." + METER_CALLED
@@ -219,7 +211,10 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                             item.getSource(),
                             broadcast,
                             graph,
-                            equivItems(copy, broadcast, graphItems)
+                            updateItemsToKeepOnlyMatchingBroadcasts(
+                                    broadcast,
+                                    graphItems
+                            )
                     ));
                 } else {
                     metricRegistry.meter(updateEquivalences + "meter.nop").mark();
@@ -289,7 +284,11 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                                      : EquivalenceGraph.valueOf(item.toRef());
 
             Equivalent<Item> equivItems = new Equivalent<>(
-                    graph, equivItems(item, broadcast, graphItems(graph, allItems))
+                    graph,
+                    updateItemsToKeepOnlyMatchingBroadcasts(
+                            broadcast,
+                            graphItems(graph, allItems)
+                    )
             );
             entryContent.put(
                     entry,
@@ -297,41 +296,6 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
             );
         }
         return entryContent.build();
-    }
-
-    private ImmutableSet<Item> equivItems(
-            Item item,
-            Broadcast broadcast,
-            Iterable<Item> graphItems
-    ) {
-        metricRegistry.histogram(sourceFilter + "items.before.size")
-                .update(
-                        Iterables.size(graphItems)
-                );
-        metricRegistry.histogram(sourceFilter + "broadcasts.before.size")
-                .update(
-                        StreamSupport.stream(graphItems.spliterator(), false)
-                                .mapToInt(graphItem -> graphItem.getBroadcasts().size())
-                                .sum()
-                );
-
-        ImmutableSet<Item> filteredItems = ImmutableSet.<Item>builder()
-                .add(item)
-                .addAll(filterSources(itemsBySource(graphItems), broadcast, item.getSource()))
-                .build();
-
-        metricRegistry.histogram(sourceFilter + "items.after.size")
-                .update(
-                        Iterables.size(filteredItems)
-                );
-        metricRegistry.histogram(sourceFilter + "broadcasts.after.size")
-                .update(
-                        filteredItems.stream()
-                                .mapToInt(graphItem -> graphItem.getBroadcasts().size())
-                                .sum()
-                );
-
-        return filteredItems;
     }
 
     private java.util.Optional<Broadcast> findBroadcast(
@@ -350,12 +314,12 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
                 .findFirst();
     }
 
-    private Iterable<Item> graphItems(EquivalenceGraph graph, Map<Id, Item> itemMap) {
+    private ImmutableList<Item> graphItems(EquivalenceGraph graph, Map<Id, Item> itemMap) {
         return graph.getEquivalenceSet()
                 .stream()
                 .map(itemMap::get)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .collect(MoreCollectors.toImmutableList());
     }
 
     private Map<Id, Item> itemsFor(OptionalMap<Id, EquivalenceGraph> graphs, List<Id> itemIds)
@@ -384,74 +348,31 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
         return Futures.get(future, 1, TimeUnit.MINUTES, WriteException.class);
     }
 
-    private ImmutableMap<Publisher, Collection<Item>> itemsBySource(Iterable<Item> graphContent) {
-        return Multimaps.index(graphContent, Sourceds.toPublisher()).asMap();
-    }
-
-    private ImmutableSet<Item> filterSources(
-            Map<Publisher, Collection<Item>> contentBySource,
+    private ImmutableSet<Item> updateItemsToKeepOnlyMatchingBroadcasts(
             Broadcast subjectBroadcast,
-            Publisher src
-    ) {
-        ImmutableSet.Builder<Item> selected = ImmutableSet.builder();
-        for (Map.Entry<Publisher, Collection<Item>> sourceContent : contentBySource.entrySet()) {
-            if (sourceContent.getKey().equals(src)) {
-                continue;
-            }
-
-            java.util.Optional<Item> bestMatch = bestMatch(
-                    sourceContent.getValue(), subjectBroadcast
-            );
-
-            if (bestMatch.isPresent()) {
-                Item item = bestMatch.get().copy();
-                item.setBroadcasts(matchingOrEmpty(subjectBroadcast, item.getBroadcasts()));
-                selected.add(item);
-            } else {
-                selected.addAll(matchingOrEmptyBroadcasts(
-                        subjectBroadcast, sourceContent.getValue()
-                ));
-            }
-        }
-        return selected.build();
-    }
-
-    private Set<Broadcast> matchingOrEmpty(Broadcast subjectBroadcast, Set<Broadcast> broadcasts) {
-        return broadcasts.stream()
-                .filter(Broadcast::isActivelyPublished)
-                .filter(broadcast -> broadcastMatcher.matches(subjectBroadcast, broadcast))
-                .findFirst()
-                .map(ImmutableSet::of)
-                .orElse(ImmutableSet.of());
-    }
-
-    private Iterable<? extends Item> matchingOrEmptyBroadcasts(
-            Broadcast subjectBroadcast,
-            Collection<Item> value
+            ImmutableList<Item> value
     ) {
         return value.stream()
                 .map(input -> {
                     Item copy = input.copy();
-                    copy.setBroadcasts(matchingOrEmpty(subjectBroadcast, copy.getBroadcasts()));
+                    copy.setBroadcasts(
+                            findMatchingBroadcast(subjectBroadcast, copy.getBroadcasts())
+                                    .map(ImmutableSet::of)
+                                    .orElse(ImmutableSet.of())
+                    );
                     return copy;
                 })
-                .collect(Collectors.toList());
+                .collect(MoreCollectors.toImmutableSet());
     }
 
-    private java.util.Optional<Item> bestMatch(
-            Collection<Item> sourceContent,
-            Broadcast subjectBroadcast
+    private java.util.Optional<Broadcast> findMatchingBroadcast(
+            Broadcast subjectBroadcast,
+            Set<Broadcast> broadcasts
     ) {
-        return sourceContent.stream()
-                .filter(item -> broadcastMatch(item, subjectBroadcast))
-                .findFirst();
-    }
-
-    private boolean broadcastMatch(Item item, Broadcast subjectBroadcast) {
-        return item.getBroadcasts()
-                .stream()
+        return broadcasts.stream()
                 .filter(Broadcast::isActivelyPublished)
-                .anyMatch(broadcast -> broadcastMatcher.matches(subjectBroadcast, broadcast));
+                .filter(broadcast -> broadcastMatcher.matches(subjectBroadcast, broadcast))
+                .findFirst();
     }
 
     private String getBroadcastMetricName(Broadcast broadcast) {
