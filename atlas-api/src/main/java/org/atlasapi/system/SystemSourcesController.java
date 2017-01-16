@@ -19,17 +19,17 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Controller
-public class SourcesController {
+public class SystemSourcesController {
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
     private final EntityListWriter<Publisher> sourcesWriter = SourceWriter.sourceListWriter("sources");
 
-    private SourcesController() {
+    private SystemSourcesController() {
 
     }
 
-    public static SourcesController create() {
-        return new SourcesController();
+    public static SystemSourcesController create() {
+        return new SystemSourcesController();
     }
 
     @RequestMapping({ "/system/sources/{sid}.*", "/system/sources.*" })
