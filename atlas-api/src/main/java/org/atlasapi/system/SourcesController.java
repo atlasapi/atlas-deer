@@ -40,11 +40,13 @@ public class SourcesController {
 
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
+            writer.startResponse();
             writer.writeList(
                     sourcesWriter,
                     Publisher.all(),
                     OutputContext.valueOf(QueryContext.standard(request))
             );
+            writer.finishResponse();
         } catch (Exception e) {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
