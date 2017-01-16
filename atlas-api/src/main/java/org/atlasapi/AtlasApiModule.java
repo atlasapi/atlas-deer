@@ -8,7 +8,6 @@ import org.atlasapi.system.MetricsModule;
 
 import com.metabroadcast.common.webapp.properties.ContextConfigurer;
 
-import org.atlasapi.system.SourcesModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -20,8 +19,7 @@ import org.springframework.context.annotation.Import;
         AtlasPersistenceModule.class,
         KafkaMessagingModule.class,
         ApplicationModule.class,
-        QueryWebModule.class,
-        SourcesModule.class
+        QueryWebModule.class
 })
 public class AtlasApiModule {
 
