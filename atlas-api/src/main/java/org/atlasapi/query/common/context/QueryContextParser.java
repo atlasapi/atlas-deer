@@ -5,9 +5,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.DefaultApplication;
-import org.atlasapi.application.auth.ApplicationFetcher;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
-import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
@@ -25,14 +24,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class QueryContextParser implements ParameterNameProvider {
 
     private final ApplicationFetcher configFetcher;
-    private final UserFetcher userFetcher;
     private final AnnotationsExtractor annotationExtractor;
     private final SelectionBuilder selectionBuilder;
 
-    public QueryContextParser(ApplicationFetcher configFetcher, UserFetcher userFetcher,
-            AnnotationsExtractor annotationsParser, Selection.SelectionBuilder selectionBuilder) {
+    public QueryContextParser(
+            ApplicationFetcher configFetcher,
+            AnnotationsExtractor annotationsParser,
+            Selection.SelectionBuilder selectionBuilder
+    ) {
         this.configFetcher = checkNotNull(configFetcher);
-        this.userFetcher = checkNotNull(userFetcher);
         this.annotationExtractor = checkNotNull(annotationsParser);
         this.selectionBuilder = checkNotNull(selectionBuilder);
     }
@@ -81,7 +81,6 @@ public class QueryContextParser implements ParameterNameProvider {
         return ImmutableSet.copyOf(
                 Iterables.concat(
                         ImmutableList.of(
-                                userFetcher.getParameterNames(),
                                 annotationExtractor.getParameterNames(),
                                 selectionBuilder.getParameterNames(),
                                 configFetcher.getParameterNames(),

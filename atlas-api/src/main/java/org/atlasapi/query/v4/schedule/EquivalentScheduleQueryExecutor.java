@@ -10,7 +10,6 @@ import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationAccessRole;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;

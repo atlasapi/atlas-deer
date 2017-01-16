@@ -44,24 +44,6 @@ public class OutputContext {
         );
     }
 
-    public static OutputContext valueOf(UserAwareQueryContext standard) {
-        return new OutputContext(
-                standard.getAnnotations(),
-                standard.getApplication(),
-                standard.getRequest(),
-                null
-        );
-    }
-
-    public static OutputContext valueOf(UserAccountsAwareQueryContext standard) {
-        return new OutputContext(
-                standard.getAnnotations(),
-                standard.getApplication(),
-                standard.getRequest(),
-                null
-        );
-    }
-
     private final ActiveAnnotations annotations;
     private final Application application;
     private final List<Resource> resources;

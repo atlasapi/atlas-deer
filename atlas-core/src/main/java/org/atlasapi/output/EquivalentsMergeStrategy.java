@@ -1,7 +1,6 @@
 package org.atlasapi.output;
 
 import com.metabroadcast.applications.client.model.internal.Application;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.equivalence.Equivalable;
 
 /**

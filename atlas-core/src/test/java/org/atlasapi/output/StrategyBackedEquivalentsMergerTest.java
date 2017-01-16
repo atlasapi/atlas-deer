@@ -8,7 +8,6 @@ import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.applications.client.model.internal.Environment;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;

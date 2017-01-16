@@ -12,6 +12,7 @@ import com.metabroadcast.applications.client.query.Result;
 
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
 
+import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +43,7 @@ public class ApiKeyApplicationFetcherTest {
     public void setup() {
         fetcher = new ApiKeyApplicationFetcher(applicationsClient);
         apiKey = "apiKey";
-        query = Query.create(apiKey, Environment.PROD);
+        query = Query.create(apiKey, Environment.STAGE);
     }
 
     @Test
@@ -108,7 +109,7 @@ public class ApiKeyApplicationFetcherTest {
 
     private Application getApplication() {
         return Application.builder()
-                .withId(-1l)
+                .withId(-1L)
                 .withTitle("test")
                 .withDescription("desc")
                 .withEnvironment(Environment.PROD)

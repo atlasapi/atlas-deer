@@ -4,7 +4,6 @@ import java.util.Set;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 
 import com.google.common.util.concurrent.ListenableFuture;

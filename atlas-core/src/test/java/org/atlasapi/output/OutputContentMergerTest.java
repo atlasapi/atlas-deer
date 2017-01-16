@@ -13,7 +13,6 @@ import com.metabroadcast.applications.client.metric.Metrics;
 import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Brand;
@@ -29,7 +28,6 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
-import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Rating;
@@ -41,7 +39,6 @@ import org.atlasapi.segment.SegmentEvent;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -55,7 +52,6 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -63,7 +59,9 @@ import static org.mockito.Mockito.mock;
 public class OutputContentMergerTest {
 
     //TODO mock hierarchy chooser
-    private final OutputContentMerger merger = new OutputContentMerger(new MostPrecidentWithChildrenContentHierarchyChooser());
+    private final OutputContentMerger merger = new OutputContentMerger(
+            new MostPrecidentWithChildrenContentHierarchyChooser()
+    );
 
     @Test
     public void testSortOfCommonSourceContentIsStable() {
@@ -443,7 +441,6 @@ public class OutputContentMergerTest {
 
     @Test
     public void testImageWithoutMerging() {
-//        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
         Application application = getApplicationWithPrecedenceOfSources(
                 Publisher.BBC,
                 Publisher.PA
@@ -492,7 +489,6 @@ public class OutputContentMergerTest {
     // that source should be output, since it is assumed that within a data source
     // broadcasts aren't duplicated
     public void testOutputsAllBroadcastsFromPrecedentPublisher() {
-//        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
 
         Application application = getApplicationWithPrecedenceOfSources(
                 Publisher.BBC,
@@ -536,9 +532,6 @@ public class OutputContentMergerTest {
     @Test
     public void testMergesBroadcastsWithSimilarStartTimes() {
 
-//        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
-//                .copy()
-//                .build();
         Application application = getApplicationWithPrecedenceOfSources(
                 Publisher.BBC,
                 Publisher.PA
@@ -720,20 +713,6 @@ public class OutputContentMergerTest {
         }
     }
 
-    private ApplicationSources sourcesWithPrecedence(boolean imagePrecedenceEnabled,
-            Publisher... publishers) {
-        return ApplicationSources
-                .defaults()
-                .copy()
-                .withPrecedence(true)
-                .withImagePrecedenceEnabled(imagePrecedenceEnabled)
-                .withReadableSources(Lists.transform(
-                        ImmutableList.copyOf(publishers),
-                        input -> new SourceReadEntry(input, SourceStatus.AVAILABLE_ENABLED)
-                ))
-                .build();
-    }
-
     private void setEquivalent(Content receiver, Content... equivalents) {
         ImmutableList<Content> allContent = ImmutableList.<Content>builder()
                 .add(receiver)
@@ -762,7 +741,7 @@ public class OutputContentMergerTest {
                 .withApiKey("test")
                 .withSources(configuration)
                 .withAllowedDomains(Lists.newArrayList())
-                .withAccessRoles(AccessRoles.create(Lists.newArrayList(), Metrics.create(new MetricRegistry(), "")))
+                .withAccessRoles(AccessRoles.create(Lists.newArrayList(), Metrics.create(new MetricRegistry())))
                 .withRevoked(false)
                 .build();
     }

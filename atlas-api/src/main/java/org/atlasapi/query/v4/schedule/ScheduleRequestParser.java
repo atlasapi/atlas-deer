@@ -8,8 +8,7 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApplicationFetcher;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;

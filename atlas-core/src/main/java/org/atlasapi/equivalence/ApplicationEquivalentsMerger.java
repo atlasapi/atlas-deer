@@ -3,7 +3,6 @@ package org.atlasapi.equivalence;
 import java.util.List;
 
 import com.metabroadcast.applications.client.model.internal.Application;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 
 import com.google.common.base.Optional;

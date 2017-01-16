@@ -2,8 +2,6 @@ package org.atlasapi.application;
 
 import javax.annotation.Nullable;
 
-import org.atlasapi.model.translators.SourceStatusModelTranslator;
-
 import com.google.common.base.Preconditions;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -80,11 +78,6 @@ public class SourceStatus {
     @Nullable
     public SourceState getState() {
         return state;
-    }
-
-    public static SourceStatus fromV3SourceStatus(
-            org.atlasapi.application.v3.SourceStatus sourceStatus) {
-        return SourceStatusModelTranslator.transform3To4(sourceStatus);
     }
 
     @Override

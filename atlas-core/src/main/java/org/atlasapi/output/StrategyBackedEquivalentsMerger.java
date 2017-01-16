@@ -3,7 +3,6 @@ package org.atlasapi.output;
 import java.util.List;
 
 import com.metabroadcast.applications.client.model.internal.Application;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;

@@ -5,8 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.auth.ApplicationFetcher;
-import org.atlasapi.application.auth.UserFetcher;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
@@ -265,10 +264,6 @@ public class QueryWebModule {
 
     private
     @Autowired
-    UserFetcher userFetcher;
-
-    private
-    @Autowired
     ApplicationFetcher configFetcher;
 
     private
@@ -367,8 +362,7 @@ public class QueryWebModule {
     @Bean
     TopicContentController topicContentController() {
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(configFetcher,
-                userFetcher,
-                IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
+                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(contentAnnotationIndex())
                         .addExplicitSingleContext(topicAnnotationIndex())
                         .combine()
@@ -428,6 +422,7 @@ public class QueryWebModule {
                 configFetcher,
                 userFetcher,
                 IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
+                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(modelInfoAnnotationIndex())
                         .combine()
                 ),
@@ -452,6 +447,7 @@ public class QueryWebModule {
                 configFetcher,
                 userFetcher,
                 IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
+                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(endpointInfoAnnotationIndex())
                         .combine()
                 ),
@@ -531,7 +527,6 @@ public class QueryWebModule {
     private StandardQueryParser<Content> contentQueryParser() {
         QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
-                userFetcher,
                 new IndexAnnotationsExtractor(contentAnnotationIndex()), selectionBuilder()
         );
 
@@ -608,7 +603,6 @@ public class QueryWebModule {
     private QueryParser<ResolvedChannelGroup> channelGroupQueryParser() {
         QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
-                userFetcher,
                 new IndexAnnotationsExtractor(
                         channelGroupAnnotationIndex()
                 ),
@@ -648,7 +642,6 @@ public class QueryWebModule {
     private StandardQueryParser<ResolvedChannel> channelQueryParser() {
         QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
-                userFetcher,
                 new IndexAnnotationsExtractor(
                         channelAnnotationIndex()
                 ),
@@ -696,6 +689,10 @@ public class QueryWebModule {
     private StandardQueryParser<Topic> topicQueryParser() {
         QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
                 new IndexAnnotationsExtractor(topicAnnotationIndex()), selectionBuilder()
+        QueryContextParser contextParser = new QueryContextParser(
+                configFetcher,
+                new IndexAnnotationsExtractor(topicAnnotationIndex()),
+                selectionBuilder()
         );
 
         return StandardQueryParser.create(
@@ -732,6 +729,10 @@ public class QueryWebModule {
     private StandardQueryParser<Event> eventQueryParser() {
         QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
                 new IndexAnnotationsExtractor(eventAnnotationIndex()), selectionBuilder()
+        QueryContextParser contextParser = new QueryContextParser(
+                configFetcher,
+                new IndexAnnotationsExtractor(eventAnnotationIndex()),
+                selectionBuilder()
         );
 
         return StandardQueryParser.create(Resource.EVENT,
@@ -762,6 +763,10 @@ public class QueryWebModule {
     private StandardQueryParser<Organisation> organisationQueryParser() {
         QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
                 new IndexAnnotationsExtractor(organisationAnnotationIndex()), selectionBuilder()
+        QueryContextParser contextParser = new QueryContextParser(
+                configFetcher,
+                new IndexAnnotationsExtractor(organisationAnnotationIndex()),
+                selectionBuilder()
         );
 
         return StandardQueryParser.create(Resource.ORGANISATION,

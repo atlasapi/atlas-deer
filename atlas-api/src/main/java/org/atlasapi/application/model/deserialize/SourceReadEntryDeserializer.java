@@ -22,10 +22,11 @@ public class SourceReadEntryDeserializer implements JsonDeserializer<SourceReadE
         JsonObject obj = json.getAsJsonObject();
         String srcKey = obj.getAsJsonPrimitive("key").getAsString();
         Optional<Publisher> publisher = Sources.fromPossibleKey(srcKey);
-        SourceStatus.SourceState sourceState = SourceStatus.SourceState.valueOf(obj.getAsJsonPrimitive(
-                "state")
-                .getAsString()
-                .toUpperCase());
+        SourceStatus.SourceState sourceState = SourceStatus.SourceState.valueOf(
+                obj.getAsJsonPrimitive("state")
+                        .getAsString()
+                        .toUpperCase()
+        );
         SourceStatus sourceStatus = new SourceStatus(
                 sourceState,
                 obj.getAsJsonPrimitive("enabled").getAsBoolean()

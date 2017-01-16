@@ -5,9 +5,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.DefaultApplication;
-import org.atlasapi.application.auth.ApplicationFetcher;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
-import org.atlasapi.application.auth.UserFetcher;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;
@@ -25,15 +24,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ContextualQueryContextParser implements ParameterNameProvider {
 
     private final ApplicationFetcher configFetcher;
-    private final UserFetcher userFetcher;
     private final ContextualAnnotationsExtractor annotationExtractor;
     private final SelectionBuilder selectionBuilder;
 
-    public ContextualQueryContextParser(ApplicationFetcher configFetcher,
-            UserFetcher userFetcher, ContextualAnnotationsExtractor annotationsParser,
-            Selection.SelectionBuilder selectionBuilder) {
+    public ContextualQueryContextParser(
+            ApplicationFetcher configFetcher,
+            ContextualAnnotationsExtractor annotationsParser,
+            Selection.SelectionBuilder selectionBuilder
+    ) {
         this.configFetcher = checkNotNull(configFetcher);
-        this.userFetcher = userFetcher;
         this.annotationExtractor = checkNotNull(annotationsParser);
         this.selectionBuilder = checkNotNull(selectionBuilder);
     }
@@ -51,7 +50,6 @@ public class ContextualQueryContextParser implements ParameterNameProvider {
     @Override
     public ImmutableSet<String> getOptionalParameters() {
         return ImmutableSet.copyOf(Iterables.concat(ImmutableList.of(
-                userFetcher.getParameterNames(),
                 annotationExtractor.getParameterNames(),
                 selectionBuilder.getParameterNames(),
                 configFetcher.getParameterNames(),

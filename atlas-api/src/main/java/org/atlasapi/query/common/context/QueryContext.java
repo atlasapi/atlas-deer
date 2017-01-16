@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.google.common.base.MoreObjects;
 import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 
 import com.metabroadcast.common.query.Selection;
@@ -16,7 +17,7 @@ public class QueryContext {
 
     public static final QueryContext standard(HttpServletRequest request) {
         return new QueryContext(
-                null, //TODO: make this not like this
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 request
         );

@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;

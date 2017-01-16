@@ -5,7 +5,6 @@ import java.util.Set;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.IndexQueryResult;

@@ -15,7 +15,7 @@ import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.auth.ApplicationFetcher;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;

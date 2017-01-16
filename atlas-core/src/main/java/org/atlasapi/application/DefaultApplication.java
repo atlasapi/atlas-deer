@@ -40,16 +40,16 @@ public class DefaultApplication {
         return Application.builder()
                 .withId(-1l)
                 .withTitle("defaultApplication")
-                .withDescription("")
+                .withDescription("Default application")
                 .withEnvironment(null)
                 .withCreated(ZonedDateTime.now())
-                .withApiKey("")
+                .withApiKey("default")
                 .withSources(configuration)
                 .withAllowedDomains(ImmutableList.of())
                 .withAccessRoles(
                         AccessRoles.create(
                                 ImmutableList.of(),
-                                Metrics.create(new MetricRegistry(), "")
+                                Metrics.create(new MetricRegistry())
                         )
                 )
                 .withRevoked(false)

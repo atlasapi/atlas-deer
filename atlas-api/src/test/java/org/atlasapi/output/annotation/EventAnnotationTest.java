@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Person;
@@ -15,6 +16,8 @@ import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
+import org.atlasapi.query.annotation.ActiveAnnotations;
+import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.v4.event.PersonListWriter;
 import org.atlasapi.query.v4.organisation.OrganisationListWriter;
@@ -77,7 +80,10 @@ public class EventAnnotationTest {
 
         when(resolver.resolveIds(anySet())).thenReturn(Futures.immediateFuture(
                 Resolved.valueOf(ImmutableSet.of(organisation))));
-        OutputContext context = OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)));
+        OutputContext context = OutputContext.valueOf(
+//                QueryContext.standard(mock(HttpServletRequest.class))
+                new QueryContext(mock(Application.class), ActiveAnnotations.standard(), mock(HttpServletRequest.class))
+        );
 
         eventAnnotation.write(event, fieldWriter, context);
         verify(fieldWriter).writeField("title", event.getTitle());

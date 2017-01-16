@@ -2,7 +2,6 @@ package org.atlasapi.content;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;

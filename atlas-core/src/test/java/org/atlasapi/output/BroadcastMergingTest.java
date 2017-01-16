@@ -1,14 +1,7 @@
 package org.atlasapi.output;
 
-import com.google.common.collect.Lists;
-import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.applications.client.model.internal.Environment;
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.SourceStatus;
-import org.atlasapi.application.query.ApplicationConfigurationFetcher;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Item;
@@ -19,10 +12,8 @@ import org.atlasapi.media.entity.Publisher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.joda.time.DateTime;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 
 import static com.metabroadcast.common.time.DateTimeZones.UTC;
@@ -35,24 +26,14 @@ public class BroadcastMergingTest {
 
     //TODO mock hierarchy chooser
     private final OutputContentMerger executor = new OutputContentMerger(new MostPrecidentWithChildrenContentHierarchyChooser());
-    private final Application application = Application.builder()
-            .withId(-1l)
-            .withTitle("test")
-            .withDescription("desc")
-            .withEnvironment(mock(Environment.class))
-            .withCreated(ZonedDateTime.now())
-            .withApiKey("test")
-            .withSources(ApplicationConfiguration.builder()
-                    .withPrecedence(Lists.newArrayList(Publisher.BBC, Publisher.FACEBOOK))
-                    .withEnabledWriteSources(Lists.newArrayList())
-                    .build())
-            .withAllowedDomains(Lists.newArrayList())
-            .withAccessRoles(mock(AccessRoles.class))
-            .withRevoked(false)
-            .build();
+
+    private final Application application = mock(Application.class);
+    private final List<Publisher> defaultTestPublishers = ImmutableList.of(Publisher.BBC, Publisher.FACEBOOK);
 
     @Test
     public void testBroadcastMergingNoBroadcasts() {
+        when(application.getConfiguration()).thenReturn(getConfigWithReads(defaultTestPublishers));
+
         Item chosenItem = new Item();
         chosenItem.setId(1L);
         chosenItem.setPublisher(Publisher.BBC);
@@ -73,6 +54,8 @@ public class BroadcastMergingTest {
 
     @Test
     public void testBroadcastMergingNonMatchingBroadcasts() {
+        when(application.getConfiguration()).thenReturn(getConfigWithReads(defaultTestPublishers));
+
         Item chosenItem = new Item();
         chosenItem.setId(1L);
         chosenItem.setPublisher(Publisher.BBC);
@@ -110,6 +93,8 @@ public class BroadcastMergingTest {
 
     @Test
     public void testBroadcastMergingMatchingBroadcasts() {
+        when(application.getConfiguration()).thenReturn(getConfigWithReads(defaultTestPublishers));
+
         Item chosenItem = new Item();
         chosenItem.setId(1L);
         chosenItem.setPublisher(Publisher.BBC);
@@ -162,18 +147,14 @@ public class BroadcastMergingTest {
     @Test
     public void testBroadcastMergingMatchingBroadcastsWithPrecedence() {
 
-        ApplicationSources sources = ApplicationSources.defaults()
-                .copy().withPrecedence(true)
-                .withReadableSources(ImmutableList.of(
-                        new SourceReadEntry(
-                                Publisher.METABROADCAST,
-                                SourceStatus.AVAILABLE_ENABLED
-                        ),
-                        new SourceReadEntry(Publisher.PA, SourceStatus.AVAILABLE_ENABLED),
-                        new SourceReadEntry(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED),
-                        new SourceReadEntry(Publisher.FACEBOOK, SourceStatus.AVAILABLE_ENABLED)
-                ))
-                .build();
+        when(application.getConfiguration()).thenReturn(getConfigWithReads(
+                ImmutableList.of(
+                        Publisher.METABROADCAST,
+                        Publisher.PA,
+                        Publisher.BBC,
+                        Publisher.FACEBOOK
+                )
+        ));
 
         Item chosenItemWithoutBroadcasts = new Item();
         chosenItemWithoutBroadcasts.setId(1L);
@@ -250,5 +231,12 @@ public class BroadcastMergingTest {
         assertFalse(mergedBroadcast.getSurround());
         assertTrue(mergedBroadcast.getSubtitled());
         assertTrue(mergedBroadcast.getAliases().size() == 3);
+    }
+
+    private ApplicationConfiguration getConfigWithReads(List<Publisher> publishers) {
+        return ApplicationConfiguration.builder()
+                .withPrecedence(publishers)
+                .withEnabledWriteSources(ImmutableList.of())
+                .build();
     }
 }

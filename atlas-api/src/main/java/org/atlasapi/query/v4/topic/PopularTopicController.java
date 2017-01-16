@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.DefaultApplication;
-import org.atlasapi.application.auth.ApplicationFetcher;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
