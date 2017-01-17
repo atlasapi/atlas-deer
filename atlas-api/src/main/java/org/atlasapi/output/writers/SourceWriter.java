@@ -22,17 +22,19 @@ public final class SourceWriter implements EntityListWriter<Publisher> {
 
     private final String listName;
     private final String fieldName;
+    private final CountryWriter countryWriter;
 
     private SourceWriter(String listName, String fieldName) {
         this.listName = listName;
         this.fieldName = fieldName;
+        this.countryWriter = new CountryWriter("countries", "country");
     }
 
     @Override
     public void write(Publisher entity, FieldWriter writer, OutputContext ctxt) throws IOException {
         writer.writeField("key", entity.key());
         writer.writeField("name", entity.title());
-        writer.writeField("country", entity.country());
+        writer.writeObject(countryWriter, entity.country(), ctxt);
     }
 
     @Override
