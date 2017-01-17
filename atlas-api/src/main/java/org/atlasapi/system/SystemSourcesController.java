@@ -1,5 +1,7 @@
 package org.atlasapi.system;
 
+import org.atlasapi.application.sources.SourceIdCodec;
+import org.atlasapi.application.writers.SourceWithIdWriter;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
@@ -21,15 +23,16 @@ import java.io.IOException;
 @Controller
 public class SystemSourcesController {
 
-    private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
-    private final EntityListWriter<Publisher> sourcesWriter = SourceWriter.sourceListWriter("sources");
+    private final ResponseWriterFactory writerResolver;
+    private final EntityListWriter<Publisher> sourcesWriter;
 
-    private SystemSourcesController() {
-
+    private SystemSourcesController(SourceIdCodec sourceIdCodec) {
+        sourcesWriter = new SourceWithIdWriter(sourceIdCodec, "source", "sources");
+        writerResolver = new ResponseWriterFactory();
     }
 
-    public static SystemSourcesController create() {
-        return new SystemSourcesController();
+    public static SystemSourcesController create(SourceIdCodec sourceIdCodec) {
+        return new SystemSourcesController(sourceIdCodec);
     }
 
     @RequestMapping({ "/system/sources/{sid}.*", "/system/sources.*" })
