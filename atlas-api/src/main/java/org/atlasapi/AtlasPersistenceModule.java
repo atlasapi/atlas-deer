@@ -8,6 +8,7 @@ import javax.annotation.PreDestroy;
 
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
@@ -242,6 +243,10 @@ public class AtlasPersistenceModule {
 
     @Bean
     public ContentStore contentStore() {
+        return persistenceModule().contentStore();
+    }
+
+    public AstyanaxCassandraContentStore astyanaxContentStore() {
         return persistenceModule().contentStore();
     }
 

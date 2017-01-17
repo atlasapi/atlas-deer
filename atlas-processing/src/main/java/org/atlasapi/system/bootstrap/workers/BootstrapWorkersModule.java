@@ -115,7 +115,7 @@ public class BootstrapWorkersModule {
 
     @Bean
     @Qualifier("bootstrap")
-    KafkaMessageConsumerFactory bootstrapQueueFactory() {
+    public KafkaMessageConsumerFactory bootstrapQueueFactory() {
         return KafkaMessageConsumerFactory.create(zookeeper, originSystem);
     }
 

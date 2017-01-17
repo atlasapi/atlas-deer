@@ -55,18 +55,18 @@ public class ContentDebugControllerTest {
         when(atlasPersistenceModule.nullMessageSendingContentStore())
                 .thenReturn(contentStore);
 
-        contentDebugController = new ContentDebugController(
-                contentResolver,
-                legacySegmentMigrator,
-                atlasPersistenceModule,
-                directAndExplicitEquivalenceMigrator,
-                contentIndex,
-                esContentTranslator,
-                neo4jContentStore,
-                contentStore,
-                equivalenceGraphStore,
-                equivalentContentStore
-        );
+        contentDebugController = ContentDebugController.builder()
+                .withLegacyContentResolver(contentResolver)
+                .withLegacySegmentMigrator(legacySegmentMigrator)
+                .withPersistence(atlasPersistenceModule)
+                .withEquivalenceMigrator(directAndExplicitEquivalenceMigrator)
+                .withIndex(contentIndex)
+                .withEsContentTranslator(esContentTranslator)
+                .withNeo4jContentStore(neo4jContentStore)
+                .withContentStore(contentStore)
+                .withContentEquivalenceGraphStore(equivalenceGraphStore)
+                .withEquivalentContentStore(equivalentContentStore)
+                .build();
     }
 
     @Test
