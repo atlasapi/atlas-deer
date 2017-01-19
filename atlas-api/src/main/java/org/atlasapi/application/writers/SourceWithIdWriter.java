@@ -27,8 +27,11 @@ public class SourceWithIdWriter implements
     }
 
     @Override
-    public void write(Publisher entity, FieldWriter writer,
-            OutputContext ctxt) throws IOException {
+    public void write(
+            Publisher entity,
+            FieldWriter writer,
+            OutputContext ctxt
+    ) throws IOException {
         writer.writeField("id", sourceIdCodec.encode(entity));
         writer.writeField("key", entity.key());
         writer.writeField("name", entity.title());

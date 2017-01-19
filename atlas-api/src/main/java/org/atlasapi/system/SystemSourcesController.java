@@ -1,5 +1,8 @@
 package org.atlasapi.system;
 
+import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.base.Optional;
+
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.writers.SourceWithIdWriter;
 import org.atlasapi.content.QueryParseException;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.QueryParam;
 import java.io.IOException;
 
 @Controller
@@ -25,8 +29,10 @@ public class SystemSourcesController {
 
     private final ResponseWriterFactory writerResolver;
     private final EntityListWriter<Publisher> sourcesWriter;
+    private final SourceIdCodec sourceIdCodec;
 
     private SystemSourcesController(SourceIdCodec sourceIdCodec) {
+        this.sourceIdCodec = sourceIdCodec;
         sourcesWriter = new SourceWithIdWriter(sourceIdCodec, "source", "sources");
         writerResolver = new ResponseWriterFactory();
     }
@@ -38,22 +44,51 @@ public class SystemSourcesController {
     @RequestMapping({ "/system/sources/{sid}.*", "/system/sources.*" })
     public void listSources(
             HttpServletRequest request,
-            HttpServletResponse response
+            HttpServletResponse response,
+            @QueryParam("sid") String sourceId
     ) throws QueryParseException, QueryExecutionException, IOException {
 
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
             writer.startResponse();
-            writer.writeList(
-                    sourcesWriter,
-                    Publisher.all(),
-                    OutputContext.valueOf(QueryContext.standard(request))
-            );
+            if(Strings.isNullOrEmpty(sourceId)) {
+                listAllSources(writer, request);
+            } else {
+                listSingleSource(writer, request, sourceId);
+            }
             writer.finishResponse();
         } catch (Exception e) {
             ErrorSummary summary = ErrorSummary.forException(e);
             new ErrorResultWriter().write(summary, writer, request, response);
         }
+    }
+
+    private void listAllSources(
+            ResponseWriter writer,
+            HttpServletRequest request
+    ) throws IOException {
+        writer.writeList(
+                sourcesWriter,
+                Publisher.all(),
+                OutputContext.valueOf(QueryContext.standard(request))
+        );
+    }
+
+    private void listSingleSource(
+            ResponseWriter writer,
+            HttpServletRequest request,
+            String sourceId
+    ) throws IOException {
+        Optional<Publisher> publisher = sourceIdCodec.decode(sourceId);
+        if(!publisher.isPresent()) {
+            throw new IOException("Publisher ID not found: " + sourceId);
+        }
+
+        writer.writeObject(
+                sourcesWriter,
+                sourceIdCodec.decode(sourceId).get(),
+                OutputContext.valueOf(QueryContext.standard(request))
+        );
     }
 
 }
