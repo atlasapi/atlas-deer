@@ -17,10 +17,13 @@ import org.atlasapi.output.writers.SourceWriter;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import java.io.IOException;
 
@@ -41,11 +44,11 @@ public class SystemSourcesController {
         return new SystemSourcesController(sourceIdCodec);
     }
 
-    @RequestMapping({ "/system/sources/{sid}.*", "/system/sources.*" })
+    @RequestMapping({ "/system/sources/{sourceId}.*", "/system/sources.*" })
     public void listSources(
             HttpServletRequest request,
             HttpServletResponse response,
-            @QueryParam("sid") String sourceId
+            @PathVariable String sourceId
     ) throws QueryParseException, QueryExecutionException, IOException {
 
         ResponseWriter writer = writerResolver.writerFor(request, response);
