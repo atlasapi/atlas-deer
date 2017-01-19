@@ -3,9 +3,11 @@ package org.atlasapi.query.v4.topic;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
@@ -62,12 +64,27 @@ public class TopicContentQueryExecutorTest {
     private @Mock TopicResolver topicResolver;
     private @Mock ContentIndex contentIndex;
     private @Mock MergingEquivalentsResolver<Content> equivalentsResolver;
+    private @Mock Application application;
+    private @Mock HttpServletRequest request;
 
     private TopicContentQueryExecutor executor;
+    private QueryContext queryContext;
 
     @Before
     public void setup() {
+        when(application.getConfiguration()).thenReturn(
+                ApplicationConfiguration.builder()
+                        .withNoPrecedence(
+                                Publisher.all().stream()
+                                        .filter(Publisher::enabledWithNoApiKey)
+                                        .collect(Collectors.toList())
+                        )
+                        .withEnabledWriteSources(ImmutableList.of())
+                        .build()
+        );
+
         executor = new TopicContentQueryExecutor(topicResolver, contentIndex, equivalentsResolver);
+        queryContext = new QueryContext(application, ActiveAnnotations.standard(), request);
     }
 
     @Test
@@ -142,15 +159,14 @@ public class TopicContentQueryExecutorTest {
     public void testFailsWhenTopicIsMissing() throws Throwable {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
-        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
-        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
+        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
+        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
 
         when(topicResolver.resolveIds(argThat(hasItems(Id.valueOf(1234)))))
                 .thenReturn(Futures.immediateFuture(Resolved.<Topic>empty()));
 
         try {
-            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
+            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, queryContext));
         } catch (QueryExecutionException qee) {
            verifyException(qee);
         }
@@ -161,9 +177,8 @@ public class TopicContentQueryExecutorTest {
     public void testFailsWhenTopicIsForbidden() throws Throwable {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
-        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
-        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
+        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
+        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
 
         Topic topic = new Topic();
         topic.setId(Id.valueOf(1234));
@@ -173,7 +188,7 @@ public class TopicContentQueryExecutorTest {
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
 
         try {
-            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
+            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, queryContext));
         } catch (QueryExecutionException qee) {
             verifyException(qee);
         }

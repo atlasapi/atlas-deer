@@ -16,7 +16,7 @@ import com.metabroadcast.applications.client.model.internal.ApplicationConfigura
 import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.Channel;
@@ -103,7 +103,7 @@ public class ScheduleRequestParserTest {
         when(applicationFetcher.applicationFor(argThat(httpRequestWithParam(KEY_PARAM, is("apikey")))))
                 .thenReturn(Optional.of(application));
         when(applicationFetcher.applicationFor(argThat(httpRequestWithParam(KEY_PARAM, not("apikey")))))
-                .thenThrow(new InvalidApiKeyException("therequestedapikey"));
+                .thenThrow(InvalidApiKeyException.create("therequestedapikey", "test"));
     }
 
     private Matcher<HttpServletRequest> httpRequestWithParam(

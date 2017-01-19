@@ -1,4 +1,4 @@
-package org.atlasapi.application.auth;
+package org.atlasapi.application;
 
 import java.io.IOException;
 

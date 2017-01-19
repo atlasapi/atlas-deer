@@ -5,11 +5,14 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.output.EntityListWriter;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.annotation.ActiveAnnotations;
+import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
@@ -43,7 +46,13 @@ public class JsonResponseWriterTest {
         mapper = new ObjectMapper();
         request = new StubHttpServletRequest();
         response = new StubHttpServletResponse();
-        ctxt = OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)));
+        ctxt = OutputContext.valueOf(
+                new QueryContext(
+                        mock(Application.class),
+                        ActiveAnnotations.standard(),
+                        mock(HttpServletRequest.class)
+                )
+        );
         formatter = new JsonResponseWriter(request, response);
         formatter.startResponse();
     }

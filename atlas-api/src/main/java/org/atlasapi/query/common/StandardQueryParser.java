@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;

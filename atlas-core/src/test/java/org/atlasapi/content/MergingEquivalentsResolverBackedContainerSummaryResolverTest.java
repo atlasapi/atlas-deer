@@ -1,6 +1,8 @@
 package org.atlasapi.content;
 
+import com.google.common.collect.ImmutableList;
 import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
@@ -15,12 +17,15 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -37,6 +42,20 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
     private Application application = mock(Application.class);
     @InjectMocks
     private MergingEquivalentsResolverBackedContainerSummaryResolver objectUnderTest;
+
+    @Before
+    public void setUp() {
+        when(application.getConfiguration()).thenReturn(
+                ApplicationConfiguration.builder()
+                    .withNoPrecedence(
+                        Publisher.all().stream()
+                            .filter(Publisher::enabledWithNoApiKey)
+                            .collect(Collectors.toList())
+                    )
+                    .withEnabledWriteSources(ImmutableList.of())
+                    .build()
+        );
+    }
 
     @Test
     public void testResolveContainerSummary() throws Exception {
@@ -130,9 +149,10 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
     }
 
     @Test
-    public void testAnnotationBasedMErger() throws Exception {
+    public void testAnnotationBasedMerger() throws Exception {
         EquivalentsResolver<Content> resolver = mock(EquivalentsResolver.class);
         ApplicationEquivalentsMerger<Content> merger = mock(ApplicationEquivalentsMerger.class);
+        when(application.getConfiguration()).thenReturn(mock(ApplicationConfiguration.class));
         contentAnnotationBasedMergingEquivalentsResolver = new AnnotationBasedMergingEquivalentsResolver<>(
                 resolver,
                 merger

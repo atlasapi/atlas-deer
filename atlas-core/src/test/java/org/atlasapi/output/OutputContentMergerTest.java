@@ -1,6 +1,5 @@
 package org.atlasapi.output;
 
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -8,13 +7,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.codahale.metrics.MetricRegistry;
-import com.metabroadcast.applications.client.metric.Metrics;
-import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.SourceStatus;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -55,6 +49,7 @@ import org.junit.Test;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OutputContentMergerTest {
 
@@ -73,7 +68,7 @@ public class OutputContentMergerTest {
         setEquivalent(two, one, three);
         setEquivalent(three, two, one);
 
-        Application application = getApplicationWithPrecedenceOfSources(Publisher.BBC, Publisher.TED);
+        Application application = getApplicationWithPrecedence(true, Publisher.BBC, Publisher.TED);
 
         ImmutableList<Brand> contents = ImmutableList.of(one, two, three);
 
@@ -102,7 +97,7 @@ public class OutputContentMergerTest {
         //two is intentionally missing here
         ImmutableList<Brand> contents = ImmutableList.of(one, three);
 
-        Application application = getApplicationWithPrecedenceOfSources(Publisher.BBC, Publisher.TED);
+        Application application = getApplicationWithPrecedence(true, Publisher.BBC, Publisher.TED);
 
         mergePermutations(contents, application, one, two.getId());
 
@@ -116,7 +111,7 @@ public class OutputContentMergerTest {
 
         contents = ImmutableList.of(one, three);
 
-        application = getApplicationWithPrecedenceOfSources(Publisher.TED, Publisher.BBC);
+        application = getApplicationWithPrecedence(true, Publisher.TED, Publisher.BBC);
         mergePermutations(contents, application, three, two.getId());
     }
 
@@ -128,7 +123,8 @@ public class OutputContentMergerTest {
         one.addAlias(new Alias("a1", "v1"));
         two.addAlias(new Alias("a2", "v2"));
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.METABROADCAST,
                 Publisher.BBC,
                 Publisher.PA
@@ -156,7 +152,8 @@ public class OutputContentMergerTest {
                 Image.builder("test4").build()
         ));
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.METABROADCAST,
                 Publisher.BBC,
                 Publisher.PA
@@ -189,7 +186,8 @@ public class OutputContentMergerTest {
                 Image.builder("test4").build()
         ));
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                false,
                 Publisher.METABROADCAST,
                 Publisher.BBC,
                 Publisher.PA
@@ -238,7 +236,8 @@ public class OutputContentMergerTest {
         two.setSegmentEvents(ImmutableList.of(seThree));
         three.setSegmentEvents(ImmutableList.of(seFour, seFive));
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC_KIWI,
                 Publisher.BBC_MUSIC
         );
@@ -286,7 +285,8 @@ public class OutputContentMergerTest {
         );
 
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
@@ -327,7 +327,8 @@ public class OutputContentMergerTest {
                 itemSummaries
         );
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
@@ -391,7 +392,8 @@ public class OutputContentMergerTest {
                 availableContent2
         );
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
@@ -425,7 +427,8 @@ public class OutputContentMergerTest {
         one.setManifestedAs(ImmutableSet.of(encoding1, encoding2));
         two.setManifestedAs(ImmutableSet.of(encoding3, encoding4));
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
@@ -441,7 +444,8 @@ public class OutputContentMergerTest {
 
     @Test
     public void testImageWithoutMerging() {
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                false,
                 Publisher.BBC,
                 Publisher.PA
         );
@@ -456,7 +460,8 @@ public class OutputContentMergerTest {
 
     @Test
     public void testImageWithMerging() {
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC,
                 Publisher.PA
         );
@@ -471,7 +476,6 @@ public class OutputContentMergerTest {
         item1.setImages(ImmutableSet.of(image1));
 
         Item item2 = item(5L, "item2", Publisher.PA);
-
         Image image2 = new Image("http://image2.org/");
 
         image1.setAvailabilityStart(DateTime.now().minusDays(1));
@@ -490,7 +494,8 @@ public class OutputContentMergerTest {
     // broadcasts aren't duplicated
     public void testOutputsAllBroadcastsFromPrecedentPublisher() {
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC,
                 Publisher.PA
         );
@@ -532,7 +537,8 @@ public class OutputContentMergerTest {
     @Test
     public void testMergesBroadcastsWithSimilarStartTimes() {
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.BBC,
                 Publisher.PA
         );
@@ -567,8 +573,9 @@ public class OutputContentMergerTest {
 //                .copy()
 //                .build();
 
-        Application application = getApplicationWithPrecedenceOfSources(
-                Publisher.BBC_KIWI,
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
                 Publisher.PA
         );
 
@@ -614,7 +621,8 @@ public class OutputContentMergerTest {
 
 //        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.PA,
                 Publisher.BBC,
                 Publisher.RADIO_TIMES
@@ -656,7 +664,8 @@ public class OutputContentMergerTest {
 
 //        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
 
-        Application application = getApplicationWithPrecedenceOfSources(
+        Application application = getApplicationWithPrecedence(
+                true,
                 Publisher.PA,
                 Publisher.BBC,
                 Publisher.RADIO_TIMES
@@ -725,25 +734,26 @@ public class OutputContentMergerTest {
         ));
     }
 
-    private Application getApplicationWithPrecedenceOfSources(Publisher... publishers) {
+    private Application getApplicationWithPrecedence(boolean imagePrecedence, Publisher... publishers) {
 
-        ApplicationConfiguration configuration = ApplicationConfiguration.builder()
+        ApplicationConfiguration testConfig = ApplicationConfiguration.builder()
                 .withPrecedence(Lists.newArrayList(publishers))
-                .withEnabledWriteSources(Lists.newArrayList())
+                .withEnabledWriteSources(ImmutableList.of())
                 .build();
 
-        return Application.builder()
-                .withId(-1l)
-                .withTitle("test")
-                .withDescription("desc")
-                .withEnvironment(null)
-                .withCreated(ZonedDateTime.now())
-                .withApiKey("test")
-                .withSources(configuration)
-                .withAllowedDomains(Lists.newArrayList())
-                .withAccessRoles(AccessRoles.create(Lists.newArrayList(), Metrics.create(new MetricRegistry())))
-                .withRevoked(false)
-                .build();
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
+
+        when(configuration.isPrecedenceEnabled()).thenReturn(testConfig.isPrecedenceEnabled());
+        when(configuration.getEnabledReadSources()).thenReturn(testConfig.getEnabledReadSources());
+        when(configuration.getReadPrecedenceOrdering()).thenReturn(testConfig.getReadPrecedenceOrdering());
+        when(configuration.isImagePrecedenceEnabled()).thenReturn(imagePrecedence);
+        when(configuration.getImageReadPrecedenceOrdering()).thenReturn(testConfig.getImageReadPrecedenceOrdering());
+
+
+        when(application.getConfiguration()).thenReturn(configuration);
+
+        return application;
     }
 
 }

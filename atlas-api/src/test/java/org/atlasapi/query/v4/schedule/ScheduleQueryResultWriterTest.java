@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
@@ -21,6 +22,8 @@ import org.atlasapi.output.writers.BroadcastWriter;
 import org.atlasapi.output.writers.LicenseWriter;
 import org.atlasapi.output.writers.RequestWriter;
 import org.atlasapi.persistence.output.ContainerSummaryResolver;
+import org.atlasapi.query.annotation.ActiveAnnotations;
+import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
@@ -96,7 +99,11 @@ public class ScheduleQueryResultWriterTest {
         HttpServletRequest request = new StubHttpServletRequest();
         StubHttpServletResponse response = new StubHttpServletResponse();
         JsonResponseWriter responseWriter = new JsonResponseWriter(request, response);
-        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
+        QueryContext context = new QueryContext(
+                mock(Application.class),
+                ActiveAnnotations.standard(),
+                mock(HttpServletRequest.class)
+        );
         QueryResult<ChannelSchedule> result = QueryResult.singleResult(cs, context);
 
         writer.write(result, responseWriter);

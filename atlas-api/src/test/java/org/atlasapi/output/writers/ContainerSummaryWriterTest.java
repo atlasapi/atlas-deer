@@ -25,6 +25,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,10 +39,9 @@ public class ContainerSummaryWriterTest {
 
     @Mock private FieldWriter fieldWriter;
     @Mock private OutputContext outputContext;
+    @Mock private Application application;
 
     private ContainerSummaryWriter containerSummaryWriter;
-
-    private Application application;
     private ImmutableSet<Annotation> annotations;
     private Series series;
     private Episode episode;
@@ -55,7 +55,6 @@ public class ContainerSummaryWriterTest {
                 commonContainerSummaryWriter
         );
 
-        application = DefaultApplication.create();
         annotations = ImmutableSet.of();
 
         when(outputContext.getApplication()).thenReturn(application);

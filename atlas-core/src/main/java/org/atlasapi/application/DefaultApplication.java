@@ -12,6 +12,7 @@ import org.atlasapi.media.entity.Publisher;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DefaultApplication {
 
@@ -25,15 +26,16 @@ public class DefaultApplication {
 
     private static Application createInternal(List<Publisher> publishers) {
 
-        List<Publisher> publisherList;
-        if(publishers.isEmpty()) {
-            publisherList = getDefaultPublishers();
-        } else {
-            publisherList = Lists.newArrayList(publishers);
-        }
+        List<Publisher> finalPublishers = ImmutableList.<Publisher>builder()
+                .addAll(getDefaultPublishers().stream()
+                                .filter(publisher -> !publishers.contains(publisher))
+                                .collect(Collectors.toList())
+                )
+                .addAll(publishers)
+                .build();
 
         ApplicationConfiguration configuration = ApplicationConfiguration.builder()
-                .withPrecedence(publisherList)
+                .withPrecedence(finalPublishers)
                 .withEnabledWriteSources(ImmutableList.of())
                 .build();
 

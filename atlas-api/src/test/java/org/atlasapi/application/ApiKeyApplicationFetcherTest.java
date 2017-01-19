@@ -1,4 +1,4 @@
-package org.atlasapi.application.auth;
+package org.atlasapi.application;
 
 import com.google.api.client.util.Lists;
 import com.metabroadcast.applications.client.ApplicationsClient;
@@ -12,7 +12,6 @@ import com.metabroadcast.applications.client.query.Result;
 
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
 
-import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +40,7 @@ public class ApiKeyApplicationFetcherTest {
 
     @Before
     public void setup() {
-        fetcher = new ApiKeyApplicationFetcher(applicationsClient);
+        fetcher = new ApiKeyApplicationFetcher(applicationsClient, Environment.STAGE);
         apiKey = "apiKey";
         query = Query.create(apiKey, Environment.STAGE);
     }
@@ -76,7 +75,7 @@ public class ApiKeyApplicationFetcherTest {
         assertThat(app.get(), is(application));
     }
 
-    @Test
+    @Test(expected = InvalidApiKeyException.class)
     public void testReturnsEmptyIfNoApiKeyIsSupplied() throws Exception {
 
         HttpServletRequest request = new StubHttpServletRequest();

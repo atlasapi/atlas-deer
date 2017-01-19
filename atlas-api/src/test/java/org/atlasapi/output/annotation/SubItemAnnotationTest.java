@@ -2,6 +2,7 @@ package org.atlasapi.output.annotation;
 
 import java.util.Iterator;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.EpisodeRef;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.Series;
@@ -9,6 +10,8 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.annotation.ActiveAnnotations;
+import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -23,9 +26,12 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class SubItemAnnotationTest {
+
+    private final Application application = mock(Application.class);
 
     @Test
     public void testOrderingOfSubItemsIsBasedReverseLexographicallyOnSortKey() throws Exception {
@@ -46,12 +52,14 @@ public class SubItemAnnotationTest {
         );
         series.setItemRefs(ImmutableList.of(episodeOne, episodeTwo));
 
-        FieldWriter writer = Mockito.mock(FieldWriter.class);
+        FieldWriter writer = mock(FieldWriter.class);
 
         ArgumentCaptor<Iterable> captor = ArgumentCaptor.forClass(Iterable.class);
         MockHttpServletRequest httpReq = new MockHttpServletRequest("GET", "");
         httpReq.setParameter("sub_item.ordering", "reverse");
-        anno.write(series, writer, OutputContext.valueOf(QueryContext.standard(httpReq)));
+        anno.write(series, writer, OutputContext.valueOf(
+                new QueryContext(application, ActiveAnnotations.standard(), httpReq))
+        );
         verify(writer).writeList(any(), captor.capture(), any());
 
         Iterator<ItemRef> sortedItemRefIterator = captor.getValue().iterator();
@@ -78,14 +86,16 @@ public class SubItemAnnotationTest {
         );
         series.setItemRefs(ImmutableList.of(episodeOne, episodeTwo));
 
-        FieldWriter writer = Mockito.mock(FieldWriter.class);
+        FieldWriter writer = mock(FieldWriter.class);
 
         ArgumentCaptor<Iterable> captor = ArgumentCaptor.forClass(Iterable.class);
 
         MockHttpServletRequest httpReq = new MockHttpServletRequest("GET", "");
         httpReq.setParameter("sub_items.ordering", "reverse");
 
-        anno.write(series, writer, OutputContext.valueOf(QueryContext.standard(httpReq)));
+        anno.write(series, writer, OutputContext.valueOf(
+                new QueryContext(application, ActiveAnnotations.standard(), httpReq))
+        );
         verify(writer).writeList(any(), captor.capture(), any());
 
         Iterator<ItemRef> sortedItemRefIterator = captor.getValue().iterator();

@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.ApplicationFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;

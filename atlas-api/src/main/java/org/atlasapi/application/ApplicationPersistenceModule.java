@@ -5,7 +5,6 @@ import com.metabroadcast.applications.client.ApplicationsClient;
 import com.metabroadcast.applications.client.ApplicationsClientImpl;
 import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
-import org.atlasapi.application.auth.MongoTokenRequestStore;
 
 import com.metabroadcast.common.social.auth.credentials.CredentialsStore;
 import com.metabroadcast.common.social.auth.credentials.MongoDBCredentialsStore;

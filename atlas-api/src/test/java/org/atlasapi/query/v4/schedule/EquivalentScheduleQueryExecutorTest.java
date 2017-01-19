@@ -3,6 +3,7 @@ package org.atlasapi.query.v4.schedule;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -11,6 +12,7 @@ import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.applications.client.model.internal.Environment;
+import org.atlasapi.application.v3.ApplicationAccessRole;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
@@ -72,6 +74,10 @@ public class EquivalentScheduleQueryExecutorTest {
     @Mock private EquivalentScheduleResolver scheduleResolver;
     @Mock private FlexibleBroadcastMatcher broadcastMatcher;
 
+    @Mock private Application application = mock(Application.class);
+    @Mock private HttpServletRequest request = mock(HttpServletRequest.class);
+
+    private QueryContext queryContext;
     private EquivalentScheduleQueryExecutor executor;
 
     @Before
@@ -81,6 +87,17 @@ public class EquivalentScheduleQueryExecutorTest {
                 scheduleResolver,
                 equivalentsMerger,
                 broadcastMatcher
+        );
+
+        AccessRoles accessRoles = mock(AccessRoles.class);
+        when(accessRoles.hasRole(ApplicationAccessRole.PREFER_EBS_SCHEDULE.getRole())).thenReturn(false);
+
+        when(application.getAccessRoles()).thenReturn(accessRoles);
+        when(application.getConfiguration()).thenReturn(getConfig());
+        queryContext = new QueryContext(
+                application,
+                ActiveAnnotations.standard(),
+                request
         );
     }
 
@@ -98,7 +115,7 @@ public class EquivalentScheduleQueryExecutorTest {
                 .withSource(METABROADCAST)
                 .withStart(start)
                 .withEnd(end)
-                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withContext(queryContext)
                 .withId(channel.getId())
                 .build();
 
@@ -150,7 +167,7 @@ public class EquivalentScheduleQueryExecutorTest {
                 .withSource(METABROADCAST)
                 .withStart(start)
                 .withEnd(end)
-                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withContext(queryContext)
                 .withIds(cids)
                 .build();
 
@@ -202,7 +219,7 @@ public class EquivalentScheduleQueryExecutorTest {
                 .withSource(METABROADCAST)
                 .withStart(start)
                 .withEnd(end)
-                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withContext(queryContext)
                 .withId(Id.valueOf(1))
                 .build();
 
@@ -231,7 +248,7 @@ public class EquivalentScheduleQueryExecutorTest {
                 .withId(-1l)
                 .withTitle("test")
                 .withDescription("desc")
-                .withEnvironment(Environment.PROD)
+                .withEnvironment(Environment.STAGE)
                 .withCreated(ZonedDateTime.now())
                 .withApiKey("apiKey")
                 .withSources(ApplicationConfiguration.builder()
@@ -322,6 +339,15 @@ public class EquivalentScheduleQueryExecutorTest {
                 application
         );
 
+    }
+
+    private ApplicationConfiguration getConfig() {
+        return ApplicationConfiguration.builder()
+                .withNoPrecedence(Publisher.all().stream()
+                        .filter(Publisher::enabledWithNoApiKey)
+                        .collect(Collectors.toList()))
+                .withEnabledWriteSources(ImmutableList.of())
+                .build();
     }
 
 }

@@ -9,6 +9,7 @@ import java.util.stream.StreamSupport;
 
 import com.google.common.base.Optional;
 import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -240,7 +241,10 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
             Iterable<T> notChosen, Function<T, Iterable<P>> projector) {
         return Iterables.concat(
                 projector.apply(chosen),
-                Iterables.concat(Iterables.transform(notChosen, projector))
+                Iterables.concat(StreamSupport.stream(notChosen.spliterator(), false)
+                        .map(projector::apply)
+                        .collect(Collectors.toList())
+                )
         );
     }
 
@@ -437,17 +441,25 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         chosen.setSegmentEvents(segmentEvents.build());
     }
 
-    private <T extends Item> void mergeBroadcasts(Application application, T chosen,
-            Iterable<T> notChosen) {
+    private <T extends Item> void mergeBroadcasts(
+            Application application,
+            T chosen,
+            Iterable<T> notChosen
+    ) {
 
         // Take broadcasts from the most precedent source with broadcasts, and
         // merge them with broadcasts from less precedent sources.
 
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
+
         List<T> first = application.getConfiguration()
                 .getReadPrecedenceOrdering()
                 .onResultOf(Sourceds.toPublisher())
-                .leastOf(Iterables.filter(all, HAS_BROADCASTS), 1);
+                .leastOf(StreamSupport.stream(all.spliterator(), false)
+                                .filter(HAS_BROADCASTS::apply)
+                                .collect(Collectors.toList()),
+                        1
+                );
 
         if (!first.isEmpty()) {
             Publisher sourceForBroadcasts = Iterables.getOnlyElement(first).getSource();

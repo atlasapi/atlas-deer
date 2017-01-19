@@ -112,7 +112,7 @@ public class ApplicationWebModule {
     public
     @Bean
     ApplicationFetcher configFetcher() {
-        return new ApiKeyApplicationFetcher(appPersistence.applicationsClient());
+        return ApiKeyApplicationFetcher.create(appPersistence.applicationsClient());
     }
 
     public

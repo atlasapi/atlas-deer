@@ -38,10 +38,10 @@ public class SeriesSummaryWriterTest {
 
     @Mock private FieldWriter fieldWriter;
     @Mock private OutputContext outputContext;
+    @Mock private Application application;
 
     private SeriesSummaryWriter seriesSummaryWriter;
 
-    private Application application;
     private ImmutableSet<Annotation> annotations;
     private Series series;
     private Episode episode;
@@ -54,7 +54,6 @@ public class SeriesSummaryWriterTest {
                 commonContainerSummaryWriter
         );
 
-        application = DefaultApplication.create();
         annotations = ImmutableSet.of();
 
         when(outputContext.getApplication()).thenReturn(application);

@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.ApplicationFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.ContextualAnnotationsExtractor;

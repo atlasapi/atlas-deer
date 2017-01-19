@@ -5,7 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.InvalidApiKeyException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.generation.ModelClassInfoStore;
 import org.atlasapi.generation.model.ModelClassInfo;

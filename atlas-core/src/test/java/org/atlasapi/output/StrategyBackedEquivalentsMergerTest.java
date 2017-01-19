@@ -2,6 +2,7 @@ package org.atlasapi.output;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import com.metabroadcast.applications.client.model.internal.AccessRoles;
@@ -41,30 +42,19 @@ import static org.mockito.Mockito.when;
 public class StrategyBackedEquivalentsMergerTest {
 
     @Mock private EquivalentsMergeStrategy<Content> strategy;
+    @Mock private Application nonMergingApplication;
+    @Mock private Application mergingApplication;
 
     private StrategyBackedEquivalentsMerger<Content> merger;
 
     @Before
     public void setup() {
         merger = new StrategyBackedEquivalentsMerger<Content>(strategy);
+        when(nonMergingApplication.getConfiguration())
+                .thenReturn(getConfig(ImmutableList.of()));
+        when(mergingApplication.getConfiguration())
+                .thenReturn(getConfig(ImmutableList.of(Publisher.BBC, Publisher.TED)));
     }
-
-    private final Application nonMergingApplication = DefaultApplication.create();
-    private final Application mergingApplication = Application.builder()
-            .withId(-1l)
-            .withTitle("test")
-            .withDescription("desc")
-            .withEnvironment(mock(Environment.class))
-            .withCreated(ZonedDateTime.now())
-            .withApiKey("test")
-            .withSources(ApplicationConfiguration.builder()
-                    .withPrecedence(Lists.newArrayList(Publisher.BBC, Publisher.TED))
-                    .withEnabledWriteSources(Lists.newArrayList())
-                    .build())
-            .withAllowedDomains(Lists.newArrayList())
-            .withAccessRoles(mock(AccessRoles.class))
-            .withRevoked(false)
-            .build();
 
     @Test
     public void testDoesntMergeForNonMergingConfig() {
@@ -206,6 +196,23 @@ public class StrategyBackedEquivalentsMergerTest {
                 anyCollectionOf(Content.class),
                 argThat(is(mergingApplication))
         )).thenReturn(content);
+    }
+
+    private ApplicationConfiguration getConfig(List<Publisher> publishers) {
+        List<Publisher> finalPublishers = ImmutableList.<Publisher>builder()
+                .addAll(
+                        Publisher.all().stream()
+                                .filter(Publisher::enabledWithNoApiKey)
+                                .filter(publisher -> !publishers.contains(publisher))
+                                .collect(Collectors.toList())
+                )
+                .addAll(publishers)
+                .build();
+
+        return ApplicationConfiguration.builder()
+                .withPrecedence(finalPublishers)
+                .withEnabledWriteSources(ImmutableList.of())
+                .build();
     }
 
 }

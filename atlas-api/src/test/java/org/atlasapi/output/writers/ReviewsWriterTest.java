@@ -6,11 +6,14 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.entity.Review;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.annotation.ActiveAnnotations;
+import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import org.junit.Before;
@@ -28,7 +31,12 @@ public class ReviewsWriterTest {
 
     private @Mock FieldWriter fieldWriter;
     private @Mock EntityWriter<Publisher> sourceWriter;
-    private OutputContext ctxt = OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)));
+    private @Mock HttpServletRequest request = mock(HttpServletRequest.class);
+    private @Mock Application application = mock(Application.class);
+
+    private OutputContext ctxt = OutputContext.valueOf(
+            new QueryContext(application, ActiveAnnotations.standard(), request)
+    );
 
 
     private ReviewsWriter writerUnderTest;
