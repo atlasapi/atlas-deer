@@ -1,4 +1,4 @@
-FROM 448613307115.dkr.ecr.us-east-1.amazonaws.com/jvm-oracle8:latest
+FROM 448613307115.dkr.ecr.eu-west-1.amazonaws.com/jvm-oracle:latest
 
 RUN SERVER_PORT="8080" \
     MESSAGING_DEER_EQUIVALENT_CONTENT_CONTENT_CHANGES_ENABLED="false" \
