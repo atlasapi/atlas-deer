@@ -2,6 +2,7 @@ package org.atlasapi.system;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
+
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.application.writers.SourceWithIdWriter;
 import org.atlasapi.content.QueryParseException;

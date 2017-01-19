@@ -38,7 +38,6 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -82,51 +81,8 @@ public class ContentDebugController {
     private final ContentBootstrapListener contentAndEquivalentsBootstrapListener;
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
-    public ContentDebugController(
-            ContentResolver legacyContentResolver,
-            LegacySegmentMigrator legacySegmentMigrator,
-            AtlasPersistenceModule persistence,
-            DirectAndExplicitEquivalenceMigrator equivalenceMigrator,
-            ContentIndex index,
-            EsContentTranslator esContentTranslator,
-            Neo4jContentStore neo4jContentStore,
-            ContentStore contentStore,
-            EquivalenceGraphStore contentEquivalenceGraphStore,
-            EquivalentContentStore equivalentContentStore
-    ) {
-        this.legacyContentResolver = checkNotNull(legacyContentResolver);
-        this.index = checkNotNull(index);
-        this.esContentTranslator = checkNotNull(esContentTranslator);
-        this.contentStore = checkNotNull(contentStore);
-        this.equivalenceGraphStore = checkNotNull(contentEquivalenceGraphStore);
-        this.equivalentContentStore = checkNotNull(equivalentContentStore);
-        this.neo4jContentStore = checkNotNull(neo4jContentStore);
-
-        this.contentBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(persistence.nullMessageSendingContentStore())
-                .withEquivalenceMigrator(equivalenceMigrator)
-                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
-                .withContentIndex(index)
-                .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
-                .build();
-
-        this.contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
-                .withContentWriter(persistence.nullMessageSendingContentStore())
-                .withEquivalenceMigrator(equivalenceMigrator)
-                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
-                .withContentIndex(index)
-                .withMigrateHierarchies(legacySegmentMigrator, legacyContentResolver)
-                .withMigrateEquivalents(persistence.nullMessageSendingEquivalenceGraphStore())
-                .build();
-
-        this.contentNeo4jMigrator = ContentNeo4jMigrator.create(
-                neo4jContentStore, contentStore, contentEquivalenceGraphStore
-        );
-
-        this.jackson = new ObjectMapper();
-        this.jackson.registerModule(new GuavaModule());
-
-        this.gson = new GsonBuilder()
+    private ContentDebugController(Builder builder) {
+        gson = new GsonBuilder()
                 .registerTypeAdapter(
                         DateTime.class,
                         (JsonSerializer<DateTime>) (src, typeOfSrc, context) ->
@@ -138,50 +94,99 @@ public class ContentDebugController {
                                 new JsonPrimitive(src.toString())
                 )
                 .create();
+
+        jackson = new ObjectMapper().findAndRegisterModules();
+
+        legacyContentResolver = checkNotNull(builder.legacyContentResolver);
+        index = checkNotNull(builder.index);
+        esContentTranslator = checkNotNull(builder.esContentTranslator);
+        contentStore = checkNotNull(builder.contentStore);
+        equivalenceGraphStore = checkNotNull(builder.contentEquivalenceGraphStore);
+        equivalentContentStore = checkNotNull(builder.equivalentContentStore);
+        neo4jContentStore = checkNotNull(builder.neo4jContentStore);
+
+        contentBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(builder.persistence.nullMessageSendingContentStore())
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(builder.persistence.nullMessageSendingEquivalentContentStore())
+                .withContentIndex(index)
+                .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
+                .build();
+
+        contentAndEquivalentsBootstrapListener = ContentBootstrapListener.builder()
+                .withContentWriter(builder.persistence.nullMessageSendingContentStore())
+                .withEquivalenceMigrator(builder.equivalenceMigrator)
+                .withEquivalentContentStore(builder.persistence.nullMessageSendingEquivalentContentStore())
+                .withContentIndex(index)
+                .withMigrateHierarchies(builder.legacySegmentMigrator, legacyContentResolver)
+                .withMigrateEquivalents(builder.persistence.nullMessageSendingEquivalenceGraphStore())
+                .build();
+
+        contentNeo4jMigrator = ContentNeo4jMigrator.create(
+                builder.neo4jContentStore, builder.contentStore, builder.contentEquivalenceGraphStore
+        );
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @RequestMapping("/system/id/decode/uppercase/{id}")
-    private void decodeUppercaseId(@PathVariable("id") String id,
-            final HttpServletResponse response) throws IOException {
+    public void decodeUppercaseId(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws IOException {
         response.getWriter().write(uppercase.decode(id).toString());
     }
 
     @RequestMapping("/system/id/decode/lowercase/{id}")
-    private void decodeLowercaseId(@PathVariable("id") String id,
-            final HttpServletResponse response) throws IOException {
+    public void decodeLowercaseId(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws IOException {
         response.getWriter().write(lowercase.decode(id).toString());
     }
 
     @RequestMapping("/system/id/encode/uppercase/{id}")
-    private void encodeUppercaseId(@PathVariable("id") Long id, final HttpServletResponse response)
-            throws IOException {
+    public void encodeUppercaseId(
+            @PathVariable("id") Long id,
+            final HttpServletResponse response
+    ) throws IOException {
         response.getWriter().write(uppercase.encode(BigInteger.valueOf(id)));
     }
 
     @RequestMapping("/system/id/encode/lowercase/{id}")
-    private void encodeLowercaseId(@PathVariable("id") Long id, final HttpServletResponse response)
-            throws IOException {
+    public void encodeLowercaseId(
+            @PathVariable("id") Long id,
+            final HttpServletResponse response
+    ) throws IOException {
         response.getWriter().write(lowercase.encode(BigInteger.valueOf(id)));
     }
 
     @RequestMapping("/system/id/toLowercase/{id}")
-    private void toLowercaseId(@PathVariable("id") String id, final HttpServletResponse response)
-            throws IOException {
+    public void toLowercaseId(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws IOException {
         response.getWriter().write(lowercase.encode(uppercase.decode(id)));
     }
 
     @RequestMapping("/system/id/toUppercase/{id}")
-    private void toUppercaseId(@PathVariable("id") String id, final HttpServletResponse response)
-            throws IOException {
+    public void toUppercaseId(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws IOException {
         response.getWriter().write(uppercase.encode(lowercase.decode(id)));
     }
 
     /* Deactivates a piece of content by setting activelyPublished to false */
     @RequestMapping("/system/debug/content/{id}/deactivate")
-    private void deactivateContent(@PathVariable("id") String id,
-            final HttpServletResponse response) throws IOException {
+    public void deactivateContent(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws IOException {
         try {
-            Resolved<Content> resolved = Futures.get(
+            Resolved<Content> resolved = Futures.getChecked(
                     contentStore.resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id)))),
                     IOException.class
             );
@@ -196,8 +201,10 @@ public class ContentDebugController {
 
     /* Updates the equivalent content store representation of a piece of content */
     @RequestMapping("/system/debug/content/{id}/updateEquivalentContentStore")
-    private void updateEquivalentContentStore(@PathVariable("id") String id,
-            final HttpServletResponse response) throws IOException {
+    public void updateEquivalentContentStore(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws IOException {
         try {
             Id contentId = decodeId(id);
             equivalentContentStore.updateContent(contentId);
@@ -208,8 +215,10 @@ public class ContentDebugController {
 
     /* Returns the JSON representation of a legacy content read from Mongo and translated to the v4 model */
     @RequestMapping("/system/debug/content/{id}/legacy")
-    public void printLegacyContent(@PathVariable("id") String id,
-            final HttpServletResponse response) throws Exception {
+    public void printLegacyContent(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws Exception {
         ListenableFuture<Resolved<Content>> resolving = legacyContentResolver
                 .resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id))));
         Resolved<Content> resolved = Futures.get(resolving, Exception.class);
@@ -219,8 +228,10 @@ public class ContentDebugController {
 
     /* Returns the JSON representation of a piece of content stored in the Cassandra store */
     @RequestMapping("/system/debug/content/{id}")
-    public void printContent(@PathVariable("id") String id, final HttpServletResponse response)
-            throws Exception {
+    public void printContent(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws Exception {
         Id decodedId = decodeId(id);
         ImmutableList<Id> ids = ImmutableList.of(decodedId);
         Resolved<Content> result = Futures.get(
@@ -232,8 +243,10 @@ public class ContentDebugController {
 
     /* Returns the JSON representation of a piece of content stored in the equivalent content store */
     @RequestMapping("/system/debug/equivalentcontent/{id}")
-    public void printEquivalentContent(@PathVariable("id") String idString,
-            HttpServletResponse response) throws Exception {
+    public void printEquivalentContent(
+            @PathVariable("id") String idString,
+            HttpServletResponse response
+    ) throws Exception {
         Id id = decodeId(idString);
         ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
@@ -250,8 +263,10 @@ public class ContentDebugController {
 
     /* Returns the JSON representation of a set stored in the equivalent content store */
     @RequestMapping("/system/debug/equivalentcontent/{id}/set")
-    public void printEquivalentContentSet(@PathVariable("id") String idString,
-            HttpServletResponse response) throws Exception {
+    public void printEquivalentContentSet(
+            @PathVariable("id") String idString,
+            HttpServletResponse response
+    ) throws Exception {
         Id id = decodeId(idString);
         ImmutableList<Id> ids = ImmutableList.of(id);
         ResolvedEquivalents<Content> result = Futures.get(
@@ -268,9 +283,10 @@ public class ContentDebugController {
 
     /* Returns the JSON representation of a piece of equivalent content graph */
     @RequestMapping("/system/debug/content/{id}/graph")
-    public void printContentEquivalence(@PathVariable("id") String id,
-            final HttpServletResponse response)
-            throws Exception {
+    public void printContentEquivalence(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws Exception {
         Id decodedId = decodeId(id);
         ImmutableList<Id> ids = ImmutableList.of(decodedId);
         OptionalMap<Id, EquivalenceGraph> equivalenceGraph = Futures.get(
@@ -293,8 +309,10 @@ public class ContentDebugController {
     }
 
     @RequestMapping("/system/debug/content/{id}/index")
-    public void indexContent(@PathVariable("id") String id, final HttpServletResponse response)
-            throws IOException {
+    public void indexContent(
+            @PathVariable("id") String id,
+            final HttpServletResponse response
+    ) throws IOException {
         try {
             Id decodedId = decodeId(id);
             Resolved<Content> resolved =
@@ -319,9 +337,11 @@ public class ContentDebugController {
     }
 
     @RequestMapping("/system/debug/content/{id}/migrate")
-    public void forceEquivUpdate(@PathVariable("id") String id,
+    public void forceEquivUpdate(
+            @PathVariable("id") String id,
             @RequestParam(name = "equivalents", defaultValue = "false") Boolean migrateEquivalents,
-            final HttpServletResponse response) throws IOException {
+            final HttpServletResponse response
+    ) throws IOException {
         try {
             Long decodedId = lowercase.decode(id).longValue();
 
@@ -342,8 +362,10 @@ public class ContentDebugController {
     }
 
     @RequestMapping(value = "/system/debug/content/{id}/neo4j", method = RequestMethod.POST)
-    public void updateContentInNeo4j(@PathVariable("id") String id, HttpServletResponse response)
-            throws IOException {
+    public void updateContentInNeo4j(
+            @PathVariable("id") String id,
+            HttpServletResponse response
+    ) throws IOException {
         PrintWriter writer = response.getWriter();
 
         try {
@@ -421,5 +443,75 @@ public class ContentDebugController {
 
     private Id decodeId(String id) {
         return Id.valueOf(lowercase.decode(id).longValue());
+    }
+
+    public static final class Builder {
+
+        private ContentResolver legacyContentResolver;
+        private ContentIndex index;
+        private EsContentTranslator esContentTranslator;
+        private ContentStore contentStore;
+        private EquivalentContentStore equivalentContentStore;
+        private Neo4jContentStore neo4jContentStore;
+        private LegacySegmentMigrator legacySegmentMigrator;
+        private AtlasPersistenceModule persistence;
+        private DirectAndExplicitEquivalenceMigrator equivalenceMigrator;
+        private EquivalenceGraphStore contentEquivalenceGraphStore;
+
+        private Builder() { }
+
+        public Builder withContentEquivalenceGraphStore(EquivalenceGraphStore val) {
+            contentEquivalenceGraphStore = val;
+            return this;
+        }
+
+        public Builder withEquivalenceMigrator(DirectAndExplicitEquivalenceMigrator val) {
+            this.equivalenceMigrator = val;
+            return this;
+        }
+
+        public Builder withPersistence(AtlasPersistenceModule val) {
+            persistence = val;
+            return this;
+        }
+
+        public Builder withLegacySegmentMigrator(LegacySegmentMigrator val) {
+            legacySegmentMigrator = val;
+            return this;
+        }
+
+        public Builder withLegacyContentResolver(ContentResolver val) {
+            legacyContentResolver = val;
+            return this;
+        }
+
+        public Builder withIndex(ContentIndex val) {
+            index = val;
+            return this;
+        }
+
+        public Builder withEsContentTranslator(EsContentTranslator val) {
+            esContentTranslator = val;
+            return this;
+        }
+
+        public Builder withContentStore(ContentStore val) {
+            contentStore = val;
+            return this;
+        }
+
+        public Builder withEquivalentContentStore(EquivalentContentStore val) {
+            equivalentContentStore = val;
+            return this;
+        }
+
+        public Builder withNeo4jContentStore(Neo4jContentStore val) {
+            neo4jContentStore = val;
+            return this;
+        }
+
+        public ContentDebugController build() {
+            return new ContentDebugController(this);
+        }
     }
 }
