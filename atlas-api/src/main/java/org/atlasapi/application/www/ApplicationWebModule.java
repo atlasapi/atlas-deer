@@ -6,13 +6,11 @@ import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationPersistenceModule;
-import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.application.model.deserialize.IdDeserializer;
 import org.atlasapi.application.model.deserialize.OptionalDeserializer;
 import org.atlasapi.application.model.deserialize.PublisherDeserializer;
-import org.atlasapi.application.model.deserialize.SourceReadEntryDeserializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.input.GsonModelReader;
 import org.atlasapi.input.ModelReader;
@@ -58,7 +56,6 @@ public class ApplicationWebModule {
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final JsonDeserializer<Id> idDeserializer = new IdDeserializer(idCodec);
     private final JsonDeserializer<DateTime> datetimeDeserializer = new JodaDateTimeSerializer();
-    private final JsonDeserializer<SourceReadEntry> readsDeserializer = new SourceReadEntryDeserializer();
     private final JsonDeserializer<Publisher> publisherDeserializer = new PublisherDeserializer();
 
     @Autowired AtlasPersistenceModule persistence;
@@ -67,13 +64,10 @@ public class ApplicationWebModule {
     @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
 
     private static final String APP_NAME = "atlas";
-
-    @Value("${youtube.handling.service}") private String handlingService;
-
+    
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(DateTime.class, datetimeDeserializer)
             .registerTypeAdapter(Id.class, idDeserializer)
-            .registerTypeAdapter(SourceReadEntry.class, readsDeserializer)
             .registerTypeAdapter(Publisher.class, publisherDeserializer)
             .registerTypeAdapter(new TypeToken<Optional<DateTime>>() {
 

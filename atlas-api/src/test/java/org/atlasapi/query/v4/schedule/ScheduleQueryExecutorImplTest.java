@@ -7,8 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.SourceStatus;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
@@ -222,10 +220,6 @@ public class ScheduleQueryExecutorImplTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        List<SourceReadEntry> reads = ImmutableList.copyOf(Iterables.transform(
-                Publisher.all(),
-                input -> new SourceReadEntry(input, SourceStatus.AVAILABLE_ENABLED)
-        ));
 
         Application application = mock(Application.class);
         when(application.getConfiguration())

@@ -13,8 +13,8 @@ public class SourcesModule {
     private final SourceIdCodec sourceIdCodec = new SourceIdCodec(idCodec);
 
     @Bean
-    public SystemSourcesController systemSourcesControllergit () {
-        return SystemSourcesController.create(sourceIdCodec);
+    public SourcesController systemSourcesController() {
+        return SourcesController.create(sourceIdCodec);
     }
 
 }

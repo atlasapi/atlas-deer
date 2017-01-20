@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.base.MoreObjects;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.IdentifiedSerializer;
@@ -88,7 +89,7 @@ public class BroadcastSerializer {
             );
         }
         if (broadcast.getRevisedRepeat() != null) {
-//            builder.setRevisedRepeat(broadcast.getRevisedRepeat()); //TODO fix
+            builder.setRevisedRepeat(broadcast.getRevisedRepeat());
         }
         return builder;
     }
@@ -128,7 +129,7 @@ public class BroadcastSerializer {
                     blackoutRestrictionSerializer.deserialize(msg.getBlackoutRestriction())
             );
         }
-//        broadcast.setRevisedRepeat(msg.hasRevisedRepeat() ? msg.getRevisedRepeat() : null); //TODO: broadcast fix
+        broadcast.setRevisedRepeat(msg.hasRevisedRepeat() ? msg.getRevisedRepeat() : null);
         return broadcast;
     }
 }

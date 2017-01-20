@@ -40,7 +40,7 @@ public class DefaultApplication {
                 .build();
 
         return Application.builder()
-                .withId(-1l)
+                .withId(-1L)
                 .withTitle("defaultApplication")
                 .withDescription("Default application")
                 .withEnvironment(null)
