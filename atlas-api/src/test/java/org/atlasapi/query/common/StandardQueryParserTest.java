@@ -59,7 +59,7 @@ public class StandardQueryParserTest {
     @Mock private HttpServletRequest request = mock(HttpServletRequest.class);
     @Mock private Application application = mock(Application.class);
 
-    private QueryContext queryContext = new QueryContext(
+    private QueryContext queryContext = QueryContext.create(
             application,
             ActiveAnnotations.standard(),
             request

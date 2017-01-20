@@ -45,16 +45,20 @@ public class PopularTopicController {
     private final TopicResolver resolver;
     private final PopularTopicIndex index;
     private final QueryResultWriter<Topic> resultWriter;
-    private final ApplicationFetcher sourcesFetcher;
+    private final ApplicationFetcher applicationFetcher;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    public PopularTopicController(TopicResolver resolver, PopularTopicIndex index,
-            QueryResultWriter<Topic> resultWriter, ApplicationFetcher configurationFetcher) {
+    public PopularTopicController(
+            TopicResolver resolver,
+            PopularTopicIndex index,
+            QueryResultWriter<Topic> resultWriter,
+            ApplicationFetcher applicationFetcher
+    ) {
         this.resolver = resolver;
         this.index = index;
         this.resultWriter = resultWriter;
-        this.sourcesFetcher = configurationFetcher;
+        this.applicationFetcher = applicationFetcher;
     }
 
     @RequestMapping({ "/4/topics/popular\\.[a-z]+", "/4/topics/popular" })
@@ -71,7 +75,7 @@ public class PopularTopicController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            Application application = sourcesFetcher.applicationFor(request)
+            Application application = applicationFetcher.applicationFor(request)
                     .orElse(DefaultApplication.create());
             Interval interval = new Interval(
                     dateTimeInQueryParser.parse(from),
@@ -83,7 +87,7 @@ public class PopularTopicController {
             );
             resultWriter.write(QueryResult.listResult(
                     resolve(topicIds),
-                    QueryContext.create(sources, ActiveAnnotations.standard(), request),
+                    QueryContext.create(application, ActiveAnnotations.standard(), request),
                     Long.valueOf(topicIds.get().size())
             ), writer);
         } catch (Exception e) {

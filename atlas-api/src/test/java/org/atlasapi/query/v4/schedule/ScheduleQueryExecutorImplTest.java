@@ -85,7 +85,7 @@ public class ScheduleQueryExecutorImplTest {
                                 .collect(Collectors.toList())
                 )
         );
-        queryContext = new QueryContext(
+        queryContext = QueryContext.create(
                 application,
                 ActiveAnnotations.standard(),
                 request
@@ -230,14 +230,8 @@ public class ScheduleQueryExecutorImplTest {
         Application application = mock(Application.class);
         when(application.getConfiguration())
                 .thenReturn(getConfigWithPrecedence(Publisher.all().asList()));
-        QueryContext context = new QueryContext(
-                application,
-        ApplicationSources appSources = ApplicationSources.defaults().copy()
-                .withPrecedence(true)
-                .withReadableSources(reads)
-                .build();
         QueryContext context = QueryContext.create(
-                appSources,
+                application,
                 ActiveAnnotations.standard(),
                 mock(HttpServletRequest.class)
         );

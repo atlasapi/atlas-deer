@@ -88,7 +88,7 @@ public class BroadcastSerializer {
             );
         }
         if (broadcast.getRevisedRepeat() != null) {
-            builder.setRevisedRepeat(broadcast.getRevisedRepeat());
+//            builder.setRevisedRepeat(broadcast.getRevisedRepeat()); //TODO fix
         }
         return builder;
     }
@@ -128,7 +128,7 @@ public class BroadcastSerializer {
                     blackoutRestrictionSerializer.deserialize(msg.getBlackoutRestriction())
             );
         }
-        broadcast.setRevisedRepeat(msg.hasRevisedRepeat() ? msg.getRevisedRepeat() : null);
+//        broadcast.setRevisedRepeat(msg.hasRevisedRepeat() ? msg.getRevisedRepeat() : null); //TODO: broadcast fix
         return broadcast;
     }
 }

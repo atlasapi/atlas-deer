@@ -1,6 +1,6 @@
 package org.atlasapi.query.v4.topic;
 
-import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -8,11 +8,8 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
-import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.Episode;
@@ -74,17 +71,13 @@ public class TopicContentQueryExecutorTest {
     public void setup() {
         when(application.getConfiguration()).thenReturn(
                 ApplicationConfiguration.builder()
-                        .withNoPrecedence(
-                                Publisher.all().stream()
-                                        .filter(Publisher::enabledWithNoApiKey)
-                                        .collect(Collectors.toList())
-                        )
+                        .withNoPrecedence(getPublishers())
                         .withEnabledWriteSources(ImmutableList.of())
                         .build()
         );
 
         executor = new TopicContentQueryExecutor(topicResolver, contentIndex, equivalentsResolver);
-        queryContext = new QueryContext(application, ActiveAnnotations.standard(), request);
+        queryContext = QueryContext.create(application, ActiveAnnotations.standard(), request);
     }
 
     @Test
@@ -92,32 +85,11 @@ public class TopicContentQueryExecutorTest {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
 
-        QueryContext context = new QueryContext(
-                Application.builder()
-                        .withId(-1l)
-                        .withTitle("test")
-                        .withDescription("desc")
-                        .withEnvironment(Environment.PROD)
-                        .withCreated(ZonedDateTime.now())
-                        .withApiKey("apiKey")
-                        .withSources(ApplicationConfiguration.builder()
-                                .withPrecedence(Lists.newArrayList(Publisher.BBC, Publisher.DBPEDIA))
-                                .withEnabledWriteSources(Lists.newArrayList())
-                                .build())
-                        .withAllowedDomains(Lists.newArrayList())
-                        .withAccessRoles(mock(AccessRoles.class))
-                        .withRevoked(false)
-                        .build(),
+        QueryContext context = QueryContext.create(
+                application,
                 ActiveAnnotations.standard(),
                 mock(HttpServletRequest.class)
         );
-
-        QueryContext context = QueryContext.create(ApplicationSources.defaults()
-                .copyWithChangedReadableSourceStatus(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED)
-                .copyWithChangedReadableSourceStatus(
-                        Publisher.DBPEDIA,
-                        SourceStatus.AVAILABLE_ENABLED
-                ), ActiveAnnotations.standard(), mock(HttpServletRequest.class));
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
         ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
 
@@ -207,5 +179,16 @@ public class TopicContentQueryExecutorTest {
                 argThat(isA(Set.class))
         );
         throw qee.getCause();
+    }
+
+    private List<Publisher> getPublishers() {
+        return ImmutableList.<Publisher>builder()
+                .addAll(
+                        Publisher.all().stream()
+                                .filter(Publisher::enabledWithNoApiKey)
+                                .collect(Collectors.toList())
+                )
+                .add(Publisher.DBPEDIA)
+                .build();
     }
 }

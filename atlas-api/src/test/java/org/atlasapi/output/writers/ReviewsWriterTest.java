@@ -13,7 +13,6 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import org.junit.Before;
@@ -35,7 +34,7 @@ public class ReviewsWriterTest {
     private @Mock Application application = mock(Application.class);
 
     private OutputContext ctxt = OutputContext.valueOf(
-            new QueryContext(application, ActiveAnnotations.standard(), request)
+            QueryContext.create(application, ActiveAnnotations.standard(), request)
     );
 
 

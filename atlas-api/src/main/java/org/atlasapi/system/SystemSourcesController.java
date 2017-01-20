@@ -2,7 +2,6 @@ package org.atlasapi.system;
 
 import com.google.common.base.Optional;
 import org.atlasapi.application.sources.SourceIdCodec;
-import org.atlasapi.application.writers.SourceWithIdWriter;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityListWriter;
@@ -11,6 +10,7 @@ import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.ResponseWriter;
 import org.atlasapi.output.ResponseWriterFactory;
+import org.atlasapi.output.writers.SourceWithIdWriter;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.springframework.stereotype.Controller;
@@ -30,7 +30,7 @@ public class SystemSourcesController {
 
     private SystemSourcesController(SourceIdCodec sourceIdCodec) {
         this.sourceIdCodec = sourceIdCodec;
-        sourcesWriter = new SourceWithIdWriter(sourceIdCodec, "source", "sources");
+        sourcesWriter = SourceWithIdWriter.create(sourceIdCodec, "source", "sources");
         writerResolver = new ResponseWriterFactory();
     }
 
@@ -91,14 +91,14 @@ public class SystemSourcesController {
             HttpServletRequest request,
             String sourceId
     ) throws IOException {
-        Optional<Publisher> publisher = sourceIdCodec.decode(sourceId);
+        Optional<Publisher> publisher = sourceIdCodec.decode(sourceId).toGuavaOptional();
         if(!publisher.isPresent()) {
             throw new IOException("Publisher ID not found: " + sourceId);
         }
 
         writer.writeObject(
                 sourcesWriter,
-                sourceIdCodec.decode(sourceId).get(),
+                publisher.get(),
                 OutputContext.valueOf(QueryContext.standard(request))
         );
     }

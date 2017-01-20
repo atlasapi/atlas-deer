@@ -210,8 +210,7 @@ class ScheduleRequestParser {
         checkArgument(application.getConfiguration().isReadEnabled(publisher), "Source %s not enabled", publisher);
 
         ActiveAnnotations annotations = annotationExtractor.extractFromRequest(request);
-        return new QueryContext(application, annotations, request);
-        return QueryContext.create(appSources, annotations, request);
+        return QueryContext.create(application, annotations, request);
     }
 
     private List<Id> extractChannels(HttpServletRequest request) throws QueryParseException {

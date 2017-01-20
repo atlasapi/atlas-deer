@@ -361,12 +361,14 @@ public class QueryWebModule {
 
     @Bean
     TopicContentController topicContentController() {
-        ContextualQueryContextParser contextParser = new ContextualQueryContextParser(configFetcher,
-                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
+        ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
+                configFetcher,
+                IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(contentAnnotationIndex())
                         .addExplicitSingleContext(topicAnnotationIndex())
                         .combine()
-                ), selectionBuilder()
+                ),
+                selectionBuilder()
         );
 
         ContextualQueryParser<Topic, Content> parser = new ContextualQueryParser<>(
@@ -420,9 +422,7 @@ public class QueryWebModule {
         );
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
-                userFetcher,
                 IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
-                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(modelInfoAnnotationIndex())
                         .combine()
                 ),
@@ -445,9 +445,7 @@ public class QueryWebModule {
         );
         ContextualQueryContextParser contextParser = new ContextualQueryContextParser(
                 configFetcher,
-                userFetcher,
                 IndexContextualAnnotationsExtractor.create(ResourceAnnotationIndex.combination()
-                new IndexContextualAnnotationsExtractor(ResourceAnnotationIndex.combination()
                         .addImplicitListContext(endpointInfoAnnotationIndex())
                         .combine()
                 ),
@@ -687,9 +685,7 @@ public class QueryWebModule {
     }
 
     private StandardQueryParser<Topic> topicQueryParser() {
-        QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
-                new IndexAnnotationsExtractor(topicAnnotationIndex()), selectionBuilder()
-        QueryContextParser contextParser = new QueryContextParser(
+        QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
                 new IndexAnnotationsExtractor(topicAnnotationIndex()),
                 selectionBuilder()
@@ -727,9 +723,7 @@ public class QueryWebModule {
     }
 
     private StandardQueryParser<Event> eventQueryParser() {
-        QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
-                new IndexAnnotationsExtractor(eventAnnotationIndex()), selectionBuilder()
-        QueryContextParser contextParser = new QueryContextParser(
+        QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
                 new IndexAnnotationsExtractor(eventAnnotationIndex()),
                 selectionBuilder()
@@ -761,9 +755,7 @@ public class QueryWebModule {
     }
 
     private StandardQueryParser<Organisation> organisationQueryParser() {
-        QueryContextParser contextParser = QueryContextParser.create(configFetcher, userFetcher,
-                new IndexAnnotationsExtractor(organisationAnnotationIndex()), selectionBuilder()
-        QueryContextParser contextParser = new QueryContextParser(
+        QueryContextParser contextParser = QueryContextParser.create(
                 configFetcher,
                 new IndexAnnotationsExtractor(organisationAnnotationIndex()),
                 selectionBuilder()

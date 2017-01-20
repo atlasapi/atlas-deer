@@ -68,8 +68,6 @@ public class ContextualQueryParserTest {
                 .thenReturn(new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of()));
         when(queryContextParser.parseContext(req))
                 .thenReturn(QueryContext.create(
-                        ApplicationSources.defaults(),
-                .thenReturn(new QueryContext(
                         mock(Application.class),
                         ActiveAnnotations.standard(),
                         mock(HttpServletRequest.class)

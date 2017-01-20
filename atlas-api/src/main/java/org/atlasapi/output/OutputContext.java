@@ -13,8 +13,6 @@ import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.Resource;
 import org.atlasapi.query.common.context.QueryContext;
-import org.atlasapi.query.common.useraware.UserAccountsAwareQueryContext;
-import org.atlasapi.query.common.useraware.UserAwareQueryContext;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;

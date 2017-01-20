@@ -10,26 +10,18 @@ import org.atlasapi.query.annotation.ActiveAnnotations;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.base.Optional;
+import scala.io.BytePickle;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class QueryContext {
 
-    public static final QueryContext standard(HttpServletRequest request) {
-        return new QueryContext(
-                DefaultApplication.create(),
-                ActiveAnnotations.standard(),
-                request
-        );
-    }
-
     private final Application application;
-    private final ApplicationSources appSources;
     private final ActiveAnnotations annotations;
     private final Optional<Selection> selection;
     private final HttpServletRequest request;
 
-    public QueryContext(
+    private QueryContext(
             Application application,
             ActiveAnnotations annotations,
             HttpServletRequest request
@@ -37,7 +29,7 @@ public class QueryContext {
         this(application, annotations, null, request);
     }
 
-    public QueryContext(
+    private QueryContext(
             Application application,
             ActiveAnnotations annotations,
             Selection selection,
@@ -49,35 +41,34 @@ public class QueryContext {
         this.request = checkNotNull(request);
     }
 
-    public Application getApplication() {
-        return this.application;
+
     public static QueryContext standard(HttpServletRequest request) {
-        return create(
-                ApplicationSources.defaults(),
+        return new QueryContext(
+                DefaultApplication.create(),
                 ActiveAnnotations.standard(),
                 request
         );
     }
 
     public static QueryContext create(
-            ApplicationSources appSources,
+            Application application,
             ActiveAnnotations annotations,
             HttpServletRequest request
     ) {
-        return new QueryContext(appSources, annotations, null, request);
+        return new QueryContext(application, annotations, null, request);
     }
 
     public static QueryContext create(
-            ApplicationSources appSources,
+            Application application,
             ActiveAnnotations annotations,
             Selection selection,
             HttpServletRequest request
     ) {
-        return new QueryContext(appSources, annotations, selection, request);
+        return new QueryContext(application, annotations, selection, request);
     }
 
-    public ApplicationSources getApplicationSources() {
-        return this.appSources;
+    public Application getApplication() {
+        return this.application;
     }
 
     public ActiveAnnotations getAnnotations() {
@@ -114,7 +105,7 @@ public class QueryContext {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("config", application)
+                .add("application", application)
                 .add("annotations", annotations)
                 .add("selection", selection)
                 .toString();

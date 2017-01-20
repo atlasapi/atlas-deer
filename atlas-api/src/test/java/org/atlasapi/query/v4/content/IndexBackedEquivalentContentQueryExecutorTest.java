@@ -41,7 +41,7 @@ public class IndexBackedEquivalentContentQueryExecutorTest {
 
         Query<Content> query = Query.singleQuery(
                 Id.valueOf(1),
-                new QueryContext(
+                QueryContext.create(
                         mock(Application.class),
                         ActiveAnnotations.standard(),
                         mock(HttpServletRequest.class)

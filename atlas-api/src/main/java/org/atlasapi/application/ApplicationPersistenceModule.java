@@ -6,11 +6,7 @@ import com.metabroadcast.applications.client.ApplicationsClientImpl;
 import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
 
-import com.metabroadcast.common.social.auth.credentials.CredentialsStore;
-import com.metabroadcast.common.social.auth.credentials.MongoDBCredentialsStore;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 

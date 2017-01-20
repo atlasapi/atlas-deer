@@ -11,7 +11,6 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import org.junit.Test;
@@ -19,7 +18,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -37,7 +35,7 @@ public class RatingsWriterTest {
         Rating rating = new Rating("MOOSE", 1.0f, Publisher.BBC);
 
         OutputContext ctxt = OutputContext.valueOf(
-                new QueryContext(application, ActiveAnnotations.standard(), request)
+                QueryContext.create(application, ActiveAnnotations.standard(), request)
         );
 
         writerUnderTest.write(

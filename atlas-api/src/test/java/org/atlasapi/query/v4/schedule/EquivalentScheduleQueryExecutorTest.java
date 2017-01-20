@@ -94,7 +94,7 @@ public class EquivalentScheduleQueryExecutorTest {
 
         when(application.getAccessRoles()).thenReturn(accessRoles);
         when(application.getConfiguration()).thenReturn(getConfig());
-        queryContext = new QueryContext(
+        queryContext = QueryContext.create(
                 application,
                 ActiveAnnotations.standard(),
                 request
@@ -260,9 +260,6 @@ public class EquivalentScheduleQueryExecutorTest {
                 .withRevoked(false)
                 .build();
         QueryContext context = QueryContext.create(
-                appSources,
-
-        QueryContext context = new QueryContext(
                 application,
                 ActiveAnnotations.standard(),
                 mock(HttpServletRequest.class)

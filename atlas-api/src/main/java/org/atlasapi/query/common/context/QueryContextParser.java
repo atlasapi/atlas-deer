@@ -38,14 +38,12 @@ public class QueryContextParser implements ParameterNameProvider {
     }
 
     public static QueryContextParser create(
-            ApplicationSourcesFetcher configFetcher,
-            UserFetcher userFetcher,
+            ApplicationFetcher configFetcher,
             AnnotationsExtractor annotationsParser,
             SelectionBuilder selectionBuilder
     ) {
         return new QueryContextParser(
                 configFetcher,
-                userFetcher,
                 annotationsParser,
                 selectionBuilder
         );
@@ -53,10 +51,7 @@ public class QueryContextParser implements ParameterNameProvider {
 
     public QueryContext parseSingleContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        return new QueryContext(
-                configFetcher.applicationFor(request).orElse(configFetcher.getDefaults()),
         return QueryContext.create(
-                configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
                 configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromSingleRequest(request),
                 selectionBuilder.build(request),
@@ -67,8 +62,6 @@ public class QueryContextParser implements ParameterNameProvider {
     public QueryContext parseListContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
         return QueryContext.create(
-                configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
-        return new QueryContext(
                 configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromListRequest(request),
                 selectionBuilder.build(request),

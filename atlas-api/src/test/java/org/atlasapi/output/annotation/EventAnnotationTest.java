@@ -17,7 +17,6 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.ItemRefWriter;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.v4.event.PersonListWriter;
 import org.atlasapi.query.v4.organisation.OrganisationListWriter;
@@ -80,9 +79,13 @@ public class EventAnnotationTest {
 
         when(resolver.resolveIds(anySet())).thenReturn(Futures.immediateFuture(
                 Resolved.valueOf(ImmutableSet.of(organisation))));
+
         OutputContext context = OutputContext.valueOf(
-//                QueryContext.standard(mock(HttpServletRequest.class))
-                new QueryContext(mock(Application.class), ActiveAnnotations.standard(), mock(HttpServletRequest.class))
+                QueryContext.create(
+                        mock(Application.class),
+                        ActiveAnnotations.standard(),
+                        mock(HttpServletRequest.class)
+                )
         );
 
         eventAnnotation.write(event, fieldWriter, context);

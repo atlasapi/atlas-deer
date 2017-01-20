@@ -64,8 +64,11 @@ public class ContextualQueryParser<C, R> {
                 contextQuery, resourceQuery(request, contextQuery.getOnlyId(), context), context);
     }
 
-    private ListQuery<R> resourceQuery(HttpServletRequest request, Id contextId,
-            QueryContext context)
+    private ListQuery<R> resourceQuery(
+            HttpServletRequest request,
+            Id contextId,
+            QueryContext context
+    )
             throws QueryParseException {
         AttributeQuerySet querySet = attributeParser.parse(request);
         querySet = querySet.copyWith(contextAttributeQuery(contextId));

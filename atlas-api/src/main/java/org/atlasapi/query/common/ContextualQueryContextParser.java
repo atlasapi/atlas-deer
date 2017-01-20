@@ -39,7 +39,7 @@ public class ContextualQueryContextParser implements ParameterNameProvider {
 
     public QueryContext parseContext(HttpServletRequest request)
             throws QueryParseException, InvalidApiKeyException {
-        return new QueryContext(
+        return QueryContext.create(
                 configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromRequest(request),
                 selectionBuilder.build(request),

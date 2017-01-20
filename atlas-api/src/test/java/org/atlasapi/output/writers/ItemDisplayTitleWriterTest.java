@@ -15,7 +15,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.time.DateTimeZones;
@@ -27,7 +26,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -43,7 +41,7 @@ public class ItemDisplayTitleWriterTest {
     @Before
     public void setUp() {
         outputContext = OutputContext.valueOf(
-                new QueryContext(application, ActiveAnnotations.standard(), request)
+                QueryContext.create(application, ActiveAnnotations.standard(), request)
         );
     }
 

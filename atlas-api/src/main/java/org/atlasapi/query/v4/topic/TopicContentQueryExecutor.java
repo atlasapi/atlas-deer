@@ -54,10 +54,15 @@ public class TopicContentQueryExecutor implements ContextualQueryExecutor<Topic,
     public ContextualQueryResult<Topic, Content> execute(
             final ContextualQuery<Topic, Content> query)
             throws QueryExecutionException {
-        return Futures.get(Futures.transform(
-                resolveTopic(query.getContextQuery().getOnlyId()),
-                resolveContentToContextualQuery(query)
-        ), QUERY_TIMEOUT, MILLISECONDS, QueryExecutionException.class);
+        return Futures.getChecked(
+                Futures.transformAsync(
+                        resolveTopic(query.getContextQuery().getOnlyId()),
+                        resolveContentToContextualQuery(query)
+                ),
+                QueryExecutionException.class,
+                QUERY_TIMEOUT,
+                MILLISECONDS
+        );
     }
 
     private AsyncFunction<Resolved<Topic>, ContextualQueryResult<Topic, Content>> resolveContentToContextualQuery(

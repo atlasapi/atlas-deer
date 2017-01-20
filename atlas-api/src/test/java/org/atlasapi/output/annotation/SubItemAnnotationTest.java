@@ -11,7 +11,6 @@ import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
@@ -20,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import static org.hamcrest.Matchers.is;
@@ -58,7 +56,7 @@ public class SubItemAnnotationTest {
         MockHttpServletRequest httpReq = new MockHttpServletRequest("GET", "");
         httpReq.setParameter("sub_item.ordering", "reverse");
         anno.write(series, writer, OutputContext.valueOf(
-                new QueryContext(application, ActiveAnnotations.standard(), httpReq))
+                QueryContext.create(application, ActiveAnnotations.standard(), httpReq))
         );
         verify(writer).writeList(any(), captor.capture(), any());
 
@@ -94,7 +92,7 @@ public class SubItemAnnotationTest {
         httpReq.setParameter("sub_items.ordering", "reverse");
 
         anno.write(series, writer, OutputContext.valueOf(
-                new QueryContext(application, ActiveAnnotations.standard(), httpReq))
+                QueryContext.create(application, ActiveAnnotations.standard(), httpReq))
         );
         verify(writer).writeList(any(), captor.capture(), any());
 

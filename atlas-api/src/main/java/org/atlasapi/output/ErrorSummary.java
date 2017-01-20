@@ -5,10 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.atlasapi.application.InvalidApiKeyException;
-import org.atlasapi.query.common.InvalidAnnotationException;
-import org.atlasapi.query.common.InvalidIdentifierException;
-import org.atlasapi.query.common.InvalidParameterException;
-import org.atlasapi.application.auth.InvalidApiKeyException;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.InvalidIdentifierException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;

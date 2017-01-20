@@ -12,7 +12,6 @@ import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
-import org.atlasapi.query.common.QueryContext;
 import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
@@ -47,7 +46,7 @@ public class JsonResponseWriterTest {
         request = new StubHttpServletRequest();
         response = new StubHttpServletResponse();
         ctxt = OutputContext.valueOf(
-                new QueryContext(
+                QueryContext.create(
                         mock(Application.class),
                         ActiveAnnotations.standard(),
                         mock(HttpServletRequest.class)
