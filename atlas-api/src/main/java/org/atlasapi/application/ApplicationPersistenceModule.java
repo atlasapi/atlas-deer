@@ -20,16 +20,6 @@ public class ApplicationPersistenceModule {
 
     @Autowired AtlasPersistenceModule persistence;
 
-    @Bean
-    public CredentialsStore credentialsStore() {
-        return new MongoDBCredentialsStore(persistence.databasedWriteMongo());
-    }
-
-    @Bean
-    public MongoTokenRequestStore tokenStore() {
-        return new MongoTokenRequestStore(persistence.databasedWriteMongo());
-    }
-
     public ApplicationsClient applicationsClient() {
         return ApplicationsClientImpl.create(
                 Configurer.get("applications.client.host").get(),
