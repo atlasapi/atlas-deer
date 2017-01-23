@@ -60,8 +60,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
-    private static final int CQL_PORT = 9042;
-
     private static final String METRIC_PREFIX = "persistence.store.";
 
     private String contentEquivalenceGraphChanges = Configurer.get(

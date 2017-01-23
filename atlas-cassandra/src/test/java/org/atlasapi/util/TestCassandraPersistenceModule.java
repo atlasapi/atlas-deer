@@ -28,9 +28,14 @@ import com.metabroadcast.common.queue.MessageSerializer;
 import com.metabroadcast.common.queue.MessagingException;
 
 import com.codahale.metrics.MetricRegistry;
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.json.JacksonJsonCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractIdleService;
@@ -42,6 +47,8 @@ import org.slf4j.LoggerFactory;
 
 public class TestCassandraPersistenceModule extends AbstractIdleService
         implements PersistenceModule {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -75,11 +82,22 @@ public class TestCassandraPersistenceModule extends AbstractIdleService
 
     private final AstyanaxContext<Keyspace> context
             = new ConfiguredAstyanaxContext("Atlas", keyspace, seeds, 9160, 5, 60).get();
-    private final DatastaxCassandraService cassandraService = new DatastaxCassandraService(
-            seeds,
-            8,
-            2
-    );
+    private final DatastaxCassandraService cassandraService = DatastaxCassandraService.builder()
+            .withNodes(seeds)
+            .withConnectionsPerHostLocal(8)
+            .withConnectionsPerHostRemote(2)
+            .withCodecRegistry(new CodecRegistry()
+                    .register(InstantCodec.instance)
+                    .register(LocalDateCodec.instance)
+                    .register(new JacksonJsonCodec<>(
+                            org.atlasapi.content.v2.model.Clip.Wrapper.class,
+                            MAPPER
+                    ))
+                    .register(new JacksonJsonCodec<>(
+                            org.atlasapi.content.v2.model.Encoding.Wrapper.class,
+                            MAPPER
+                    ))
+            ).build();
 
     private CassandraPersistenceModule persistenceModule;
 

@@ -182,6 +182,7 @@ public class CqlContentStore implements ContentStore {
             Container container = resolveContainer(content);
             ensureContentSummary(content, container);
             ensureId(content);
+            filterUnpublishedBroadcasts(content);
 
             ImmutableList.Builder<ResourceUpdatedMessage> messages = ImmutableList.builder();
 
@@ -212,6 +213,18 @@ public class CqlContentStore implements ContentStore {
         } catch (WriteException | RuntimeException e) {
             metricRegistry.meter(writeContent + METER_FAILURE).mark();
             throw e;
+        }
+    }
+
+    private void filterUnpublishedBroadcasts(Content content) {
+        if (content instanceof Item) {
+            Item item = (Item) content;
+            item.setBroadcasts(
+                    item.getBroadcasts()
+                            .stream()
+                            .filter(Broadcast::isActivelyPublished)
+                            .collect(MoreCollectors.toImmutableSet())
+            );
         }
     }
 
