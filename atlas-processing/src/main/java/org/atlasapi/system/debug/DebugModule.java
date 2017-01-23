@@ -17,27 +17,18 @@ public class DebugModule {
 
     @Bean
     public ContentDebugController contentDebugController() {
-        return new ContentDebugController(
-                persistenceModule.legacyContentResolver(),
-                persistenceModule.legacySegmentMigrator(),
-                persistenceModule,
-                explicitEquivalenceMigrator(),
-                persistenceModule.contentIndex(),
-                persistenceModule.esContentTranslator(),
-                persistenceModule.neo4jContentStore(),
-                persistenceModule.contentStore(),
-                persistenceModule.getContentEquivalenceGraphStore(),
-                persistenceModule.getEquivalentContentStore()
-        );
-    }
-
-    @Bean
-    CqlContentDebugController cqlController() {
-        return new CqlContentDebugController(
-                persistenceModule.legacyContentResolver(),
-                persistenceModule.contentStore(),
-                persistenceModule.cqlContentStore()
-        );
+        return ContentDebugController.builder()
+                .withLegacyContentResolver(persistenceModule.legacyContentResolver())
+                .withLegacySegmentMigrator(persistenceModule.legacySegmentMigrator())
+                .withPersistence(persistenceModule)
+                .withEquivalenceMigrator(explicitEquivalenceMigrator())
+                .withIndex(persistenceModule.contentIndex())
+                .withEsContentTranslator(persistenceModule.esContentTranslator())
+                .withNeo4jContentStore(persistenceModule.neo4jContentStore())
+                .withContentStore(persistenceModule.contentStore())
+                .withContentEquivalenceGraphStore(persistenceModule.getContentEquivalenceGraphStore())
+                .withEquivalentContentStore(persistenceModule.getEquivalentContentStore())
+                .build();
     }
 
     @Bean

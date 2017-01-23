@@ -8,13 +8,13 @@ import javax.annotation.PreDestroy;
 
 import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.CassandraEquivalentContentStore;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
-import org.atlasapi.content.v2.CqlContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.event.EventResolver;
@@ -245,14 +245,8 @@ public class AtlasPersistenceModule {
         return persistenceModule().contentStore();
     }
 
-    @Bean
-    public CqlContentStore cqlContentStore() {
-        return persistenceModule().cqlContentStore();
-    }
-
-    @Bean
-    public CqlContentStore bootstrapCqlContentStore() {
-        return persistenceModule().bootstrapCqlContentStore();
+    public AstyanaxCassandraContentStore astyanaxContentStore() {
+        return persistenceModule().astyanaxContentStore();
     }
 
     public ContentStore nullMessageSendingContentStore() {

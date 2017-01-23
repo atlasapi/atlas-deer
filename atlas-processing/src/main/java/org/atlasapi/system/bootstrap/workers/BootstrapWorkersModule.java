@@ -115,7 +115,7 @@ public class BootstrapWorkersModule {
 
     @Bean
     @Qualifier("bootstrap")
-    KafkaMessageConsumerFactory bootstrapQueueFactory() {
+    public KafkaMessageConsumerFactory bootstrapQueueFactory() {
         return KafkaMessageConsumerFactory.create(zookeeper, originSystem);
     }
 
@@ -126,7 +126,7 @@ public class BootstrapWorkersModule {
 
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
-                persistence.contentStore(),
+                persistence.astyanaxContentStore(),
                 WORKER_METRIC_PREFIX + workerName + ".",
                 metricsModule.metrics(),
                 ColumbusTelescopeReporter.create(
@@ -158,7 +158,7 @@ public class BootstrapWorkersModule {
 
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
-                persistence.cqlContentStore(),
+                persistence.contentStore(),
                 WORKER_METRIC_PREFIX + workerName + ".",
                 metricsModule.metrics(),
                 ColumbusTelescopeReporter.create(

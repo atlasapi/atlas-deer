@@ -12,10 +12,12 @@ import org.atlasapi.system.ProcessingHealthModule;
 import org.atlasapi.system.bootstrap.workers.BootstrapWorkersModule;
 import org.atlasapi.system.bootstrap.workers.DelegatingContentStore;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
+import org.atlasapi.system.bootstrap.workers.EntityUpdatedLegacyMessageSerializer;
 import org.atlasapi.system.legacy.MongoProgressStore;
 import org.atlasapi.system.legacy.ProgressStore;
 
 import com.metabroadcast.common.properties.Configurer;
+import com.metabroadcast.common.queue.kafka.StartPoint;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -40,8 +42,14 @@ public class BootstrapModule {
     private static final Integer NUMBER_OF_SCHECHULE_CONTROLLER_THREADS = 2;
     private static final Integer NUMBER_OF_SCHEDULE_BOOTSTRAP_THREADS = Configurer.get(
             "boootstrap.schedule.numThreads").toInt();
-    private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS = Configurer.get(
+    private static final Integer NUMBER_OF_SOURCE_BOOTSTRAP_THREADS = Configurer.get(
             "boootstrap.source.numThreads").toInt();
+
+    private final Integer contentChangesReplayNumOfConsumers =
+            Configurer.get("messaging.bootstrap.content.changes.consumers").toInt();
+    private final String consumerSystem = Configurer.get("messaging.system").get();
+    private final String contentChanges =
+            Configurer.get("messaging.destination.content.changes").get();
 
     @Autowired private AtlasPersistenceModule persistence;
     @Autowired private BootstrapWorkersModule workers;
@@ -51,7 +59,6 @@ public class BootstrapModule {
 
     @Autowired private MessagingModule messaging;
     @Autowired private MetricsModule metricsModule;
-
 
     @Bean
     BootstrapController bootstrapController() {
@@ -78,20 +85,35 @@ public class BootstrapModule {
 
     @Bean
     ContentBootstrapController contentBootstrapController() {
-        return new ContentBootstrapController(
-                persistence.legacyContentResolver(),
-                persistence.legacyContentLister(),
-                persistence.nullMessageSendingContentStore(),
-                search.equivContentIndex(),
-                explicitEquivalenceMigrator,
-                NUMBER_OF_SOURCE_BOOTSTRAP_TRHEADS,
-                progressStore(),
-                metrics,
-                persistence.nullMessageSendingEquivalentContentStore(),
-                persistence.nullMessageSendingEquivalenceGraphStore(),
-                persistence.contentStore(),
-                persistence.neo4jContentStore()
-        );
+        return ContentBootstrapController.builder()
+                .withRead(persistence.legacyContentResolver())
+                .withContentLister(persistence.legacyContentLister())
+                .withWrite(persistence.nullMessageSendingContentStore())
+                .withContentIndex(search.equivContentIndex())
+                .withEquivalenceMigrator(explicitEquivalenceMigrator)
+                .withMaxSourceBootstrapThreads(NUMBER_OF_SOURCE_BOOTSTRAP_THREADS)
+                .withProgressStore(progressStore())
+                .withMetrics(metrics)
+                .withEquivalentContentStore(persistence.nullMessageSendingEquivalentContentStore())
+                .withEquivalenceGraphStore(persistence.nullMessageSendingEquivalenceGraphStore())
+                .withContentStore(persistence.contentStore())
+                .withNeo4JContentStore(persistence.neo4jContentStore())
+                .withLegacyResolver(persistence.legacyContentResolver())
+                .withReplayConsumerFactory(worker -> workers.bootstrapQueueFactory()
+                        .createConsumer(
+                                worker,
+                                new EntityUpdatedLegacyMessageSerializer(),
+                                contentChanges,
+                                "ReplayContentBootstrap"
+                        )
+                        .withConsumerSystem(consumerSystem)
+                        .withDefaultConsumers(contentChangesReplayNumOfConsumers)
+                        .withMaxConsumers(contentChangesReplayNumOfConsumers)
+                        .withPersistentRetryPolicy(persistence.databasedWriteMongo())
+                        .withMetricRegistry(metricsModule.metrics())
+                        .startFrom(StartPoint.BEGINNING)
+                        .build()
+                ).build();
     }
 
     @Bean
@@ -104,18 +126,6 @@ public class BootstrapModule {
         return new IndividualTopicBootstrapController(
                 persistence.legacyTopicResolver(),
                 persistence.topicStore()
-        );
-    }
-
-    @Bean
-    CqlContentBootstrapController cqlContentBootstrapController() {
-        return CqlContentBootstrapController.create(
-                executorService(20, "cql-content-bootstrap"),
-                progressStore(),
-                persistence.legacyContentResolver(),
-                persistence.bootstrapCqlContentStore(),
-                persistence.legacyContentLister(),
-                metrics
         );
     }
 
