@@ -99,6 +99,7 @@ public class BootstrapModule {
                 .withContentStore(persistence.contentStore())
                 .withNeo4JContentStore(persistence.neo4jContentStore())
                 .withLegacyResolver(persistence.legacyContentResolver())
+                .withAstyanaxStore(persistence.astyanaxContentStore())
                 .withReplayConsumerFactory(worker -> workers.bootstrapQueueFactory()
                         .createConsumer(
                                 worker,
@@ -126,6 +127,18 @@ public class BootstrapModule {
         return new IndividualTopicBootstrapController(
                 persistence.legacyTopicResolver(),
                 persistence.topicStore()
+        );
+    }
+
+    @Bean
+    CqlContentBootstrapController cqlContentBootstrapController() {
+        return CqlContentBootstrapController.create(
+                executorService(20, "cql-content-bootstrap"),
+                progressStore(),
+                persistence.legacyContentResolver(),
+                persistence.bootstrapCqlContentStore(),
+                persistence.legacyContentLister(),
+                metrics
         );
     }
 
