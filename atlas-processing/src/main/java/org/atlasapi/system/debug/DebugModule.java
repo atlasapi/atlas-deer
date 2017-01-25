@@ -32,6 +32,15 @@ public class DebugModule {
     }
 
     @Bean
+    CqlContentDebugController cqlController() {
+        return new CqlContentDebugController(
+                persistenceModule.legacyContentResolver(),
+                persistenceModule.contentStore(),
+                persistenceModule.cqlContentStore()
+        );
+    }
+
+    @Bean
     public EventDebugController eventDebugController() {
         return new EventDebugController(persistenceModule.legacyEventResolver(), persistenceModule);
     }
