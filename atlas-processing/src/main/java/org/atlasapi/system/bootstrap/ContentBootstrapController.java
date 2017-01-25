@@ -14,7 +14,6 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletResponse;
 
-import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
@@ -83,7 +82,7 @@ public class ContentBootstrapController {
     private final ContentNeo4jMigrator contentNeo4jMigrator;
 
     private final ContentResolver legacyResolver;
-    private final AstyanaxCassandraContentStore astyanaxStore;
+    private final ContentStore contentStore;
     private final Function<Worker<ResourceUpdatedMessage>, KafkaConsumer> replayConsumerFactory;
 
     private KafkaConsumer replayBootstrapListener;
@@ -96,7 +95,7 @@ public class ContentBootstrapController {
         progressStore = checkNotNull(builder.progressStore);
         timer = checkNotNull(builder.metrics).timer(getClass().getSimpleName());
         legacyResolver = checkNotNull(builder.legacyResolver);
-        astyanaxStore = checkNotNull(builder.astyanaxStore);
+        contentStore = checkNotNull(builder.contentStore);
         replayConsumerFactory = checkNotNull(builder.replayConsumerFactory);
 
         contentBootstrapListener = ContentBootstrapListener.builder()
@@ -264,12 +263,12 @@ public class ContentBootstrapController {
 
                     try {
                         log.info(
-                                "Bootstrapping Asty content for {} at {}",
+                                "Bootstrapping content for {} at {}",
                                 updated.getId(),
                                 messageTime
                         );
 
-                        astyanaxStore.writeContent(legacy);
+                        contentStore.writeContent(legacy);
                     } catch (WriteException e) {
                         throw new RuntimeException(e);
                     }
@@ -550,18 +549,12 @@ public class ContentBootstrapController {
         private ProgressStore progressStore;
 
         private ContentResolver legacyResolver;
-        private AstyanaxCassandraContentStore astyanaxStore;
         private Function<Worker<ResourceUpdatedMessage>, KafkaConsumer> replayConsumerFactory;
 
         private Builder() { }
 
         public Builder withLegacyResolver(ContentResolver val) {
             legacyResolver = val;
-            return this;
-        }
-
-        public Builder withAstyanaxStore(AstyanaxCassandraContentStore val) {
-            astyanaxStore = val;
             return this;
         }
 
