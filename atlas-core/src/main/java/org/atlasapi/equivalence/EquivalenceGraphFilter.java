@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 
 public class EquivalenceGraphFilter implements Predicate<Content> {
 
@@ -35,9 +36,16 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
             return;
         }
 
-        checkArgument(builder.graph.get()
-                .getAdjacencyList()
-                .containsKey(builder.graphEntryId.get()));
+        checkArgument(
+                builder.graph.get()
+                        .getAdjacencyList()
+                        .containsKey(builder.graphEntryId.get()),
+                format(
+                        "Given entry-point id %s does not exist in graph %s",
+                        builder.graphEntryId.get(),
+                        builder.graph.get().getId()
+                )
+        );
 
         this.selectedIds = visitId(
                 builder.graphEntryId.get(),
