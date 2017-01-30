@@ -153,7 +153,7 @@ public class ErrorSummary {
                 )
                 .put(
                         ApplicationResolutionException.class,
-                        new DefaultErrorSummaryFactory("INVALID_API_KEY", HttpStatusCode.FORBIDDEN)
+                        new DefaultErrorSummaryFactory("APPLICATION_RESOLUTION_ERROR", HttpStatusCode.BAD_REQUEST)
                 )
                 .put(
                         LicenseNotAcceptedException.class,

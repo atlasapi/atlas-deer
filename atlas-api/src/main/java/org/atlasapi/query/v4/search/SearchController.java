@@ -8,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.metabroadcast.applications.client.model.internal.Application;
-import nu.xom.Elements;
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.ApiKeyApplicationFetcher;
 import org.atlasapi.application.ApplicationFetcher;

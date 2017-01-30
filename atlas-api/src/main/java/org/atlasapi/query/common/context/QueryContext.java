@@ -1,5 +1,6 @@
 package org.atlasapi.query.common.context;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import com.google.common.base.MoreObjects;
@@ -24,15 +25,7 @@ public class QueryContext {
     private QueryContext(
             Application application,
             ActiveAnnotations annotations,
-            HttpServletRequest request
-    ) {
-        this(application, annotations, null, request);
-    }
-
-    private QueryContext(
-            Application application,
-            ActiveAnnotations annotations,
-            Selection selection,
+            @Nullable Selection selection,
             HttpServletRequest request
     ) {
         this.application = checkNotNull(application);
@@ -46,6 +39,7 @@ public class QueryContext {
         return new QueryContext(
                 DefaultApplication.create(),
                 ActiveAnnotations.standard(),
+                null,
                 request
         );
     }
