@@ -38,7 +38,6 @@ import com.google.gson.reflect.TypeToken;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -98,15 +97,13 @@ public class ApplicationWebModule {
     }
 
     @Bean
-    public
-    DefaultAnnotationHandlerMapping controllerMappings() {
+    public DefaultAnnotationHandlerMapping controllerMappings() {
         DefaultAnnotationHandlerMapping controllerClassNameHandlerMapping = new DefaultAnnotationHandlerMapping();
         return controllerClassNameHandlerMapping;
     }
 
-    public
     @Bean
-    ApplicationFetcher configFetcher() {
+    public ApplicationFetcher configFetcher() {
         return ApiKeyApplicationFetcher.create(
                 appPersistence.applicationsClient(),
                 Configurer.getPlatform()
@@ -114,8 +111,7 @@ public class ApplicationWebModule {
     }
 
     @Bean
-    public
-    FixedAppIdUserRefBuilder userRefBuilder() {
+    public FixedAppIdUserRefBuilder userRefBuilder() {
         return new FixedAppIdUserRefBuilder(APP_NAME);
     }
 

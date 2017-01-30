@@ -75,7 +75,7 @@ public class ApiKeyApplicationFetcherTest {
         assertThat(app.get(), is(application));
     }
 
-    @Test(expected = ApplicationResolutionException.class)
+    @Test
     public void testReturnsEmptyIfNoApiKeyIsSupplied() throws Exception {
 
         HttpServletRequest request = new StubHttpServletRequest();
