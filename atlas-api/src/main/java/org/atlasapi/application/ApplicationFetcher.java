@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface ApplicationFetcher {
 
     Optional<Application> applicationFor(HttpServletRequest request)
-            throws InvalidApiKeyException;
+            throws ApplicationResolutionException;
 
     ImmutableSet<String> getParameterNames();
 

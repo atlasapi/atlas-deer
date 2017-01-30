@@ -569,10 +569,6 @@ public class OutputContentMergerTest {
 
     @Test
     public void mergeBroadcastsMergesTheirFields() {
-//        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
-//                .copy()
-//                .build();
-
         Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC,
@@ -619,8 +615,6 @@ public class OutputContentMergerTest {
         // content belonging to sources that the user does not have permission to access
         // have already been whittled out
 
-//        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
-
         Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.PA,
@@ -661,8 +655,6 @@ public class OutputContentMergerTest {
     public void mergeAllRatingsToChosenContent() {
         // content belonging to sources that the user does not have permission to access
         // have already been whittled out
-
-//        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
 
         Application application = getApplicationWithPrecedence(
                 true,
@@ -749,7 +741,6 @@ public class OutputContentMergerTest {
         when(configuration.getReadPrecedenceOrdering()).thenReturn(testConfig.getReadPrecedenceOrdering());
         when(configuration.isImagePrecedenceEnabled()).thenReturn(imagePrecedence);
         when(configuration.getImageReadPrecedenceOrdering()).thenReturn(testConfig.getImageReadPrecedenceOrdering());
-
 
         when(application.getConfiguration()).thenReturn(configuration);
 

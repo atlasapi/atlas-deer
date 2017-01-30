@@ -2,6 +2,7 @@ package org.atlasapi.application.www;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.common.properties.Configurer;
 import org.atlasapi.AtlasPersistenceModule;
 import org.atlasapi.LicenseModule;
 import org.atlasapi.annotation.Annotation;
@@ -96,8 +97,8 @@ public class ApplicationWebModule {
 
     }
 
-    public
     @Bean
+    public
     DefaultAnnotationHandlerMapping controllerMappings() {
         DefaultAnnotationHandlerMapping controllerClassNameHandlerMapping = new DefaultAnnotationHandlerMapping();
         return controllerClassNameHandlerMapping;
@@ -106,11 +107,14 @@ public class ApplicationWebModule {
     public
     @Bean
     ApplicationFetcher configFetcher() {
-        return ApiKeyApplicationFetcher.create(appPersistence.applicationsClient());
+        return ApiKeyApplicationFetcher.create(
+                appPersistence.applicationsClient(),
+                Configurer.getPlatform()
+        );
     }
 
-    public
     @Bean
+    public
     FixedAppIdUserRefBuilder userRefBuilder() {
         return new FixedAppIdUserRefBuilder(APP_NAME);
     }

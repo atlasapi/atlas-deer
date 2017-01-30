@@ -11,7 +11,8 @@ import com.metabroadcast.applications.client.query.Query;
 import com.metabroadcast.applications.client.query.Result;
 
 import com.google.common.collect.ImmutableSet;
-import com.metabroadcast.common.properties.Configurer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -20,6 +21,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ApiKeyApplicationFetcher implements ApplicationFetcher {
 
     public static final String API_KEY_QUERY_PARAMETER = "key";
+
+    private static final Logger log = LoggerFactory.getLogger(ApiKeyApplicationFetcher.class);
 
     private final ApplicationsClient applicationsClient;
     private final Environment environment;
@@ -30,10 +33,13 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
         this.environment = checkNotNull(environment);
     }
 
-    public static ApiKeyApplicationFetcher create(ApplicationsClient applicationsClient) {
+    public static ApiKeyApplicationFetcher create(
+            ApplicationsClient applicationsClient,
+            String environment
+    ) {
         return new ApiKeyApplicationFetcher(
                 applicationsClient,
-                Environment.parse(Configurer.getPlatform())
+                Environment.parse(environment)
         );
     }
 
@@ -44,7 +50,7 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
 
     @Override
     public Optional<Application> applicationFor(HttpServletRequest request)
-            throws InvalidApiKeyException {
+            throws ApplicationResolutionException {
 
         String apiKey;
         try {
@@ -54,7 +60,8 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
                     request.getHeader(API_KEY_QUERY_PARAMETER)
             );
         } catch (NullPointerException e) {
-            throw InvalidApiKeyException.create(e.getMessage(), "No api key supplied");
+            log.info("Request with no API key: {}", request.getRequestURI(), e);
+            return Optional.empty();
         }
 
         Result result = applicationsClient.resolve(
@@ -62,7 +69,13 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
         );
 
         if (result.getErrorCode().isPresent()) {
-            throw InvalidApiKeyException.create(apiKey, result.getErrorCode().get().toString());
+            throw ApplicationResolutionException.create(
+                    apiKey,
+                    String.format(
+                            "Application service returned error code: %s",
+                            result.getErrorCode().get().toString()
+                    )
+            );
         }
         return result.getSingleResult();
     }

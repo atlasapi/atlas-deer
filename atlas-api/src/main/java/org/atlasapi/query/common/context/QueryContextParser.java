@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.application.ApplicationFetcher;
-import org.atlasapi.application.InvalidApiKeyException;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
@@ -50,7 +50,7 @@ public class QueryContextParser implements ParameterNameProvider {
     }
 
     public QueryContext parseSingleContext(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         return QueryContext.create(
                 configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromSingleRequest(request),
@@ -60,7 +60,7 @@ public class QueryContextParser implements ParameterNameProvider {
     }
 
     public QueryContext parseListContext(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         return QueryContext.create(
                 configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromListRequest(request),

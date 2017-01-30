@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.application.ApplicationFetcher;
-import org.atlasapi.application.InvalidApiKeyException;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -121,14 +121,14 @@ class ScheduleRequestParser {
     }
 
     public ScheduleQuery queryFrom(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         Matcher matcher = CHANNEL_ID_PATTERN.matcher(request.getRequestURI());
         return matcher.matches() ? parseSingleRequest(request)
                                  : parseMultiRequest(request);
     }
 
     private ScheduleQuery parseSingleRequest(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         singleValidator.validateParameters(request);
 
         Publisher publisher = extractPublisher(request);
@@ -171,7 +171,7 @@ class ScheduleRequestParser {
     }
 
     private ScheduleQuery parseMultiRequest(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
 
         multiValidator.validateParameters(request);
 
@@ -204,7 +204,7 @@ class ScheduleRequestParser {
     }
 
     private QueryContext parseContext(HttpServletRequest request, Publisher publisher)
-            throws InvalidApiKeyException, InvalidAnnotationException {
+            throws ApplicationResolutionException, InvalidAnnotationException {
         Application application = getConfiguration(request);
 
         checkArgument(application.getConfiguration().isReadEnabled(publisher), "Source %s not enabled", publisher);
@@ -292,7 +292,8 @@ class ScheduleRequestParser {
         return publisher.get();
     }
 
-    private Application getConfiguration(HttpServletRequest request) throws InvalidApiKeyException {
+    private Application getConfiguration(HttpServletRequest request) throws
+            ApplicationResolutionException {
 
         Optional<Application> application = applicationFetcher.applicationFor(request);
         if (application.isPresent()) {

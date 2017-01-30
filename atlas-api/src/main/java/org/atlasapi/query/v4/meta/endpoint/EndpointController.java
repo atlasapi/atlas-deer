@@ -5,7 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.atlasapi.application.InvalidApiKeyException;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.generation.EndpointClassInfoStore;
 import org.atlasapi.generation.model.EndpointClassInfo;
@@ -70,7 +70,7 @@ public class EndpointController {
 
     private QueryResult<EndpointClassInfo> createListResultFrom(
             Iterable<EndpointClassInfo> resources, HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         return QueryResult.listResult(
                 resources,
                 contextParser.parseContext(request),
@@ -106,7 +106,7 @@ public class EndpointController {
 
     private QueryResult<EndpointClassInfo> createSingleResultFrom(EndpointClassInfo resource,
             HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         return QueryResult.singleResult(resource, contextParser.parseContext(request));
     }
 }

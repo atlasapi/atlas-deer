@@ -7,6 +7,8 @@ import com.metabroadcast.applications.client.metric.Metrics;
 import com.metabroadcast.applications.client.model.internal.AccessRoles;
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
+import com.metabroadcast.common.properties.Configurer;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.media.entity.Publisher;
 
@@ -14,28 +16,14 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class DefaultApplication {
 
     public static Application create() {
-        return createInternal(Lists.newArrayList());
-    }
-
-    public static Application createWithReads(List<Publisher> publishers) {
-        return createInternal(publishers);
-    }
-
-    private static Application createInternal(List<Publisher> publishers) {
-
-        List<Publisher> finalPublishers = ImmutableList.<Publisher>builder()
-                .addAll(getDefaultPublishers().stream()
-                                .filter(publisher -> !publishers.contains(publisher))
-                                .collect(Collectors.toList())
-                )
-                .addAll(publishers)
-                .build();
 
         ApplicationConfiguration configuration = ApplicationConfiguration.builder()
-                .withPrecedence(finalPublishers)
+                .withPrecedence(getDefaultPublishers())
                 .withEnabledWriteSources(ImmutableList.of())
                 .build();
 
@@ -43,7 +31,7 @@ public class DefaultApplication {
                 .withId(-1L)
                 .withTitle("defaultApplication")
                 .withDescription("Default application")
-                .withEnvironment(null)
+                .withEnvironment(parseEnvironment(Configurer.getPlatform()))
                 .withCreated(ZonedDateTime.now())
                 .withApiKey("default")
                 .withSources(configuration)
@@ -63,6 +51,10 @@ public class DefaultApplication {
                 .stream()
                 .filter(Publisher::enabledWithNoApiKey)
                 .collect(MoreCollectors.toImmutableList());
+    }
+
+    private static Environment parseEnvironment(String platform) {
+        return "prod".equals(platform) ? Environment.parse(platform) : Environment.STAGE;
     }
 
 }

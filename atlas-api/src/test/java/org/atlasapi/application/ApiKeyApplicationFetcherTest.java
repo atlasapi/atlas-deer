@@ -75,7 +75,7 @@ public class ApiKeyApplicationFetcherTest {
         assertThat(app.get(), is(application));
     }
 
-    @Test(expected = InvalidApiKeyException.class)
+    @Test(expected = ApplicationResolutionException.class)
     public void testReturnsEmptyIfNoApiKeyIsSupplied() throws Exception {
 
         HttpServletRequest request = new StubHttpServletRequest();
@@ -84,7 +84,7 @@ public class ApiKeyApplicationFetcherTest {
         assertFalse(app.isPresent());
     }
 
-    @Test(expected = InvalidApiKeyException.class)
+    @Test(expected = ApplicationResolutionException.class)
     public void testThrowsInvalidApiKeyExceptionIfAppIsRevoked() throws Exception {
 
         Result result = Result.failure(ErrorCode.REVOKED);
@@ -95,7 +95,7 @@ public class ApiKeyApplicationFetcherTest {
         fetcher.applicationFor(request);
     }
 
-    @Test(expected = InvalidApiKeyException.class)
+    @Test(expected = ApplicationResolutionException.class)
     public void testThrowsInvalidApiKeyExceptionIfTheresNoAppForKey() throws Exception {
 
         Result result = Result.failure(ErrorCode.NOT_FOUND);
