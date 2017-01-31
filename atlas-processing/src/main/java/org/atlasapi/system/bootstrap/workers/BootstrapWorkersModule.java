@@ -126,7 +126,7 @@ public class BootstrapWorkersModule {
 
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
-                persistence.contentStore(),
+                persistence.astyanaxContentStore(),
                 WORKER_METRIC_PREFIX + workerName + ".",
                 metricsModule.metrics(),
                 ColumbusTelescopeReporter.create(
@@ -158,7 +158,7 @@ public class BootstrapWorkersModule {
 
         ContentBootstrapWorker worker = ContentBootstrapWorker.create(
                 persistence.legacyContentResolver(),
-                persistence.cqlContentStore(),
+                persistence.contentStore(),
                 WORKER_METRIC_PREFIX + workerName + ".",
                 metricsModule.metrics(),
                 ColumbusTelescopeReporter.create(

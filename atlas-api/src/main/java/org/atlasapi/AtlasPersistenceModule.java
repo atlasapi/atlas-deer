@@ -15,7 +15,6 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
-import org.atlasapi.content.v2.CqlContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.event.EventResolver;
@@ -247,17 +246,7 @@ public class AtlasPersistenceModule {
     }
 
     public AstyanaxCassandraContentStore astyanaxContentStore() {
-        return persistenceModule().contentStore();
-    }
-
-    @Bean
-    public CqlContentStore cqlContentStore() {
-        return persistenceModule().cqlContentStore();
-    }
-
-    @Bean
-    public CqlContentStore bootstrapCqlContentStore() {
-        return persistenceModule().bootstrapCqlContentStore();
+        return persistenceModule().astyanaxContentStore();
     }
 
     public ContentStore nullMessageSendingContentStore() {
