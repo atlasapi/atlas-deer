@@ -214,8 +214,12 @@ public class ContentBootstrapListener
     }
 
     private void migrateParent(Id parentId, Result result) {
-        Content content = resolveLegacyContent(parentId);
-        migrateContent(content, result);
+        try {
+            Content content = resolveLegacyContent(parentId);
+            migrateContent(content, result);
+        } catch (Exception e) {
+            log.error("Failed to migrate parent {}", parentId, e);
+        }
     }
 
     private void migrateContent(Content content, Result result) {
@@ -284,29 +288,37 @@ public class ContentBootstrapListener
 
     private void migrateSeries(ImmutableList<SeriesRef> seriesRefs, Result result) {
         for (SeriesRef seriesRef : seriesRefs) {
-            Id seriesRefId = seriesRef.getId();
+            try {
+                Id seriesRefId = seriesRef.getId();
 
-            Content series = resolveLegacyContent(seriesRefId);
-            migrateContent(series, result);
+                Content series = resolveLegacyContent(seriesRefId);
+                migrateContent(series, result);
 
-            if (result.getSucceeded() && series instanceof Container) {
-                Container container = (Container) series;
-                migrateHierarchy(
-                        container,
-                        result,
-                        ImmutableList.of(),
-                        container.getItemRefs()
-                );
+                if (result.getSucceeded() && series instanceof Container) {
+                    Container container = (Container) series;
+                    migrateHierarchy(
+                            container,
+                            result,
+                            ImmutableList.of(),
+                            container.getItemRefs()
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Failed to migrate series {}", seriesRef.getId(), e);
             }
         }
     }
 
     private void migrateItemRefs(ImmutableList<ItemRef> itemRefs, Result result) {
         for (ItemRef itemRef : itemRefs) {
-            Id itemRefId = itemRef.getId();
+            try {
+                Id itemRefId = itemRef.getId();
 
-            Content content = resolveLegacyContent(itemRefId);
-            migrateContent(content, result);
+                Content content = resolveLegacyContent(itemRefId);
+                migrateContent(content, result);
+            } catch (Exception e) {
+                log.error("Failed to migrate item {}", itemRef.getId(), e);
+            }
         }
     }
 
@@ -333,17 +345,21 @@ public class ContentBootstrapListener
 
     private void migrateEquivalents(Set<Id> equivalentIds, Result result) {
         for (Id equivalentId : equivalentIds) {
-            Content content = resolveLegacyContent(equivalentId);
+            try {
+                Content content = resolveLegacyContent(equivalentId);
 
-            // Some equivalents will fail to migrate because their parents are missing.
-            // This is intended as a workaround for that scenario
-            if (migrateHierarchy) {
-                result.push(ResultNode.PARENTS);
-                migrateParents(content, result);
-                result.pop();
+                // Some equivalents will fail to migrate because their parents are missing.
+                // This is intended as a workaround for that scenario
+                if (migrateHierarchy) {
+                    result.push(ResultNode.PARENTS);
+                    migrateParents(content, result);
+                    result.pop();
+                }
+
+                migrateContent(content, result);
+            } catch (Exception e) {
+                log.error("Failed to migrate equivalent {}", equivalentId, e);
             }
-
-            migrateContent(content, result);
         }
     }
 
