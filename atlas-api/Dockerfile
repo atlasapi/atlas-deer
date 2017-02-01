@@ -4,6 +4,7 @@ ENV LOG4J_CONFIGURATION="file:////usr/local/jetty/log4j.properties" \
     NIMROD_LOG_LEVEL="INFO" \
     ROOT_LOG_LEVEL="INFO" \
     JVM_MEMORY="5G" \
+    DEBUG_AND_REMOTE_OPTS="" \
     JVM_OPTS="-XX:+UseConcMarkSweepGC \
       -XX:+UseParNewGC \
       -XX:CMSInitiatingOccupancyFraction=75 \
@@ -65,5 +66,6 @@ CMD java \
     -Droot.log.level="$ROOT_LOG_LEVEL" \
     -Xmx$JVM_MEMORY \
     -Xms$JVM_MEMORY \
+    $DEBUG_AND_REMOTE_OPTS \
     $JVM_OPTS \
     -jar atlas-api.war
