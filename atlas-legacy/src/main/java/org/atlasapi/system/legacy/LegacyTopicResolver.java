@@ -1,5 +1,7 @@
 package org.atlasapi.system.legacy;
 
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.common.query.Selection;
 import org.atlasapi.content.criteria.ContentQuery;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
@@ -66,7 +68,7 @@ public class LegacyTopicResolver implements TopicResolver {
 
     public Iterable<Topic> resolveAll() {
         return Iterables.transform(
-                topicResolver.topicsFor(ContentQuery.MATCHES_EVERYTHING),
+                topicResolver.topicsFor(new ContentQuery(ImmutableList.of(), Selection.ALL)),
                 transformer
         );
     }

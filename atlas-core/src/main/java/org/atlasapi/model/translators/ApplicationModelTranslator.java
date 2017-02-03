@@ -8,7 +8,7 @@ import org.atlasapi.application.ApplicationAccessRole;
 import org.atlasapi.application.ApplicationCredentials;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.v3.ApplicationConfiguration;
+import org.atlasapi.legacy.application.ApplicationConfiguration;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -21,14 +21,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class ApplicationModelTranslator
-        implements Function<org.atlasapi.application.v3.Application, Application> {
+        implements Function<org.atlasapi.legacy.application.Application, Application> {
 
     public Iterable<Application> transform(
-            Iterable<org.atlasapi.application.v3.Application> inputs) {
+            Iterable<org.atlasapi.legacy.application.Application> inputs) {
         return Iterables.transform(inputs, this);
     }
 
-    public Application apply(org.atlasapi.application.v3.Application input) {
+    public Application apply(org.atlasapi.legacy.application.Application input) {
         return Application.builder()
                 .withId(Id.valueOf(input.getDeerId().longValue()))
                 .withSlug(input.getSlug())
@@ -42,7 +42,7 @@ public class ApplicationModelTranslator
     }
 
     private ApplicationCredentials transformCredentials3to4(
-            org.atlasapi.application.v3.ApplicationCredentials input) {
+            org.atlasapi.legacy.application.ApplicationCredentials input) {
         return new ApplicationCredentials(input.getApiKey());
     }
 
@@ -82,8 +82,8 @@ public class ApplicationModelTranslator
         return builder.build();
     }
 
-    public org.atlasapi.application.v3.Application transform4to3(Application input) {
-        return org.atlasapi.application.v3.Application.application(input.getSlug())
+    public org.atlasapi.legacy.application.Application transform4to3(Application input) {
+        return org.atlasapi.legacy.application.Application.application(input.getSlug())
                 .withDeerId(input.getId().longValue())
                 .withTitle(input.getTitle())
                 .withDescription(input.getDescription())
@@ -94,9 +94,9 @@ public class ApplicationModelTranslator
                 .build();
     }
 
-    private org.atlasapi.application.v3.ApplicationCredentials transformCredentials4to3(
+    private org.atlasapi.legacy.application.ApplicationCredentials transformCredentials4to3(
             ApplicationCredentials input) {
-        return new org.atlasapi.application.v3.ApplicationCredentials(input.getApiKey());
+        return new org.atlasapi.legacy.application.ApplicationCredentials(input.getApiKey());
     }
 
     private ApplicationConfiguration transformSources4to3(ApplicationSources input) {

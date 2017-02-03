@@ -1,7 +1,7 @@
 package org.atlasapi.application;
 
 import org.atlasapi.application.SourceStatus.SourceState;
-import org.atlasapi.application.v3.ApplicationTranslator;
+import org.atlasapi.legacy.application.ApplicationTranslator;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -26,18 +26,18 @@ import com.mongodb.DBObject;
 
 import static com.metabroadcast.common.persistence.mongo.MongoBuilders.select;
 import static com.metabroadcast.common.persistence.mongo.MongoBuilders.where;
-import static org.atlasapi.application.v3.ApplicationConfigurationTranslator.PUBLISHER_KEY;
-import static org.atlasapi.application.v3.ApplicationConfigurationTranslator.SOURCES_KEY;
-import static org.atlasapi.application.v3.ApplicationConfigurationTranslator.STATE_KEY;
-import static org.atlasapi.application.v3.ApplicationConfigurationTranslator.WRITABLE_KEY;
-import static org.atlasapi.application.v3.ApplicationTranslator.APPLICATION_CONFIG_KEY;
-import static org.atlasapi.application.v3.ApplicationTranslator.DEER_ID_KEY;
+import static org.atlasapi.legacy.application.ApplicationConfigurationTranslator.PUBLISHER_KEY;
+import static org.atlasapi.legacy.application.ApplicationConfigurationTranslator.SOURCES_KEY;
+import static org.atlasapi.legacy.application.ApplicationConfigurationTranslator.STATE_KEY;
+import static org.atlasapi.legacy.application.ApplicationConfigurationTranslator.WRITABLE_KEY;
+import static org.atlasapi.legacy.application.ApplicationTranslator.APPLICATION_CONFIG_KEY;
+import static org.atlasapi.legacy.application.ApplicationTranslator.DEER_ID_KEY;
 
 public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
         implements LegacyApplicationStore {
 
     private final ApplicationModelTranslator transformer;
-    private final org.atlasapi.application.v3.ApplicationStore legacyStore;
+    private final org.atlasapi.legacy.application.ApplicationStore legacyStore;
     private final DBCollection collection;
     private final ApplicationTranslator legacyTranslator;
 
@@ -50,7 +50,7 @@ public class LegacyAdaptingApplicationStore extends AbstractApplicationStore
         }
     };
 
-    public LegacyAdaptingApplicationStore(org.atlasapi.application.v3.ApplicationStore legacyStore,
+    public LegacyAdaptingApplicationStore(org.atlasapi.legacy.application.ApplicationStore legacyStore,
             DatabasedMongo db,
             IdGenerator idGenerator, NumberToShortStringCodec idCodec) {
         super(idGenerator, idCodec);

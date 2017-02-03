@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.atlasapi.application.LegacyApplicationStore;
-import org.atlasapi.application.users.v3.UserTranslator;
+import org.atlasapi.legacy.user.UserTranslator;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.model.translators.UserModelTranslator;
@@ -24,7 +24,7 @@ import com.mongodb.DBObject;
 
 public class LegacyAdaptingUserStore implements UserStore {
 
-    private final org.atlasapi.application.users.v3.UserStore legacyStore;
+    private final org.atlasapi.legacy.user.UserStore legacyStore;
     private final UserModelTranslator transformer;
     private final DBCollection collection;
     private final UserTranslator translator;
@@ -38,7 +38,7 @@ public class LegacyAdaptingUserStore implements UserStore {
         }
     };
 
-    public LegacyAdaptingUserStore(org.atlasapi.application.users.v3.UserStore legacyStore,
+    public LegacyAdaptingUserStore(org.atlasapi.legacy.user.UserStore legacyStore,
             LegacyApplicationStore appStore, DatabasedMongo db) {
         this.legacyStore = legacyStore;
         this.collection = db.collection("users");

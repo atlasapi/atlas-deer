@@ -8,7 +8,7 @@ import org.atlasapi.application.ApplicationCredentials;
 import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.application.SourceReadEntry;
 import org.atlasapi.application.SourceStatus;
-import org.atlasapi.application.v3.ApplicationConfiguration;
+import org.atlasapi.legacy.application.ApplicationConfiguration;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 
@@ -61,9 +61,9 @@ public class ApplicationModelTranslatorTest {
         ));
         configuration = configuration.copyWithWritableSources(writes);
 
-        org.atlasapi.application.v3.ApplicationCredentials creds = new org.atlasapi.application.v3.ApplicationCredentials(
+        org.atlasapi.legacy.application.ApplicationCredentials creds = new org.atlasapi.legacy.application.ApplicationCredentials(
                 API_KEY);
-        org.atlasapi.application.v3.Application application = org.atlasapi.application.v3.Application
+        org.atlasapi.legacy.application.Application application = org.atlasapi.legacy.application.Application
                 .application(SLUG)
                 .withDeerId(Id.valueOf(5000).longValue())
                 .withTitle(TITLE)
@@ -109,7 +109,7 @@ public class ApplicationModelTranslatorTest {
                 .withSources(sources)
                 .build();
         ApplicationModelTranslator translator = new ApplicationModelTranslator();
-        org.atlasapi.application.v3.Application result = translator.transform4to3(application);
+        org.atlasapi.legacy.application.Application result = translator.transform4to3(application);
         assertEquals(Long.valueOf(5000), result.getDeerId());
         assertEquals(SLUG, result.getSlug());
         assertEquals(CREATED, result.getCreated());

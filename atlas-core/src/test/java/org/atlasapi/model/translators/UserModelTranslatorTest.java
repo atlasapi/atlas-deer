@@ -61,7 +61,7 @@ public class UserModelTranslatorTest {
     @Test
     public void test3To4UserTranslation() {
         final DateTime licenseAccepted = DateTime.now(DateTimeZones.UTC);
-        org.atlasapi.application.users.v3.User user = org.atlasapi.application.users.v3.User.builder()
+        org.atlasapi.legacy.user.User user = org.atlasapi.legacy.user.User.builder()
                 .withId(USER_ID.longValue())
                 .withUserRef(USER_REF)
                 .withScreenName(SCREEN_NAME)
@@ -70,7 +70,7 @@ public class UserModelTranslatorTest {
                 .withEmail(EMAIL)
                 .withWebsite(WEBSITE)
                 .withProfileImage(PROFILE_IMAGE)
-                .withRole(org.atlasapi.application.users.v3.Role.ADMIN)
+                .withRole(org.atlasapi.legacy.user.Role.ADMIN)
                 .withApplicationSlugs(APP_SLUGS)
                 .withSources(SOURCES)
                 .withProfileComplete(PROFILE_COMPLETE)
@@ -117,7 +117,7 @@ public class UserModelTranslatorTest {
                 .build();
 
         UserModelTranslator translator = new UserModelTranslator(store);
-        org.atlasapi.application.users.v3.User result = translator.transform4to3(user);
+        org.atlasapi.legacy.user.User result = translator.transform4to3(user);
         assertEquals(Long.valueOf(USER_ID.longValue()), result.getId());
         assertEquals(USER_REF, result.getUserRef());
         assertEquals(SCREEN_NAME, result.getScreenName());
@@ -125,7 +125,7 @@ public class UserModelTranslatorTest {
         assertEquals(COMPANY, result.getCompany());
         assertEquals(WEBSITE, result.getWebsite());
         assertEquals(PROFILE_IMAGE, result.getProfileImage());
-        assertEquals(org.atlasapi.application.users.v3.Role.ADMIN, result.getRole());
+        assertEquals(org.atlasapi.legacy.user.Role.ADMIN, result.getRole());
         assertTrue(result.getApplicationSlugs().containsAll(APP_SLUGS));
         assertTrue(result.getSources().containsAll(SOURCES));
         assertTrue(result.isProfileComplete());
