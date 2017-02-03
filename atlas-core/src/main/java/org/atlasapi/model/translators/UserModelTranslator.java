@@ -15,7 +15,7 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-public class UserModelTranslator implements Function<org.atlasapi.application.users.v3.User, User> {
+public class UserModelTranslator implements Function<org.atlasapi.legacy.user.User, User> {
 
     private final LegacyApplicationStore store;
 
@@ -23,7 +23,7 @@ public class UserModelTranslator implements Function<org.atlasapi.application.us
         this.store = store;
     }
 
-    public User apply(org.atlasapi.application.users.v3.User input) {
+    public User apply(org.atlasapi.legacy.user.User input) {
         return User.builder()
                 .withId(Id.valueOf(input.getId().longValue()))
                 .withUserRef(input.getUserRef())
@@ -46,8 +46,8 @@ public class UserModelTranslator implements Function<org.atlasapi.application.us
         return Sets.newHashSet(store.applicationIdsForSlugs(input));
     }
 
-    public org.atlasapi.application.users.v3.User transform4to3(User input) {
-        return org.atlasapi.application.users.v3.User.builder()
+    public org.atlasapi.legacy.user.User transform4to3(User input) {
+        return org.atlasapi.legacy.user.User.builder()
                 .withId(input.getId().longValue())
                 .withUserRef(input.getUserRef())
                 .withScreenName(input.getScreenName())
@@ -56,7 +56,7 @@ public class UserModelTranslator implements Function<org.atlasapi.application.us
                 .withEmail(input.getEmail())
                 .withWebsite(input.getWebsite())
                 .withProfileImage(input.getProfileImage())
-                .withRole(org.atlasapi.application.users.v3.Role.valueOf(input.getRole().name()))
+                .withRole(org.atlasapi.legacy.user.Role.valueOf(input.getRole().name()))
                 .withApplicationSlugs(transformApplicationIds(input.getApplicationIds()))
                 .withSources(input.getSources())
                 .withProfileComplete(input.isProfileComplete())
