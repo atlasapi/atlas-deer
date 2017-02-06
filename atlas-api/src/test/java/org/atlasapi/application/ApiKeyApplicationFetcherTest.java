@@ -111,7 +111,7 @@ public class ApiKeyApplicationFetcherTest {
                 .withId(-1L)
                 .withTitle("test")
                 .withDescription("desc")
-                .withEnvironment(Environment.PROD)
+                .withEnvironment(Environment.STAGE)
                 .withCreated(ZonedDateTime.now())
                 .withApiKey(apiKey)
                 .withSources(mock(ApplicationConfiguration.class))

@@ -2,6 +2,7 @@ package org.atlasapi.application;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.metabroadcast.applications.client.ApplicationsClient;
@@ -14,6 +15,7 @@ import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -52,29 +54,24 @@ public class ApiKeyApplicationFetcher implements ApplicationFetcher {
     public Optional<Application> applicationFor(HttpServletRequest request)
             throws ApplicationResolutionException {
 
-        String apiKey;
-        try {
+        String apiKeyParam = request.getParameter(API_KEY_QUERY_PARAMETER);
+        String apiKeyHeader = request.getHeader(API_KEY_QUERY_PARAMETER);
 
-            apiKey = MoreObjects.firstNonNull(
-                    request.getParameter(API_KEY_QUERY_PARAMETER),
-                    request.getHeader(API_KEY_QUERY_PARAMETER)
-            );
-        } catch (NullPointerException e) {
-            log.info("Request with no API key: {}", request.getRequestURI(), e);
+        if (Strings.isNullOrEmpty(apiKeyParam) && Strings.isNullOrEmpty(apiKeyHeader)) {
             return Optional.empty();
         }
+
+        String apiKey = MoreObjects.firstNonNull(apiKeyParam, apiKeyHeader);
 
         Result result = applicationsClient.resolve(
                 Query.create(apiKey, environment)
         );
 
         if (result.getErrorCode().isPresent()) {
+            log.error("Unable to resolve application: {} - {}", result.getErrorCode().get(), apiKey);
             throw ApplicationResolutionException.create(
                     apiKey,
-                    String.format(
-                            "Application service returned error code: %s",
-                            result.getErrorCode().get().toString()
-                    )
+                    "Unable to resolve application"
             );
         }
         return result.getSingleResult();
