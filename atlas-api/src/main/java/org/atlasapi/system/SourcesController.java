@@ -1,6 +1,5 @@
 package org.atlasapi.system;
 
-import com.google.common.base.Optional;
 import org.atlasapi.application.sources.SourceIdCodec;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.media.entity.Publisher;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 
 @Controller
 public class SourcesController {
@@ -47,7 +47,7 @@ public class SourcesController {
 
         ResponseWriter writer = writerResolver.writerFor(request, response);
         try {
-            Optional<Publisher> publisher = sourceIdCodec.decode(sourceId).toGuavaOptional();
+            Optional<Publisher> publisher = sourceIdCodec.decode(sourceId);
             if(!publisher.isPresent()) {
                 throw new IOException("Publisher ID not found: " + sourceId);
             }

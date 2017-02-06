@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class SourcesModule {
 
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
-    private final SourceIdCodec sourceIdCodec = new SourceIdCodec(idCodec);
+    private final SourceIdCodec sourceIdCodec = SourceIdCodec.createWithCodec(idCodec);
 
     @Bean
     public SourcesController systemSourcesController() {
