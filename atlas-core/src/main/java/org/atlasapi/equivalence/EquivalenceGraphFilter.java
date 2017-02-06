@@ -14,10 +14,12 @@ import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EquivalenceGraphFilter implements Predicate<Content> {
+
+    private static final Logger log = LoggerFactory.getLogger(EquivalenceGraphFilter.class);
 
     private final ImmutableSet<Publisher> selectedSources;
     private final ImmutableSet<Id> selectedIds;
@@ -35,9 +37,18 @@ public class EquivalenceGraphFilter implements Predicate<Content> {
             return;
         }
 
-        checkArgument(builder.graph.get()
-                .getAdjacencyList()
-                .containsKey(builder.graphEntryId.get()));
+        if (!builder.graph.get().getAdjacencyList().containsKey(builder.graphEntryId.get())) {
+            // We are swallowing the error here and reverting to the default behaviour of not
+            // filtering IDs based on graph-traversal to avoid a failure on a single ID failing
+            // the entire API call
+            log.warn(
+                    "Given entry-point id {} does not exist in graph {}",
+                    builder.graphEntryId.get(),
+                    builder.graph.get().getId()
+            );
+            this.selectedIds = ImmutableSet.copyOf(builder.activelyPublishedIds);
+            return;
+        }
 
         this.selectedIds = visitId(
                 builder.graphEntryId.get(),

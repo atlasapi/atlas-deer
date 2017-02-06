@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.atlasapi.content.AstyanaxCassandraContentStore;
 import org.atlasapi.content.ContentSerializationVisitor;
 import org.atlasapi.content.ContentSerializer;
+import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.v2.CqlContentStore;
 import org.atlasapi.entity.AliasIndex;
 import org.atlasapi.equivalence.CassandraEquivalenceGraphStore;
@@ -59,8 +60,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CassandraPersistenceModule extends AbstractIdleService implements PersistenceModule {
 
-    private static final int CQL_PORT = 9042;
-
     private static final String METRIC_PREFIX = "persistence.store.";
 
     private String contentEquivalenceGraphChanges = Configurer.get(
@@ -101,15 +100,14 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     private CassandraEquivalenceGraphStore nullMessageSendingEquivGraphStore;
     private CassandraEquivalentScheduleStore equivalentScheduleStore;
     private DatastaxCassandraScheduleStore v2ScheduleStore;
-    private AstyanaxCassandraContentStore contentStore;
+    private AstyanaxCassandraContentStore astyanaxContentStore;
     private CqlContentStore cqlContentStore;
-    private CqlContentStore bootstrapCqlContentStore;
-    private AstyanaxCassandraContentStore nullMsgSendingContentStore;
     private EventStore eventStore;
     private OrganisationStore organisationStore;
     private OrganisationStore idSettingOrganisationStore;
 
     private MessageSenderFactory messageSenderFactory;
+    private CqlContentStore nullMessageSendingCqlContentStore;
 
     public CassandraPersistenceModule(
             MessageSenderFactory messageSenderFactory,
@@ -182,19 +180,11 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 METRIC_PREFIX + "CassandraEquivalenceGraphStore."
         );
 
-        this.contentStore = makeAstyanaxContentStore(readConsistency);
+        this.astyanaxContentStore = makeAstyanaxContentStore(readConsistency);
 
-        // This content store is used by debug endpoints that are used for resolving issues.
-        // Therefore we are passing a "fake" content hasher to ensure we are always writing
-        // content when asked to
-        this.nullMsgSendingContentStore = makeAstyanaxNullMsgContentStore(readConsistency);
-
-        // The CQL content store isn't live yet and will run in parallel with the Astyanax store
-        // for testing. We pass in a dummy message sender to avoid sending content update messages
-        // from two different places
         this.cqlContentStore = makeCqlContentStore(session);
 
-        this.bootstrapCqlContentStore = makeBootstrapCqlContentStore(session);
+        this.nullMessageSendingCqlContentStore = makeNullMessageCqlContentStore(session);
 
         this.nullMessageSendingEquivalenceGraphStore = new CassandraEquivalenceGraphStore(
                 nullMessageSender(EquivalenceGraphUpdateMessage.class),
@@ -207,7 +197,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
 
         this.equivalentScheduleStore = new CassandraEquivalentScheduleStore(
                 contentEquivalenceGraphStore,
-                contentStore,
+                cqlContentStore,
                 session,
                 read,
                 write,
@@ -226,7 +216,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
         );
         this.v2ScheduleStore = new DatastaxCassandraScheduleStore(
                 "schedule_v2",
-                contentStore,
+                cqlContentStore,
                 sender(scheduleChanges, ScheduleUpdateMessage.class),
                 new SystemClock(),
                 getReadConsistencyLevel(),
@@ -250,7 +240,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withMetricPrefix(METRIC_PREFIX + "CassandraTopicStore.")
                 .build();
         this.scheduleStore = AstyanaxCassandraScheduleStore.builder(context, "schedule",
-                contentStore, sender(scheduleChanges, ScheduleUpdateMessage.class)
+                cqlContentStore, sender(scheduleChanges, ScheduleUpdateMessage.class)
         )
                 .withReadConsistency(readConsistency)
                 .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
@@ -281,7 +271,7 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 context,
                 "content",
                 contentHasher,
-                sender(contentChanges, ResourceUpdatedMessage.class),
+                nullMessageSender(ResourceUpdatedMessage.class),
                 contentIdGenerator,
                 contentEquivalenceGraphStore
         )
@@ -292,24 +282,6 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .build();
     }
 
-    private AstyanaxCassandraContentStore makeAstyanaxNullMsgContentStore(
-            ConsistencyLevel readConsistency
-    ) {
-        return AstyanaxCassandraContentStore.builder(
-                context,
-                "content",
-                content -> UUID.randomUUID().toString(),
-                nullMessageSender(ResourceUpdatedMessage.class),
-                contentIdGenerator,
-                contentEquivalenceGraphStore
-        )
-                .withReadConsistency(readConsistency)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .withMetricRegistry(metrics)
-                .withMetricPrefix(METRIC_PREFIX + "NullMessageSendingAstyanaxCassandraContentStore.")
-                .build();
-    }
-
     private CqlContentStore makeCqlContentStore(Session session) {
         return CqlContentStore.builder()
                 .withSession(session)
@@ -317,24 +289,21 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
                 .withClock(new SystemClock())
                 .withHasher(contentHasher)
                 .withGraphStore(contentEquivalenceGraphStore)
-//                .withSender(null)
+                .withSender(sender(contentChanges, ResourceUpdatedMessage.class))
                 .withMetricRegistry(metrics)
                 .withMetricPrefix(METRIC_PREFIX + "CqlContentStore.")
                 .build();
     }
 
-    private CqlContentStore makeBootstrapCqlContentStore(Session session) {
+    private CqlContentStore makeNullMessageCqlContentStore(Session session) {
         return CqlContentStore.builder()
                 .withSession(session)
                 .withIdGenerator(contentIdGenerator)
                 .withClock(new SystemClock())
-                .withHasher(contentHasher)
+                .withHasher(content -> UUID.randomUUID().toString())
                 .withGraphStore(contentEquivalenceGraphStore)
-//                .withSender(null)
-                .withReadConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
-                .withWriteConsistency(com.datastax.driver.core.ConsistencyLevel.QUORUM)
                 .withMetricRegistry(metrics)
-                .withMetricPrefix(METRIC_PREFIX + "BootstrapCqlContentStore.")
+                .withMetricPrefix(METRIC_PREFIX + "NullMessageCqlContentStore.")
                 .build();
     }
 
@@ -384,20 +353,16 @@ public class CassandraPersistenceModule extends AbstractIdleService implements P
     }
 
     @Override
-    public AstyanaxCassandraContentStore contentStore() {
-        return contentStore;
-    }
-
-    public CqlContentStore cqlContentStore() {
+    public ContentStore contentStore() {
         return cqlContentStore;
     }
 
-    public CqlContentStore bootstrapCqlContentStore() {
-        return bootstrapCqlContentStore;
+    public ContentStore nullMessageSendingContentStore() {
+        return nullMessageSendingCqlContentStore;
     }
 
-    public AstyanaxCassandraContentStore nullMessageSendingContentStore() {
-        return nullMsgSendingContentStore;
+    public AstyanaxCassandraContentStore astyanaxContentStore() {
+        return astyanaxContentStore;
     }
 
     @Override
