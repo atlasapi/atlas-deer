@@ -543,13 +543,20 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         if (chosen.getPremiere() == null && toMerge.getPremiere() != null) {
             chosen.setPremiere(toMerge.getPremiere());
         }
-        if (!chosen.getBlackoutRestriction().isPresent() && toMerge.getBlackoutRestriction()
-                .isPresent()) {
+        if (shouldUpdateBlackoutRestriction(chosen, toMerge)) {
             chosen.setBlackoutRestriction(toMerge.getBlackoutRestriction().get());
         }
         if (chosen.getRevisedRepeat() == null && toMerge.getRevisedRepeat() != null) {
             chosen.setRevisedRepeat(toMerge.getRevisedRepeat());
         }
+    }
+
+    private boolean shouldUpdateBlackoutRestriction(Broadcast chosen, Broadcast toMerge) {
+        boolean chosenBlackedOut =
+                chosen.getBlackoutRestriction().isPresent()
+                        && chosen.getBlackoutRestriction().get().getAll();
+
+        return toMerge.getBlackoutRestriction().isPresent() && !chosenBlackedOut;
     }
 
     private static boolean isImageAvailableAndNotGenericImageContentPlayer(
