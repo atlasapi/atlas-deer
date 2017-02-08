@@ -38,7 +38,7 @@ public class ContainerSetter {
 
         Container container = (Container) content;
         ImmutableList<org.atlasapi.content.ItemRef> itemRefs = container.getItemRefs();
-        if (itemRefs != null) {
+        if (itemRefs != null && !itemRefs.isEmpty()) {
             internal.setItemRefs(
                     itemRefs
                             .stream()
@@ -51,7 +51,7 @@ public class ContainerSetter {
 
         Map<org.atlasapi.content.ItemRef, Iterable<org.atlasapi.content.BroadcastRef>> upcomingContent =
                 container.getUpcomingContent();
-        if (upcomingContent != null) {
+        if (upcomingContent != null && !upcomingContent.isEmpty()) {
             internal.setUpcomingContent(
                     upcomingContent.entrySet().stream().collect(MoreCollectors.toImmutableMap(
                             entry -> ref.serialize(entry.getKey()),
@@ -67,7 +67,7 @@ public class ContainerSetter {
 
         Map<org.atlasapi.content.ItemRef, Iterable<org.atlasapi.content.LocationSummary>> availableContent =
                 container.getAvailableContent();
-        if (availableContent != null) {
+        if (availableContent != null && !availableContent.isEmpty()) {
             internal.setAvailableContent(
                     availableContent.entrySet().stream().collect(MoreCollectors.toImmutableMap(
                             entry -> ref.serialize(entry.getKey()),
@@ -82,7 +82,7 @@ public class ContainerSetter {
         }
 
         List<org.atlasapi.content.ItemSummary> itemSummaries = container.getItemSummaries();
-        if (itemSummaries != null) {
+        if (itemSummaries != null && !itemSummaries.isEmpty()) {
             internal.setItemSummaries(
                     itemSummaries.stream().collect(MoreCollectors.toImmutableMap(
                             summary -> ref.serialize(summary.getItemRef()),
