@@ -14,6 +14,7 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletResponse;
 
+import org.atlasapi.content.Brand;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
@@ -22,9 +23,11 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.ContentType;
 import org.atlasapi.content.ContentVisitorAdapter;
 import org.atlasapi.content.ContentWriter;
+import org.atlasapi.content.Episode;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.IndexException;
 import org.atlasapi.content.Item;
+import org.atlasapi.content.Series;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identified;
 import org.atlasapi.entity.ResourceLister;
@@ -154,6 +157,62 @@ public class ContentBootstrapController {
                 "Starting bootstrap of " + source + " "
                         + (migrateEquivalents ? "with" : "without") + " equivalents"
         );
+        resp.getWriter().flush();
+    }
+
+    @RequestMapping(value = "/system/bootstrap/type", method = RequestMethod.POST)
+    public void bootstrapType(
+            @RequestParam("type") String type,
+            @RequestParam("progress") String progressId,
+            HttpServletResponse resp
+    ) throws IOException {
+        Optional<ContentListingProgress> progress = progressStore.progressForTask(progressId);
+
+        Class<? extends Content> filter;
+        switch (type) {
+        case "episode":
+            filter = Episode.class;
+            break;
+        case "brand":
+            filter = Brand.class;
+            break;
+        case "series":
+            filter = Series.class;
+            break;
+        case "item":
+            filter = Item.class;
+            break;
+        default:
+            throw new IllegalArgumentException(String.format("Unknown content type %s", type));
+        }
+
+        FluentIterable<? extends Content> contentIterable;
+        if (progress.isPresent()) {
+            contentIterable = contentLister.list(progress.get()).filter(filter);
+        } else {
+            contentIterable = contentLister.list().filter(filter);
+        }
+
+        Runnable listener = () -> {
+            ExecutorService executor = getExecutor();
+
+            for (Content c : contentIterable) {
+                executor.submit(() -> c.accept(contentBootstrapListener));
+                progressStore.storeProgress(
+                        progressId,
+                        new ContentListingProgress(null, null, c.getCanonicalUri())
+                );
+            }
+
+            executor.shutdown();
+
+            progressStore.storeProgress(progressId, ContentListingProgress.START);
+        };
+
+        executorService.execute(listener);
+
+        resp.setStatus(HttpStatus.ACCEPTED.value());
+        resp.getWriter().println(String.format("Starting bootstrap %s of %s", progressId, type));
         resp.getWriter().flush();
     }
 
