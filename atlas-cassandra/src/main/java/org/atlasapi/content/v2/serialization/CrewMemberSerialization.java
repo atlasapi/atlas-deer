@@ -66,13 +66,22 @@ public class CrewMemberSerialization {
         String publisherKey = internal.getPublisher();
         Publisher publisher = Publisher.fromKey(publisherKey).valueOrNull();
 
+        // The serialize method does not validate this is non-null and we have some crew members
+        // written in the DB with null roles so we need to gracefully handle this case
+        if (internal.getRole() != null) {
+            crewMember.withRole(org.atlasapi.content.CrewMember.Role.fromKey(
+                    internal.getRole())
+            );
+        }
+
         crewMember = crewMember
-                .withRole(org.atlasapi.content.CrewMember.Role.fromKey(internal.getRole()))
                 .withName(internal.getName())
                 .withPublisher(publisher);
 
         if (TYPE_ACTOR.equals(type)) {
-            crewMember = ((org.atlasapi.content.Actor) crewMember).withCharacter(internal.getCharacter());
+            crewMember = ((org.atlasapi.content.Actor) crewMember).withCharacter(
+                    internal.getCharacter()
+            );
         }
 
         return crewMember;
