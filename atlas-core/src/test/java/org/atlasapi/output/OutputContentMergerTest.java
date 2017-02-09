@@ -800,27 +800,6 @@ public class OutputContentMergerTest {
         ));
     }
 
-    private Application getApplicationWithPrecedence(boolean imagePrecedence, Publisher... publishers) {
-
-        ApplicationConfiguration testConfig = ApplicationConfiguration.builder()
-                .withPrecedence(Lists.newArrayList(publishers))
-                .withEnabledWriteSources(ImmutableList.of())
-                .build();
-
-        Application application = mock(Application.class);
-        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
-
-        when(configuration.isPrecedenceEnabled()).thenReturn(testConfig.isPrecedenceEnabled());
-        when(configuration.getEnabledReadSources()).thenReturn(testConfig.getEnabledReadSources());
-        when(configuration.getReadPrecedenceOrdering()).thenReturn(testConfig.getReadPrecedenceOrdering());
-        when(configuration.isImagePrecedenceEnabled()).thenReturn(imagePrecedence);
-        when(configuration.getImageReadPrecedenceOrdering()).thenReturn(testConfig.getImageReadPrecedenceOrdering());
-
-        when(application.getConfiguration()).thenReturn(configuration);
-
-        return application;
-    }
-
     @SuppressWarnings("Guava")
     private com.google.common.base.Optional<BlackoutRestriction> getMergedBlackoutRestriction(
             @Nullable BlackoutRestriction chosenRestriction,
@@ -842,16 +821,37 @@ public class OutputContentMergerTest {
         chosen.addBroadcast(chosenBroadcast);
         notChosen.addBroadcast(notChosenBroadcast);
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.METABROADCAST,
                 Publisher.BBC
         );
 
-        Item merged = merger.merge(chosen, ImmutableList.of(notChosen), sources);
+        Item merged = merger.merge(chosen, ImmutableList.of(notChosen), application);
 
         return Iterables
                 .getOnlyElement(merged.getBroadcasts())
                 .getBlackoutRestriction();
+    }
+
+    private Application getApplicationWithPrecedence(boolean imagePrecedence, Publisher... publishers) {
+
+        ApplicationConfiguration testConfig = ApplicationConfiguration.builder()
+                .withPrecedence(Lists.newArrayList(publishers))
+                .withEnabledWriteSources(ImmutableList.of())
+                .build();
+
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
+
+        when(configuration.isPrecedenceEnabled()).thenReturn(testConfig.isPrecedenceEnabled());
+        when(configuration.getEnabledReadSources()).thenReturn(testConfig.getEnabledReadSources());
+        when(configuration.getReadPrecedenceOrdering()).thenReturn(testConfig.getReadPrecedenceOrdering());
+        when(configuration.isImagePrecedenceEnabled()).thenReturn(imagePrecedence);
+        when(configuration.getImageReadPrecedenceOrdering()).thenReturn(testConfig.getImageReadPrecedenceOrdering());
+
+        when(application.getConfiguration()).thenReturn(configuration);
+
+        return application;
     }
 }
