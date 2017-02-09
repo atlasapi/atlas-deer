@@ -38,6 +38,9 @@ import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -58,6 +61,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Controller
@@ -95,7 +99,12 @@ public class ContentDebugController {
                 )
                 .create();
 
-        jackson = new ObjectMapper().findAndRegisterModules();
+        jackson = new ObjectMapper()
+                .registerModule(new GuavaModule())
+                .registerModule(new Jdk8Module())
+                .registerModule(new JodaModule())
+                .configure(WRITE_DATES_AS_TIMESTAMPS , false)
+                .findAndRegisterModules();
 
         legacyContentResolver = checkNotNull(builder.legacyContentResolver);
         index = checkNotNull(builder.index);
