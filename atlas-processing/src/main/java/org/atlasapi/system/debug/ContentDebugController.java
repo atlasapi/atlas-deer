@@ -223,7 +223,8 @@ public class ContentDebugController {
                 .resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id))));
         Resolved<Content> resolved = Futures.get(resolving, Exception.class);
         Content content = Iterables.getOnlyElement(resolved.getResources());
-        gson.toJson(content, response.getWriter());
+
+        jackson.writeValue(response.getWriter(), content);
     }
 
     /* Returns the JSON representation of a piece of content stored in the Cassandra store */
@@ -238,7 +239,8 @@ public class ContentDebugController {
                 contentStore.resolveIds(ids), 1, TimeUnit.MINUTES, Exception.class
         );
         Content content = result.getResources().first().orNull();
-        gson.toJson(content, response.getWriter());
+
+        jackson.writeValue(response.getWriter(), content);
     }
 
     /* Returns the JSON representation of a piece of content stored in the equivalent content store */
