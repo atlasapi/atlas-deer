@@ -226,7 +226,7 @@ public class ContentDebugController {
     @RequestMapping("/system/debug/content/{id}/legacy")
     public void printLegacyContent(
             @PathVariable("id") String id,
-            final HttpServletResponse response
+            HttpServletResponse response
     ) throws Exception {
         ListenableFuture<Resolved<Content>> resolving = legacyContentResolver
                 .resolveIds(ImmutableList.of(Id.valueOf(lowercase.decode(id))));
@@ -234,13 +234,14 @@ public class ContentDebugController {
         Content content = Iterables.getOnlyElement(resolved.getResources());
 
         jackson.writeValue(response.getWriter(), content);
+        response.flushBuffer();
     }
 
     /* Returns the JSON representation of a piece of content stored in the Cassandra store */
     @RequestMapping("/system/debug/content/{id}")
     public void printContent(
             @PathVariable("id") String id,
-            final HttpServletResponse response
+            HttpServletResponse response
     ) throws Exception {
         Id decodedId = decodeId(id);
         ImmutableList<Id> ids = ImmutableList.of(decodedId);
@@ -250,6 +251,7 @@ public class ContentDebugController {
         Content content = result.getResources().first().orNull();
 
         jackson.writeValue(response.getWriter(), content);
+        response.flushBuffer();
     }
 
     /* Returns the JSON representation of a piece of content stored in the equivalent content store */
