@@ -193,6 +193,8 @@ public class CqlContentStore implements ContentStore {
             batch.addAll(updateContainerDenormalizedInfo(content, previous, messages));
             batch.addAll(updateChildrenSummaries(content, previous, messages));
 
+            setExistingItemRefs(content, previous);
+
             org.atlasapi.content.v2.model.Content serialized = translator.serialize(content);
 
             batch.add(mapper.saveQuery(serialized));
@@ -207,7 +209,6 @@ public class CqlContentStore implements ContentStore {
 
             sendMessages(messages.build());
 
-            setExistingItemRefs(content, previous);
 
             return new WriteResult<>(content, true, DateTime.now(), previous);
         } catch (WriteException | RuntimeException e) {
@@ -411,6 +412,7 @@ public class CqlContentStore implements ContentStore {
             Container currentContainer = (Container) content;
 
             currentContainer.setItemRefs(previousContainer.getItemRefs());
+            currentContainer.setItemSummaries(previousContainer.getItemSummaries());
 
             if (content instanceof Brand && previousContainer instanceof Brand) {
                 Brand previousBrand = (Brand) previousContainer;

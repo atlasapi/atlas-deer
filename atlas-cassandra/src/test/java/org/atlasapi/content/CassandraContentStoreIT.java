@@ -55,6 +55,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.hamcrest.MatcherAssert;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.After;
@@ -2051,6 +2052,42 @@ public abstract class CassandraContentStoreIT {
 
         Clip resolvedClip = clips.get(0);
         assertThat(resolvedClip.getTitle(), notNullValue());
+    }
+
+    @Test
+    public void dontWriteNullItemSummariesAndItemRefsForBrands() throws Exception {
+        when(clock.now()).thenReturn(DateTime.now());
+        when(idGenerator.generateRaw()).thenReturn(1L, 2L, 3L);
+
+        Brand brand = create(new Brand());
+        brand.setTitle("brand title");
+
+        WriteResult<Brand, Content> writtenBrand = store.writeContent(brand);
+        brand.setId(writtenBrand.getResource().getId());
+
+        Item item0 = create(new Item());
+        item0.setContainer(brand);
+        Item item1 = create(new Item());
+        item1.setContainer(brand);
+
+        store.writeContent(item0);
+        store.writeContent(item1);
+
+        Brand resolvedBrand = (Brand) store.resolveIds(
+                ImmutableList.of(writtenBrand.getResource().getId())
+        ).get().getResources().first().get();
+        assertThat(resolvedBrand.getItemRefs().size(), is(2));
+        assertThat(resolvedBrand.getItemSummaries().size(), is(2));
+
+        when(hasher.hash(brand)).thenReturn("has summaries", "no summaries");
+
+        store.writeContent(brand);
+
+        resolvedBrand = (Brand) store.resolveIds(
+                ImmutableList.of(writtenBrand.getResource().getId())
+        ).get().getResources().first().get();
+        assertThat(resolvedBrand.getItemRefs().size(), is(2));
+        assertThat(resolvedBrand.getItemSummaries().size(), is(2));
     }
 
     protected  <T extends Content> T create(T content) {

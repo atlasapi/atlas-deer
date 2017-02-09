@@ -7,8 +7,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.BroadcastRef;
@@ -682,6 +685,77 @@ public class OutputContentMergerTest {
         assertThat(merged.getRatings().containsAll(expectedRatings), is(true));
     }
 
+    @Test
+    public void mergeBlackoutReturnsBlackoutTrueIfChosenNoBlackoutAndNonChosenBlackoutTrue() {
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
+                getMergedBlackoutRestriction(
+                        null,
+                        new BlackoutRestriction(true)
+        );
+
+        assertThat(restriction.isPresent(), is(true));
+        assertThat(restriction.get().getAll(), is(true));
+    }
+
+    @Test
+    public void mergeBlackoutReturnsBlackoutFalseIfChosenNoBlackoutAndNonChosenBlackoutFalse() {
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
+                getMergedBlackoutRestriction(
+                null,
+                new BlackoutRestriction(false)
+        );
+
+        assertThat(restriction.isPresent(), is(true));
+        assertThat(restriction.get().getAll(), is(false));
+    }
+
+    @Test
+    public void mergeBlackoutReturnsBlackoutTrueIfChosenBlackoutFalseAndNonChosenBlackoutTrue() {
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
+                getMergedBlackoutRestriction(
+                        new BlackoutRestriction(false),
+                        new BlackoutRestriction(true)
+        );
+
+        assertThat(restriction.isPresent(), is(true));
+        assertThat(restriction.get().getAll(), is(true));
+    }
+
+    @Test
+    public void mergeBlackoutReturnsBlackoutTrueIfChosenBlackoutTrueAndNonChosenBlackoutFalse() {
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
+                getMergedBlackoutRestriction(
+                        new BlackoutRestriction(true),
+                        new BlackoutRestriction(false)
+        );
+
+        assertThat(restriction.isPresent(), is(true));
+        assertThat(restriction.get().getAll(), is(true));
+    }
+
+    @Test
+    public void mergeBlackoutReturnsBlackoutFalseIfChosenBlackoutFalseAndNonChosenBlackoutFalse() {
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
+                getMergedBlackoutRestriction(
+                        new BlackoutRestriction(false),
+                        new BlackoutRestriction(false)
+                );
+
+        assertThat(restriction.isPresent(), is(true));
+        assertThat(restriction.get().getAll(), is(false));
+    }
+
+    @Test
+    public void mergeBlackoutReturnsNoBlackoutIfChosenNoBlackoutAndNonChosenNoBlackout() {
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
+                getMergedBlackoutRestriction(
+                        null,
+                        null
+                );
+
+        assertThat(restriction.isPresent(), is(false));
+    }
+
     private List<Rating> addRatings(Item item, Float... ratingValues) {
         Publisher publisher = item.getSource();
         List<Rating> ratings = Arrays.asList(ratingValues).stream()
@@ -747,4 +821,37 @@ public class OutputContentMergerTest {
         return application;
     }
 
+    @SuppressWarnings("Guava")
+    private com.google.common.base.Optional<BlackoutRestriction> getMergedBlackoutRestriction(
+            @Nullable BlackoutRestriction chosenRestriction,
+            @Nullable BlackoutRestriction toMergeRestriction
+    ) {
+        Item chosen = item(1L, "o", Publisher.METABROADCAST);
+        Item notChosen = item(2L, "k", Publisher.BBC);
+
+        Id channelId = Id.valueOf(0L);
+        DateTime start = DateTime.now();
+        DateTime end = DateTime.now().plusHours(1);
+
+        Broadcast chosenBroadcast = new Broadcast(channelId, start, end);
+        chosenBroadcast.setBlackoutRestriction(chosenRestriction);
+
+        Broadcast notChosenBroadcast = new Broadcast(channelId, start, end);
+        notChosenBroadcast.setBlackoutRestriction(toMergeRestriction);
+
+        chosen.addBroadcast(chosenBroadcast);
+        notChosen.addBroadcast(notChosenBroadcast);
+
+        ApplicationSources sources = sourcesWithPrecedence(
+                true,
+                Publisher.METABROADCAST,
+                Publisher.BBC
+        );
+
+        Item merged = merger.merge(chosen, ImmutableList.of(notChosen), sources);
+
+        return Iterables
+                .getOnlyElement(merged.getBroadcasts())
+                .getBlackoutRestriction();
+    }
 }

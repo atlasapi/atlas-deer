@@ -45,12 +45,17 @@ import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Interval;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class EquivalentScheduleQueryExecutor
         implements ScheduleQueryExecutor {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(EquivalentScheduleQueryExecutor.class);
 
     private static final long QUERY_TIMEOUT = 60000;
 
@@ -204,6 +209,12 @@ public class EquivalentScheduleQueryExecutor
             Application application) {
         ImmutableList.Builder<ItemAndBroadcast> iabs = ImmutableList.builder();
         for (EquivalentScheduleEntry entry : entries) {
+            if (entry.getItems().getResources().isEmpty()) {
+                // Prevent a single bad entry from failing the entire call
+                log.warn("Schedule entry has no items. Entry: <{}>", entry);
+                continue;
+            }
+
             List<Item> mergedItems = equivalentsMerger.merge(
                     Optional.<Id>absent(),
                     entry.getItems().getResources(),
