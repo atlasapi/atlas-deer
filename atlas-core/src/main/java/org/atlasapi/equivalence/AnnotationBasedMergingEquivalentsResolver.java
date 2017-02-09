@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 
 import com.google.common.base.Function;
@@ -29,41 +29,37 @@ public class AnnotationBasedMergingEquivalentsResolver<E extends Equivalable<E>>
 
     @Override
     public ListenableFuture<ResolvedEquivalents<E>> resolveIds(Iterable<Id> ids,
-            ApplicationSources sources, Set<Annotation> activeAnnotations) {
+            Application application, Set<Annotation> activeAnnotations) {
 
         if (activeAnnotations.contains(Annotation.NON_MERGED)) {
             return resolver.resolveIdsWithoutEquivalence(
                     ids,
-                    sources.getEnabledReadSources(),
+                    application.getConfiguration().getEnabledReadSources(),
                     activeAnnotations
             );
         } else {
             ListenableFuture<ResolvedEquivalents<E>> unmerged
-                    = resolver.resolveIds(ids, sources.getEnabledReadSources(), activeAnnotations);
-            return Futures.transform(unmerged, mergeUsing(sources));
+                    = resolver.resolveIds(ids, application.getConfiguration().getEnabledReadSources(), activeAnnotations);
+            return Futures.transform(unmerged, mergeUsing(application));
         }
     }
 
     private Function<ResolvedEquivalents<E>, ResolvedEquivalents<E>> mergeUsing(
-            final ApplicationSources sources) {
-        return new Function<ResolvedEquivalents<E>, ResolvedEquivalents<E>>() {
+            final Application application) {
+        return input -> {
 
-            @Override
-            public ResolvedEquivalents<E> apply(ResolvedEquivalents<E> input) {
-
-                ResolvedEquivalents.Builder<E> builder = ResolvedEquivalents.builder();
-                for (Map.Entry<Id, Collection<E>> entry : input.asMap().entrySet()) {
-                    builder.putEquivalents(
-                            entry.getKey(),
-                            merge(entry.getKey(), entry.getValue(), sources)
-                    );
-                }
-                return builder.build();
+            ResolvedEquivalents.Builder<E> builder = ResolvedEquivalents.builder();
+            for (Map.Entry<Id, Collection<E>> entry : input.asMap().entrySet()) {
+                builder.putEquivalents(
+                        entry.getKey(),
+                        merge(entry.getKey(), entry.getValue(), application)
+                );
             }
+            return builder.build();
         };
     }
 
-    private Iterable<E> merge(Id id, Collection<E> equivs, ApplicationSources sources) {
-        return merger.merge(Optional.of(id), equivs, sources);
+    private Iterable<E> merge(Id id, Collection<E> equivs, Application application) {
+        return merger.merge(Optional.of(id), equivs, application);
     }
 }

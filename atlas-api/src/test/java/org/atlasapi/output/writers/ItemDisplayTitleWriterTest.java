@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.Episode;
@@ -13,17 +14,18 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.time.DateTimeZones;
 
 import org.joda.time.DateTime;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -31,6 +33,17 @@ public class ItemDisplayTitleWriterTest {
 
     private ItemDisplayTitleWriter titleWriter = new ItemDisplayTitleWriter();
     private @Mock FieldWriter fieldWriter;
+    private @Mock HttpServletRequest request;
+    private @Mock Application application;
+
+    private OutputContext outputContext;
+
+    @Before
+    public void setUp() {
+        outputContext = OutputContext.valueOf(
+                QueryContext.create(application, ActiveAnnotations.standard(), request)
+        );
+    }
 
     @Test
     public void testSpecialEpisodeHasEpisodeTitleAndNoSubtitle() throws Exception {
@@ -49,7 +62,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getTitle());
@@ -68,7 +81,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getTitle());
@@ -95,7 +108,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -126,7 +139,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -153,7 +166,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -180,7 +193,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -207,7 +220,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -240,7 +253,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -267,7 +280,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -303,7 +316,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -339,7 +352,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -375,7 +388,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -411,7 +424,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -447,7 +460,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -476,7 +489,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle("Sausages");
@@ -501,7 +514,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(entity.getContainerSummary().getTitle());
@@ -522,7 +535,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(null);
@@ -541,7 +554,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle(null);
@@ -572,7 +585,7 @@ public class ItemDisplayTitleWriterTest {
         titleWriter.write(
                 entity,
                 fieldWriter,
-                OutputContext.valueOf(QueryContext.standard(mock(HttpServletRequest.class)))
+                outputContext
         );
 
         verifyTitle("Silent Witness");

@@ -54,7 +54,7 @@ public class SeriesSummaryWriter implements EntityWriter<Episode> {
 
         Optional<ContainerSummary> summary = containerSummaryResolver.resolveContainerSummary(
                 seriesRef.getId(),
-                ctxt.getApplicationSources(),
+                ctxt.getApplication(),
                 ctxt.getActiveAnnotations()
         );
 

@@ -2,7 +2,7 @@ package org.atlasapi.output;
 
 import java.util.List;
 
-import org.atlasapi.application.ApplicationSources;
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Identifiable;
 import org.atlasapi.entity.Sourced;
@@ -30,11 +30,11 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
 
     @Override
     public <T extends E> List<T> merge(final Optional<Id> id, Iterable<T> equivalents,
-            ApplicationSources sources) {
-        if (!sources.isPrecedenceEnabled()) {
+            Application application) {
+        if (!application.getConfiguration().isPrecedenceEnabled()) {
             return ImmutableList.copyOf(equivalents);
         }
-        Ordering<Sourced> equivsOrdering = applicationEquivalentsOrdering(sources);
+        Ordering<Sourced> equivsOrdering = applicationEquivalentsOrdering(application);
         ImmutableList<T> sortedEquivalents = equivsOrdering.immutableSortedCopy(equivalents);
         if (sortedEquivalents.isEmpty()) {
             return ImmutableList.of();
@@ -44,7 +44,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
                     strategy.merge(
                             Iterables.getFirst(sortedEquivalents, null),
                             ImmutableList.of(),
-                            sources
+                            application
                     )
             );
         }
@@ -63,25 +63,21 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
                 sortedEquivalents,
                 Predicates.not(idIs(chosen.getId()))
         );
-        return ImmutableList.of(strategy.merge(chosen, notChosen, sources));
+        return ImmutableList.of(strategy.merge(chosen, notChosen, application));
     }
 
     private boolean trivialMerge(ImmutableList<?> sortedEquivalents) {
         return sortedEquivalents.size() == 1;
     }
 
-    private Ordering<Sourced> applicationEquivalentsOrdering(ApplicationSources sources) {
-        return sources.publisherPrecedenceOrdering().onResultOf(Sourceds.toPublisher());
+    private Ordering<Sourced> applicationEquivalentsOrdering(Application application) {
+        return application.getConfiguration()
+                .getReadPrecedenceOrdering()
+                .onResultOf(Sourceds.toPublisher());
     }
 
     private Predicate<Identifiable> idIs(final Id id) {
-        return new Predicate<Identifiable>() {
-
-            @Override
-            public boolean apply(Identifiable input) {
-                return input.getId().equals(id);
-            }
-        };
+        return input -> input.getId().equals(id);
     }
 
 }

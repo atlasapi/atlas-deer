@@ -7,9 +7,10 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApiKeySourcesFetcher;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.DefaultApplication;
+import org.atlasapi.application.ApiKeyApplicationFetcher;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Specialization;
 import org.atlasapi.entity.Identified;
@@ -65,13 +66,13 @@ public class SearchController {
     private static final float DEFAULT_CATCHUP_WEIGHTING = 0.15f;
 
     private final SearchResolver searcher;
-    private final ApplicationSourcesFetcher sourcesFetcher;
+    private final ApplicationFetcher applicationFetcher;
     private final QueryResultWriter<Content> resultWriter;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
     private final ParameterChecker paramChecker = new ParameterChecker(ImmutableSet.of(
-            ApiKeySourcesFetcher.API_KEY_QUERY_PARAMETER,
+            ApiKeyApplicationFetcher.API_KEY_QUERY_PARAMETER,
             Selection.LIMIT_REQUEST_PARAM,
             Selection.START_INDEX_REQUEST_PARAM,
             QUERY_PARAM,
@@ -88,10 +89,10 @@ public class SearchController {
             PRIORITY_CHANNEL_WEIGHTING
     ));
 
-    public SearchController(SearchResolver searcher, ApplicationSourcesFetcher configFetcher,
+    public SearchController(SearchResolver searcher, ApplicationFetcher applicationFetcher,
             QueryResultWriter<Content> resultWriter) {
         this.searcher = searcher;
-        this.sourcesFetcher = configFetcher;
+        this.applicationFetcher = applicationFetcher;
         this.resultWriter = resultWriter;
     }
 
@@ -141,10 +142,10 @@ public class SearchController {
                     DEFAULT_PRIORITY_CHANNEL_WEIGHTING
             );
 
-            ApplicationSources appSources = sourcesFetcher.sourcesFor(request)
-                    .or(ApplicationSources.defaults());
+            Application application = applicationFetcher.applicationFor(request)
+                    .orElse(DefaultApplication.create());
             Set<Specialization> specializations = specializations(specialization);
-            Set<Publisher> publishers = publishers(publisher, appSources);
+            Set<Publisher> publishers = publishers(publisher, application);
             List<Identified> content = searcher.search(SearchQuery.builder(q)
                     .withSelection(selection)
                     .withSpecializations(specializations)
@@ -160,7 +161,7 @@ public class SearchController {
                     .withCurrentBroadcastsOnly(!Strings.isNullOrEmpty(currentBroadcastsOnly)
                                                ? Boolean.valueOf(currentBroadcastsOnly)
                                                : false)
-                    .build(), appSources);
+                    .build(), application);
             resultWriter.write(QueryResult.listResult(
                     Iterables.filter(content, Content.class),
                     QueryContext.standard(request),
@@ -173,10 +174,10 @@ public class SearchController {
         }
     }
 
-    private Set<Publisher> publishers(String publisher, ApplicationSources appSources) {
+    private Set<Publisher> publishers(String publisher, Application application) {
         return Sets.intersection(
                 ImmutableSet.copyOf(Publisher.fromCsv(publisher)),
-                appSources.getEnabledReadSources()
+                application.getConfiguration().getEnabledReadSources()
         );
     }
 

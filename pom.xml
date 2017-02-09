@@ -406,11 +406,12 @@
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jvm</artifactId>
         <version>${metrics-dw.version}</version>
-      </dependency><dependency>
-      <groupId>io.prometheus</groupId>
-      <artifactId>simpleclient</artifactId>
-      <version>${prometheus.version}</version>
-    </dependency>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient</artifactId>
+        <version>${prometheus.version}</version>
+      </dependency>
       <dependency>
         <groupId>io.prometheus</groupId>
         <artifactId>simpleclient_servlet</artifactId>

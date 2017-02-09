@@ -1,12 +1,12 @@
 package org.atlasapi.query.v4.schedule;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.SourceStatus;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
@@ -62,8 +62,11 @@ public class ScheduleQueryExecutorImplTest {
     @Mock private MergingEquivalentsResolver<Content> equivalentContentResolver;
     @Mock private ChannelResolver channelResolver;
     @Mock private ScheduleResolver scheduleResolver;
+    @Mock private Application application = mock(Application.class);
+    @Mock private HttpServletRequest request = mock(HttpServletRequest.class);
 
     private ScheduleQueryExecutorImpl executor;
+    private QueryContext queryContext;
 
     @Before
     public void setup() {
@@ -71,6 +74,19 @@ public class ScheduleQueryExecutorImplTest {
                 channelResolver,
                 scheduleResolver,
                 equivalentContentResolver
+        );
+
+        when(application.getConfiguration())
+                .thenReturn(
+                        getConfigWithNoPrecedence(Publisher.all().stream()
+                                .filter(Publisher::enabledWithNoApiKey)
+                                .collect(Collectors.toList())
+                )
+        );
+        queryContext = QueryContext.create(
+                application,
+                ActiveAnnotations.standard(),
+                request
         );
     }
 
@@ -88,7 +104,7 @@ public class ScheduleQueryExecutorImplTest {
                 .withSource(METABROADCAST)
                 .withStart(start)
                 .withEnd(end)
-                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withContext(queryContext)
                 .withId(channel.getId())
                 .build();
 
@@ -135,7 +151,7 @@ public class ScheduleQueryExecutorImplTest {
                 .withSource(METABROADCAST)
                 .withStart(start)
                 .withEnd(end)
-                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withContext(queryContext)
                 .withIds(cids)
                 .build();
 
@@ -183,7 +199,7 @@ public class ScheduleQueryExecutorImplTest {
                 .withSource(METABROADCAST)
                 .withStart(start)
                 .withEnd(end)
-                .withContext(QueryContext.standard(mock(HttpServletRequest.class)))
+                .withContext(queryContext)
                 .withId(Id.valueOf(1))
                 .build();
 
@@ -204,17 +220,12 @@ public class ScheduleQueryExecutorImplTest {
         DateTime start = new DateTime(0, DateTimeZones.UTC);
         DateTime end = new DateTime(0, DateTimeZones.UTC);
         Interval interval = new Interval(start, end);
-        List<SourceReadEntry> reads = ImmutableList.copyOf(Iterables.transform(
-                Publisher.all(),
-                input -> new SourceReadEntry(input, SourceStatus.AVAILABLE_ENABLED)
-        ));
 
-        ApplicationSources appSources = ApplicationSources.defaults().copy()
-                .withPrecedence(true)
-                .withReadableSources(reads)
-                .build();
+        Application application = mock(Application.class);
+        when(application.getConfiguration())
+                .thenReturn(getConfigWithPrecedence(Publisher.all().asList()));
         QueryContext context = QueryContext.create(
-                appSources,
+                application,
                 ActiveAnnotations.standard(),
                 mock(HttpServletRequest.class)
         );
@@ -249,7 +260,7 @@ public class ScheduleQueryExecutorImplTest {
                 )));
         when(equivalentContentResolver.resolveIds(
                 ImmutableSet.of(itemId),
-                appSources,
+                application,
                 ActiveAnnotations.standard().all()
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
@@ -265,10 +276,24 @@ public class ScheduleQueryExecutorImplTest {
         );
         verify(equivalentContentResolver).resolveIds(
                 ImmutableSet.of(itemId),
-                appSources,
+                application,
                 ActiveAnnotations.standard().all()
         );
 
+    }
+
+    private ApplicationConfiguration getConfigWithNoPrecedence(List<Publisher> publishers) {
+        return ApplicationConfiguration.builder()
+                .withNoPrecedence(publishers)
+                .withEnabledWriteSources(ImmutableList.of())
+                .build();
+    }
+
+    private ApplicationConfiguration getConfigWithPrecedence(List<Publisher> publishers) {
+        return ApplicationConfiguration.builder()
+                .withPrecedence(publishers)
+                .withEnabledWriteSources(ImmutableList.of())
+                .build();
     }
 
 }

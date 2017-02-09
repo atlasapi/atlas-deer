@@ -4,6 +4,7 @@ ENV LOG4J_CONFIGURATION="file:////usr/local/jetty/log4j.properties" \
     NIMROD_LOG_LEVEL="INFO" \
     ROOT_LOG_LEVEL="INFO" \
     JVM_MEMORY="5G" \
+    DEBUG_AND_REMOTE_OPTS="" \
     JVM_OPTS="-XX:+UseConcMarkSweepGC \
       -XX:+UseParNewGC \
       -XX:CMSInitiatingOccupancyFraction=75 \
@@ -23,6 +24,7 @@ CMD java \
     -Djetty.home="$JETTY_HOME" \
     -Dsun.net.inetaddr.ttl="$SUN_NET_INETADDR_TTL" \
     -DMBST_PLATFORM="$MBST_PLATFORM" \
+    -Dapplications.client.host="$APPLICATIONS_CLIENT_HOST" \
     -Dcassandra.clientThreads="$CASSANDRA_CLIENTTHREADS" \
     -Dcassandra.cluster="$CASSANDRA_CLUSTER" \
     -Dcassandra.connectionsPerHost.local="$CASSANDRA_CONNECTIONSPERHOST_LOCAL" \
@@ -64,5 +66,6 @@ CMD java \
     -Droot.log.level="$ROOT_LOG_LEVEL" \
     -Xmx$JVM_MEMORY \
     -Xms$JVM_MEMORY \
+    $DEBUG_AND_REMOTE_OPTS \
     $JVM_OPTS \
     -jar atlas-api.war

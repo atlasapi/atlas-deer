@@ -6,10 +6,10 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.DefaultApplication;
+import org.atlasapi.application.ApplicationFetcher;
 import org.atlasapi.entity.Id;
-import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.output.ErrorResultWriter;
 import org.atlasapi.output.ErrorSummary;
 import org.atlasapi.output.QueryResultWriter;
@@ -27,7 +27,6 @@ import com.metabroadcast.common.webapp.query.DateTimeInQueryParser;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.joda.time.Interval;
@@ -46,16 +45,20 @@ public class PopularTopicController {
     private final TopicResolver resolver;
     private final PopularTopicIndex index;
     private final QueryResultWriter<Topic> resultWriter;
-    private final ApplicationSourcesFetcher sourcesFetcher;
+    private final ApplicationFetcher applicationFetcher;
 
     private final ResponseWriterFactory writerResolver = new ResponseWriterFactory();
 
-    public PopularTopicController(TopicResolver resolver, PopularTopicIndex index,
-            QueryResultWriter<Topic> resultWriter, ApplicationSourcesFetcher configurationFetcher) {
+    public PopularTopicController(
+            TopicResolver resolver,
+            PopularTopicIndex index,
+            QueryResultWriter<Topic> resultWriter,
+            ApplicationFetcher applicationFetcher
+    ) {
         this.resolver = resolver;
         this.index = index;
         this.resultWriter = resultWriter;
-        this.sourcesFetcher = configurationFetcher;
+        this.applicationFetcher = applicationFetcher;
     }
 
     @RequestMapping({ "/4/topics/popular\\.[a-z]+", "/4/topics/popular" })
@@ -72,8 +75,8 @@ public class PopularTopicController {
         ResponseWriter writer = null;
         try {
             writer = writerResolver.writerFor(request, response);
-            ApplicationSources sources = sourcesFetcher.sourcesFor(request)
-                    .or(ApplicationSources.defaults());
+            Application application = applicationFetcher.applicationFor(request)
+                    .orElse(DefaultApplication.create());
             Interval interval = new Interval(
                     dateTimeInQueryParser.parse(from),
                     dateTimeInQueryParser.parse(to)
@@ -84,7 +87,7 @@ public class PopularTopicController {
             );
             resultWriter.write(QueryResult.listResult(
                     resolve(topicIds),
-                    QueryContext.create(sources, ActiveAnnotations.standard(), request),
+                    QueryContext.create(application, ActiveAnnotations.standard(), request),
                     Long.valueOf(topicIds.get().size())
             ), writer);
         } catch (Exception e) {
@@ -96,15 +99,11 @@ public class PopularTopicController {
 
     private Iterable<Topic> resolve(ListenableFuture<FluentIterable<Id>> topicIds)
             throws Exception {
-        return Futures.get(Futures.transform(
-                topicIds,
-                new AsyncFunction<FluentIterable<Id>, Resolved<Topic>>() {
-
-                    @Override
-                    public ListenableFuture<Resolved<Topic>> apply(FluentIterable<Id> input) {
-                        return resolver.resolveIds(input);
-                    }
-                }
-        ), 60, TimeUnit.SECONDS, Exception.class).getResources();
+        return Futures.getChecked(
+                Futures.transformAsync(topicIds, resolver::resolveIds),
+                Exception.class,
+                60,
+                TimeUnit.SECONDS
+        ).getResources();
     }
 }

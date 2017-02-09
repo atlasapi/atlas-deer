@@ -3,8 +3,8 @@ package org.atlasapi.query.v4.schedule;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
@@ -112,7 +112,7 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
             ScheduleQuery query)
             throws ScheduleQueryExecutionException {
 
-        if (query.getContext().getApplicationSources().isPrecedenceEnabled()) {
+        if (query.getContext().getApplication().getConfiguration().isPrecedenceEnabled()) {
             schedule = Futures.transform(schedule, toEquivalentEntries(query));
         }
 
@@ -127,10 +127,10 @@ public class ScheduleQueryExecutorImpl implements ScheduleQueryExecutor {
 
     private ListenableFuture<Schedule> resolveEquivalents(Schedule schedule,
             QueryContext context) {
-        ApplicationSources sources = context.getApplicationSources();
+        Application application = context.getApplication();
         ImmutableSet<Annotation> annotations = context.getAnnotations().all();
         ListenableFuture<ResolvedEquivalents<Content>> equivs
-                = mergingContentResolver.resolveIds(idsFrom(schedule), sources, annotations);
+                = mergingContentResolver.resolveIds(idsFrom(schedule), application, annotations);
         return Futures.transform(equivs, intoSchedule(schedule));
     }
 

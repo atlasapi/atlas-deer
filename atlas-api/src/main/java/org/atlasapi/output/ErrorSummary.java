@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.UUID;
 
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.query.common.exceptions.InvalidAnnotationException;
 import org.atlasapi.query.common.exceptions.InvalidIdentifierException;
 import org.atlasapi.query.common.exceptions.InvalidParameterException;
@@ -152,8 +152,8 @@ public class ErrorSummary {
                         )
                 )
                 .put(
-                        InvalidApiKeyException.class,
-                        new DefaultErrorSummaryFactory("INVALID_API_KEY", HttpStatusCode.FORBIDDEN)
+                        ApplicationResolutionException.class,
+                        new DefaultErrorSummaryFactory("APPLICATION_RESOLUTION_ERROR", HttpStatusCode.BAD_REQUEST)
                 )
                 .put(
                         LicenseNotAcceptedException.class,

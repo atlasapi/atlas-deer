@@ -1,6 +1,6 @@
 package org.atlasapi.output;
 
-import org.atlasapi.application.ApplicationSources;
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.equivalence.Equivalable;
 
 /**
@@ -15,6 +15,6 @@ public interface EquivalentsMergeStrategy<E extends Equivalable<E>> {
      * @param equivalents - a set of resources equivalent to chosen.
      * @return merged resources.
      */
-    <T extends E> T merge(T chosen, Iterable<? extends T> equivalents, ApplicationSources sources);
+    <T extends E> T merge(T chosen, Iterable<? extends T> equivalents, Application application);
 
 }

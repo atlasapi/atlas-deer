@@ -14,18 +14,41 @@
     <dependency>
       <groupId>org.atlasapi</groupId>
       <artifactId>atlas-model</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.metabroadcast.common</groupId>
+          <artifactId>common</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.atlasapi</groupId>
       <artifactId>atlas-applications</artifactId>
+      <exclusions>
+        <exclusion>
+            <groupId>com.metabroadcast.common</groupId>
+            <artifactId>common</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.metabroadcast.common</groupId>
       <artifactId>common</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.metabroadcast.common.queue</groupId>
       <artifactId>common-queue</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.metabroadcast</groupId>
+      <artifactId>applications-service-client</artifactId>
+      <version>[1.1.0,1.2.0)</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

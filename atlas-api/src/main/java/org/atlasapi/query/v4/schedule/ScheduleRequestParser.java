@@ -7,9 +7,9 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
@@ -57,7 +57,7 @@ class ScheduleRequestParser {
     private static final String ID_PARAM = "id";
     private static final String ORDER_BY = "order_by";
 
-    private final ApplicationSourcesFetcher applicationFetcher;
+    private final ApplicationFetcher applicationFetcher;
 
     private final SetBasedRequestParameterValidator singleValidator;
     private final SetBasedRequestParameterValidator multiValidator;
@@ -69,7 +69,7 @@ class ScheduleRequestParser {
     private final Clock clock;
 
     public ScheduleRequestParser(
-            ApplicationSourcesFetcher appFetcher,
+            ApplicationFetcher appFetcher,
             Duration maxQueryDuration,
             Clock clock,
             ContextualAnnotationsExtractor annotationsExtractor
@@ -90,7 +90,7 @@ class ScheduleRequestParser {
     }
 
     private SetBasedRequestParameterValidator singleRequestValidator(
-            ApplicationSourcesFetcher fetcher
+            ApplicationFetcher fetcher
     ) {
         ImmutableList<String> required = ImmutableList.<String>builder()
                 .add(FROM_PARAM, SOURCE_PARAM)
@@ -106,7 +106,7 @@ class ScheduleRequestParser {
     }
 
     private SetBasedRequestParameterValidator multiRequestValidator(
-            ApplicationSourcesFetcher fetcher
+            ApplicationFetcher fetcher
     ) {
         ImmutableList<String> required = ImmutableList.<String>builder()
                 .add(ID_PARAM, FROM_PARAM, SOURCE_PARAM)
@@ -121,14 +121,14 @@ class ScheduleRequestParser {
     }
 
     public ScheduleQuery queryFrom(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         Matcher matcher = CHANNEL_ID_PATTERN.matcher(request.getRequestURI());
         return matcher.matches() ? parseSingleRequest(request)
                                  : parseMultiRequest(request);
     }
 
     private ScheduleQuery parseSingleRequest(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         singleValidator.validateParameters(request);
 
         Publisher publisher = extractPublisher(request);
@@ -171,7 +171,7 @@ class ScheduleRequestParser {
     }
 
     private ScheduleQuery parseMultiRequest(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
 
         multiValidator.validateParameters(request);
 
@@ -204,13 +204,13 @@ class ScheduleRequestParser {
     }
 
     private QueryContext parseContext(HttpServletRequest request, Publisher publisher)
-            throws InvalidApiKeyException, InvalidAnnotationException {
-        ApplicationSources appSources = getConfiguration(request);
+            throws ApplicationResolutionException, InvalidAnnotationException {
+        Application application = getConfiguration(request);
 
-        checkArgument(appSources.isReadEnabled(publisher), "Source %s not enabled", publisher);
+        checkArgument(application.getConfiguration().isReadEnabled(publisher), "Source %s not enabled", publisher);
 
         ActiveAnnotations annotations = annotationExtractor.extractFromRequest(request);
-        return QueryContext.create(appSources, annotations, request);
+        return QueryContext.create(application, annotations, request);
     }
 
     private List<Id> extractChannels(HttpServletRequest request) throws QueryParseException {
@@ -292,11 +292,12 @@ class ScheduleRequestParser {
         return publisher.get();
     }
 
-    private ApplicationSources getConfiguration(HttpServletRequest request) throws InvalidApiKeyException {
-        com.google.common.base.Optional<ApplicationSources> config =
-                applicationFetcher.sourcesFor(request);
-        if (config.isPresent()) {
-            return config.get();
+    private Application getConfiguration(HttpServletRequest request) throws
+            ApplicationResolutionException {
+
+        Optional<Application> application = applicationFetcher.applicationFor(request);
+        if (application.isPresent()) {
+            return application.get();
         }
         // key is required parameter so we should never reach here.
         throw new IllegalStateException("application not fetched");

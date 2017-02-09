@@ -9,9 +9,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceReadEntry;
-import org.atlasapi.application.SourceStatus;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.content.BlackoutRestriction;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
@@ -26,7 +25,6 @@ import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemRef;
 import org.atlasapi.content.ItemSummary;
 import org.atlasapi.content.LocationSummary;
-import org.atlasapi.content.SeriesRef;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.Rating;
@@ -38,7 +36,6 @@ import org.atlasapi.segment.SegmentEvent;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.stream.MoreCollectors;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -52,15 +49,17 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OutputContentMergerTest {
 
     //TODO mock hierarchy chooser
-    private final OutputContentMerger merger = new OutputContentMerger(new MostPrecidentWithChildrenContentHierarchyChooser());
+    private final OutputContentMerger merger = new OutputContentMerger(
+            new MostPrecidentWithChildrenContentHierarchyChooser()
+    );
 
     @Test
     public void testSortOfCommonSourceContentIsStable() {
@@ -72,12 +71,12 @@ public class OutputContentMergerTest {
         setEquivalent(two, one, three);
         setEquivalent(three, two, one);
 
-        ApplicationSources sources = sourcesWithPrecedence(true, Publisher.BBC, Publisher.TED);
+        Application application = getApplicationWithPrecedence(true, Publisher.BBC, Publisher.TED);
 
         ImmutableList<Brand> contents = ImmutableList.of(one, two, three);
 
         for (List<Brand> contentList : Collections2.permutations(contents)) {
-            List<Brand> merged = merger.merge(sources, contentList);
+            List<Brand> merged = merger.merge(application, contentList);
             assertThat(merged.size(), is(1));
             if (contentList.get(0).equals(three)) {
                 assertThat(contentList.toString(), merged.get(0), is(contentList.get(1)));
@@ -101,8 +100,9 @@ public class OutputContentMergerTest {
         //two is intentionally missing here
         ImmutableList<Brand> contents = ImmutableList.of(one, three);
 
-        ApplicationSources sources = sourcesWithPrecedence(true, Publisher.BBC, Publisher.TED);
-        mergePermutations(contents, sources, one, two.getId());
+        Application application = getApplicationWithPrecedence(true, Publisher.BBC, Publisher.TED);
+
+        mergePermutations(contents, application, one, two.getId());
 
         one = brand(5L, "one", Publisher.BBC);
         two = brand(2L, "two", Publisher.PA);
@@ -114,8 +114,8 @@ public class OutputContentMergerTest {
 
         contents = ImmutableList.of(one, three);
 
-        sources = sourcesWithPrecedence(true, Publisher.TED, Publisher.BBC);
-        mergePermutations(contents, sources, three, two.getId());
+        application = getApplicationWithPrecedence(true, Publisher.TED, Publisher.BBC);
+        mergePermutations(contents, application, three, two.getId());
     }
 
     @Test
@@ -126,13 +126,14 @@ public class OutputContentMergerTest {
         one.addAlias(new Alias("a1", "v1"));
         two.addAlias(new Alias("a2", "v2"));
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.METABROADCAST,
                 Publisher.BBC,
                 Publisher.PA
         );
-        Item merged = merger.merge(one, ImmutableList.of(two), sources);
+
+        Item merged = merger.merge(one, ImmutableList.of(two), application);
         assertThat(merged.getAliases().size(), is(2));
     }
 
@@ -154,13 +155,14 @@ public class OutputContentMergerTest {
                 Image.builder("test4").build()
         ));
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.METABROADCAST,
                 Publisher.BBC,
                 Publisher.PA
         );
-        Item merged = merger.merge(one, ImmutableList.of(two, three), sources);
+
+        Item merged = merger.merge(one, ImmutableList.of(two, three), application);
 
         ImmutableSet<Image> images = merged.getImages().stream()
                 .filter(img -> img.getSource() != null)
@@ -187,13 +189,14 @@ public class OutputContentMergerTest {
                 Image.builder("test4").build()
         ));
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 false,
                 Publisher.METABROADCAST,
                 Publisher.BBC,
                 Publisher.PA
         );
-        Item merged = merger.merge(one, ImmutableList.of(two, three), sources);
+
+        Item merged = merger.merge(one, ImmutableList.of(two, three), application);
 
         ImmutableSet<Image> images = merged.getImages().stream()
                 .filter(img -> img.getSource() != null)
@@ -236,13 +239,13 @@ public class OutputContentMergerTest {
         two.setSegmentEvents(ImmutableList.of(seThree));
         three.setSegmentEvents(ImmutableList.of(seFour, seFive));
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC_KIWI,
                 Publisher.BBC_MUSIC
         );
 
-        Item merged = merger.merge(one, ImmutableList.of(two, three), sources);
+        Item merged = merger.merge(one, ImmutableList.of(two, three), application);
 
         List<SegmentEvent> mergedSegmentEvents = merged.getSegmentEvents();
 
@@ -284,14 +287,15 @@ public class OutputContentMergerTest {
                 upcomingContent
         );
 
-        ApplicationSources sources = sourcesWithPrecedence(
+
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
         );
 
-        Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
+        Container merged = merger.merge(one, ImmutableList.of(two, three), application);
 
         assertThat(merged.getUpcomingContent(), is(upcomingContent));
     }
@@ -326,14 +330,14 @@ public class OutputContentMergerTest {
                 itemSummaries
         );
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
         );
 
-        Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
+        Container merged = merger.merge(one, ImmutableList.of(two, three), application);
 
         assertThat(merged.getItemSummaries(), is(itemSummaries));
     }
@@ -391,14 +395,14 @@ public class OutputContentMergerTest {
                 availableContent2
         );
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
         );
 
-        Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
+        Container merged = merger.merge(one, ImmutableList.of(two, three), application);
 
         Map<ItemRef, Iterable<LocationSummary>> expectedAvailableContent = ImmutableMap.<ItemRef, Iterable<LocationSummary>>builder()
                 .putAll(availableContent1)
@@ -426,14 +430,14 @@ public class OutputContentMergerTest {
         one.setManifestedAs(ImmutableSet.of(encoding1, encoding2));
         two.setManifestedAs(ImmutableSet.of(encoding3, encoding4));
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.BBC_KIWI,
                 Publisher.METABROADCAST,
                 Publisher.BBC_MUSIC
         );
 
-        Container merged = merger.merge(one, ImmutableList.of(two, three), sources);
+        Container merged = merger.merge(one, ImmutableList.of(two, three), application);
 
         assertThat(
                 merged.getManifestedAs(),
@@ -443,19 +447,28 @@ public class OutputContentMergerTest {
 
     @Test
     public void testImageWithoutMerging() {
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
+        Application application = getApplicationWithPrecedence(
+                false,
+                Publisher.BBC,
+                Publisher.PA
+        );
         Item item1 = item(4L, "item1", Publisher.BBC);
         item1.setImages(ImmutableSet.of(new Image("http://image1.org/")));
         Item item2 = item(5L, "item2", Publisher.PA);
         item2.setImages(ImmutableSet.of(new Image("http://image2.org/")));
 
-        Content merged = merger.merge(item1, ImmutableList.of(item2), sources);
+        Content merged = merger.merge(item1, ImmutableList.of(item2), application);
         assertThat(merged.getImages().size(), is(2));
     }
 
     @Test
     public void testImageWithMerging() {
-        ApplicationSources sources = sourcesWithPrecedence(true, Publisher.BBC, Publisher.PA);
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
+
         Item item1 = item(4L, "item1", Publisher.BBC);
         Image image1 = new Image("http://image1.org/");
 
@@ -466,7 +479,6 @@ public class OutputContentMergerTest {
         item1.setImages(ImmutableSet.of(image1));
 
         Item item2 = item(5L, "item2", Publisher.PA);
-
         Image image2 = new Image("http://image2.org/");
 
         image1.setAvailabilityStart(DateTime.now().minusDays(1));
@@ -474,106 +486,8 @@ public class OutputContentMergerTest {
 
         item2.setImages(ImmutableSet.of(image2));
         
-        Content merged = merger.merge(item2,  ImmutableList.of(item1), sources);
+        Content merged = merger.merge(item2,  ImmutableList.of(item1), application);
         assertThat(Iterables.getOnlyElement(merged.getImages()).getCanonicalUri(), is("http://image2.org/"));
-    }
-
-    @Test
-    public void testContentHierarchyMergingWhenNoPrecidenceDefined() {
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
-        Brand bbcBrand = brand(1, "http://bbc.co.uk/brand", Publisher.BBC);
-        List<ItemRef> bbcEpisodes = ImmutableList.of(new ItemRef(
-                Id.valueOf(3),
-                Publisher.BBC,
-                "1",
-                DateTime.now()
-        ));
-        bbcBrand.setItemRefs(bbcEpisodes);
-
-        Brand paBrand = brand(2, "http://pressassociation.com/brand", Publisher.PA);
-        List<ItemRef> paEpisodes = ImmutableList.of(new ItemRef(
-                Id.valueOf(4),
-                Publisher.PA,
-                "1",
-                DateTime.now()
-        ));
-        paBrand.setItemRefs(paEpisodes);
-
-        Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
-        assertThat(merged.getItemRefs(), is(equalTo(bbcEpisodes)));
-    }
-
-    @Test
-    public void testContentHierarchyMergingWhenPrecidenceDifferentFromMainPrecedence() {
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
-                .copy()
-                .withContentHierarchyPrecedence(ImmutableList.of(Publisher.PA, Publisher.BBC))
-                .build();
-
-        Brand bbcBrand = brand(1, "http://bbc.co.uk/brand", Publisher.BBC);
-        List<ItemRef> bbcEpisodes = ImmutableList.of(new ItemRef(
-                Id.valueOf(3),
-                Publisher.BBC,
-                "1",
-                DateTime.now()
-        ));
-        bbcBrand.setItemRefs(bbcEpisodes);
-        bbcBrand.setSeriesRefs(ImmutableList.of(new SeriesRef(
-                Id.valueOf(3),
-                Publisher.BBC,
-                "",
-                1,
-                DateTime.now()
-        )));
-
-        Brand paBrand = brand(2, "http://pressassociation.com/brand", Publisher.PA);
-        List<ItemRef> paEpisodes = ImmutableList.of(new ItemRef(
-                Id.valueOf(4),
-                Publisher.PA,
-                "1",
-                DateTime.now()
-        ));
-        paBrand.setItemRefs(paEpisodes);
-        paBrand.setSeriesRefs(ImmutableList.of(new SeriesRef(
-                Id.valueOf(2),
-                Publisher.PA,
-                "",
-                2,
-                DateTime.now()
-        )));
-
-        Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
-        assertThat(merged.getItemRefs(), is(equalTo(paEpisodes)));
-        assertThat(merged.getSeriesRefs(), is(equalTo(paBrand.getSeriesRefs())));
-    }
-
-    @Test
-    public void testContentHierarchyMergingWhenPrecidenceSameAsMainPrecedence() {
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
-                .copy()
-                .withContentHierarchyPrecedence(ImmutableList.of(Publisher.BBC, Publisher.PA))
-                .build();
-
-        Brand bbcBrand = brand(1, "http://bbc.co.uk/brand", Publisher.BBC);
-        List<ItemRef> bbcEpisodes = ImmutableList.of(new ItemRef(
-                Id.valueOf(3),
-                Publisher.BBC,
-                "1",
-                DateTime.now()
-        ));
-        bbcBrand.setItemRefs(bbcEpisodes);
-
-        Brand paBrand = brand(2, "http://pressassociation.com/brand", Publisher.PA);
-        List<ItemRef> paEpisodes = ImmutableList.of(new ItemRef(
-                Id.valueOf(4),
-                Publisher.PA,
-                "1",
-                DateTime.now()
-        ));
-        paBrand.setItemRefs(paEpisodes);
-
-        Brand merged = merger.merge(bbcBrand, ImmutableList.of(paBrand), sources);
-        assertThat(merged.getItemRefs(), is(equalTo(bbcEpisodes)));
     }
 
     @Test
@@ -582,7 +496,12 @@ public class OutputContentMergerTest {
     // that source should be output, since it is assumed that within a data source
     // broadcasts aren't duplicated
     public void testOutputsAllBroadcastsFromPrecedentPublisher() {
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA);
+
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
 
         Item item1 = item(4L, "item1", Publisher.BBC);
         Broadcast b1 = new Broadcast(
@@ -614,17 +533,18 @@ public class OutputContentMergerTest {
         );
         item3.setBroadcasts(ImmutableSet.of(b3));
 
-        Item merged = merger.merge(item1, ImmutableList.of(item2, item3), sources);
+        Item merged = merger.merge(item1, ImmutableList.of(item2, item3), application);
         assertThat(merged.getBroadcasts().size(), is(2));
     }
 
     @Test
     public void testMergesBroadcastsWithSimilarStartTimes() {
 
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
-                .copy()
-                .withContentHierarchyPrecedence(ImmutableList.of(Publisher.BBC, Publisher.PA))
-                .build();
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
 
         DateTime b1StartTime = new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 20, 0, 0);
 
@@ -646,16 +566,17 @@ public class OutputContentMergerTest {
         item2.setBroadcasts(ImmutableSet.of(b2));
         b2.addAlias(new Alias("ns2", "v2"));
 
-        Item merged = merger.merge(item1, ImmutableList.of(item2), sources);
+        Item merged = merger.merge(item1, ImmutableList.of(item2), application);
         assertThat(Iterables.getOnlyElement(merged.getBroadcasts()).getAliases().size(), is(2));
     }
 
     @Test
     public void mergeBroadcastsMergesTheirFields() {
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.BBC, Publisher.PA)
-                .copy()
-                .withContentHierarchyPrecedence(ImmutableList.of(Publisher.BBC, Publisher.PA))
-                .build();
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.BBC,
+                Publisher.PA
+        );
 
         DateTime startTime = new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 20, 0, 0);
         DateTime endTime = new DateTime(2015, DateTimeConstants.JANUARY, 1, 1, 20, 30, 0);
@@ -679,7 +600,7 @@ public class OutputContentMergerTest {
         secondItem.addBroadcast(secondItemBroadcast);
 
 
-        Item merged = merger.merge(firstItem, ImmutableList.of(secondItem), sources);
+        Item merged = merger.merge(firstItem, ImmutableList.of(secondItem), application);
 
         Broadcast actualBroadcast = Iterables.getOnlyElement(merged.getBroadcasts());
         assertThat(
@@ -697,7 +618,12 @@ public class OutputContentMergerTest {
         // content belonging to sources that the user does not have permission to access
         // have already been whittled out
 
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.BBC,
+                Publisher.RADIO_TIMES
+        );
 
         Item chosenItem = item(10L, "uriFirst", Publisher.RADIO_TIMES);
         Item firstEquivItem = item(11L, "uriSecond", Publisher.PA);
@@ -712,7 +638,7 @@ public class OutputContentMergerTest {
         // chosenItem is mutated by merge, so calculate this first
         int expectedReviewsCount = expectedReviews.size();
 
-        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), sources);
+        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), application);
 
         assertThat(merged.getReviews().size(), is(expectedReviewsCount));
         assertThat(merged.getReviews().containsAll(expectedReviews), is(true));
@@ -733,7 +659,12 @@ public class OutputContentMergerTest {
         // content belonging to sources that the user does not have permission to access
         // have already been whittled out
 
-        ApplicationSources sources = sourcesWithPrecedence(false, Publisher.PA, Publisher.BBC, Publisher.RADIO_TIMES).copy().build();
+        Application application = getApplicationWithPrecedence(
+                true,
+                Publisher.PA,
+                Publisher.BBC,
+                Publisher.RADIO_TIMES
+        );
 
         Item chosenItem = item(10L, "uriFirst", Publisher.RADIO_TIMES);
         Item firstEquivItem = item(11L, "uriSecond", Publisher.PA);
@@ -748,7 +679,7 @@ public class OutputContentMergerTest {
         // chosenItem is mutated by merge, so calculate this first
         int expectedRatingsCount = expectedRatings.size();
 
-        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), sources);
+        Item merged = merger.merge(chosenItem, ImmutableList.of(firstEquivItem, secondEquivItem), application);
 
         assertThat(merged.getRatings().size(), is(expectedRatingsCount));
         assertThat(merged.getRatings().containsAll(expectedRatings), is(true));
@@ -756,7 +687,7 @@ public class OutputContentMergerTest {
 
     @Test
     public void mergeBlackoutReturnsBlackoutTrueIfChosenNoBlackoutAndNonChosenBlackoutTrue() {
-        com.google.common.base.Optional<BlackoutRestriction> restriction = 
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
                 getMergedBlackoutRestriction(
                         null,
                         new BlackoutRestriction(true)
@@ -768,7 +699,7 @@ public class OutputContentMergerTest {
 
     @Test
     public void mergeBlackoutReturnsBlackoutFalseIfChosenNoBlackoutAndNonChosenBlackoutFalse() {
-        com.google.common.base.Optional<BlackoutRestriction> restriction = 
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
                 getMergedBlackoutRestriction(
                 null,
                 new BlackoutRestriction(false)
@@ -780,7 +711,7 @@ public class OutputContentMergerTest {
 
     @Test
     public void mergeBlackoutReturnsBlackoutTrueIfChosenBlackoutFalseAndNonChosenBlackoutTrue() {
-        com.google.common.base.Optional<BlackoutRestriction> restriction = 
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
                 getMergedBlackoutRestriction(
                         new BlackoutRestriction(false),
                         new BlackoutRestriction(true)
@@ -792,7 +723,7 @@ public class OutputContentMergerTest {
 
     @Test
     public void mergeBlackoutReturnsBlackoutTrueIfChosenBlackoutTrueAndNonChosenBlackoutFalse() {
-        com.google.common.base.Optional<BlackoutRestriction> restriction = 
+        com.google.common.base.Optional<BlackoutRestriction> restriction =
                 getMergedBlackoutRestriction(
                         new BlackoutRestriction(true),
                         new BlackoutRestriction(false)
@@ -847,34 +778,14 @@ public class OutputContentMergerTest {
         return one;
     }
 
-    private void mergePermutations(ImmutableList<Brand> contents, ApplicationSources sources,
+    private void mergePermutations(ImmutableList<Brand> contents, Application application,
             Brand expectedContent, Id expectedId) {
         for (List<Brand> contentList : Collections2.permutations(contents)) {
-            List<Brand> merged = merger.merge(sources, contentList);
+            List<Brand> merged = merger.merge(application, contentList);
             Brand mergedBrand = Iterables.getOnlyElement(merged);
             assertThat(mergedBrand, is(expectedContent));
             assertThat(mergedBrand.getId(), is(expectedId));
         }
-    }
-
-    private ApplicationSources sourcesWithPrecedence(boolean imagePrecedenceEnabled,
-            Publisher... publishers) {
-        return ApplicationSources
-                .defaults()
-                .copy()
-                .withPrecedence(true)
-                .withImagePrecedenceEnabled(imagePrecedenceEnabled)
-                .withReadableSources(Lists.transform(
-                        ImmutableList.copyOf(publishers),
-                        new Function<Publisher, SourceReadEntry>() {
-
-                            @Override
-                            public SourceReadEntry apply(Publisher input) {
-                                return new SourceReadEntry(input, SourceStatus.AVAILABLE_ENABLED);
-                            }
-                        }
-                ))
-                .build();
     }
 
     private void setEquivalent(Content receiver, Content... equivalents) {
@@ -882,8 +793,10 @@ public class OutputContentMergerTest {
                 .add(receiver)
                 .addAll(ImmutableList.copyOf(equivalents))
                 .build();
-        receiver.setEquivalentTo(ImmutableSet.copyOf(Iterables.transform(
-                allContent, EquivalenceRef.toEquivalenceRef())
+        receiver.setEquivalentTo(ImmutableSet.copyOf(
+                allContent.stream()
+                        .map(EquivalenceRef.toEquivalenceRef()::apply)
+                        .collect(Collectors.toList())
         ));
     }
 
@@ -908,16 +821,37 @@ public class OutputContentMergerTest {
         chosen.addBroadcast(chosenBroadcast);
         notChosen.addBroadcast(notChosenBroadcast);
 
-        ApplicationSources sources = sourcesWithPrecedence(
+        Application application = getApplicationWithPrecedence(
                 true,
                 Publisher.METABROADCAST,
                 Publisher.BBC
         );
 
-        Item merged = merger.merge(chosen, ImmutableList.of(notChosen), sources);
+        Item merged = merger.merge(chosen, ImmutableList.of(notChosen), application);
 
         return Iterables
                 .getOnlyElement(merged.getBroadcasts())
                 .getBlackoutRestriction();
+    }
+
+    private Application getApplicationWithPrecedence(boolean imagePrecedence, Publisher... publishers) {
+
+        ApplicationConfiguration testConfig = ApplicationConfiguration.builder()
+                .withPrecedence(Lists.newArrayList(publishers))
+                .withEnabledWriteSources(ImmutableList.of())
+                .build();
+
+        Application application = mock(Application.class);
+        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
+
+        when(configuration.isPrecedenceEnabled()).thenReturn(testConfig.isPrecedenceEnabled());
+        when(configuration.getEnabledReadSources()).thenReturn(testConfig.getEnabledReadSources());
+        when(configuration.getReadPrecedenceOrdering()).thenReturn(testConfig.getReadPrecedenceOrdering());
+        when(configuration.isImagePrecedenceEnabled()).thenReturn(imagePrecedence);
+        when(configuration.getImageReadPrecedenceOrdering()).thenReturn(testConfig.getImageReadPrecedenceOrdering());
+
+        when(application.getConfiguration()).thenReturn(configuration);
+
+        return application;
     }
 }

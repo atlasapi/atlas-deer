@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.base.MoreObjects;
 import org.atlasapi.entity.DateTimeSerializer;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.IdentifiedSerializer;

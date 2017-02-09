@@ -4,10 +4,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
-import org.atlasapi.application.auth.UserFetcher;
+import org.atlasapi.application.DefaultApplication;
+import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.output.JsonResponseWriter;
 import org.atlasapi.query.annotation.AnnotationsExtractor;
@@ -24,41 +23,36 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class QueryContextParser implements ParameterNameProvider {
 
-    private final ApplicationSourcesFetcher configFetcher;
-    private final UserFetcher userFetcher;
+    private final ApplicationFetcher configFetcher;
     private final AnnotationsExtractor annotationExtractor;
     private final SelectionBuilder selectionBuilder;
 
-    private QueryContextParser(
-            ApplicationSourcesFetcher configFetcher,
-            UserFetcher userFetcher,
+    public QueryContextParser(
+            ApplicationFetcher configFetcher,
             AnnotationsExtractor annotationsParser,
             Selection.SelectionBuilder selectionBuilder
     ) {
         this.configFetcher = checkNotNull(configFetcher);
-        this.userFetcher = checkNotNull(userFetcher);
         this.annotationExtractor = checkNotNull(annotationsParser);
         this.selectionBuilder = checkNotNull(selectionBuilder);
     }
 
     public static QueryContextParser create(
-            ApplicationSourcesFetcher configFetcher,
-            UserFetcher userFetcher,
+            ApplicationFetcher configFetcher,
             AnnotationsExtractor annotationsParser,
             SelectionBuilder selectionBuilder
     ) {
         return new QueryContextParser(
                 configFetcher,
-                userFetcher,
                 annotationsParser,
                 selectionBuilder
         );
     }
 
     public QueryContext parseSingleContext(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         return QueryContext.create(
-                configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
+                configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromSingleRequest(request),
                 selectionBuilder.build(request),
                 request
@@ -66,9 +60,9 @@ public class QueryContextParser implements ParameterNameProvider {
     }
 
     public QueryContext parseListContext(HttpServletRequest request)
-            throws QueryParseException, InvalidApiKeyException {
+            throws QueryParseException, ApplicationResolutionException {
         return QueryContext.create(
-                configFetcher.sourcesFor(request).or(ApplicationSources.defaults()),
+                configFetcher.applicationFor(request).orElse(DefaultApplication.create()),
                 annotationExtractor.extractFromListRequest(request),
                 selectionBuilder.build(request),
                 request
@@ -80,7 +74,6 @@ public class QueryContextParser implements ParameterNameProvider {
         return ImmutableSet.copyOf(
                 Iterables.concat(
                         ImmutableList.of(
-                                userFetcher.getParameterNames(),
                                 annotationExtractor.getParameterNames(),
                                 selectionBuilder.getParameterNames(),
                                 configFetcher.getParameterNames(),

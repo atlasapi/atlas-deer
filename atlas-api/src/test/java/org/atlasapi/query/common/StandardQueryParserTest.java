@@ -2,9 +2,12 @@ package org.atlasapi.query.common;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
+import org.atlasapi.output.OutputContext;
+import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.attributes.QueryAtomParser;
 import org.atlasapi.query.common.attributes.QueryAttributeParser;
 import org.atlasapi.query.common.coercers.IdCoercer;
@@ -53,6 +56,14 @@ public class StandardQueryParserTest {
     );
 
     @Mock private QueryContextParser queryContextParser;
+    @Mock private HttpServletRequest request = mock(HttpServletRequest.class);
+    @Mock private Application application = mock(Application.class);
+
+    private QueryContext queryContext = QueryContext.create(
+            application,
+            ActiveAnnotations.standard(),
+            request
+    );
     private StandardQueryParser<Topic> queryParser;
 
     @Before
@@ -70,7 +81,7 @@ public class StandardQueryParserTest {
     @Test
     public void testParsesSingleIdIntoNonListTopicQuery() throws Exception {
         when(queryContextParser.parseSingleContext(isA(HttpServletRequest.class)))
-                .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
+                .thenReturn(queryContext);
 
         Query<Topic> q = queryParser.parse(requestWithPath("4.0/topics/cbbh.json"));
 
@@ -84,7 +95,7 @@ public class StandardQueryParserTest {
     @SuppressWarnings("unchecked")
     public void testParsesIdsOnlyIntoListQuery() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-                .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
+                .thenReturn(queryContext);
 
         Query<Topic> q = queryParser.parse(requestWithPath("4.0/topics.json")
                 .withParam("id", "cbbh"));
@@ -101,7 +112,7 @@ public class StandardQueryParserTest {
     @SuppressWarnings("unchecked")
     public void testParsesAttributeKeyWithOperator() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-                .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
+                .thenReturn(queryContext);
 
         Query<Topic> q = queryParser.parse(requestWithPath("4.0/topics.json")
                 .withParam("aliases.namespace.beginning", "prefix"));
@@ -118,7 +129,7 @@ public class StandardQueryParserTest {
     @Test(expected = InvalidParameterException.class)
     public void testRejectsInvalidAttributeKey() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-                .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
+                .thenReturn(queryContext);
 
         queryParser.parse(requestWithPath("4.0/topics.json")
                 .withParam("just.the.beginning", "prefix"));
@@ -128,7 +139,7 @@ public class StandardQueryParserTest {
     @Test(expected = InvalidOperatorException.class)
     public void testRejectsAttributeKeyWithBadOperator() throws Exception {
         when(queryContextParser.parseListContext(isA(HttpServletRequest.class)))
-                .thenReturn(QueryContext.standard(mock(HttpServletRequest.class)));
+                .thenReturn(queryContext);
 
         queryParser.parse(requestWithPath("4.0/topics.json")
                 .withParam("aliases.namespace.ending", "suffix"));

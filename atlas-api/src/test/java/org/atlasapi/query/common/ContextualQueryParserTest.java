@@ -2,7 +2,8 @@ package org.atlasapi.query.common;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -67,7 +68,7 @@ public class ContextualQueryParserTest {
                 .thenReturn(new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of()));
         when(queryContextParser.parseContext(req))
                 .thenReturn(QueryContext.create(
-                        ApplicationSources.defaults(),
+                        mock(Application.class),
                         ActiveAnnotations.standard(),
                         mock(HttpServletRequest.class)
                 ));

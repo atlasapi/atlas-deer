@@ -1,7 +1,8 @@
 package org.atlasapi.output.writers;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.ContainerSummary;
 import org.atlasapi.content.ContainerSummaryResolver;
 import org.atlasapi.content.Episode;
@@ -24,6 +25,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,10 +39,9 @@ public class ContainerSummaryWriterTest {
 
     @Mock private FieldWriter fieldWriter;
     @Mock private OutputContext outputContext;
+    @Mock private Application application;
 
     private ContainerSummaryWriter containerSummaryWriter;
-
-    private ApplicationSources applicationSources;
     private ImmutableSet<Annotation> annotations;
     private Series series;
     private Episode episode;
@@ -54,10 +55,9 @@ public class ContainerSummaryWriterTest {
                 commonContainerSummaryWriter
         );
 
-        applicationSources = ApplicationSources.defaults();
         annotations = ImmutableSet.of();
 
-        when(outputContext.getApplicationSources()).thenReturn(applicationSources);
+        when(outputContext.getApplication()).thenReturn(application);
         when(outputContext.getActiveAnnotations()).thenReturn(annotations);
 
         series = new Series(Id.valueOf(10L), Publisher.METABROADCAST);
@@ -86,7 +86,7 @@ public class ContainerSummaryWriterTest {
         ContainerSummary expectedSummary = ContainerSummary.from(series);
 
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), applicationSources, annotations
+                series.getId(), application, annotations
         ))
                 .thenReturn(Optional.of(expectedSummary));
 
@@ -98,7 +98,7 @@ public class ContainerSummaryWriterTest {
     @Test
     public void doNotWriteWhenContainerSummaryCannotBeResolved() throws Exception {
         when(containerSummaryResolver.resolveContainerSummary(
-                series.getId(), applicationSources, annotations
+                series.getId(), application, annotations
         ))
                 .thenReturn(Optional.absent());
 

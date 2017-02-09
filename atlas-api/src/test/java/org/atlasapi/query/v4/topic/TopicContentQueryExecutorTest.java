@@ -1,12 +1,15 @@
 package org.atlasapi.query.v4.topic;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceStatus;
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.Episode;
@@ -58,24 +61,35 @@ public class TopicContentQueryExecutorTest {
     private @Mock TopicResolver topicResolver;
     private @Mock ContentIndex contentIndex;
     private @Mock MergingEquivalentsResolver<Content> equivalentsResolver;
+    private @Mock Application application;
+    private @Mock HttpServletRequest request;
 
     private TopicContentQueryExecutor executor;
+    private QueryContext queryContext;
 
     @Before
     public void setup() {
+        when(application.getConfiguration()).thenReturn(
+                ApplicationConfiguration.builder()
+                        .withNoPrecedence(getPublishers())
+                        .withEnabledWriteSources(ImmutableList.of())
+                        .build()
+        );
+
         executor = new TopicContentQueryExecutor(topicResolver, contentIndex, equivalentsResolver);
+        queryContext = QueryContext.create(application, ActiveAnnotations.standard(), request);
     }
 
     @Test
     public void testExecutingTopicContentQuery() throws QueryExecutionException {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = QueryContext.create(ApplicationSources.defaults()
-                .copyWithChangedReadableSourceStatus(Publisher.BBC, SourceStatus.AVAILABLE_ENABLED)
-                .copyWithChangedReadableSourceStatus(
-                        Publisher.DBPEDIA,
-                        SourceStatus.AVAILABLE_ENABLED
-                ), ActiveAnnotations.standard(), mock(HttpServletRequest.class));
+
+        QueryContext context = QueryContext.create(
+                application,
+                ActiveAnnotations.standard(),
+                mock(HttpServletRequest.class)
+        );
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
         ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
 
@@ -90,14 +104,14 @@ public class TopicContentQueryExecutorTest {
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
         FluentIterable<Id> returning = FluentIterable.from(ImmutableSet.of(content.getId()));
         when(contentIndex.query(emptyAttributeQuerySet,
-                context.getApplicationSources().getEnabledReadSources(),
+                context.getApplication().getConfiguration().getEnabledReadSources(),
                 Selection.all(),
                 Optional.empty()
         ))
                 .thenReturn(Futures.immediateFuture(IndexQueryResult.withIds(returning, 0L)));
         when(equivalentsResolver.resolveIds(
                 argThat(hasItems(content.getId())),
-                argThat(is(context.getApplicationSources())),
+                argThat(is(context.getApplication())),
                 argThat(is(context.getAnnotations().all()))
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>builder().putEquivalents(
@@ -117,27 +131,16 @@ public class TopicContentQueryExecutorTest {
     public void testFailsWhenTopicIsMissing() throws Throwable {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
-        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
-        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
+        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
+        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
 
         when(topicResolver.resolveIds(argThat(hasItems(Id.valueOf(1234)))))
                 .thenReturn(Futures.immediateFuture(Resolved.<Topic>empty()));
 
         try {
-            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
+            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, queryContext));
         } catch (QueryExecutionException qee) {
-            verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)),
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(Selection.class)),
-                    argThat(isA(Optional.class))
-            );
-            verify(equivalentsResolver, never()).resolveIds(
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(ApplicationSources.class)),
-                    argThat(isA(Set.class))
-            );
-            throw qee.getCause();
+           verifyException(qee);
         }
 
     }
@@ -146,9 +149,8 @@ public class TopicContentQueryExecutorTest {
     public void testFailsWhenTopicIsForbidden() throws Throwable {
 
         AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
-        QueryContext context = QueryContext.standard(mock(HttpServletRequest.class));
-        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), context);
-        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, context);
+        SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
+        ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
 
         Topic topic = new Topic();
         topic.setId(Id.valueOf(1234));
@@ -158,20 +160,35 @@ public class TopicContentQueryExecutorTest {
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
 
         try {
-            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, context));
+            executor.execute(ContextualQuery.valueOf(contextQuery, resourceQuery, queryContext));
         } catch (QueryExecutionException qee) {
-            verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)),
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(Selection.class)),
-                    argThat(isA(Optional.class))
-            );
-            verify(equivalentsResolver, never()).resolveIds(
-                    argThat(isA(Iterable.class)),
-                    argThat(isA(ApplicationSources.class)),
-                    argThat(isA(Set.class))
-            );
-            throw qee.getCause();
+            verifyException(qee);
         }
 
+    }
+
+    private void verifyException(QueryExecutionException qee) throws Throwable {
+        verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)),
+                argThat(isA(Iterable.class)),
+                argThat(isA(Selection.class)),
+                argThat(isA(Optional.class))
+        );
+        verify(equivalentsResolver, never()).resolveIds(
+                argThat(isA(Iterable.class)),
+                argThat(isA(Application.class)),
+                argThat(isA(Set.class))
+        );
+        throw qee.getCause();
+    }
+
+    private List<Publisher> getPublishers() {
+        return ImmutableList.<Publisher>builder()
+                .addAll(
+                        Publisher.all().stream()
+                                .filter(Publisher::enabledWithNoApiKey)
+                                .collect(Collectors.toList())
+                )
+                .add(Publisher.DBPEDIA)
+                .build();
     }
 }

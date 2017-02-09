@@ -1,7 +1,9 @@
 package org.atlasapi.content;
 
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.AnnotationBasedMergingEquivalentsResolver;
 import org.atlasapi.equivalence.ApplicationEquivalentsMerger;
@@ -15,12 +17,15 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -34,13 +39,27 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
     @Mock
     private MergingEquivalentsResolver<Content> contentResolver;
     private AnnotationBasedMergingEquivalentsResolver<Content> contentAnnotationBasedMergingEquivalentsResolver;
+    private Application application = mock(Application.class);
     @InjectMocks
     private MergingEquivalentsResolverBackedContainerSummaryResolver objectUnderTest;
+
+    @Before
+    public void setUp() {
+        when(application.getConfiguration()).thenReturn(
+                ApplicationConfiguration.builder()
+                    .withNoPrecedence(
+                        Publisher.all().stream()
+                            .filter(Publisher::enabledWithNoApiKey)
+                            .collect(Collectors.toList())
+                    )
+                    .withEnabledWriteSources(ImmutableList.of())
+                    .build()
+        );
+    }
 
     @Test
     public void testResolveContainerSummary() throws Exception {
         Id id = Id.valueOf(1L);
-        ApplicationSources applicationSources = mock(ApplicationSources.class);
         Iterable<Id> containerIds = ImmutableSet.of(id);
         ContainerSummary containerSummary = mock(ContainerSummary.class);
         Container container = mock(Container.class);
@@ -60,13 +79,13 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
 
         when(contentResolver.resolveIds(
                 containerIds,
-                applicationSources,
+                application,
                 ImmutableSet.of()
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
-                applicationSources,
+                application,
                 ImmutableSet.of()
         );
 
@@ -80,17 +99,16 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         ListenableFuture<ResolvedEquivalents<Content>> resolved = Futures.immediateFuture(
                 ResolvedEquivalents.<Content>empty()
         );
-        ApplicationSources applicationSources = mock(ApplicationSources.class);
 
         when(contentResolver.resolveIds(
                 containerIds,
-                applicationSources,
+                application,
                 ImmutableSet.of()
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
-                applicationSources,
+                application,
                 ImmutableSet.of()
         );
 
@@ -107,8 +125,6 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
         when(nonContainer.copyWithEquivalentTo(Matchers.<Iterable<EquivalenceRef>>any())).thenReturn(
                 nonContainer);
 
-        ApplicationSources applicationSources = mock(ApplicationSources.class);
-
         ResolvedEquivalents<Content> resolvedEquivalents = ResolvedEquivalents.<Content>builder()
                 .putEquivalents(id, ImmutableSet.of(nonContainer)
                 ).build();
@@ -119,13 +135,13 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
 
         when(contentResolver.resolveIds(
                 containerIds,
-                applicationSources,
+                application,
                 ImmutableSet.of()
         )).thenReturn(resolved);
 
         Optional<ContainerSummary> containerSummaryOptional = objectUnderTest.resolveContainerSummary(
                 id,
-                applicationSources,
+                application,
                 ImmutableSet.of()
         );
 
@@ -133,17 +149,17 @@ public class MergingEquivalentsResolverBackedContainerSummaryResolverTest {
     }
 
     @Test
-    public void testAnnotationBasedMErger() throws Exception {
+    public void testAnnotationBasedMerger() throws Exception {
         EquivalentsResolver<Content> resolver = mock(EquivalentsResolver.class);
         ApplicationEquivalentsMerger<Content> merger = mock(ApplicationEquivalentsMerger.class);
-        ApplicationSources sources = mock(ApplicationSources.class);
+        when(application.getConfiguration()).thenReturn(mock(ApplicationConfiguration.class));
         contentAnnotationBasedMergingEquivalentsResolver = new AnnotationBasedMergingEquivalentsResolver<>(
                 resolver,
                 merger
         );
         contentAnnotationBasedMergingEquivalentsResolver.resolveIds(
                 ImmutableSet.of(),
-                sources,
+                application,
                 ImmutableSet.of(
                         Annotation.NON_MERGED)
         );

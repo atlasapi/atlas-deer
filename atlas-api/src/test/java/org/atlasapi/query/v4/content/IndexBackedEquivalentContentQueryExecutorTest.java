@@ -2,12 +2,14 @@ package org.atlasapi.query.v4.content;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
 import org.atlasapi.output.NotFoundException;
+import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.context.QueryContext;
 
@@ -39,12 +41,16 @@ public class IndexBackedEquivalentContentQueryExecutorTest {
 
         Query<Content> query = Query.singleQuery(
                 Id.valueOf(1),
-                QueryContext.standard(mock(HttpServletRequest.class))
+                QueryContext.create(
+                        mock(Application.class),
+                        ActiveAnnotations.standard(),
+                        mock(HttpServletRequest.class)
+                )
         );
         QueryContext ctxt = query.getContext();
 
         when(equivalentContentResolver.resolveIds(ImmutableSet.of(query.getOnlyId()),
-                ctxt.getApplicationSources(), ImmutableSet.copyOf(ctxt.getAnnotations().values())
+                ctxt.getApplication(), ImmutableSet.copyOf(ctxt.getAnnotations().values())
         ))
                 .thenReturn(Futures.immediateFuture(ResolvedEquivalents.<Content>empty()));
 

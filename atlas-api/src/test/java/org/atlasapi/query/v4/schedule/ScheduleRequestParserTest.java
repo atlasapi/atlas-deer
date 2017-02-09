@@ -1,16 +1,22 @@
 package org.atlasapi.query.v4.schedule;
 
 import java.math.BigInteger;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.collect.Lists;
+import com.metabroadcast.applications.client.model.internal.AccessRoles;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
+import com.metabroadcast.applications.client.model.internal.Environment;
 import org.atlasapi.annotation.Annotation;
-import org.atlasapi.application.ApplicationSources;
-import org.atlasapi.application.SourceStatus;
-import org.atlasapi.application.auth.ApplicationSourcesFetcher;
-import org.atlasapi.application.auth.InvalidApiKeyException;
+import org.atlasapi.application.ApplicationFetcher;
+import org.atlasapi.application.ApplicationResolutionException;
 import org.atlasapi.content.QueryParseException;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.channel.Channel;
@@ -26,9 +32,7 @@ import com.metabroadcast.common.servlet.StubHttpServletRequest;
 import com.metabroadcast.common.time.DateTimeZones;
 import com.metabroadcast.common.time.TimeMachine;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -43,16 +47,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.atlasapi.media.entity.Publisher.BBC;
-import static org.atlasapi.media.entity.Publisher.METABROADCAST;
-import static org.atlasapi.media.entity.Publisher.PA;
-import static org.atlasapi.media.entity.Publisher.YOUTUBE;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -60,7 +61,7 @@ public class ScheduleRequestParserTest {
 
     private static final String KEY_PARAM = "key";
 
-    @Mock private ApplicationSourcesFetcher applicationFetcher;
+    @Mock private ApplicationFetcher applicationFetcher;
     @Mock private ContextualAnnotationsExtractor annotationsExtractor;
 
     private DateTime time = new DateTime(2012, 12, 14, 10, 0, 0, 0, DateTimeZones.UTC);
@@ -69,8 +70,21 @@ public class ScheduleRequestParserTest {
     private final NumberToShortStringCodec codec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final Channel channel1 = Channel.builder().build();
     private final Channel channel2 = Channel.builder().build();
-    private final ApplicationSources sources = ApplicationSources.defaults()
-            .copyWithChangedReadableSourceStatus(BBC, SourceStatus.AVAILABLE_ENABLED);
+    private final Application application = Application.builder()
+            .withId(-1l)
+            .withTitle("title")
+            .withDescription("desc")
+            .withEnvironment(Environment.PROD)
+            .withCreated(ZonedDateTime.now())
+            .withApiKey("apiKey")
+            .withSources(ApplicationConfiguration.builder()
+                    .withPrecedence(Lists.newArrayList(Publisher.BBC))
+                    .withEnabledWriteSources(Lists.newArrayList())
+                    .build())
+            .withAllowedDomains(Lists.newArrayList())
+            .withAccessRoles(mock(AccessRoles.class))
+            .withRevoked(false)
+            .build();
 
     @Before
     public void before() throws Exception {
@@ -86,10 +100,10 @@ public class ScheduleRequestParserTest {
 
         when(annotationsExtractor.extractFromRequest(any(HttpServletRequest.class)))
                 .thenReturn(ActiveAnnotations.standard());
-        when(applicationFetcher.sourcesFor(argThat(httpRequestWithParam(KEY_PARAM, is("apikey")))))
-                .thenReturn(Optional.of(sources));
-        when(applicationFetcher.sourcesFor(argThat(httpRequestWithParam(KEY_PARAM, not("apikey")))))
-                .thenThrow(new InvalidApiKeyException("therequestedapikey"));
+        when(applicationFetcher.applicationFor(argThat(httpRequestWithParam(KEY_PARAM, is("apikey")))))
+                .thenReturn(Optional.of(application));
+        when(applicationFetcher.applicationFor(argThat(httpRequestWithParam(KEY_PARAM, not("apikey")))))
+                .thenThrow(ApplicationResolutionException.create("therequestedapikey", "test"));
     }
 
     private Matcher<HttpServletRequest> httpRequestWithParam(
@@ -115,12 +129,12 @@ public class ScheduleRequestParserTest {
         )
                 .withParam("from", DateTime.now().toString())
                 .withParam("count", "5")
-                .withParam("source", BBC.key())
-                .withParam("override_source", YOUTUBE.key())
+                .withParam("source", Publisher.BBC.key())
+                .withParam("override_source", Publisher.YOUTUBE.key())
                 .withParam(KEY_PARAM, "apikey");
         ScheduleQuery query = builder.queryFrom(request);
 
-        assertThat(query.getOverride().get(), is(YOUTUBE));
+        assertThat(query.getOverride().get(), is(Publisher.YOUTUBE));
     }
 
     @Test
@@ -131,7 +145,7 @@ public class ScheduleRequestParserTest {
         StubHttpServletRequest request = singleScheduleRequest(
                 channel1,
                 intvl,
-                BBC,
+                Publisher.BBC,
                 "apikey",
                 Annotation.standard(),
                 ".json"
@@ -142,12 +156,12 @@ public class ScheduleRequestParserTest {
         assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
         assertThat(query.getStart(), is(start));
         assertThat(query.getEnd().get(), is(end));
-        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getSource(), is(Publisher.BBC));
         assertThat(
                 query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)),
                 is(Annotation.standard())
         );
-        assertThat(query.getContext().getApplicationSources(), is(sources));
+        assertThat(query.getContext().getApplication(), is(application));
     }
 
     @Test
@@ -160,7 +174,7 @@ public class ScheduleRequestParserTest {
         StubHttpServletRequest request = singleScheduleRequest(
                 channel1,
                 intvl,
-                BBC,
+                Publisher.BBC,
                 "apikey",
                 Annotation.standard(),
                 ""
@@ -171,12 +185,12 @@ public class ScheduleRequestParserTest {
         assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
         assertThat(query.getStart(), is(start));
         assertThat(query.getEnd().get(), is(end));
-        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getSource(), is(Publisher.BBC));
         assertThat(
                 query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)),
                 is(Annotation.standard())
         );
-        assertThat(query.getContext().getApplicationSources(), is(sources));
+        assertThat(query.getContext().getApplication(), is(application));
     }
 
     @Test(expected = InvalidParameterException.class)
@@ -188,7 +202,7 @@ public class ScheduleRequestParserTest {
         StubHttpServletRequest request = singleScheduleRequest(
                 channel1,
                 intvl,
-                BBC,
+                Publisher.BBC,
                 "apikey",
                 Annotation.standard(),
                 ""
@@ -199,12 +213,12 @@ public class ScheduleRequestParserTest {
         assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
         assertThat(query.getStart(), is(start));
         assertThat(query.getEnd().get(), is(end));
-        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getSource(), is(Publisher.BBC));
         assertThat(
                 query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)),
                 is(Annotation.standard())
         );
-        assertThat(query.getContext().getApplicationSources(), is(sources));
+        assertThat(query.getContext().getApplication(), is(application));
     }
 
     @Test
@@ -219,7 +233,7 @@ public class ScheduleRequestParserTest {
         )
                 .withParam("from", start.toString())
                 .withParam("count", "5")
-                .withParam("source", BBC.key())
+                .withParam("source", Publisher.BBC.key())
                 .withParam(
                         "annotations",
                         Joiner.on(',')
@@ -235,12 +249,12 @@ public class ScheduleRequestParserTest {
         assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
         assertThat(query.getStart(), is(start));
         assertThat(query.getCount().get(), is(5));
-        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getSource(), is(Publisher.BBC));
         assertThat(
                 query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)),
                 is(Annotation.standard())
         );
-        assertThat(query.getContext().getApplicationSources(), is(sources));
+        assertThat(query.getContext().getApplication(), is(application));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -255,7 +269,7 @@ public class ScheduleRequestParserTest {
         )
                 .withParam("from", start.toString())
                 .withParam("count", "11")
-                .withParam("source", BBC.key())
+                .withParam("source", Publisher.BBC.key())
                 .withParam(
                         "annotations",
                         Joiner.on(',')
@@ -271,12 +285,12 @@ public class ScheduleRequestParserTest {
         assertThat(query.getChannelId(), is(Id.valueOf(channel1.getId())));
         assertThat(query.getStart(), is(start));
         assertThat(query.getCount().get(), is(5));
-        assertThat(query.getSource(), is(BBC));
+        assertThat(query.getSource(), is(Publisher.BBC));
         assertThat(
                 query.getContext().getAnnotations().forPath(ImmutableList.of(Resource.CONTENT)),
                 is(Annotation.standard())
         );
-        assertThat(query.getContext().getApplicationSources(), is(sources));
+        assertThat(query.getContext().getApplication(), is(application));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -286,7 +300,7 @@ public class ScheduleRequestParserTest {
         DateTime to = from.plusHours(25);
 
         StubHttpServletRequest request = singleScheduleRequest(channel1, from, to,
-                BBC, "apikey", Annotation.standard(), ".json"
+                Publisher.BBC, "apikey", Annotation.standard(), ".json"
         );
 
         builder.queryFrom(request);
@@ -300,20 +314,20 @@ public class ScheduleRequestParserTest {
         DateTime to = from.plusHours(24);
 
         StubHttpServletRequest request = singleScheduleRequest(channel1, from, to,
-                PA, "apikey", Annotation.standard(), ".json"
+                Publisher.PA, "apikey", Annotation.standard(), ".json"
         );
 
         builder.queryFrom(request);
     }
 
-    @Test(expected = InvalidApiKeyException.class)
+    @Test(expected = ApplicationResolutionException.class)
     public void testDoesntAcceptUnknownApiKey() throws Exception {
 
         DateTime from = new DateTime(2012, 12, 22, 0, 0, 0, 0, DateTimeZones.UTC);
         DateTime to = from.plusHours(24);
 
         StubHttpServletRequest request = singleScheduleRequest(channel1, from, to,
-                BBC, "unknownapikey", Annotation.standard(), ".json"
+                Publisher.BBC, "unknownapikey", Annotation.standard(), ".json"
         );
 
         builder.queryFrom(request);
@@ -341,7 +355,7 @@ public class ScheduleRequestParserTest {
         DateTime to = from.plusHours(24);
 
         StubHttpServletRequest request = singleScheduleRequest("invalid", from, to,
-                BBC, "apikey", Annotation.standard(), ".json"
+                Publisher.BBC, "apikey", Annotation.standard(), ".json"
         );
 
         builder.queryFrom(request);
@@ -358,7 +372,7 @@ public class ScheduleRequestParserTest {
         StubHttpServletRequest request = multiScheduleRequest(
                 ImmutableList.of(channel1, channel2),
                 intvl,
-                BBC,
+                Publisher.BBC,
                 "apikey",
                 Annotation.standard(),
                 ""
@@ -380,7 +394,7 @@ public class ScheduleRequestParserTest {
         StubHttpServletRequest request = multiScheduleRequest(
                 "hkqs,invalid",
                 intvl,
-                BBC,
+                Publisher.BBC,
                 "apikey",
                 Annotation.standard(),
                 ""
@@ -393,7 +407,7 @@ public class ScheduleRequestParserTest {
         assertThat(query.getChannelIds().asList().get(1), is(Id.valueOf(channel2.getId())));
     }
 
-    @Test(expected = InvalidApiKeyException.class)
+    @Test(expected = ApplicationResolutionException.class)
     public void testDoesntAcceptRequestWithNoApiKey() throws Exception {
 
         Interval intvl = new Interval(
@@ -403,7 +417,7 @@ public class ScheduleRequestParserTest {
         StubHttpServletRequest request = singleScheduleRequest(
                 channel1,
                 intvl,
-                METABROADCAST,
+                Publisher.METABROADCAST,
                 null,
                 Annotation.standard(),
                 ""
@@ -414,16 +428,11 @@ public class ScheduleRequestParserTest {
 
     private StubHttpServletRequest multiScheduleRequest(List<Channel> channels, Interval intvl,
             Publisher src, String appKey, Set<Annotation> annotations, String ext) {
-        String ids = Joiner.on(',').join(Iterables.transform(
-                channels,
-                new Function<Channel, String>() {
-
-                    @Override
-                    public String apply(Channel channel) {
-                        return codec.encode(BigInteger.valueOf(channel.getId()));
-                    }
-                }
-        ));
+        String ids = Joiner.on(',').join(
+                channels.stream()
+                        .map(channel -> codec.encode(BigInteger.valueOf(channel.getId())))
+                        .collect(Collectors.toList())
+        );
         return multiScheduleRequest(ids, intvl, src, appKey, annotations, ext);
     }
 

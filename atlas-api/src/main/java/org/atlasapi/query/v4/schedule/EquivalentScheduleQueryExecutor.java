@@ -6,9 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.application.ApplicationAccessRole;
-import org.atlasapi.application.ApplicationSources;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.content.Broadcast;
@@ -146,8 +147,8 @@ public class EquivalentScheduleQueryExecutor
     }
 
     private ImmutableSet<Publisher> selectedSources(ScheduleQuery query) {
-        if (query.getContext().getApplicationSources().isPrecedenceEnabled()) {
-            return query.getContext().getApplicationSources().getEnabledReadSources();
+        if (query.getContext().getApplication().getConfiguration().isPrecedenceEnabled()) {
+            return query.getContext().getApplication().getConfiguration().getEnabledReadSources();
         }
         return ImmutableSet.of(query.getSource());
     }
@@ -184,28 +185,28 @@ public class EquivalentScheduleQueryExecutor
             boolean hasNonMergedAnnotation =
                     context.getAnnotations().containsValue(Annotation.NON_MERGED);
 
-            if (context.getApplicationSources().isPrecedenceEnabled() && !hasNonMergedAnnotation) {
-                return mergeItemsInSchedule(input, context.getApplicationSources());
+            if (context.getApplication().getConfiguration().isPrecedenceEnabled() && !hasNonMergedAnnotation) {
+                return mergeItemsInSchedule(input, context.getApplication());
             }
             return selectBroadcastItems(input);
         };
     }
 
     private Schedule mergeItemsInSchedule(EquivalentSchedule schedule,
-            ApplicationSources applicationSources) {
+            Application application) {
         ImmutableList.Builder<ChannelSchedule> channelSchedules = ImmutableList.builder();
         for (EquivalentChannelSchedule ecs : schedule.channelSchedules()) {
             channelSchedules.add(new ChannelSchedule(
                     ecs.getChannel(),
                     ecs.getInterval(),
-                    mergeItems(ecs.getEntries(), applicationSources)
+                    mergeItems(ecs.getEntries(), application)
             ));
         }
         return new Schedule(channelSchedules.build(), schedule.interval());
     }
 
     private Iterable<ItemAndBroadcast> mergeItems(ImmutableList<EquivalentScheduleEntry> entries,
-            ApplicationSources applicationSources) {
+            Application application) {
         ImmutableList.Builder<ItemAndBroadcast> iabs = ImmutableList.builder();
         for (EquivalentScheduleEntry entry : entries) {
             if (entry.getItems().getResources().isEmpty()) {
@@ -217,7 +218,7 @@ public class EquivalentScheduleQueryExecutor
             List<Item> mergedItems = equivalentsMerger.merge(
                     Optional.<Id>absent(),
                     entry.getItems().getResources(),
-                    applicationSources
+                    application
             );
 
             Item item = Iterables.getOnlyElement(mergedItems);
@@ -270,9 +271,9 @@ public class EquivalentScheduleQueryExecutor
         List<Channel> defaultChannels = new ArrayList<>();
 
         if (query.getContext()
-                .getApplicationSources()
+                .getApplication()
                 .getAccessRoles()
-                .contains(ApplicationAccessRole.PREFER_EBS_SCHEDULE)
+                .hasRole(ApplicationAccessRole.PREFER_EBS_SCHEDULE.getRole())
                 ) {
 
             channels.forEach(channel -> {
