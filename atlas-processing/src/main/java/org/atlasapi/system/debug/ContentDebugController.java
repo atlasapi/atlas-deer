@@ -61,6 +61,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -104,6 +105,7 @@ public class ContentDebugController {
                 .registerModule(new Jdk8Module())
                 .registerModule(new JodaModule())
                 .configure(WRITE_DATES_AS_TIMESTAMPS , false)
+                .configure(FAIL_ON_EMPTY_BEANS, false)
                 .findAndRegisterModules();
 
         legacyContentResolver = checkNotNull(builder.legacyContentResolver);
