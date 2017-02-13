@@ -1,6 +1,8 @@
 package org.atlasapi.output;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.entity.Id;
@@ -16,6 +18,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
+import org.atlasapi.media.entity.Publisher;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -29,13 +32,19 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
     }
 
     @Override
-    public <T extends E> List<T> merge(final Optional<Id> id, Iterable<T> equivalents,
-            Application application) {
+    public <T extends E> List<T> merge(
+            final Optional<Id> id,
+            Iterable<T> equivalents,
+            Application application
+    ) {
         if (!application.getConfiguration().isPrecedenceEnabled()) {
             return ImmutableList.copyOf(equivalents);
         }
-        Ordering<Sourced> equivsOrdering = applicationEquivalentsOrdering(application);
+
+        Ordering<Sourced> equivsOrdering = applicationEquivalentsOrdering(application, equivalents);
+
         ImmutableList<T> sortedEquivalents = equivsOrdering.immutableSortedCopy(equivalents);
+
         if (sortedEquivalents.isEmpty()) {
             return ImmutableList.of();
         }
@@ -70,10 +79,26 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         return sortedEquivalents.size() == 1;
     }
 
-    private Ordering<Sourced> applicationEquivalentsOrdering(Application application) {
-        return application.getConfiguration()
+    private <T extends E> Ordering<Sourced> applicationEquivalentsOrdering(
+            Application application,
+            Iterable<T> equivalents
+    ) {
+
+        List<Publisher> applicationPublishers = application.getConfiguration()
                 .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher());
+                .sortedCopy(application.getConfiguration().getEnabledReadSources());
+
+        List<Publisher> equivPublishers = StreamSupport.stream(equivalents.spliterator(), false)
+                .map(Sourced::getSource)
+                .filter(publisher -> !applicationPublishers.contains(publisher))
+                .collect(Collectors.toList());
+
+        return Ordering.explicit(
+                ImmutableList.<Publisher>builder()
+                        .addAll(applicationPublishers)
+                        .addAll(equivPublishers)
+                        .build()
+        ).onResultOf(Sourceds.toPublisher());
     }
 
     private Predicate<Identifiable> idIs(final Id id) {
