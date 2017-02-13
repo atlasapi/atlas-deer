@@ -15,6 +15,7 @@ import org.atlasapi.content.ContentStore;
 import org.atlasapi.content.EquivalentContentStore;
 import org.atlasapi.content.EsContentTitleSearcher;
 import org.atlasapi.content.EsContentTranslator;
+import org.atlasapi.content.v2.NormalizedEquivContentStore;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
 import org.atlasapi.equivalence.EquivalenceGraphUpdateMessage;
 import org.atlasapi.event.EventResolver;
@@ -303,24 +304,30 @@ public class AtlasPersistenceModule {
 
     @Bean
     public EquivalentContentStore getEquivalentContentStore() {
-        return new CassandraEquivalentContentStore(
+        return new NormalizedEquivContentStore(
                 persistenceModule().contentStore(),
-                legacyContentResolver(),
                 persistenceModule().contentEquivalenceGraphStore(),
-                persistenceModule().sender(
-                        equivalentContentChanges,
-                        EquivalentContentUpdatedMessage.class
-                ),
-                persistenceModule().sender(
-                        equivalentContentGraphChanges,
-                        EquivalenceGraphUpdateMessage.class
-                ),
-                persistenceModule().getSession(),
-                persistenceModule().getReadConsistencyLevel(),
-                persistenceModule().getWriteConsistencyLevel(),
-                metricsModule.metrics(),
-                STORE_METRIC_PREFIX + "CassandraEquivalentContentStore."
+                metricsModule.metrics()
         );
+
+//        return new CassandraEquivalentContentStore(
+//                persistenceModule().contentStore(),
+//                legacyContentResolver(),
+//                persistenceModule().contentEquivalenceGraphStore(),
+//                persistenceModule().sender(
+//                        equivalentContentChanges,
+//                        EquivalentContentUpdatedMessage.class
+//                ),
+//                persistenceModule().sender(
+//                        equivalentContentGraphChanges,
+//                        EquivalenceGraphUpdateMessage.class
+//                ),
+//                persistenceModule().getSession(),
+//                persistenceModule().getReadConsistencyLevel(),
+//                persistenceModule().getWriteConsistencyLevel(),
+//                metricsModule.metrics(),
+//                STORE_METRIC_PREFIX + "CassandraEquivalentContentStore."
+//        );
     }
 
     @Bean

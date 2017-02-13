@@ -84,7 +84,7 @@ import static org.atlasapi.util.Column.bytesColumn;
 import static org.atlasapi.util.Column.dateColumn;
 import static org.atlasapi.util.Column.textColumn;
 
-public final class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
+public class CassandraEquivalentScheduleStore extends AbstractEquivalentScheduleStore {
 
     private static final Logger log = LoggerFactory.getLogger(CassandraEquivalentScheduleStore.class);
     private static final Duration MAX_SCHEDULE_LENGTH = Duration.standardHours(24);

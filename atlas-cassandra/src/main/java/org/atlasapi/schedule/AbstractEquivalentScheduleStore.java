@@ -61,7 +61,7 @@ public abstract class AbstractEquivalentScheduleStore implements EquivalentSched
     protected final Clock clock;
 
     private final EquivalenceGraphStore graphStore;
-    private final ContentResolver contentStore;
+    protected final ContentResolver contentStore;
 
     private final FlexibleBroadcastMatcher broadcastMatcher
             = new FlexibleBroadcastMatcher(Duration.standardMinutes(10));
