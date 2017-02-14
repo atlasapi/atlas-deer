@@ -91,6 +91,7 @@ public class StrategyBackedEquivalentsMerger<E extends Equivalable<E>>
         List<Publisher> equivPublishers = StreamSupport.stream(equivalents.spliterator(), false)
                 .map(Sourced::getSource)
                 .filter(publisher -> !applicationPublishers.contains(publisher))
+                .distinct()
                 .collect(Collectors.toList());
 
         return Ordering.explicit(
