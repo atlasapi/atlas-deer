@@ -3,12 +3,13 @@ package org.atlasapi.output;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Content;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
+
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
@@ -42,12 +43,14 @@ public class StrategyBackedEquivalentsMergerTest {
     private StrategyBackedEquivalentsMerger<Content> merger;
 
     @Before
-    public void setup() {
-        merger = new StrategyBackedEquivalentsMerger<Content>(strategy);
+    public void setUp() {
+        merger = new StrategyBackedEquivalentsMerger<>(strategy);
+
         when(nonMergingApplication.getConfiguration())
                 .thenReturn(getConfig(ImmutableList.of()));
+
         when(mergingApplication.getConfiguration())
-                .thenReturn(getConfig(ImmutableList.of(Publisher.BBC, Publisher.TED)));
+                .thenReturn(getConfig(ImmutableList.of(Publisher.TED)));
     }
 
     @Test
@@ -139,6 +142,32 @@ public class StrategyBackedEquivalentsMergerTest {
     }
 
     @Test
+    public void worksWithMultipleItemsFromSamePublisherRetrieved() {
+
+        Content retrieved1 = new Brand(Id.valueOf(1), Publisher.BBC_KIWI);
+        Content retrieved2 = new Brand(Id.valueOf(2), Publisher.BBC_KIWI);
+
+        when(strategy.merge(
+                argThat(any(Content.class)),
+                anyCollectionOf(Content.class),
+                argThat(is(mergingApplication))
+        )).thenReturn(retrieved1);
+
+        merger.merge(
+                Optional.of(retrieved1.getId()),
+                ImmutableList.of(retrieved1, retrieved2),
+                mergingApplication
+        );
+
+        verify(strategy)
+                .merge(
+                        argThat(is(retrieved1)),
+                        argThat(contains(retrieved2)),
+                        argThat(is(mergingApplication))
+                );
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     public void testMergeVictimIsRequestedContentIdIfVictimMatchesMostPrecedentSource() {
         Content one = new Brand(Id.valueOf(1), Publisher.BBC);
@@ -146,7 +175,8 @@ public class StrategyBackedEquivalentsMergerTest {
         Content three = new Brand(Id.valueOf(3), Publisher.TED);
 
         setUpMockStrategyToReturn(one);
-        List<Content> merged = merger.merge(Optional.of(one.getId()),
+        List<Content> merged = merger.merge(
+                Optional.of(one.getId()),
                 ImmutableSet.of(one, two, three),
                 mergingApplication
         );
