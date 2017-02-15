@@ -9,7 +9,6 @@ import java.util.stream.StreamSupport;
 
 import com.google.common.base.Optional;
 import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.content.Brand;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Certificate;
@@ -97,9 +96,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     @SuppressWarnings("unchecked")
     @Deprecated
     public <T extends Described> List<T> merge(Application application, List<T> contents) {
-        Ordering<Sourced> publisherComparator = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher());
+        Ordering<Sourced> publisherComparator = applicationAndContentOrdering(application, contents);
 
         List<T> merged = Lists.newArrayListWithCapacity(contents.size());
         Set<T> processed = Sets.newHashSet();
@@ -366,9 +363,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         if (application.getConfiguration().isPeoplePrecedenceEnabled()) {
             Iterable<Film> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
-            List<Film> topFilmMatches = application.getConfiguration()
-                    .getPeopleReadPrecedenceOrdering()
-                    .onResultOf(Sourceds.toPublisher())
+            List<Film> topFilmMatches = applicationAndContentOrdering(application, all)
                     .leastOf(Iterables.filter(all, HAS_PEOPLE), 1);
 
             if (!topFilmMatches.isEmpty()) {
@@ -383,9 +378,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
         if (application.getConfiguration().isImagePrecedenceEnabled()) {
 
-            List<T> topImageMatches = application.getConfiguration()
-                    .getImageReadPrecedenceOrdering()
-                    .onResultOf(Sourceds.toPublisher())
+            List<T> topImageMatches = applicationAndContentOrdering(application, all)
                     .leastOf(
                             Iterables.filter(
                                     all,
@@ -420,9 +413,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
     private <T extends Item> void mergeVersions(Application application, T chosen,
             Iterable<T> notChosen) {
         mergeBroadcasts(application, chosen, notChosen);
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
+        List<T> notChosenOrdered = applicationAndContentOrdering(application, notChosen)
                 .sortedCopy(notChosen);
 
         ImmutableList.Builder<SegmentEvent> segmentEvents = ImmutableList.builder();
@@ -452,9 +443,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         Iterable<T> all = Iterables.concat(ImmutableList.of(chosen), notChosen);
 
-        List<T> first = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
+        List<T> first = applicationAndContentOrdering(application, all)
                 .leastOf(StreamSupport.stream(all.spliterator(), false)
                                 .filter(HAS_BROADCASTS::apply)
                                 .collect(Collectors.toList()),
@@ -473,9 +462,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
         }
 
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
+        List<T> notChosenOrdered = applicationAndContentOrdering(application, notChosen)
                 .sortedCopy(notChosen);
 
         if (chosen.getBroadcasts() != null && !chosen.getBroadcasts().isEmpty()) {
@@ -491,9 +478,7 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
 
     private <T extends Content> void mergeEncodings(Application application, T chosen,
             Iterable<T> notChosen) {
-        List<T> notChosenOrdered = application.getConfiguration()
-                .getReadPrecedenceOrdering()
-                .onResultOf(Sourceds.toPublisher())
+        List<T> notChosenOrdered = applicationAndContentOrdering(application, notChosen)
                 .sortedCopy(notChosen);
 
         HashSet<Encoding> encodings = Sets.newHashSet();
@@ -708,6 +693,29 @@ public class OutputContentMerger implements EquivalentsMergeStrategy<Content> {
         }
 
         chosen.setAvailableContent(availableContent);
+    }
+
+    private <T extends Described> Ordering<Sourced> applicationAndContentOrdering(
+            Application application,
+            Iterable<T> others
+    ) {
+
+        List<Publisher> applicationPublishers = application.getConfiguration()
+                .getReadPrecedenceOrdering()
+                .sortedCopy(application.getConfiguration().getEnabledReadSources());
+
+        List<Publisher> otherPublishers = StreamSupport.stream(others.spliterator(), false)
+                .map(Sourced::getSource)
+                .filter(publisher -> !applicationPublishers.contains(publisher))
+                .distinct()
+                .collect(Collectors.toList());
+
+        return Ordering.explicit(
+                ImmutableList.<Publisher>builder()
+                        .addAll(applicationPublishers)
+                        .addAll(otherPublishers)
+                        .build()
+        ).onResultOf(Sourceds.toPublisher());
     }
 
     private final static class TagPublisherSetter implements Function<Tag, Tag> {
