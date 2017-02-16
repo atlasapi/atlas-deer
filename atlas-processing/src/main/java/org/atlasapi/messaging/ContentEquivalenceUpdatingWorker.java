@@ -4,7 +4,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.equivalence.EquivalenceGraphStore;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.system.bootstrap.workers.DirectAndExplicitEquivalenceMigrator;
 
 import com.metabroadcast.common.queue.RecoverableException;
@@ -69,11 +68,6 @@ public class ContentEquivalenceUpdatingWorker implements Worker<EquivalenceAsser
 
     @Override
     public void process(EquivalenceAssertionMessage message) throws RecoverableException {
-        if (message.getSubject().getSource() == Publisher.PA_SERIES_SUMMARIES) {
-            // TODO Protect Deer from high volume of updates MBST-18102
-            return;
-        }
-
         messageReceivedMeter.mark();
 
         metricRegistry.meter(
