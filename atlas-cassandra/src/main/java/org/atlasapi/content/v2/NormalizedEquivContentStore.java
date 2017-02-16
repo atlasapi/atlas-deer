@@ -142,7 +142,7 @@ public class NormalizedEquivContentStore implements EquivalentContentStore {
 
                     for (Id id : ids) {
 
-                        Optional<EquivalenceGraph> equivSet = null;
+                        Optional<EquivalenceGraph> equivSet;
                         try {
                             equivSet = equivSets.get().get(id);
                         } catch (InterruptedException | ExecutionException e) {
@@ -159,6 +159,7 @@ public class NormalizedEquivContentStore implements EquivalentContentStore {
                                 .map(contentMap::get)
                                 .filter(Optional::isPresent)
                                 .map(Optional::get)
+                                .filter(c -> selectedSources.contains(c.getSource()))
                                 .collect(MoreCollectors.toImmutableSet());
 
                         result.putEquivalents(id, graphContent);
