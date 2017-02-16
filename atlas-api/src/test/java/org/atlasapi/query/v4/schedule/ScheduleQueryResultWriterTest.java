@@ -52,6 +52,7 @@ public class ScheduleQueryResultWriterTest {
     private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
     private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter(
             "broadcasts",
+            "broadcast",
             SubstitutionTableNumberCodec.lowerCaseOnly(),
             new NoOpChannelResolver()
     );

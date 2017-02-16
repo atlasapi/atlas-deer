@@ -28,19 +28,19 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
 
     private static final Logger log = LoggerFactory.getLogger(BroadcastWriter.class);
 
-    private static final String ELEMENT_NAME = "broadcast";
-
     private final AliasWriter aliasWriter;
     private final BroadcastIdAliasMapping aliasMapping;
     private final BlackoutRestrictionWriter blackoutRestrictionWriter;
 
     private final String listName;
+    private final String fieldName;
     private final NumberToShortStringCodec codec;
     private final ChannelResolver channelResolver;
     private final ChannelWriter channelWriter;
 
     public BroadcastWriter(
             String listName,
+            String fieldName,
             NumberToShortStringCodec codec,
             ChannelResolver channelResolver
     ) {
@@ -48,22 +48,24 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         this.aliasMapping = new BroadcastIdAliasMapping();
         this.blackoutRestrictionWriter = new BlackoutRestrictionWriter();
 
+        this.fieldName = checkNotNull(fieldName);
         this.listName = checkNotNull(listName);
         this.codec = checkNotNull(codec);
         this.channelResolver = checkNotNull(channelResolver);
-        this.channelWriter = new ChannelWriter(
+        this.channelWriter = ChannelWriter.create(
                 "channels",
                 "channel",
-                new ChannelGroupSummaryWriter(new SubstitutionTableNumberCodec())
+                ChannelGroupSummaryWriter.create(new SubstitutionTableNumberCodec())
         );
     }
 
     public static BroadcastWriter create(
             String listName,
+            String fieldName,
             NumberToShortStringCodec codec,
             ChannelResolver channelResolver
     ) {
-        return new BroadcastWriter(listName, codec, channelResolver);
+        return new BroadcastWriter(fieldName, listName, codec, channelResolver);
     }
 
     @Override
@@ -83,7 +85,7 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
         );
         writer.writeField("broadcast_on", codec.encode(entity.getChannelId().toBigInteger()));
 
-        Channel channel = Futures.get(
+        Channel channel = Futures.getChecked(
                 channelResolver.resolveIds(
                         ImmutableList.of(entity.getChannelId())
                 ),
@@ -136,6 +138,6 @@ public final class BroadcastWriter implements EntityListWriter<Broadcast> {
 
     @Override
     public String fieldName(Broadcast entity) {
-        return ELEMENT_NAME;
+        return fieldName;
     }
 }

@@ -20,20 +20,27 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
     private final BroadcastWriter broadcastWriter;
     private final ChannelsBroadcastFilter channelsBroadcastFilter;
 
-    private BroadcastsAnnotation(NumberToShortStringCodec codec, ChannelResolver channelResolver) {
-        broadcastWriter = new BroadcastWriter(
-                "broadcasts",
-                codec,
-                channelResolver
-        );
-        this.channelsBroadcastFilter = ChannelsBroadcastFilter.create();
+    private BroadcastsAnnotation(
+            BroadcastWriter broadcastWriter,
+            ChannelsBroadcastFilter channelsBroadcastFilter
+    ) {
+        this.broadcastWriter = broadcastWriter;
+        this.channelsBroadcastFilter = channelsBroadcastFilter;
     }
 
     public static BroadcastsAnnotation create(
             NumberToShortStringCodec codec,
             ChannelResolver channelResolver
     ) {
-        return new BroadcastsAnnotation(codec, channelResolver);
+        return new BroadcastsAnnotation(
+                new BroadcastWriter(
+                        "broadcasts",
+                        "broadcast",
+                        codec,
+                        channelResolver
+                ),
+                ChannelsBroadcastFilter.create()
+        );
     }
 
     @Override
@@ -43,8 +50,11 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
         }
     }
 
-    private void writeBroadcasts(FieldWriter writer, Item item, OutputContext ctxt)
-            throws IOException {
+    private void writeBroadcasts(
+            FieldWriter writer,
+            Item item,
+            OutputContext ctxt
+    ) throws IOException {
         Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
                 .filter(Broadcast::isActivelyPublished);
 

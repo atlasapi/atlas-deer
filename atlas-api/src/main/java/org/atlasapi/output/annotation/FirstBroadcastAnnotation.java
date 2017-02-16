@@ -26,8 +26,9 @@ public class FirstBroadcastAnnotation extends OutputAnnotation<Content> {
             NumberToShortStringCodec codec,
             ChannelResolver channelResolver
     ) {
-        broadcastWriter = new BroadcastWriter(
+        broadcastWriter = BroadcastWriter.create(
                 "first_broadcasts",
+                "broadcast",
                 codec,
                 channelResolver
         );

@@ -44,7 +44,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
     private final NumberToShortStringCodec idCode = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ChannelGroupSummaryWriter channelGroupSummaryWriter;
 
-    public ChannelWriter(
+    private ChannelWriter(
             String listName,
             String fieldName,
             ChannelGroupSummaryWriter channelGroupSummaryWriter
@@ -54,6 +54,14 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         this.channelGroupSummaryWriter = checkNotNull(channelGroupSummaryWriter);
     }
 
+    public static ChannelWriter create(
+            String listName,
+            String fieldName,
+            ChannelGroupSummaryWriter channelGroupSummaryWriter
+    ) {
+        return new ChannelWriter(listName, fieldName, channelGroupSummaryWriter);
+    }
+
     @Nonnull
     @Override
     public String listName() {
@@ -61,8 +69,11 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
     }
 
     @Override
-    public void write(@Nonnull ResolvedChannel entity, @Nonnull FieldWriter format,
-            @Nonnull OutputContext ctxt) throws IOException {
+    public void write(
+            @Nonnull ResolvedChannel entity,
+            @Nonnull FieldWriter format,
+            @Nonnull OutputContext ctxt
+    ) throws IOException {
 
         Channel channel = entity.getChannel();
 

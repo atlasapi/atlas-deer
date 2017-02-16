@@ -28,8 +28,9 @@ public class CurrentAndFutureBroadcastsAnnotation extends OutputAnnotation<Conte
             NumberToShortStringCodec codec,
             ChannelResolver channelResolver
     ) {
-        this.broadcastWriter = new BroadcastWriter(
+        this.broadcastWriter = BroadcastWriter.create(
                 "broadcasts",
+                "broadcast",
                 codec,
                 channelResolver
         );

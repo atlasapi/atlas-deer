@@ -30,8 +30,9 @@ public class NextBroadcastAnnotation extends OutputAnnotation<Content> {
     ) {
         super();
         this.clock = clock;
-        this.broadcastWriter = new BroadcastWriter(
+        this.broadcastWriter = BroadcastWriter.create(
                 "next_broadcasts",
+                "broadcast",
                 codec,
                 channelResolver
         );
