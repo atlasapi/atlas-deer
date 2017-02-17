@@ -25,6 +25,7 @@ CMD java \
     -Dsun.net.inetaddr.ttl="$SUN_NET_INETADDR_TTL" \
     -DMBST_PLATFORM="$MBST_PLATFORM" \
     -Dapplications.client.host="$APPLICATIONS_CLIENT_HOST" \
+    -Dapplications.client.env="$APPLICATIONS_CLIENT_ENV" \
     -Dcassandra.clientThreads="$CASSANDRA_CLIENTTHREADS" \
     -Dcassandra.cluster="$CASSANDRA_CLUSTER" \
     -Dcassandra.connectionsPerHost.local="$CASSANDRA_CONNECTIONSPERHOST_LOCAL" \

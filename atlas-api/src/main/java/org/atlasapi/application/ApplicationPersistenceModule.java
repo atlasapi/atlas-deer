@@ -10,11 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 @Configuration
 @Import({ AtlasPersistenceModule.class })
 public class ApplicationPersistenceModule {
 
-    private final String applicationsClientHost = Configurer.get("applications.client.host").get();
+    private final String applicationsClientHost = checkNotNull(Configurer.get("applications.client.host").get());
 
     @Autowired AtlasPersistenceModule persistence;
     private @Autowired MetricsModule metricsModule;

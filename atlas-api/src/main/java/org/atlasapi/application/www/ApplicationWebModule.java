@@ -35,6 +35,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.reflect.TypeToken;
+import org.elasticsearch.river.RiverIndexName;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -43,6 +44,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
 
 @Configuration
@@ -52,6 +54,9 @@ import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
         LicenseModule.class
 })
 public class ApplicationWebModule {
+
+    private static final String APP_CLIENT_ENV = checkNotNull(Configurer.get("applications.client.env").get());
+    private static final String APP_NAME = "atlas";
 
     private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final JsonDeserializer<Id> idDeserializer = new IdDeserializer(idCodec);
@@ -63,8 +68,7 @@ public class ApplicationWebModule {
 
     @Autowired @Qualifier("licenseWriter") EntityWriter<Object> licenseWriter;
 
-    private static final String APP_NAME = "atlas";
-    
+
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(DateTime.class, datetimeDeserializer)
             .registerTypeAdapter(Id.class, idDeserializer)
@@ -103,10 +107,10 @@ public class ApplicationWebModule {
     }
 
     @Bean
-    public ApplicationFetcher configFetcher() {
+    public ApplicationFetcher applicationFetcher() {
         return ApiKeyApplicationFetcher.create(
                 appPersistence.applicationsClient(),
-                Configurer.getPlatform()
+                APP_CLIENT_ENV
         );
     }
 
