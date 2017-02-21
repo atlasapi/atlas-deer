@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.output.annotation.OutputAnnotation;
 import org.atlasapi.query.annotation.ActiveAnnotations;
@@ -29,6 +30,7 @@ public class OutputContext {
                 standard.getAnnotations(),
                 standard.getApplication(),
                 standard.getRequest(),
+                null,
                 null
         );
     }
@@ -38,8 +40,34 @@ public class OutputContext {
                 standard.getAnnotations(),
                 standard.getApplication(),
                 standard.getRequest(),
-                region
+                region,
+                null
         );
+    }
+
+    public static OutputContext valueOf(QueryContext standard, Platform platform) {
+        return new OutputContext(
+                standard.getAnnotations(),
+                standard.getApplication(),
+                standard.getRequest(),
+                null,
+                platform
+        );
+    }
+
+    public static OutputContext valueOf(
+            QueryContext standard,
+            @Nullable Region region,
+            @Nullable Platform platform
+    ) {
+        return new OutputContext(
+                standard.getAnnotations(),
+                standard.getApplication(),
+                standard.getRequest(),
+                region,
+                platform
+        );
+
     }
 
     private final ActiveAnnotations annotations;
@@ -47,18 +75,21 @@ public class OutputContext {
     private final List<Resource> resources;
     private final HttpServletRequest request;
     private final Optional<Region> region;
+    private final Optional<Platform> platform;
 
     public OutputContext(
             ActiveAnnotations activeAnnotations,
             Application application,
             HttpServletRequest request,
-            @Nullable Region region
+            @Nullable Region region,
+            @Nullable Platform platform
     ) {
         this.annotations = checkNotNull(activeAnnotations);
         this.application = checkNotNull(application);
         this.resources = Lists.newLinkedList();
         this.request = checkNotNull(request);
         this.region = Optional.ofNullable(region);
+        this.platform = Optional.ofNullable(platform);
     }
 
     public final OutputContext startResource(Resource resource) {
@@ -95,4 +126,6 @@ public class OutputContext {
     public Optional<Region> getRegion() {
         return region;
     }
+
+    public Optional<Platform> getPlatform() { return platform; }
 }

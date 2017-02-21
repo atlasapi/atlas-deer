@@ -95,16 +95,10 @@ public class Platform extends NumberedChannelGroup {
             HashSet<ChannelGroupRef> regions = Sets.newHashSet(
                     Collections2.transform(
                             this.regionIds,
-                            new Function<Long, ChannelGroupRef>() {
-
-                                @Override
-                                public ChannelGroupRef apply(Long input) {
-                                    return new ChannelGroupRef(
-                                            Id.valueOf(input),
-                                            publisher
-                                    );
-                                }
-                            }
+                            input -> new ChannelGroupRef(
+                                    Id.valueOf(input),
+                                    publisher
+                            )
                     )
             );
             Platform platform = new Platform(

@@ -31,6 +31,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
+import org.atlasapi.output.annotation.AggregatedBroadcastsAnnotation;
 import org.atlasapi.output.annotation.AvailableContentAnnotation;
 import org.atlasapi.output.annotation.AvailableContentDetailAnnotation;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
@@ -173,6 +174,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
+import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
@@ -518,6 +520,14 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.SPECIALIZATION,
                                 EnumCoercer.create(Specialization.FROM_KEY())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.PLATFORM,
+                                IdCoercer.create(idCodec())
+                        ),
+                        QueryAtomParser.create(
+                                Attributes.DOWNWEIGH,
+                                IdCoercer.create(idCodec())
                         )
                 )
         );
@@ -532,7 +542,8 @@ public class QueryWebModule {
         return StandardQueryParser.create(
                 Resource.CONTENT,
                 contentQueryAttributeParser(),
-                idCodec(), contextParser
+                idCodec(),
+                contextParser
         );
     }
 
@@ -920,6 +931,11 @@ public class QueryWebModule {
                                 persistenceModule.playerResolver(),
                                 persistenceModule.serviceResolver()
                         ),
+                        commonImplied
+                )
+                .register(
+                        AGGREGATED_BROADCASTS,
+                        AggregatedBroadcastsAnnotation.create(idCodec(), channelResolver),
                         commonImplied
                 )
                 .register(

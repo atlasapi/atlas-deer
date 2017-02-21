@@ -3,10 +3,13 @@ package org.atlasapi.query.v4.search;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.base.Optional;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.content.Content;
 import org.atlasapi.criteria.attribute.Attributes;
@@ -24,7 +27,6 @@ import org.atlasapi.query.common.context.QueryContext;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
 import com.google.api.client.repackaged.com.google.common.base.Throwables;
-import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -68,29 +70,68 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
     private OutputContext outputContext(QueryContext queryContext) throws IOException {
         String regionParam = queryContext.getRequest()
                 .getParameter(Attributes.REGION.externalName());
-        if (Strings.isNullOrEmpty(regionParam)) {
-            return OutputContext.valueOf(queryContext);
-        }
+        String platformParam = queryContext.getRequest()
+                .getParameter(Attributes.PLATFORM.externalName());
 
-        Id regionId = Id.valueOf(codec.decode(regionParam));
-        com.google.common.base.Optional<ChannelGroup<?>> channelGroup = Futures.get(
-                channelGroupResolver.resolveIds(ImmutableList.of(regionId)),
-                1, TimeUnit.MINUTES,
-                IOException.class
-        ).getResources().first();
-        if (!channelGroup.isPresent()) {
-            Throwables.propagate(new NotFoundException(regionId));
-        } else if (!(channelGroup.get() instanceof Region)) {
+        return OutputContext.valueOf(
+                queryContext,
+                resolveRegion(regionParam),
+                resolvePlatform(platformParam)
+        );
+    }
+
+    @Nullable
+    private Region resolveRegion(String id) throws IOException {
+        ChannelGroup<?> channelGroup = resolveChannelGroup(id);
+        if (channelGroup instanceof Platform) {
+            return (Region) channelGroup;
+        } else {
             Throwables.propagate(new NotAcceptableException(
-                            String.format(
-                                    "%s is a channel group of type '%s', should be 'region",
-                                    regionParam,
-                                    channelGroup.get().getType()
-                            )
+                    String.format(
+                            "%s is a channel group of type '%s', should be 'region",
+                            id,
+                            channelGroup
                     )
-            );
+            ));
+            return null;
         }
+    }
 
-        return OutputContext.valueOf(queryContext, (Region) channelGroup.get());
+    @Nullable
+    private Platform resolvePlatform(String id) throws IOException {
+
+        ChannelGroup<?> channelGroup = resolveChannelGroup(id);
+        if (channelGroup instanceof Platform) {
+            return (Platform) channelGroup;
+        } else {
+            Throwables.propagate(new NotAcceptableException(
+                    String.format(
+                            "%s is a channel group of type '%s', should be 'platform",
+                            id,
+                            channelGroup
+                    )
+            ));
+            return null;
+        }
+    }
+
+    @Nullable
+    private ChannelGroup<?> resolveChannelGroup(String idParam) throws IOException {
+
+        Id id = Id.valueOf(codec.decode(idParam));
+        
+        Optional<ChannelGroup<?>> channelGroupOptional =  Futures.getChecked(
+                channelGroupResolver.resolveIds(ImmutableList.of(id)),
+                IOException.class,
+                1,
+                TimeUnit.MINUTES
+        ).getResources().first();
+
+        if (channelGroupOptional.isPresent()) {
+            return channelGroupOptional.get();
+        } else {
+           Throwables.propagate(new NotFoundException(id));
+        }
+        return null;
     }
 }

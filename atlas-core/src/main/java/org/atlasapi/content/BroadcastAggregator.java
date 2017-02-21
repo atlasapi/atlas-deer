@@ -1,0 +1,188 @@
+package org.atlasapi.content;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.metabroadcast.common.stream.MoreCollectors;
+import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelGroupMembership;
+import org.atlasapi.channel.ChannelRef;
+import org.atlasapi.channel.ChannelResolver;
+import org.atlasapi.channel.Platform;
+import org.atlasapi.entity.Id;
+import org.atlasapi.entity.ResourceRef;
+import org.atlasapi.media.channel.TemporalField;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+public class BroadcastAggregator {
+
+    private static final int TITLE_DISPLAY_LIMIT = 3;
+    private static final Logger log = LoggerFactory.getLogger(BroadcastAggregator.class);
+
+    private final ChannelResolver channelResolver;
+
+    private BroadcastAggregator(ChannelResolver channelResolver) {
+        this.channelResolver = channelResolver;
+    }
+
+    public static BroadcastAggregator create(ChannelResolver channelResolver) {
+        return new BroadcastAggregator(channelResolver);
+    }
+
+    public Set<AggregatedBroadcast> aggregateBroadcasts(
+            Set<Broadcast> broadcasts,
+            Optional<Platform> platformOptional
+    ) {
+        // Remove broadcasts we don't care about
+        if (platformOptional.isPresent()) {
+            broadcasts = removeBroadcastsNotOnPlatform(broadcasts, platformOptional.get());
+        }
+
+        // Filter out previous broadcasts and collect by transmission time
+        Multimap<DateTime, AggregatedBroadcast> broadcastMap = broadcasts.stream()
+                .filter(broadcast -> broadcast.getTransmissionTime().isAfterNow())
+                .map(broadcast -> AggregatedBroadcast.create(
+                        broadcast,
+                        resolveChannel(broadcast.getChannelId()))
+                )
+                .collect(MoreCollectors.toImmutableListMultiMap(
+                        aggregatedBroadcast -> aggregatedBroadcast.getBroadcast().getTransmissionTime(),
+                        aggregatedBroadcast -> aggregatedBroadcast
+
+                ));
+
+        // Aggregate the broadcasts with same transmission times
+        for(DateTime dateTime : broadcastMap.keySet()) {
+            Collection<AggregatedBroadcast> sameTimeBroadcasts = broadcastMap.get(dateTime);
+            if (sameTimeBroadcasts.size() > 1) {
+                broadcastMap.replaceValues(dateTime, aggregateBroadcastsInternal(sameTimeBroadcasts));
+            }
+        }
+
+        return broadcastMap.values().stream().collect(MoreCollectors.toImmutableSet());
+    }
+
+    private Set<AggregatedBroadcast> aggregateBroadcastsInternal(Collection<AggregatedBroadcast> broadcasts) {
+
+        // Map parent channels to parent
+        Multimap<ChannelRef, AggregatedBroadcast> parentChannelMap = broadcasts.stream()
+                .collect(MoreCollectors.toImmutableListMultiMap(
+                        aggregatedBroadcast -> aggregatedBroadcast.getChannel().getParent(),
+                        aggregatedBroadcast -> aggregatedBroadcast
+                ));
+
+        Set<AggregatedBroadcast> aggregatedBroadcasts = Sets.newHashSet();
+        // For each parent channel, merge the children
+        for (ChannelRef channelRef : parentChannelMap.keySet()) {
+            aggregatedBroadcasts.add(
+                    aggregateChannelsFromParent(channelRef, parentChannelMap.get(channelRef))
+            );
+        }
+
+        return aggregatedBroadcasts;
+    }
+
+    @Nullable
+    private Channel resolveChannel(Id id) {
+        try {
+            return Futures.getChecked(
+                    channelResolver.resolveIds(
+                            ImmutableList.of(id)
+                    ),
+                    IOException.class
+            )
+                    .getResources()
+                    .first()
+                    .orNull();
+
+        } catch (IOException e) {
+            log.error("Failed to resolve channel: {}", id, e);
+            return null;
+        }
+    }
+
+    private AggregatedBroadcast aggregateChannelsFromParent(
+            ChannelRef channelRef,
+            Collection<AggregatedBroadcast> broadcasts
+    ) {
+        // If theres just one, no need to merge
+        if (broadcasts.size() == 1) {
+            return Iterables.getOnlyElement(broadcasts);
+        }
+
+        Channel parent = resolveChannel(channelRef.getId());
+
+        List<String> titles = broadcasts.stream()
+                .map(AggregatedBroadcast::getChannel)
+                .map(Channel::getTitle)
+                .collect(MoreCollectors.toImmutableList());
+
+        String mergedChannelTitle = getMergedChannelTitle(parent.getTitle(), titles);
+
+        return AggregatedBroadcast.create(
+                broadcasts.iterator().next().getBroadcast(),
+                Channel.builderFrom(parent)
+                        .withTitles(ImmutableList.of(
+                                new TemporalField<>(mergedChannelTitle, null, null)
+                ))
+                .build()
+        );
+    }
+
+    private Set<Broadcast> removeBroadcastsNotOnPlatform(
+            Iterable<Broadcast> broadcasts,
+            Platform platform
+    ) {
+        List<Id> platformIds = StreamSupport.stream(platform.getChannels().spliterator(), false)
+                .map(ChannelGroupMembership::getChannel)
+                .map(ResourceRef::getId)
+                .collect(Collectors.toList());
+
+        return StreamSupport.stream(broadcasts.spliterator(), false)
+                .filter(broadcast -> platformIds.contains(broadcast.getChannelId()))
+                .collect(MoreCollectors.toImmutableSet());
+    }
+
+    private String getMergedChannelTitle(String parent, List<String> children) {
+
+        String mergedChannelTitle;
+
+        if (children.size() <= TITLE_DISPLAY_LIMIT) {
+            mergedChannelTitle = String.format(
+                    "%s (Only %s)",
+                    parent,
+                    String.join(", ", parseChildTitles(parent, children))
+            );
+        } else {
+            mergedChannelTitle = String.format(
+                    "%s (Only %s and %s more)",
+                    parent,
+                    String.join(", ", parseChildTitles(parent, children.subList(0, TITLE_DISPLAY_LIMIT))),
+                    children.size() - TITLE_DISPLAY_LIMIT
+            );
+        }
+
+        return mergedChannelTitle;
+    }
+
+    private List<String> parseChildTitles(String parent, List<String> children) {
+
+        children.forEach(child -> child.replaceAll(parent, "").trim());
+        return children;
+
+    }
+
+}

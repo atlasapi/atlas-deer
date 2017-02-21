@@ -19,6 +19,7 @@ import java.util.Map;
 
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
+import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
 import org.atlasapi.content.Container;
 import org.atlasapi.content.Content;
@@ -65,6 +66,10 @@ public class Attributes {
             Identified.class
     );
     public static final Attribute<Id> REGION = IdAttribute.list("region", Region.class);
+
+    public static final Attribute<Id> PLATFORM = IdAttribute.list("platform", Platform.class);
+
+    public static final Attribute<Id> DOWNWEIGH = IdAttribute.list("downweigh", Channel.class);
 
     public static final Attribute<Id> TOPIC_ID = IdAttribute.list(
             "tags.topic.id",
