@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -22,6 +23,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -125,12 +127,11 @@ public class BroadcastAggregator {
 
         Channel parent = resolveChannel(channelRef.getId());
 
-        List<String> titles = broadcasts.stream()
+        Map<Id, String> channelIdAndTitles = broadcasts.stream()
                 .map(AggregatedBroadcast::getChannel)
-                .map(Channel::getTitle)
-                .collect(MoreCollectors.toImmutableList());
+                .collect(MoreCollectors.toImmutableMap(Channel::getId, Channel::getTitle));
 
-        String mergedChannelTitle = getMergedChannelTitle(parent.getTitle(), titles);
+        String mergedChannelTitle = getMergedChannelTitle(parent, channelIdAndTitles);
 
         return AggregatedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
@@ -156,33 +157,49 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableSet());
     }
 
-    private String getMergedChannelTitle(String parent, List<String> children) {
+    private String getMergedChannelTitle(Channel parent, Map<Id, String> children) {
 
-        String mergedChannelTitle;
+        List<String> childrenTitles = parseChildTitles(parent.getTitle(), children.values());
 
         if (children.size() <= TITLE_DISPLAY_LIMIT) {
-            mergedChannelTitle = String.format(
+            return String.format(
                     "%s (Only %s)",
                     parent,
-                    String.join(", ", parseChildTitles(parent, children))
+                    String.join(", ", childrenTitles)
             );
-        } else {
-            mergedChannelTitle = String.format(
+        } else if (parent.getVariations().size() - children.size() > TITLE_DISPLAY_LIMIT){
+            return String.format(
                     "%s (Only %s and %s more)",
                     parent,
-                    String.join(", ", parseChildTitles(parent, children.subList(0, TITLE_DISPLAY_LIMIT))),
+                    String.join(", ", childrenTitles.subList(0, TITLE_DISPLAY_LIMIT)),
                     children.size() - TITLE_DISPLAY_LIMIT
             );
+        } else {
+            return String.format(
+                    "%s (Except %s)",
+                    parent,
+                    String.join(", ", parseChildTitles(
+                            parent.getTitle(),
+                            resolveMissingChildren(parent, children.keySet()))
+                    )
+            );
         }
-
-        return mergedChannelTitle;
     }
 
-    private List<String> parseChildTitles(String parent, List<String> children) {
+    private List<String> parseChildTitles(String parent, Collection<String> children) {
 
-        children.forEach(child -> child.replaceAll(parent, "").trim());
-        return children;
+        return children.stream()
+                .map(child -> child.replaceAll(parent, "").trim())
+                .collect(MoreCollectors.toImmutableList());
 
+    }
+
+    private List<String> resolveMissingChildren(Channel parent, Set<Id> ids) {
+        return parent.getVariations().stream()
+                .filter(channelRef -> !ids.contains(channelRef.getId()))
+                .map(channelRef -> resolveChannel(channelRef.getId()))
+                .map(Channel::getTitle)
+                .collect(Collectors.toList());
     }
 
 }
