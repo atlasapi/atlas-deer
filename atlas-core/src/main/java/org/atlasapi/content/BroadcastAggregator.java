@@ -1,8 +1,8 @@
 package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -12,6 +12,7 @@ import org.atlasapi.channel.ChannelGroupMembership;
 import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.media.channel.TemporalField;
@@ -31,7 +32,6 @@ import java.util.stream.StreamSupport;
 
 public class BroadcastAggregator {
 
-    private static final int TITLE_DISPLAY_LIMIT = 3;
     private static final Logger log = LoggerFactory.getLogger(BroadcastAggregator.class);
 
     private final ChannelResolver channelResolver;
@@ -46,7 +46,8 @@ public class BroadcastAggregator {
 
     public Set<AggregatedBroadcast> aggregateBroadcasts(
             Set<Broadcast> broadcasts,
-            Optional<Platform> platformOptional
+            Optional<Platform> platformOptional,
+            List<Id> downweighChannelIds
     ) {
         // Remove broadcasts we don't care about
         if (platformOptional.isPresent()) {
@@ -58,7 +59,7 @@ public class BroadcastAggregator {
                 .filter(broadcast -> broadcast.getTransmissionTime().isAfterNow())
                 .map(broadcast -> AggregatedBroadcast.create(
                         broadcast,
-                        resolveChannel(broadcast.getChannelId()))
+                        ResolvedChannel.builder(resolveChannel(broadcast.getChannelId())).build())
                 )
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         aggregatedBroadcast -> aggregatedBroadcast.getBroadcast().getTransmissionTime(),
@@ -74,7 +75,31 @@ public class BroadcastAggregator {
             }
         }
 
-        return broadcastMap.values().stream().collect(MoreCollectors.toImmutableSet());
+        return sortByDownweighChannelIds(downweighChannelIds, broadcastMap.values());
+
+    }
+
+    private Set<AggregatedBroadcast> sortByDownweighChannelIds(List<Id> ids, Collection<AggregatedBroadcast> aggregatedBroadcasts) {
+        if (ids.isEmpty()) {
+            return ImmutableSet.copyOf(aggregatedBroadcasts);
+        }
+
+        ImmutableSet.Builder<AggregatedBroadcast> broadcastBuilder = ImmutableSet.builder();
+
+        Optional<AggregatedBroadcast> keyBroadcast = aggregatedBroadcasts.stream()
+                .filter(aggregatedBroadcast -> ids.contains(aggregatedBroadcast.getBroadcast()
+                        .getChannelId()))
+                .findFirst();
+
+        if (!keyBroadcast.isPresent()) {
+            return ImmutableSet.copyOf(aggregatedBroadcasts);
+        }
+
+        return broadcastBuilder.add(keyBroadcast.get())
+                .addAll(aggregatedBroadcasts.stream()
+                        .filter(aggregatedBroadcast -> !aggregatedBroadcasts.equals(keyBroadcast.get()))
+                        .collect(Collectors.toList()))
+                .build();
     }
 
     private Set<AggregatedBroadcast> aggregateBroadcastsInternal(Collection<AggregatedBroadcast> broadcasts) {
@@ -82,7 +107,9 @@ public class BroadcastAggregator {
         // Map parent channels to parent
         Multimap<ChannelRef, AggregatedBroadcast> parentChannelMap = broadcasts.stream()
                 .collect(MoreCollectors.toImmutableListMultiMap(
-                        aggregatedBroadcast -> aggregatedBroadcast.getChannel().getParent(),
+                        aggregatedBroadcast -> aggregatedBroadcast.getResolvedChannel()
+                                .getChannel()
+                                .getParent(),
                         aggregatedBroadcast -> aggregatedBroadcast
                 ));
 
@@ -128,19 +155,26 @@ public class BroadcastAggregator {
         Channel parent = resolveChannel(channelRef.getId());
 
         Map<Id, String> channelIdAndTitles = broadcasts.stream()
-                .map(AggregatedBroadcast::getChannel)
+                .map(AggregatedBroadcast::getResolvedChannel)
+                .map(ResolvedChannel::getChannel)
                 .collect(MoreCollectors.toImmutableMap(Channel::getId, Channel::getTitle));
-
-        String mergedChannelTitle = getMergedChannelTitle(parent, channelIdAndTitles);
 
         return AggregatedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
-                Channel.builderFrom(parent)
-                        .withTitles(ImmutableList.of(
-                                new TemporalField<>(mergedChannelTitle, null, null)
+                buildMergedChannel(parent, channelIdAndTitles)
+        );
+    }
+
+    private ResolvedChannel buildMergedChannel(Channel parent, Map<Id, String> channelIdsAndTitles) {
+
+        ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(Channel.builderFrom(parent)
+                .withTitles(ImmutableList.of(
+                        new TemporalField<>(parent.getTitle(), null, null)
                 ))
                 .build()
         );
+
+        return getMergedResolvedChannel(resolvedChannelBuilder, parent, channelIdsAndTitles).build();
     }
 
     private Set<Broadcast> removeBroadcastsNotOnPlatform(
@@ -157,41 +191,27 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableSet());
     }
 
-    private String getMergedChannelTitle(Channel parent, Map<Id, String> children) {
+    private ResolvedChannel.Builder getMergedResolvedChannel(ResolvedChannel.Builder builder, Channel parent, Map<Id, String> children) {
 
-        List<String> childrenTitles = parseChildTitles(parent.getTitle(), children.values());
+        builder.withIncludedVariants(
+                Optional.of(parseChildTitles(parent.getTitle(), children.values()))
+        );
+        builder.withExcludedVariants(
+                Optional.of(resolveMissingChildren(parent, children.keySet()))
+        );
+        return builder;
 
-        if (children.size() <= TITLE_DISPLAY_LIMIT) {
-            return String.format(
-                    "%s (Only %s)",
-                    parent,
-                    String.join(", ", childrenTitles)
-            );
-        } else if (parent.getVariations().size() - children.size() > TITLE_DISPLAY_LIMIT){
-            return String.format(
-                    "%s (Only %s and %s more)",
-                    parent,
-                    String.join(", ", childrenTitles.subList(0, TITLE_DISPLAY_LIMIT)),
-                    children.size() - TITLE_DISPLAY_LIMIT
-            );
-        } else {
-            return String.format(
-                    "%s (Except %s)",
-                    parent,
-                    String.join(", ", parseChildTitles(
-                            parent.getTitle(),
-                            resolveMissingChildren(parent, children.keySet()))
-                    )
-            );
-        }
     }
 
     private List<String> parseChildTitles(String parent, Collection<String> children) {
 
         return children.stream()
-                .map(child -> child.replaceAll(parent, "").trim())
+                .map(child -> parseChildTitle(parent, child))
                 .collect(MoreCollectors.toImmutableList());
+    }
 
+    private String parseChildTitle(String parent, String child) {
+        return child.replaceAll(parent, "").trim();
     }
 
     private List<String> resolveMissingChildren(Channel parent, Set<Id> ids) {
@@ -199,6 +219,7 @@ public class BroadcastAggregator {
                 .filter(channelRef -> !ids.contains(channelRef.getId()))
                 .map(channelRef -> resolveChannel(channelRef.getId()))
                 .map(Channel::getTitle)
+                .map(title -> parseChildTitle(parent.getTitle(), title))
                 .collect(Collectors.toList());
     }
 

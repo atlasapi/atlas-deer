@@ -5,6 +5,8 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import com.google.api.client.util.Lists;
+import com.google.common.collect.ImmutableList;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroupSummary;
@@ -78,6 +80,22 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         Channel channel = entity.getChannel();
 
         format.writeField("title", channel.getTitle());
+
+        if (contextHasAnnotation(ctxt, Annotation.AGGREGATED_BROADCASTS)) {
+            format.writeList(
+                    "included_variants",
+                    "included_variants",
+                    entity.getIncludedVariants().orElse(ImmutableList.of()),
+                    ctxt
+            );
+            format.writeList(
+                    "excluded_variants",
+                    "excluded_variants",
+                    entity.getExcludedVariants().orElse(ImmutableList.of()),
+                    ctxt
+            );
+        }
+
         format.writeField("id", idCode.encode(channel.getId().toBigInteger()));
         format.writeField("uri", channel.getCanonicalUri());
         format.writeList(IMAGE_WRITER, channel.getImages(), ctxt);
@@ -115,11 +133,12 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
 
     private boolean contextHasAnnotation(OutputContext ctxt, Annotation annotation) {
 
-        return (!com.google.common.base.Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
+        return !com.google.common.base.Strings.isNullOrEmpty(ctxt.getRequest().getParameter("annotations"))
                 &&
                 Splitter.on(',')
                         .splitToList(
                                 ctxt.getRequest().getParameter("annotations")
-                        ).contains(annotation.toKey()));
+                        ).contains(annotation.toKey());
     }
+
 }

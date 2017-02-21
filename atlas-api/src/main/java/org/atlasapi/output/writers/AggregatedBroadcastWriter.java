@@ -5,7 +5,6 @@ import com.google.common.primitives.Ints;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.AggregatedBroadcast;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.entity.Alias;
@@ -53,7 +52,7 @@ public class AggregatedBroadcastWriter implements EntityListWriter<AggregatedBro
     ) throws IOException {
 
         Broadcast broadcast = entity.getBroadcast();
-        Channel channel = entity.getChannel();
+        Channel channel = entity.getResolvedChannel().getChannel();
 
         ImmutableList.Builder<Alias> aliases = ImmutableList.builder();
         Alias idAlias = aliasMapping.apply(broadcast);
@@ -77,7 +76,7 @@ public class AggregatedBroadcastWriter implements EntityListWriter<AggregatedBro
                 )
         );
 
-        writer.writeObject(channelWriter, ResolvedChannel.builder(channel).build(), ctxt);
+        writer.writeObject(channelWriter, entity.getResolvedChannel(), ctxt);
 
         writer.writeField("schedule_date", broadcast.getScheduleDate());
         writer.writeField("repeat", broadcast.getRepeat());

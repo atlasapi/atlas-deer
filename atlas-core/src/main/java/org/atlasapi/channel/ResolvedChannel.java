@@ -1,7 +1,6 @@
 package org.atlasapi.channel;
 
 import java.util.List;
-import java.util.Set;
 
 import com.google.common.base.Optional;
 
@@ -13,6 +12,8 @@ public class ResolvedChannel {
     private final Optional<List<ChannelGroupSummary>> channelGroupSummaries;
     private final Optional<Channel> parentChannel;
     private final Optional<Iterable<Channel>> channelVariations;
+    private final java.util.Optional<List<String>> includedVariants;
+    private final java.util.Optional<List<String>> excludedVariants;
     private Optional<ChannelGroupMembership> channelGroupMembership;
 
     private ResolvedChannel(
@@ -20,13 +21,17 @@ public class ResolvedChannel {
             Optional<List<ChannelGroupSummary>> channelGroupSummaries,
             Optional<Channel> parentChannel,
             Optional<Iterable<Channel>> channelVariations,
-            Optional<ChannelGroupMembership> channelGroupMembership
+            Optional<ChannelGroupMembership> channelGroupMembership,
+            java.util.Optional<List<String>> includedVariants,
+            java.util.Optional<List<String>> excludedVariants
     ) {
         this.channel = checkNotNull(channel);
         this.channelGroupSummaries = checkNotNull(channelGroupSummaries);
         this.parentChannel = checkNotNull(parentChannel);
         this.channelVariations = checkNotNull(channelVariations);
         this.channelGroupMembership = checkNotNull(channelGroupMembership);
+        this.includedVariants = checkNotNull(includedVariants);
+        this.excludedVariants = checkNotNull(excludedVariants);
     }
 
     public static Builder builder(Channel channel) {
@@ -53,6 +58,14 @@ public class ResolvedChannel {
         return channelGroupMembership;
     }
 
+    public java.util.Optional<List<String>> getIncludedVariants() {
+        return includedVariants;
+    }
+
+    public java.util.Optional<List<String>> getExcludedVariants() {
+        return excludedVariants;
+    }
+
     public static class Builder {
 
         private final Channel channel;
@@ -60,6 +73,8 @@ public class ResolvedChannel {
         private Optional<Channel> parentChannel = Optional.absent();
         private Optional<Iterable<Channel>> channelVariations = Optional.absent();
         private Optional<ChannelGroupMembership> channelGroupMembership = Optional.absent();
+        private java.util.Optional<List<String>> includedVariants = java.util.Optional.empty();
+        private java.util.Optional<List<String>> excludedVariants = java.util.Optional.empty();
 
         private Builder(Channel channel) {
             this.channel = channel;
@@ -85,13 +100,25 @@ public class ResolvedChannel {
             return this;
         }
 
+        public Builder withIncludedVariants(java.util.Optional<List<String>> includedVariants) {
+            this.includedVariants = includedVariants;
+            return this;
+        }
+
+        public Builder withExcludedVariants(java.util.Optional<List<String>> excludedVariants) {
+            this.excludedVariants = excludedVariants;
+            return this;
+        }
+
         public ResolvedChannel build() {
             return new ResolvedChannel(
                     channel,
                     channelGroupSummaries,
                     parentChannel,
                     channelVariations,
-                    channelGroupMembership
+                    channelGroupMembership,
+                    includedVariants,
+                    excludedVariants
             );
         }
 
@@ -100,7 +127,9 @@ public class ResolvedChannel {
                     .withParentChannel(resolvedChannel.getParentChannel())
                     .withChannelVariations(resolvedChannel.getChannelVariations())
                     .withChannelGroupSummaries(resolvedChannel.getChannelGroupSummaries())
-                    .withChannelGroupMembership(resolvedChannel.getChannelGroupMembership());
+                    .withChannelGroupMembership(resolvedChannel.getChannelGroupMembership())
+                    .withIncludedVariants(resolvedChannel.getIncludedVariants())
+                    .withExcludedVariants(resolvedChannel.getExcludedVariants());
         }
     }
 

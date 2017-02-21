@@ -1,31 +1,31 @@
 package org.atlasapi.content;
 
-import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ResolvedChannel;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class AggregatedBroadcast {
 
     private final Broadcast broadcast;
-    private final Channel channel;
+    private final ResolvedChannel resolvedChannel;
     private final boolean channelIsParent;
 
-    private AggregatedBroadcast(Broadcast broadcast, Channel channel) {
+    private AggregatedBroadcast(Broadcast broadcast, ResolvedChannel resolvedChannel) {
         this.broadcast = checkNotNull(broadcast);
-        this.channel = checkNotNull(channel);
-        channelIsParent = !broadcast.getChannelId().equals(channel.getId());
+        this.resolvedChannel = checkNotNull(resolvedChannel);
+        channelIsParent = !broadcast.getChannelId().equals(resolvedChannel.getChannel().getId());
     }
 
-    public static AggregatedBroadcast create(Broadcast broadcast, Channel channel) {
-        return new AggregatedBroadcast(broadcast, channel);
+    public static AggregatedBroadcast create(Broadcast broadcast, ResolvedChannel resolvedChannel) {
+        return new AggregatedBroadcast(broadcast, resolvedChannel);
     }
 
     public Broadcast getBroadcast() {
         return broadcast;
     }
 
-    public Channel getChannel() {
-        return channel;
+    public ResolvedChannel getResolvedChannel() {
+        return resolvedChannel;
     }
 
     public boolean channelIsParent() {
