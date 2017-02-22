@@ -20,13 +20,16 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
 
     private final AggregatedBroadcastWriter aggregatedBroadcastWriter;
     private final BroadcastAggregator broadcastAggregator;
+    private final NumberToShortStringCodec codec;
 
     private AggregatedBroadcastsAnnotation(
             AggregatedBroadcastWriter aggregatedBroadcastWriter,
-            BroadcastAggregator broadcastAggregator
+            BroadcastAggregator broadcastAggregator,
+            NumberToShortStringCodec codec
     ) {
         this.aggregatedBroadcastWriter = aggregatedBroadcastWriter;
         this.broadcastAggregator = broadcastAggregator;
+        this.codec = codec;
     }
 
     public static AggregatedBroadcastsAnnotation create(
@@ -36,6 +39,7 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
         return new AggregatedBroadcastsAnnotation(
                 AggregatedBroadcastWriter.create(codec),
                 BroadcastAggregator.create(channelResolver)
+                codec
         );
     }
 
@@ -59,6 +63,7 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
                 ctxt.getRequest()
                         .getParameter(Attributes.DOWNWEIGH.externalName())
                         .split(","))
+                .map(codec::decode)
                 .map(Id::valueOf)
                 .collect(MoreCollectors.toImmutableList());
 

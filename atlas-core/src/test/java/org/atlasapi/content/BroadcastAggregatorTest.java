@@ -10,6 +10,7 @@ import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ChannelRef;
 import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.Platform;
+import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
@@ -17,12 +18,15 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -65,8 +69,32 @@ public class BroadcastAggregatorTest {
     }
 
     @Test
-    public void downweighChannelIsNotFirst() throws Exception {
-        //TODO: write this test
+    public void downweighChannelBroadcastIsNotFirst() throws Exception {
+
+        Broadcast downweighedBroadcast1 = new Broadcast(Id.valueOf(333L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
+        Broadcast normalBroadcast1 = new Broadcast(Id.valueOf(111L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
+        Broadcast normalBroadcast2 = new Broadcast(Id.valueOf(222L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
+
+
+        Collection<AggregatedBroadcast> aggregatedBroadcasts = ImmutableSet.of(
+                AggregatedBroadcast.create(downweighedBroadcast1, ResolvedChannel.builder(getMockChannel(333L)).build()),
+                AggregatedBroadcast.create(normalBroadcast1, ResolvedChannel.builder(getMockChannel(111L)).build()),
+                AggregatedBroadcast.create(normalBroadcast2, ResolvedChannel.builder(getMockChannel(222L)).build())
+        );
+
+        assertThat(aggregatedBroadcasts.iterator().next().getBroadcast(), is(downweighedBroadcast1));
+
+        Set<AggregatedBroadcast> sortedBroadcasts = broadcastAggregator.sortByDownweighChannelIds(
+                ImmutableList.of(Id.valueOf(333L)),
+                aggregatedBroadcasts
+        );
+
+        assertFalse(sortedBroadcasts.iterator().next().getBroadcast().equals(downweighedBroadcast1));
+        assertTrue(sortedBroadcasts.stream()
+                .map(AggregatedBroadcast::getBroadcast)
+                .anyMatch(broadcast -> broadcast.equals(downweighedBroadcast1))
+        );
+
     }
 
     @Test
@@ -157,17 +185,23 @@ public class BroadcastAggregatorTest {
 
     private ListenableFuture<Resolved<Channel>> resolvedChannel(long id) throws Exception {
 
-        String title = "Parent ref" + id;
-
         ListenableFuture<Resolved<Channel>> listenableFuture = mock(ListenableFuture.class);
-        Channel channel = mock(Channel.class);
-
-        when(channel.getTitle()).thenReturn(title);
-        when(channel.getId()).thenReturn(Id.valueOf(id));
+        Channel channel = getMockChannel(id);
 
         when(listenableFuture.get()).thenReturn(Resolved.valueOf(ImmutableList.of(channel)));
 
         return listenableFuture;
+    }
+
+    private Channel getMockChannel(long id) {
+        Channel channel = mock(Channel.class);
+
+        String title = "Parent ref" + id;
+
+        when(channel.getTitle()).thenReturn(title);
+        when(channel.getId()).thenReturn(Id.valueOf(id));
+
+        return channel;
     }
 
 }

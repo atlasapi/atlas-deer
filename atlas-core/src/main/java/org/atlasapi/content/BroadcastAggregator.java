@@ -3,7 +3,6 @@ package org.atlasapi.content;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -110,11 +109,12 @@ public class BroadcastAggregator {
         ImmutableSet.Builder<AggregatedBroadcast> broadcastBuilder = ImmutableSet.builder();
 
         Optional<AggregatedBroadcast> keyBroadcast = aggregatedBroadcasts.stream()
-                .filter(aggregatedBroadcast -> ids.contains(aggregatedBroadcast.getBroadcast()
+                .filter(aggregatedBroadcast -> !ids.contains(aggregatedBroadcast.getBroadcast()
                         .getChannelId()))
                 .findFirst();
 
-        if (!keyBroadcast.isPresent()) {
+        if (!keyBroadcast.isPresent()
+                || aggregatedBroadcasts.iterator().next().equals(keyBroadcast.get())) {
             return ImmutableSet.copyOf(aggregatedBroadcasts);
         }
 
