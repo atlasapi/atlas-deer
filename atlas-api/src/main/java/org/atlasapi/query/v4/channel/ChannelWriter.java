@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Channel;
@@ -18,6 +17,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
 import org.atlasapi.output.writers.AliasWriter;
+import org.atlasapi.output.writers.ChannelVariantRefWriter;
 import org.atlasapi.output.writers.ImageListWriter;
 import org.atlasapi.output.writers.RelatedLinkWriter;
 import org.atlasapi.query.common.exceptions.MissingResolvedDataException;
@@ -43,8 +43,11 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
 
     private final String listName;
     private final String fieldName;
-    private final NumberToShortStringCodec idCode = SubstitutionTableNumberCodec.lowerCaseOnly();
+    private final NumberToShortStringCodec idCodec = SubstitutionTableNumberCodec.lowerCaseOnly();
     private final ChannelGroupSummaryWriter channelGroupSummaryWriter;
+    private final ChannelVariantRefWriter includedVariantWriter;
+    private final ChannelVariantRefWriter excludedVariantWriter;
+
 
     private ChannelWriter(
             String listName,
@@ -54,6 +57,17 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
         this.listName = checkNotNull(listName);
         this.fieldName = checkNotNull(fieldName);
         this.channelGroupSummaryWriter = checkNotNull(channelGroupSummaryWriter);
+
+        includedVariantWriter = ChannelVariantRefWriter.create(
+                "included_variant",
+                "included_variants",
+                idCodec
+        );
+        excludedVariantWriter = ChannelVariantRefWriter.create(
+                "excluded_variant",
+                "excluded_variants",
+                idCodec
+        );
     }
 
     public static ChannelWriter create(
@@ -83,20 +97,18 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
 
         if (contextHasAnnotation(ctxt, Annotation.AGGREGATED_BROADCASTS)) {
             format.writeList(
-                    "included_variants",
-                    "included_variants",
+                    includedVariantWriter,
                     entity.getIncludedVariants().orElse(ImmutableList.of()),
                     ctxt
             );
             format.writeList(
-                    "excluded_variants",
-                    "excluded_variants",
+                    excludedVariantWriter,
                     entity.getExcludedVariants().orElse(ImmutableList.of()),
                     ctxt
             );
         }
 
-        format.writeField("id", idCode.encode(channel.getId().toBigInteger()));
+        format.writeField("id", idCodec.encode(channel.getId().toBigInteger()));
         format.writeField("uri", channel.getCanonicalUri());
         format.writeList(IMAGE_WRITER, channel.getImages(), ctxt);
         format.writeList(AVAILABLE_FROM_WRITER, channel.getAvailableFrom(), ctxt);

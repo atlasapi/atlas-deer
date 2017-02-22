@@ -147,7 +147,7 @@ public class BroadcastAggregator {
             ChannelRef channelRef,
             Collection<AggregatedBroadcast> broadcasts
     ) {
-        // If theres just one, no need to merge
+        // If there's just one, no need to merge
         if (broadcasts.size() == 1) {
             return Iterables.getOnlyElement(broadcasts);
         }
@@ -167,14 +167,15 @@ public class BroadcastAggregator {
 
     private ResolvedChannel buildMergedChannel(Channel parent, Map<Id, String> channelIdsAndTitles) {
 
-        ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(Channel.builderFrom(parent)
-                .withTitles(ImmutableList.of(
-                        new TemporalField<>(parent.getTitle(), null, null)
-                ))
-                .build()
+        ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(
+                Channel.builderFrom(parent)
+                        .withTitles(ImmutableList.of(
+                                new TemporalField<>(parent.getTitle(), null, null)
+                        ))
+                        .build()
         );
 
-        return getMergedResolvedChannel(resolvedChannelBuilder, parent, channelIdsAndTitles).build();
+        return addChannelVariants(resolvedChannelBuilder, parent, channelIdsAndTitles).build();
     }
 
     private Set<Broadcast> removeBroadcastsNotOnPlatform(
@@ -191,22 +192,33 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableSet());
     }
 
-    private ResolvedChannel.Builder getMergedResolvedChannel(ResolvedChannel.Builder builder, Channel parent, Map<Id, String> children) {
+    private ResolvedChannel.Builder addChannelVariants(
+            ResolvedChannel.Builder builder,
+            Channel parent,
+            Map<Id, String> children
+    ) {
 
         builder.withIncludedVariants(
-                Optional.of(parseChildTitles(parent.getTitle(), children.values()))
+                Optional.of(getIncludedVariantRefs(parent, children.entrySet()))
         );
         builder.withExcludedVariants(
-                Optional.of(resolveMissingChildren(parent, children.keySet()))
+                Optional.of(resolveExcludedVariantRefs(parent, children.keySet()))
         );
         return builder;
 
     }
 
-    private List<String> parseChildTitles(String parent, Collection<String> children) {
+    // Create refs of resolved channels
+    private List<ChannelVariantRef> getIncludedVariantRefs(
+            Channel parent,
+            Set<Map.Entry<Id, String>> children
+    ) {
 
         return children.stream()
-                .map(child -> parseChildTitle(parent, child))
+                .map(entry -> ChannelVariantRef.create(
+                        parseChildTitle(parent.getTitle(), entry.getValue()),
+                        entry.getKey()
+                ))
                 .collect(MoreCollectors.toImmutableList());
     }
 
@@ -214,13 +226,16 @@ public class BroadcastAggregator {
         return child.replaceAll(parent, "").trim();
     }
 
-    private List<String> resolveMissingChildren(Channel parent, Set<Id> ids) {
+    // Create refs of unresolved channels
+    private List<ChannelVariantRef> resolveExcludedVariantRefs(Channel parent, Set<Id> ids) {
         return parent.getVariations().stream()
                 .filter(channelRef -> !ids.contains(channelRef.getId()))
                 .map(channelRef -> resolveChannel(channelRef.getId()))
-                .map(Channel::getTitle)
-                .map(title -> parseChildTitle(parent.getTitle(), title))
-                .collect(Collectors.toList());
+                .map(channel -> ChannelVariantRef.create(
+                        parseChildTitle(parent.getTitle(), channel.getTitle()),
+                        channel.getId())
+                )
+                .collect(MoreCollectors.toImmutableList());
     }
 
 }
