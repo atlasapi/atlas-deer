@@ -3,6 +3,7 @@ package org.atlasapi.content;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -79,29 +80,6 @@ public class BroadcastAggregator {
 
     }
 
-    private Set<AggregatedBroadcast> sortByDownweighChannelIds(List<Id> ids, Collection<AggregatedBroadcast> aggregatedBroadcasts) {
-        if (ids.isEmpty()) {
-            return ImmutableSet.copyOf(aggregatedBroadcasts);
-        }
-
-        ImmutableSet.Builder<AggregatedBroadcast> broadcastBuilder = ImmutableSet.builder();
-
-        Optional<AggregatedBroadcast> keyBroadcast = aggregatedBroadcasts.stream()
-                .filter(aggregatedBroadcast -> ids.contains(aggregatedBroadcast.getBroadcast()
-                        .getChannelId()))
-                .findFirst();
-
-        if (!keyBroadcast.isPresent()) {
-            return ImmutableSet.copyOf(aggregatedBroadcasts);
-        }
-
-        return broadcastBuilder.add(keyBroadcast.get())
-                .addAll(aggregatedBroadcasts.stream()
-                        .filter(aggregatedBroadcast -> !aggregatedBroadcasts.equals(keyBroadcast.get()))
-                        .collect(Collectors.toList()))
-                .build();
-    }
-
     private Set<AggregatedBroadcast> aggregateBroadcastsInternal(Collection<AggregatedBroadcast> broadcasts) {
 
         // Map parent channels to parent
@@ -122,6 +100,29 @@ public class BroadcastAggregator {
         }
 
         return aggregatedBroadcasts;
+    }
+
+    Set<AggregatedBroadcast> sortByDownweighChannelIds(List<Id> ids, Collection<AggregatedBroadcast> aggregatedBroadcasts) {
+        if (ids.isEmpty()) {
+            return ImmutableSet.copyOf(aggregatedBroadcasts);
+        }
+
+        ImmutableSet.Builder<AggregatedBroadcast> broadcastBuilder = ImmutableSet.builder();
+
+        Optional<AggregatedBroadcast> keyBroadcast = aggregatedBroadcasts.stream()
+                .filter(aggregatedBroadcast -> ids.contains(aggregatedBroadcast.getBroadcast()
+                        .getChannelId()))
+                .findFirst();
+
+        if (!keyBroadcast.isPresent()) {
+            return ImmutableSet.copyOf(aggregatedBroadcasts);
+        }
+
+        return broadcastBuilder.add(keyBroadcast.get())
+                .addAll(aggregatedBroadcasts.stream()
+                        .filter(aggregatedBroadcast -> !aggregatedBroadcasts.equals(keyBroadcast.get()))
+                        .collect(Collectors.toList()))
+                .build();
     }
 
     @Nullable
@@ -178,7 +179,7 @@ public class BroadcastAggregator {
         return addChannelVariants(resolvedChannelBuilder, parent, channelIdsAndTitles).build();
     }
 
-    private Set<Broadcast> removeBroadcastsNotOnPlatform(
+    Set<Broadcast> removeBroadcastsNotOnPlatform(
             Iterable<Broadcast> broadcasts,
             Platform platform
     ) {
@@ -209,7 +210,7 @@ public class BroadcastAggregator {
     }
 
     // Create refs of resolved channels
-    private List<ChannelVariantRef> getIncludedVariantRefs(
+    List<ChannelVariantRef> getIncludedVariantRefs(
             Channel parent,
             Set<Map.Entry<Id, String>> children
     ) {
@@ -222,20 +223,20 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableList());
     }
 
-    private String parseChildTitle(String parent, String child) {
-        return child.replaceAll(parent, "").trim();
-    }
-
     // Create refs of unresolved channels
-    private List<ChannelVariantRef> resolveExcludedVariantRefs(Channel parent, Set<Id> ids) {
+    List<ChannelVariantRef> resolveExcludedVariantRefs(Channel parent, Set<Id> ids) {
         return parent.getVariations().stream()
-                .filter(channelRef -> !ids.contains(channelRef.getId()))
+                .filter(channelRef -> ids.contains(channelRef.getId()))
                 .map(channelRef -> resolveChannel(channelRef.getId()))
                 .map(channel -> ChannelVariantRef.create(
                         parseChildTitle(parent.getTitle(), channel.getTitle()),
                         channel.getId())
                 )
                 .collect(MoreCollectors.toImmutableList());
+    }
+
+    String parseChildTitle(String parent, String child) {
+        return child.replaceAll(parent, "").trim();
     }
 
 }
