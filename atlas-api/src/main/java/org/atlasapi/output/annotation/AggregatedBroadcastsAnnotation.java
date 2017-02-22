@@ -38,7 +38,7 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
     ) {
         return new AggregatedBroadcastsAnnotation(
                 AggregatedBroadcastWriter.create(codec),
-                BroadcastAggregator.create(channelResolver)
+                BroadcastAggregator.create(channelResolver),
                 codec
         );
     }
