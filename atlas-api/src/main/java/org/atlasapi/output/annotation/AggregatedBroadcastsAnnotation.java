@@ -1,5 +1,7 @@
 package org.atlasapi.output.annotation;
 
+import com.google.api.client.util.Lists;
+import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.ChannelResolver;
@@ -59,13 +61,20 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
             FieldWriter writer,
             OutputContext ctxt
     ) throws IOException {
-        List<Id> downweighChannelIds = Arrays.stream(
-                ctxt.getRequest()
-                        .getParameter(Attributes.DOWNWEIGH.externalName())
-                        .split(","))
-                .map(codec::decode)
-                .map(Id::valueOf)
-                .collect(MoreCollectors.toImmutableList());
+
+        String[] downweighIds = ctxt.getRequest()
+                .getParameterValues(Attributes.DOWNWEIGH.externalName());
+
+        List<Id> downweighChannelIds;
+
+        if (downweighIds == null || downweighIds.length == 0) {
+            downweighChannelIds = ImmutableList.of();
+        } else {
+            downweighChannelIds = Arrays.stream(downweighIds)
+                    .map(codec::decode)
+                    .map(Id::valueOf)
+                    .collect(MoreCollectors.toImmutableList());
+        }
 
         writer.writeList(
                 aggregatedBroadcastWriter,

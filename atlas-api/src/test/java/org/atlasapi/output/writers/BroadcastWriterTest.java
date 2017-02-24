@@ -27,7 +27,6 @@ public class BroadcastWriterTest {
 
     @Mock private NumberToShortStringCodec codec;
     @Mock private ChannelResolver channelResolver;
-    @Mock private ChannelGroupResolver channelGroupResolver;
 
     @Mock private FieldWriter writer;
     @Mock private OutputContext context;

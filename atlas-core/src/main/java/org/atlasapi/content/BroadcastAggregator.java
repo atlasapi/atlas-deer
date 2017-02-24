@@ -3,7 +3,9 @@ package org.atlasapi.content;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -17,6 +19,7 @@ import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
 import org.atlasapi.media.channel.TemporalField;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +78,10 @@ public class BroadcastAggregator {
             }
         }
 
-        return sortByDownweighChannelIds(downweighChannelIds, broadcastMap.values());
+        return sortByDownweighChannelIds(
+                downweighChannelIds,
+                sortBroadcastsByDateTime(broadcastMap)
+        );
 
     }
 
@@ -123,6 +129,19 @@ public class BroadcastAggregator {
                         .filter(aggregatedBroadcast -> !aggregatedBroadcasts.equals(keyBroadcast.get()))
                         .collect(Collectors.toList()))
                 .build();
+    }
+
+    Collection<AggregatedBroadcast> sortBroadcastsByDateTime(Multimap<DateTime, AggregatedBroadcast> broadcastMap) {
+
+        List<DateTime> dateTimes = Lists.newArrayList(broadcastMap.keySet());
+        dateTimes.sort(DateTimeComparator.getInstance());
+
+        Ordering<AggregatedBroadcast> dateTimeOrdering = Ordering.explicit(dateTimes)
+                .onResultOf(aggregatedBroadcast ->
+                        aggregatedBroadcast.getBroadcast().getTransmissionTime()
+                );
+
+        return dateTimeOrdering.sortedCopy(broadcastMap.values());
     }
 
     @Nullable

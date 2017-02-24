@@ -30,10 +30,10 @@ public class AggregatedBroadcastWriter implements EntityListWriter<AggregatedBro
     private AggregatedBroadcastWriter(NumberToShortStringCodec codec) {
         this.codec = codec;
 
-        aliasWriter = new AliasWriter();
-        aliasMapping = new BroadcastIdAliasMapping();
-        blackoutRestrictionWriter = new BlackoutRestrictionWriter();
-        channelWriter = ChannelWriter.create(
+        this.aliasWriter = new AliasWriter();
+        this.aliasMapping = new BroadcastIdAliasMapping();
+        this.blackoutRestrictionWriter = new BlackoutRestrictionWriter();
+        this.channelWriter = ChannelWriter.create(
                 "channels",
                 "channel",
                 ChannelGroupSummaryWriter.create(new SubstitutionTableNumberCodec())
@@ -67,14 +67,7 @@ public class AggregatedBroadcastWriter implements EntityListWriter<AggregatedBro
                 "broadcast_duration",
                 Ints.saturatedCast(broadcast.getBroadcastDuration().getStandardSeconds())
         );
-        writer.writeField(
-                "broadcast_on",
-                codec.encode(
-                        entity.channelIsParent()
-                        ? channel.getId().toBigInteger()
-                        : broadcast.getChannelId().toBigInteger()
-                )
-        );
+        writer.writeField("broadcast_on", codec.encode(channel.getId().toBigInteger()));
 
         writer.writeObject(channelWriter, entity.getResolvedChannel(), ctxt);
 

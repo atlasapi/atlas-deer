@@ -95,7 +95,7 @@ public class ChannelWriter implements EntityListWriter<ResolvedChannel> {
 
         format.writeField("title", channel.getTitle());
 
-        if (contextHasAnnotation(ctxt, Annotation.AGGREGATED_BROADCASTS)) {
+        if (entity.getIncludedVariants().isPresent() || entity.getExcludedVariants().isPresent()) {
             format.writeList(
                     includedVariantWriter,
                     entity.getIncludedVariants().orElse(ImmutableList.of()),

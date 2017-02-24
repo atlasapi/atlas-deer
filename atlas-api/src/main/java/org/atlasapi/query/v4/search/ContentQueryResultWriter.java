@@ -67,6 +67,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
     }
 
+    // TODO: Clarify
     private OutputContext outputContext(QueryContext queryContext) throws IOException {
         String regionParam = queryContext.getRequest()
                 .getParameter(Attributes.REGION.externalName());
@@ -119,7 +120,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
     private ChannelGroup<?> resolveChannelGroup(String idParam) throws IOException {
 
         Id id = Id.valueOf(codec.decode(idParam));
-        
+
         Optional<ChannelGroup<?>> channelGroupOptional =  Futures.getChecked(
                 channelGroupResolver.resolveIds(ImmutableList.of(id)),
                 IOException.class,

@@ -4,7 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelNumbering;
 import org.atlasapi.channel.ChannelRef;
@@ -28,6 +30,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class BroadcastAggregatorTest {
@@ -65,7 +69,6 @@ public class BroadcastAggregatorTest {
         includedVariantIds = ImmutableSet.of(Id.valueOf(111L), Id.valueOf(222L), Id.valueOf(333L));
         excludedVariantIds = ImmutableSet.of(Id.valueOf(444L), Id.valueOf(555L));
 
-
     }
 
     @Test
@@ -98,12 +101,52 @@ public class BroadcastAggregatorTest {
     }
 
     @Test
+    public void aggregatedBroadcastsAreSortedByDateTime() throws Exception {
+        ResolvedChannel channel = mock(ResolvedChannel.class);
+
+        Set<AggregatedBroadcast> broadcasts = ImmutableSet.of(
+                AggregatedBroadcast.create(getFutureBroadcast(40, 7, 8), channel),
+                AggregatedBroadcast.create(getFutureBroadcast(30, 5, 6), channel),
+                AggregatedBroadcast.create(getFutureBroadcast(10, 1, 2), channel),
+                AggregatedBroadcast.create(getFutureBroadcast(20, 3, 4), channel)
+        );
+
+        Multimap<DateTime, AggregatedBroadcast> broadcastMultimap = broadcasts.stream()
+                .collect(MoreCollectors.toImmutableListMultiMap(
+                        aggregatedBroadcast -> aggregatedBroadcast.getBroadcast().getTransmissionTime(),
+                        aggregatedBroadcast -> aggregatedBroadcast
+                ));
+
+        ImmutableList<AggregatedBroadcast> sortedBroadcasts = ImmutableList.copyOf(
+                broadcastAggregator.sortBroadcastsByDateTime(broadcastMultimap)
+        );
+
+        assertThat(
+                sortedBroadcasts.get(0).getBroadcast().getChannelId().longValue(),
+                is(10L)
+        );
+        assertThat(
+                sortedBroadcasts.get(1).getBroadcast().getChannelId().longValue(),
+                is(20L)
+        );
+        assertThat(
+                sortedBroadcasts.get(2).getBroadcast().getChannelId().longValue(),
+                is(30L)
+        );
+        assertThat(
+                sortedBroadcasts.get(3).getBroadcast().getChannelId().longValue(),
+                is(40L)
+        );
+
+    }
+
+    @Test
     public void broadcastsAreRemovedIfNotOnPlatform() throws Exception {
 
-        Broadcast validBroadcast = new Broadcast(Id.valueOf(111L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
-        Broadcast invalidBroadcast = new Broadcast(Id.valueOf(333L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
+        Broadcast broadcastOnPlatform = getFutureBroadcast(111L, 1, 2);
+        Broadcast broadcastNotOnPlatform = getFutureBroadcast(333L, 1, 2);
 
-        Iterable<Broadcast> unfilteredBroadcasts = ImmutableList.of(validBroadcast, invalidBroadcast);
+        Iterable<Broadcast> unfilteredBroadcasts = ImmutableList.of(broadcastOnPlatform, broadcastNotOnPlatform);
 
         Platform platform = new Platform(
                 Id.valueOf(80085L),
@@ -117,10 +160,13 @@ public class BroadcastAggregatorTest {
                 ImmutableSet.of()
         );
 
-        Set<Broadcast> filteredBroadcasts = broadcastAggregator.removeBroadcastsNotOnPlatform(unfilteredBroadcasts, platform);
+        Set<Broadcast> filteredBroadcasts = broadcastAggregator.removeBroadcastsNotOnPlatform(
+                unfilteredBroadcasts,
+                platform
+        );
 
         assertThat(filteredBroadcasts.size(), is(1));
-        assertThat(Iterables.getOnlyElement(filteredBroadcasts), is(validBroadcast));
+        assertThat(Iterables.getOnlyElement(filteredBroadcasts), is(broadcastOnPlatform));
     }
 
     @Test
@@ -153,6 +199,7 @@ public class BroadcastAggregatorTest {
                 excludedVariantIds
         );
 
+        verify(channelResolver, times(2));
         assertThat(excludedRefs.size(), is(2));
         assertThat(
                 excludedRefs.stream().allMatch(channelVariantRef ->
@@ -202,6 +249,14 @@ public class BroadcastAggregatorTest {
         when(channel.getId()).thenReturn(Id.valueOf(id));
 
         return channel;
+    }
+
+    private Broadcast getFutureBroadcast(long id, int startNowPlusHours, int endNowPlusHours) {
+        return new Broadcast(
+                Id.valueOf(id),
+                DateTime.now().plusHours(startNowPlusHours),
+                DateTime.now().plusHours(endNowPlusHours)
+        );
     }
 
 }
