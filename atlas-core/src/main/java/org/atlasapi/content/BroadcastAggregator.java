@@ -1,10 +1,13 @@
 package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -70,16 +73,22 @@ public class BroadcastAggregator {
                 ));
 
         // Aggregate the broadcasts with same transmission times
+
+        ImmutableMultimap.Builder<DateTime, AggregatedBroadcast> aggregatedBroadcasts = ImmutableMultimap.builder();
+
         for(DateTime dateTime : broadcastMap.keySet()) {
             Collection<AggregatedBroadcast> sameTimeBroadcasts = broadcastMap.get(dateTime);
             if (sameTimeBroadcasts.size() > 1) {
-                broadcastMap.replaceValues(dateTime, aggregateBroadcastsInternal(sameTimeBroadcasts));
+                aggregatedBroadcasts.putAll(
+                        dateTime,
+                        aggregateBroadcastsInternal(sameTimeBroadcasts)
+                );
             }
         }
 
         return sortByDownweighChannelIds(
                 downweighChannelIds,
-                sortBroadcastsByDateTime(broadcastMap)
+                sortBroadcastsByDateTime(aggregatedBroadcasts.build())
         );
 
     }
@@ -130,7 +139,7 @@ public class BroadcastAggregator {
                 .build();
     }
 
-    Collection<AggregatedBroadcast> sortBroadcastsByDateTime(Multimap<DateTime, AggregatedBroadcast> broadcastMap) {
+    Collection<AggregatedBroadcast> sortBroadcastsByDateTime(ImmutableMultimap<DateTime, AggregatedBroadcast> broadcastMap) {
 
         List<DateTime> dateTimes = Lists.newArrayList(broadcastMap.keySet());
         dateTimes.sort(DateTimeComparator.getInstance());
