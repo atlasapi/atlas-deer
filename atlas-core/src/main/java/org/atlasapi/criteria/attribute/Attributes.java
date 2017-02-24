@@ -67,7 +67,7 @@ public class Attributes {
     );
     public static final Attribute<Id> REGION = IdAttribute.list("region", Region.class);
 
-    public static final Attribute<Id> PLATFORM = IdAttribute.list("platform", Platform.class);
+    public static final Attribute<Id> PLATFORM = IdAttribute.single("platform", Platform.class);
 
     public static final Attribute<Id> DOWNWEIGH = IdAttribute.list("downweigh", Channel.class);
 

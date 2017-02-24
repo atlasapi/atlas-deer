@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupResolver;
@@ -26,7 +27,6 @@ import org.atlasapi.query.common.context.QueryContext;
 
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 
-import com.google.api.client.repackaged.com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -67,52 +67,53 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
 
     }
 
-    // TODO: Clarify
     private OutputContext outputContext(QueryContext queryContext) throws IOException {
         String regionParam = queryContext.getRequest()
                 .getParameter(Attributes.REGION.externalName());
         String platformParam = queryContext.getRequest()
                 .getParameter(Attributes.PLATFORM.externalName());
 
-        return OutputContext.valueOf(
-                queryContext,
-                resolveRegion(regionParam),
-                resolvePlatform(platformParam)
-        );
+        OutputContext.Builder builder = OutputContext.builder(queryContext);
+
+        if (!Strings.isNullOrEmpty(regionParam)) {
+            builder.withRegion(resolveRegion(regionParam));
+        }
+
+        if (!Strings.isNullOrEmpty(platformParam)) {
+            builder.withPlatform(resolvePlatform(platformParam));
+        }
+
+        return builder.build();
     }
 
-    @Nullable
     private Region resolveRegion(String id) throws IOException {
         ChannelGroup<?> channelGroup = resolveChannelGroup(id);
-        if (channelGroup instanceof Platform) {
+        if (channelGroup instanceof Region) {
             return (Region) channelGroup;
         } else {
-            Throwables.propagate(new NotAcceptableException(
+            throw new RuntimeException(new NotAcceptableException(
                     String.format(
                             "%s is a channel group of type '%s', should be 'region",
                             id,
                             channelGroup
                     )
             ));
-            return null;
         }
     }
 
-    @Nullable
     private Platform resolvePlatform(String id) throws IOException {
 
         ChannelGroup<?> channelGroup = resolveChannelGroup(id);
         if (channelGroup instanceof Platform) {
             return (Platform) channelGroup;
         } else {
-            Throwables.propagate(new NotAcceptableException(
+            throw new RuntimeException(new NotAcceptableException(
                     String.format(
                             "%s is a channel group of type '%s', should be 'platform",
                             id,
                             channelGroup
                     )
             ));
-            return null;
         }
     }
 
@@ -131,8 +132,7 @@ public class ContentQueryResultWriter extends QueryResultWriter<Content> {
         if (channelGroupOptional.isPresent()) {
             return channelGroupOptional.get();
         } else {
-           Throwables.propagate(new NotFoundException(id));
+           throw new RuntimeException(new NotFoundException(id));
         }
-        return null;
     }
 }
