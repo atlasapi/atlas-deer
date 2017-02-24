@@ -197,7 +197,7 @@ public class BroadcastAggregatorTest {
 
         List<ChannelVariantRef> excludedRefs = broadcastAggregator.resolveExcludedVariantRefs(
                 variantRefParent,
-                excludedVariantIds
+                includedVariantIds
         );
 
         assertThat(excludedRefs.size(), is(2));

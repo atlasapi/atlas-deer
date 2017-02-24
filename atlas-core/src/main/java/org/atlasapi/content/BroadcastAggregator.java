@@ -237,7 +237,7 @@ public class BroadcastAggregator {
     // Create refs of unresolved channels
     List<ChannelVariantRef> resolveExcludedVariantRefs(Channel parent, Set<Id> ids) {
         return parent.getVariations().stream()
-                .filter(channelRef -> ids.contains(channelRef.getId()))
+                .filter(channelRef -> !ids.contains(channelRef.getId()))
                 .map(channelRef -> resolveChannel(channelRef.getId()))
                 .map(channel -> ChannelVariantRef.create(
                         parseChildTitle(parent.getTitle(), channel.getTitle()),
