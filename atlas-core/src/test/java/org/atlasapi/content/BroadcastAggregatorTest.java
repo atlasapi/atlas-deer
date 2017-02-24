@@ -2,6 +2,7 @@ package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -111,7 +112,7 @@ public class BroadcastAggregatorTest {
                 AggregatedBroadcast.create(getFutureBroadcast(20, 3, 4), channel)
         );
 
-        Multimap<DateTime, AggregatedBroadcast> broadcastMultimap = broadcasts.stream()
+        ImmutableMultimap<DateTime, AggregatedBroadcast> broadcastMultimap = broadcasts.stream()
                 .collect(MoreCollectors.toImmutableListMultiMap(
                         aggregatedBroadcast -> aggregatedBroadcast.getBroadcast().getTransmissionTime(),
                         aggregatedBroadcast -> aggregatedBroadcast
