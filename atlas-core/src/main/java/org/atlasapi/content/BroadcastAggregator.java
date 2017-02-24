@@ -17,7 +17,6 @@ import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.ResourceRef;
-import org.atlasapi.media.channel.TemporalField;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeComparator;
 import org.slf4j.Logger;
@@ -181,21 +180,21 @@ public class BroadcastAggregator {
 
         return AggregatedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
-                buildMergedChannel(parent, channelIdAndTitles)
+                buildResolvedChannel(parent, channelIdAndTitles)
         );
     }
 
-    private ResolvedChannel buildMergedChannel(Channel parent, Map<Id, String> channelIdsAndTitles) {
+    private ResolvedChannel buildResolvedChannel(Channel parent, Map<Id, String> channelIdsAndTitles) {
 
-        ResolvedChannel.Builder resolvedChannelBuilder = ResolvedChannel.builder(
-                Channel.builderFrom(parent)
-                        .withTitles(ImmutableList.of(
-                                new TemporalField<>(parent.getTitle(), null, null)
-                        ))
-                        .build()
-        );
+        return ResolvedChannel.builder(parent)
+                .withIncludedVariants(
+                        Optional.of(getIncludedVariantRefs(parent, channelIdsAndTitles.entrySet()))
+                )
+                .withExcludedVariants(
+                        Optional.of(resolveExcludedVariantRefs(parent, channelIdsAndTitles.keySet()))
+                )
+                .build();
 
-        return addChannelVariants(resolvedChannelBuilder, parent, channelIdsAndTitles).build();
     }
 
     Set<Broadcast> removeBroadcastsNotOnPlatform(
@@ -210,22 +209,6 @@ public class BroadcastAggregator {
         return StreamSupport.stream(broadcasts.spliterator(), false)
                 .filter(broadcast -> platformIds.contains(broadcast.getChannelId()))
                 .collect(MoreCollectors.toImmutableSet());
-    }
-
-    private ResolvedChannel.Builder addChannelVariants(
-            ResolvedChannel.Builder builder,
-            Channel parent,
-            Map<Id, String> children
-    ) {
-
-        builder.withIncludedVariants(
-                Optional.of(getIncludedVariantRefs(parent, children.entrySet()))
-        );
-        builder.withExcludedVariants(
-                Optional.of(resolveExcludedVariantRefs(parent, children.keySet()))
-        );
-        return builder;
-
     }
 
     // Create refs of resolved channels
