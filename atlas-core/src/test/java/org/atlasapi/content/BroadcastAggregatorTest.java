@@ -199,7 +199,6 @@ public class BroadcastAggregatorTest {
                 excludedVariantIds
         );
 
-        verify(channelResolver, times(2));
         assertThat(excludedRefs.size(), is(2));
         assertThat(
                 excludedRefs.stream().allMatch(channelVariantRef ->
