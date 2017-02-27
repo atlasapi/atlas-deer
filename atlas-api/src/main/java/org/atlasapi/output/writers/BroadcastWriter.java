@@ -31,7 +31,7 @@ public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast
     private final NumberToShortStringCodec codec;
     private final ChannelWriter channelWriter;
 
-    public BroadcastWriter(
+    private BroadcastWriter(
             String listName,
             String fieldName,
             NumberToShortStringCodec codec

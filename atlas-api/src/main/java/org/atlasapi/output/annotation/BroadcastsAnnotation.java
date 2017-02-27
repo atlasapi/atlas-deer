@@ -48,7 +48,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             ChannelResolver channelResolver
     ) {
         return new BroadcastsAnnotation(
-                new BroadcastWriter(
+                BroadcastWriter.create(
                         "broadcasts",
                         "broadcast",
                         codec
@@ -71,8 +71,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
             OutputContext ctxt
     ) throws IOException {
         Stream<Broadcast> broadcastStream = item.getBroadcasts().stream()
-                .filter(Broadcast::isActivelyPublished)
-                .filter(b -> b.getTransmissionTime().isAfter(DateTime.now(DateTimeZone.UTC)));
+                .filter(Broadcast::isActivelyPublished);
 
         if (ctxt.getRegion().isPresent()) {
             List<ResolvedBroadcast> resolvedBroadcasts = StreamSupport.stream(
@@ -85,11 +84,7 @@ public class BroadcastsAnnotation extends OutputAnnotation<Content> {
                     .map(broadcast -> ResolvedBroadcast.create(broadcast, resolveChannel(broadcast)))
                     .collect(MoreCollectors.toImmutableList());
 
-            writer.writeList(
-                    broadcastWriter,
-                    resolvedBroadcasts,
-                    ctxt
-            );
+            writer.writeList(broadcastWriter, resolvedBroadcasts, ctxt);
         } else {
             writer.writeList(
                     broadcastWriter,

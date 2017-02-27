@@ -3,11 +3,9 @@ package org.atlasapi.output;
 import java.util.List;
 import java.util.Optional;
 
-import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
-import jnr.x86asm.OP;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.channel.Platform;
 import org.atlasapi.channel.Region;
@@ -19,7 +17,6 @@ import org.atlasapi.query.common.context.QueryContext;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
