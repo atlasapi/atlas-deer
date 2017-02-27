@@ -2,8 +2,6 @@ package org.atlasapi.query.v4.channel;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
@@ -23,6 +21,8 @@ import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.stream.MoreCollectors;
 
@@ -105,7 +105,7 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOperands()).thenReturn(
-                new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet())
+                AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet())
         );
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))
                 .thenReturn(
@@ -216,7 +216,7 @@ public class ChannelQueryExecutorTest {
         when(channelQuery.isListQuery()).thenReturn(true);
         when(channelQuery.getContext()).thenReturn(context);
         when(channelQuery.getOperands()).thenReturn(
-                new AttributeQuerySet(Sets.<AttributeQuery<Object>>newHashSet())
+                AttributeQuerySet.create(Sets.<AttributeQuery<Object>>newHashSet())
         );
 
         when(channelResolver.resolveChannels(any(ChannelQuery.class)))

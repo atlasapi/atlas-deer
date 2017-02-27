@@ -40,20 +40,28 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class FiltersBuilder {
 
-    public static TermsFilterBuilder buildForPublishers(String field,
-            Iterable<Publisher> publishers) {
+    private FiltersBuilder() {
+    }
+
+    public static TermsFilterBuilder buildForPublishers(
+            String field,
+            Iterable<Publisher> publishers
+    ) {
         return FilterBuilders.termsFilter(field, Iterables.transform(publishers, Publisher.TO_KEY));
     }
 
     public static TermsFilterBuilder buildForSpecializations(
-            Iterable<Specialization> specializations) {
+            Iterable<Specialization> specializations
+    ) {
         return FilterBuilders.termsFilter(
                 EsContent.SPECIALIZATION,
                 Iterables.transform(specializations, Enum::name)
         );
     }
 
-    public static FilterBuilder buildTopicIdFilter(List<List<InclusionExclusionId>> topicIdSets) {
+    public static FilterBuilder buildTopicIdFilter(
+            ImmutableList<ImmutableList<InclusionExclusionId>> topicIdSets
+    ) {
         ImmutableList.Builder<FilterBuilder> topicIdFilters = ImmutableList.builder();
         for (List<InclusionExclusionId> idSet : topicIdSets) {
             BoolFilterBuilder filterForThisSet = FilterBuilders.boolFilter();
@@ -67,8 +75,10 @@ public class FiltersBuilder {
         return orFilter;
     }
 
-    private static void addFilterForTopicId(BoolFilterBuilder filterBuilder,
-            InclusionExclusionId id) {
+    private static void addFilterForTopicId(
+            BoolFilterBuilder filterBuilder,
+            InclusionExclusionId id
+    ) {
         NestedFilterBuilder filterForId = FilterBuilders.nestedFilter(
                 EsContent.TOPICS + "." + EsTopic.TYPE_NAME,
                 FilterBuilders.termFilter(
@@ -83,7 +93,7 @@ public class FiltersBuilder {
         }
     }
 
-    public static FilterBuilder buildAvailabilityFilter() {
+    private static FilterBuilder buildAvailabilityFilter() {
         NestedFilterBuilder rangeFilter = FilterBuilders.nestedFilter(
                 EsContent.LOCATIONS,
                 FilterBuilders.andFilter(
@@ -101,9 +111,11 @@ public class FiltersBuilder {
         );
     }
 
-    public static FilterBuilder buildActionableFilter(Map<String, String> actionableParams,
+    public static FilterBuilder buildActionableFilter(
+            Map<String, String> actionableParams,
             Optional<Id> maybeRegionId,
-            ChannelGroupResolver channelGroupResolver) {
+            ChannelGroupResolver channelGroupResolver
+    ) {
         OrFilterBuilder orFilterBuilder = FilterBuilders.orFilter();
         if (actionableParams.get("location.available") != null) {
             orFilterBuilder.add(buildAvailabilityFilter());
@@ -127,9 +139,12 @@ public class FiltersBuilder {
         return orFilterBuilder;
     }
 
-    public static FilterBuilder buildBroadcastRangeFilter(DateTime broadcastTimeGreaterThan,
+    private static FilterBuilder buildBroadcastRangeFilter(
+            DateTime broadcastTimeGreaterThan,
             DateTime broadcastTimeLessThan,
-            Optional<Id> maybeRegionId, ChannelGroupResolver cgResolver) {
+            Optional<Id> maybeRegionId,
+            ChannelGroupResolver cgResolver
+    ) {
         if (broadcastTimeGreaterThan != null && broadcastTimeLessThan != null) {
             checkArgument(
                     !broadcastTimeGreaterThan.isAfter(broadcastTimeLessThan),
@@ -194,8 +209,10 @@ public class FiltersBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    public static FilterBuilder buildRegionFilter(Id regionId,
-            ChannelGroupResolver channelGroupResolver) {
+    private static FilterBuilder buildRegionFilter(
+            Id regionId,
+            ChannelGroupResolver channelGroupResolver
+    ) {
         ChannelGroup region;
         try {
             Resolved<ChannelGroup<?>> resolved = Futures.get(
