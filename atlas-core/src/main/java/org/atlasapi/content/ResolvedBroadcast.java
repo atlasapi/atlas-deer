@@ -4,18 +4,18 @@ import org.atlasapi.channel.ResolvedChannel;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class AggregatedBroadcast {
+public class ResolvedBroadcast {
 
     private final Broadcast broadcast;
     private final ResolvedChannel resolvedChannel;
 
-    private AggregatedBroadcast(Broadcast broadcast, ResolvedChannel resolvedChannel) {
+    private ResolvedBroadcast(Broadcast broadcast, ResolvedChannel resolvedChannel) {
         this.broadcast = checkNotNull(broadcast);
         this.resolvedChannel = checkNotNull(resolvedChannel);
     }
 
-    public static AggregatedBroadcast create(Broadcast broadcast, ResolvedChannel resolvedChannel) {
-        return new AggregatedBroadcast(broadcast, resolvedChannel);
+    public static ResolvedBroadcast create(Broadcast broadcast, ResolvedChannel resolvedChannel) {
+        return new ResolvedBroadcast(broadcast, resolvedChannel);
     }
 
     public Broadcast getBroadcast() {

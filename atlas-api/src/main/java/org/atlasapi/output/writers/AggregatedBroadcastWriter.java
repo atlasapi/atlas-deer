@@ -5,7 +5,7 @@ import com.google.common.primitives.Ints;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import org.atlasapi.channel.Channel;
-import org.atlasapi.content.AggregatedBroadcast;
+import org.atlasapi.content.ResolvedBroadcast;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.entity.Alias;
 import org.atlasapi.output.ChannelGroupSummaryWriter;
@@ -16,7 +16,7 @@ import org.atlasapi.query.v4.channel.ChannelWriter;
 
 import java.io.IOException;
 
-public class AggregatedBroadcastWriter implements EntityListWriter<AggregatedBroadcast> {
+public class AggregatedBroadcastWriter implements EntityListWriter<ResolvedBroadcast> {
 
     private static final String listName = "aggregated_broadcasts";
     private static final String fieldName = "aggregated_broadcast";
@@ -46,7 +46,7 @@ public class AggregatedBroadcastWriter implements EntityListWriter<AggregatedBro
 
     @Override
     public void write(
-            AggregatedBroadcast entity,
+            ResolvedBroadcast entity,
             FieldWriter writer,
             OutputContext ctxt
     ) throws IOException {
@@ -102,7 +102,7 @@ public class AggregatedBroadcastWriter implements EntityListWriter<AggregatedBro
     }
 
     @Override
-    public String fieldName(AggregatedBroadcast aggregatedBroadcast) {
+    public String fieldName(ResolvedBroadcast resolvedBroadcast) {
         return fieldName;
     }
 

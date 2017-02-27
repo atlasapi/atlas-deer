@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.common.stream.MoreCollectors;
 import org.atlasapi.channel.Channel;
@@ -31,8 +30,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class BroadcastAggregatorTest {
@@ -80,22 +77,22 @@ public class BroadcastAggregatorTest {
         Broadcast normalBroadcast2 = new Broadcast(Id.valueOf(222L), DateTime.now().plusHours(1), DateTime.now().plusHours(2));
 
 
-        Collection<AggregatedBroadcast> aggregatedBroadcasts = ImmutableSet.of(
-                AggregatedBroadcast.create(downweighedBroadcast1, ResolvedChannel.builder(getMockChannel(333L)).build()),
-                AggregatedBroadcast.create(normalBroadcast1, ResolvedChannel.builder(getMockChannel(111L)).build()),
-                AggregatedBroadcast.create(normalBroadcast2, ResolvedChannel.builder(getMockChannel(222L)).build())
+        Collection<ResolvedBroadcast> resolvedBroadcasts = ImmutableSet.of(
+                ResolvedBroadcast.create(downweighedBroadcast1, ResolvedChannel.builder(getMockChannel(333L)).build()),
+                ResolvedBroadcast.create(normalBroadcast1, ResolvedChannel.builder(getMockChannel(111L)).build()),
+                ResolvedBroadcast.create(normalBroadcast2, ResolvedChannel.builder(getMockChannel(222L)).build())
         );
 
-        assertThat(aggregatedBroadcasts.iterator().next().getBroadcast(), is(downweighedBroadcast1));
+        assertThat(resolvedBroadcasts.iterator().next().getBroadcast(), is(downweighedBroadcast1));
 
-        Set<AggregatedBroadcast> sortedBroadcasts = broadcastAggregator.sortByDownweighChannelIds(
+        Set<ResolvedBroadcast> sortedBroadcasts = broadcastAggregator.sortByDownweighChannelIds(
                 ImmutableList.of(Id.valueOf(333L)),
-                aggregatedBroadcasts
+                resolvedBroadcasts
         );
 
         assertFalse(sortedBroadcasts.iterator().next().getBroadcast().equals(downweighedBroadcast1));
         assertTrue(sortedBroadcasts.stream()
-                .map(AggregatedBroadcast::getBroadcast)
+                .map(ResolvedBroadcast::getBroadcast)
                 .anyMatch(broadcast -> broadcast.equals(downweighedBroadcast1))
         );
 
@@ -105,20 +102,20 @@ public class BroadcastAggregatorTest {
     public void aggregatedBroadcastsAreSortedByDateTime() throws Exception {
         ResolvedChannel channel = mock(ResolvedChannel.class);
 
-        Set<AggregatedBroadcast> broadcasts = ImmutableSet.of(
-                AggregatedBroadcast.create(getFutureBroadcast(40, 7, 8), channel),
-                AggregatedBroadcast.create(getFutureBroadcast(30, 5, 6), channel),
-                AggregatedBroadcast.create(getFutureBroadcast(10, 1, 2), channel),
-                AggregatedBroadcast.create(getFutureBroadcast(20, 3, 4), channel)
+        Set<ResolvedBroadcast> broadcasts = ImmutableSet.of(
+                ResolvedBroadcast.create(getFutureBroadcast(40, 7, 8), channel),
+                ResolvedBroadcast.create(getFutureBroadcast(30, 5, 6), channel),
+                ResolvedBroadcast.create(getFutureBroadcast(10, 1, 2), channel),
+                ResolvedBroadcast.create(getFutureBroadcast(20, 3, 4), channel)
         );
 
-        ImmutableMultimap<DateTime, AggregatedBroadcast> broadcastMultimap = broadcasts.stream()
+        ImmutableMultimap<DateTime, ResolvedBroadcast> broadcastMultimap = broadcasts.stream()
                 .collect(MoreCollectors.toImmutableListMultiMap(
-                        aggregatedBroadcast -> aggregatedBroadcast.getBroadcast().getTransmissionTime(),
-                        aggregatedBroadcast -> aggregatedBroadcast
+                        resolvedBroadcast -> resolvedBroadcast.getBroadcast().getTransmissionTime(),
+                        resolvedBroadcast -> resolvedBroadcast
                 ));
 
-        ImmutableList<AggregatedBroadcast> sortedBroadcasts = ImmutableList.copyOf(
+        ImmutableList<ResolvedBroadcast> sortedBroadcasts = ImmutableList.copyOf(
                 broadcastAggregator.sortBroadcastsByDateTime(broadcastMultimap)
         );
 

@@ -319,9 +319,9 @@ public class QueryWebModule {
                         BroadcastWriter.create(
                                 "broadcasts",
                                 "broadcast",
-                                idCodec(),
-                                channelResolver
-                        )
+                                idCodec()
+                        ),
+                        channelResolver
                 );
         ScheduleListWriter scheduleWriter = new ScheduleListWriter(
                 channelListWriter(),
@@ -945,7 +945,7 @@ public class QueryWebModule {
                 )
                 .register(
                         UPCOMING_BROADCASTS,
-                        new UpcomingBroadcastsAnnotation(
+                        UpcomingBroadcastsAnnotation.create(
                                 idCodec(),
                                 channelResolver
                         ),
@@ -953,7 +953,7 @@ public class QueryWebModule {
                 )
                 .register(
                         CURRENT_AND_FUTURE_BROADCASTS,
-                        new CurrentAndFutureBroadcastsAnnotation(
+                        CurrentAndFutureBroadcastsAnnotation.create(
                                 idCodec(),
                                 channelResolver
                         ),
@@ -961,7 +961,7 @@ public class QueryWebModule {
                 )
                 .register(
                         FIRST_BROADCASTS,
-                        new FirstBroadcastAnnotation(
+                        FirstBroadcastAnnotation.create(
                                 idCodec(),
                                 channelResolver
                         ),
@@ -969,7 +969,7 @@ public class QueryWebModule {
                 )
                 .register(
                         NEXT_BROADCASTS,
-                        new NextBroadcastAnnotation(
+                        NextBroadcastAnnotation.create(
                                 new SystemClock(),
                                 idCodec(),
                                 channelResolver
@@ -1015,14 +1015,14 @@ public class QueryWebModule {
                                         BroadcastWriter.create(
                                                 "broadcasts",
                                                 "broadcast",
-                                                idCodec(),
-                                                channelResolver
+                                                idCodec()
                                         ),
                                         new ItemDetailWriter(
                                                 IdentificationSummaryAnnotation.create(
                                                         idSummaryWriter
                                                 )
-                                        )
+                                        ),
+                                        channelResolver
                                 )
                         ), commonImplied
                 )

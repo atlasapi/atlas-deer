@@ -1,13 +1,11 @@
 package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -49,7 +47,7 @@ public class BroadcastAggregator {
         return new BroadcastAggregator(channelResolver);
     }
 
-    public Set<AggregatedBroadcast> aggregateBroadcasts(
+    public Set<ResolvedBroadcast> aggregateBroadcasts(
             Set<Broadcast> broadcasts,
             Optional<Platform> platformOptional,
             List<Id> downweighChannelIds
@@ -60,24 +58,24 @@ public class BroadcastAggregator {
         }
 
         // Filter out previous broadcasts and collect by transmission time
-        Multimap<DateTime, AggregatedBroadcast> broadcastMap = broadcasts.stream()
+        Multimap<DateTime, ResolvedBroadcast> broadcastMap = broadcasts.stream()
                 .filter(broadcast -> broadcast.getTransmissionTime().isAfterNow())
-                .map(broadcast -> AggregatedBroadcast.create(
+                .map(broadcast -> ResolvedBroadcast.create(
                         broadcast,
                         ResolvedChannel.builder(resolveChannel(broadcast.getChannelId())).build())
                 )
                 .collect(MoreCollectors.toImmutableListMultiMap(
-                        aggregatedBroadcast -> aggregatedBroadcast.getBroadcast().getTransmissionTime(),
-                        aggregatedBroadcast -> aggregatedBroadcast
+                        resolvedBroadcast -> resolvedBroadcast.getBroadcast().getTransmissionTime(),
+                        resolvedBroadcast -> resolvedBroadcast
 
                 ));
 
         // Aggregate the broadcasts with same transmission times
 
-        ImmutableMultimap.Builder<DateTime, AggregatedBroadcast> aggregatedBroadcasts = ImmutableMultimap.builder();
+        ImmutableMultimap.Builder<DateTime, ResolvedBroadcast> aggregatedBroadcasts = ImmutableMultimap.builder();
 
         for(DateTime dateTime : broadcastMap.keySet()) {
-            Collection<AggregatedBroadcast> sameTimeBroadcasts = broadcastMap.get(dateTime);
+            Collection<ResolvedBroadcast> sameTimeBroadcasts = broadcastMap.get(dateTime);
             if (sameTimeBroadcasts.size() > 1) {
                 aggregatedBroadcasts.putAll(
                         dateTime,
@@ -93,60 +91,60 @@ public class BroadcastAggregator {
 
     }
 
-    private Set<AggregatedBroadcast> aggregateBroadcastsInternal(Collection<AggregatedBroadcast> broadcasts) {
+    private Set<ResolvedBroadcast> aggregateBroadcastsInternal(Collection<ResolvedBroadcast> broadcasts) {
 
         // Map parent channels to parent
-        Multimap<ChannelRef, AggregatedBroadcast> parentChannelMap = broadcasts.stream()
+        Multimap<ChannelRef, ResolvedBroadcast> parentChannelMap = broadcasts.stream()
                 .collect(MoreCollectors.toImmutableListMultiMap(
-                        aggregatedBroadcast -> aggregatedBroadcast.getResolvedChannel()
+                        resolvedBroadcast -> resolvedBroadcast.getResolvedChannel()
                                 .getChannel()
                                 .getParent(),
-                        aggregatedBroadcast -> aggregatedBroadcast
+                        resolvedBroadcast -> resolvedBroadcast
                 ));
 
-        Set<AggregatedBroadcast> aggregatedBroadcasts = Sets.newHashSet();
+        Set<ResolvedBroadcast> resolvedBroadcasts = Sets.newHashSet();
         // For each parent channel, merge the children
         for (ChannelRef channelRef : parentChannelMap.keySet()) {
-            aggregatedBroadcasts.add(
+            resolvedBroadcasts.add(
                     aggregateChannelsFromParent(channelRef, parentChannelMap.get(channelRef))
             );
         }
 
-        return aggregatedBroadcasts;
+        return resolvedBroadcasts;
     }
 
-    Set<AggregatedBroadcast> sortByDownweighChannelIds(List<Id> ids, Collection<AggregatedBroadcast> aggregatedBroadcasts) {
+    Set<ResolvedBroadcast> sortByDownweighChannelIds(List<Id> ids, Collection<ResolvedBroadcast> resolvedBroadcasts) {
         if (ids.isEmpty()) {
-            return ImmutableSet.copyOf(aggregatedBroadcasts);
+            return ImmutableSet.copyOf(resolvedBroadcasts);
         }
 
-        ImmutableSet.Builder<AggregatedBroadcast> broadcastBuilder = ImmutableSet.builder();
+        ImmutableSet.Builder<ResolvedBroadcast> broadcastBuilder = ImmutableSet.builder();
 
-        Optional<AggregatedBroadcast> keyBroadcast = aggregatedBroadcasts.stream()
-                .filter(aggregatedBroadcast -> !ids.contains(aggregatedBroadcast.getBroadcast()
+        Optional<ResolvedBroadcast> keyBroadcast = resolvedBroadcasts.stream()
+                .filter(resolvedBroadcast -> !ids.contains(resolvedBroadcast.getBroadcast()
                         .getChannelId()))
                 .findFirst();
 
         if (!keyBroadcast.isPresent()
-                || aggregatedBroadcasts.iterator().next().equals(keyBroadcast.get())) {
-            return ImmutableSet.copyOf(aggregatedBroadcasts);
+                || resolvedBroadcasts.iterator().next().equals(keyBroadcast.get())) {
+            return ImmutableSet.copyOf(resolvedBroadcasts);
         }
 
         return broadcastBuilder.add(keyBroadcast.get())
-                .addAll(aggregatedBroadcasts.stream()
-                        .filter(aggregatedBroadcast -> !aggregatedBroadcasts.equals(keyBroadcast.get()))
+                .addAll(resolvedBroadcasts.stream()
+                        .filter(resolvedBroadcast -> !resolvedBroadcasts.equals(keyBroadcast.get()))
                         .collect(Collectors.toList()))
                 .build();
     }
 
-    Collection<AggregatedBroadcast> sortBroadcastsByDateTime(ImmutableMultimap<DateTime, AggregatedBroadcast> broadcastMap) {
+    Collection<ResolvedBroadcast> sortBroadcastsByDateTime(ImmutableMultimap<DateTime, ResolvedBroadcast> broadcastMap) {
 
         List<DateTime> dateTimes = Lists.newArrayList(broadcastMap.keySet());
         dateTimes.sort(DateTimeComparator.getInstance());
 
-        Ordering<AggregatedBroadcast> dateTimeOrdering = Ordering.explicit(dateTimes)
-                .onResultOf(aggregatedBroadcast ->
-                        aggregatedBroadcast.getBroadcast().getTransmissionTime()
+        Ordering<ResolvedBroadcast> dateTimeOrdering = Ordering.explicit(dateTimes)
+                .onResultOf(resolvedBroadcast ->
+                        resolvedBroadcast.getBroadcast().getTransmissionTime()
                 );
 
         return dateTimeOrdering.sortedCopy(broadcastMap.values());
@@ -171,9 +169,9 @@ public class BroadcastAggregator {
         }
     }
 
-    private AggregatedBroadcast aggregateChannelsFromParent(
+    private ResolvedBroadcast aggregateChannelsFromParent(
             ChannelRef channelRef,
-            Collection<AggregatedBroadcast> broadcasts
+            Collection<ResolvedBroadcast> broadcasts
     ) {
         // If there's just one, no need to merge
         if (broadcasts.size() == 1) {
@@ -183,11 +181,11 @@ public class BroadcastAggregator {
         Channel parent = resolveChannel(channelRef.getId());
 
         Map<Id, String> channelIdAndTitles = broadcasts.stream()
-                .map(AggregatedBroadcast::getResolvedChannel)
+                .map(ResolvedBroadcast::getResolvedChannel)
                 .map(ResolvedChannel::getChannel)
                 .collect(MoreCollectors.toImmutableMap(Channel::getId, Channel::getTitle));
 
-        return AggregatedBroadcast.create(
+        return ResolvedBroadcast.create(
                 broadcasts.iterator().next().getBroadcast(),
                 buildResolvedChannel(parent, channelIdAndTitles)
         );
