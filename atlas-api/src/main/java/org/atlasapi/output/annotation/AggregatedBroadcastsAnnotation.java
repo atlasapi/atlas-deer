@@ -1,6 +1,5 @@
 package org.atlasapi.output.annotation;
 
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -12,7 +11,7 @@ import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.output.FieldWriter;
 import org.atlasapi.output.OutputContext;
-import org.atlasapi.output.writers.AggregatedBroadcastWriter;
+import org.atlasapi.output.writers.BroadcastWriter;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -20,16 +19,16 @@ import java.util.List;
 
 public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
 
-    private final AggregatedBroadcastWriter aggregatedBroadcastWriter;
+    private final BroadcastWriter broadcastWriter;
     private final BroadcastAggregator broadcastAggregator;
     private final NumberToShortStringCodec codec;
 
     private AggregatedBroadcastsAnnotation(
-            AggregatedBroadcastWriter aggregatedBroadcastWriter,
+            BroadcastWriter broadcastWriter,
             BroadcastAggregator broadcastAggregator,
             NumberToShortStringCodec codec
     ) {
-        this.aggregatedBroadcastWriter = aggregatedBroadcastWriter;
+        this.broadcastWriter = broadcastWriter;
         this.broadcastAggregator = broadcastAggregator;
         this.codec = codec;
     }
@@ -39,7 +38,11 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
             ChannelResolver channelResolver
     ) {
         return new AggregatedBroadcastsAnnotation(
-                AggregatedBroadcastWriter.create(codec),
+                BroadcastWriter.create(
+                        "aggregated_broadcasts",
+                        "aggregated_broadcast",
+                        codec
+                ),
                 BroadcastAggregator.create(channelResolver),
                 codec
         );
@@ -77,7 +80,7 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
         }
 
         writer.writeList(
-                aggregatedBroadcastWriter,
+                broadcastWriter,
                 broadcastAggregator.aggregateBroadcasts(
                         item.getBroadcasts(),
                         ctxt.getPlatform(),
