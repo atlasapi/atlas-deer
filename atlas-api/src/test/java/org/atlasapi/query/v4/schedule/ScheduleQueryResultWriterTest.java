@@ -4,14 +4,18 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.channel.Channel;
+import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.content.Broadcast;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.Episode;
 import org.atlasapi.content.Item;
 import org.atlasapi.content.ItemAndBroadcast;
+import org.atlasapi.content.ResolvedBroadcast;
+import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.AnnotationRegistry;
 import org.atlasapi.output.EntityListWriter;
@@ -26,7 +30,6 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.query.v4.channel.ChannelListWriter;
 import org.atlasapi.schedule.ChannelSchedule;
-import org.atlasapi.system.legacy.NoOpChannelResolver;
 
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
@@ -37,28 +40,32 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ScheduleQueryResultWriterTest {
+
+    private final ChannelResolver channelResolver = mock(ChannelResolver.class);
 
     private final AnnotationRegistry<Content> contentAnnotations = AnnotationRegistry.<Content>builder()
             .build();
     private final AnnotationRegistry<ResolvedChannel> channelAnnotations = AnnotationRegistry.<ResolvedChannel>builder()
             .build();
     private EntityWriter<Content> contentWriter = new ContentListWriter(contentAnnotations);
-    private EntityWriter<Broadcast> broadcastWriter = new BroadcastWriter(
+    private EntityWriter<ResolvedBroadcast> broadcastWriter = BroadcastWriter.create(
             "broadcasts",
-            SubstitutionTableNumberCodec.lowerCaseOnly(),
-            new NoOpChannelResolver()
+            "broadcast",
+            SubstitutionTableNumberCodec.lowerCaseOnly()
     );
-    private final EntityListWriter<ChannelSchedule> scheduleWriter
-            = new ScheduleListWriter(
+    private final EntityListWriter<ChannelSchedule> scheduleWriter = new ScheduleListWriter(
             new ChannelListWriter(channelAnnotations),
-            new ScheduleEntryListWriter(contentWriter, broadcastWriter)
+            new ScheduleEntryListWriter(contentWriter, broadcastWriter, channelResolver)
     );
     private final EntityWriter<Object> licenseWriter = new LicenseWriter(new License("test"));
     private final ScheduleQueryResultWriter writer = new ScheduleQueryResultWriter(
@@ -67,23 +74,34 @@ public class ScheduleQueryResultWriterTest {
             new RequestWriter()
     );
 
+    private Channel channel;
+
+    @Before
+    public void setUp() throws Exception {
+
+        ListenableFuture<Resolved<Channel>> listenableFuture = mock(ListenableFuture.class);
+
+        channel = Channel.builder(Publisher.BBC).build();
+        channel.setId(1234L);
+
+        when(listenableFuture.get()).thenReturn(Resolved.valueOf(ImmutableList.of(channel)));
+        when(channelResolver.resolveIds(any())).thenReturn(listenableFuture);
+    }
+
     @Test
     public void testWrite() throws IOException {
-        Channel channel = Channel.builder(Publisher.BBC).build();
-        channel.setId(1234l);
-
         DateTime from = new DateTime(0, DateTimeZones.UTC);
         DateTime to = new DateTime(1000, DateTimeZones.UTC);
         Interval interval = new Interval(from, to);
 
         Item item = new Item("aUri", "aCurie", Publisher.BBC);
-        item.setId(4321l);
+        item.setId(4321L);
         item.setTitle("aTitle");
         Broadcast broadcast = new Broadcast(channel, from, to);
         ItemAndBroadcast itemAndBroadcast = new ItemAndBroadcast(item, broadcast);
 
         Item episode = new Episode("bUri", "bCurie", Publisher.BBC);
-        episode.setId(4322l);
+        episode.setId(4322L);
         Broadcast broadcast2 = new Broadcast(channel, to, to.plusSeconds(2));
         ItemAndBroadcast episodeAndBroadcast = new ItemAndBroadcast(episode, broadcast2);
 
