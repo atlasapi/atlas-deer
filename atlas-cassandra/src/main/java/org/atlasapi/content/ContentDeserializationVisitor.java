@@ -32,7 +32,6 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Ordering;
 import org.joda.time.Duration;
 
-import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
@@ -69,14 +68,8 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final ReviewSerializer reviewSerializer = new ReviewSerializer();
     private final RatingSerializer ratingSerializer = new RatingSerializer();
 
-    private static final Set<Annotation> BROADCAST_ANNOTATIONS = ImmutableSet.of(
-            BROADCASTS,
-            UPCOMING_BROADCASTS,
-            CURRENT_AND_FUTURE_BROADCASTS,
-            FIRST_BROADCASTS,
-            NEXT_BROADCASTS,
-            AGGREGATED_BROADCASTS
-    );
+    private static final Set<Annotation> BROADCAST_ANNOTATIONS = ImmutableSet.of(BROADCASTS,
+            UPCOMING_BROADCASTS, CURRENT_AND_FUTURE_BROADCASTS, FIRST_BROADCASTS, NEXT_BROADCASTS);
     private static final Annotation SUB_ITEMS_ANNOTATIONS = SUB_ITEMS;
     private static final Annotation SUB_ITEM_SUMMARIES_ANNOTATION = SUB_ITEM_SUMMARIES;
     private static final Set<Annotation> LOCATIONS_ANNOTATIONS = ImmutableSet.of(LOCATIONS, AVAILABLE_LOCATIONS);

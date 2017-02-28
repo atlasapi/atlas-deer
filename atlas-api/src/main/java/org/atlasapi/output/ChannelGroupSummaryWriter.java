@@ -14,12 +14,8 @@ public class ChannelGroupSummaryWriter implements EntityListWriter<ChannelGroupS
     private static final AliasWriter ALIAS_WRITER = new AliasWriter();
     private final NumberToShortStringCodec codec;
 
-    private ChannelGroupSummaryWriter(NumberToShortStringCodec codec) {
+    public ChannelGroupSummaryWriter(NumberToShortStringCodec codec) {
         this.codec = checkNotNull(codec);
-    }
-
-    public static ChannelGroupSummaryWriter create(NumberToShortStringCodec codec) {
-        return new ChannelGroupSummaryWriter(codec);
     }
 
     @Override
