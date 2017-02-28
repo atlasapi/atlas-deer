@@ -523,11 +523,11 @@ public class QueryWebModule {
                         ),
                         QueryAtomParser.create(
                                 Attributes.PLATFORM,
-                                IdCoercer.create(idCodec())
+                                StringCoercer.create()
                         ),
                         QueryAtomParser.create(
                                 Attributes.DOWNWEIGH,
-                                IdCoercer.create(idCodec())
+                                StringCoercer.create()
                         )
                 )
         );
