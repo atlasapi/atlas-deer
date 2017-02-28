@@ -114,6 +114,17 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         ChannelQuery.Builder channelQueryBuilder = ChannelQuery.builder();
         Ordering<? super Channel> ordering = Ordering.allEqual();
 
+        for (AttributeQuery<?> queryOperand : query.getOperands()) {
+            Object operandValue = queryOperand.getValue().get(0);
+            String queryAttributeName = queryOperand.getAttributeName();
+
+            if (queryAttributeName.equals(Attributes.ALIASES_NAMESPACE.externalName())) {
+                channelQueryBuilder.withAliasNamespace((String) operandValue);
+            } else if (queryAttributeName.equals(Attributes.ALIASES_VALUE.externalName())) {
+                channelQueryBuilder.withAliasNamespace((String) operandValue);
+            }
+        }
+
         for (AttributeQuery<?> attributeQuery : query.getOperands()) {
             Object attributeValue = attributeQuery.getValue().get(0);
 
@@ -177,11 +188,30 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         );
     }
 
+    private boolean queryHasAliasAttributesOnly(ChannelQuery channelQuery) {
+
+        return !channelQuery.getAdvertisedOn().isPresent() &&
+                !channelQuery.getAvailableFrom().isPresent() &&
+                !channelQuery.getBroadcaster().isPresent() &&
+                !channelQuery.getChannelGroups().isPresent() &&
+                !channelQuery.getGenres().isPresent() &&
+                !channelQuery.getMediaType().isPresent() &&
+                !channelQuery.getPublisher().isPresent() &&
+                !channelQuery.getUri().isPresent() &&
+                channelQuery.getAliasNamespace().isPresent() &&
+                channelQuery.getAliasValue().isPresent();
+    }
+
     private FluentIterable<Channel> getChannels(ChannelQuery channelQuery)
             throws QueryExecutionException {
-        ListenableFuture<Resolved<Channel>> resolvingChannels = channelResolver.resolveChannels(
-                channelQuery
-        );
+
+        ListenableFuture<Resolved<Channel>> resolvingChannels;
+
+        if (queryHasAliasAttributesOnly(channelQuery)) {
+            resolvingChannels = channelResolver.resolveChannelsWithAliases(channelQuery);
+        } else {
+            resolvingChannels = channelResolver.resolveChannels(channelQuery);
+        }
 
         ListenableFuture<FluentIterable<Channel>> resolvedIterable = Futures.transform(
                 resolvingChannels,
