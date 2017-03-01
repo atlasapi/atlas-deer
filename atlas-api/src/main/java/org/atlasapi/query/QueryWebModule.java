@@ -520,14 +520,6 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.SPECIALIZATION,
                                 EnumCoercer.create(Specialization.FROM_KEY())
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.PLATFORM,
-                                StringCoercer.create()
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.DOWNWEIGH,
-                                StringCoercer.create()
                         )
                 )
         );

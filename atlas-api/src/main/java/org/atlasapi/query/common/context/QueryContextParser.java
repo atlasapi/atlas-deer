@@ -104,7 +104,9 @@ public class QueryContextParser implements ParameterNameProvider {
                                         "episode.brand.id",
                                         "brand.id",
                                         "series.id",
-                                        "actionableFilterParameters"
+                                        "actionableFilterParameters",
+                                        "platform",
+                                        "downweigh"
                                 )
                         )
                 )
