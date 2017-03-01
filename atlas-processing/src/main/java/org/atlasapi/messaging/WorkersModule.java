@@ -438,7 +438,7 @@ public class WorkersModule {
     }
 
     private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
-        return new DirectAndExplicitEquivalenceMigrator(
+        return DirectAndExplicitEquivalenceMigrator.create(
                 persistence.legacyContentResolver(),
                 persistence.legacyEquivalenceStore(),
                 persistence.getContentEquivalenceGraphStore()

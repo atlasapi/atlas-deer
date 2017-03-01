@@ -52,7 +52,7 @@ public class DebugModule {
     }
 
     private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator() {
-        return new DirectAndExplicitEquivalenceMigrator(
+        return DirectAndExplicitEquivalenceMigrator.create(
                 persistenceModule.legacyContentResolver(),
                 persistenceModule.legacyEquivalenceStore(),
                 persistenceModule.nullMessageSendingGraphStore()
