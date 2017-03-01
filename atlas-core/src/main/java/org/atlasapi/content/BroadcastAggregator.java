@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ import java.util.stream.StreamSupport;
 public class BroadcastAggregator {
 
     private static final Logger log = LoggerFactory.getLogger(BroadcastAggregator.class);
+
+    private static final Set<String> INVALID_CHILD_NAMES = ImmutableSet.of("", "hd", "+1");
 
     private final ChannelResolver channelResolver;
 
@@ -244,8 +247,14 @@ public class BroadcastAggregator {
                 .collect(MoreCollectors.toImmutableList());
     }
 
-    String parseChildTitle(String parent, String child) {
-        return child.replaceAll(parent, "").trim();
+    String parseChildTitle(String parentTitle, String childTitle) {
+        String parsedTitle = childTitle.replaceAll(parentTitle, "").trim();
+
+        return INVALID_CHILD_NAMES.containsAll(
+                Arrays.asList(parsedTitle.toLowerCase().split(" "))
+        )
+               ? childTitle
+               : parsedTitle;
     }
 
 }

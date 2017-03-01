@@ -218,6 +218,21 @@ public class BroadcastAggregatorTest {
                 broadcastAggregator.parseChildTitle(parent, "BBC One London HD"),
                 is("London HD")
         );
+
+        assertThat(
+                broadcastAggregator.parseChildTitle(parent, "BBC One"),
+                is("BBC One")
+        );
+
+        assertThat(
+                broadcastAggregator.parseChildTitle(parent, "BBC One HD"),
+                is("BBC One HD")
+        );
+
+        assertThat(
+                broadcastAggregator.parseChildTitle(parent, "BBC One HD +1"),
+                is("BBC One HD +1")
+        );
     }
 
     private ChannelNumbering getChannelNumbering(long id) {
