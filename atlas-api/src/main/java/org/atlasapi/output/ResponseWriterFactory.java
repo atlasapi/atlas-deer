@@ -25,6 +25,7 @@ public class ResponseWriterFactory {
         response.addHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Cache-Control", "public, max-age=300");
         response.setHeader("Vary", "Origin");
+        response.setContentType("application/json; charset=UTF-8");
 
         if (writerFromExtension != null) {
             return writerFromExtension;
