@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -124,8 +125,13 @@ public class BroadcastAggregator {
         ImmutableSet.Builder<ResolvedBroadcast> broadcastBuilder = ImmutableSet.builder();
 
         Optional<ResolvedBroadcast> keyBroadcast = resolvedBroadcasts.stream()
-                .filter(resolvedBroadcast -> !ids.contains(resolvedBroadcast.getBroadcast()
-                        .getChannelId()))
+                .filter(resolvedBroadcast ->
+                        variantIdIsNotDownweighed(ids, resolvedBroadcast)
+                        && !ids.contains(resolvedBroadcast.getResolvedChannel()
+                                .getChannel()
+                                .getId()
+                        )
+                )
                 .findFirst();
 
         if (!keyBroadcast.isPresent()
@@ -255,6 +261,17 @@ public class BroadcastAggregator {
         )
                ? childTitle
                : parsedTitle;
+    }
+
+    private boolean variantIdIsNotDownweighed(List<Id> downweighedIds, ResolvedBroadcast resolvedBroadcast) {
+
+        List<Id> includedVariantIds = resolvedBroadcast.getResolvedChannel()
+                .getIncludedVariants().orElse(ImmutableList.of())
+                .stream()
+                .map(ChannelVariantRef::getId)
+                .collect(MoreCollectors.toImmutableList());
+
+        return downweighedIds.stream().noneMatch(includedVariantIds::contains);
     }
 
 }
