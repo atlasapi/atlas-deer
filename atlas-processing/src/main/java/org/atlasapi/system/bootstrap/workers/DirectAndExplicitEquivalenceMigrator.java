@@ -39,11 +39,26 @@ public class DirectAndExplicitEquivalenceMigrator {
     private final LookupEntryStore legacyEquivalenceStore;
     private final EquivalenceGraphStore graphStore;
 
-    public DirectAndExplicitEquivalenceMigrator(ContentResolver legacyResolver,
-            LookupEntryStore legacyEquivalenceStore, EquivalenceGraphStore graphStore) {
+    private DirectAndExplicitEquivalenceMigrator(
+            ContentResolver legacyResolver,
+            LookupEntryStore legacyEquivalenceStore,
+            EquivalenceGraphStore graphStore
+    ) {
         this.legacyResolver = checkNotNull(legacyResolver);
         this.legacyEquivalenceStore = checkNotNull(legacyEquivalenceStore);
         this.graphStore = checkNotNull(graphStore);
+    }
+
+    public static DirectAndExplicitEquivalenceMigrator create(
+            ContentResolver legacyResolver,
+            LookupEntryStore legacyEquivalenceStore,
+            EquivalenceGraphStore graphStore
+    ) {
+        return new DirectAndExplicitEquivalenceMigrator(
+                legacyResolver,
+                legacyEquivalenceStore,
+                graphStore
+        );
     }
 
     public Optional<EquivalenceGraphUpdate> migrateEquivalence(ResourceRef ref) {
