@@ -1,5 +1,6 @@
 package org.atlasapi.output.annotation;
 
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.stream.MoreCollectors;
@@ -65,16 +66,15 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
             OutputContext ctxt
     ) throws IOException {
 
-        String[] downweighIds = ctxt.getRequest()
-                .getParameter(Attributes.DOWNWEIGH.externalName())
-                .split(",");
+        String downweighIds = ctxt.getRequest()
+                .getParameter(Attributes.DOWNWEIGH.externalName());
 
         List<Id> downweighChannelIds;
 
-        if (downweighIds == null || downweighIds.length == 0) {
+        if (Strings.isNullOrEmpty(downweighIds)) {
             downweighChannelIds = ImmutableList.of();
         } else {
-            downweighChannelIds = Arrays.stream(downweighIds)
+            downweighChannelIds = Arrays.stream(downweighIds.split(","))
                     .map(codec::decode)
                     .map(Id::valueOf)
                     .collect(MoreCollectors.toImmutableList());
