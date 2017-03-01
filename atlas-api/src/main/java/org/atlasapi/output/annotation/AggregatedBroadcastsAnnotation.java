@@ -66,7 +66,8 @@ public class AggregatedBroadcastsAnnotation extends OutputAnnotation<Content> {
     ) throws IOException {
 
         String[] downweighIds = ctxt.getRequest()
-                .getParameterValues(Attributes.DOWNWEIGH.externalName());
+                .getParameter(Attributes.DOWNWEIGH.externalName())
+                .split(",");
 
         List<Id> downweighChannelIds;
 
