@@ -85,6 +85,8 @@ public class BroadcastAggregator {
                         dateTime,
                         aggregateBroadcastsInternal(sameTimeBroadcasts)
                 );
+            } else {
+                aggregatedBroadcasts.put(dateTime, Iterables.getOnlyElement(sameTimeBroadcasts));
             }
         }
 
