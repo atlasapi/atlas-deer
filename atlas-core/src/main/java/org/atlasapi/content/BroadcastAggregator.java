@@ -1,5 +1,6 @@
 package org.atlasapi.content;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -85,6 +86,8 @@ public class BroadcastAggregator {
                         dateTime,
                         aggregateBroadcastsInternal(sameTimeBroadcasts)
                 );
+            } else {
+                aggregatedBroadcasts.put(dateTime, Iterables.getOnlyElement(sameTimeBroadcasts));
             }
         }
 
@@ -100,9 +103,14 @@ public class BroadcastAggregator {
         // Map parent channels to parent
         Multimap<ChannelRef, ResolvedBroadcast> parentChannelMap = broadcasts.stream()
                 .collect(MoreCollectors.toImmutableListMultiMap(
-                        resolvedBroadcast -> resolvedBroadcast.getResolvedChannel()
-                                .getChannel()
-                                .getParent(),
+                        resolvedBroadcast -> MoreObjects.firstNonNull(
+                                resolvedBroadcast.getResolvedChannel()
+                                        .getChannel()
+                                        .getParent(),
+                                resolvedBroadcast.getResolvedChannel()
+                                        .getChannel()
+                                        .toRef()
+                        ),
                         resolvedBroadcast -> resolvedBroadcast
                 ));
 

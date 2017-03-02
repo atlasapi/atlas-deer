@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
@@ -66,6 +67,40 @@ public class BroadcastAggregatorTest {
 
         includedVariantIds = ImmutableSet.of(Id.valueOf(111L), Id.valueOf(222L), Id.valueOf(333L));
         excludedVariantIds = ImmutableSet.of(Id.valueOf(444L), Id.valueOf(555L));
+
+    }
+
+    public void aggregatedBroadcastUsesOwnChannelIfNoParent() throws Exception {
+        //TODO: write this test
+    }
+
+    @Test
+    public void singleBroadcastIsReturnedNormally() throws Exception {
+
+        Broadcast broadcast = getFutureBroadcast(444L, 1, 2);
+
+        Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
+                ImmutableSet.of(broadcast),
+                Optional.empty(),
+                ImmutableList.of()
+        );
+
+        assertThat(Iterables.getOnlyElement(resolvedBroadcasts).getBroadcast(), is(broadcast));
+
+    }
+
+    @Test
+    public void broadcastOnSameChannelAtDifferentTimesDoNotAggregate() throws Exception {
+        Broadcast firstBroadcast = getFutureBroadcast(444L, 1, 2);
+        Broadcast secondBroadcast = getFutureBroadcast(444L, 5, 6);
+
+        Set<ResolvedBroadcast> resolvedBroadcasts = broadcastAggregator.aggregateBroadcasts(
+                ImmutableSet.of(firstBroadcast, secondBroadcast),
+                Optional.empty(),
+                ImmutableList.of()
+        );
+
+        assertThat(resolvedBroadcasts.size(), is(2));
 
     }
 
