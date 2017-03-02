@@ -55,7 +55,7 @@ public final class BroadcastWriter implements EntityListWriter<ResolvedBroadcast
             String fieldName,
             NumberToShortStringCodec codec
     ) {
-        return new BroadcastWriter(fieldName, listName, codec);
+        return new BroadcastWriter(listName, fieldName, codec);
     }
 
     @Override
