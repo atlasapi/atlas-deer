@@ -179,6 +179,10 @@ public class Channel extends Identified implements Sourced {
         return advertiseFrom;
     }
 
+    public ChannelRef toRef() {
+        return new ChannelRef(getId(), getSource());
+    }
+
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
     }

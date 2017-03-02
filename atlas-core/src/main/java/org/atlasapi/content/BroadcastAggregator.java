@@ -107,10 +107,9 @@ public class BroadcastAggregator {
                                 resolvedBroadcast.getResolvedChannel()
                                         .getChannel()
                                         .getParent(),
-                                new ChannelRef(
-                                        resolvedBroadcast.getResolvedChannel().getChannel().getId(),
-                                        resolvedBroadcast.getResolvedChannel().getChannel().getSource()
-                                )
+                                resolvedBroadcast.getResolvedChannel()
+                                        .getChannel()
+                                        .toRef()
                         ),
                         resolvedBroadcast -> resolvedBroadcast
                 ));
