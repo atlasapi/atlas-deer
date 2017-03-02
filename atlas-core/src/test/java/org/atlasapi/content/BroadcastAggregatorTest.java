@@ -70,6 +70,10 @@ public class BroadcastAggregatorTest {
 
     }
 
+    public void aggregatedBroadcastUsesOwnChannelIfNoParent() throws Exception {
+        //TODO: write this test
+    }
+
     @Test
     public void singleBroadcastIsReturnedNormally() throws Exception {
 
