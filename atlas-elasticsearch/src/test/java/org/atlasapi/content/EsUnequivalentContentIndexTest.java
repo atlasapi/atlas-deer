@@ -1,9 +1,10 @@
 package org.atlasapi.content;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.Currency;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -17,7 +18,6 @@ import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.criteria.EnumAttributeQuery;
 import org.atlasapi.criteria.IdAttributeQuery;
-import org.atlasapi.criteria.StringAttributeQuery;
 import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.criteria.operator.Operators;
 import org.atlasapi.entity.Id;
@@ -27,7 +27,6 @@ import org.atlasapi.util.CassandraSecondaryIndex;
 import org.atlasapi.util.ElasticSearchHelper;
 
 import com.metabroadcast.common.currency.Price;
-import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.intl.Countries;
 import com.metabroadcast.common.query.Selection;
 
@@ -67,9 +66,6 @@ public class EsUnequivalentContentIndexTest {
 
     private static final Client esClient = ElasticSearchHelper.testNode().client();
 
-    private static final SubstitutionTableNumberCodec codec =
-            SubstitutionTableNumberCodec.lowerCaseOnly();
-
     private final CassandraSecondaryIndex equivIdIndex = mock(CassandraSecondaryIndex.class);
     private final ChannelGroupResolver channelGroupResolver = mock(ChannelGroupResolver.class);
 
@@ -90,7 +86,7 @@ public class EsUnequivalentContentIndexTest {
 
     @Before
     public void setup() {
-        index = EsUnequivalentContentIndex.create(
+        index = new EsUnequivalentContentIndex(
                 esClient, EsSchema.CONTENT_INDEX,
                 channelGroupResolver, equivIdIndex, 60_000
         );
@@ -106,72 +102,77 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testGenreQuery() throws Exception {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
-                10L,
-                10L
+                10l,
+                10l
         )));
-        Item item = complexItem().withId(10L).build();
+        Item item = complexItem().withId(10l).build();
         item.setGenres(ImmutableSet.of("horror", "action"));
         indexAndRefresh(item);
 
         AttributeQuery<String> genreQuery = Attributes.GENRE.createQuery(
                 Operators.EQUALS, ImmutableList.of("horror")
         );
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(genreQuery));
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(genreQuery));
         IndexQueryResult result = Futures.get(
                 index.query(
                         querySet,
                         ImmutableList.of(Publisher.BBC),
-                        Selection.all()
+                        Selection.all(),
+                        Optional.empty()
                 ),
                 Exception.class
         );
-        assertThat(result.getIds().first().get(), is(Id.valueOf(10L)));
+        assertThat(result.getIds().first().get(), is(Id.valueOf(10l)));
     }
 
     @Test
     public void testBrandFilterWithTopicFilterForEpisode() throws Exception {
         when(equivIdIndex.lookup(anyList()))
-                .thenReturn(Futures.immediateFuture(ImmutableMap.of(10L, 10L, 20L, 20L)));
-        when(equivIdIndex.reverseLookup(Id.valueOf(10L)))
-                .thenReturn(Futures.immediateFuture(ImmutableSet.of(10L)));
-        when(equivIdIndex.reverseLookup(Id.valueOf(20L)))
-                .thenReturn(Futures.immediateFuture(ImmutableSet.of(20L)));
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l, 20l, 20l)));
+        when(equivIdIndex.reverseLookup(Id.valueOf(10l)))
+                .thenReturn(Futures.immediateFuture(ImmutableSet.of(10l)));
+        when(equivIdIndex.reverseLookup(Id.valueOf(20l)))
+                .thenReturn(Futures.immediateFuture(ImmutableSet.of(20l)));
 
-        Brand brand = new Brand(Id.valueOf(10L), Publisher.METABROADCAST);
+        Brand brand = new Brand(Id.valueOf(10l), Publisher.METABROADCAST);
         brand.setTitle("Test Brand");
 
-        Episode episode = new Episode(Id.valueOf(20L), Publisher.METABROADCAST);
+        Episode episode = new Episode(Id.valueOf(20l), Publisher.METABROADCAST);
         episode.setTitle("Test episode");
         episode.setContainerRef(brand.toRef());
         episode.setTags(
                 ImmutableList.of(
-                        new Tag(
-                                Id.valueOf(25L),
-                                0.0f,
-                                false,
-                                Tag.Relationship.ABOUT
-                        )
+                        new Tag(Id.valueOf(25l), 0.0f, false, Tag.Relationship.ABOUT)
                 )
         );
         indexAndRefresh(brand, episode);
 
         ListenableFuture<IndexQueryResult> future = index.query(
-                AttributeQuerySet.create(
+                new AttributeQuerySet(
                         ImmutableSet.of(
-                                new StringAttributeQuery(
-                                        Attributes.SEARCH_TOPIC_ID,
-                                        Operators.EQUALS,
-                                        ImmutableList.of(codec.encode(BigInteger.valueOf(25L)))
-                                ),
                                 new IdAttributeQuery(
-                                        Attributes.BRAND_ID,
+                                        Attributes.TOPIC_ID,
                                         Operators.EQUALS,
-                                        ImmutableList.of(Id.valueOf(10L))
+                                        ImmutableList.of(Id.valueOf(25l))
                                 )
                         )
                 ),
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<List<List<InclusionExclusionId>>>empty(),
+                                false,
+                                Optional.of(Id.valueOf(10l)),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
+                )
         );
         IndexQueryResult result = Futures.get(future, IOException.class);
         assertThat(result.getIds().size(), is(1));
@@ -201,22 +202,31 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableItem, nonAvailableItem);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                new AttributeQuerySet(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
                                         Operators.EQUALS,
                                         ImmutableList.of(ContentType.ITEM)
-                                ),
-                                new StringAttributeQuery(
-                                        Attributes.ACTIONABLE_FILTER_PARAMETERS,
-                                        Operators.EQUALS,
-                                        ImmutableList.of("location.available:true")
                                 )
                         )
                 ),
                 ImmutableList.of(publisher),
-                Selection.all()
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of("location.available", "true")),
+                                Optional.empty()
+                        )
+                )
         );
         IndexQueryResult result = Futures.get(resultFuture, IOException.class);
         FluentIterable<Id> ids = result.getIds();
@@ -249,32 +259,41 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableItem, nonAvailableItem);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                new AttributeQuerySet(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
                                         Operators.EQUALS,
                                         ImmutableList.of(ContentType.ITEM)
-                                ),
-                                new StringAttributeQuery(
-                                        Attributes.ACTIONABLE_FILTER_PARAMETERS,
-                                        Operators.EQUALS,
-                                        ImmutableList.of(
-                                                "broadcast.time.gt:" 
-                                                        + DateTime.now().minusHours(2).toString(),
-                                                "broadcast.time.lt:"
-                                                        + DateTime.now().plusHours(2).toString()
-                                        )
                                 )
                         )
                 ),
                 ImmutableList.of(publisher),
-                Selection.all()
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of(
+                                        "broadcast.time.gt",
+                                        DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt",
+                                        DateTime.now().plusHours(2).toString()
+                                )),
+                                Optional.empty()
+                        )
+                )
         );
         IndexQueryResult result = Futures.get(resultFuture, IOException.class);
         FluentIterable<Id> ids = result.getIds();
-        assertThat(ids.contains(Id.valueOf(1L)), is(true));
-        assertThat(ids.contains(Id.valueOf(2L)), is(false));
+        assertThat(ids, containsInAnyOrder(Id.valueOf(1L)));
+        assertThat(ids, not(containsInAnyOrder(Id.valueOf(2L))));
 
     }
 
@@ -302,22 +321,31 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableBrand, availableItem, nonAvailableBrand);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                new AttributeQuerySet(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
                                         Operators.EQUALS,
                                         ImmutableList.of(ContentType.BRAND)
-                                ),
-                                new StringAttributeQuery(
-                                        Attributes.ACTIONABLE_FILTER_PARAMETERS,
-                                        Operators.EQUALS,
-                                        ImmutableList.of("location.available:true")
                                 )
                         )
                 ),
                 ImmutableList.of(publisher),
-                Selection.all()
+                Selection.all(),
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.<Id>empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of("location.available", "true")),
+                                Optional.empty()
+                        )
+                )
         );
         IndexQueryResult result = Futures.get(resultFuture, IOException.class);
         FluentIterable<Id> ids = result.getIds();
@@ -348,27 +376,37 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableBrand, availableItem);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                new AttributeQuerySet(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
                                         Operators.EQUALS,
                                         ImmutableList.of(ContentType.BRAND)
-                                ),
-                                new StringAttributeQuery(
-                                        Attributes.ACTIONABLE_FILTER_PARAMETERS,
-                                        Operators.EQUALS,
-                                        ImmutableList.of(
-                                                "broadcast.time.gt:"
-                                                        + DateTime.now().minusHours(2).toString(),
-                                                "broadcast.time.lt"
-                                                        + DateTime.now().plusHours(2).toString()
-                                        )
                                 )
                         )
                 ),
                 ImmutableList.of(publisher),
-                Selection.all()
+                Selection.all(),
+
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.empty(),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of(
+                                        "broadcast.time.gt",
+                                        DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt",
+                                        DateTime.now().plusHours(2).toString()
+                                )),
+                                Optional.empty()
+                        )
+                )
         );
         IndexQueryResult result = Futures.get(resultFuture, IOException.class);
         FluentIterable<Id> ids = result.getIds();
@@ -429,32 +467,37 @@ public class EsUnequivalentContentIndexTest {
         indexAndRefresh(availableBrand, availableItem, nonAvailableBrand);
 
         ListenableFuture<IndexQueryResult> resultFuture = index.query(
-                AttributeQuerySet.create(
+                new AttributeQuerySet(
                         ImmutableSet.of(
                                 new EnumAttributeQuery<>(
                                         Attributes.CONTENT_TYPE,
                                         Operators.EQUALS,
                                         ImmutableList.of(ContentType.BRAND)
-                                ),
-                                new IdAttributeQuery(
-                                        Attributes.REGION,
-                                        Operators.EQUALS,
-                                        ImmutableList.of(regionId)
-                                ),
-                                new StringAttributeQuery(
-                                        Attributes.ACTIONABLE_FILTER_PARAMETERS,
-                                        Operators.EQUALS,
-                                        ImmutableList.of(
-                                                "broadcast.time.gt:"
-                                                        + DateTime.now().minusHours(2).toString(),
-                                                "broadcast.time.lt"
-                                                        + DateTime.now().plusHours(2).toString()
-                                        )
                                 )
                         )
                 ),
                 ImmutableList.of(publisher),
-                Selection.all()
+                Selection.all(),
+
+                Optional.of(
+                        new IndexQueryParams(
+                                Optional.<FuzzyQueryParams>empty(),
+                                Optional.<QueryOrdering>empty(),
+                                Optional.of(regionId),
+                                Optional.<Float>empty(),
+                                Optional.<Float>empty(),
+                                Optional.empty(),
+                                false,
+                                Optional.empty(),
+                                Optional.of(ImmutableMap.of(
+                                        "broadcast.time.gt",
+                                        DateTime.now().minusHours(2).toString(),
+                                        "broadcast.time.lt",
+                                        DateTime.now().plusHours(2).toString()
+                                )),
+                                Optional.empty()
+                        )
+                )
         );
         IndexQueryResult result = Futures.get(resultFuture, IOException.class);
         FluentIterable<Id> ids = result.getIds();
@@ -479,8 +522,8 @@ public class EsUnequivalentContentIndexTest {
         encoding1.setAvailableAt(ImmutableSet.of(location1));
         encoding2.setAvailableAt(ImmutableSet.of(location2));
 
-        Item item1 = complexItem().withTitle("test!").withId(30L).build();
-        Item item2 = complexItem().withTitle("not!").withId(20L).build();
+        Item item1 = complexItem().withTitle("test!").withId(30l).build();
+        Item item2 = complexItem().withTitle("not!").withId(20l).build();
 
         item1.setManifestedAs(ImmutableSet.of(encoding1));
         item2.setManifestedAs(ImmutableSet.of(encoding2));
@@ -490,13 +533,13 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testTitlePrefixQuery() throws Exception {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
-                20L,
-                20L,
-                30L,
-                30L
+                20l,
+                20l,
+                30l,
+                30l
         )));
-        Item item1 = complexItem().withTitle("test!").withId(30L).build();
-        Item item2 = complexItem().withTitle("not!").withId(20L).build();
+        Item item1 = complexItem().withTitle("test!").withId(30l).build();
+        Item item2 = complexItem().withTitle("not!").withId(20l).build();
 
         indexAndRefresh(item1, item2);
 
@@ -504,9 +547,10 @@ public class EsUnequivalentContentIndexTest {
                 .createQuery(Operators.BEGINNING, ImmutableList.of("te"));
         IndexQueryResult result = Futures.get(
                 index.query(
-                        AttributeQuerySet.create(ImmutableList.of(query)),
+                        new AttributeQuerySet(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
-                        Selection.all()
+                        Selection.all(),
+                        Optional.empty()
                 ),
                 Exception.class
         );
@@ -517,13 +561,13 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testTitlePrefixQueryWithNonLetterCharacter() throws Exception {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
-                20L,
-                20L,
-                30L,
-                30L
+                20l,
+                20l,
+                30l,
+                30l
         )));
-        Item item1 = complexItem().withTitle("1test").withId(30L).build();
-        Item item2 = complexItem().withTitle("not!").withId(20L).build();
+        Item item1 = complexItem().withTitle("1test").withId(30l).build();
+        Item item2 = complexItem().withTitle("not!").withId(20l).build();
 
         indexAndRefresh(item1, item2);
 
@@ -531,9 +575,10 @@ public class EsUnequivalentContentIndexTest {
                 .createQuery(Operators.BEGINNING, ImmutableList.of("#"));
         IndexQueryResult result = Futures.get(
                 index.query(
-                        AttributeQuerySet.create(ImmutableList.of(query)),
+                        new AttributeQuerySet(ImmutableList.of(query)),
                         ImmutableList.of(Publisher.BBC),
-                        Selection.all()
+                        Selection.all(),
+                        Optional.empty()
                 ),
                 Exception.class
         );
@@ -556,11 +601,10 @@ public class EsUnequivalentContentIndexTest {
         AttributeQuery<Publisher> query = Attributes.SOURCE
                 .createQuery(Operators.EQUALS, ImmutableList.of(Publisher.METABROADCAST));
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(query));
-        ListenableFuture<IndexQueryResult> result = index.query(
-                querySet,
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
+        ListenableFuture<IndexQueryResult> result = index.query(querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(), Optional.empty()
         );
 
         IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
@@ -569,11 +613,9 @@ public class EsUnequivalentContentIndexTest {
         query = Attributes.SOURCE
                 .createQuery(Operators.EQUALS, ImmutableList.of(Publisher.BBC));
 
-        querySet = AttributeQuerySet.create(ImmutableList.of(query));
-        result = index.query(
-                querySet, 
-                ImmutableList.of(Publisher.METABROADCAST), 
-                Selection.all()
+        querySet = new AttributeQuerySet(ImmutableList.of(query));
+        result = index.query(querySet, ImmutableList.of(Publisher.METABROADCAST), Selection.all(),
+                Optional.empty()
         );
 
         ids = result.get(1, TimeUnit.SECONDS);
@@ -584,8 +626,8 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testTopicQuery() throws Exception {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
-                1L,
-                1L
+                1l,
+                1l
         )));
         Content content = new Episode();
         content.setId(1);
@@ -599,16 +641,17 @@ public class EsUnequivalentContentIndexTest {
 
         indexAndRefresh(content);
 
-        AttributeQuery<String> query = Attributes.SEARCH_TOPIC_ID.createQuery(
+        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(
                 Operators.EQUALS,
-                ImmutableList.of(codec.encode(BigInteger.valueOf(2L)))
+                ImmutableList.of(Id.valueOf(2))
         );
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(query));
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
         ListenableFuture<IndexQueryResult> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(),
+                Optional.empty()
         );
 
         IndexQueryResult ids = result.get(1, TimeUnit.SECONDS);
@@ -646,20 +689,29 @@ public class EsUnequivalentContentIndexTest {
 
         indexAndRefresh(episode1, episode2, episode3);
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(
-                Attributes.SEARCH_TOPIC_ID.createQuery(
-                        Operators.EQUALS,
-                        ImmutableList.of(codec.encode(BigInteger.valueOf(4L)))
-                ),
-                Attributes.ORDER_BY.createQuery(
-                        Operators.EQUALS,
-                        ImmutableList.of("topics.weighting.desc")
-                )
-        ));
+        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(
+                Operators.EQUALS,
+                ImmutableList.of(Id.valueOf(4))
+        );
+
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
         ListenableFuture<IndexQueryResult> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(),
+                Optional.of(new IndexQueryParams(
+                                Optional.empty(),
+                                Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc")),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Boolean.TRUE,
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
+                )
         );
 
         IndexQueryResult ids = result.get();
@@ -693,27 +745,97 @@ public class EsUnequivalentContentIndexTest {
 
         indexAndRefresh(episode1, episode2, episode3);
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(ImmutableList.of(
-                Attributes.ID.createQuery(
-                        Operators.EQUALS,
-                        ImmutableList.of(Id.valueOf(1), Id.valueOf(2), Id.valueOf(3))
-                ),
-                Attributes.ORDER_BY.createQuery(
-                        Operators.EQUALS,
-                        ImmutableList.of("topics.weighting.desc")
-                )
-        ));
-        
+        AttributeQuery<Id> query = Attributes.ID.createQuery(
+                Operators.EQUALS,
+                ImmutableList.of(Id.valueOf(1), Id.valueOf(2), Id.valueOf(3))
+        );
+
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
         ListenableFuture<IndexQueryResult> result = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(),
+                Optional.of(new IndexQueryParams(
+                                Optional.empty(),
+                                Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc")),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Boolean.TRUE,
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
+                )
         );
 
         IndexQueryResult ids = result.get();
         assertThat(ids.getIds().get(0), is(Id.valueOf(2)));
         assertThat(ids.getIds().get(1), is(Id.valueOf(1)));
         assertThat(ids.getIds().get(2), is(Id.valueOf(3)));
+    }
+
+    @Test
+    public void orderByMultipleFieldsWorks() throws Exception {
+        for (Long id : ImmutableList.of(1L, 2L, 3L)) {
+            when(equivIdIndex.lookup(eq(ImmutableList.of(id))))
+                    .thenReturn(Futures.immediateFuture(ImmutableMap.of(id, id)));
+        }
+
+        Content episode1 = episode(1);
+        episode1.setTags(ImmutableList.of(new Tag(
+                4L,
+                1.0f,
+                true,
+                Tag.Relationship.ABOUT
+        )));
+        Content episode2 = episode(2);
+        episode2.setTags(ImmutableList.of(new Tag(
+                4L,
+                1.0f,
+                true,
+                Tag.Relationship.ABOUT
+        )));
+        Content episode3 = episode(3);
+        episode3.setTags(ImmutableList.of(new Tag(
+                4L,
+                2.0f,
+                false,
+                Tag.Relationship.ABOUT
+        )));
+
+        indexAndRefresh(episode1, episode2, episode3);
+
+        AttributeQuery<Id> query = Attributes.TOPIC_ID.createQuery(
+                Operators.EQUALS,
+                ImmutableList.of(Id.valueOf(4))
+        );
+
+        AttributeQuerySet querySet = new AttributeQuerySet(ImmutableList.of(query));
+        ListenableFuture<IndexQueryResult> result = index.query(
+                querySet,
+                ImmutableList.of(Publisher.METABROADCAST),
+                Selection.all(),
+                Optional.of(new IndexQueryParams(
+                                Optional.empty(),
+                                Optional.of(QueryOrdering.fromOrderBy("topics.weighting.desc,id.asc")),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Boolean.TRUE,
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()
+                        )
+                )
+        );
+
+        IndexQueryResult ids = result.get();
+        assertThat(ids.getIds().get(0), is(Id.valueOf(3)));
+        assertThat(ids.getIds().get(1), is(Id.valueOf(1)));
+        assertThat(ids.getIds().get(2), is(Id.valueOf(2)));
     }
 
     private Content episode(int id) {
@@ -745,9 +867,8 @@ public class EsUnequivalentContentIndexTest {
                 Operators.EQUALS, ImmutableList.of(1.0f));
 
         IndexQueryResult ids = index.query(
-                AttributeQuerySet.create(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                new AttributeQuerySet(ImmutableList.of(query)),
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty()
         )
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
@@ -756,9 +877,8 @@ public class EsUnequivalentContentIndexTest {
                 Operators.LESS_THAN, ImmutableList.of(0.5f));
 
         ids = index.query(
-                AttributeQuerySet.create(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                new AttributeQuerySet(ImmutableList.of(query)),
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty()
         )
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().isPresent(), is(false));
@@ -767,9 +887,8 @@ public class EsUnequivalentContentIndexTest {
                 Operators.GREATER_THAN, ImmutableList.of(0.5f));
 
         ids = index.query(
-                AttributeQuerySet.create(ImmutableList.of(query)),
-                ImmutableList.of(Publisher.METABROADCAST), 
-                Selection.all()
+                new AttributeQuerySet(ImmutableList.of(query)),
+                ImmutableList.of(Publisher.METABROADCAST), Selection.all(), Optional.empty()
         )
                 .get(1, TimeUnit.SECONDS);
         assertThat(ids.getIds().first().get(), is(Id.valueOf(1)));
@@ -787,29 +906,30 @@ public class EsUnequivalentContentIndexTest {
     public void testUnindexingOfContentThatIsNoLongerPublished()
             throws IndexException, ExecutionException, InterruptedException {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
-                10L,
-                10L
+                10l,
+                10l
         )));
-        Item item = complexItem().withId(20L).build();
+        Item item = complexItem().withId(20l).build();
         item.setPublisher(Publisher.METABROADCAST);
         item.setActivelyPublished(true);
         indexAndRefresh(item);
 
-        AttributeQuerySet querySet = AttributeQuerySet.create(
+        AttributeQuerySet querySet = new AttributeQuerySet(
                 ImmutableList.of(
                         Attributes.ID.createQuery(
                                 Operators.EQUALS,
-                                ImmutableList.of(Id.valueOf(20L))
+                                ImmutableList.of(Id.valueOf(20l))
                         )
                 )
         );
         IndexQueryResult resultWithItemPresent = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(),
+                Optional.empty()
         )
                 .get();
-        assertThat(resultWithItemPresent.getIds().first().get(), is(Id.valueOf(20L)));
+        assertThat(resultWithItemPresent.getIds().first().get(), is(Id.valueOf(20l)));
 
         item.setActivelyPublished(false);
         indexAndRefresh(item);
@@ -817,7 +937,8 @@ public class EsUnequivalentContentIndexTest {
         IndexQueryResult resultWithItemAbsent = index.query(
                 querySet,
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(),
+                Optional.empty()
         )
                 .get();
         assertThat(
@@ -829,10 +950,10 @@ public class EsUnequivalentContentIndexTest {
     @Test
     public void testUpdatesCanonicalIdsCorrectly() throws IndexException {
         when(equivIdIndex.lookup(any())).thenReturn(Futures.immediateFuture(ImmutableMap.of(
-                10L,
-                10L
+                10l,
+                10l
         )));
-        Item item = new Item(Id.valueOf(10L), Publisher.METABROADCAST);
+        Item item = new Item(Id.valueOf(10l), Publisher.METABROADCAST);
         item.setTitle("Test title!");
         indexAndRefresh(item);
 
@@ -845,7 +966,7 @@ public class EsUnequivalentContentIndexTest {
         assertThat(resolvedFields.get(EsContent.TITLE), is(equalTo("Test title!")));
         assertThat(resolvedFields.get(EsContent.CANONICAL_ID), is(equalTo(10)));
 
-        index.updateCanonicalIds(Id.valueOf(20L), ImmutableSet.of(Id.valueOf(10L)));
+        index.updateCanonicalIds(Id.valueOf(20l), ImmutableSet.of(Id.valueOf(10l)));
 
         ElasticSearchHelper.refresh(esClient);
 

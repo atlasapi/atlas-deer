@@ -8,9 +8,6 @@ import org.atlasapi.channel.ChannelGroupResolver;
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
 import org.atlasapi.media.entity.Publisher;
-import org.atlasapi.query.EsQueryParser;
-import org.atlasapi.query.IndexQueryParams;
-import org.atlasapi.query.QueryOrdering;
 import org.atlasapi.util.ElasticsearchIndexCreator;
 import org.atlasapi.util.EsQueryBuilder;
 import org.atlasapi.util.FiltersBuilder;
@@ -55,13 +52,12 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
     private final String index;
     private final ChannelGroupResolver channelGroupResolver;
 
+    private final EsQueryBuilder queryBuilderFactory = new EsQueryBuilder();
+
     private final SecondaryIndex equivIdIndex;
     private final EsUnequivalentContentIndexer indexer;
 
-    private final EsQueryParser esQueryParser;
-    private final EsQueryBuilder queryBuilderFactory;
-
-    private EsUnequivalentContentIndex(
+    public EsUnequivalentContentIndex(
             Client esClient,
             String indexName,
             ChannelGroupResolver channelGroupResolver,
@@ -83,25 +79,6 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
                 indexName,
                 requestTimeout,
                 translator
-        );
-
-        this.esQueryParser = EsQueryParser.create();
-        this.queryBuilderFactory = EsQueryBuilder.create();
-    }
-
-    public static EsUnequivalentContentIndex create(
-            Client esClient,
-            String indexName,
-            ChannelGroupResolver channelGroupResolver,
-            SecondaryIndex equivIdIndex,
-            Integer requestTimeout
-    ) {
-        return new EsUnequivalentContentIndex(
-                esClient,
-                indexName,
-                channelGroupResolver,
-                equivIdIndex,
-                requestTimeout
         );
     }
 
@@ -129,20 +106,15 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
     }
 
     @Override
-    public ListenableFuture<IndexQueryResult> query(
-            AttributeQuerySet query,
-            Iterable<Publisher> publishers,
-            Selection selection
-    ) {
+    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = queryInternal(
-                query, publishers, selection
+                query, publishers, selection, queryParams
         );
 
         return Futures.transform(response, (SearchResponse input) -> {
-            ImmutableList<Id> ids = StreamSupport.stream(
-                    input.getHits().spliterator(),
-                    false
-            )
+            ImmutableList<Id> ids = StreamSupport.stream(input.getHits().spliterator(), false)
                     .map(this::getId)
                     .collect(MoreCollectors.toImmutableList());
 
@@ -151,13 +123,11 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
     }
 
     @Override
-    public ListenableFuture<DelegateIndexQueryResult> delegateQuery(
-            AttributeQuerySet query,
-            Iterable<Publisher> publishers,
-            Selection selection
-    ) {
+    public ListenableFuture<DelegateIndexQueryResult> delegateQuery(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = queryInternal(
-                query, publishers, selection
+                query, publishers, selection, queryParams
         );
 
         return Futures.transform(response, (SearchResponse input) -> {
@@ -175,16 +145,12 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         });
     }
 
-    private SettableFuture<SearchResponse> queryInternal(
-            AttributeQuerySet query,
-            Iterable<Publisher> publishers,
-            Selection selection
-    ) {
+    private SettableFuture<SearchResponse> queryInternal(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams) {
         SettableFuture<SearchResponse> response = SettableFuture.create();
 
-        EsQueryParser.EsQuery esQuery = esQueryParser.parse(query);
-
-        QueryBuilder queryBuilder = queryBuilderFactory.buildQuery(esQuery.getAttributeQuerySet());
+        QueryBuilder queryBuilder = this.queryBuilderFactory.buildQuery(query);
 
         /* matchAllFilter as a bool filter with less than 1 clause is invalid */
         BoolFilterBuilder filterBuilder = FilterBuilders.boolFilter()
@@ -204,14 +170,17 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
                 .setFrom(selection.getOffset())
                 .setSize(Objects.firstNonNull(selection.getLimit(), DEFAULT_LIMIT));
 
-        addOrdering(esQuery.getIndexQueryParams(), reqBuilder);
+        if (queryParams.isPresent()) {
 
-        queryBuilder = addFuzzyQuery(esQuery.getIndexQueryParams(), queryBuilder, reqBuilder);
+            addOrdering(queryParams, reqBuilder);
 
-        addBrandId(esQuery.getIndexQueryParams(), filterBuilder);
-        addSeriesId(esQuery.getIndexQueryParams(), filterBuilder);
-        addTopicFilter(esQuery.getIndexQueryParams(), filterBuilder);
-        addActionableFilter(esQuery.getIndexQueryParams(), filterBuilder);
+            queryBuilder = addFuzzyQuery(queryParams, queryBuilder, reqBuilder);
+
+            addBrandId(queryParams, filterBuilder);
+            addSeriesId(queryParams, filterBuilder);
+            addTopicFilter(queryParams, filterBuilder);
+            addActionableFilter(queryParams, filterBuilder);
+        }
 
         reqBuilder.addSort(EsContent.ID, SortOrder.ASC);
 
@@ -219,30 +188,24 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         reqBuilder.setQuery(finalQuery);
         log.debug(reqBuilder.internalBuilder().toString());
         reqBuilder.execute(FutureSettingActionListener.setting(response));
-
         return response;
     }
 
-    private void addOrdering(
-            IndexQueryParams queryParams,
-            SearchRequestBuilder reqBuilder
-    ) {
-        if (queryParams.getOrdering().isPresent()) {
-            addSortOrder(queryParams.getOrdering(), reqBuilder);
+    private void addOrdering(Optional<IndexQueryParams> queryParams,
+            SearchRequestBuilder reqBuilder) {
+        if (queryParams.get().getOrdering().isPresent()) {
+            addSortOrder(queryParams.get().getOrdering(), reqBuilder);
         }
     }
 
-    private QueryBuilder addFuzzyQuery(
-            IndexQueryParams queryParams,
-            QueryBuilder queryBuilder,
-            SearchRequestBuilder reqBuilder
-    ) {
-        if (queryParams.getFuzzyQueryParams().isPresent()) {
+    private QueryBuilder addFuzzyQuery(Optional<IndexQueryParams> queryParams,
+            QueryBuilder queryBuilder, SearchRequestBuilder reqBuilder) {
+        if (queryParams.get().getFuzzyQueryParams().isPresent()) {
             queryBuilder = addTitleQuery(queryParams, queryBuilder);
-            if (queryParams.getBroadcastWeighting().isPresent()) {
+            if (queryParams.isPresent() && queryParams.get().getBroadcastWeighting().isPresent()) {
                 queryBuilder = BroadcastQueryBuilder.build(
                         queryBuilder,
-                        queryParams.getBroadcastWeighting().get()
+                        queryParams.get().getBroadcastWeighting().get()
                 );
             } else {
                 queryBuilder = BroadcastQueryBuilder.build(queryBuilder, 5f);
@@ -252,52 +215,44 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         return queryBuilder;
     }
 
-    private void addBrandId(
-            IndexQueryParams queryParams,
-            BoolFilterBuilder filterBuilder
-    ) {
-        if (queryParams.getBrandId().isPresent()) {
+    private void addBrandId(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getBrandId().isPresent()) {
             filterBuilder.must(
                     FiltersBuilder.getBrandIdFilter(
-                            queryParams.getBrandId().get(),
+                            queryParams.get().getBrandId().get(),
                             equivIdIndex
                     )
             );
         }
     }
 
-    private void addSeriesId(
-            IndexQueryParams queryParams,
-            BoolFilterBuilder filterBuilder
-    ) {
-        if (queryParams.getSeriesId().isPresent()) {
+    private void addSeriesId(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getSeriesId().isPresent()) {
             filterBuilder.must(
                     FiltersBuilder.getSeriesIdFilter(
-                            queryParams.getSeriesId().get(), equivIdIndex
+                            queryParams.get().getSeriesId().get(), equivIdIndex
                     )
             );
         }
     }
 
-    private void addTopicFilter(
-            IndexQueryParams queryParams,
-            BoolFilterBuilder filterBuilder
-    ) {
-        if (queryParams.getTopicFilterIds().isPresent()) {
+    private void addTopicFilter(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getTopicFilterIds().isPresent()) {
             filterBuilder.must(
-                    FiltersBuilder.buildTopicIdFilter(queryParams.getTopicFilterIds().get())
+                    FiltersBuilder.buildTopicIdFilter(queryParams.get().getTopicFilterIds().get())
             );
         }
     }
 
-    private void addActionableFilter(
-            IndexQueryParams queryParams,
-            BoolFilterBuilder filterBuilder
-    ) {
-        if (queryParams.getActionableFilterParams().isPresent()) {
-            Optional<Id> maybeRegionId = queryParams.getRegionId();
+    private void addActionableFilter(Optional<IndexQueryParams> queryParams,
+            BoolFilterBuilder filterBuilder) {
+        if (queryParams.get().getActionableFilterParams().isPresent()) {
+            Optional<Id> maybeRegionId = queryParams.get().getRegionId();
             FilterBuilder actionableFilter = FiltersBuilder.buildActionableFilter(
-                    queryParams.getActionableFilterParams().get(),
+                    queryParams.get().getActionableFilterParams().get(),
                     maybeRegionId,
                     channelGroupResolver
             );
@@ -328,11 +283,9 @@ public class EsUnequivalentContentIndex extends AbstractIdleService
         return orderField;
     }
 
-    private QueryBuilder addTitleQuery(
-            IndexQueryParams queryParams,
-            QueryBuilder queryBuilder
-    ) {
-        FuzzyQueryParams searchParams = queryParams.getFuzzyQueryParams().get();
+    private QueryBuilder addTitleQuery(Optional<IndexQueryParams> queryParams,
+            QueryBuilder queryBuilder) {
+        FuzzyQueryParams searchParams = queryParams.get().getFuzzyQueryParams().get();
         queryBuilder = QueryBuilders.boolQuery()
                 .must(queryBuilder)
                 .must(TitleQueryBuilder.build(

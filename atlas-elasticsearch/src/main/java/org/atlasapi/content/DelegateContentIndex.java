@@ -1,5 +1,7 @@
 package org.atlasapi.content;
 
+import java.util.Optional;
+
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.media.entity.Publisher;
 
@@ -14,9 +16,7 @@ import com.google.common.util.concurrent.ListenableFuture;
  */
 public interface DelegateContentIndex {
 
-    ListenableFuture<DelegateIndexQueryResult> delegateQuery(
-            AttributeQuerySet query,
-            Iterable<Publisher> publishers,
-            Selection selection
-    );
+    ListenableFuture<DelegateIndexQueryResult> delegateQuery(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> queryParams);
 }

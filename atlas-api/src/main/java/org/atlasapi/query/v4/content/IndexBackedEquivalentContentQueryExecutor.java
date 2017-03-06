@@ -5,13 +5,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.annotation.Annotation;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
+import org.atlasapi.content.IndexQueryParser;
 import org.atlasapi.content.IndexQueryResult;
-import org.atlasapi.criteria.AttributeQuery;
-import org.atlasapi.criteria.IdAttributeQuery;
-import org.atlasapi.criteria.attribute.Attributes;
 import org.atlasapi.entity.Id;
 import org.atlasapi.equivalence.MergingEquivalentsResolver;
 import org.atlasapi.equivalence.ResolvedEquivalents;
@@ -23,10 +22,9 @@ import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.query.common.exceptions.UncheckedQueryExecutionException;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.query.Selection;
-import com.metabroadcast.promise.Promise;
 
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -39,23 +37,12 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
 
     private final ContentIndex index;
     private final MergingEquivalentsResolver<Content> resolver;
+    private final IndexQueryParser indexQueryParser = new IndexQueryParser();
 
-    private IndexBackedEquivalentContentQueryExecutor(
-            ContentIndex contentIndex,
-            MergingEquivalentsResolver<Content> equivalentContentResolver
-    ) {
+    public IndexBackedEquivalentContentQueryExecutor(ContentIndex contentIndex,
+            MergingEquivalentsResolver<Content> equivalentContentResolver) {
         this.index = checkNotNull(contentIndex);
         this.resolver = checkNotNull(equivalentContentResolver);
-    }
-
-    public static IndexBackedEquivalentContentQueryExecutor create(
-            ContentIndex contentIndex,
-            MergingEquivalentsResolver<Content> equivalentContentResolver
-    ) {
-        return new IndexBackedEquivalentContentQueryExecutor(
-                contentIndex,
-                equivalentContentResolver
-        );
     }
 
     @Override
@@ -86,16 +73,14 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         return query.isListQuery() ? executeListQuery(query) : executeSingleQuery(query);
     }
 
-    private ListenableFuture<QueryResult<Content>> executeSingleQuery(Query<Content> query) {
+    private ListenableFuture<QueryResult<Content>> executeSingleQuery(final Query<Content> query) {
         final Id contentId = query.getOnlyId();
         return Futures.transform(
                 resolve(query, contentId),
                 (ResolvedEquivalents<Content> input) -> {
                     List<Content> equivs = input.get(contentId).asList();
                     if (equivs.isEmpty()) {
-                        throw new UncheckedQueryExecutionException(
-                                new NotFoundException(contentId)
-                        );
+                        throw new UncheckedQueryExecutionException(new NotFoundException(contentId));
                     }
                     Content resource = equivs.get(0);
                     return QueryResult.singleResult(resource, query.getContext());
@@ -111,60 +96,39 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
         );
     }
 
-    private ListenableFuture<QueryResult<Content>> executeListQuery(Query<Content> query)
+    private ListenableFuture<QueryResult<Content>> executeListQuery(final Query<Content> query)
             throws QueryExecutionException {
         try {
-            ListenableFuture<IndexQueryResult> result = executeIndexQuery(query);
-
-            return Promise.wrap(result)
-                    .then(queryResult -> resolveSearchQuery(query, queryResult))
-                    .get();
+            ListenableFuture<IndexQueryResult> result
+                    = index.query(
+                    query.getOperands(),
+                    sources(query),
+                    selection(query),
+                    Optional.of(indexQueryParser.parse(query))
+            );
+            return Futures.get(
+                    Futures.transform(result, toQueryResult(query)),
+                    QueryExecutionException.class
+            );
         } catch (Exception e) {
             throw new QueryExecutionException(e);
         }
     }
 
-    private ListenableFuture<IndexQueryResult> executeIndexQuery(Query<Content> query) {
-        // Check if the query is requesting specific IDs
-        Optional<ListenableFuture<IndexQueryResult>> naiveResult = query.getOperands()
-                .stream()
-                .filter(attributeQuery -> attributeQuery.getAttribute().equals(Attributes.ID))
-                .map(attributeQuery -> (IdAttributeQuery) attributeQuery)
-                .map(AttributeQuery::getValue)
-                .map(ids -> IndexQueryResult.withIds(ids, ids.size()))
-                .map(Futures::immediateFuture)
-                .findFirst();
-
-        if (naiveResult.isPresent()) {
-            return naiveResult.get();
-        }
-
-        return index.query(
-                query.getOperands(),
-                sources(query),
-                selection(query)
-        );
-    }
-
-    private ListenableFuture<QueryResult<Content>> resolveSearchQuery(
-            Query<Content> query,
-            IndexQueryResult input
-    ) {
-        ListenableFuture<ResolvedEquivalents<Content>> resolving =
-                resolver.resolveIds(
-                        input.getIds(),
-                        application(query),
-                        annotations(query)
-                );
-        return Futures.transform(
-                resolving,
-                (ResolvedEquivalents<Content> resolved) -> {
-                    Iterable<Content> resources = resolved.getFirstElems();
-                    return QueryResult.listResult(
-                            resources, query.getContext(),
-                            input.getTotalCount()
+    private Function<IndexQueryResult, ListenableFuture<QueryResult<Content>>> toQueryResult(
+            final Query<Content> query) {
+        return input -> {
+            ListenableFuture<ResolvedEquivalents<Content>> resolving =
+                    resolver.resolveIds(
+                            input.getIds(),
+                            application(query),
+                            annotations(query)
                     );
-                });
+            return Futures.transform(resolving, (ResolvedEquivalents<Content> resolved) -> {
+                Iterable<Content> resources = resolved.getFirstElems();
+                return QueryResult.listResult(resources, query.getContext(), input.getTotalCount());
+            });
+        };
     }
 
     private Selection selection(Query<Content> query) {
@@ -182,4 +146,5 @@ public class IndexBackedEquivalentContentQueryExecutor implements QueryExecutor<
     private Application application(Query<Content> query) {
         return query.getContext().getApplication();
     }
+
 }

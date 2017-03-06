@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import org.atlasapi.EsSchema;
@@ -37,7 +38,7 @@ public class PseudoEquivalentContentIndexIT {
 
     @Before
     public void setUp() {
-        EsUnequivalentContentIndex delegate = EsUnequivalentContentIndex.create(
+        EsUnequivalentContentIndex delegate = new EsUnequivalentContentIndex(
                 esNode,
                 EsSchema.CONTENT_INDEX,
                 mock(ChannelGroupResolver.class),
@@ -45,25 +46,25 @@ public class PseudoEquivalentContentIndexIT {
                 60000
         );
         delegate.startAsync().awaitRunning();
-        contentIndex = PseudoEquivalentContentIndex.create(delegate);
+        contentIndex = new PseudoEquivalentContentIndex(delegate);
     }
 
     @Test
     public void testQuery() throws Exception {
-        Item item1 = new Item(Id.valueOf(1L), Publisher.BBC);
-        Item item2 = new Item(Id.valueOf(2L), Publisher.METABROADCAST);
-        Item item3 = new Item(Id.valueOf(3L), Publisher.METABROADCAST);
+        Item item1 = new Item(Id.valueOf(1l), Publisher.BBC);
+        Item item2 = new Item(Id.valueOf(2l), Publisher.METABROADCAST);
+        Item item3 = new Item(Id.valueOf(3l), Publisher.METABROADCAST);
 
         when(equivIndex.lookup(anyList()))
-                .thenReturn(Futures.immediateFuture(ImmutableMap.of(1L, 2L)))
-                .thenReturn(Futures.immediateFuture(ImmutableMap.of(2L, 2L)))
-                .thenReturn(Futures.immediateFuture(ImmutableMap.of(3L, 3L)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(1l, 2l)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(2l, 2l)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(3l, 3l)))
                 .thenReturn(
                         Futures.immediateFuture(
                                 ImmutableMap.of(
-                                        1L, 2L,
-                                        2L, 2L,
-                                        3L, 3L
+                                        1l, 2l,
+                                        2l, 2l,
+                                        3l, 3l
                                 )
                         )
                 );
@@ -71,43 +72,44 @@ public class PseudoEquivalentContentIndexIT {
         indexAndRefresh(item1, item2, item3);
 
         ListenableFuture<IndexQueryResult> result = contentIndex.query(
-                AttributeQuerySet.create(ImmutableList.of()),
+                new AttributeQuerySet(ImmutableList.of()),
                 ImmutableList.of(Publisher.METABROADCAST),
-                Selection.all()
+                Selection.all(),
+                Optional.empty()
         );
 
         ImmutableList<Id> ids = ImmutableList.copyOf(Futures.get(result, IOException.class)
                 .getIds());
 
-        assertThat(ids, is(ImmutableList.of(Id.valueOf(2L), Id.valueOf(3L))));
+        assertThat(ids, is(ImmutableList.of(Id.valueOf(2l), Id.valueOf(3l))));
     }
 
     @Test
     public void testRemovesNonActivelyPublishedContent()
             throws IndexException, ExecutionException, InterruptedException {
         when(equivIndex.lookup(anyList()))
-                .thenReturn(Futures.immediateFuture(ImmutableMap.of(10L, 10L)))
-                .thenReturn(Futures.immediateFuture(ImmutableMap.of(20L, 20L)))
-                .thenReturn(Futures.immediateFuture(ImmutableMap.of(3L, 3L)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(10l, 10l)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(20l, 20l)))
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(3l, 3l)))
                 .thenReturn(
                         Futures.immediateFuture(
                                 ImmutableMap.of(
-                                        1L, 2L,
-                                        2L, 2L,
-                                        3L, 3L
+                                        1l, 2l,
+                                        2l, 2l,
+                                        3l, 3l
                                 )
                         )
                 );
 
-        Item item = new Item(Id.valueOf(10L), Publisher.METABROADCAST);
+        Item item = new Item(Id.valueOf(10l), Publisher.METABROADCAST);
         indexAndRefresh(item);
         item.setActivelyPublished(false);
         indexAndRefresh(item);
         GetResponse resp = esNode.prepareGet().setIndex("content").setId("10").execute().get();
         assertThat(resp.isExists(), is(false));
 
-        Episode episode = new Episode(Id.valueOf(20L), Publisher.METABROADCAST);
-        episode.setContainerRef(new BrandRef(Id.valueOf(30L), Publisher.METABROADCAST));
+        Episode episode = new Episode(Id.valueOf(20l), Publisher.METABROADCAST);
+        episode.setContainerRef(new BrandRef(Id.valueOf(30l), Publisher.METABROADCAST));
         indexAndRefresh(episode);
         episode.setActivelyPublished(false);
         indexAndRefresh(episode);

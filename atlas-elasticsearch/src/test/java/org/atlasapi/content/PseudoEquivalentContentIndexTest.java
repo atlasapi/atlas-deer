@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.atlasapi.criteria.AttributeQuerySet;
 import org.atlasapi.entity.Id;
@@ -26,14 +27,15 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class PseudoEquivalentContentIndexTest {
 
-    private final AttributeQuerySet query = AttributeQuerySet.create(Lists.newArrayList());
+    private final AttributeQuerySet query = new AttributeQuerySet(Lists.newArrayList());
+    private final Optional<IndexQueryParams> indexQueryParams = Optional.<IndexQueryParams>empty();
 
     private @Mock EsUnequivalentContentIndex esUnequivalentContentIndex;
     private PseudoEquivalentContentIndex pseudoEquivalentContentIndex;
 
     @Before
     public void setUp() throws Exception {
-        pseudoEquivalentContentIndex = PseudoEquivalentContentIndex.create(esUnequivalentContentIndex);
+        pseudoEquivalentContentIndex = new PseudoEquivalentContentIndex(esUnequivalentContentIndex);
     }
 
     @Test
@@ -52,7 +54,7 @@ public class PseudoEquivalentContentIndexTest {
         setupMocks(delegateResult, publishers);
 
         IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
-                query, publishers, Selection.ALL
+                query, publishers, Selection.ALL, indexQueryParams
         ).get();
 
         assertThat(queryResult.getTotalCount(), is(10L));
@@ -77,7 +79,7 @@ public class PseudoEquivalentContentIndexTest {
         setupMocks(delegateResult, publishers);
 
         IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
-                query, publishers, new Selection(2, 2)
+                query, publishers, new Selection(2, 2), Optional.<IndexQueryParams>empty()
         ).get();
 
         assertThat(queryResult.getIds().size(), is(2));
@@ -108,7 +110,7 @@ public class PseudoEquivalentContentIndexTest {
         setupMocks(delegateResult, publishers);
 
         IndexQueryResult queryResult = pseudoEquivalentContentIndex.query(
-                query, publishers, Selection.ALL
+                query, publishers, Selection.ALL, Optional.<IndexQueryParams>empty()
         ).get();
 
         assertThat(queryResult.getIds().size(), is(3));
@@ -120,9 +122,11 @@ public class PseudoEquivalentContentIndexTest {
 
     private void setupMocks(DelegateIndexQueryResult queryResult, List<Publisher> publishers) {
         when(esUnequivalentContentIndex.delegateQuery(
-                eq(AttributeQuerySet.create(Lists.newArrayList())),
+                eq(new AttributeQuerySet(Lists.newArrayList())),
                 eq(publishers),
-                any(Selection.class))
+                any(Selection.class),
+                eq(indexQueryParams)
+                )
         )
                 .thenReturn(Futures.immediateFuture(queryResult));
     }

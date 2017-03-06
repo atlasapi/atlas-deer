@@ -95,7 +95,7 @@ public class EsContentTitleSearcherTest {
         item2.setContainerRef(brand1.toRef());
         item3.setContainerRef(brand2.toRef());
 
-        EsUnequivalentContentIndex contentIndex = EsUnequivalentContentIndex.create(
+        EsUnequivalentContentIndex contentIndex = new EsUnequivalentContentIndex(
                 esClient.client(),
                 EsSchema.CONTENT_INDEX,
                 mock(ChannelGroupResolver.class),

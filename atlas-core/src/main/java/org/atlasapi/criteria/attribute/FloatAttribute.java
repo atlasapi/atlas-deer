@@ -27,13 +27,6 @@ public class FloatAttribute extends Attribute<Float> {
 
     public static FloatAttribute single(
             String name,
-            Class<? extends Identified> target
-    ) {
-        return new FloatAttribute(name, target, false);
-    }
-
-    public static FloatAttribute single(
-            String name,
             String javaAttributeName,
             Class<? extends Identified> target
     ) {

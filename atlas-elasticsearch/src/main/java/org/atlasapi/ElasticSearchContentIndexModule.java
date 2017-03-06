@@ -49,7 +49,7 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         TransportClient esClient = new TransportClient(settings);
         registerSeeds(esClient, seeds, port);
 
-        unequivIndex = EsUnequivalentContentIndex.create(
+        unequivIndex = new EsUnequivalentContentIndex(
                 esClient,
                 indexName,
                 channelGroupResolver,
@@ -64,9 +64,9 @@ public class ElasticSearchContentIndexModule implements IndexModule {
         );
 
         PseudoEquivalentContentIndex equivalentEsIndex =
-                PseudoEquivalentContentIndex.create(unequivIndex);
+                new PseudoEquivalentContentIndex(unequivIndex);
 
-        this.equivContentIndex = InstrumentedContentIndex.create(equivalentEsIndex, metrics);
+        this.equivContentIndex = new InstrumentedContentIndex(equivalentEsIndex, metrics);
         this.popularTopicsIndex = new EsPopularTopicIndex(esClient);
         this.topicIndex = new EsTopicIndex(esClient, EsSchema.TOPICS_INDEX, 60, TimeUnit.SECONDS);
         this.contentSearcher = new EsContentTitleSearcher(esClient);

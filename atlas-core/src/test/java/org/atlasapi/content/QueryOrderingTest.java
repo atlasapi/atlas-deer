@@ -1,4 +1,4 @@
-package org.atlasapi.query;
+package org.atlasapi.content;
 
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
