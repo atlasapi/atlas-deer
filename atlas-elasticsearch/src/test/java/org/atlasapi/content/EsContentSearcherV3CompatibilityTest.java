@@ -68,7 +68,7 @@ public class EsContentSearcherV3CompatibilityTest {
     @Before
     public void setUp() throws Exception {
         ElasticSearchHelper.refresh(esClient.client());
-        indexer = EsUnequivalentContentIndex.create(
+        indexer = new EsUnequivalentContentIndex(
                 esClient.client(),
                 EsSchema.CONTENT_INDEX,
                 mock(ChannelGroupResolver.class),

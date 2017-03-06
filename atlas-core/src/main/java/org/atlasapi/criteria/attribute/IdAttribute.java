@@ -27,6 +27,7 @@ public class IdAttribute extends Attribute<Id> {
         super(name, javaAttributeName, target, isCollectionOfValues);
     }
 
+
     public static IdAttribute single(
             String name,
             Class<? extends Identified> target

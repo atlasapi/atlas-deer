@@ -1,6 +1,7 @@
 package org.atlasapi.content;
 
 import java.util.LinkedHashMap;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -26,26 +27,20 @@ public class PseudoEquivalentContentIndex implements ContentIndex {
 
     private final EsUnequivalentContentIndex delegate;
 
-    private PseudoEquivalentContentIndex(EsUnequivalentContentIndex delegate) {
+    public PseudoEquivalentContentIndex(EsUnequivalentContentIndex delegate) {
         this.delegate = checkNotNull(delegate);
     }
 
-    public static PseudoEquivalentContentIndex create(EsUnequivalentContentIndex delegate) {
-        return new PseudoEquivalentContentIndex(delegate);
-    }
-
     @Override
-    public ListenableFuture<IndexQueryResult> query(
-            AttributeQuerySet query,
-            Iterable<Publisher> publishers,
-            Selection selection
-    ) {
+    public ListenableFuture<IndexQueryResult> query(AttributeQuerySet query,
+            Iterable<Publisher> publishers, Selection selection,
+            Optional<IndexQueryParams> searchParam) {
         try {
 
             Selection selectionForDelegate = getSelectionForDelegate(publishers, selection);
 
             DelegateIndexQueryResult result = Futures.get(
-                    delegate.delegateQuery(query, publishers, selectionForDelegate),
+                    delegate.delegateQuery(query, publishers, selectionForDelegate, searchParam),
                     Exception.class
             );
 

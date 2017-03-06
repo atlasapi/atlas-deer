@@ -20,7 +20,6 @@ import org.atlasapi.criteria.QueryNodeVisitor;
 import org.atlasapi.criteria.QueryVisitor;
 import org.atlasapi.criteria.SortAttributeQuery;
 import org.atlasapi.criteria.StringAttributeQuery;
-import org.atlasapi.criteria.attribute.Attribute;
 import org.atlasapi.criteria.operator.ComparableOperatorVisitor;
 import org.atlasapi.criteria.operator.DateTimeOperatorVisitor;
 import org.atlasapi.criteria.operator.EqualsOperatorVisitor;
@@ -37,7 +36,6 @@ import org.atlasapi.entity.Id;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -47,52 +45,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.joda.time.DateTime;
 
-import static org.atlasapi.criteria.attribute.Attributes.ALIASES_NAMESPACE;
-import static org.atlasapi.criteria.attribute.Attributes.ALIASES_VALUE;
-import static org.atlasapi.criteria.attribute.Attributes.CONTENT_GROUP;
-import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TITLE_PREFIX;
-import static org.atlasapi.criteria.attribute.Attributes.CONTENT_TYPE;
-import static org.atlasapi.criteria.attribute.Attributes.GENRE;
-import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_NAMESPACE;
-import static org.atlasapi.criteria.attribute.Attributes.LOCATIONS_ALIASES_VALUE;
-import static org.atlasapi.criteria.attribute.Attributes.SOURCE;
-import static org.atlasapi.criteria.attribute.Attributes.SPECIALIZATION;
-import static org.atlasapi.criteria.attribute.Attributes.TAG_RELATIONSHIP;
-import static org.atlasapi.criteria.attribute.Attributes.TAG_SUPERVISED;
-import static org.atlasapi.criteria.attribute.Attributes.TAG_WEIGHTING;
-
 public class EsQueryBuilder {
-
-    /**
-     * These are the attributes that are supported by {@link org.atlasapi.util.EsQueryBuilder}
-     */
-    public static final ImmutableSet<Attribute> SUPPORTED_ATTRIBUTES =
-            ImmutableSet.<Attribute>builder()
-                    .add(CONTENT_TYPE)
-                    .add(SOURCE)
-                    .add(ALIASES_NAMESPACE)
-                    .add(ALIASES_VALUE)
-                    .add(LOCATIONS_ALIASES_NAMESPACE)
-                    .add(LOCATIONS_ALIASES_VALUE)
-                    .add(TAG_RELATIONSHIP)
-                    .add(TAG_SUPERVISED)
-                    .add(TAG_WEIGHTING)
-                    .add(CONTENT_TITLE_PREFIX)
-                    .add(GENRE)
-                    .add(CONTENT_GROUP)
-                    .add(SPECIALIZATION)
-                    .build();
 
     private static final Joiner PATH_JOINER = Joiner.on(".");
     private static final String NON_LETTER_PREFIX = "#";
     private static final String NON_LETTER_PREFIX_REGEX = "[^a-zA-Z]+.*";
-
-    private EsQueryBuilder() {
-    }
-
-    public static EsQueryBuilder create() {
-        return new EsQueryBuilder();
-    }
 
     public QueryBuilder buildQuery(AttributeQuerySet operands) {
         return operands.accept(new QueryNodeVisitor<QueryBuilder>() {

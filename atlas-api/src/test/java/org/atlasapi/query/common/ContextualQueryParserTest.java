@@ -2,6 +2,8 @@ package org.atlasapi.query.common;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+import org.atlasapi.application.DefaultApplication;
 import org.atlasapi.content.Content;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
@@ -12,7 +14,6 @@ import org.atlasapi.query.common.attributes.QueryAttributeParser;
 import org.atlasapi.query.common.context.QueryContext;
 import org.atlasapi.topic.Topic;
 
-import com.metabroadcast.applications.client.model.internal.Application;
 import com.metabroadcast.common.ids.NumberToShortStringCodec;
 import com.metabroadcast.common.ids.SubstitutionTableNumberCodec;
 import com.metabroadcast.common.servlet.StubHttpServletRequest;
@@ -64,7 +65,7 @@ public class ContextualQueryParserTest {
         ).withParam("alias.namespace", "ns");
 
         when(attributeParser.parse(req))
-                .thenReturn(AttributeQuerySet.create(ImmutableSet.of()));
+                .thenReturn(new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of()));
         when(queryContextParser.parseContext(req))
                 .thenReturn(QueryContext.create(
                         mock(Application.class),

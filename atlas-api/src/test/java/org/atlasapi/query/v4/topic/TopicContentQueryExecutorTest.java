@@ -1,11 +1,15 @@
 package org.atlasapi.query.v4.topic;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.collect.ImmutableList;
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.content.Content;
 import org.atlasapi.content.ContentIndex;
 import org.atlasapi.content.Episode;
@@ -30,12 +34,9 @@ import org.atlasapi.query.common.exceptions.QueryExecutionException;
 import org.atlasapi.topic.Topic;
 import org.atlasapi.topic.TopicResolver;
 
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.query.Selection;
 
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import org.junit.Before;
@@ -75,14 +76,14 @@ public class TopicContentQueryExecutorTest {
                         .build()
         );
 
-        executor = TopicContentQueryExecutor.create(topicResolver, contentIndex, equivalentsResolver);
+        executor = new TopicContentQueryExecutor(topicResolver, contentIndex, equivalentsResolver);
         queryContext = QueryContext.create(application, ActiveAnnotations.standard(), request);
     }
 
     @Test
     public void testExecutingTopicContentQuery() throws QueryExecutionException {
 
-        AttributeQuerySet emptyAttributeQuerySet = AttributeQuerySet.create(ImmutableSet.<AttributeQuery<?>>of());
+        AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
 
         QueryContext context = QueryContext.create(
                 application,
@@ -102,10 +103,10 @@ public class TopicContentQueryExecutorTest {
         when(topicResolver.resolveIds(argThat(hasItems(topic.getId()))))
                 .thenReturn(Futures.immediateFuture(Resolved.valueOf(ImmutableSet.of(topic))));
         FluentIterable<Id> returning = FluentIterable.from(ImmutableSet.of(content.getId()));
-        when(contentIndex.query(
-                emptyAttributeQuerySet,
+        when(contentIndex.query(emptyAttributeQuerySet,
                 context.getApplication().getConfiguration().getEnabledReadSources(),
-                Selection.all()
+                Selection.all(),
+                Optional.empty()
         ))
                 .thenReturn(Futures.immediateFuture(IndexQueryResult.withIds(returning, 0L)));
         when(equivalentsResolver.resolveIds(
@@ -129,7 +130,7 @@ public class TopicContentQueryExecutorTest {
     @Test(expected = NotFoundException.class)
     public void testFailsWhenTopicIsMissing() throws Throwable {
 
-        AttributeQuerySet emptyAttributeQuerySet = AttributeQuerySet.create(ImmutableSet.<AttributeQuery<?>>of());
+        AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
         ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
 
@@ -147,7 +148,7 @@ public class TopicContentQueryExecutorTest {
     @Test(expected = ForbiddenException.class)
     public void testFailsWhenTopicIsForbidden() throws Throwable {
 
-        AttributeQuerySet emptyAttributeQuerySet = AttributeQuerySet.create(ImmutableSet.<AttributeQuery<?>>of());
+        AttributeQuerySet emptyAttributeQuerySet = new AttributeQuerySet(ImmutableSet.<AttributeQuery<?>>of());
         SingleQuery<Topic> contextQuery = Query.singleQuery(Id.valueOf(1234), queryContext);
         ListQuery<Content> resourceQuery = Query.listQuery(emptyAttributeQuerySet, queryContext);
 
@@ -167,10 +168,10 @@ public class TopicContentQueryExecutorTest {
     }
 
     private void verifyException(QueryExecutionException qee) throws Throwable {
-        verify(contentIndex, never()).query(
-                argThat(isA(AttributeQuerySet.class)),
+        verify(contentIndex, never()).query(argThat(isA(AttributeQuerySet.class)),
                 argThat(isA(Iterable.class)),
-                argThat(isA(Selection.class))
+                argThat(isA(Selection.class)),
+                argThat(isA(Optional.class))
         );
         verify(equivalentsResolver, never()).resolveIds(
                 argThat(isA(Iterable.class)),
