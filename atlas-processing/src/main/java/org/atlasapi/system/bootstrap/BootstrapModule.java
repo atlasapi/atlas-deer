@@ -55,7 +55,6 @@ public class BootstrapModule {
     @Autowired private BootstrapWorkersModule workers;
     @Autowired private ElasticSearchContentIndexModule search;
     @Autowired private MetricRegistry metrics;
-    @Autowired private DirectAndExplicitEquivalenceMigrator explicitEquivalenceMigrator;
 
     @Autowired private MessagingModule messaging;
     @Autowired private MetricsModule metricsModule;
@@ -90,7 +89,13 @@ public class BootstrapModule {
                 .withContentLister(persistence.legacyContentLister())
                 .withWrite(persistence.nullMessageSendingContentStore())
                 .withContentIndex(search.equivContentIndex())
-                .withEquivalenceMigrator(explicitEquivalenceMigrator)
+                .withEquivalenceMigrator(
+                        DirectAndExplicitEquivalenceMigrator.create(
+                                persistence.legacyContentResolver(),
+                                persistence.legacyEquivalenceStore(),
+                                persistence.getContentEquivalenceGraphStore()
+                        )
+                )
                 .withMaxSourceBootstrapThreads(NUMBER_OF_SOURCE_BOOTSTRAP_THREADS)
                 .withProgressStore(progressStore())
                 .withMetrics(metrics)

@@ -412,7 +412,7 @@ public class BootstrapWorkersModule {
 
     @Bean
     public DirectAndExplicitEquivalenceMigrator directAndExplicitEquivalenceMigrator() {
-        return new DirectAndExplicitEquivalenceMigrator(
+        return DirectAndExplicitEquivalenceMigrator.create(
                 persistence.legacyContentResolver(),
                 persistence.legacyEquivalenceStore(),
                 persistence.nullMessageSendingGraphStore()

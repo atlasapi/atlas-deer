@@ -179,8 +179,16 @@ public class Channel extends Identified implements Sourced {
         return advertiseFrom;
     }
 
+    public ChannelRef toRef() {
+        return new ChannelRef(getId(), getSource());
+    }
+
     public static Builder builder(Publisher publisher) {
         return new Builder(publisher);
+    }
+
+    public static Builder builderFrom(Channel channel) {
+        return new Builder(channel.getSource()).copyOf(channel);
     }
 
     public String getKey() {
@@ -344,6 +352,32 @@ public class Channel extends Identified implements Sourced {
         public Builder withAdvertiseFrom(DateTime dateTime) {
             this.advertiseFrom = dateTime;
             return this;
+        }
+
+        public Builder copyOf(Channel channel) {
+            this.uri = channel.getCanonicalUri();
+            this.id = channel.getId();
+            this.aliases = channel.getAliases();
+            this.titles = channel.getAllTitles();
+            this.publisher = channel.getSource();
+            this.mediaType = channel.getMediaType();
+            this.key = channel.getKey();
+            this.highDefinition = channel.getHighDefinition();
+            this.regional = channel.getRegional();
+            this.broadcaster = channel.getBroadcaster();
+            this.availableFrom = channel.availableFrom;
+            this.channelGroups = channel.getChannelGroups();
+            this.genres = channel.getGenres();
+            this.relatedLinks = channel.getRelatedLinks();
+            this.images = channel.getAllImages();
+            this.parent = channel.getParent();
+            this.variations = channel.getVariations();
+            this.startDate = channel.getStartDate();
+            this.endDate = channel.getEndDate();
+            this.advertiseFrom = channel.getAdvertiseFrom();
+
+            return this;
+
         }
 
         private ChannelRef buildChannelRef(Long id) {

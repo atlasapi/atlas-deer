@@ -31,6 +31,7 @@ import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.QueryResultWriter;
 import org.atlasapi.output.ScrubbablesSegmentRelatedLinkMerger;
 import org.atlasapi.output.SegmentRelatedLinkMergingFetcher;
+import org.atlasapi.output.annotation.AggregatedBroadcastsAnnotation;
 import org.atlasapi.output.annotation.AvailableContentAnnotation;
 import org.atlasapi.output.annotation.AvailableContentDetailAnnotation;
 import org.atlasapi.output.annotation.AvailableLocationsAnnotation;
@@ -173,6 +174,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import static org.atlasapi.annotation.Annotation.ADVERTISED_CHANNELS;
+import static org.atlasapi.annotation.Annotation.AGGREGATED_BROADCASTS;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_CONTENT_DETAIL;
 import static org.atlasapi.annotation.Annotation.AVAILABLE_LOCATIONS;
@@ -314,11 +316,12 @@ public class QueryWebModule {
         EntityListWriter<ItemAndBroadcast> entryListWriter =
                 new ScheduleEntryListWriter(
                         contentListWriter(),
-                        new BroadcastWriter(
+                        BroadcastWriter.create(
                                 "broadcasts",
-                                idCodec(),
-                                channelResolver
-                        )
+                                "broadcast",
+                                idCodec()
+                        ),
+                        channelResolver
                 );
         ScheduleListWriter scheduleWriter = new ScheduleListWriter(
                 channelListWriter(),
@@ -531,7 +534,8 @@ public class QueryWebModule {
         return StandardQueryParser.create(
                 Resource.CONTENT,
                 contentQueryAttributeParser(),
-                idCodec(), contextParser
+                idCodec(),
+                contextParser
         );
     }
 
@@ -558,10 +562,10 @@ public class QueryWebModule {
     }
 
     private ChannelWriter channelWriter() {
-        return new ChannelWriter(
+        return ChannelWriter.create(
                 "channels",
                 "channel",
-                new ChannelGroupSummaryWriter(idCodec())
+                ChannelGroupSummaryWriter.create(idCodec())
         );
     }
 
@@ -930,35 +934,42 @@ public class QueryWebModule {
                         commonImplied
                 )
                 .register(
+                        AGGREGATED_BROADCASTS,
+                        AggregatedBroadcastsAnnotation.create(idCodec(), channelResolver),
+                        commonImplied
+                )
+                .register(
                         BROADCASTS,
                         BroadcastsAnnotation.create(idCodec(), channelResolver),
                         commonImplied
                 )
                 .register(
                         UPCOMING_BROADCASTS,
-                        new UpcomingBroadcastsAnnotation(idCodec(),
-                                channelResolver,
-                                channelGroupResolver
+                        UpcomingBroadcastsAnnotation.create(
+                                idCodec(),
+                                channelResolver
                         ),
                         commonImplied
                 )
                 .register(
                         CURRENT_AND_FUTURE_BROADCASTS,
-                        new CurrentAndFutureBroadcastsAnnotation(idCodec(),
+                        CurrentAndFutureBroadcastsAnnotation.create(
+                                idCodec(),
                                 channelResolver
                         ),
                         commonImplied
                 )
                 .register(
                         FIRST_BROADCASTS,
-                        new FirstBroadcastAnnotation(idCodec(),
+                        FirstBroadcastAnnotation.create(
+                                idCodec(),
                                 channelResolver
                         ),
                         commonImplied
                 )
                 .register(
                         NEXT_BROADCASTS,
-                        new NextBroadcastAnnotation(
+                        NextBroadcastAnnotation.create(
                                 new SystemClock(),
                                 idCodec(),
                                 channelResolver
@@ -1001,16 +1012,17 @@ public class QueryWebModule {
                         new UpcomingContentDetailAnnotation(
                                 queryModule.mergingContentResolver(),
                                 new UpcomingContentDetailWriter(
-                                        new BroadcastWriter(
+                                        BroadcastWriter.create(
                                                 "broadcasts",
-                                                idCodec(),
-                                                channelResolver
+                                                "broadcast",
+                                                idCodec()
                                         ),
                                         new ItemDetailWriter(
                                                 IdentificationSummaryAnnotation.create(
                                                         idSummaryWriter
                                                 )
-                                        )
+                                        ),
+                                        channelResolver
                                 )
                         ), commonImplied
                 )
