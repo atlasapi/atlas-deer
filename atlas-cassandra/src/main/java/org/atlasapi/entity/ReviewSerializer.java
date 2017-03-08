@@ -1,8 +1,10 @@
 package org.atlasapi.entity;
 
+import com.google.common.base.Strings;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
 
+import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -11,30 +13,70 @@ public class ReviewSerializer {
         CommonProtos.Review.Builder reviewBuilder = CommonProtos.Review.newBuilder();
 
         Locale locale = review.getLocale();
-        if (null != locale) {
+        if (locale != null) {
             CommonProtos.LocaleString.Builder localeBuilder = CommonProtos.LocaleString.newBuilder();
             localeBuilder.setValue(locale.getLanguage());
             reviewBuilder.setLocale(localeBuilder);
         }
 
+        Date date = review.getDate();
+        if (date != null) {
+            CommonProtos.Date.Builder dateBuilder = CommonProtos.Date.newBuilder();
+            dateBuilder.setMillis(date.getTime());
+            reviewBuilder.setDate(dateBuilder);
+        }
+
+        if (!Strings.isNullOrEmpty(review.getAuthor())) {
+            reviewBuilder.setAuthor(review.getAuthor());
+        }
+
+        if (!Strings.isNullOrEmpty(review.getAuthorInitials())) {
+            reviewBuilder.setAuthorInitials(review.getAuthorInitials());
+        }
+
+        if (!Strings.isNullOrEmpty(review.getRating())) {
+            reviewBuilder.setRating(review.getRating());
+        }
+
+        if (review.getReviewType() != null) {
+            reviewBuilder.setReviewType(review.getReviewType().toKey());
+        }
+
         reviewBuilder.setReview(review.getReview());
+
         return reviewBuilder.build();
     }
 
     public Optional<Review> deserialize(Optional<Publisher> source, CommonProtos.Review reviewBuffer) {
-        Locale locale = null;
-        if (reviewBuffer.hasLocale()) {
-            locale = new Locale(reviewBuffer.getLocale().getValue());
-        }
-
         // * all the fields of this protocol buffer are optional for future
         //   compatibility.  This incarnation requires .hasReview() to be true
         //    to match Review requirements
         // * source is inherited from the Item containing the review
-        if (reviewBuffer.hasReview()) {
-            return Optional.of(new Review(locale, reviewBuffer.getReview(), source));
+
+        if (!reviewBuffer.hasReview()) {
+            return Optional.empty();
         }
 
-        return Optional.empty();
+        Review.Builder reviewBuilder = Review.builder(reviewBuffer.getReview());
+
+        if (reviewBuffer.hasLocale()) {
+            reviewBuilder.withLocale(new Locale(reviewBuffer.getLocale().getValue()));
+        }
+
+        if (reviewBuffer.hasDate()) {
+            reviewBuilder.withDate(new Date(reviewBuffer.getDate().getMillis()));
+        }
+
+        if (reviewBuffer.hasReviewType()) {
+            reviewBuilder.withReviewType(ReviewType.fromKey(reviewBuffer.getReviewType()));
+        }
+
+        return Optional.of(reviewBuilder.withAuthor(reviewBuffer.getAuthor())
+                        .withAuthorInitials(reviewBuffer.getAuthorInitials())
+                        .withRating(reviewBuffer.getRating())
+                        .withSource(source)
+                        .build()
+        );
+
     }
 }

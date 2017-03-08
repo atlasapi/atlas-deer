@@ -1,7 +1,6 @@
 package org.atlasapi.system.legacy;
 
 import java.util.Collection;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,6 +14,7 @@ import org.atlasapi.entity.Alias;
 import org.atlasapi.entity.Award;
 import org.atlasapi.entity.Rating;
 import org.atlasapi.entity.Review;
+import org.atlasapi.entity.ReviewType;
 import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Clip;
 import org.atlasapi.media.entity.Described;
@@ -140,22 +140,33 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
 
     protected Iterable<Review> transformReviews(Collection<org.atlasapi.media.entity.Review> legacyReviews, Publisher source) {
         return legacyReviews.stream()
-                .map(legacyReview -> transformReview(legacyReview.getLocale(), legacyReview.getReview(), source))
+                .map(legacyReview -> transformReview(legacyReview, source))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
-    protected Optional<Review> transformReview(Locale locale, String review, Publisher source) {
+    protected Optional<Review> transformReview(
+            org.atlasapi.media.entity.Review legacyReview,
+            Publisher source
+    ) {
         // we don't want to fail the ingest of the whole content item because of
         // a broken legacy review
         try {
-            return Optional.of(new Review(locale, review, Optional.ofNullable(source)));
-        } catch(NullPointerException e) {
+            return Optional.of(Review.builder(legacyReview.getReview())
+                    .withLocale(legacyReview.getLocale())
+                    .withAuthor(legacyReview.getAuthor())
+                    .withAuthorInitials(legacyReview.getAuthorInitials())
+                    .withRating(legacyReview.getRating())
+                    .withDate(legacyReview.getDate())
+                    .withReviewType(ReviewType.fromKey(legacyReview.getReviewTypeKey()))
+                    .withSource(Optional.ofNullable(source))
+                    .build()
+            );
+        } catch (NullPointerException e) {
             return Optional.empty();
         }
     }
-
 
     protected Iterable<Rating> transformRatings(Iterable<org.atlasapi.media.entity.Rating> legacyRatings) {
         return Iterables.transform(

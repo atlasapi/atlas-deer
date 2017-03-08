@@ -254,18 +254,18 @@ public class LegacyContentTransformerTest {
         legacyItem.setId(2L);
         legacyItem.setPublisher(Publisher.AMAZON_UK);
         legacyItem.setReviews(Arrays.asList(
-                new Review(Locale.CHINESE, "hen hao"),
-                new Review(Locale.ENGLISH, "dog's bolls"),
-                new Review(Locale.FRENCH, "tres bien")
+                Review.builder().withLocale(Locale.CHINESE).withReview("hen hao").build(),
+                Review.builder().withLocale(Locale.ENGLISH).withReview("dog's bolls").build(),
+                Review.builder().withLocale(Locale.FRENCH).withReview("tres bien").build()
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getReviews().size(), is(3));
 
         assertThat(transformedItem.getReviews().containsAll(Arrays.asList(
-                new org.atlasapi.entity.Review(Locale.ENGLISH, "dog's bolls", Optional.of(Publisher.AMAZON_UK)),
-                new org.atlasapi.entity.Review(Locale.CHINESE, "hen hao", Optional.of(Publisher.AMAZON_UK)),
-                new org.atlasapi.entity.Review(Locale.FRENCH, "tres bien", Optional.of(Publisher.AMAZON_UK))
+                org.atlasapi.entity.Review.builder("hen hao").withLocale(Locale.CHINESE).withSource(Optional.of(Publisher.AMAZON_UK)).build(),
+                org.atlasapi.entity.Review.builder("dog's bolls").withLocale(Locale.ENGLISH).withSource(Optional.of(Publisher.AMAZON_UK)).build(),
+                org.atlasapi.entity.Review.builder("tres bien").withLocale(Locale.FRENCH).withSource(Optional.of(Publisher.AMAZON_UK)).build()
         )), is(true));
     }
 
@@ -302,15 +302,15 @@ public class LegacyContentTransformerTest {
         Item legacyItem = new Item();
         legacyItem.setId(2L);
         legacyItem.setReviews(Arrays.asList(
-                new Review(Locale.ENGLISH, null)  // this is broken Review
+                Review.builder().withLocale(Locale.ENGLISH).withReview(null).build()  // this is broken Review
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getReviews().size(), is(0));
 
         legacyItem.setReviews(Arrays.asList(
-                new Review(Locale.CHINESE, "hen hao"),
-                new Review(Locale.ENGLISH, null)  // this is broken Review
+                Review.builder().withLocale(Locale.CHINESE).withReview("hen hao").build(),
+                Review.builder().withLocale(Locale.ENGLISH).withReview( null).build()  // this is broken Review
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);

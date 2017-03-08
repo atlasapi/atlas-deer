@@ -38,9 +38,16 @@ public class ReviewsWriter implements EntityListWriter<Review> {
     public void write(@Nonnull Review entity, @Nonnull FieldWriter writer, @Nonnull OutputContext ctxt)
             throws IOException {
 
-        String language = (null != entity.getLocale()) ? entity.getLocale().getLanguage() : null;
+        String language = (entity.getLocale() != null) ? entity.getLocale().getLanguage() : null;
+        String reviewType = (entity.getReviewType() != null) ? entity.getReviewType().toKey() : null;
+
         writer.writeField("language", language);
         writer.writeField("review", entity.getReview());
+        writer.writeField("author", entity.getAuthor());
+        writer.writeField("author_initials", entity.getAuthorInitials());
+        writer.writeField("rating", entity.getRating());
+        writer.writeField("date", entity.getDate());
+        writer.writeField("review_type", reviewType);
 
         Optional<Publisher> source = entity.getSource();
         if (source.isPresent()) {
