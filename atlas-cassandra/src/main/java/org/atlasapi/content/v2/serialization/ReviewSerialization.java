@@ -5,8 +5,10 @@ import java.util.Locale;
 import com.google.common.base.Strings;
 import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.entity.ReviewType;
-import org.joda.time.DateTime;
 import org.joda.time.Instant;
+
+import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;
+import static org.atlasapi.content.v2.serialization.DateTimeUtils.toInstant;
 
 public class ReviewSerialization {
 
@@ -32,7 +34,7 @@ public class ReviewSerialization {
         }
 
         if (review.getDate() != null) {
-            internal.setDate(new Instant(review.getDate().getTime()));
+            internal.setDate(toInstant(review.getDate()));
         }
 
         if (review.getReviewType() != null) {
@@ -53,11 +55,15 @@ public class ReviewSerialization {
             locale = Locale.forLanguageTag(internalLocale);
         }
 
+        Instant instant = review.getDate();
+        if (instant != null) {
+            reviewBuilder.withDate(toDateTime(instant));
+        }
+
         return reviewBuilder.withLocale(locale)
                 .withAuthor(review.getAuthor())
                 .withAuthorInitials(review.getAuthorInitials())
                 .withRating(review.getRating())
-                .withDate(new DateTime(review.getDate()).toDate())
                 .withReviewType(ReviewType.fromKey(review.getReviewTypeKey()))
                 .build();
     }

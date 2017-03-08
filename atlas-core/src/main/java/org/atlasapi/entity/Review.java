@@ -1,6 +1,5 @@
 package org.atlasapi.entity;
 
-import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -9,6 +8,7 @@ import javax.annotation.Nullable;
 
 import org.atlasapi.hashing.Hashable;
 import org.atlasapi.media.entity.Publisher;
+import org.joda.time.DateTime;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -19,7 +19,7 @@ public class Review implements Hashable {
     private final String author;
     private final String authorInitials;
     private final String rating;
-    private final Date date;
+    private final DateTime date;
     private final ReviewType reviewType;
     // source should not be serialised.  It is inherited from the Content that contains it
     private final Optional<Publisher> source;
@@ -89,7 +89,7 @@ public class Review implements Hashable {
     }
 
     @Nullable
-    public Date getDate() {
+    public DateTime getDate() {
         return date;
     }
 
@@ -139,7 +139,7 @@ public class Review implements Hashable {
         private String author;
         private String authorInitials;
         private String rating;
-        private Date date;
+        private DateTime date;
         private ReviewType reviewType;
         private Optional<Publisher> source = Optional.empty();
 
@@ -167,7 +167,7 @@ public class Review implements Hashable {
             return this;
         }
 
-        public Builder withDate(@Nullable Date date) {
+        public Builder withDate(@Nullable DateTime date) {
             this.date = date;
             return this;
         }

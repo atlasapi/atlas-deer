@@ -68,7 +68,7 @@ public class Review {
         return date;
     }
 
-    public void setDate(Instant date) {
+    public void setDate(@Nullable Instant date) {
         this.date = date;
     }
 
