@@ -221,7 +221,12 @@ CREATE TYPE IF NOT EXISTS Restriction (
 
 CREATE TYPE IF NOT EXISTS Review (
   locale text,
-  review text
+  review text,
+  author text,
+  author_initials text,
+  rating text,
+  date timestamp,
+  review_type_key text
 );
 
 CREATE TYPE IF NOT EXISTS Rating (
