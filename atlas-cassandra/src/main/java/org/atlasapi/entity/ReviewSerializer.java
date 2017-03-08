@@ -71,12 +71,21 @@ public class ReviewSerializer {
             reviewBuilder.withReviewType(ReviewType.fromKey(reviewBuffer.getReviewType()));
         }
 
-        return Optional.of(reviewBuilder.withAuthor(reviewBuffer.getAuthor())
-                        .withAuthorInitials(reviewBuffer.getAuthorInitials())
-                        .withRating(reviewBuffer.getRating())
-                        .withSource(source)
-                        .build()
-        );
+        if (reviewBuffer.hasAuthor()) {
+            reviewBuilder.withAuthor(reviewBuffer.getAuthor());
+        }
+
+        if (reviewBuffer.hasAuthorInitials()) {
+            reviewBuilder.withAuthorInitials(reviewBuffer.getAuthorInitials());
+        }
+
+        if (reviewBuffer.hasRating()) {
+            reviewBuilder.withRating(reviewBuffer.getRating());
+        }
+
+        reviewBuilder.withSource(source);
+
+        return Optional.of(reviewBuilder.build());
 
     }
 }
