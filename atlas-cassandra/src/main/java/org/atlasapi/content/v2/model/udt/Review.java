@@ -12,10 +12,10 @@ public class Review {
     @Field(name = "locale") private String locale;
     @Field(name = "review") private String review;
     @Field(name = "author") private String author;
-    @Field(name = "authorInitials") private String authorInitials;
+    @Field(name = "author_initials") private String authorInitials;
     @Field(name = "rating") private String rating;
     @Field(name = "date") private Instant date;
-    @Field(name = "reviewTypeKey") private String reviewTypeKey;
+    @Field(name = "review_type_key") private String reviewTypeKey;
 
     public Review() {}
 
