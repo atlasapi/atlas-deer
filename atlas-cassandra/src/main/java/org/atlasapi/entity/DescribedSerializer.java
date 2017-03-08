@@ -27,7 +27,7 @@ public class DescribedSerializer<T extends Described> {
     private final ImageSerializer imageSerializer = new ImageSerializer();
     private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
     private final RatingSerializer ratingSerializer = new RatingSerializer();
-    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
+    private final ReviewSerializer reviewSerializer = ReviewSerializer.create();
 
     public CommonProtos.Described serialize(T source) {
         CommonProtos.Described.Builder builder = CommonProtos.Described.newBuilder();

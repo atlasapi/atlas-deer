@@ -45,7 +45,7 @@ public final class ContentSerializationVisitor implements ContentVisitor<Builder
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
     private final AwardSerializer awardSerializer = new AwardSerializer();
-    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
+    private final ReviewSerializer reviewSerializer = ReviewSerializer.create();
     private final RatingSerializer ratingSerializer = new RatingSerializer();
 
     public ContentSerializationVisitor() {}

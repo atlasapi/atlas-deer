@@ -3,12 +3,24 @@ package org.atlasapi.entity;
 import com.google.common.base.Strings;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
+import org.joda.time.DateTime;
 
 import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
 
 public class ReviewSerializer {
+
+    private final DateTimeSerializer dateTimeSerializer;
+
+    private ReviewSerializer() {
+        this.dateTimeSerializer = new DateTimeSerializer();
+    }
+
+    public static ReviewSerializer create() {
+        return new ReviewSerializer();
+    }
+
     public CommonProtos.Review serialize(Review review) {
         CommonProtos.Review.Builder reviewBuilder = CommonProtos.Review.newBuilder();
 
@@ -19,9 +31,8 @@ public class ReviewSerializer {
             reviewBuilder.setLocale(localeBuilder);
         }
 
-        Date date = review.getDate();
-        if (date != null) {
-//            reviewBuilder.setDate(review.getDate().toInstant());
+        if (review.getDate() != null) {
+            reviewBuilder.setDate(dateTimeSerializer.serialize(review.getDate()));
         }
 
         if (!Strings.isNullOrEmpty(review.getAuthor())) {
@@ -62,7 +73,7 @@ public class ReviewSerializer {
         }
 
         if (reviewBuffer.hasDate()) {
-            reviewBuilder.withDate(new Date(reviewBuffer.getDate().getMillis()));
+            reviewBuilder.withDate(dateTimeSerializer.deserialize(reviewBuffer.getDate()));
         }
 
         if (reviewBuffer.hasReviewType()) {

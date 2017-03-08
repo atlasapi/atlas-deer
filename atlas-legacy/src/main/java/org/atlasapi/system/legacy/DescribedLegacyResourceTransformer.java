@@ -1,10 +1,12 @@
 package org.atlasapi.system.legacy;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import org.atlasapi.content.MediaType;
 import org.atlasapi.content.PriorityScoreReasons;
@@ -153,12 +155,20 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         // we don't want to fail the ingest of the whole content item because of
         // a broken legacy review
         try {
-            return Optional.of(Review.builder(legacyReview.getReview())
-                    .withLocale(legacyReview.getLocale())
+            if (Strings.isNullOrEmpty(legacyReview.getReview())) {
+                return Optional.empty();
+            }
+
+            Review.Builder reviewBuilder = Review.builder(legacyReview.getReview());
+
+            Date date = legacyReview.getDate();
+            if (date != null) {
+                reviewBuilder.withDate(new DateTime(date.getTime()));
+            }
+            return Optional.of(reviewBuilder.withLocale(legacyReview.getLocale())
                     .withAuthor(legacyReview.getAuthor())
                     .withAuthorInitials(legacyReview.getAuthorInitials())
                     .withRating(legacyReview.getRating())
-                    .withDate(legacyReview.getDate())
                     .withReviewType(ReviewType.fromKey(legacyReview.getReviewTypeKey()))
                     .withSource(Optional.ofNullable(source))
                     .build()
