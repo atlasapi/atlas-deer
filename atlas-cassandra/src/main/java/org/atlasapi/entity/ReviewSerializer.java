@@ -21,9 +21,7 @@ public class ReviewSerializer {
 
         Date date = review.getDate();
         if (date != null) {
-            CommonProtos.Date.Builder dateBuilder = CommonProtos.Date.newBuilder();
-            dateBuilder.setMillis(date.getTime());
-            reviewBuilder.setDate(dateBuilder);
+//            reviewBuilder.setDate(review.getDate().toInstant());
         }
 
         if (!Strings.isNullOrEmpty(review.getAuthor())) {

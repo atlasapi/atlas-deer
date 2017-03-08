@@ -5,6 +5,8 @@ import java.util.Locale;
 import com.google.common.base.Strings;
 import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.entity.ReviewType;
+import org.joda.time.DateTime;
+import org.joda.time.Instant;
 
 public class ReviewSerialization {
 
@@ -30,7 +32,7 @@ public class ReviewSerialization {
         }
 
         if (review.getDate() != null) {
-            internal.setDate(review.getDate());
+            internal.setDate(new Instant(review.getDate().getTime()));
         }
 
         if (review.getReviewType() != null) {
@@ -55,7 +57,7 @@ public class ReviewSerialization {
                 .withAuthor(review.getAuthor())
                 .withAuthorInitials(review.getAuthorInitials())
                 .withRating(review.getRating())
-                .withDate(review.getDate())
+                .withDate(new DateTime(review.getDate()).toDate())
                 .withReviewType(ReviewType.fromKey(review.getReviewTypeKey()))
                 .build();
     }

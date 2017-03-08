@@ -2,9 +2,9 @@ package org.atlasapi.content.v2.model.udt;
 
 import com.datastax.driver.mapping.annotations.Field;
 import com.datastax.driver.mapping.annotations.UDT;
+import org.joda.time.Instant;
 
 import javax.annotation.Nullable;
-import java.util.Date;
 
 @UDT(name = "review")
 public class Review {
@@ -14,7 +14,7 @@ public class Review {
     @Field(name = "author") private String author;
     @Field(name = "authorInitials") private String authorInitials;
     @Field(name = "rating") private String rating;
-    @Field(name = "date") private Date date;
+    @Field(name = "date") private Instant date;
     @Field(name = "reviewTypeKey") private String reviewTypeKey;
 
     public Review() {}
@@ -64,11 +64,11 @@ public class Review {
     }
 
     @Nullable
-    public Date getDate() {
+    public Instant getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(Instant date) {
         this.date = date;
     }
 

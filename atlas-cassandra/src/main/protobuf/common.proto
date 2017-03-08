@@ -8,10 +8,6 @@ message DateTime {
     required int64 millis = 1;
 }
 
-message Date {
-    required int64 millis = 1;
-}
-
 message LocaleString {
     required string value = 1;
     optional string locale = 2;
@@ -177,6 +173,6 @@ message Review {
     optional string author = 3;
     optional string authorInitials = 4;
     optional string rating = 5;
-    optional Date date = 6;
+    optional DateTime date = 6;
     optional string reviewType = 7;
 }
