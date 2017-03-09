@@ -64,7 +64,7 @@ public class BroadcastAggregator {
 
         // Filter out previous broadcasts and collect by transmission time
         Multimap<DateTime, ResolvedBroadcast> broadcastMap = broadcasts.stream()
-                .filter(broadcast -> broadcast.getTransmissionTime().isAfterNow())
+                .filter(broadcast -> broadcast.getTransmissionEndTime().isAfterNow())
                 .map(broadcast -> ResolvedBroadcast.create(
                         broadcast,
                         ResolvedChannel.builder(resolveChannel(broadcast.getChannelId())).build())
