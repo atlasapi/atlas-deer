@@ -27,7 +27,7 @@ public class DescribedSerializer<T extends Described> {
     private final ImageSerializer imageSerializer = new ImageSerializer();
     private final RelatedLinkSerializer relatedLinkSerializer = new RelatedLinkSerializer();
     private final RatingSerializer ratingSerializer = new RatingSerializer();
-    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
+    private final ReviewSerializer reviewSerializer = ReviewSerializer.create();
 
     public CommonProtos.Described serialize(T source) {
         CommonProtos.Described.Builder builder = CommonProtos.Described.newBuilder();
@@ -190,9 +190,8 @@ public class DescribedSerializer<T extends Described> {
                 .collect(Collectors.toList()));
 
         // deserialization discards entities that failed to parse
-        final java.util.Optional<Publisher> publisherOptionalJ8 = java.util.Optional.ofNullable(publisherOptional.orNull());
         target.setReviews(serialized.getReviewsList().stream()
-                .map(reviewBuffer -> reviewSerializer.deserialize(publisherOptionalJ8, reviewBuffer))
+                .map(reviewSerializer::deserialize)
                 .filter(java.util.Optional::isPresent)
                 .map(java.util.Optional::get)
                 .collect(Collectors.toList()));

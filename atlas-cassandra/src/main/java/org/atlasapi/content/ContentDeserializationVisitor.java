@@ -66,7 +66,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
     private final DateTimeSerializer dateTimeSerializer = new DateTimeSerializer();
     private final EventRefSerializer eventRefSerializer = new EventRefSerializer();
     private final AwardSerializer awardSerializer = new AwardSerializer();
-    private final ReviewSerializer reviewSerializer = new ReviewSerializer();
+    private final ReviewSerializer reviewSerializer = ReviewSerializer.create();
     private final RatingSerializer ratingSerializer = new RatingSerializer();
 
     private static final Set<Annotation> BROADCAST_ANNOTATIONS = ImmutableSet.of(
@@ -204,7 +204,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
         // deserialization discards entities that failed to parse
         described.setReviews(msg.getReviewsList().stream()
-                .map(reviewBuffer -> reviewSerializer.deserialize(possibleSource, reviewBuffer))
+                .map(reviewSerializer::deserialize)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList()));

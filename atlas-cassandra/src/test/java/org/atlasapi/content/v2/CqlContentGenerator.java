@@ -183,11 +183,11 @@ public class CqlContentGenerator {
         c.setRatings(ImmutableList.of(new Rating("sometype", 4.2f, Publisher.AMAZON_UK)));
 
         c.setReviews(ImmutableList.of(
-                new Review(
-                        Locale.CANADA,
-                        "hao aboot this one, eh?",
-                        Optional.of(Publisher.BBC_KIWI)
-                )));
+                Review.builder("hao aboot this one, eh?")
+                .withLocale(Locale.CANADA)
+                .withSource(Optional.of(Publisher.BBC_KIWI))
+                .build()
+        ));
     }
 
     private static void setContainerFields(Container container) {

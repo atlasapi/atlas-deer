@@ -647,7 +647,7 @@ public class OutputContentMergerTest {
     private List<Review> addReviews(Item item, String... reviewComments) {
         Optional<Publisher> publisher = Optional.of(item.getSource());
         List<Review> reviews = Arrays.asList(reviewComments).stream()
-                .map(comment -> new Review(null, comment, publisher))
+                .map(comment -> Review.builder(comment).withSource(publisher).build())
                 .collect(Collectors.toList());
 
         item.setReviews(ImmutableList.copyOf(reviews));

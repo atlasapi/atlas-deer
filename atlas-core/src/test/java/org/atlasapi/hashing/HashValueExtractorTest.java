@@ -454,7 +454,10 @@ public class HashValueExtractorTest {
         described.setRelatedLinks(ImmutableSet.of(relatedLink));
 
         described.setReviews(ImmutableSet.of(
-                new Review(Locale.ENGLISH, "review", Optional.of(Publisher.METABROADCAST))
+                Review.builder("review")
+                        .withLocale(Locale.ENGLISH)
+                        .withSource(Optional.of(Publisher.METABROADCAST))
+                        .build()
         ));
         described.setRatings(ImmutableSet.of(
                 new Rating("type", 5F, Publisher.METABROADCAST)

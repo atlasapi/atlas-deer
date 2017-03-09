@@ -41,6 +41,7 @@ import java.util.Optional;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -254,18 +255,39 @@ public class LegacyContentTransformerTest {
         legacyItem.setId(2L);
         legacyItem.setPublisher(Publisher.AMAZON_UK);
         legacyItem.setReviews(Arrays.asList(
-                new Review(Locale.CHINESE, "hen hao"),
-                new Review(Locale.ENGLISH, "dog's bolls"),
-                new Review(Locale.FRENCH, "tres bien")
+                Review.builder()
+                        .withLocale(Locale.CHINESE)
+                        .withReview("hen hao")
+                        .withPublisherKey(Publisher.METABROADCAST.key())
+                        .build(),
+                Review.builder()
+                        .withLocale(Locale.ENGLISH)
+                        .withReview("dog's bolls")
+                        .withPublisherKey(Publisher.RADIO_TIMES.key())
+                        .build(),
+                Review.builder()
+                        .withLocale(Locale.FRENCH)
+                        .withReview("tres bien")
+                        .withPublisherKey(null)
+                        .build()
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getReviews().size(), is(3));
 
         assertThat(transformedItem.getReviews().containsAll(Arrays.asList(
-                new org.atlasapi.entity.Review(Locale.ENGLISH, "dog's bolls", Optional.of(Publisher.AMAZON_UK)),
-                new org.atlasapi.entity.Review(Locale.CHINESE, "hen hao", Optional.of(Publisher.AMAZON_UK)),
-                new org.atlasapi.entity.Review(Locale.FRENCH, "tres bien", Optional.of(Publisher.AMAZON_UK))
+                org.atlasapi.entity.Review.builder("hen hao")
+                        .withLocale(Locale.CHINESE)
+                        .withSource(Optional.of(Publisher.METABROADCAST))
+                        .build(),
+                org.atlasapi.entity.Review.builder("dog's bolls")
+                        .withLocale(Locale.ENGLISH)
+                        .withSource(Optional.of(Publisher.RADIO_TIMES))
+                        .build(),
+                org.atlasapi.entity.Review.builder("tres bien")
+                        .withLocale(Locale.FRENCH)
+                        .withSource(Optional.empty())
+                        .build()
         )), is(true));
     }
 
@@ -295,22 +317,22 @@ public class LegacyContentTransformerTest {
         )), is(true));
     }
 
-    @Test
+    @Test(expected=NullPointerException.class)
     public void testWithBrokenReview() {
         org.atlasapi.content.Item transformedItem;
 
         Item legacyItem = new Item();
         legacyItem.setId(2L);
         legacyItem.setReviews(Arrays.asList(
-                new Review(Locale.ENGLISH, null)  // this is broken Review
+                Review.builder().withLocale(Locale.ENGLISH).withReview(null).build()  // this is broken Review
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);
         assertThat(transformedItem.getReviews().size(), is(0));
 
         legacyItem.setReviews(Arrays.asList(
-                new Review(Locale.CHINESE, "hen hao"),
-                new Review(Locale.ENGLISH, null)  // this is broken Review
+                Review.builder().withLocale(Locale.CHINESE).withReview("hen hao").build(),
+                Review.builder().withLocale(Locale.ENGLISH).withReview( null).build()  // this is broken Review
         ));
 
         transformedItem = (org.atlasapi.content.Item) objectUnderTest.apply(legacyItem);

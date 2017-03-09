@@ -600,9 +600,9 @@ public class ContentSerializerTest {
 
     private void addReviewsAndRatingsToDescribed(Described described, Optional<Publisher> publisher) {
         described.setReviews(Arrays.asList(
-                new Review(Locale.ENGLISH, "dog's bolls", publisher),
-                new Review(Locale.CHINESE, "hen hao", publisher),
-                new Review(Locale.FRENCH, "tres bien", publisher)
+                Review.builder("dog's bolls").withLocale(Locale.ENGLISH).withSource(publisher).build(),
+                Review.builder("hen hao").withLocale(Locale.CHINESE).withSource(publisher).build(),
+                Review.builder("tres bien").withLocale(Locale.FRENCH).withSource(publisher).build()
         ));
 
         described.setRatings(Arrays.asList(

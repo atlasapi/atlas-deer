@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.metabroadcast.applications.client.model.internal.Application;
 import org.atlasapi.entity.Review;
+import org.atlasapi.entity.ReviewType;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.output.EntityWriter;
 import org.atlasapi.output.FieldWriter;
@@ -15,6 +16,7 @@ import org.atlasapi.output.OutputContext;
 import org.atlasapi.query.annotation.ActiveAnnotations;
 import org.atlasapi.query.common.context.QueryContext;
 
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,47 +49,66 @@ public class ReviewsWriterTest {
 
     @Test
     public void testReview() throws IOException {
-        Review review = new Review(Locale.CHINESE, "hen hao", Optional.of(Publisher.BBC));
+        Review review = Review.builder("hen hao")
+                .withLocale(Locale.CHINESE)
+                .withSource(Optional.of(Publisher.BBC))
+                .withAuthor("Top Cat")
+                .withAuthorInitials("TC")
+                .withRating("5 stars")
+                .withReviewType(ReviewType.NORMAL_REVIEW)
+                .withDate(DateTime.now())
+                .build();
 
-        writerUnderTest.write(
-                review,
-                fieldWriter,
-                ctxt);
+        writerUnderTest.write(review, fieldWriter, ctxt);
 
         verify(fieldWriter).writeField("language", review.getLocale().getLanguage());
         verify(fieldWriter).writeField("review", review.getReview());
         verify(fieldWriter).writeObject(sourceWriter, review.getSource().get(), ctxt);
+        verify(fieldWriter).writeField("author", review.getAuthor());
+        verify(fieldWriter).writeField("author_initials", review.getAuthorInitials());
+        verify(fieldWriter).writeField("rating", review.getRating());
+        verify(fieldWriter).writeField("date", review.getDate());
+        verify(fieldWriter).writeField("review_type", review.getReviewType().toKey());
+
         verifyNoMoreInteractions(fieldWriter);
     }
 
 
     @Test
     public void testReviewWithoutLanguage() throws IOException {
-        Review review = new Review(null, "hen hao", Optional.of(Publisher.BBC));
+        Review review = Review.builder("hen hao")
+                .withSource(Optional.of(Publisher.BBC))
+                .build();
 
-        writerUnderTest.write(
-                review,
-                fieldWriter,
-                ctxt);
+        writerUnderTest.write(review, fieldWriter, ctxt);
 
         verify(fieldWriter).writeField("language", null);
         verify(fieldWriter).writeField("review", review.getReview());
         verify(fieldWriter).writeObject(sourceWriter, review.getSource().get(), ctxt);
+        verify(fieldWriter).writeField("author", null);
+        verify(fieldWriter).writeField("author_initials", null);
+        verify(fieldWriter).writeField("rating", null);
+        verify(fieldWriter).writeField("date", null);
+        verify(fieldWriter).writeField("review_type", null);
+
         verifyNoMoreInteractions(fieldWriter);
     }
 
 
     @Test
-    public void testReviewWithoutSource() throws IOException {
-        Review review = new Review(null, "hen hao", Optional.empty());
+    public void testReviewWithoutLanguageAndSource() throws IOException {
+        Review review = Review.builder("hen hao").build();
 
-        writerUnderTest.write(
-                review,
-                fieldWriter,
-                ctxt);
+        writerUnderTest.write(review, fieldWriter, ctxt);
 
         verify(fieldWriter).writeField("language", null);
         verify(fieldWriter).writeField("review", review.getReview());
+        verify(fieldWriter).writeField("author", null);
+        verify(fieldWriter).writeField("author_initials", null);
+        verify(fieldWriter).writeField("rating", null);
+        verify(fieldWriter).writeField("date", null);
+        verify(fieldWriter).writeField("review_type", null);
+
         verifyNoMoreInteractions(fieldWriter);
     }
 }

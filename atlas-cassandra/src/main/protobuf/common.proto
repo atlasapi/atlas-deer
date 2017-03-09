@@ -170,4 +170,10 @@ message Rating {
 message Review {
     optional LocaleString locale = 1;
     optional string review = 2;
+    optional string author = 3;
+    optional string authorInitials = 4;
+    optional string rating = 5;
+    optional DateTime date = 6;
+    optional string reviewType = 7;
+    optional string publisherKey = 8;
 }

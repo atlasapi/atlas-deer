@@ -26,6 +26,7 @@ import org.atlasapi.content.v2.serialization.KeyPhraseSerialization;
 import org.atlasapi.content.v2.serialization.RatingSerialization;
 import org.atlasapi.content.v2.serialization.ReviewSerialization;
 import org.atlasapi.content.v2.serialization.TagSerialization;
+import org.atlasapi.source.Sources;
 
 public class ContentSetter {
 
@@ -164,11 +165,17 @@ public class ContentSetter {
         if (reviews != null) {
             content.setReviews(reviews.stream()
                     .map(review::deserialize)
-                    .map(rv -> new org.atlasapi.entity.Review(
-                            rv.getLocale(),
-                            rv.getReview(),
-                            Optional.of(content.getSource())
-                    ))
+                    .map(rv ->
+                            org.atlasapi.entity.Review.builder(rv.getReview())
+                                    .withLocale(rv.getLocale())
+                                    .withAuthor(rv.getAuthor())
+                                    .withAuthorInitials(rv.getAuthorInitials())
+                                    .withRating(rv.getRating())
+                                    .withDate(rv.getDate())
+                                    .withReviewType(rv.getReviewType())
+                                    .withSource(rv.getSource())
+                                    .build()
+                    )
                     .collect(Collectors.toSet()));
         }
 
