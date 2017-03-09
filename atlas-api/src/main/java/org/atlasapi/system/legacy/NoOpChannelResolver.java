@@ -20,4 +20,11 @@ public class NoOpChannelResolver implements ChannelResolver {
     public ListenableFuture<Resolved<Channel>> resolveChannels(ChannelQuery channelQuery) {
         return Futures.immediateFuture(Resolved.empty());
     }
+
+    @Override
+    public ListenableFuture<Resolved<Channel>> resolveChannelsWithAliases(
+            ChannelQuery channelQuery
+    ) {
+        return Futures.immediateFuture(Resolved.empty());
+    }
 }
