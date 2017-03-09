@@ -68,10 +68,10 @@ public class ContentGroupSerializerTest {
 
     private void addReviewsAndRatingsToDescribed(Described described) {
         described.setReviews(Arrays.asList(
-                new Review(Locale.ENGLISH, "dog's bolls", Optional.empty()),
-                new Review(Locale.CHINESE, "hen hao", Optional.empty()),
-                new Review(Locale.FRENCH, "tres bien", Optional.empty()),
-                new Review(null, "sehr gut", Optional.empty())
+                Review.builder("dog's bolls").withLocale(Locale.ENGLISH).withSource(Optional.empty()).build(),
+                Review.builder("hen hao").withLocale(Locale.CHINESE).withSource(Optional.empty()).build(),
+                Review.builder("tres bien").withLocale(Locale.FRENCH).withSource(Optional.empty()).build(),
+                Review.builder("sehr gut").withSource(Optional.empty()).build()
         ));
 
         described.setRatings(Arrays.asList(

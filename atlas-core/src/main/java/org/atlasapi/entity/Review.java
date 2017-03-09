@@ -21,23 +21,8 @@ public class Review implements Hashable {
     private final String rating;
     private final DateTime date;
     private final ReviewType reviewType;
-    // source should not be serialised.  It is inherited from the Content that contains it
+    // source is serialised as the publisher key
     private final Optional<Publisher> source;
-
-    public Review(@Nullable Locale locale, String review, Optional<Publisher> source) {
-        this.locale = locale;
-        // note this is more strict than Owl (non-existent reviews should not be carried across)
-        this.review = checkNotNull(review);
-
-        // source of containing Content is stored for ease of rendering at API
-        this.source = checkNotNull(source);
-
-        this.author = null;
-        this.authorInitials = null;
-        this.rating = null;
-        this.date = null;
-        this.reviewType = null;
-    }
 
     private Review(Builder builder) {
         this.review = checkNotNull(builder.review);
