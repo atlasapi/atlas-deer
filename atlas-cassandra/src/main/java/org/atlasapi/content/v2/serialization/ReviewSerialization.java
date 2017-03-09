@@ -1,10 +1,12 @@
 package org.atlasapi.content.v2.serialization;
 
 import java.util.Locale;
+import java.util.Optional;
 
 import com.google.common.base.Strings;
 import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.entity.ReviewType;
+import org.atlasapi.source.Sources;
 import org.joda.time.Instant;
 
 import static org.atlasapi.content.v2.serialization.DateTimeUtils.toDateTime;
@@ -41,6 +43,10 @@ public class ReviewSerialization {
             internal.setReviewTypeKey(review.getReviewType().toKey());
         }
 
+        review.getSource().ifPresent(
+                source -> internal.setPublisherKey(source.key())
+        );
+
         return internal;
     }
 
@@ -65,6 +71,7 @@ public class ReviewSerialization {
                 .withAuthorInitials(review.getAuthorInitials())
                 .withRating(review.getRating())
                 .withReviewType(ReviewType.fromKey(review.getReviewTypeKey()))
+                .withSource(Optional.ofNullable(Sources.fromPossibleKey(review.getPublisherKey()).orNull()))
                 .build();
     }
 }
