@@ -226,7 +226,8 @@ CREATE TYPE IF NOT EXISTS Review (
   author_initials text,
   rating text,
   date timestamp,
-  review_type_key text
+  review_type_key text,
+  publisher_key text
 );
 
 CREATE TYPE IF NOT EXISTS Rating (
