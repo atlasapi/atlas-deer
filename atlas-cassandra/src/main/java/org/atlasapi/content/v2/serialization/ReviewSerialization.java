@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.google.common.base.Strings;
 import org.atlasapi.content.v2.model.udt.Review;
 import org.atlasapi.entity.ReviewType;
+import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.source.Sources;
 import org.joda.time.Instant;
 
@@ -66,12 +67,17 @@ public class ReviewSerialization {
             reviewBuilder.withDate(toDateTime(instant));
         }
 
+        Publisher source = null;
+        if (!Strings.isNullOrEmpty(review.getPublisherKey())) {
+            source = Sources.fromPossibleKey(review.getPublisherKey()).orNull();
+        }
+
         return reviewBuilder.withLocale(locale)
                 .withAuthor(review.getAuthor())
                 .withAuthorInitials(review.getAuthorInitials())
                 .withRating(review.getRating())
                 .withReviewType(ReviewType.fromKey(review.getReviewTypeKey()))
-                .withSource(Optional.ofNullable(Sources.fromPossibleKey(review.getPublisherKey()).orNull()))
+                .withSource(Optional.ofNullable(source))
                 .build();
     }
 }
