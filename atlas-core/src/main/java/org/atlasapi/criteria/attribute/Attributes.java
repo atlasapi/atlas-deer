@@ -176,8 +176,6 @@ public class Attributes {
     public static final String MEDIA_TYPE_PARAM = "media_type";
     public static final String ORDER_BY_PARAM = "order_by";
     public static final String ADVERTISED_FROM_PARAM = "advertised";
-    public static final String ALIASES_NAMESPACE_PARAM = "aliases.namespace";
-    public static final String ALIASES_VALUE_PARAM = "aliases.value";
     public static final Attribute<Boolean> ADVERTISED_ON = BooleanAttribute.single(
             ADVERTISED_FROM_PARAM,
             Identified.class

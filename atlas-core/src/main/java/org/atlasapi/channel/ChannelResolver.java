@@ -10,6 +10,4 @@ public interface ChannelResolver extends IdResolver<Channel> {
 
     ListenableFuture<Resolved<Channel>> resolveChannels(ChannelQuery channelQuery);
 
-    ListenableFuture<Resolved<Channel>> resolveChannelsWithAliases(ChannelQuery channelQuery);
-
 }

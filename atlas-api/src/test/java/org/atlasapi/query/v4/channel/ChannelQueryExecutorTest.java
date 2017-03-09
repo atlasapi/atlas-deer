@@ -2,6 +2,8 @@ package org.atlasapi.query.v4.channel;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.metabroadcast.applications.client.model.internal.Application;
+import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import org.atlasapi.channel.Channel;
 import org.atlasapi.channel.ChannelGroup;
 import org.atlasapi.channel.ChannelGroupMembership;
@@ -13,12 +15,6 @@ import org.atlasapi.channel.ChannelResolver;
 import org.atlasapi.channel.ResolvedChannel;
 import org.atlasapi.criteria.AttributeQuery;
 import org.atlasapi.criteria.AttributeQuerySet;
-import org.atlasapi.criteria.BooleanAttributeQuery;
-import org.atlasapi.criteria.StringAttributeQuery;
-import org.atlasapi.criteria.attribute.Attributes;
-import org.atlasapi.criteria.operator.EqualsOperator;
-import org.atlasapi.criteria.operator.Operators;
-import org.atlasapi.criteria.operator.StringOperator;
 import org.atlasapi.entity.Id;
 import org.atlasapi.entity.util.Resolved;
 import org.atlasapi.media.channel.ChannelQuery;
@@ -27,8 +23,6 @@ import org.atlasapi.query.common.Query;
 import org.atlasapi.query.common.QueryResult;
 import org.atlasapi.query.common.context.QueryContext;
 
-import com.metabroadcast.applications.client.model.internal.Application;
-import com.metabroadcast.applications.client.model.internal.ApplicationConfiguration;
 import com.metabroadcast.common.query.Selection;
 import com.metabroadcast.common.stream.MoreCollectors;
 
@@ -50,7 +44,6 @@ import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -170,7 +163,7 @@ public class ChannelQueryExecutorTest {
         QueryResult<ResolvedChannel> queryResult = objectUnderTest.execute(channelQuery);
 
         assertThat(queryResult.getOnlyResource().getChannel(), is(result));
-        assert (queryResult.getOnlyResource().getParentChannel().isPresent());
+        assert(queryResult.getOnlyResource().getParentChannel().isPresent());
         assertThat(queryResult.getOnlyResource().getChannelGroupSummaries(), is(Optional.absent()));
         assertThat(queryResult.getOnlyResource().getChannelVariations(), is(Optional.absent()));
         assertThat(queryResult.getOnlyResource().getParentChannel().get(), is(parent));
@@ -233,8 +226,7 @@ public class ChannelQueryExecutorTest {
                         )
                 );
 
-        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(
-                channelGroupId))))
+        when(channelGroupResolver.resolveIds((Iterable<Id>) argThat(containsInAnyOrder(channelGroupId))))
                 .thenReturn(
                         Futures.immediateFuture(
                                 Resolved.valueOf(ImmutableList.of(channelGroup))
@@ -258,152 +250,13 @@ public class ChannelQueryExecutorTest {
 
         ImmutableList<ResolvedChannel> resolvedChannels = queryResult.getResources().toList();
 
-        for (ResolvedChannel resolvedChannel : resolvedChannels) {
+        for(ResolvedChannel resolvedChannel : resolvedChannels) {
             assertThat(resolvedChannel.getParentChannel(), is(Optional.absent()));
-            assert (resolvedChannel.getChannelGroupSummaries().isPresent());
-            assert (resolvedChannel.getChannelVariations().isPresent());
+            assert(resolvedChannel.getChannelGroupSummaries().isPresent());
+            assert(resolvedChannel.getChannelVariations().isPresent());
 
-            assert (resolvedChannel.getChannelGroupSummaries().get().contains(channelGroupSummary));
+            assert(resolvedChannel.getChannelGroupSummaries().get().contains(channelGroupSummary));
         }
-    }
-
-    @Test
-    public void testMultipleChannelsAreFullyResolvedOnlyByAliasAnnotations() throws Exception {
-        Channel channel1 = mock(Channel.class);
-        Channel channel2 = mock(Channel.class);
-
-        StringOperator op = Operators.BEGINNING;
-        AttributeQuery namespaceAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_NAMESPACE,
-                op,
-                ImmutableList.of("namespace")
-        );
-        AttributeQuery valueAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_VALUE,
-                op,
-                ImmutableList.of("value")
-        );
-
-        QueryContext context = mock(QueryContext.class);
-        Query<ResolvedChannel> query = mock(Query.class);
-
-        Application application = mock(Application.class);
-        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
-
-        Selection selection = Selection.ALL;
-
-        HttpServletRequest request = mock(HttpServletRequest.class);
-
-        when(request.getParameter("annotations")).thenReturn("aliases.namespace, aliases.value");
-        when(context.getRequest()).thenReturn(request);
-
-        when(application.getConfiguration()).thenReturn(configuration);
-        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
-        when(context.getApplication()).thenReturn(application);
-
-        when(context.getSelection()).thenReturn(Optional.of(selection));
-
-        when(query.isListQuery()).thenReturn(true);
-        when(query.getContext()).thenReturn(context);
-        when(query.getOperands()).thenReturn(
-                new AttributeQuerySet(ImmutableList.<AttributeQuery<Object>>of(
-                        namespaceAttribute,
-                        valueAttribute
-                ))
-        );
-
-        when(channelResolver.resolveChannelsWithAliases(any(ChannelQuery.class)))
-                .thenReturn(
-                        Futures.immediateFuture(
-                                Resolved.valueOf(ImmutableSet.of(channel1, channel2))
-                        )
-                );
-
-        QueryResult<ResolvedChannel> queryResult = objectUnderTest.execute(query);
-
-        verify(channelResolver).resolveChannelsWithAliases(any(ChannelQuery.class));
-
-        ImmutableList<Channel> channels = queryResult.getResources()
-                .toList()
-                .stream()
-                .map(ResolvedChannel::getChannel)
-                .collect(MoreCollectors.toImmutableList());
-
-        assertThat(channels, containsInAnyOrder(channel1, channel2));
-    }
-
-    @Test
-    public void testMultipleChannelsAreFullyResolvedByAliasAndOtherAnnotations() throws Exception {
-        Channel channel1 = mock(Channel.class);
-        Channel channel2 = mock(Channel.class);
-
-        StringOperator stringOperator = Operators.BEGINNING;
-        EqualsOperator booleanOperator = Operators.EQUALS;
-        AttributeQuery namespaceAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_NAMESPACE,
-                stringOperator,
-                ImmutableList.of("namespace")
-        );
-        AttributeQuery valueAttribute = new StringAttributeQuery(
-                Attributes.ALIASES_VALUE,
-                stringOperator,
-                ImmutableList.of("value")
-        );
-        AttributeQuery advertisedOnAttribute = new BooleanAttributeQuery(
-                Attributes.ADVERTISED_ON,
-                booleanOperator,
-                ImmutableList.of(true)
-        );
-
-        QueryContext context = mock(QueryContext.class);
-        Query<ResolvedChannel> query = mock(Query.class);
-
-        Application application = mock(Application.class);
-        ApplicationConfiguration configuration = mock(ApplicationConfiguration.class);
-
-        Selection selection = Selection.ALL;
-
-        HttpServletRequest request = mock(HttpServletRequest.class);
-
-        when(request.getParameter("annotations")).thenReturn(
-                "aliases.namespace, aliases.value, advertised"
-        );
-        when(context.getRequest()).thenReturn(request);
-
-        when(application.getConfiguration()).thenReturn(configuration);
-        when(configuration.isReadEnabled(any(Publisher.class))).thenReturn(true);
-        when(context.getApplication()).thenReturn(application);
-
-        when(context.getSelection()).thenReturn(Optional.of(selection));
-
-        when(query.isListQuery()).thenReturn(true);
-        when(query.getContext()).thenReturn(context);
-        when(query.getOperands()).thenReturn(
-                new AttributeQuerySet(ImmutableList.<AttributeQuery<Object>>of(
-                        namespaceAttribute,
-                        valueAttribute,
-                        advertisedOnAttribute
-                ))
-        );
-
-        when(channelResolver.resolveChannels(any(ChannelQuery.class)))
-                .thenReturn(
-                        Futures.immediateFuture(
-                                Resolved.valueOf(ImmutableSet.of(channel1, channel2))
-                        )
-                );
-
-        QueryResult<ResolvedChannel> queryResult = objectUnderTest.execute(query);
-
-        verify(channelResolver).resolveChannels(any(ChannelQuery.class));
-
-        ImmutableList<Channel> channels = queryResult.getResources()
-                .toList()
-                .stream()
-                .map(ResolvedChannel::getChannel)
-                .collect(MoreCollectors.toImmutableList());
-
-        assertThat(channels, containsInAnyOrder(channel1, channel2));
     }
 
 }

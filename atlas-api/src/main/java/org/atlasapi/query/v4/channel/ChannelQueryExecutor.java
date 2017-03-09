@@ -118,12 +118,6 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
             Object attributeValue = attributeQuery.getValue().get(0);
 
             switch (attributeQuery.getAttributeName()) {
-            case Attributes.ALIASES_NAMESPACE_PARAM:
-                channelQueryBuilder.withAliasNamespace((String) attributeValue);
-                break;
-            case Attributes.ALIASES_VALUE_PARAM:
-                channelQueryBuilder.withAliasValue((String) attributeValue);
-                break;
             case Attributes.AVAILABLE_FROM_PARAM:
                 channelQueryBuilder.withAvailableFrom((Publisher) attributeValue);
                 break;
@@ -183,30 +177,11 @@ public class ChannelQueryExecutor implements QueryExecutor<ResolvedChannel> {
         );
     }
 
-    protected boolean queryHasAliasAttributesOnly(ChannelQuery channelQuery) {
-
-        return !channelQuery.getAdvertisedOn().isPresent() &&
-                !channelQuery.getAvailableFrom().isPresent() &&
-                !channelQuery.getBroadcaster().isPresent() &&
-                !channelQuery.getChannelGroups().isPresent() &&
-                !channelQuery.getGenres().isPresent() &&
-                !channelQuery.getMediaType().isPresent() &&
-                !channelQuery.getPublisher().isPresent() &&
-                !channelQuery.getUri().isPresent() &&
-                channelQuery.getAliasNamespace().isPresent() &&
-                channelQuery.getAliasValue().isPresent();
-    }
-
     private FluentIterable<Channel> getChannels(ChannelQuery channelQuery)
             throws QueryExecutionException {
-
-        ListenableFuture<Resolved<Channel>> resolvingChannels;
-
-        if (queryHasAliasAttributesOnly(channelQuery)) {
-            resolvingChannels = channelResolver.resolveChannelsWithAliases(channelQuery);
-        } else {
-            resolvingChannels = channelResolver.resolveChannels(channelQuery);
-        }
+        ListenableFuture<Resolved<Channel>> resolvingChannels = channelResolver.resolveChannels(
+                channelQuery
+        );
 
         ListenableFuture<FluentIterable<Channel>> resolvedIterable = Futures.transform(
                 resolvingChannels,

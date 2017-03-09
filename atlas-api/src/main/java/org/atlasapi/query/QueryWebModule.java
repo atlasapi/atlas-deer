@@ -683,14 +683,6 @@ public class QueryWebModule {
                         QueryAtomParser.create(
                                 Attributes.MEDIA_TYPE,
                                 EnumCoercer.create(MediaType::fromKey)
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.ALIASES_NAMESPACE,
-                                StringCoercer.create()
-                        ),
-                        QueryAtomParser.create(
-                                Attributes.ALIASES_VALUE,
-                                StringCoercer.create()
                         )
                 )
         );
