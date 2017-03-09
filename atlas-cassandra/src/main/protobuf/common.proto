@@ -175,4 +175,5 @@ message Review {
     optional string rating = 5;
     optional DateTime date = 6;
     optional string reviewType = 7;
+    optional string publisherKey = 8;
 }

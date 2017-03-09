@@ -21,10 +21,10 @@ import org.atlasapi.media.entity.Content;
 import org.atlasapi.media.entity.Clip;
 import org.atlasapi.media.entity.Described;
 import org.atlasapi.media.entity.Identified;
-import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.media.entity.Topic;
 import org.atlasapi.media.entity.Version;
 
+import org.atlasapi.source.Sources;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +71,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         described.setPriority(transformPriority(input.getPriority()));
         described.setAwards(transformAwards(input.getAwards()));
 
-        described.setReviews(transformReviews(input.getReviews(), input.getPublisher()));
+        described.setReviews(transformReviews(input.getReviews()));
         described.setRatings(transformRatings(input.getRatings()));
 
         return described;
@@ -140,17 +140,16 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
         return award;
     }
 
-    protected Iterable<Review> transformReviews(Collection<org.atlasapi.media.entity.Review> legacyReviews, Publisher source) {
+    protected Iterable<Review> transformReviews(Collection<org.atlasapi.media.entity.Review> legacyReviews) {
         return legacyReviews.stream()
-                .map(legacyReview -> transformReview(legacyReview, source))
+                .map(this::transformReview)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
     protected Optional<Review> transformReview(
-            org.atlasapi.media.entity.Review legacyReview,
-            Publisher source
+            org.atlasapi.media.entity.Review legacyReview
     ) {
         // we don't want to fail the ingest of the whole content item because of
         // a broken legacy review
@@ -170,7 +169,7 @@ public abstract class DescribedLegacyResourceTransformer<F extends Described, T 
                     .withAuthorInitials(legacyReview.getAuthorInitials())
                     .withRating(legacyReview.getRating())
                     .withReviewType(ReviewType.fromKey(legacyReview.getReviewTypeKey()))
-                    .withSource(Optional.ofNullable(source))
+                    .withSource(Optional.ofNullable(Sources.fromPossibleKey(legacyReview.getPublisherKey()).orNull()))
                     .build()
             );
         } catch (NullPointerException e) {

@@ -16,6 +16,7 @@ public class Review {
     @Field(name = "rating") private String rating;
     @Field(name = "date") private Instant date;
     @Field(name = "review_type_key") private String reviewTypeKey;
+    @Field(name = "publisher_key") private String publisherKey;
 
     public Review() {}
 
@@ -79,5 +80,14 @@ public class Review {
 
     public void setReviewTypeKey(String reviewTypeKey) {
         this.reviewTypeKey = reviewTypeKey;
+    }
+
+    @Nullable
+    public String getPublisherKey() {
+        return publisherKey;
+    }
+
+    public void setPublisherKey(String publisherKey) {
+        this.publisherKey = publisherKey;
     }
 }

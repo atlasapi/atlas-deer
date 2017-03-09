@@ -26,6 +26,7 @@ import org.atlasapi.content.v2.serialization.KeyPhraseSerialization;
 import org.atlasapi.content.v2.serialization.RatingSerialization;
 import org.atlasapi.content.v2.serialization.ReviewSerialization;
 import org.atlasapi.content.v2.serialization.TagSerialization;
+import org.atlasapi.source.Sources;
 
 public class ContentSetter {
 
@@ -172,7 +173,7 @@ public class ContentSetter {
                                     .withRating(rv.getRating())
                                     .withDate(rv.getDate())
                                     .withReviewType(rv.getReviewType())
-                                    .withSource(Optional.of(content.getSource()))
+                                    .withSource(rv.getSource())
                                     .build()
                     )
                     .collect(Collectors.toSet()));

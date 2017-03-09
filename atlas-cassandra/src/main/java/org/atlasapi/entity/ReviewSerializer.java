@@ -3,6 +3,7 @@ package org.atlasapi.entity;
 import com.google.common.base.Strings;
 import org.atlasapi.media.entity.Publisher;
 import org.atlasapi.serialization.protobuf.CommonProtos;
+import org.atlasapi.source.Sources;
 import org.joda.time.DateTime;
 
 import java.util.Date;
@@ -51,12 +52,15 @@ public class ReviewSerializer {
             reviewBuilder.setReviewType(review.getReviewType().toKey());
         }
 
+        review.getSource().ifPresent(
+                source -> reviewBuilder.setPublisherKey(source.key())
+        );
         reviewBuilder.setReview(review.getReview());
 
         return reviewBuilder.build();
     }
 
-    public Optional<Review> deserialize(Optional<Publisher> source, CommonProtos.Review reviewBuffer) {
+    public Optional<Review> deserialize(CommonProtos.Review reviewBuffer) {
         // * all the fields of this protocol buffer are optional for future
         //   compatibility.  This incarnation requires .hasReview() to be true
         //    to match Review requirements
@@ -92,7 +96,10 @@ public class ReviewSerializer {
             reviewBuilder.withRating(reviewBuffer.getRating());
         }
 
-        reviewBuilder.withSource(source);
+        if (reviewBuffer.hasPublisherKey()) {
+            Publisher publisher = Sources.fromPossibleKey(reviewBuffer.getPublisherKey()).orNull();
+            reviewBuilder.withSource(Optional.ofNullable(publisher));
+        }
 
         return Optional.of(reviewBuilder.build());
 

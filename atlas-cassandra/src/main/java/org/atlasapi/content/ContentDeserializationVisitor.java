@@ -204,7 +204,7 @@ final class ContentDeserializationVisitor implements ContentVisitor<Content> {
 
         // deserialization discards entities that failed to parse
         described.setReviews(msg.getReviewsList().stream()
-                .map(reviewBuffer -> reviewSerializer.deserialize(possibleSource, reviewBuffer))
+                .map(reviewSerializer::deserialize)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList()));
